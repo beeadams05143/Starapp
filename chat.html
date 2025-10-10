@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Group Chat</title>
+
+  <!-- Your styles -->
+  <link rel="stylesheet" href="chatStyles.css" />
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Page-specific styles -->
+  <style>
+    /* Layout for this page */
+    .chat-wrapper { display:flex; justify-content:center; margin:40px auto; padding:0 16px; }
+    .chat-card   { width:min(720px, 92vw); padding:12px; }
+
+    /* message list */
+    #chatBox {
+      height: 360px;
+      overflow-y: auto;
+      background: #fafafa;
+      border-radius: 12px;
+      padding: 10px;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.04);
+    }
+
+    /* bubbles */
+    .bubble { display:flex; gap:8px; align-items:flex-start; margin:8px 0; }
+    .bubble .avatar {
+      width:28px; height:28px; border-radius:50%;
+      object-fit:cover; flex:0 0 28px;
+    }
+    .bubble .content { line-height:1.3; }
+    .bubble .msg { background:#fff; border-radius:10px; padding:6px 8px; }
+    .bubble .meta { font-size:12px; color:#666; margin-top:4px; }
+
+    /* input row */
+    .input-row {
+      display:flex; gap:8px; margin-top:12px;
+      align-items:center;
+    }
+    #chatInput {
+      flex:1; height:38px; padding:0 10px; border-radius:8px; border:1px solid #ccc;
+    }
+    #sendBtn {
+      height:38px; padding:0 14px; border-radius:8px; border:none;
+      background:#1677ff; color:#fff; font-weight:600; cursor:pointer;
+    }
+    #sendBtn:hover { filter: brightness(0.95); }
+
+    .footnotes { margin-top:10px; font-size:14px; color:#333; }
+
+    /* --- STAR1 full-page background for this page --- */
+    body.star-bg {
+      /* change extension if your file is .png/.jpeg */
+      background: url("STAR1.jpg") center / cover no-repeat fixed;
+    }
+
+    /* let the background show through */
+    body.star-bg .chat-wrapper { background: transparent !important; }
+
+    /* optional nice 'glass' panel for the chat card */
+    .chat-panel {
+      background: rgba(255,255,255,0.88);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.12);
+    }
+
+    /* keep inner areas readable */
+    .chat-panel #chatBox,
+    .chat-panel input,
+    .chat-panel button {
+      background: rgba(255,255,255,0.95);
+    }
+
+    /* avoid overlap with bottom tab bar */
+    .chat-wrapper { margin-bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
+  </style>
+</head>
+<body class="star-bg">
+  <!-- Shared navbar (your loader fills this) -->
+  <div id="navbar"></div>
+
+  <main class="chat-wrapper">
+    <div class="chat-card chat-panel" aria-label="Group chat">
+      <h2 style="text-align:center;">Group Chat</h2>
+
+      <!-- message list -->
+      <div id="chatBox" class="chat-box" role="log" aria-live="polite"></div>
+
+      <!-- composer -->
+      <div class="input-row">
+        <input id="chatInput" type="text" placeholder="Type a message..." autocomplete="off" />
+        <button id="sendBtn" type="button">Send</button>
+      </div>
+
+      <div class="footnotes">
+        <div>✅ Connected to group</div>
+        <div>🗓️ Showing messages from the last 24 hours</div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Page-specific logic (keep if you use it) -->
+<!-- Chat logic -->
+<script type="module" src="./chat.js"></script>
+
+
+  <!-- Top app bar + bottom tabs (creates #openMenu) -->
+  <script defer src="/ui-shell.js"></script>
+
+  <!-- Hamburger drawer (depends on #openMenu created by ui-shell) -->
+  <script defer src="/scripts/appbar-drawer.js"></script>
+
+  <!-- Floating avatar (top-right across pages) -->
+  <script type="module" src="/avatar-float.js"></script>
+  <script type="module" src="/load-navbar.js"></script>
+
+</body>
+</html>

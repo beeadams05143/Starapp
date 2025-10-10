@@ -1,0 +1,280 @@
+<!-- login.html -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Login - STAR</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root { color-scheme: light; }
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      background: #f9fafb; margin: 0; min-height: 100vh;
+      display: grid; place-items: center;
+    }
+    .card {
+      width: 340px; max-width: 92vw; background: #fff; padding: 24px 22px;
+      border-radius: 14px; box-shadow: 0 6px 24px rgba(0,0,0,.08);
+    }
+    h1 { margin: 0 0 6px; font-size: 28px; }
+    .tagline { margin: 0 0 18px; color: #6b7280; font-size: 13px; }
+    label { display:block; font-size: 13px; margin: 10px 0 6px; color:#111827; }
+    input {
+      width: 100%; padding: 10px 12px; font-size: 15px;
+      border: 1px solid #d1d5db; border-radius: 10px; outline: none;
+    }
+    .row { display:flex; gap:10px; margin-top: 14px; }
+    button {
+      flex: 1 1 auto; padding: 10px 14px; font-size: 15px; border: 0; border-radius: 10px;
+      background:#111827; color:#fff; cursor:pointer;
+    }
+    button.ghost { background:#fff; color:#111827; border:1px solid #e5e7eb; }
+    button:disabled { opacity: .6; cursor: not-allowed; }
+    #logoutBtn { width:100%; margin-top: 10px; display:none; }
+    #message { min-height: 18px; margin-top: 10px; font-size: 13px; color:#b91c1c; }
+    #message.ok { color:#0f766e; }
+    .muted { color:#6b7280; font-size:12px; margin-top:10px }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>🌟 STAR</h1>
+    <p class="tagline"><strong>Support Tool for Autonomy and Reflection</strong></p>
+
+    <!-- Signed-out view -->
+    <form id="authForm" novalidate>
+      <label for="email">Email</label>
+      <input id="email" type="email" autocomplete="username" placeholder="you@example.com" required />
+
+      <label for="password">Password</label>
+      <input id="password" type="password" autocomplete="current-password" placeholder="Your password" required />
+
+      <div class="row">
+        <button id="loginBtn" type="submit">Login</button>
+        <button id="signupBtn" type="button" class="ghost">Sign up</button>
+      </div>
+
+      <button id="forgotBtn" type="button" class="ghost" style="margin-top:10px;">Forgot password?</button>
+    </form>
+
+    <!-- Signed-in view -->
+    <button id="logoutBtn" type="button">Log Out</button>
+
+    <div id="message" role="status" aria-live="polite"></div>
+    <p class="muted" id="whoami"></p>
+  </main>
+
+  <!-- Auth logic -->
+  <script type="module">
+    // ---- Config (kept the same default) ----
+    const params   = new URLSearchParams(location.search);
+    const redirect = params.get('redirect') || 'dashboard.html';
+
+    // ---- Elements ----
+    const form      = document.getElementById('authForm');
+    const emailEl   = document.getElementById('email');
+    const passEl    = document.getElementById('password');
+    const loginBtn  = document.getElementById('loginBtn');
+    const signupBtn = document.getElementById('signupBtn');
+    const forgotBtn = document.getElementById('forgotBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const msg       = document.getElementById('message');
+    const whoami    = document.getElementById('whoami');
+
+    const showMsg = (text, ok=false) => {
+      msg.textContent = text || '';
+      msg.classList.toggle('ok', !!ok);
+    };
+    const show = (el, on) => { if (el) el.style.display = on ? '' : 'none'; };
+    const setBusy = (on) => { [loginBtn, signupBtn, forgotBtn, logoutBtn].forEach(b => b && (b.disabled = on)); };
+
+    async function boot() {
+      if (!form || !emailEl || !passEl) {
+        console.error('[AUTH] Required form elements not found.');
+        return;
+      }
+
+      setBusy(true);
+      showMsg('Loading…');
+
+      let supabase;
+      try {
+        ({ supabase } = await import('./supabaseClient.js'));
+      } catch (err) {
+        console.error('[AUTH] Failed to load supabase client', err);
+        showMsg('Could not load authentication client. Refresh to retry.');
+        [loginBtn, signupBtn, forgotBtn, logoutBtn].forEach(btn => btn && (btn.disabled = true));
+        return;
+      }
+
+      showMsg('');
+      setBusy(false);
+
+      // Ensure a profile row exists so names show up elsewhere
+      async function ensureProfileRow(user) {
+        try {
+          await supabase.from('profiles').upsert({
+            id: user.id,
+            full_name:    user.user_metadata?.full_name || user.user_metadata?.name || user.email,
+            public_name:  user.user_metadata?.full_name || user.user_metadata?.name || user.email,
+            display_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email
+          }, { onConflict: 'id' });
+        } catch (e) {
+          console.warn('[AUTH] ensureProfileRow failed', e);
+        }
+      }
+
+      async function render() {
+        try {
+          const { data: { session }, error } = await supabase.auth.getSession();
+          if (error) console.warn('[AUTH] getSession error:', error);
+
+          const authed = !!session?.user;
+          show(form, !authed);
+          show(logoutBtn, authed);
+
+          whoami.textContent = authed ? `Signed in as ${session.user.email}` : '';
+        } catch (err) {
+          console.error('[AUTH] render failed', err);
+          showMsg('Auth status unavailable. Retry shortly.');
+        }
+      }
+
+      // ---- Login (instrumented) ----
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        console.log('[LOGIN] submit fired');
+        showMsg('');
+        setBusy(true);
+
+        try {
+          const email = (emailEl.value || '').trim();
+          const password = passEl.value;
+          console.log('[LOGIN] values', { emailPresent: !!email, pwLength: password?.length });
+
+          if (!email || !password) {
+            setBusy(false);
+            console.log('[LOGIN] missing email or password');
+            showMsg('Enter email & password');
+            return;
+          }
+
+          console.time('[LOGIN] signInWithPassword');
+          const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+          console.timeEnd('[LOGIN] signInWithPassword');
+          console.log('[LOGIN] result', { data, error });
+
+          setBusy(false);
+
+          if (error) {
+            showMsg(error.message);
+            return;
+          }
+
+          // sanity: ensure session exists (some browsers need a beat)
+          const { data: s } = await supabase.auth.getSession();
+          console.log('[LOGIN] session after login', s);
+          if (!s?.session) {
+            showMsg('Login succeeded but no session yet. Retrying…');
+            await new Promise(r => setTimeout(r, 300));
+          }
+
+          // optional: ensure profile row
+          try {
+            const { data: u } = await supabase.auth.getUser();
+            if (u?.user) await ensureProfileRow(u.user);
+          } catch (e2) {
+            console.warn('[LOGIN] ensureProfileRow failed:', e2);
+          }
+
+          console.log('[LOGIN] redirecting to', redirect);
+          location.replace(redirect);  // e.g., 'dashboard.html'
+        } catch (err) {
+          setBusy(false);
+          console.error('[LOGIN] unexpected error', err);
+          showMsg('Unexpected error. See console.');
+        }
+      });
+
+      // ---- Signup (works with or without "Confirm email") ----
+      signupBtn?.addEventListener('click', async () => {
+        showMsg('');
+        setBusy(true);
+
+        const email = (emailEl.value || '').trim();
+        const password = passEl.value;
+        if (!email || !password) {
+          setBusy(false);
+          return showMsg('Enter email & password');
+        }
+
+        const { data, error } = await supabase.auth.signUp({ email, password });
+        setBusy(false);
+        if (error) return showMsg(error.message);
+
+        // If "Confirm email" is OFF, session is created immediately → redirect.
+        // If it's ON, no session → ask them to check email.
+        const hasSession = !!data?.session;
+        if (hasSession) {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) await ensureProfileRow(user);
+          return location.replace(redirect);
+        } else {
+          return showMsg('Check your email to confirm, then log in.', true);
+        }
+      });
+
+      // ---- Forgot password ----
+      forgotBtn?.addEventListener('click', async () => {
+        const email = (emailEl.value || '').trim();
+        if (!email) {
+          showMsg('Enter your email first.');
+          return;
+        }
+
+        setBusy(true);
+        showMsg('Sending reset email…');
+        try {
+          const { error } = await supabase.auth.resetPasswordForEmail(email);
+          if (error) {
+            showMsg(error.message);
+          } else {
+            showMsg('Password reset email sent. Check your inbox (and spam).', true);
+          }
+        } catch (err) {
+          console.error('[AUTH] resetPasswordForEmail failed', err);
+          showMsg('Could not send reset email. Try again shortly.');
+        } finally {
+          setBusy(false);
+        }
+      });
+
+      // ---- Logout ----
+      logoutBtn?.addEventListener('click', async () => {
+        showMsg('');
+        setBusy(true);
+        try {
+          await supabase.auth.signOut();
+          showMsg('Logged out.', true);
+        } catch (e) {
+          console.warn('[AUTH] signOut failed', e);
+          showMsg('Logout failed. Try again.');
+        } finally {
+          setBusy(false);
+          await render();
+        }
+      });
+
+      // Keep UI synced if auth changes in another tab
+      supabase.auth.onAuthStateChange(() => render());
+
+      // Initial paint
+      render();
+    }
+
+    boot();
+  </script>
+
+
+</body>
+</html>

@@ -1,0 +1,30 @@
+:root { --appbar-h: 56px; }
+
+body {
+  /* room for the fixed top app bar */
+  padding-top: var(--appbar-h);
+}
+
+/* Fixed black app bar */
+.appbar{
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  height: var(--appbar-h);
+  display: flex; align-items: center; gap: 12px;
+  padding: 8px 14px;
+  background: #111 !important; color: #fff !important;
+  border: 0 !important; border-radius: 0 !important;
+  box-shadow: none !important; transform: none !important;
+}
+
+.appbar .iconbtn{
+  appearance: none; border: 0;
+  background: #222 !important; color: #fff !important;
+  font-size: 20px; line-height: 1; padding: 8px 10px; border-radius: 10px;
+  box-shadow: none !important;
+}
+
+.appbar .iconbtn:hover,
+.appbar .iconbtn:active,
+.appbar .iconbtn:focus { box-shadow: none !important; }
+
+.appbar .brand .title { color: #fff !important; font-weight: 800; }

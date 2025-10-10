@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Mood Report</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body.plain-page {
+      background: none !important;
+      background-color: #f9f9f9 !important;
+    }
+  </style>
+</head>
+
+<body class="plain-page">
+<style id="mood-report-scroll-fix">
+  /* Allow the page to scroll */
+  html, body {
+    height: auto !important;
+    min-height: 100% !important;
+    overflow-y: auto !important;
+    overflow-x: hidden;
+  }
+  /* Neutralize full-viewport wrappers */
+  main, .page, .content, .container, #report, #reportPage {
+    height: auto !important;
+    min-height: 100vh;
+    overflow: visible !important;
+  }
+  /* Keep content above fixed bottom tabs */
+  body.plain-page { padding-bottom: 96px; }
+  /* Responsive canvases */
+  canvas { display: block; max-width: 100%; height: auto; }
+</style>
+
+<div id="navbar-container"></div>
+
+<h1>Mood Report</h1>
+
+<h2>Recent Mood Check-Ins</h2>
+<div style="margin-bottom: 1rem;">
+  <label for="startDate">Start:</label>
+  <input type="date" id="startDate" />
+  <label for="endDate" style="margin-left: 1rem;">End:</label>
+  <input type="date" id="endDate" />
+</div>
+
+<input type="text" id="searchInput" placeholder="Search by mood, note, or date..." style="margin-bottom: 1rem; padding: 0.5rem; width: 100%; max-width: 400px;" />
+<button id="toggleEntriesBtn">Show All Entries</button>
+<button id="downloadCsvBtn" style="margin-left: 1rem;">Download CSV</button>
+<ul id="entries" style="max-height: 300px; overflow-y: auto; padding-right: 1rem;"></ul>
+
+<h2>Mood Intensity Over Time</h2>
+<canvas id="moodTrendChart" width="400" height="200"></canvas>
+
+<h2>Mood Type Frequency</h2>
+<canvas id="moodBarChart" width="400" height="200"></canvas>
+
+<h2>Mood Share (Pie)</h2>
+<canvas id="moodPieChart" width="400" height="200"></canvas>
+<script type="module">
+  import { supabase } from './supabaseClient.js';
+
+  async function fetchMergedMoodEntries() {
+    let supa = [];
+    let uid = null;
+    try {
+      const { data } = await supabase.auth.getSession();
+      uid = data?.session?.user?.id || null;
+    } catch {}
+
+    try {
+      let q = supabase
+        .from('mood_entries')
+        .select('created_at,mood,intensity,notes')
+        .order('created_at', { ascending: true });
+      if (uid) q = q.eq('user_id', uid);   // harmless if column doesn't exist
+      const { data, error } = await q;
+      if (!error && Array.isArray(data)) {
+        supa = data.map(r => {
+          const iso = new Date(r.created_at).toISOString();
+          return {
+            iso,
+            time: new Date(iso).toLocaleString(),
+            mood: r.mood || 'Unknown',
+            intensity: r.intensity ?? null,
+            note: r.notes ?? ''
+          };
+        });
+      }
+    } catch {}
+
+    if (supa.length) return supa; // do NOT merge local seeds if we have server rows
+
+    const local = (JSON.parse(localStorage.getItem('moodEntries') || '[]')).map(r => {
+      const ts  = r.timestamp || r.created_at || r.time || Date.now();
+      const iso = new Date(ts).toISOString();
+      return {
+        iso,
+        time: new Date(iso).toLocaleString(),
+        mood: r.mood || 'Unknown',
+        intensity: r.intensity ?? null,
+        note: r.note ?? r.notes ?? ''
+      };
+    });
+    return local.sort((a,b)=>new Date(a.iso) - new Date(b.iso));
+  }
+
+  window.fetchMergedMoodEntries = fetchMergedMoodEntries;
+</script>
+
+<!-- MODULE: fetch merged mood entries from Supabase + local -->
+<script type="module">
+  import { supabase } from './supabaseClient.js';
+
+  async function fetchMergedMoodEntries() {
+    // 1) Supabase
+    let supa = [];
+    try {
+      const { data, error } = await supabase
+        .from('mood_entries')
+        .select('created_at,mood,intensity,notes')
+        .order('created_at');
+      if (!error && Array.isArray(data)) {
+        supa = data.map(r => {
+          const iso = new Date(r.created_at).toISOString();
+          return {
+            iso,
+            time: new Date(iso).toLocaleString(),
+            mood: r.mood || 'Unknown',
+            intensity: r.intensity ?? null,
+            note: r.notes ?? ''
+          };
+        });
+      }
+    } catch {}
+
+    // 2) Local fallback/merge (offline)
+    const local = (JSON.parse(localStorage.getItem('moodEntries') || '[]')).map(r => {
+      const ts  = r.timestamp || r.created_at || r.time || Date.now();
+      const iso = new Date(ts).toISOString();
+      return {
+        iso,
+        time: new Date(iso).toLocaleString(),
+        mood: r.mood || 'Unknown',
+        intensity: r.intensity ?? null,
+        note: r.note ?? r.notes ?? ''
+      };
+    });
+
+    // 3) Merge + de-dupe (prefer Supabase when same key)
+    const byKey = new Map();
+    [...supa, ...local].forEach(e => {
+      const key = `${e.iso}|${e.mood}|${e.intensity ?? ''}`;
+      if (!byKey.has(key)) byKey.set(key, e);
+    });
+
+    return [...byKey.values()].sort((a, b) => new Date(a.iso) - new Date(b.iso));
+  }
+
+  // expose to the non-module script below
+  window.fetchMergedMoodEntries = fetchMergedMoodEntries;
+</script>
+
+<!-- UI + charts -->
+<script>
+  const entriesList     = document.getElementById("entries");
+  const toggleBtn       = document.getElementById("toggleEntriesBtn");
+  const searchInput     = document.getElementById("searchInput");
+  const startDateInput  = document.getElementById("startDate");
+  const endDateInput    = document.getElementById("endDate");
+  const downloadBtn     = document.getElementById("downloadCsvBtn");
+
+  let moodEntries = []; // filled during boot
+  let showingAll = false;
+
+  function isInDateRange(entry, startDate, endDate) {
+    const d = new Date(entry.iso || entry.time);
+    if (startDate && d < new Date(startDate)) return false;
+    if (endDate && d > new Date(endDate))     return false;
+    return true;
+  }
+
+  function renderEntries(filtered) {
+    entriesList.innerHTML = "";
+    const visible = showingAll ? filtered : filtered.slice(0, 5);
+    visible.forEach(entry => {
+      const li = document.createElement("li");
+      li.textContent = `${entry.time || "Unknown"} — Mood: ${entry.mood}, Intensity: ${entry.intensity}, Note: ${entry.note || "None"}`;
+      entriesList.appendChild(li);
+    });
+    toggleBtn.textContent = showingAll ? "Show Less" : "Show All Entries";
+  }
+
+  function updateCharts(entries) {
+    const ctxLine = document.getElementById("moodTrendChart").getContext("2d");
+    const ctxBar  = document.getElementById("moodBarChart").getContext("2d");
+    const ctxPie  = document.getElementById("moodPieChart")?.getContext("2d");
+
+    if (window.intensityChart) window.intensityChart.destroy();
+    if (window.barChart)       window.barChart.destroy();
+    if (window.pieChart)       window.pieChart.destroy();
+
+    // Line: intensity over time
+    const labelsTime = entries
+      .map(e => {
+        const d = new Date(e.time);
+        return isNaN(d) ? "Invalid" : `${d.toLocaleDateString()} ${d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
+      })
+      .reverse();
+
+    const dataIntensity = entries.map(e => Number(e.intensity)).reverse();
+
+    window.intensityChart = new Chart(ctxLine, {
+      type: "line",
+      data: {
+        labels: labelsTime,
+        datasets: [{
+          label: "Mood Intensity",
+          data: dataIntensity,
+          borderColor: "#007bff",
+          backgroundColor: "#007bff33",
+          fill: false,
+          tension: 0.3,
+          pointRadius: 4,
+          pointHoverRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: (context) => {
+                const entry = entries[entries.length - 1 - context.dataIndex];
+                return `Mood: ${entry.mood}, Intensity: ${entry.intensity}`;
+              }
+            }
+          }
+        },
+        scales: {
+          y: { min: 1, max: 5, ticks: { stepSize: 1 }, title: { display: true, text: "Intensity (1 = Low, 5 = High)" } },
+          x: { ticks: { autoSkip: true, maxRotation: 45, minRotation: 0 } }
+        }
+      }
+    });
+
+    // Aggregate counts by mood
+    const moodCount = {};
+    entries.forEach(e => { if (e.mood) moodCount[e.mood] = (moodCount[e.mood] || 0) + 1; });
+    const moodLabels = Object.keys(moodCount);
+    const moodValues = Object.values(moodCount);
+
+    const palette = ["#ffc107","#36a2eb","#ff6384","#4bc0c0","#9966ff","#ff9f40","#8bc34a","#e91e63","#9c27b0","#03a9f4"];
+    const barColors = moodLabels.map((_, i) => palette[i % palette.length]);
+
+    // Bar: frequency
+    window.barChart = new Chart(ctxBar, {
+      type: "bar",
+      data: { labels: moodLabels, datasets: [{ label: "Mood Frequency", data: moodValues, backgroundColor: barColors }] },
+      options: { responsive: true, scales: { y: { beginAtZero: true } } }
+    });
+
+    // Pie: share
+    if (ctxPie) {
+      window.pieChart = new Chart(ctxPie, {
+        type: "pie",
+        data: { labels: moodLabels, datasets: [{ label: "Mood Share", data: moodValues, backgroundColor: barColors, borderWidth: 1 }] },
+        options: { responsive: true, plugins: { legend: { position: "bottom" } } }
+      });
+    }
+  }
+
+  function updateFilteredView() {
+    const term  = searchInput.value.toLowerCase();
+    const start = startDateInput.value;
+    const end   = endDateInput.value;
+
+    const filtered = moodEntries.filter(entry =>
+      ((entry.mood || "").toLowerCase().includes(term) ||
+       (entry.note || "").toLowerCase().includes(term) ||
+       (entry.time || "").toLowerCase().includes(term)) &&
+       isInDateRange(entry, start, end)
+    );
+
+    renderEntries(filtered);
+    updateCharts(filtered);
+  }
+
+  function downloadCSV(entries) {
+    if (!entries.length) { alert("No mood entries to export."); return; }
+
+    const headers = ["Time", "Mood", "Intensity", "Note"];
+    const rows = entries.map(e => [
+      `"${e.time}"`,
+      `"${e.mood}"`,
+      `"${e.intensity}"`,
+      `"${(e.note || "").replace(/"/g, '""')}"`
+    ]);
+
+    const csvContent = [headers, ...rows].map(r => r.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url  = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "mood_entries.csv";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  // Listeners
+  toggleBtn.addEventListener("click", () => { showingAll = !showingAll; updateFilteredView(); });
+  searchInput.addEventListener("input",  updateFilteredView);
+  startDateInput.addEventListener("change", updateFilteredView);
+  endDateInput.addEventListener("change",   updateFilteredView);
+  downloadBtn.addEventListener("click", () => {
+    const term  = searchInput.value.toLowerCase();
+    const start = startDateInput.value;
+    const end   = endDateInput.value;
+    const filtered = moodEntries.filter(entry =>
+      ((entry.mood || "").toLowerCase().includes(term) ||
+       (entry.note || "").toLowerCase().includes(term) ||
+       (entry.time || "").toLowerCase().includes(term)) &&
+       isInDateRange(entry, start, end)
+    );
+    downloadCSV(filtered);
+  });
+
+  // Boot: load Supabase + local then render
+  (async function boot(){
+    try {
+      if (window.fetchMergedMoodEntries) {
+        moodEntries = await window.fetchMergedMoodEntries();
+      } else {
+        throw new Error("fetchMergedMoodEntries not available");
+      }
+    } catch (_) {
+      try {
+        moodEntries = JSON.parse(localStorage.getItem("moodEntries") || "[]").map(function (r) {
+          const ts  = r.timestamp || r.created_at || r.time || Date.now();
+          const iso = new Date(ts).toISOString();
+          return { iso, time: new Date(iso).toLocaleString(), mood: r.mood || "Unknown", intensity: (r.intensity != null) ? Number(r.intensity) : null, note: r.note || r.notes || "" };
+        });
+      } catch { moodEntries = []; }
+    }
+    updateFilteredView();
+  })();
+</script>
+
+<!-- Other scripts you already use -->
+<script type="module" src="./script.js"></script>
+<script defer src="./ui-shell.js"></script>
+<script defer src="./scripts/appbar-drawer.js"></script>
+<script type="module" src="./avatar-float.js"></script>
+
+</body>
+</html>

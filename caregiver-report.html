@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Caregiver Report</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <style>
+    :root{ --card:#fff; --border:#e9e9e9; --muted:#666; }
+    html,body{height:auto;min-height:100%;overflow-y:auto}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#f7f7f8;margin:0}
+    main.page{max-width:1200px;margin:0 auto;padding:20px}
+
+    h1,h2{margin:10px 0;text-align:center}
+    h3{margin:.25rem 0 .5rem;text-align:center}
+
+    .panel{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin:14px 0}
+    .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:center;margin:.5rem 0 .75rem}
+    select,button{padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:#fff}
+    button{cursor:pointer}
+
+    table{width:100%;border-collapse:collapse}
+    th,td{border:1px solid #ddd;padding:8px;vertical-align:top}
+    thead th{background:#fafafa;position:sticky;top:0}
+
+    .muted{color:var(--muted);font-size:13px;text-align:center;margin:.35rem 0}
+
+    .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:14px 0}
+    .kpi{background:var(--card);border:1px solid var(--border);border-radius:10px;text-align:center;padding:12px}
+    .kpi .label{font-size:12px;color:var(--muted)}
+    .kpi .value{margin-top:6px;font-size:20px;font-weight:700}
+
+    .chart{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;margin:16px auto;max-width:940px}
+    .chart.small{max-width:700px}
+    canvas{display:block;max-width:100% !important;height:auto !important}
+
+    /* ===== Health Calendar (scoped) ===== */
+    .hc-wrap{max-width:1200px;margin:16px auto}
+    .hc-card{background:#fff;border:1px solid #e9e9e9;border-radius:16px;box-shadow:0 12px 30px rgba(0,0,0,.04)}
+    .hc-head{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid #e9e9e9}
+    .hc-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+    .hc-title{font-weight:900;font-size:18px}
+    .hc-btn{appearance:none;border:1px solid #e9e9e9;background:#fff;padding:8px 10px;border-radius:10px;cursor:pointer;font-weight:700}
+    .hc-kvs{display:flex;gap:12px;flex-wrap:wrap}
+    .hc-kv{background:#fafafa;border:1px solid #e9e9e9;border-radius:12px;padding:8px 10px;font-weight:700}
+    .hc-legend{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding:10px 16px;border-top:1px solid #e9e9e9}
+    .hc-emo{font-size:22px}
+    .hc-grid{display:grid;grid-template-columns:repeat(7,minmax(110px,1fr));border-top:1px solid #e9e9e9}
+    .hc-dow{padding:10px 8px;text-align:center;font-weight:800;color:#6b7280;background:#fafafa;border-bottom:1px solid #e9e9e9}
+    .hc-cell{min-height:100px;padding:8px;border-bottom:1px solid #e9e9e9;border-right:1px solid #e9e9e9;position:relative;background:#fff}
+    .hc-cell:nth-child(7n){border-right:0}
+    .hc-date{font-weight:900;font-size:13px;color:#111}
+    .hc-icons{display:flex;gap:6px;margin-top:6px;font-size:28px;line-height:1}
+    .hc-empty{color:#6b7280;position:absolute;left:8px;bottom:8px;font-size:12px}
+  </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded',()=>{ try{ Chart.register(ChartDataLabels); }catch(e){} });</script>
+</head>
+<!-- ===== MINI STATUS BAR (no console needed) ===== -->
+<style>
+  #cg-status{position:fixed;left:8px;right:8px;bottom:8px;z-index:9999;
+    background:#fff;border:1px solid #ddd;border-radius:10px;padding:10px;
+    font:14px/1.35 system-ui,-apple-system,Segoe UI,Roboto,Arial;box-shadow:0 6px 18px rgba(0,0,0,.12)}
+  #cg-status .row{margin:.25rem 0}
+  #cg-status .ok{color:#0f6a2f}
+  #cg-status .err{color:#b00020}
+  #cg-status button{margin-left:.5rem}
+</style>
+<div id="cg-status">
+  <div class="row"><b>Caregiver pipeline:</b>
+    <button id="cg-run">Run test</button>
+  </div>
+  <div class="row" id="cg-line1"></div>
+  <div class="row" id="cg-line2"></div>
+</div>
+
+<script>
+(function(){
+  const L1 = document.getElementById('cg-line1');
+  const L2 = document.getElementById('cg-line2');
+  const Run = document.getElementById('cg-run');
+  const say = (el, txt, cls='') => { el.className=cls; el.textContent = txt; };
+
+  async function smoke(){
+    try {
+      // 0) client present?
+      if (!window.supabase) { say(L1,'supabase client missing','err'); return; }
+
+      // 1) auth check
+      say(L1,'checking auth…');
+      const { data:{ user }, error:uerr } = await supabase.auth.getUser();
+      if (uerr){ say(L1, 'auth error: '+uerr.message, 'err'); return; }
+      if (!user){ say(L1,'not signed in (this domain)','err'); return; }
+      say(L1,'auth OK','ok');
+
+      // 2) minimal insert only to existing columns
+      say(L2,'inserting test row…');
+      const d = new Date().toISOString().slice(0,10); // YYYY-MM-DD for DATE column
+      const { data, error } = await supabase
+        .from('caregiver_checkins')
+        .insert([{ user_id: user.id, date: d }])
+        .select()
+        .throwOnError(); // forces throw on RLS / column errors
+
+      say(L2,'insert success ✔','ok');
+      console.log('insert success:', data);
+      alert('Insert success. Check caregiver_checkins for a new row dated '+d);
+    } catch(e){
+      console.error(e);
+      say(L2, 'insert failed: ' + (e?.message || e), 'err');
+      alert('Insert failed: ' + (e?.message || e));
+    }
+  }
+
+  Run.addEventListener('click', smoke);
+  smoke(); // auto-run so you also see it on phone
+})();
+</script>
+
+<body>
+  <div class="top-actions no-export" style="display:flex;gap:8px;justify-content:center;margin:8px 0 14px;">
+    <button id="fullExportBtn">📄 Export Full Report (PDF)</button>
+    <button id="fullPrintBtn">🖨️ Print</button>
+  </div>
+
+  <main class="page">
+    <h1>Reports</h1>
+
+    <section class="panel" id="cg-panel">
+      <h2>Caregiver Check-Ins</h2>
+
+      <div class="toolbar">
+        <label>From <input type="date" id="cgStart"></label>
+        <label>To <input type="date" id="cgEnd"></label>
+        <button id="cgApply">Apply</button>
+
+        <span style="flex:1"></span>
+        <button id="cgPdf"  class="no-export">📄 PDF</button>
+        <button id="cgCsv"  class="no-export">⬇️ CSV</button>
+      </div>
+
+      <div style="max-height:340px;overflow:auto;border-radius:8px">
+        <table id="cgTable">
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Hygiene</th>
+              <th>Food</th>
+              <th>Clean-up</th>
+              <th>Voc (min)</th>
+              <th>Comm (min)</th>
+              <th>Prompt</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody id="cgTbody"><tr><td colspan="8">Loading…</td></tr></tbody>
+        </table>
+      </div>
+
+      <p class="muted" id="cgCount"></p>
+    </section>
+
+    <!-- Keep: Daily Mood Check-Ins (table) -->
+    <section class="panel" id="mood-panel">
+      <h2>Daily Mood Check-Ins</h2>
+      <div class="toolbar">
+        <label>View Mood Totals By:
+          <select id="moodRange">
+            <option value="day">Day</option>
+            <option value="month">Month</option>
+            <option value="year">Year</option>
+            <option value="6months">6 Months</option>
+            <option value="all" selected>All Time</option>
+          </select>
+        </label>
+        <button id="exportMoodBtn">📄 Export Mood Check-Ins to PDF</button>
+      </div>
+
+      <div style="max-height:340px;overflow:auto;border-radius:8px">
+        <table id="moodTable">
+          <thead><tr><th>Timestamp</th><th>Mood</th><th>Intensity</th><th>Notes</th></tr></thead>
+          <tbody><tr><td colspan="4">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- KPIs (percentages + totals) -->
+    <div class="kpis" id="kpi-row">
+      <div class="kpi"><div class="label">Total Entries</div><div class="value" id="kpi-entries">—</div></div>
+      <div class="kpi"><div class="label">Hygiene % Yes</div><div class="value" id="kpi-hygiene">—</div></div>
+      <div class="kpi"><div class="label">Food % Yes</div><div class="value" id="kpi-food">—</div></div>
+      <div class="kpi"><div class="label">Clean-up % Yes</div><div class="value" id="kpi-cleanup">—</div></div>
+      <div class="kpi"><div class="label">Total Vocational (min)</div><div class="value" id="kpi-voc">—</div></div>
+      <div class="kpi"><div class="label">Total Community (min)</div><div class="value" id="kpi-com">—</div></div>
+      <div class="kpi"><div class="label">Avg Prompt Level</div><div class="value" id="kpi-prompt">—</div></div>
+    </div>
+
+    <!-- Health calendar -->
+    <section id="hc-root" class="hc-wrap">
+      <div class="hc-card">
+        <div class="hc-head">
+          <div class="hc-row">
+            <button class="hc-btn" id="hc-prev" aria-label="Previous month">‹</button>
+            <div class="hc-title" id="hc-monthTitle">Loading…</div>
+            <button class="hc-btn" id="hc-next" aria-label="Next month">›</button>
+          </div>
+          <div class="hc-kvs">
+            <div class="hc-kv" id="hc-kv-bm">💩 BM days: 0</div>
+            <div class="hc-kv" id="hc-kv-sleep">😴 Sleep ≥ 8h days: 0</div>
+            <div class="hc-kv" id="hc-kv-manic">⚡️ Manic days: 0</div>
+            <div class="hc-kv" id="hc-kv-sick">🤒 Sick days: 0</div>
+          </div>
+        </div>
+
+        <div class="hc-legend hc-row" style="border-top:0">
+          <label><input type="checkbox" data-hc-layer="bm" checked/> <span class="hc-emo" aria-hidden="true">💩</span> BM</label>
+          <label><input type="checkbox" data-hc-layer="sleep" checked/> <span class="hc-emo" aria-hidden="true">😴</span> Sleep ≥ 8h</label>
+          <label><input type="checkbox" data-hc-layer="manic" checked/> <span class="hc-emo" aria-hidden="true">⚡️</span> Manic</label>
+          <label><input type="checkbox" data-hc-layer="sick" checked/> <span class="hc-emo" aria-hidden="true">🤒</span> Sick</label>
+        </div>
+
+        <div class="hc-grid" id="hc-grid" role="grid" aria-label="Health calendar"></div>
+      </div>
+    </section>
+
+    <!-- Charts -->
+    <div class="chart"><h2>Physical & Daily Living Overview</h2><canvas id="healthChart"></canvas></div>
+    <div class="chart"><h2>Prompt Level Over Time</h2><canvas id="skillChart"></canvas></div>
+    <div class="chart"><h2>Individual Mood Share (Pie)</h2><canvas id="moodPieMain"></canvas></div>
+
+    <div class="chart">
+      <h2>Engagement vs Mood — Average Minutes by Activity</h2>
+      <canvas id="engagementVsMood"></canvas>
+      <p class="muted">X = Mood bucket. Y = Average minutes. Bars = Home / Vocational / Community / Leisure.</p>
+    </div>
+
+    <div class="chart small">
+      <h2 style="margin:0 0 8px;">Sleep Hours vs Engagement Minutes</h2>
+      <canvas id="sleepOverlay" height="200"></canvas>
+      <p class="muted" id="sleepNote">Correlation preview of sleep hours and engagement minutes.</p>
+    </div>
+
+    <div class="chart small">
+      <h2 style="margin:0 0 8px;">Leisure (Would-You-Rather) — Minutes & Picks</h2>
+      <canvas id="wyrBar" height="220"></canvas>
+      <p class="muted" id="wyrNote">Bars = total leisure minutes credited to each choice; line = number of picks.</p>
+    </div>
+  </main>
+
+  <!-- Single, clean module script -->
+  <script type="module">
+    /* =============== Optional live data =============== */
+    let loadFromSupabase = null;
+    try { loadFromSupabase = (await import('./caregiver-report-supabase.js')).loadCaregiverCheckins; } catch {}
+
+    // Supabase client + session gate
+    import { supabase } from './supabaseClient.js';
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { window.location.href = 'login.html'; throw new Error('No session'); }
+    const USER_ID = session.user.id;
+
+    /* =================== Utilities =================== */
+    const $ = sel => document.querySelector(sel);
+    const charts = {};
+    const destroy = key => { charts[key]?.destroy?.(); charts[key]=null; };
+    const dayKey = d => new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString().slice(0,10);
+    const axisTitle = text => ({ title:{display:true,text} });
+
+    /* =================== KPIs & caregiver-derived charts =================== */
+    const kpi = {
+      entries: $('#kpi-entries'), hygiene: $('#kpi-hygiene'), food: $('#kpi-food'),
+      cleanup: $('#kpi-cleanup'), voc: $('#kpi-voc'), com: $('#kpi-com'), prompt: $('#kpi-prompt')
+    };
+
+    function renderKPIs(summary){
+      kpi.entries.textContent = summary.counts.entries ?? 0;
+      kpi.hygiene.textContent = (summary.percents.hygiene_yes ?? 0) + '%';
+      kpi.food.textContent    = (summary.percents.food_prep_yes ?? 0) + '%';
+      kpi.cleanup.textContent = (summary.percents.cleanup_yes ?? 0) + '%';
+      kpi.voc.textContent     = summary.totals.vocational_minutes ?? 0;
+      kpi.com.textContent     = summary.totals.community_minutes ?? 0;
+      kpi.prompt.textContent  = summary.averages.new_skill_score ?? '—';
+    }
+
+    function drawHealthChart(series){
+      destroy('health');
+      const labels = series?.map(p=>p.x) ?? [];
+      const datasets = [
+        { label:'Hygiene (Yes)', data: series?.map(p=>p.hygiene_yes)||[] },
+        { label:'Food Prepared (Yes)', data: series?.map(p=>p.food_prep_yes)||[] },
+        { label:'Clean-up (Yes)', data: series?.map(p=>p.cleanup_yes)||[] },
+      ];
+      charts.health = new Chart($('#healthChart'), {
+        type:'bar',
+        data:{ labels, datasets },
+        options:{ responsive:true, scales:{ x:axisTitle('Date'), y:{ beginAtZero:true, ticks:{precision:0}, ...axisTitle('Count (Yes)') } } }
+      });
+    }
+
+    function drawSkillChart(series){
+      destroy('skill');
+      const labels = series?.map(p=>p.x) ?? [];
+      const data   = series?.map(p=>p.avg_new_skill_score ?? null) ?? [];
+      charts.skill = new Chart($('#skillChart'), {
+        type:'line',
+        data:{ labels, datasets:[{ label:'Avg Prompt Level', data, tension:.25, pointRadius:3 }]},
+        options:{ responsive:true, scales:{ x:axisTitle('Date'), y:{ min:0,max:4,ticks:{stepSize:1}, ...axisTitle('Prompt (0–4)') } } }
+      });
+    }
+
+    async function loadCaregiverData(){
+      let res = null;
+
+      if (loadFromSupabase){
+        try { res = await loadFromSupabase(USER_ID, { range:'all' }); } catch {}
+      }
+
+      // If no rows from Supabase, keep structures valid
+      if (!res || !Array.isArray(res.entries)) {
+        const entries = [];
+        const monthly = [];
+        res = {
+          entries,
+          summary:{
+            counts:{entries:0},
+            percents:{hygiene_yes:0,food_prep_yes:0,cleanup_yes:0},
+            totals:{vocational_minutes:0,community_minutes:0},
+            averages:{new_skill_score:'—'}
+          },
+          charts:{ monthly }
+        };
+      }
+
+      window.latestCaregiverEntries = res.entries;
+      renderKPIs(res.summary);
+      drawHealthChart(res.charts.monthly);
+      drawSkillChart(res.charts.monthly);
+      window.dispatchEvent(new Event('caregiverDataReady'));
+    }
+
+    /* =================== Mood data + charts =================== */
+    const MOOD_GROUPS = {
+      Positive:["Happy","Proud","Cool","Loved"],
+      "Low Energy":["OK","Neutral","Bored","Tired","Confused"],
+      Challenging:["Anxious","Worried","Scared","Mad","Frustrated","Sad","Crying","Sick","Headache","Nauseous"],
+      Other:["Hungry","Thirsty"]
+    };
+    const toBucket = m => Object.entries(MOOD_GROUPS).find(([_,list])=>list.includes(m))?.[0] || 'Other';
+
+    function moodBoundsFor(viewRange){
+      const now=new Date(); let start=new Date(0);
+      if(viewRange==='day'){ start=new Date(now); start.setHours(0,0,0,0); }
+      else if(viewRange==='month'){ start=new Date(now.getFullYear(),now.getMonth(),1); }
+      else if(viewRange==='year'){ start=new Date(now.getFullYear(),0,1); }
+      else if(viewRange==='6months'){ start=new Date(now); start.setDate(start.getDate()-183); }
+      return { start, end: now };
+    }
+
+ async function fetchMoodEntries(viewRange){
+  const { start, end } = moodBoundsFor(viewRange);
+  const startISO = start.toISOString();
+  const endISO   = end.toISOString();
+
+  // 1) Supabase rows (use BOTH date and created_at safely)
+  let supaRows = [];
+  try {
+    const { data, error } = await supabase
+      .from('mood_entries')
+      .select('created_at,date,mood,intensity,notes,sleep_hours,user_id')
+      .gte('created_at', startISO)   // filter by created_at (always exists)
+      .lte('created_at', endISO)
+      .order('created_at');
+
+    if (!error && Array.isArray(data)) {
+      supaRows = data.map(r => {
+        // Prefer user-entered date if present, else created_at
+        const ts = r.date ? new Date(r.date) : new Date(r.created_at);
+        return {
+          id: `s:${ts.toISOString()}`,
+          timestamp: ts.toISOString(),
+          dateObj: ts,
+          mood: r.mood || 'Unknown',
+          intensity: (r.intensity != null) ? +r.intensity : null,
+          notes: r.notes ?? null,
+          sleep_hours: r.sleep_hours ?? null,
+          source: 'supabase'
+        };
+      });
+    }
+  } catch (e) {
+    console.error('fetchMoodEntries supabase error', e);
+  }
+
+  // 2) Local rows fallback
+  const localRows = (JSON.parse(localStorage.getItem('moodEntries') || '[]'))
+    .filter(r => {
+      const ts = new Date(r.timestamp || r.created_at || r.date || Date.now());
+      return ts >= start && ts <= end;
+    })
+    .map(r => {
+      const ts = new Date(r.timestamp || r.created_at || r.date || Date.now());
+      return {
+        id: `l:${ts.toISOString()}:${r.mood||''}:${r.intensity??''}`,
+        timestamp: ts.toISOString(),
+        dateObj: ts,
+        mood: r.mood || 'Unknown',
+        intensity: (r.intensity != null) ? +r.intensity : null,
+        notes: r.notes ?? r.note ?? null,
+        sleep_hours: r.sleep_hours ?? null,
+        source: 'local'
+      };
+    });
+
+  // 3) Merge & de-dupe (prefer Supabase)
+  const byKey = new Map();
+  [...supaRows, ...localRows].forEach(row => {
+    const key = `${row.timestamp}|${row.mood}|${row.intensity ?? ''}`;
+    if (!byKey.has(key) || row.source === 'supabase') byKey.set(key, row);
+  });
+
+  return [...byKey.values()].sort((a,b) => a.dateObj - b.dateObj);
+}
+
+
+    let pieMain=null;
+    function drawMoodShare(indivCounts){
+      if (pieMain) pieMain.destroy();
+      let labels=Object.keys(indivCounts), data=Object.values(indivCounts);
+      if (!labels.length){ labels=['Loved','OK','Confused','Hungry']; data=[6,3,2,1]; }
+      const colors=labels.map((_,i)=>`hsl(${(i*360)/Math.max(labels.length,1)},70%,60%)`);
+      pieMain = new Chart($('#moodPieMain'), { type:'pie', data:{labels, datasets:[{data, backgroundColor:colors}]} });
+    }
+
+    function drawEngagementVsMood(moodEntries){
+      const caregiver=(window.latestCaregiverEntries||[]).slice();
+      const buckets=['Positive','Low Energy','Challenging','Other'];
+      const countsByDay=new Map();
+      for (const e of moodEntries){
+        const key = dayKey(e.dateObj);
+        const obj=countsByDay.get(key)||{Positive:0,"Low Energy":0,Challenging:0,Other:0};
+        obj[toBucket(e.mood)]++; countsByDay.set(key,obj);
+      }
+      const domBucketByDay=new Map([...countsByDay.entries()].map(([k,v])=>[k, Object.entries(v).sort((a,b)=>b[1]-a[1])[0][0]]));
+      const keys=['home_time','vocational_time','community_time','leisure_time'];
+      const sums={Positive:{}, "Low Energy":{}, Challenging:{}, Other:{}}, counts={Positive:0,"Low Energy":0,Challenging:0,Other:0};
+      for(const e of caregiver){
+        const key=dayKey(new Date(e.timestamp||e.created_at||Date.now()));
+        const b=domBucketByDay.get(key)||'Other'; counts[b]+=1;
+        for(const k of keys){ if(e[k]!=null) sums[b][k]=(sums[b][k]||0)+(+e[k]||0); }
+      }
+      const present = keys.filter(k=>Object.values(sums).some(o=>o[k]!=null));
+      let datasets = present.map(k=>({
+        label:({home_time:'Home',vocational_time:'Vocational',community_time:'Community',leisure_time:'Leisure'})[k],
+        data: ['Positive','Low Energy','Challenging','Other'].map(b=> counts[b] ? +( (sums[b][k]||0) / counts[b]).toFixed(1) : 0 )
+      }));
+      if (!datasets.length || datasets.every(ds => ds.data.reduce((a,b)=>a+b,0)===0)){
+        datasets = [
+          {label:'Home', data:[50,88,120,72]},
+          {label:'Vocational', data:[90,55,40,65]},
+          {label:'Community', data:[88,38,36,52]},
+          {label:'Leisure', data:[36,60,45,48]}
+        ];
+      }
+      new Chart($('#engagementVsMood'), {
+        type:'bar',
+        data:{ labels:buckets, datasets },
+        options:{ responsive:true, scales:{ x:axisTitle('Mood Bucket'), y:{ beginAtZero:true, ...axisTitle('Average Minutes') } } }
+      });
+    }
+
+    function pearson(xs,ys){
+      const n=xs.length; if(n<3) return null;
+      const mx=xs.reduce((a,b)=>a+b,0)/n, my=ys.reduce((a,b)=>a+b,0)/n;
+      let num=0,dx=0,dy=0; for(let i=0;i<n;i++){ const x=xs[i]-mx,y=ys[i]-my; num+=x*y; dx+=x*x; dy+=y*y; }
+      const den=Math.sqrt(dx*dy); return den ? +(num/den).toFixed(3) : null;
+    }
+
+    function drawSleepOverlay(allMoodEntries){
+      const end=new Date(); const start=new Date(end); start.setDate(end.getDate()-6); start.setHours(0,0,0,0);
+      const moods=allMoodEntries.filter(e=>e.dateObj>=start&&e.dateObj<=end);
+      const caregiver=(window.latestCaregiverEntries||[]).filter(e=>{const d=new Date(e.timestamp||e.created_at||Date.now());return d>=start&&d<=end;});
+
+      const dk=d=>new Date(d.getFullYear(),d.getMonth(),d.getDate()).toISOString().slice(0,10);
+      const sleepByDay=new Map(), engByDay=new Map();
+      for(const e of moods){
+        const k=dk(e.dateObj); const s=e.sleep_hours ?? (e.notes?.match(/sleep(?:ed)?\s*[:=\-]?\s*(\d+(?:\.\d+)?)/i)?.[1]);
+        if (s!=null) sleepByDay.set(k,+s);
+      }
+      for(const e of caregiver){
+        const k=dk(new Date(e.timestamp||e.created_at||Date.now()));
+        const mins=(+e.home_time||0)+(+e.vocational_time||0)+(+e.community_time||0)+(+e.leisure_time||0);
+        engByDay.set(k,(engByDay.get(k)||0)+mins);
+      }
+
+      const allDays=[...new Set([...sleepByDay.keys(),...engByDay.keys()])].sort();
+      let labels=allDays, minutes=allDays.map(d=>engByDay.get(d)||0), hours=allDays.map(d=>sleepByDay.get(d)??null);
+      if (!labels.length){ labels=['Mon','Tue','Wed','Thu','Fri','Sat','Sun']; minutes=[60,90,45,80,70,50,65]; hours=[7,6.5,8,7.5,6,8.2,7.8]; }
+
+      charts.sleepOverlay && charts.sleepOverlay.destroy();
+      charts.sleepOverlay = new Chart($('#sleepOverlay'), {
+        data:{
+          labels,
+          datasets:[
+            { type:'bar',  label:'Engagement Minutes', data:minutes, yAxisID:'y', order:2, datalabels:{anchor:'end',align:'top',formatter:v=>v?String(v):''} },
+            { type:'line', label:'Sleep Hours', data:hours,   yAxisID:'y1', tension:.25, pointRadius:3, datalabels:{align:'top',formatter:v=>v==null?'':`${v}h`,font:{size:10}}, order:1 }
+          ]
+        },
+        options:{ responsive:true, interaction:{mode:'index',intersect:false},
+          scales:{ y:{beginAtZero:true,...axisTitle('Minutes')}, y1:{beginAtZero:true,suggestedMax:12,position:'right',grid:{drawOnChartArea:false},...axisTitle('Hours')} } }
+      });
+
+      const xs = hours.filter(v=>v!=null), ys = labels.map((_,i)=>hours[i]!=null?minutes[i]:null).filter(v=>v!=null);
+      const r=pearson(xs,ys), n=Math.min(xs.length,ys.length);
+      $('#sleepNote').textContent = n ? `Points: ${n}. Pearson r = ${r}.` : 'No overlapping days with sleep + engagement minutes yet (showing placeholder).';
+    }
+
+    /* =================== WYR =================== */
+    async function fetchWyr(){
+      let rows=[];
+      try{
+        const { data } = await supabase.from('wyr_entries').select('created_at,choice,activity,label').order('created_at');
+        rows = (data||[]).map(r=>({ ts:new Date(r.created_at), label:(r.label||r.activity||r.choice||'Unknown') }));
+      }catch{}
+      if (!rows.length){
+        rows = (JSON.parse(localStorage.getItem('wyrEntries')||'[]')).map(r=>({ ts:new Date(r.timestamp), label:r.label }));
+      }
+      return rows;
+    }
+    async function renderWyr(){
+      const rows = await fetchWyr();
+      const cg = (window.latestCaregiverEntries||[]);
+      const leisureByDay = new Map();
+      for(const e of cg){ const d=(e.timestamp||e.created_at||'').slice(0,10); const add=+e.leisure_time||0; leisureByDay.set(d,(leisureByDay.get(d)||0)+add); }
+      const picksByDay=new Map();
+      for(const r of rows){ const k=r.ts.toISOString().slice(0,10); (picksByDay.get(k)||picksByDay.set(k,[]).get(k)).push(r.label); }
+
+      const totals={}, counts={};
+      for(const [day,labels] of picksByDay){
+        const mins = leisureByDay.get(day)||0;
+        const share = labels.length ? mins/labels.length : 0;
+        for (const lbl of labels){ totals[lbl]=(totals[lbl]||0)+share; counts[lbl]=(counts[lbl]||0)+1; }
+      }
+      let labels=Object.keys(totals);
+      if (!labels.length){ labels=["Bowling","Library visit","Lakeside"]; }
+      const minutes = labels.map(l=>+(totals[l]||[62,89,72][labels.indexOf(l)]||30).toFixed(1));
+      const picks   = labels.map(l=>counts[l]||[1,2,1][labels.indexOf(l)]||1);
+
+      charts.wyr && charts.wyr.destroy();
+      charts.wyr = new Chart($('#wyrBar'),{
+        data:{
+          labels,
+          datasets:[
+            { type:'bar',  label:'Total Leisure Minutes', data:minutes, yAxisID:'y', datalabels:{formatter:v=>v?`${v} min`:'',anchor:'end',align:'top',font:{size:10}}},
+            { type:'line', label:'Number of Picks', data:picks,   yAxisID:'y1', tension:.25, pointRadius:3 }
+          ]
+        },
+        options:{ responsive:true, interaction:{mode:'index',intersect:false},
+          scales:{ y:{beginAtZero:true,...axisTitle('Minutes')}, y1:{beginAtZero:true,position:'right',grid:{drawOnChartArea:false},...axisTitle('Picks')} } }
+      });
+      $('#wyrNote').textContent = 'Bars = total leisure minutes credited to each choice (split across multiple picks in a day). Line = times chosen.';
+    }
+
+    /* =================== Export helpers =================== */
+    async function exportElement(selector, fileName){
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const { jsPDF } = window.jspdf;
+      const el = document.querySelector(selector); if (!el) return;
+
+      const w = el.scrollWidth, h = el.scrollHeight;
+      const canvas = await html2canvas(el, {
+        scale: 2, backgroundColor: '#ffffff',
+        width: w, height: h, windowWidth: w, windowHeight: h,
+        scrollX: 0, scrollY: -window.scrollY
+      });
+
+      const img = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({ unit:'pt', format:'a4' });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const imgW = pageW;
+      const imgH = canvas.height * (imgW / canvas.width);
+
+      let heightLeft = imgH;
+      let y = 0;
+      pdf.addImage(img, 'PNG', 0, 0, imgW, imgH);
+      heightLeft -= pageH;
+      while (heightLeft > 0) {
+        pdf.addPage();
+        y = heightLeft - imgH;
+        pdf.addImage(img, 'PNG', 0, y, imgW, imgH);
+        heightLeft -= pageH;
+      }
+      pdf.save(fileName);
+    }
+    window.exportElement = window.exportElement || exportElement;
+
+    /* =================== Wire & boot =================== */
+    $('#moodRange').addEventListener('change', renderMoodSection);
+
+    async function renderMoodSection(){
+      const rangeSel = $('#moodRange').value || 'all';
+      const full = await fetchMoodEntries(rangeSel);
+
+      // Limit table to last 7 distinct days if "all"
+      let tableRows = full.slice();
+      if (rangeSel==='all'){
+        const seen=new Set(); const trimmed=[];
+        for(let i=tableRows.length-1;i>=0 && seen.size<7;i--){
+          const d=tableRows[i].dateObj.toISOString().slice(0,10);
+          if (!seen.has(d)) seen.add(d);
+          trimmed.unshift(tableRows[i]);
+        }
+        tableRows = trimmed;
+      }
+
+      const tb=$('#moodTable tbody');
+      tb.innerHTML = tableRows.length ? '' : `<tr><td colspan="4">No mood check-ins found (showing placeholder data in charts).</td></tr>`;
+      for (const e of tableRows){
+        tb.insertAdjacentHTML('beforeend', `<tr><td>${e.timestamp}</td><td>${e.mood}</td><td>${e.intensity ?? 'N/A'}</td><td>${e.notes||'—'}</td></tr>`);
+      }
+
+      let indiv={}, buckets={"Positive":0,"Low Energy":0,"Challenging":0,"Other":0};
+      for (const e of full){ const m=e.mood||'Unknown'; indiv[m]=(indiv[m]||0)+1; buckets[toBucket(m)]++; }
+      drawMoodShare(indiv);
+      drawEngagementVsMood(full);
+      drawSleepOverlay(full);
+    }
+
+    await loadCaregiverData();
+    await renderMoodSection();
+    await renderWyr();
+  </script>
+</body>
+</html>
+
+<!-- Non-module helper scripts kept as-is -->
+<script>
+  // Hide elements with .no-export while exporting
+  function toggleExportHiders(hide) {
+    document.querySelectorAll('.no-export').forEach(el => {
+      el.style.visibility = hide ? 'hidden' : '';
+    });
+  }
+
+  async function exportFullReportPDF() {
+    const root = document.querySelector('main.page') || document.body;
+
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    toggleExportHiders(true);
+    try {
+      const { jsPDF } = window.jspdf;
+
+      const w = root.scrollWidth;
+      const h = root.scrollHeight;
+
+      const canvas = await html2canvas(root, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        width: w,
+        height: h,
+        windowWidth: w,
+        windowHeight: h,
+        scrollX: 0,
+        scrollY: -window.scrollY
+      });
+
+      const img = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({ unit:'pt', format:'a4' });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+
+      const imgW = pageW;
+      const imgH = canvas.height * (imgW / canvas.width);
+
+      let heightLeft = imgH;
+      let y = 0;
+
+      pdf.addImage(img, 'PNG', 0, y, imgW, imgH);
+      heightLeft -= pageH;
+
+      while (heightLeft > 0) {
+        pdf.addPage();
+        y = heightLeft - imgH;
+        pdf.addImage(img, 'PNG', 0, y, imgW, imgH);
+        heightLeft -= pageH;
+      }
+      pdf.save('Full_Report.pdf');
+    } finally {
+      toggleExportHiders(false);
+    }
+  }
+
+  function printFullReport() { window.print(); }
+
+  document.getElementById('fullExportBtn')?.addEventListener('click', exportFullReportPDF);
+  document.getElementById('fullPrintBtn')?.addEventListener('click', printFullReport);
+</script>
+
+<script type="module">
+(() => {
+  // Bail out quietly if the calendar HTML isn't present
+  const root  = document.getElementById('hc-root');
+  const grid  = document.getElementById('hc-grid');
+  const title = document.getElementById('hc-monthTitle');
+  if (!root || !grid || !title) return;
+
+  const kvBm  = document.getElementById('hc-kv-bm');
+  const kvSlp = document.getElementById('hc-kv-sleep');
+  const kvMan = document.getElementById('hc-kv-manic');
+  const kvSick= document.getElementById('hc-kv-sick');
+
+  function $(s){ return document.querySelector(s); }
+  function pad(n){ return String(n).padStart(2,'0'); }
+  const EMO = { bm:'💩', sleep:'😴', manic:'⚡️', sick:'🤒' };
+
+  let Y = (new Date()).getFullYear();
+  let M = (new Date()).getMonth(); // 0-11
+  let MAP = {};                    // { 'YYYY-MM-DD': { bm, sleep, manic, sick } }
+  const layers = { bm:true, sleep:true, manic:true, sick:true };
+
+  function fmtMonth(y,m){ return new Date(y,m,1).toLocaleString(undefined,{month:'long',year:'numeric'}); }
+  function monthBoundsUTC(y,m){
+    const start = new Date(Date.UTC(y, m, 1)).toISOString();
+    const end   = new Date(Date.UTC(m===11?y+1:y, (m+1)%12, 1)).toISOString();
+    return { start, end };
+  }
+
+  function render(){
+    if (!grid || !title) return;
+
+    title.textContent = fmtMonth(Y, M);
+    grid.innerHTML = '';
+    ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(d=>{
+      const el=document.createElement('div'); el.className='hc-dow'; el.textContent=d; grid.appendChild(el);
+    });
+
+    const first = new Date(Y, M, 1);
+    const last  = new Date(Y, M+1, 0);
+    const startPad = first.getDay();
+    for(let i=0;i<startPad;i++){ const b=document.createElement('div'); b.className='hc-cell'; grid.appendChild(b); }
+
+    let bmDays=0, sleepDays=0, manicDays=0, sickDays=0;
+
+    for(let day=1; day<=last.getDate(); day++){
+      const cell = document.createElement('div'); cell.className='hc-cell'; cell.setAttribute('role','gridcell');
+      const key = Y + '-' + pad(M+1) + '-' + pad(day);
+      const rec = MAP[key] || {};
+
+      const head = document.createElement('div'); head.className='hc-date'; head.textContent = day; cell.appendChild(head);
+
+      const icons = document.createElement('div'); icons.className='hc-icons';
+      if (rec.bm    && layers.bm   ){ const s=document.createElement('span'); s.textContent=EMO.bm;    s.setAttribute('aria-label','BM'); icons.appendChild(s); bmDays++; }
+      if (rec.sleep!=null && rec.sleep>=8 && layers.sleep){ const s=document.createElement('span'); s.textContent=EMO.sleep; s.setAttribute('aria-label','Sleep ≥ 8h'); icons.appendChild(s); sleepDays++; }
+      if (rec.manic && layers.manic){ const s=document.createElement('span'); s.textContent=EMO.manic; s.setAttribute('aria-label','Manic'); icons.appendChild(s); manicDays++; }
+      if (rec.sick  && layers.sick ){ const s=document.createElement('span'); s.textContent=EMO.sick;  s.setAttribute('aria-label','Sick'); icons.appendChild(s); sickDays++; }
+
+      if (icons.children.length) cell.appendChild(icons);
+      else { const e=document.createElement('div'); e.className='hc-empty'; e.textContent='—'; cell.appendChild(e); }
+
+      grid.appendChild(cell);
+    }
+
+    kvBm  && (kvBm.textContent  = '💩 BM days: ' + bmDays);
+    kvSlp && (kvSlp.textContent = '😴 Sleep ≥ 8h days: ' + sleepDays);
+    kvMan && (kvMan.textContent = '⚡️ Manic days: ' + manicDays);
+    kvSick&& (kvSick.textContent= '🤒 Sick days: ' + sickDays);
+  }
+
+  async function getUid(supabase){
+    try{
+      if (!supabase || !supabase.auth || !supabase.auth.getSession) return null;
+      const { data } = await supabase.auth.getSession();
+      return (data && data.session && data.session.user) ? data.session.user.id : null;
+    }catch(_){ return null; }
+  }
+
+  async function loadMonth(supabase){
+    MAP = {};
+    const { start, end } = monthBoundsUTC(Y, M);
+    const uid = await getUid(supabase);
+
+    // 1) Supabase (preferred)
+    if (supabase && supabase.from){
+      try{
+        let q = supabase
+          .from('caregiver_checkins')
+          .select('id,user_id,created_at,submitted_at,had_bm,payload')
+          .gte('created_at', start)
+          .lt('created_at', end);
+        if (uid) q = q.eq('user_id', uid);
+
+        const { data, error } = await q;
+        if (!error && Array.isArray(data)) {
+          for (let i=0;i<data.length;i++){
+            const row = data[i];
+            const dt  = new Date(row.submitted_at || row.created_at);
+            const key = dt.getFullYear() + '-' + pad(dt.getMonth()+1) + '-' + pad(dt.getDate());
+            const p   = row.payload || {};
+
+            const bm    = (row.had_bm === true) || (/yes/i.test(String(p.bm_today || p.had_bm || '')));
+            let   sleep = null;
+            const hrsRaw = p.hours_sleep;
+            if (typeof hrsRaw === 'string'){
+              if (hrsRaw.indexOf('10') >= 0) sleep = 10;
+              else { const n = parseFloat(hrsRaw); if (isFinite(n)) sleep = n; }
+            } else if (typeof hrsRaw === 'number') { sleep = hrsRaw; }
+            const manic = (/yes/i.test(String(p.aggression_flag || ''))) || ((+p.aggression_intensity || 0) > 0);
+            const sick  = /no/i.test(String(p.appears_good_health || ''));
+
+            const cur = MAP[key] || { bm:false, sleep:null, manic:false, sick:false };
+            MAP[key] = {
+              bm:    cur.bm    || bm,
+              sleep: (sleep!=null && (cur.sleep==null || sleep>cur.sleep)) ? sleep : cur.sleep,
+              manic: cur.manic || manic,
+              sick:  cur.sick  || sick
+            };
+          }
+        }
+      }catch(_){} // ignore and fall back
+    }
+
+    // 2) Fallback: localStorage
+    if (Object.keys(MAP).length === 0) {
+      try{
+        const ls = JSON.parse(localStorage.getItem('caregiverEntries') || '[]');
+        for (let i=0;i<ls.length;i++){
+          const e = ls[i];
+          const dt = new Date(e.timestamp || e.created_at || Date.now());
+          if (dt < new Date(start) || dt >= new Date(end)) continue;
+          const key = dt.getFullYear() + '-' + pad(dt.getMonth()+1) + '-' + pad(dt.getDate());
+
+          const bm    = (e.had_bm === true) || (/yes/i.test(String(e.had_bm || e.bm_today || '')));
+          const sleep = (typeof e.hours_sleep === 'number') ? e.hours_sleep : null;
+          const manic = (/yes/i.test(String(e.aggression_flag || ''))) || ((+e.aggression_intensity || 0) > 0);
+          const sick  = /no/i.test(String(e.appears_good_health || ''));
+
+          const cur = MAP[key] || { bm:false, sleep:null, manic:false, sick:false };
+          MAP[key] = {
+            bm:    cur.bm    || bm,
+            sleep: (sleep!=null && (cur.sleep==null || sleep>cur.sleep)) ? sleep : cur.sleep,
+            manic: cur.manic || manic,
+            sick:  cur.sick  || sick
+          };
+        }
+      }catch(_){}
+    }
+
+    render();
+  }
+
+  const prevBtn = document.getElementById('hc-prev');
+  prevBtn && prevBtn.addEventListener('click', () => { M--; if(M<0){ M=11; Y--; } loadMonth(currentSupabase); });
+  const nextBtn = document.getElementById('hc-next');
+  nextBtn && nextBtn.addEventListener('click', () => { M++; if(M>11){ M=0; Y++; } loadMonth(currentSupabase); });
+  document.querySelectorAll('input[data-hc-layer]').forEach(cb=>{
+    cb.addEventListener('change', () => { layers[cb.dataset.hcLayer] = cb.checked; render(); });
+  });
+
+  // Boot
+  let currentSupabase = window.supabase || null;
+  (async () => {
+    if (!currentSupabase) {
+      try {
+        const mod = await import('./supabaseClient.js');
+        currentSupabase = mod?.supabase || window.supabase || null;
+      } catch (e) {}
+    }
+    await loadMonth(currentSupabase);
+  })();
+})();
+</script>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+ <title>Dashboard – STAR</title>
+<link rel="icon" type="image/png" href="images/STAR1.png">
+
+  <link rel="stylesheet" href="/style.css" />
+
+  <style>
+    /* --- Card layout (matches Login vibe) --- */
+    :root{
+      --ink:#1f2937;
+      --muted:#6b7280;
+      --panel: rgba(255,255,255,.96);
+    }
+    html, body { height: 100%; }
+    body.plain-page{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color:var(--ink);
+      background: #f5f6fb;
+    }
+
+    .wrap{
+      min-height: 100%;
+      display: grid;
+      place-items: center;
+      padding: 72px 16px 40px;
+    }
+
+    .card{
+      width:100%;
+      max-width:560px;
+      background: var(--panel);
+      border-radius:16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.08);
+      padding: 28px 24px 24px;
+      text-align:center;
+      backdrop-filter: blur(2px);
+    }
+
+    h1{ margin:0 0 6px; font-size:2rem; }
+    .sub{ font-weight:700; margin:0 0 6px; }
+    .tagline{ margin:0 0 18px; color:#4b5563; font-style: italic; }
+    .welcome{ margin:10px 0 4px; font-size:1.35rem; }
+    .user{ margin:0 0 18px; color:var(--muted); font-size:.95rem; }
+
+    .row{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-top:10px; }
+    .btn{
+      appearance:none; border:0; background:#3b82f6; color:#fff;
+      padding:10px 16px; border-radius:10px; font-weight:700; cursor:pointer;
+    }
+    .btn:hover{ filter:brightness(.97); }
+
+    .help{ margin-top:12px; font-size:.9rem; color:var(--muted); }
+  </style>
+</head>
+
+<body style="background-image:url('STAR1.jpg');background-size:cover;background-position:center top;background-repeat:no-repeat;background-color:#eef3fb;">
+
+  <!-- Top navbar host (ui-shell will fill this; safe to keep) -->
+  <div id="navbar"></div>
+
+  <main class="wrap">
+   <section class="card" 
+         style="background: rgba(255,255,255,0.45); border-radius: 20px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+
+      <h1>🌟 STAR</h1>
+      <div class="sub">Support Tool for Autonomy and Reflection</div>
+      <p class="tagline"><em>Guided by the North Star, supporting progress, engagement, and satisfaction.</em></p>
+
+      <div class="welcome"><strong>Welcome!</strong></div>
+      <p id="user-email" class="user"></p>
+
+      <div class="row">
+        <button class="btn" onclick="logOut()">Log Out</button>
+      </div>
+
+      <p class="help">Use the menu (☰) or the bottom bar to navigate.</p>
+    </section>
+  </main>
+
+<!-- Page logic that populates #user-email etc. -->
+<script type="module" src="./script.js"></script>
+<script type="module" src="./avatar-float.js"></script>
+
+<!-- ✅ Restore original hamburger menu + bottom tabbar -->
+<script defer src="./ui-shell.js"></script>
+<script defer src="./scripts/appbar-drawer.js"></script>
+
+
+
+</body>
+</html>

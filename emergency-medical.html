@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Emergency/Medical</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <!-- Your app stylesheet (unchanged) -->
+  <link rel="stylesheet" href="style.css" />
+
+  <style>
+    /* --- Force scrolling even if a global sheet sets overflow: hidden or 100vh --- */
+    html, body { height: auto !important; min-height: 100%; overflow-y: auto !important; -webkit-overflow-scrolling: touch; }
+    body { margin: 0; }
+
+    /* Navbar should not be fixed here */
+    #navbar-container { position: static; }
+
+    .page-wrap {
+      max-width: 900px;
+      margin: 24px auto 80px;
+      padding: 24px;
+      background: rgba(255,255,255,0.92);
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.08);
+    }
+    h1 { text-align: center; margin-top: 0; }
+
+    /* Big profile photo uploader */
+    .photo-row {
+      display: flex; align-items: center; gap: 24px;
+      margin: 8px 0 24px; flex-wrap: wrap;
+    }
+    .photo-uploader {
+      width: 200px; height: 200px; border-radius: 50%;
+      border: 3px dashed #bbb; display: grid; place-items: center;
+      overflow: hidden; background: #fafafa; position: relative;
+      user-select: none; transition: border-color .2s, background .2s;
+      flex: 0 0 200px;
+    }
+    .photo-uploader.dragover { border-color: #3b82f6; background: #eef5ff; }
+    .photo-uploader img { width: 100%; height: 100%; object-fit: cover; display: none; }
+    .photo-uploader.has-image img { display: block; }
+    .photo-placeholder { text-align: center; font-size: 14px; color: #666; line-height: 1.3; padding: 0 16px; }
+    .photo-actions { display: flex; flex-direction: column; gap: 8px; }
+    .btn { appearance: none; border: 0; border-radius: 8px; padding: 10px 14px; background: #22c55e; color: white; font-weight: 600; cursor: pointer; }
+    .btn.secondary { background: #e5e7eb; color: #111; }
+    .btn:disabled { opacity: .6; cursor: default; }
+
+    /* Simple form section styles */
+    fieldset { border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; margin: 18px 0; background: #fff; }
+    legend { font-weight: 700; }
+    label { display:block; margin:10px 0 6px; font-weight:600; }
+    input[type="text"], input[type="tel"], input[type="email"], textarea {
+      width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px;
+    }
+    textarea { min-height: 80px; resize: vertical; }
+
+    /* Responsive rows */
+    .row { display: grid; gap: 12px; }
+    @media (min-width: 820px){
+      .cols-2{ grid-template-columns: 1fr 1fr; }
+      .cols-3{ grid-template-columns: 1.2fr .9fr .9fr; } /* address a bit wider */
+      .cols-3-med{ grid-template-columns: 1.2fr .8fr .8fr; }
+    }
+
+    .actions-inline{ display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+    .helper { font-size: 12px; color: #6b7280; margin-top:6px; }
+    .list{ margin-top:12px; }
+    .list-item{ padding:12px; border:1px dashed #e5e7eb; border-radius:10px; background:#fff; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .pill { font-size: 12px; padding:4px 8px; border-radius:999px; background:#f3f4f6; }
+
+    /* status line */
+    .statusline{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; color:#555; margin-top:6px; }
+  </style>
+</head>
+<body>
+  <!-- ✅ Navbar mount -->
+  <div id="navbar-container"></div>
+
+  <div class="page-wrap">
+    <h1>Support Information</h1>
+
+    <!-- ===== Profile Photo ===== -->
+    <div class="photo-row">
+      <div id="photoDrop" class="photo-uploader" aria-label="Profile photo dropzone">
+        <img id="profilePreview" alt="Profile photo preview">
+        <div id="photoPlaceholder" class="photo-placeholder">
+          <strong>Profile Picture</strong><br/>
+          Click or drop a photo<br/>(JPG/PNG, square works best)
+        </div>
+        <input id="profileInput" type="file" accept="image/*" style="display:none" />
+      </div>
+
+      <div class="photo-actions">
+        <button id="chooseBtn" class="btn">Choose Photo</button>
+        <button id="saveBtn" class="btn">Save Photo</button>
+        <button id="removeBtn" class="btn secondary">Remove Photo</button>
+        <small id="saveStatus" style="color:#555;"></small>
+      </div>
+    </div>
+
+    <!-- ===== Individual ===== -->
+    <fieldset>
+      <legend>Individual</legend>
+
+      <div class="row">
+        <label for="indivName">Name</label>
+        <input type="text" id="indivName" placeholder="Full Name">
+      </div>
+
+      <div class="row cols-3">
+        <div>
+          <label for="indivAddress">Address</label>
+          <input type="text" id="indivAddress" placeholder="Street, City, State">
+        </div>
+        <div>
+          <label for="indivPhone">Phone</label>
+          <input type="tel" id="indivPhone" placeholder="Phone Number">
+        </div>
+        <div>
+          <label for="indivEmail">Email</label>
+          <input type="email" id="indivEmail" placeholder="name@email.com">
+        </div>
+      </div>
+
+      <div class="row cols-2">
+        <div>
+          <label for="indivAllergies">Allergies</label>
+          <textarea id="indivAllergies" placeholder="e.g., Peanuts, Penicillin"></textarea>
+        </div>
+        <div>
+          <label for="indivConditions">Other Medical Info</label>
+          <textarea id="indivConditions" placeholder="Diagnoses, mobility, seizure protocol, etc."></textarea>
+        </div>
+      </div>
+
+      <div class="row cols-2">
+        <div>
+          <label for="preferredHospital">Preferred Hospital/Physician</label>
+          <input id="preferredHospital" type="text" placeholder="Hospital or doctor name">
+          <div class="helper">Include practice phone if helpful.</div>
+        </div>
+        <div>
+          <label for="insuranceInfo">Insurance Carrier & Policy #</label>
+          <input id="insuranceInfo" type="text" placeholder="Carrier – Policy Number">
+        </div>
+      </div>
+
+      <div class="row cols-2">
+        <div>
+          <label for="primaryLanguage">Primary Language</label>
+          <input id="primaryLanguage" type="text" placeholder="e.g., English">
+        </div>
+        <div>
+          <label for="communicationNeeds">Communication/Support Needs</label>
+          <input id="communicationNeeds" type="text" placeholder="Plain language, visual schedule, AAC, etc.">
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="emergencyNotes">Emergency Instructions (if any)</label>
+          <textarea id="emergencyNotes" placeholder="Who to call first, transportation notes, door codes, pets at home, etc."></textarea>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="interactionTips">Communication & Interaction Tips</label>
+          <textarea id="interactionTips" placeholder="Use short sentences. Avoid describing procedures. Dislikes loud noises. Gets anxious at blood draws. Loves music and dogs — singing helps."></textarea>
+          <div class="helper">Anything that helps a stranger interact safely and kindly during emergencies.</div>
+        </div>
+      </div>
+    </fieldset>
+
+    <!-- ===== Emergency Contacts ===== -->
+    <fieldset>
+      <legend>Emergency Contacts</legend>
+
+      <div class="row cols-2">
+        <div>
+          <label for="ecName">Name</label>
+          <input type="text" id="ecName" placeholder="Contact Name">
+        </div>
+        <div>
+          <label for="ecRel">Relationship</label>
+          <input type="text" id="ecRel" placeholder="Relationship">
+        </div>
+      </div>
+
+      <div class="row cols-2">
+        <div>
+          <label for="ecPhone">Phone</label>
+          <input type="tel" id="ecPhone" placeholder="(555) 555-5555">
+        </div>
+        <div>
+          <label for="ecEmail">Email</label>
+          <input type="email" id="ecEmail" placeholder="contact@email.com">
+        </div>
+      </div>
+
+      <div class="actions-inline">
+        <button class="btn" id="addEmergency" type="button">Add Emergency Contact</button>
+        <small class="helper">Added contacts appear below. You can remove any before saving.</small>
+      </div>
+      <div id="ecList" class="list" aria-live="polite"></div>
+    </fieldset>
+
+    <!-- ===== Medications ===== -->
+    <fieldset>
+      <legend>Medications</legend>
+      <div class="row cols-3-med">
+        <div>
+          <label for="medName">Name</label>
+          <input type="text" id="medName" placeholder="Medication name">
+        </div>
+        <div>
+          <label for="medDose">Dosage</label>
+          <input type="text" id="medDose" placeholder="e.g., 10 mg">
+        </div>
+        <div>
+          <label for="medFreq">Frequency</label>
+          <input type="text" id="medFreq" placeholder="e.g., 2× daily with meals">
+        </div>
+      </div>
+      <div class="actions-inline">
+        <button class="btn" id="addMedication" type="button">Add Medication</button>
+        <small class="helper">Added medications appear below. You can remove any before saving.</small>
+      </div>
+      <div id="medList" class="list" aria-live="polite"></div>
+    </fieldset>
+
+    <!-- ===== Save controls ===== -->
+    <div class="actions-inline">
+      <button class="btn secondary" id="saveDraftBtn" type="button">Save Draft (local)</button>
+      <button class="btn" id="saveCloudBtn" type="button">Save to Cloud</button>
+      <button class="btn secondary" id="loadCloudBtn" type="button">Load from Cloud</button>
+      <div class="statusline">
+        <span class="pill" id="lastSaved"></span>
+        <span class="pill" id="cloudStatus"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Utils ===== -->
+  <script>
+    function fileToURL(file) { return URL.createObjectURL(file); }
+  </script>
+
+  <!-- ===== Supabase logic (photo + form save/load) ===== -->
+  <script type="module">
+    import { supabase } from './supabaseClient.js';
+
+    // ---------- PHOTO ----------
+    const drop    = document.getElementById('photoDrop');
+    const input   = document.getElementById('profileInput');
+    const preview = document.getElementById('profilePreview');
+    const placeholder = document.getElementById('photoPlaceholder');
+    const chooseBtn = document.getElementById('chooseBtn');
+    const saveBtn   = document.getElementById('saveBtn');
+    const removeBtn = document.getElementById('removeBtn');
+    const saveStatus = document.getElementById('saveStatus');
+
+    let pendingFile = null;
+
+    async function initExistingPhoto() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const uid = session?.user?.id;
+        if (uid) {
+          const { data: p } = await supabase.from('profiles').select('avatar_url').eq('id', uid).maybeSingle();
+          if (p?.avatar_url) { setPreview(p.avatar_url); return; }
+        }
+      } catch {}
+      const localUrl = localStorage.getItem('emergencyProfilePhotoURL');
+      if (localUrl) setPreview(localUrl);
+    }
+    function setPreview(src) {
+      preview.src = src;
+      drop.classList.add('has-image');
+      placeholder.style.display = 'none';
+    }
+    function clearPreview() {
+      preview.src = '';
+      drop.classList.remove('has-image');
+      placeholder.style.display = 'grid';
+      pendingFile = null;
+    }
+    chooseBtn.addEventListener('click', () => input.click());
+    drop.addEventListener('click', () => input.click());
+    ['dragenter','dragover'].forEach(evt => drop.addEventListener(evt, e => { e.preventDefault(); drop.classList.add('dragover'); }));
+    ['dragleave','drop'].forEach(evt => drop.addEventListener(evt, e => { e.preventDefault(); drop.classList.remove('dragover'); }));
+    drop.addEventListener('drop', e => { const f = e.dataTransfer.files?.[0]; if (f && f.type.startsWith('image/')) handleChosenFile(f); });
+    input.addEventListener('change', e => { const f = e.target.files?.[0]; if (f && f.type.startsWith('image/')) handleChosenFile(f); });
+    function handleChosenFile(file) { pendingFile = file; const url = URL.createObjectURL(file); setPreview(url); saveStatus.textContent = 'Ready to save…'; }
+    removeBtn.addEventListener('click', () => { localStorage.removeItem('emergencyProfilePhotoURL'); clearPreview(); saveStatus.textContent = 'Photo removed (not yet saved to cloud).'; });
+
+    saveBtn.addEventListener('click', async () => {
+      saveBtn.disabled = true; saveStatus.textContent = 'Saving photo…';
+      if (!pendingFile && preview.src) { localStorage.setItem('emergencyProfilePhotoURL', preview.src); saveStatus.textContent = 'Saved locally.'; saveBtn.disabled = false; return; }
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const uid = session?.user?.id;
+        if (!uid) throw new Error('Not signed in');
+        const ext = (pendingFile?.name?.split('.').pop() || 'jpg').toLowerCase();
+        const path = `${uid}/${Date.now()}.${ext}`;
+        const { error: upErr } = await supabase.storage.from('profile-photos').upload(path, pendingFile, { upsert: true, contentType: pendingFile.type });
+        if (upErr) throw upErr;
+        const { data: publicData } = supabase.storage.from('profile-photos').getPublicUrl(path);
+        const publicUrl = publicData?.publicUrl;
+        if (!publicUrl) throw new Error('No public URL returned');
+        await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', uid);
+        localStorage.setItem('emergencyProfilePhotoURL', publicUrl);
+        setPreview(publicUrl); pendingFile = null; saveStatus.textContent = 'Photo saved!';
+        const navAvatar = document.getElementById('navAvatar'); if (navAvatar) navAvatar.src = publicUrl;
+      } catch (e) {
+        try {
+          const b64 = await fileToBase64(pendingFile);
+          localStorage.setItem('emergencyProfilePhotoURL', b64);
+          setPreview(b64);
+          saveStatus.textContent = 'Saved locally (offline fallback).'; pendingFile = null;
+        } catch (e2) { console.error(e2); saveStatus.textContent = 'Save failed. Please try again.'; }
+      } finally { saveBtn.disabled = false; }
+    });
+    function fileToBase64(file) { return new Promise((resolve, reject) => { const r = new FileReader(); r.onload = () => resolve(r.result); r.onerror = reject; r.readAsDataURL(file); }); }
+    initExistingPhoto();
+
+    // ---------- FORM (draft + Supabase) ----------
+    const DRAFT_KEY = 'emergencyMedicalDraft:v1';
+
+    // Inputs
+    const $ = id => document.getElementById(id);
+
+    // Lists in memory
+    let contacts = [];
+    let medications = [];
+
+    // Add/remove list items
+    function renderLists(){
+      // contacts
+      const ecList = $('ecList'); ecList.innerHTML = '';
+      contacts.forEach((c, i) => {
+        const el = document.createElement('div'); el.className = 'list-item';
+        el.innerHTML = `<div>${c.name || ''} ${c.relationship ? '('+c.relationship+')' : ''} — ${[c.phone,c.email].filter(Boolean).join(' • ')}</div>
+                        <button class="btn secondary" data-remove-contact="${i}" type="button">Remove</button>`;
+        ecList.appendChild(el);
+      });
+      ecList.querySelectorAll('[data-remove-contact]').forEach(btn => {
+        btn.addEventListener('click', e => { const idx = +e.currentTarget.getAttribute('data-remove-contact'); contacts.splice(idx,1); renderLists(); saveDraft(); });
+      });
+
+      // medications
+      const medList = $('medList'); medList.innerHTML = '';
+      medications.forEach((m, i) => {
+        const el = document.createElement('div'); el.className = 'list-item';
+        el.innerHTML = `<div>${m.name || ''}${m.dosage ? ' — '+m.dosage : ''}${m.frequency ? ' — '+m.frequency : ''}</div>
+                        <button class="btn secondary" data-remove-med="${i}" type="button">Remove</button>`;
+        medList.appendChild(el);
+      });
+      medList.querySelectorAll('[data-remove-med]').forEach(btn => {
+        btn.addEventListener('click', e => { const idx = +e.currentTarget.getAttribute('data-remove-med'); medications.splice(idx,1); renderLists(); saveDraft(); });
+      });
+    }
+
+    $('addEmergency').addEventListener('click', () => {
+      const c = { name: $('ecName').value.trim(), relationship: $('ecRel').value.trim(), phone: $('ecPhone').value.trim(), email: $('ecEmail').value.trim() };
+      if(!c.name){ alert('Add a contact name first.'); return; }
+      contacts.push(c);
+      ['ecName','ecRel','ecPhone','ecEmail'].forEach(id => $(id).value='');
+      renderLists(); saveDraft();
+    });
+
+    $('addMedication').addEventListener('click', () => {
+      const m = { name: $('medName').value.trim(), dosage: $('medDose').value.trim(), frequency: $('medFreq').value.trim() };
+      if(!m.name){ alert('Add a medication name first.'); return; }
+      medications.push(m);
+      ['medName','medDose','medFreq'].forEach(id => $(id).value='');
+      renderLists(); saveDraft();
+    });
+
+    // Build/restore payload
+    function buildPayload(){
+      return {
+        name: $('indivName').value.trim(),
+        address: $('indivAddress').value.trim(),
+        phone: $('indivPhone').value.trim(),
+        email: $('indivEmail').value.trim(),
+        allergies: $('indivAllergies').value.trim(),
+        other_medical_info: $('indivConditions').value.trim(),
+        preferred_hospital: $('preferredHospital').value.trim(),
+        insurance_info: $('insuranceInfo').value.trim(),
+        primary_language: $('primaryLanguage').value.trim(),
+        communication_needs: $('communicationNeeds').value.trim(),
+        emergency_instructions: $('emergencyNotes').value.trim(),
+        interaction_tips: $('interactionTips').value.trim(),
+        avatar_url: preview?.src || null,
+        contacts,
+        medications
+      };
+    }
+    function hydrateForm(data){
+      if(!data) return;
+      $('indivName').value = data.name || '';
+      $('indivAddress').value = data.address || '';
+      $('indivPhone').value = data.phone || '';
+      $('indivEmail').value = data.email || '';
+      $('indivAllergies').value = data.allergies || '';
+      $('indivConditions').value = data.other_medical_info || '';
+      $('preferredHospital').value = data.preferred_hospital || '';
+      $('insuranceInfo').value = data.insurance_info || '';
+      $('primaryLanguage').value = data.primary_language || '';
+      $('communicationNeeds').value = data.communication_needs || '';
+      $('emergencyNotes').value = data.emergency_instructions || '';
+      $('interactionTips').value = data.interaction_tips || '';
+      if(data.avatar_url){ setPreview(data.avatar_url); }
+      contacts = Array.isArray(data.contacts) ? data.contacts : [];
+      medications = Array.isArray(data.medications) ? data.medications : [];
+      renderLists();
+    }
+
+    // Local draft
+    function saveDraft(){
+      const payload = buildPayload();
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(payload));
+      const ts = new Date().toLocaleString();
+      document.getElementById('lastSaved').textContent = `Draft saved: ${ts}`;
+    }
+    function loadDraft(){
+      try{
+        const raw = localStorage.getItem(DRAFT_KEY);
+        if(raw){ hydrateForm(JSON.parse(raw)); document.getElementById('lastSaved').textContent = 'Draft loaded from this device.'; }
+      }catch{}
+    }
+
+    // Cloud save/load
+    async function saveToCloud(){
+      document.getElementById('cloudStatus').textContent = 'Saving…';
+      try{
+        const { data: { session } } = await supabase.auth.getSession();
+        const uid = session?.user?.id;
+        if(!uid) throw new Error('Not signed in');
+        const payload = buildPayload();
+        const row = { id: uid, ...payload, updated_at: new Date().toISOString() };
+        const { error } = await supabase.from('emergency_medical').upsert(row, { onConflict: 'id' });
+        if(error) throw error;
+        document.getElementById('cloudStatus').textContent = 'Saved to cloud ✓';
+      }catch(err){
+        console.error(err);
+        document.getElementById('cloudStatus').textContent = 'Cloud save failed';
+        alert(err.message || 'Saving to cloud failed.');
+      }
+    }
+
+    async function loadFromCloud(){
+      document.getElementById('cloudStatus').textContent = 'Loading…';
+      try{
+        const { data: { session } } = await supabase.auth.getSession();
+        const uid = session?.user?.id;
+        if(!uid) throw new Error('Not signed in');
+        const { data, error } = await supabase.from('emergency_medical').select('*').eq('id', uid).maybeSingle();
+        if(error) throw error;
+        if(!data){ document.getElementById('cloudStatus').textContent = 'No cloud record yet'; return; }
+        hydrateForm(data);
+        document.getElementById('cloudStatus').textContent = 'Loaded from cloud ✓';
+      }catch(err){
+        console.error(err);
+        document.getElementById('cloudStatus').textContent = 'Cloud load failed';
+        alert(err.message || 'Loading from cloud failed.');
+      }
+    }
+
+    // Wire buttons + autosave
+    document.getElementById('saveDraftBtn').addEventListener('click', saveDraft);
+    document.getElementById('saveCloudBtn').addEventListener('click', async () => { saveDraft(); await saveToCloud(); });
+    document.getElementById('loadCloudBtn').addEventListener('click', loadFromCloud);
+    // autosave on input
+    document.querySelectorAll('input, textarea').forEach(el => el.addEventListener('input', debounce(saveDraft, 600)));
+
+    // Init
+    loadDraft();  // local first
+    await loadFromCloud(); // then cloud (if available) to override local
+
+    function debounce(fn, ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
+  </script>
+
+  <!-- Page logic that populates #user-email etc. -->
+<script type="module" src="./script.js"></script>
+<script type="module" src="./avatar-float.js"></script>
+
+<!-- ✅ Restore original hamburger menu + bottom tabbar -->
+<script defer src="./ui-shell.js"></script>
+<script defer src="./scripts/appbar-drawer.js"></script>
+</body>
+</html>
+
+
+</body>
+</html>
+
+<!--
+If the table doesn't exist yet, run this in Supabase SQL:
+
+create table if not exists public.emergency_medical (
+  id uuid primary key references auth.users(id) on delete cascade,
+  name text,
+  address text,
+  phone text,
+  email text,
+  allergies text,
+  other_medical_info text,
+  preferred_hospital text,
+  insurance_info text,
+  primary_language text,
+  communication_needs text,
+  emergency_instructions text,
+  interaction_tips text,
+  avatar_url text,
+  contacts jsonb,
+  medications jsonb,
+  updated_at timestamptz default now()
+);
+
+-- RLS (optional, tighten as needed):
+alter table public.emergency_medical enable row level security;
+create policy "owner can read" on public.emergency_medical for select using (auth.uid() = id);
+create policy "owner can upsert" on public.emergency_medical for insert with check (auth.uid() = id);
+create policy "owner can update" on public.emergency_medical for update using (auth.uid() = id);
+
+-->

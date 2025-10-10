@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Caregiver Check-In</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    html,body{height:auto!important;min-height:100%;overflow-y:auto!important;-webkit-overflow-scrolling:touch}
+    body{margin:0}
+    .page-wrap{max-width:940px;margin:24px auto 96px;padding:16px;background:rgba(255,255,255,.92);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.08)}
+    h1{margin:8px 0 6px;font-size:clamp(28px,4.2vw,44px)}
+    .sub{color:#6b7280;margin-bottom:12px}
+    .progress{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:.25rem 0 .5rem}
+    .prog-item{display:grid;gap:6px;cursor:pointer}
+    .prog-label{text-align:center;font-size:13px;color:#6b7280;font-weight:700}
+    .seg{height:8px;background:#e9edf2;border-radius:999px}
+    .seg.active{background:linear-gradient(90deg,#4ade80,#22c55e)}
+    .seg.done{background:#c7f9d6}
+    .top-actions{display:flex;gap:8px;justify-content:flex-end;align-items:center;margin:4px 0 10px}
+    .btn{appearance:none;border:1px solid #e5e7eb;background:#fff;color:#111827;padding:10px 14px;border-radius:12px;font-weight:800;cursor:pointer}
+    .btn.primary{background:linear-gradient(180deg,#4ade80,#22c55e);border-color:#22c55e;color:#053a19;box-shadow:0 6px 16px rgba(16,185,129,.25)}
+    .btn:disabled{opacity:.55;cursor:not-allowed}
+    fieldset.panel{background:#fff;border-radius:16px;border:2px dashed #d8dbe2;padding:16px;margin:10px 0 20px;box-shadow:0 6px 18px rgba(0,0,0,.05)}
+    legend{display:none}
+    .section-title{font-weight:900;margin-bottom:8px;border-bottom:1px solid #ececec;padding-bottom:6px}
+    .subcap{font-weight:800;color:#374151;margin:16px 0 6px}
+    label{display:block;margin:10px 0 6px;font-weight:700}
+    input,select,textarea{width:100%;padding:11px 12px;border:1px solid #cfd6df;border-radius:12px;font-size:16px;background:#fff}
+    textarea{min-height:84px;resize:vertical}
+    input[type="range"]{width:100%}
+    .row{display:grid;gap:12px}
+    .cols-3{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+    .cols-2{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+    .compact{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+    .yn{width:min(100%,200px)}
+    .controls{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;flex-wrap:wrap}
+    .left-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .savedAt,.tip,.muted{color:#6b7280;font-size:12px}
+    .soft{border:0;height:1px;background:#eceff3;margin:10px 0}
+    .step{display:none}
+    .step.active{display:block}
+    #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:88px;background:#111;color:#fff;padding:10px 14px;border-radius:10px;font-weight:800;z-index:9999;opacity:0;transition:opacity .2s}
+  </style>
+</head>
+<body>
+  <div class="page-wrap">
+    <h1>Caregiver Check-In</h1>
+    <div class="sub">Autosaves as you type. Use <strong>Save &amp; Next</strong> to step through.</div>
+
+    <div class="progress" id="progress">
+      <div class="prog-item" data-step="0"><div class="prog-label">Physical</div><div class="seg active"></div></div>
+      <div class="prog-item" data-step="1"><div class="prog-label">Behavior</div><div class="seg"></div></div>
+      <div class="prog-item" data-step="2"><div class="prog-label">Community</div><div class="seg"></div></div>
+      <div class="prog-item" data-step="3"><div class="prog-label">Daily Living</div><div class="seg"></div></div>
+    </div>
+
+    <div class="top-actions">
+      <button class="btn ghost" id="toggleAll">Show all sections</button>
+      <button class="btn" id="resumeDraftBtn" style="display:none" disabled>Resume last draft</button>
+    </div>
+
+    <form id="cg-form" novalidate>
+      <!-- STEP 1: Physical -->
+      <div class="step active" data-step="0">
+        <fieldset class="panel">
+          <div class="section-title">Physical Factors</div>
+          <div class="row cols-3 compact">
+            <label>Appears in good health?
+              <select name="appears_good_health" class="yn"><option value="">Select</option><option>Yes</option><option>No</option></select>
+            </label>
+            <label>Appears tired?
+              <select name="appears_tired" class="yn"><option value="">Select</option><option>Yes</option><option>No</option></select>
+            </label>
+            <label>Hours of sleep:
+              <select name="hours_sleep" class="yn"><option value="">Select</option><option>4</option><option>6</option><option>8</option><option>10+</option></select>
+            </label>
+          </div>
+          <div class="row cols-3 compact">
+           <label for="had_bm">Had a BM today?</label>
+<select id="had_bm" name="had_bm" class="yn" required>
+  <option value="">Select...</option>
+  <option value="yes">Yes</option>
+  <option value="no">No</option>
+</select>
+<div class="row cols-3 compact">
+  <label for="caregiver_name">Caregiver Name:</label>
+  <input id="caregiver_name" name="caregiver_name" type="text" placeholder="Enter your name" required />
+</div>
+
+            <label>PRN sleep aid given:<input type="text" name="prn_name" placeholder="Name of PRN"/></label>
+            <label>Time PRN was given:<input type="time" name="prn_time"/></label>
+          </div>
+          <label>Caregiver notes:<textarea name="physical_notes" placeholder="Optional notes..."></textarea></label>
+          <div class="controls">
+            <div class="left-actions"><button class="btn" type="button" data-save>Save</button><span class="savedAt" data-savedat></span></div>
+            <div><button class="btn primary" type="button" data-next>Save &amp; Next →</button></div>
+          </div>
+        </fieldset>
+      </div>
+
+      <!-- STEP 2: Behavior -->
+      <div class="step" data-step="1">
+        <fieldset class="panel">
+          <div class="section-title">Behavioral Observations</div>
+          <div class="row cols-3 compact">
+            <label>Did the individual display any aggression?
+              <select name="aggression_flag" id="aggression_flag" class="yn"><option value="">Select</option><option>No</option><option>Yes</option></select>
+            </label>
+            <label>Aggression type:
+              <select name="aggression_type" id="aggression_type" disabled>
+                <option value="">Select type</option>
+                <option>Posturing</option><option>Physical</option><option>Verbal</option><option>Self-harm</option>
+              </select>
+            </label>
+            <label>Intensity (0–5):
+              <input type="range" min="0" max="5" step="1" value="0" name="aggression_intensity" id="aggression_intensity" disabled/>
+              <div class="savedAt"><span id="intensityVal">0</span></div>
+            </label>
+          </div>
+          <label>Behavior notes:<textarea name="behavior_notes" placeholder="What happened, what helped"></textarea></label>
+          <div class="controls">
+            <div class="left-actions"><button class="btn" type="button" data-save>Save</button><span class="savedAt" data-savedat></span></div>
+            <div><button class="btn" type="button" data-prev>← Back</button><button class="btn primary" type="button" data-next>Save &amp; Next →</button></div>
+          </div>
+        </fieldset>
+      </div>
+
+      <!-- STEP 3: Community (restored full set) -->
+      <div class="step" data-step="2">
+        <fieldset class="panel">
+          <div class="section-title">Community / Vocational Outcomes</div>
+
+          <!-- Vocational -->
+          <div class="row cols-3 compact">
+            <label>Participated in vocational activity?
+              <select name="vocational_participation" class="yn"><option value="">Select</option><option>Yes</option><option>No</option></select>
+            </label>
+            <label>Time in vocational activity:
+              <select name="vocational_time">
+                <option value="">Select duration</option>
+                <option>0</option><option>15–30 min</option><option>30–60 min</option><option>1–2 hrs</option><option>2+ hrs</option>
+              </select>
+            </label>
+            <label>Prompting (vocational):
+              <select name="vocational_prompting" data-scale="prompting"></select>
+            </label>
+          </div>
+
+          <hr class="soft"/>
+
+          <!-- HOME / FAMILY COMMUNITY -->
+          <div class="subcap">Home / family community</div>
+          <div class="row cols-3 compact">
+            <label>Engaged in a home/community activity?
+              <select name="home_activity_flag" class="yn"><option value="">Select</option><option>Yes</option><option>No</option></select>
+            </label>
+            <label>Time spent (home):
+              <select name="home_activity_time">
+                <option value="">Select duration</option>
+                <option>0</option><option>15–30 min</option><option>30–60 min</option><option>1–2 hrs</option><option>2+ hrs</option>
+              </select>
+            </label>
+            <label>Prompting (home):
+              <select name="home_activity_prompting" data-scale="prompting"></select>
+            </label>
+          </div>
+          <div class="row cols-2">
+            <label>Home activity type:
+              <select name="home_activity_type">
+                <option value="">Select type</option>
+                <option>Meal with immediate family</option>
+                <option>Meal with extended family</option>
+                <option>Family celebration</option>
+                <option>Visited neighbor</option>
+                <option>Hosted guest</option>
+                <option>Family game/movie night</option>
+                <option>Walk / neighborhood stroll</option>
+                <option>Other</option>
+              </select>
+            </label>
+            <label>Home activity note:<input type="text" name="home_activity_note" placeholder="e.g., hosted grandma for dinner"/></label>
+          </div>
+
+          <hr class="soft"/>
+
+          <!-- COMMUNITY AT LARGE -->
+          <div class="subcap">Community at large</div>
+          <div class="row cols-3 compact">
+            <label>Engaged in a community-at-large activity?
+              <select name="public_activity_flag" class="yn"><option value="">Select</option><option>Yes</option><option>No</option></select>
+            </label>
+            <label>Time spent (community-at-large):
+              <select name="public_activity_time">
+                <option value="">Select duration</option>
+                <option>0</option><option>15–30 min</option><option>30–60 min</option><option>1–2 hrs</option><option>2+ hrs</option>
+              </select>
+            </label>
+            <label>Prompting (community-at-large):
+              <select name="public_activity_prompting" data-scale="prompting"></select>
+            </label>
+          </div>
+          <div class="row cols-2">
+            <label>Community activity type:
+              <select name="public_activity_type">
+                <option value="">Select type</option>
+                <option>Shopping – grocery/retail</option>
+                <option>Library</option>
+                <option>Museum</option>
+                <option>Park/Playground</option>
+                <option>Restaurant/Café</option>
+                <option>Public transit practice</option>
+                <option>Recreation center / gym</option>
+                <option>Sports event</option>
+                <option>Volunteer shift</option>
+                <option>Class / lesson</option>
+                <option>Walk / Stroll</option>
+                <option>Went to store</option>
+                <option>Went to recycling</option>
+                <option>Other</option>
+              </select>
+            </label>
+            <label>Community activity note:<input type="text" name="public_activity_note" placeholder="e.g., went to library, checked out 2 books"/></label>
+          </div>
+
+          <hr class="soft"/>
+
+          <!-- INTERACTION + LEISURE -->
+          <div class="row cols-3 compact">
+            <label>Engaged with a community member appropriately?
+              <select name="community_interaction_ok" class="yn"><option value="">Select</option><option>Yes</option><option>No</option></select>
+            </label>
+            <label>Interaction type:
+              <select name="interaction_type">
+                <option value="">Select type</option>
+                <option>Greeting</option><option>Compliment</option>
+                <option>Introduced self/family</option><option>Asked a question</option><option>Shared space respectfully</option>
+                <option>Small talk</option><option>Requested help</option><option>Offered help</option>
+                <option>Conflict resolution</option><option>Used AAC appropriately</option><option>Maintained eye contact</option><option>Other</option>
+              </select>
+            </label>
+            <label>Prompting (interaction):
+              <select name="interaction_prompting" data-scale="prompting"></select>
+            </label>
+          </div>
+          <div class="row cols-2">
+            <label>Interaction note:<input type="text" name="interaction_note" placeholder="e.g., greeted neighbor with 'Hi' and smile"/></label>
+          </div>
+
+          <label>Community / Vocational Notes:<textarea name="community_notes" placeholder="Additional context for community or vocational participation"></textarea></label>
+
+          <div class="controls">
+            <div class="left-actions"><button class="btn" type="button" data-save>Save</button><span class="savedAt" data-savedat></span></div>
+            <div><button class="btn" type="button" data-prev>← Back</button><button class="btn primary" type="button" data-next>Save &amp; Next →</button></div>
+          </div>
+        </fieldset>
+      </div>
+
+      <!-- STEP 4: Daily Living -->
+      <div class="step" data-step="3">
+        <fieldset class="panel">
+          <div class="section-title">Daily Living Activities</div>
+          <div class="row cols-2">
+            <label>ADL category:
+              <select name="adl_category" id="adl_category">
+                <option value="">Select category</option>
+                <option>Hygiene / Toileting</option>
+                <option>Dressing / Grooming</option>
+                <option>Cleaning / Household</option>
+                <option>Cooking / Food</option>
+                <option>Community / Errands</option>
+              </select>
+            </label>
+            <label>ADL activity:
+              <select name="adl_activity" id="adl_activity"><option value="">Select activity</option></select>
+            </label>
+          </div>
+          <div class="row cols-2">
+            <label>ADL note:<input type="text" name="adl_note" id="adl_note" placeholder="e.g., wiped table and brought dishes to sink"/></label>
+            <label>Prompting / independence:
+              <select name="prompting_level" id="prompting_level" data-scale="prompting"></select>
+            </label>
+          </div>
+          <label>Daily living notes:<textarea name="daily_living_notes" id="daily_living_notes" placeholder="Cooking, cleaning, laundry, errands, etc."></textarea></label>
+          <div class="controls">
+            <div class="left-actions">
+              <button class="btn" type="button" data-save>Save</button>
+              <span class="savedAt" data-savedat></span>
+              <span class="savedAt" id="finalSubmittedAt"></span>
+            </div>
+            <div>
+              <button class="btn" type="button" data-prev>← Back</button>
+              <button class="btn primary" id="submitAll" type="submit">Submit Final</button>
+            </div>
+          </div>
+        </fieldset>
+      </div>
+    </form>
+  </div>
+
+  <div id="toast"></div>
+
+
+<!-- App logic -->
+<script type="module">
+  // 1) Imports MUST be first in the module
+  import { supabase } from './supabaseClient.js';
+
+  // 2) Optional: expose for console debugging
+  window.supabase = supabase;
+
+  // 3) Simple load marker
+  console.log('[cg] script loaded v4');
+
+  // Define outer refs so other functions (e.g., submitFinal) can use them
+  let formEl, submitBtn;
+
+  // 4) Start logic once DOM is ready
+  document.addEventListener('DOMContentLoaded', () => {
+    formEl    = document.getElementById('cg-form');
+    submitBtn = document.getElementById('submitAll');
+
+    if (!formEl || !submitBtn) {
+      console.error('❌ Form or button not found!');
+      return;
+    }
+
+   console.log('✅ Form and button loaded:', formEl, submitBtn);
+
+// Wire up the final submit
+submitBtn.addEventListener('click', submitFinal);
+formEl.addEventListener('submit', submitFinal);
+
+// Kick off the wizard UI
+go(0);
+}); // <-- end DOMContentLoaded
+
+  // Helper: normalize truthy/falsey
+  const toBool = (v) => {
+    if (v == null) return null;
+    const s = String(v).trim().toLowerCase();
+    return ['true','yes','y','1','on'].includes(s)
+      ? true
+      : ['false','no','n','0','off',''].includes(s)
+      ? false
+      : null;
+  };
+
+
+
+ 
+    // Prompting scale
+    const PROMPT_SCALE = [
+      { value:"", label:"Select one", desc:"Select a level to see description." },
+      { value:"0", label:"0 – Dependent", desc:"hand-over-hand or full physical assistance; caregiver initiates and guides most steps." },
+      { value:"1", label:"1 – Frequent prompts", desc:"needs prompts on most steps (verbal/gesture/model); little sustained independence." },
+      { value:"2", label:"2 – Periodic prompts", desc:"needs prompts several times during the task but completes stretches independently." },
+      { value:"3", label:"3 – 1–2 prompts", desc:"needs one or two prompts/cues to complete." },
+      { value:"4", label:"4 – Independent", desc:"completes without prompts (supervision okay, no cues given)." }
+    ];
+    function populatePromptingSelect(sel){
+      const prev = sel.value;
+      sel.innerHTML = PROMPT_SCALE.map(o=>`<option value="${o.value}">${o.label}</option>`).join('');
+      if (prev) sel.value = prev;
+    }
+    function hydratePromptingSelects(){
+      document.querySelectorAll('select[data-scale="prompting"]').forEach(populatePromptingSelect);
+    }
+
+    // Aggression enable/disable
+    const flag = document.getElementById('aggression_flag');
+    const aType = document.getElementById('aggression_type');
+    const aInt  = document.getElementById('aggression_intensity');
+    function syncAggressionControls(){
+      const yes = flag?.value === 'Yes';
+      [aType,aInt].forEach(el=>el && (el.disabled=!yes));
+      if(!yes){ if(aType) aType.value=''; if(aInt){ aInt.value=0; const iv=document.getElementById('intensityVal'); if(iv) iv.textContent='0'; } }
+    }
+    flag?.addEventListener('change', syncAggressionControls);
+
+    // ADL activity options
+    const ADL_OPTIONS = {
+      'Hygiene / Toileting': ['Brushed teeth','Flossed teeth','Washed face','Showered','Toileting routine','Combed hair','Clipped nails'],
+      'Dressing / Grooming': ['Chose clothes','Dressed self','Zipped / Buttoned','Tied shoes','Wore hat/sunglasses/jacket'],
+      'Cleaning / Household': ['Wiped table','Brought dishes to sink','Loaded dishwasher','Swept/Vacuumed','Made bed','Laundry assist'],
+      'Cooking / Food': ['Prepared snack','Prepared drink','Made sandwich','Helped cook','Used microwave','Helped bake'],
+      'Community / Errands': ['Brought trash out','Sorted recycling','Carried grocery bag']
+    };
+    const adlCategory = document.getElementById('adl_category');
+    const adlActivity = document.getElementById('adl_activity');
+    function setAdlActivities(cat){
+      const list = ADL_OPTIONS[cat] || [];
+      adlActivity.innerHTML = '<option value="">Select activity</option>' + list.map(x=>`<option>${x}</option>`).join('');
+    }
+    adlCategory?.addEventListener('change', e=> setAdlActivities(e.target.value));
+
+    // Wizard state
+    let showAll=false, current=0;
+    let draft = loadDraft() || { data:{}, savedAt:{} };
+
+    // Init
+    steps.forEach((step,idx)=>restore(step,idx));
+    hydratePromptingSelects();
+    updateSavedButtons();
+    updateProgress();
+    syncAggressionControls();
+
+    // Wire per-step buttons and autosave
+    steps.forEach((step, idx) => {
+      step.querySelector('[data-next]')?.addEventListener('click',()=>{ save(step,idx); go(idx+1); });
+      step.querySelector('[data-prev]')?.addEventListener('click',()=>{ save(step,idx,true); go(idx-1); });
+      step.querySelector('[data-save]')?.addEventListener('click',()=> save(step,idx));
+      let t; step.addEventListener('input', e=>{
+        if(e.target?.name==='aggression_intensity'){ const el=document.getElementById('intensityVal'); if(el) el.textContent=e.target.value; }
+        clearTimeout(t); t=setTimeout(()=>save(step,idx,true),450);
+      });
+    });
+
+    // Progress nav + show all
+    progItems.forEach(pi=>pi.addEventListener('click',()=>go(Number(pi.dataset.step))));
+    toggleAllBtn?.addEventListener('click',()=>{
+      showAll=!showAll;
+      if(showAll){ steps.forEach(s=>s.classList.add('active')); toggleAllBtn.textContent='Collapse to wizard'; }
+      else { steps.forEach((s,i)=>s.classList.toggle('active',i===current)); toggleAllBtn.textContent='Show all sections'; steps[current].scrollIntoView({behavior:'smooth',block:'start'}); }
+    });
+
+    // Draft resume
+    resumeDraftBtn?.addEventListener('click',()=>{
+      draft = loadDraft() || { data:{}, savedAt:{} };
+      steps.forEach((s,i)=>hydrate(s,draft.data[i]));
+      const cat = draft.data[3]?.adl_category; if(cat){ setAdlActivities(cat); adlActivity.value = draft.data[3]?.adl_activity || ''; }
+      steps.forEach((s,i)=>updateSavedAt(s,i));
+      hydratePromptingSelects();
+      syncAggressionControls();
+      toast('Draft restored');
+    });
+
+    // Submit handlers
+    submitBtn?.addEventListener('click', submitFinal);
+    formEl?.addEventListener('submit', submitFinal);
+
+    // ---------- helpers ----------
+    function serialize(step){
+      const data={};
+      step.querySelectorAll('input,select,textarea').forEach(el=>{
+        if(!el.name) return;
+        if(el.type==='checkbox') data[el.name]=!!el.checked;
+        else if(el.type==='radio'){ if(el.checked) data[el.name]=el.value; }
+        else data[el.name]=el.value;
+      });
+      return data;
+    }
+    function hydrate(step,data){
+      if(!data) return;
+      step.querySelectorAll('input,select,textarea').forEach(el=>{
+        const v = data[el.name]; if(v===undefined) return;
+        if(el.type==='checkbox') el.checked = !!v;
+        else if(el.type==='radio') el.checked = (el.value===v);
+        else el.value = v;
+      });
+    }
+    function save(step,idx,silent){
+      draft.data[idx]=serialize(step);
+      draft.savedAt[idx]=new Date().toISOString();
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+      updateSavedAt(step,idx);
+      updateSavedButtons();
+      if(!silent) toast('Saved');
+    }
+    function restore(step,idx){
+      hydrate(step,draft.data[idx]); updateSavedAt(step,idx);
+      if(idx===3 && draft.data[3]?.adl_category){ setAdlActivities(draft.data[3].adl_category); adlActivity.value=draft.data[3]?.adl_activity || ''; }
+    }
+    function loadDraft(){ try{ const raw=localStorage.getItem(DRAFT_KEY); return raw?JSON.parse(raw):null; }catch{ return null; } }
+    function updateSavedAt(step,idx){
+      const el=step.querySelector('[data-savedat]'); const ts=draft.savedAt[idx];
+      if(el) el.textContent = ts ? `Last saved: ${new Date(ts).toLocaleString()}` : '';
+    }
+    function updateSavedButtons(){
+      const hasDraft = !!localStorage.getItem(DRAFT_KEY);
+      if (resumeDraftBtn){ resumeDraftBtn.style.display = hasDraft ? '' : 'none'; resumeDraftBtn.disabled = !hasDraft; }
+    }
+    function updateProgress(){
+      segs.forEach((seg,idx)=>{
+        seg.classList.toggle('active', idx===current);
+        const hasData = !!draft.data[idx] && Object.values(draft.data[idx]).some(v=>v!=='' && v!==false && v!==null && v!==undefined);
+        seg.classList.toggle('done', hasData && idx<current);
+      });
+    }
+    function go(i){
+      current = Math.max(0, Math.min(i, steps.length-1));
+      if(!showAll){ steps.forEach((s,idx)=>s.classList.toggle('active', idx===current)); steps[current].scrollIntoView({behavior:'smooth',block:'start'}); }
+      updateProgress();
+    }
+    function buildPayload(){
+      const payload={};
+      steps.forEach((s,idx)=>Object.assign(payload, draft.data[idx]||{}));
+      payload._saved_at = draft.savedAt;
+      payload._submitted_at = new Date().toISOString();
+      return payload;
+    }
+    function resetFormValues(){ formEl.reset(); const iv=document.getElementById('intensityVal'); if(iv) iv.textContent='0'; setAdlActivities(''); hydratePromptingSelects(); }
+    function clearDraftUI(){ draft={ data:{}, savedAt:{} }; localStorage.removeItem(DRAFT_KEY); steps.forEach((s,i)=>updateSavedAt(s,i)); updateSavedButtons(); }
+    function toast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.style.opacity='1'; clearTimeout(el._t); el._t=setTimeout(()=>el.style.opacity='0',1400); }
+
+    // ---------- FINAL SUBMIT ----------
+    async function submitFinal(e){
+      e?.preventDefault?.();
+      if (submitBtn) { submitBtn.disabled=true; submitBtn.textContent='Submitting…'; }
+      try {
+        save(steps[current], current, true);
+
+        const { data: { session } } = await supabase.auth.getSession();
+        const user_id = session?.user?.id;
+        if (!user_id) throw new Error('Not signed in');
+
+        const payload = buildPayload();
+        const had_bm =
+          payload.had_bm === true ||
+          /yes/i.test(String(payload.had_bm ?? payload.bm_today ?? ''));
+
+        const row = {
+          user_id,
+          date: new Date().toISOString().slice(0,10),
+          had_bm,
+          payload,
+          submitted_at: new Date().toISOString()
+        };
+
+        const { data, error } = await supabase
+          .from('caregiver_checkins')
+          .insert([row])
+          .select('id, submitted_at')
+          .single();
+
+        if (error) throw error;
+
+        const when = new Date(data?.submitted_at || row.submitted_at).toLocaleString();
+        const slot = document.getElementById('finalSubmittedAt');
+        if (slot) slot.textContent = `SUBMITTED: ${when}`;
+
+        clearDraftUI();
+        resetFormValues();
+        toast('Submitted ✓');
+      } catch (err) {
+        console.error('[cg] submit error:', err);
+        alert('Could not submit. ' + (err?.message || 'Check your connection and try again.'));
+      } finally {
+        if (submitBtn) { submitBtn.disabled=false; submitBtn.textContent='Submit Final'; }
+      }
+    }
+go(0);
+}); // end DOMContentLoaded
+</script>
+</body>
+</html>

@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Meeting Minutes</title>
+  
+  <style>
+    :root{
+      --ink:#1f2937;         /* text */
+      --accent:#f59e0b;      /* pencil accent / buttons */
+      --paper:#fffdfa;       /* warm paper */
+      --rule:#e5e7eb;        /* light line color */
+      --punch:#d1d5db;       /* binder holes */
+    }
+    *{ box-sizing:border-box; }
+
+    html, body { height: 100%; }
+
+    body{
+      margin:0;
+      /* add bottom padding for the fixed save bar space (approx 88px) */
+      padding:24px 24px 112px;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      color:var(--ink); background:#fafaf9;
+      display:block; /* allow natural page scroll */
+    }
+
+    .wrap{ max-width:900px; width:100%; margin: 0 auto; }
+
+    .toolbar{
+      display:flex; align-items:center; gap:12px; margin-bottom:16px;
+    }
+    .toolbar a{ color:#6b7280; text-decoration:none; }
+    .btn{
+      appearance:none; border:1px solid #e5e7eb; background:#111; color:#fff;
+      padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:600;
+    }
+    .btn.secondary{ background:#fff; color:#111; }
+
+    /* notebook card */
+    .notebook{
+      position:relative; border-radius:18px; overflow:hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,.08);
+      display:grid; grid-template-columns: 1fr 110px;  /* paper + pencil rail */
+      background:var(--paper);
+    }
+
+    /* lined paper effect */
+    .paper{
+      padding:24px 24px 28px 42px; position:relative;
+      background:
+        /* vertical margin (pink/red-ish margin line) */
+        linear-gradient(90deg, transparent 38px, rgba(239,68,68,.25) 39px, transparent 40px) 0 0/100% 100%,
+        /* horizontal rules */
+        repeating-linear-gradient(#0000, #0000 30px, var(--rule) 31px);
+      /* extra space so the fixed save bar never covers inputs */
+      padding-bottom: 120px;
+    }
+
+    /* binder holes */
+    .paper:before{
+      content:"";
+      position:absolute; left:14px; top:24px; bottom:24px; width:8px;
+      background:
+        radial-gradient(var(--punch) 60%, transparent 62%) 0 0/100% 48px repeat-y;
+      border-radius:8px;
+    }
+
+    /* pencil rail */
+    /* pencil rail (move to right side, below quick tabs) */
+.rail{
+  position: fixed;
+  right: 12px;          /* hug the right edge */
+  top: 148px;           /* BELOW the quick tabs (yours are at top: 88px) */
+  bottom: 24px;         /* stay above the bottom tab bar */
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  background: linear-gradient(180deg, #fff, #f8fafc);
+  border-left: 1px solid var(--rule);
+  padding: 6px 8px;
+  z-index: 900;         /* under quick tabs (which are z-index: 1050) */
+}
+
+  
+    .pencil{
+      width:56px; height:320px;
+      filter: drop-shadow(0 8px 18px rgba(0,0,0,.15));
+    }
+
+    h1{ margin:0 0 12px 0; letter-spacing:.2px; }
+    label{ font-weight:600; display:block; margin:6px 0 6px; }
+    input[type="text"], input[type="datetime-local"], textarea, select{
+      width:100%; padding:10px 12px; border:1px solid #e5e7eb; border-radius:10px;
+      font-size:16px; background:#fff; outline:none;
+    }
+    textarea{
+      min-height:220px; line-height:30px; /* matches rule spacing */
+      background:
+        linear-gradient(#0000, #0000 29px, rgba(37,99,235,.08) 30px) 0 0/100% 30px repeat-y;
+    }
+
+    .grid2{ display:grid; gap:12px; grid-template-columns: 1fr 1fr; }
+    .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+
+    .chip{
+      padding:6px 10px; border:1px solid #e5e7eb; border-radius:999px; background:#fff;
+      display:inline-flex; align-items:center; gap:8px; margin:4px 6px 0 0;
+    }
+    .chip button{ border:none; background:transparent; cursor:pointer; color:#ef4444; font-weight:700; }
+
+    .hint{ color:#6b7280; font-size:13px; margin-top:6px; }
+    .divider{ height:1px; background:#f1f5f9; margin:16px 0; }
+
+    /* Fixed bottom save bar above tabbar */
+    .save-bar{
+      position:fixed;
+      left:0; right:0;
+      bottom:56px; /* move it up above your bottom nav (adjust if nav is taller) */
+      background:#fffdfa;
+      border-top:1px solid #e5e7eb;
+      padding:12px 24px;
+      display:flex; gap:12px; justify-content:center;
+      z-index:1000;
+    }
+    .save-bar .btn { max-width: 220px; }
+
+    /* ---------- Right-edge quick nav tabs (same style as other docs pages) ---------- */
+    .edge-tabs {
+      position: fixed;
+      right: 12px;
+      top: 88px;               /* under the top app bar & away from the star badge */
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 1050;
+    }
+    .edge-tabs a {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      text-decoration: none;
+      background: #111;
+      color: #fff;
+      box-shadow: 0 8px 18px rgba(0,0,0,.22);
+      opacity: .92;
+      transition: transform .08s ease, opacity .08s ease;
+      font-size: 20px;
+    }
+    .edge-tabs a:hover { transform: translateY(-1px); opacity: 1; }
+    .edge-tabs a[aria-current="page"] {
+      outline: 3px solid #ffd166;
+      outline-offset: 2px;
+      background: #1b1b1b;
+    }
+    @media (max-width: 680px) {
+      .edge-tabs { 
+        top: auto; bottom: 100px; right: 10px;
+        flex-direction: row;
+      }
+    }
+    @media print { .edge-tabs { display: none !important; } }
+  </style>
+</head>
+<body>
+
+  <div id="navbar"></div>
+
+  <!-- Quick links to other Documents pages -->
+  <nav class="edge-tabs" aria-label="Documents quick links">
+    <a href="documents.html" title="Docs Home">📁</a>
+    <a href="finance.html" title="Finance">💵</a>
+    <a href="medical.html" title="Medical">🩺</a>
+    <a href="hr.html" title="HR">🏢</a>
+    <a href="caregiving.html" title="Caregiving">🧩</a>
+    <a href="isa-iep.html" title="ISA/IEP">📚</a>
+    <a href="year-end-paperwork.html" title="Year End">📦</a>
+    <a href="guardianship.html" title="Guardianship">🛡️</a>
+    <a href="minutes-form.html" aria-current="page" title="Meeting Minutes">📝</a>
+  </nav>
+
+  <div class="wrap">
+    <div class="toolbar">
+      <a href="./documents.html">← Back to Documents</a>
+    </div>
+
+    <div class="paper">
+  <h1>Add Meeting Minutes</h1><!-- OPEN THE FORM -->
+<form id="minutesForm" novalidate>
+
+
+  <!-- OPEN THE FORM HERE -->
+  <form id="minutesForm" novalidate>
+<div class="paper">
+  <h1>Add Meeting Minutes</h1>
+
+  <!-- OPEN THE FORM HERE -->
+  <form id="minutesForm" novalidate>
+
+        <div class="grid2">
+          <div>
+            <label for="title">Title</label>
+            <input id="title" type="text" placeholder="IEP Meeting — Aug 20, 2025" />
+          </div>
+          <div>
+            <label for="dateTime">Date & Time</label>
+            <input id="dateTime" type="datetime-local" />
+          </div>
+        </div>
+
+        <div class="grid2" style="margin-top:8px">
+          <div>
+            <label for="location">Location / Link</label>
+            <input id="location" type="text" placeholder="Room 201 or Zoom https://..." />
+          </div>
+          <div>
+            <label for="facilitator">Facilitator</label>
+            <input id="facilitator" type="text" placeholder="Name" />
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <label>Attendees</label>
+        <div class="row">
+          <input id="attendeeName" type="text" placeholder="Name — Role (e.g., Jane Doe — Teacher)" />
+          <button class="btn secondary" id="addAttendeeBtn" type="button">Add</button>
+        </div>
+        <div id="attendeesList" style="margin-top:6px"></div>
+<textarea id="attendeesField" name="attendees" hidden></textarea>
+
+        <div class="divider"></div>
+
+        <label for="agenda">Agenda (one per line)</label>
+        <textarea id="agenda" placeholder="1) Welcome&#10;2) Review goals&#10;3) Next steps"></textarea>
+
+        <label for="notes" style="margin-top:10px">Discussion Notes</label>
+        <textarea id="notes" placeholder="Type the discussion here…"></textarea>
+
+        <div class="grid2" style="margin-top:8px">
+          <div>
+            <label for="decisions">Decisions (one per line)</label>
+            <textarea id="decisions" placeholder="- Decision 1&#10;- Decision 2"></textarea>
+          </div>
+          <div>
+            <label for="actions">Action Items (one per line: Task — Owner — YYYY-MM-DD)</label>
+            <textarea id="actions" placeholder="Submit consent — Jane — 2025-09-01"></textarea>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="grid2">
+          <div>
+            <label for="nextDate">Next Meeting Date/Time</label>
+            <input id="nextDate" type="datetime-local" />
+          </div>
+          <div>
+            <label for="nextLink">Next Meeting Link</label>
+            <input id="nextLink" type="text" placeholder="https://teams.microsoft.com/..." />
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <label for="attachment">Upload or Scan (optional)</label>
+        <input id="attachment" type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.heic" />
+        <div class="hint">Attach official minutes, photos of notes, or scans. Files stay private; the app uses signed links.</div>
+     
+     <!-- Buttons INSIDE the form (recommended) -->
+<div class="actions" style="margin:16px 0;">
+  <button type="submit" class="btn primary">Save Minutes</button>
+  <button type="button" id="clearMinutesBtn" class="btn">Clear</button>
+</div>
+
+</form> <!-- CLOSE minutesForm -->
+
+      </div>
+
+      <!-- PENCIL RAIL -->
+      <div class="rail" aria-hidden="true">
+        <!-- Cute pencil SVG -->
+        <svg class="pencil" viewBox="0 0 80 460" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="wood" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0" stop-color="#f5deb3"/>
+              <stop offset="1" stop-color="#e9c999"/>
+            </linearGradient>
+          </defs>
+          <!-- eraser -->
+          <rect x="10" y="0" width="60" height="70" rx="8" fill="#fca5a5"/>
+          <rect x="10" y="68" width="60" height="10" fill="#9ca3af"/>
+          <!-- body -->
+          <rect x="10" y="78" width="60" height="310" fill="#f59e0b"/>
+          <rect x="18" y="78" width="44" height="310" fill="#fbbf24" opacity=".6"/>
+          <!-- wood + tip -->
+          <polygon points="10,388 70,388 40,458" fill="url(#wood)"/>
+          <polygon points="26,420 54,420 40,458" fill="#111"/>
+        </svg>
+      </div>
+    </div> <!-- /.notebook -->
+  </div>   <!-- /.wrap -->
+
+ 
+
+  <!-- Logic -->
+  <script type="module">
+    import { uploadFileToBucket, saveMinutesRich } from "./documents.js";
+
+    // attendees UI
+    const attendees = [];
+    const attendeeInput = document.getElementById('attendeeName');
+    const attendeesList = document.getElementById('attendeesList');
+    document.getElementById('addAttendeeBtn').addEventListener('click', () => {
+      const v = attendeeInput.value.trim();
+      if (!v) return;
+      attendees.push(v);
+      attendeeInput.value = "";
+      renderAttendees();
+    });
+    function renderAttendees(){
+      attendeesList.innerHTML = "";
+      attendees.forEach((a, i) => {
+        const chip = document.createElement('span');
+        chip.className = "chip";
+        chip.innerHTML = `${a} <button type="button" aria-label="Remove attendee ${i}">×</button>`;
+        chip.querySelector('button').onclick = () => { attendees.splice(i,1); renderAttendees(); };
+        attendeesList.appendChild(chip);
+      });
+    }
+
+    // save
+    document.getElementById('saveBtn').addEventListener('click', async () => {
+      const title = document.getElementById('title').value.trim();
+      if (!title) return alert("Please add a title.");
+
+      const file = document.getElementById('attachment').files[0];
+
+      const payload = {
+        title,
+        datetime: document.getElementById('dateTime').value,
+        location: document.getElementById('location').value,
+        facilitator: document.getElementById('facilitator').value,
+        attendees,
+        agenda: document.getElementById('agenda').value.split('\n').map(s=>s.trim()).filter(Boolean),
+        discussion: document.getElementById('notes').value,
+        decisions: document.getElementById('decisions').value.split('\n').map(s=>s.trim()).filter(Boolean),
+        action_items: document.getElementById('actions').value.split('\n').map(s=>s.trim()).filter(Boolean),
+        next_datetime: document.getElementById('nextDate').value,
+        next_link: document.getElementById('nextLink').value
+      };
+
+      try{
+        let storagePath = null;
+        if (file) storagePath = await uploadFileToBucket({ file }); // goes to private 'documents' bucket
+        await saveMinutesRich(payload, storagePath);                  // inserts markdown + optional file path
+        alert("Saved!");
+        window.location.href = "./documents.html";
+      }catch(err){
+        console.error(err);
+        alert("Save failed: " + err.message);
+      }
+    });
+
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      document.querySelectorAll('input, textarea').forEach(el => { if (el.type !== 'file') el.value = '' });
+      attendees.splice(0, attendees.length); renderAttendees();
+    });
+  </script>
+
+  <!-- Page-specific logic (keep if you use it) -->
+  <script type="module" src="/script.js"></script>
+
+  <!-- Top app bar + bottom tabs (creates #openMenu) -->
+  <script defer src="/ui-shell.js"></script>
+
+  <!-- Hamburger drawer (depends on #openMenu created by ui-shell) -->
+  <script defer src="/scripts/appbar-drawer.js"></script>
+
+  <!-- Floating avatar (top-right across pages) -->
+  <script type="module" src="/avatar-float.js"></script>
+
+</body>
+</html>

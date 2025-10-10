@@ -1,0 +1,503 @@
+<!-- /calendar.html -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Group Calendar</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Global + page CSS -->
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="calendar.css">
+
+  <!-- Page-specific hardening / tweaks -->
+  <style>
+    :root{ --ink:#1f2937; --paper:#fffdfa; --rule:#eceff4; --accent:#f59e0b; --vio:#7c3aed; --muted:#9aa3b2; --chip:#f8fafc; }
+    *{ box-sizing:border-box; }
+    body.calendar-page{ margin:0; background:#f5f6ff; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; color:var(--ink); }
+    main.cal-wrap{ width:100%; max-width:1100px; padding:16px; margin:0 auto; }
+
+    .notebook{ display:grid; grid-template-columns: 1fr 110px; gap:0; border-radius:20px; overflow:hidden; background:var(--paper); box-shadow:0 16px 40px rgba(0,0,0,.10); }
+    .paper{
+      position:relative; padding:22px 22px 26px 38px;
+      background:
+        linear-gradient(90deg,transparent 30px, rgba(239,68,68,.16) 31px, transparent 32px) 0 0/100% 100%,
+        repeating-linear-gradient(#0000, #0000 32px, var(--rule) 33px);
+      min-height:72vh;
+    }
+    .paper:before{ content:""; position:absolute; left:12px; top:18px; bottom:18px; width:8px; background:radial-gradient(#d7dee6 60%, transparent 62%) 0 0/100% 48px repeat-y; border-radius:8px; }
+    .rail{ display:flex; align-items:center; justify-content:center; background:linear-gradient(180deg,#fff,#f6f9ff); border-left:1px solid #e5e7eb; }
+    .pencil{ width:56px; height:320px; filter: drop-shadow(0 10px 20px rgba(0,0,0,.15)); }
+
+    .cal-header{ display:flex; gap:10px; align-items:center; justify-content:space-between; margin:4px 8px 14px 8px; }
+    .month-title{ font-size:24px; font-weight:800; letter-spacing:.2px; }
+    .nav{ display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; border-radius:12px; border:1px solid #e5e7eb; background:#fff; cursor:pointer; font-size:18px; }
+
+    .weekday-row{ display:grid; grid-template-columns: repeat(7, 1fr); margin:0 8px 6px 8px; font-weight:700; font-size:12px; color:#6b7280; text-align:center; }
+    .month-grid{ display:grid; grid-template-columns: repeat(7, 1fr); gap:8px; padding:0 8px; }
+    .day{ position:relative; display:flex; align-items:flex-start; justify-content:flex-start; min-height:84px; padding:8px 8px 6px 8px; border-radius:14px; background:#fff; border:1px solid #eceff4; text-align:left; cursor:pointer; box-shadow: 0 1px 0 rgba(0,0,0,.02); }
+    .day .num{ font-weight:800; font-size:14px; }
+    .day .dots{ position:absolute; right:8px; top:8px; width:8px; height:8px; border-radius:999px; background:var(--vio); box-shadow: 12px 0 0 #10b981, 24px 0 0 #f59e0b; }
+    .day.today{ outline:2px solid #a78bfa; }
+    .day.selected{ border-color:#f1d58a; box-shadow:0 6px 18px rgba(0,0,0,.06), inset 0 0 0 2px #f7e3a6; }
+    .day.muted{ color:#9aa3b2; background:#fafbff; }
+
+    .event-panel{ margin:16px 8px 8px 8px; background:#fff; border:1px solid #eceff4; border-radius:16px; }
+    .event-header{ display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border-bottom:1px solid #f1f5f9; }
+    .event-title{ font-weight:800; }
+    .btn{ appearance:none; background:#111; color:#fff; border:0; border-radius:12px; padding:10px 12px; font-weight:700; cursor:pointer; }
+    .btn.secondary{ background:#fff; color:#111; border:1px solid #e5e7eb; }
+    ul.event-list{ list-style:none; margin:0; padding:10px 12px; }
+    .event{ display:flex; align-items:center; justify-content:space-between; padding:10px 10px; border:1px solid #eef2f7; border-radius:12px; margin:8px 0; background:#fff; }
+    .event .title{ font-weight:700; }
+    .event .meta{ font-size:12px; color:#6b7280; margin-top:2px; }
+    .event .del{ border:0; background:#fff; cursor:pointer; font-size:18px; }
+
+    .empty{ color:#9aa3b2; font-style:italic; padding:8px; }
+    dialog{ border:0; border-radius:16px; width:min(520px, 92vw); padding:0; box-shadow:0 24px 60px rgba(0,0,0,.25); }
+    dialog::backdrop{ backdrop-filter: blur(3px); background: rgba(0,0,0,.2); }
+    .dlg-wrap{ padding:16px 16px 12px; }
+    .dlg-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+    .dlg-head h3{ margin:0; font-size:18px; }
+    .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    label{ font-size:12px; font-weight:700; color:#374151; display:block; margin:10px 0 6px; }
+    input[type="text"], input[type="date"], input[type="time"], textarea{ width:100%; padding:10px 12px; border:1px solid #e5e7eb; border-radius:10px; font:inherit; background:#fff; }
+    textarea{ min-height:90px; }
+    .dlg-actions{ display:flex; justify-content:flex-end; gap:10px; padding:12px 16px; border-top:1px solid #f1f5f9; }
+    .chip{ display:inline-flex; align-items:center; gap:6px; background:var(--chip); border:1px solid #e5e7eb; border-radius:999px; padding:6px 10px; }
+
+    .tape{ position:absolute; left:50%; transform:translateX(-50%); top:-12px; width:96px; height:22px; background:#b9915f; border-radius:6px; opacity:.75; }
+    @media (max-width: 720px){ .day{ min-height:64px; } .paper{ padding-left:26px; } .paper:before{ left:6px; } }
+
+    /* ===== Calendar hardening overrides ===== */
+    .month-grid .day { font: inherit !important; color: var(--ink) !important; line-height: 1.1 !important; position: relative; }
+    .month-grid .day .num { display:inline-block; font-weight:800; font-size:14px !important; color:var(--ink) !important; position:relative; z-index:1; }
+    .month-grid .day.muted .num { color: var(--muted) !important; }
+    button.day, .month-grid button.day { appearance:none; background:#fff; border:1px solid #eceff4; color:var(--ink) !important; }
+
+    /* Keep the nav arrows obvious (‹ ›) */
+    .cal-header .cal-nav{
+      width:40px;height:40px;border-radius:12px;border:1px solid #e5e7eb;background:#fff;
+      display:inline-flex;align-items:center;justify-content:center;cursor:pointer;
+      box-shadow:0 1px 0 rgba(0,0,0,.04);
+      font-size:22px;font-weight:800;color:#374151;
+    }
+    .cal-header .cal-nav svg{ display:none; }
+    .cal-header .cal-nav.prev::before{ content:"‹"; }
+    .cal-header .cal-nav.next::before{ content:"›"; }
+    .cal-header .cal-nav:focus{ outline:2px solid #a78bfa; outline-offset:2px; }
+
+    /* Header stays clickable above calendar */
+    header, .appbar, .topbar, #appbar { position:sticky; top:0; z-index:2000; pointer-events:auto; }
+    .cal-wrap, .notebook, .paper { position:relative; z-index:1; }
+    .paper::before, .tape { pointer-events:none; }
+
+    html, body { min-height:100%; height:auto; }
+    body.calendar-page{ overflow-y:auto; padding-bottom:84px; }
+    .event-panel { max-height:58vh; overflow:auto; }
+
+    /* match hamburger style */
+    #openMenu, #navbar button[aria-label*="menu" i]{
+      background:transparent !important; border:0 !important; padding:0 !important;
+      width:44px; height:44px; display:inline-flex; align-items:center; justify-content:center; box-shadow:none !important;
+    }
+    #openMenu svg { display:block; }
+  </style>
+</head>
+
+<body class="calendar-page">
+  <!-- Shared navbar mounts here -->
+  <div id="navbar"></div>
+
+  <main class="cal-wrap">
+    ...
+
+
+  <main class="cal-wrap">
+    <div class="notebook">
+      <div class="paper">
+        <div class="tape" aria-hidden="true"></div>
+
+        <header class="cal-header">
+          <button class="cal-nav prev" aria-label="Previous month"></button>
+          <div class="month-title" id="monthLabel">Month YYYY</div>
+          <button class="cal-nav next" aria-label="Next month"></button>
+        </header>
+
+        <div class="weekday-row">
+          <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+        </div>
+
+        <div id="monthGrid" class="month-grid"></div>
+
+        <section class="event-panel">
+          <div class="event-header">
+            <div class="event-title" id="selectedDateLabel">Selected Date</div>
+            <button id="addBtn" class="btn">＋ Add Event</button>
+          </div>
+          <ul id="eventList" class="event-list"></ul>
+        </section>
+      </div>
+
+      <div class="rail" aria-hidden="true">
+        <!-- Pencil -->
+        <svg class="pencil" viewBox="0 0 80 460" xmlns="http://www.w3.org/2000/svg">
+          <defs><linearGradient id="wood" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#f5deb3"/><stop offset="1" stop-color="#e9c999"/></linearGradient></defs>
+          <rect x="10" y="0" width="60" height="70" rx="8" fill="#fca5a5"/><rect x="10" y="68" width="60" height="10" fill="#9ca3af"/>
+          <rect x="10" y="78" width="60" height="310" fill="#f59e0b"/><rect x="18" y="78" width="44" height="310" fill="#fbbf24" opacity=".6"/>
+          <polygon points="10,388 70,388 40,458" fill="url(#wood)"/><polygon points="26,420 54,420 40,458" fill="#111"/>
+        </svg>
+      </div>
+    </div>
+  </main>
+
+  <!-- Add Event dialog -->
+  <dialog id="eventDialog">
+    <form class="dlg-wrap" id="eventForm">
+      <div class="dlg-head">
+        <h3>New Event</h3>
+        <span class="chip">📅 <span id="dlgDateText">—</span></span>
+      </div>
+
+      <label for="evTitle">Title</label>
+      <input id="evTitle" name="title" type="text" placeholder="e.g., Therapy session" required>
+
+      <label for="evType">Type</label>
+      <select id="evType" name="type" required>
+        <option value="doctor">Doctor / Medical</option>
+        <option value="medical">Medical (other)</option>
+        <option value="isa">ISA Meeting</option>
+        <option value="shopping">Shopping</option>
+        <option value="finance">Finance</option>
+        <option value="other" selected>Other</option>
+      </select>
+
+      <div class="grid2">
+        <div>
+          <label for="evDate">Date</label>
+          <input id="evDate" name="date" type="date" required>
+        </div>
+        <div>
+          <label class="chip" style="margin-top:28px;">
+            <input id="evAllDay" name="allday" type="checkbox" style="accent-color:#111"> All day
+          </label>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div>
+          <label for="evStart">Start</label>
+          <input id="evStart" name="start" type="time">
+        </div>
+        <div>
+          <label for="evEnd">End</label>
+          <input id="evEnd" name="end" type="time">
+        </div>
+      </div>
+
+      <label for="evLocation">Location</label>
+      <input id="evLocation" name="location" type="text" placeholder="Room 12, Zoom link…">
+
+      <label for="evNotes">Notes</label>
+      <textarea id="evNotes" name="notes" placeholder="Anything to remember…"></textarea>
+
+      <div class="dlg-actions">
+        <button type="button" class="btn secondary cancel">Cancel</button>
+        <button type="submit" class="btn">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ===== Supabase Calendar logic ===== -->
+  <script type="module">
+  import { supabase } from "./supabaseClient.js";
+
+  // ✅ Require login (redirect if not)
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData?.user) {
+    location.href = `/login.html?redirect=${encodeURIComponent(location.pathname)}`;
+    throw new Error("Not signed in");
+  }
+  const currentUserId = userData.user.id;
+
+  (async () => {
+    // routes for the event-type links
+    const TYPE_TO_ROUTE = {
+      doctor: "medical-notes.html",
+      medical: "medical-notes.html",
+      isa: "isa-notes.html",
+      shopping: "finance.html",
+      finance: "finance.html",
+      other: "notes.html",
+    };
+
+    const GROUP_ID = null;
+
+    const state = {
+      today: new Date(),
+      year: new Date().getFullYear(),
+      month: new Date().getMonth(),
+      selected: new Date(),
+      cacheByDay: new Map(),
+    };
+
+    const dk = (d) =>
+      new Date(d.getFullYear(), d.getMonth(), d.getDate())
+        .toISOString()
+        .slice(0, 10);
+    const fmtMonthYear = (d) =>
+      d.toLocaleString(undefined, { month: "long", year: "numeric" });
+    const escapeHtml = (s) =>
+      (s ?? "")
+        .toString()
+        .replace(/[&<>\"']/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
+
+    const api = {
+      async monthEvents(year, month) {
+        const first = new Date(year, month, 1);
+        const last = new Date(year, month + 1, 0);
+        const from = first.toISOString().slice(0, 10);
+        const to = last.toISOString().slice(0, 10);
+
+        let q = supabase
+          .from("calendar_events")
+          .select("*")
+          .gte("start_date", from)
+          .lte("start_date", to)
+          .order("start_date", { ascending: true });
+
+        if (GROUP_ID) q = q.eq("group_id", GROUP_ID);
+
+        const { data, error } = await q;
+        if (error) {
+          console.error(error.message);
+          return [];
+        }
+        return data || [];
+      },
+
+      async addEvent(evt) {
+        const payload = {
+          title: evt.title,
+          type: evt.type,
+          start_date: evt.date,
+          start_time: evt.start || null,
+          end_time: evt.end || null,
+          location: evt.location || null,
+          notes: evt.notes || null,
+          all_day: !!evt.allDay,
+          created_by: currentUserId,
+          group_id: GROUP_ID,
+        };
+        const { data, error } = await supabase
+          .from("calendar_events")
+          .insert(payload)
+          .select("*")
+          .single();
+        if (error) throw error;
+        return data;
+      },
+
+      async deleteEvent(id) {
+        const { error } = await supabase.from("calendar_events").delete().eq("id", id);
+        if (error) throw error;
+      },
+    };
+
+    // Elements
+    const monthLabel = document.getElementById("monthLabel");
+    const grid = document.getElementById("monthGrid");
+    const selectedLabel = document.getElementById("selectedDateLabel");
+    const list = document.getElementById("eventList");
+    const addBtn = document.getElementById("addBtn");
+    const dlg = document.getElementById("eventDialog");
+    const form = document.getElementById("eventForm");
+    const dlgDateText = document.getElementById("dlgDateText");
+    const evDate = document.getElementById("evDate");
+    const evAllDay = document.getElementById("evAllDay");
+
+    async function loadMonthIntoCache() {
+      state.cacheByDay.clear();
+      const rows = await api.monthEvents(state.year, state.month);
+      for (const r of rows) {
+        const key = r.start_date;
+        if (!state.cacheByDay.has(key)) state.cacheByDay.set(key, []);
+        state.cacheByDay.get(key).push(r);
+      }
+    }
+    const eventsForDay = (key) => state.cacheByDay.get(key) || [];
+
+    async function renderMonth() {
+      const first = new Date(state.year, state.month, 1);
+      monthLabel.textContent = fmtMonthYear(first);
+      await loadMonthIntoCache();
+
+      const start = new Date(first);
+      start.setDate(1 - first.getDay());
+
+      grid.innerHTML = "";
+      for (let i = 0; i < 42; i++) {
+        const d = new Date(start);
+        d.setDate(start.getDate() + i);
+        const key = dk(d);
+
+        const cell = document.createElement("button");
+        cell.className = "day";
+        if (d.getMonth() !== state.month) cell.classList.add("muted");
+        if (dk(d) === dk(state.today)) cell.classList.add("today");
+        if (dk(d) === dk(state.selected)) cell.classList.add("selected");
+
+        const items = eventsForDay(key);
+        cell.innerHTML =
+          `<span class="num">${d.getDate()}</span>` +
+          (items.length ? `<span class="dots" title="${items.length} event(s)"></span>` : "");
+
+        cell.addEventListener("click", () => {
+          state.selected = d;
+          renderSelected();
+          renderMonth();
+        });
+
+        grid.appendChild(cell);
+      }
+    }
+
+    function linkFor(evt) {
+      const page = TYPE_TO_ROUTE[evt.type] || TYPE_TO_ROUTE.other;
+      const p = new URLSearchParams({
+        date: evt.start_date,
+        event_id: evt.id,
+        type: evt.type,
+      });
+      return `${page}?${p.toString()}`;
+    }
+
+    function renderSelected() {
+      selectedLabel.textContent = state.selected.toLocaleDateString(undefined, {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+      });
+
+      const key = dk(state.selected);
+      const items = eventsForDay(key);
+
+      list.innerHTML = items.length ? "" : `<li class="empty">No events yet.</li>`;
+      items.forEach((e) => {
+        const time = e.all_day ? "All day" : [e.start_time, e.end_time].filter(Boolean).join(" – ");
+        const li = document.createElement("li");
+        li.className = "event";
+        li.innerHTML = `
+          <div class="left">
+            <div class="title"><a href="${linkFor(e)}" style="text-decoration:none; color:inherit">${escapeHtml(e.title)}</a></div>
+            <div class="meta">${escapeHtml(e.type)}${time ? " • " + escapeHtml(time) : ""}${e.location ? " • " + escapeHtml(e.location) : ""}</div>
+          </div>
+          <button class="del" aria-label="Delete">🗑️</button>
+        `;
+        li.querySelector(".del").onclick = async () => {
+          try {
+            await api.deleteEvent(e.id);
+            await renderMonth();
+            renderSelected();
+          } catch (err) {
+            alert("Delete failed: " + err.message);
+          }
+        };
+        list.appendChild(li);
+      });
+    }
+
+    document.querySelector(".cal-nav.prev").onclick = async () => {
+      state.month--;
+      if (state.month < 0) {
+        state.month = 11;
+        state.year--;
+      }
+      await renderMonth();
+      renderSelected();
+    };
+
+    document.querySelector(".cal-nav.next").onclick = async () => {
+      state.month++;
+      if (state.month > 11) {
+        state.month = 0;
+        state.year++;
+      }
+      await renderMonth();
+      renderSelected();
+    };
+
+    const resetDialog = () => {
+      form.reset();
+      evAllDay.checked = false;
+    };
+
+    addBtn.onclick = () => {
+      const key = dk(state.selected);
+      evDate.value = key;
+      dlgDateText.textContent = state.selected.toLocaleDateString(undefined, {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+      });
+      resetDialog();
+      evDate.value = key;
+      dlg.showModal();
+    };
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const data = new FormData(form);
+      const title = (data.get("title") || "").trim();
+      if (!title) return alert("Please add a title.");
+
+      const evt = {
+        date: data.get("date"),
+        title,
+        type: data.get("type"),
+        start: data.get("start") || "",
+        end: data.get("end") || "",
+        location: data.get("location") || "",
+        notes: data.get("notes") || "",
+        allDay: data.get("allday") === "on",
+      };
+
+      try {
+        const saved = await api.addEvent(evt);
+        const key = saved.start_date;
+        if (!state.cacheByDay.has(key)) state.cacheByDay.set(key, []);
+        state.cacheByDay.get(key).push(saved);
+
+        dlg.close();
+        state.selected = new Date(saved.start_date + "T00:00:00");
+        state.year = state.selected.getFullYear();
+        state.month = state.selected.getMonth();
+        renderSelected();
+        renderMonth();
+      } catch (err) {
+        alert("Save failed: " + err.message);
+      }
+    });
+
+    dlg.querySelector(".cancel").onclick = () => dlg.close();
+
+    await renderMonth();
+    renderSelected();
+  })();
+</script>
+
+
+    <!-- Mount for the bottom tab bar (same pattern as home.html) -->
+  <div id="tabbar"></div>
+
+  <!-- 🔁 Shared nav + UI shell (match home.html paths exactly) -->
+  <script type="module" src="/script.js"></script>
+  <script defer src="/ui-shell.js"></script>
+  <script defer src="/scripts/appbar-drawer.js"></script>
+  <script type="module" src="/avatar-float.js"></script>
+
+  <!-- ✅ Navbar loader (include once, as a module, absolute path) -->
+  <script type="module" src="/load-navbar.js"></script>
+</body>
+</html>
+

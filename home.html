@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>STAR — Home</title>
+
+  <!-- CSS: one global + one page-specific -->
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="homeStyles.css?v=12">
+
+</head>
+
+<body class="home-page">
+  <!-- Navbar mounts here -->
+  <div id="navbar"></div>
+
+  
+    <div id="category-layout" class="home-hero">
+  <div class="home-inner">
+    <h1 id="checkin-title">Check In</h1>
+
+    <!-- Row 1: Feelings spans full width -->
+    <div class="category-row top">
+      <button id="feelingsBtn" class="category-btn card" type="button"
+              onclick="goToMoodPage('feelings')">
+        <span class="emoji">❤️</span><span class="txt">Feelings</span>
+      </button>
+    </div>
+
+    <!-- Row 2: Fun + Body -->
+    <div class="category-row">
+      <button id="funBtn" class="category-btn card" type="button"
+              onclick="goToMoodPage('fun')">
+        <span class="emoji">😁</span><span class="txt">Fun</span>
+      </button>
+
+      <button id="bodyBtn" class="category-btn card" type="button"
+              onclick="goToMoodPage('body')">
+        <span class="emoji">💪</span><span class="txt">Body</span>
+      </button>
+    </div>
+
+    <!-- Row 3: Work + Community -->
+    <div class="category-row">
+      <button id="workBtn" class="category-btn card" type="button"
+              onclick="goToMoodPage('work')">
+        <span class="emoji">🏅</span><span class="txt">Work</span>
+      </button>
+
+      <button id="communityBtn" class="category-btn card" type="button"
+              onclick="goToMoodPage('community')">
+        <span class="emoji">🏘️</span><span class="txt">Community</span>
+      </button>
+    </div>
+
+    <div id="checkInPrompt" class="home-prompt">
+      What are you checking in about today?
+    </div>
+  </div>
+</div>
+
+  </main>
+
+  <!-- Bottom tab bar mounts here -->
+  <div id="tabbar"></div>
+
+ <!-- Scripts -->
+<script type="module" src="./script.js"></script>
+
+<!-- ✅ Bottom tab bar + hamburger menu -->
+<script defer src="./load-tabbar.js"></script>
+<script defer src="./ui-shell.js"></script>
+<script defer src="./scripts/appbar-drawer.js"></script>
+
+<!-- simple router to mood checker with category -->
+<script>
+  function goToMoodPage(cat) {
+    try { sessionStorage.setItem('checkinCategory', cat); } catch (e) {}
+    // Adjust the path if your mood checker lives in a subfolder.
+    location.href = 'moodchecker_with_other_moods.html?category=' + encodeURIComponent(cat);
+  }
+</script>
+
+
+</body>
+</html>

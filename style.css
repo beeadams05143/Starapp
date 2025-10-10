@@ -1,0 +1,445 @@
+/* =========================
+   GLOBAL MOBILE GUARDRAILS
+   ========================= */
+/* keep text scaling sane on iOS */
+html { -webkit-text-size-adjust: 100%; }
+
+/* stop horizontal scrolling everywhere */
+html, body { width: 100%; max-width: 100%; overflow-x: clip; }
+
+/* media/embeds never overflow */
+img, video, canvas, svg, iframe { display: block; max-width: 100%; height: auto; }
+
+/* box model baseline */
+*, *::before, *::after { box-sizing: border-box; }
+
+/* safe bottom for iOS tab bar / home indicator */
+:root { --tabbar-h: 64px; --safe-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--tabbar-h)); }
+
+/* =========================
+   PAGE LAYOUT VARIANTS
+   ========================= */
+/* Default layout (used for most pages like home.html) */
+body.default-page {
+  margin: 0;
+  padding: 0;
+  /* PATCH: avoid 100vw/hidden which caused side-scroll */
+  min-height: 100vh;
+  width: 100%;
+  overflow-y: auto;
+  overflow-x: clip;
+
+  background-image: url('STAR1.jpg');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-color: #fbe6c2; /* Warm neutral color */
+}
+
+/* Clean scrollable centered layout for mood/caregiver pages */
+body.plain-page {
+  margin: 0 auto;
+  padding: 2rem;
+  max-width: 800px;
+  background: #eaf6ff;
+  font-family: sans-serif;
+  min-height: 100vh;
+  overflow-y: auto;
+}
+
+/* =========================
+   BASE BODY (your second body block)
+   ========================= */
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  width: 100%;
+  overflow-y: auto;
+  overflow-x: clip;
+  background-color: #fbe6c2; /* Clean beige background */
+}
+
+
+/* =========================
+   TYPOGRAPHY & COMMON ELEMENTS
+   ========================= */
+h1, h2 { text-align: center; color: #333; }
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  background: #fff;
+  padding: 1.5rem;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  margin-bottom: 2rem;
+}
+
+label { font-weight: bold; }
+input, button { padding: 0.5rem; font-size: 1rem; }
+
+button {
+  background: #007acc;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+button:hover { background: #005fa3; }
+
+#intensity-value { font-weight: bold; text-align: center; }
+
+ul { list-style: none; padding: 0; }
+li {
+  background: #fff;
+  margin-bottom: 0.75rem;
+  padding: 0.75rem;
+  border-left: 6px solid #ccc;
+  border-radius: 6px;
+}
+
+/* =========================
+   MOOD GRID
+   ========================= */
+.mood-group { margin-bottom: 1.5rem; border-radius: 8px; padding: 1rem; }
+.mood-header { font-size: 1.1rem; font-weight: bold; margin-bottom: 0.5rem; text-align: center; }
+
+.group-positive { background-color: #e1f8dc; }
+.group-neutral  { background-color: #fff8d6; }
+.group-challenging { background-color: #ffe5e5; }
+
+.mood-grid { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+
+.mood-btn {
+  display: flex; flex-direction: column; align-items: center;
+  border: 2px solid transparent; border-radius: 10px;
+  padding: 8px; cursor: pointer; font-size: 2.2rem; width: 70px;
+  transition: transform 0.2s, border 0.3s; background: white;
+}
+.mood-btn .label { font-size: 0.75rem; margin-top: 4px; text-align: center; color: #333; }
+.mood-btn:hover { transform: scale(1.1); }
+.mood-btn.selected { border: 2px solid #007acc; background-color: #d4f0ff; }
+
+/* PATCH: let charts scale fully but never overflow */
+canvas { min-height: 300px; max-width: 100%; margin: 20px auto; display: block; }
+
+/* "Other" group */
+.group-other { background-color: #f3e8ff; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; }
+.group-other .mood-header { color: #6d4c41; font-weight: bold; margin-bottom: 0.5em; text-align: center; }
+.group-other .mood-grid { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+
+/* =========================
+   NAVBAR
+   ========================= */
+/* top banner wrapper you already had */
+#navbar {
+  position: relative; top: 0; left: 0; width: 100%;
+  background-color: transparent; color: white;
+  padding: 10px 0; text-align: center; z-index: 999;
+}
+
+/* fixed top navbar */
+.navbar {
+  position: fixed; top: 0; left: 0; width: 100%;
+  background-color: #333; padding: 10px 0; z-index: 1000;
+  /* PATCH: allow tiny-screen horizontal overflow inside, not the page */
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+}
+.navbar-menu {
+  list-style: none; display: flex; justify-content: center;
+  gap: 1.5em; margin: 0; padding: 0;
+  /* PATCH: allow wrapping on small screens */
+  flex-wrap: wrap;
+}
+.navbar-menu li a {
+  color: white; text-decoration: none; font-weight: bold;
+  font-family: sans-serif; font-size: 1rem;
+}
+.navbar-menu li a:hover { text-decoration: underline; }
+
+/* push page content below fixed navbar */
+body { padding-top: 60px; }
+
+/* Global navbar alignment (your rules kept) */
+#navbar nav { display: flex !important; align-items: center !important; gap: 8px !important; justify-content: flex-start !important; }
+#navbar #userArea { margin-left: auto !important; display: flex !important; align-items: center !important; gap: 8px !important; }
+#navbar #navAvatar { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; }
+/* fallback if your navbar root isn't <nav> */
+#navbar > *:first-child { display: flex !important; align-items: center !important; gap: 8px !important; width: 100%; }
+
+/* hide the old navbar avatar block everywhere */
+#userArea, .brand-pill { display: none !important; }
+
+/* =========================
+   BOTTOM SAFE AREA / STICKY ACTIONS
+   ========================= */
+/* add safe bottom padding so buttons aren’t under the tab bar */
+.page, main, .content { padding-bottom: var(--safe-bottom); }
+/* optional sticky action bar container */
+.sticky-actions {
+  position: sticky; bottom: 0; z-index: 5;
+  background: #fff; padding: 10px; box-shadow: 0 -6px 16px rgba(0,0,0,.08);
+}
+
+/* =========================
+   CHAT
+   ========================= */
+#chat-container {
+  max-width: 600px;
+  margin: 100px auto 40px;
+  padding: 20px;
+  background-color: rgba(255, 255, 255, 0.85);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* unify your duplicate #chat-box styles into one */
+#chat-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+  background: #f0f0f0;
+  border-radius: 10px;
+  height: 300px;     /* you had 400 in one place; 300 fits phones better */
+  overflow-y: auto;
+}
+
+.chat-message {
+  max-width: 70%;
+  padding: 8px;
+  border-radius: 10px;
+  background-color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+}
+.chat-message.sent { align-self: flex-end; background-color: #dcf8c6; }
+.chat-message.received { align-self: flex-start; background-color: #fff; }
+.chat-message .sender { font-weight: bold; margin-bottom: 2px; font-size: 0.85em; }
+.chat-message .message-bubble { font-size: 1em; }
+.chat-message .timestamp { align-self: flex-end; font-size: 0.75em; color: gray; margin-top: 2px; }
+
+#chat-input-container { display: flex; gap: 8px; align-items: center; }
+#chat-input { flex-grow: 1; padding: 10px; font-size: 14px; border-radius: 20px; border: 1px solid #ccc; outline: none; }
+#send-btn { padding: 10px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; }
+
+/* keep the composer visible on phones */
+.chat-input-bar { position: sticky; bottom: 0; background: #fff; padding: 8px; box-shadow: 0 -6px 16px rgba(0,0,0,.08); z-index: 10; }
+/* if the chat page has extra navs, hide them on small screens (no HTML change needed; safe to keep) */
+@media (max-width: 768px) {
+  .chat-page .tabbar, .chat-page .sidebar-menu { display: none; }
+}
+
+/* =========================
+   CALENDAR
+   ========================= */
+/* add gentle side padding so next/prev arrows aren’t clipped */
+.calendar, .calendar-wrap { width: 100%; overflow: hidden; padding-inline: 12px; }
+.calendar-header { display: flex; align-items: center; justify-content: space-between; }
+/* if you have a floating star button */
+.fab { right: 12px; }
+@media (max-width: 480px) { .fab { right: 8px; } }
+
+/* =========================
+   DOCS / FORMS / PANELS (no HTML changes required)
+   ========================= */
+/* big decorations (e.g., the pencil) won’t push layout wider than viewport */
+.decor-pencil { max-width: 25vw; height: auto; }
+
+/* 2-col rows collapse on phones */
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
+
+/* Constrain wide sheets/cards so they don’t exceed viewport */
+.sheet, .card, .form-card, .docs-panel {
+  width: min(100%, 720px);
+  margin-inline: auto;
+  padding-inline: 12px;
+}
+
+/* =========================
+   WEEKLY FOCUS / WIDE PAGES
+   ========================= */
+.weekly-focus, .sheet-card {
+  width: min(100%, 680px);
+  margin-inline: auto;
+  padding-inline: 12px;
+}
+.weekly-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 700px) { .weekly-two-col { grid-template-columns: 1fr; } }
+
+/* =========================
+   HERO IMAGE (home)
+   ========================= */
+.hero-star {
+  display: block;
+  max-width: 1000px;
+  margin: 16px auto 12px;   /* center it */
+  padding: 0 12px;          /* small side breathing room */
+}
+.hero-star img {
+  width: 100%;
+  height: auto;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.18);
+}
+
+
+/* Utility */
+.avatar { width: 32px; height: 32px; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
+.bubble { display: flex; align-items: center; gap: 8px; }
+/* Hide ONLY the floating Group Settings button (desktop + mobile) */
+#avatar-float,
+a[href$="group_settings.html"],
+a[href*="group_settings.html"] {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+/* (Safety) keep other avatars visible */
+#navAvatar,
+.avatar,
+.chat-avatar,
+.profile-avatar {
+  display: inline-block; /* or remove this block if not needed */
+}
+/* Home page rails: center and keep off the edges */
+.home-rail, .home-card, .home-section, .pill-row {
+  width: min(100%, 680px);
+  margin: 12px auto;
+  padding-inline: 12px;
+}
+
+/* Make any pill/button rows wrap nicely on small screens */
+.pill-row { display: flex; flex-wrap: wrap; gap: 10px; }
+
+/* Slight top breathing room under the app bar */
+body.default-page { padding-top: 8px; }
+
+/* Keep the hero centered and not too wide */
+.hero-star { max-width: 960px; margin: 16px auto 12px; padding: 0 12px; }
+.hero-star img { width: 100%; height: auto; }
+/* Home: add comfortable side gutters on all content */
+body.default-page {
+  padding-top: 8px;             /* a little space below the app bar */
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+/* Home: center typical content containers and cap width */
+body.default-page main,
+body.default-page .container,
+body.default-page .content,
+body.default-page .sections,
+body.default-page .home,
+body.default-page #home {
+  width: min(100%, 680px);
+  margin-inline: auto;
+}
+
+/* If your rails are just plain <div> siblings, this caps them too */
+@media (max-width: 900px) {
+  body.default-page > :not(#navbar):not(.navbar):not([data-appbar])
+                     :not(#tabbar):not(.tabbar) {
+    max-width: 680px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+/* Home layout (pairs with <main class="home-wrap">) */
+.home-page {
+  padding-top: 8px;          /* little space under the top bar */
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+.home-wrap {
+  width: min(100%, 680px);   /* cap width on phone/tablet */
+  margin: 12px auto;         /* center horizontally */
+  padding-inline: 12px;      /* keep rails off the edges */
+}
+
+/* allow a bit wider on large screens */
+@media (min-width: 900px) {
+  .home-wrap { max-width: 840px; }
+}
+/* ---- Home buttons layout ---- */
+.home-inner .category-row{
+  display: grid;
+  grid-template-columns: 1fr 1fr;  /* two-up */
+  gap: 14px;
+  align-items: stretch;
+}
+
+/* make top "Feelings" pill span full width */
+.home-inner #feelingsBtn { grid-column: 1 / -1; }
+
+/* if you don't have id="feelingsBtn", this fallback spans the first pill */
+.home-inner .category-row.top .category-btn:first-child { grid-column: 1 / -1; }
+
+.home-inner .category-btn.card{
+  width: 100%;                 /* fill its grid cell */
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 8px 20px rgba(0,0,0,.12);
+  border: 2px solid #f1c655;   /* your yellow rim */
+}
+
+.home-inner .category-btn .emoji{ margin-right: 10px; }
+.home-inner .category-btn .txt  { font-weight: 800; font-size: 1.05rem; }
+
+/* tidy spacing around the “Check In” heading */
+#checkin-title { text-align:center; margin: 10px 0 8px; }
+
+@media (max-width: 430px){
+  /* stack if the phone is very narrow */
+  .home-inner .category-row{ grid-template-columns: 1fr; }
+}
+/* ==== Caregiver One-Page PDF (screen + pdf) ==== */
+.cgpdf{
+  width: 816px;                 /* ~Letter width (with margins) */
+  max-width: 100%;
+  margin: 16px auto;
+  background:#fff;
+  color:#111827;
+  font: 12.5px/1.35 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  padding: 22px;
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.08);
+}
+.cgpdf .hdr{ text-align:center; font-weight:900; font-size:28px; margin: 2px 0 6px; }
+.cgpdf .sub{ text-align:center; color:#6b7280; margin-bottom: 10px; }
+.cgpdf .sec{ border:2px dashed #e5e7eb; border-radius: 12px; padding: 12px; margin: 10px 0; }
+.cgpdf .sec h4{ margin:0 0 6px; font-size:14px; }
+.cgpdf .grid2{ display:grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; }
+.cgpdf .row label{ color:#374151; font-weight:800; display:block; }
+.cgpdf .row .val{ white-space:pre-wrap; word-break:break-word; }
+.cgpdf .notes{ border:1px solid #e5e7eb; border-radius:8px; padding:8px; background:#fafafa; }
+.cgpdf .attachments{ margin-top:6px; }
+
+/* Print fallback (if you press Cmd/Ctrl+P on preview) */
+@media print{
+  body *{ visibility:hidden !important; }
+  #cgOnePdf, #cgOnePdf *{ visibility:visible !important; }
+  #cgOnePdf{ display:block !important; position:relative !important; inset:auto !important; box-shadow:none !important; }
+}
+/* GLOBAL: hide the inline Menu dropdown that sits under the app bar */
+body > details,
+#navbar + details,
+#navbar-container + details {
+  display: none !important;
+}
+
+/* remove any gap if the script left spacing after that details */
+body > details + * {
+  margin-top: 0 !important;
+}
+/* collapse any gap where that inline <details> used to sit */
+body > details + * { margin-top: 0 !important; }
+#navMenu { display: none !important; }
+#navMenu + * { margin-top: 0 !important; } /* collapse any gap */

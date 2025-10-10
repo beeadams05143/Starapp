@@ -1,0 +1,122 @@
+body {
+  font-family: 'Comic Sans MS', 'Chalkboard SE', cursive;
+  margin: 0;
+  padding: 2rem;
+  background-color: #fefae0;
+  color: #333;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  background: #fff;
+  padding: 2rem;
+  border-radius: 20px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.1);
+}
+
+h1 {
+  text-align: center;
+  font-size: 2.5rem;
+  margin-bottom: 2rem;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+fieldset {
+  border: 2px dashed #ccc;
+  border-radius: 15px;
+  padding: 1.5rem;
+}
+
+legend {
+  font-weight: bold;
+  font-size: 1.2rem;
+  padding: 0 10px;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+}
+
+input[type="number"],
+input[type="text"],
+input[type="time"],
+select,
+textarea {
+  padding: 0.5rem;
+  font-size: 1rem;
+  border: 1px solid #aaa;
+  border-radius: 8px;
+  margin-top: 0.25rem;
+}
+
+input[type="range"] {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+input[type="file"] {
+  margin-top: 0.5rem;
+}
+
+button {
+  font-size: 1.2rem;
+  background-color: #90be6d;
+  color: white;
+  padding: 1rem;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  align-self: center;
+  width: 200px;
+}
+
+button:hover {
+  background-color: #74a151;
+}
+/* Fix form layout */
+form {
+  max-width: 600px;
+  margin: auto;
+}
+
+/* Fix for each label+input pair to stack nicely */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1.5rem;
+}
+
+/* Inputs, selects, textareas should fill width */
+input[type="text"],
+select,
+textarea {
+  width: 100%;
+  padding: 0.5rem;
+  font-size: 1rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+/* Add some padding inside fieldsets */
+fieldset {
+  padding: 1rem;
+  border: 2px dashed #ccc;
+  border-radius: 10px;
+  margin-bottom: 2rem;
+}
+
+/* Headings */
+legend {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}

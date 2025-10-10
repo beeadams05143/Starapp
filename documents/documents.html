@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Documents</title>
+  <style>
+    :root{ --ink:#1f2937; --accent:#f59e0b; --paper:#fffdfa; --rule:#e5e7eb; --punch:#d1d5db; }
+    *{box-sizing:border-box}
+    body{margin:0; padding:24px; font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial; background:#fafaf9; color:var(--ink);}
+    .page{max-width:1200px; margin:0 auto; display:grid; grid-template-columns: 1fr 220px; gap:18px;}
+
+    /* Notebook */
+    .notebook{position:relative; border-radius:18px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,.08); display:grid; grid-template-columns:1fr 110px; background:var(--paper)}
+    .paper{
+      padding:24px 24px 28px 42px; position:relative;
+      background:
+        linear-gradient(90deg,transparent 38px, rgba(239,68,68,.25) 39px, transparent 40px) 0 0/100% 100%,
+        repeating-linear-gradient(#0000, #0000 30px, var(--rule) 31px);
+    }
+    .paper:before{content:""; position:absolute; left:14px; top:24px; bottom:24px; width:8px;
+      background:radial-gradient(var(--punch) 60%, transparent 62%) 0 0/100% 48px repeat-y; border-radius:8px;}
+    .rail{display:flex; align-items:center; justify-content:center; background:linear-gradient(180deg,#fff,#f8fafc); border-left:1px solid #e5e7eb}
+    .pencil{width:56px; height:320px; filter:drop-shadow(0 8px 18px rgba(0,0,0,.15))}
+    h1{margin:0 0 12px}
+    label{display:block; font-weight:600; margin:6px 0 6px}
+    input[type="text"], input[type="datetime-local"], select, textarea{
+      width:100%; padding:10px 12px; border:1px solid #e5e7eb; border-radius:10px; font-size:16px; background:#fff; outline:none;
+    }
+    textarea{min-height:140px; line-height:30px;
+      background:linear-gradient(#0000, #0000 29px, rgba(37,99,235,.08) 30px) 0 0/100% 30px repeat-y;
+    }
+    .grid2{display:grid; gap:12px; grid-template-columns:1fr 1fr}
+    .divider{height:1px; background:#f1f5f9; margin:16px 0}
+    .btn{appearance:none; border:1px solid #e5e7eb; background:#111; color:#fff; padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:600}
+    .btn.secondary{background:#fff; color:#111}
+    .muted{color:#6b7280; font-size:13px}
+    .card{border:1px solid #e5e7eb; border-radius:12px; padding:12px; margin-top:10px; background:#fff}
+    .row{display:flex; gap:8px; align-items:center; justify-content:space-between}
+
+    /* Right-side binder tabs */
+.tabs{
+  position:sticky; top:18px;
+  display:flex; flex-direction:column; gap:12px;    /* <- use gap, not margins */
+  height:max-content;
+  padding:12px;
+  border:1px solid #e5e7eb; border-radius:12px; background:#fff;
+}
+
+/* Shared pill styles for both buttons and links */
+.tabbtn, .tablink{
+  display:block; width:100%;
+  text-align:right;
+  padding:12px 14px;
+  border:1px solid #e5e7eb; border-radius:999px;
+  background:#fff;
+  cursor:pointer; font-weight:700;
+  line-height:1.1; min-height:46px;                 /* consistent height */
+  margin:0;                                         /* remove old margins */
+  text-decoration:none;
+}
+
+.tabbtn:hover, .tablink:hover{ transform:translateX(2px) }
+
+.tabbtn.active, .tablink.active, .active-link{
+  background:#111; color:#fff !important; border-color:#111;
+}
+
+/* Ensure visited links don't turn purple, but keep active white text */
+.tabbtn:not(.active), .tabbtn:not(.active):visited,
+.tablink:not(.active), .tablink:not(.active):visited{
+  color:#111 !important;
+}
+
+/* Optional: keep pills tidy on very narrow screens */
+@media (max-width: 420px){
+  .tabs{ position:static; }
+}
+
+
+    /* Hide Group switcher (navbar) on docs pages */
+    #group-switcher, label[for="group-switcher"], #groupSwitcherStatus { display:none !important; }
+  </style>
+</head>
+<body>
+  <!-- Shared navbar -->
+  <div id="navbar"></div>
+
+  <div class="page">
+    <!-- Main content -->
+    <div>
+      <div class="notebook">
+        <div class="paper">
+          <h1 id="formHeading">Add Document — <span id="catLabel">Finance</span></h1>
+
+          <form id="doc-form-pretty">
+            <input type="hidden" id="docCategory" value="Finance" />
+
+            <div class="grid2">
+              <div>
+                <label for="docTitle">Title</label>
+                <input id="docTitle" type="text" placeholder="e.g., Invoice 1032 / Guardianship Renewal" />
+              </div>
+              <div>
+                <label for="docDate">Document Date</label>
+                <input id="docDate" type="datetime-local" />
+              </div>
+            </div>
+
+            <div class="grid2" style="margin-top:8px">
+              <div>
+                <label for="docType">Type</label>
+                <select id="docType">
+                  <option value="upload">Upload (General)</option>
+                  <option value="appointment_notes">Appointment Notes</option>
+                  <option value="email">Email</option>
+                  <option value="text">Text</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label for="docTags">Tags (comma separated)</label>
+                <input id="docTags" type="text" placeholder="medical, school, ISA" />
+              </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <label for="docDescription">Description / Notes</label>
+            <textarea id="docDescription" placeholder="Short description or notes…"></textarea>
+
+            <!-- Medical-only extras (shows when the Medical tab is active) -->
+            <div id="medicalExtras" style="display:none">
+              <div class="divider"></div>
+              <h3 style="margin:0 0 8px">Medical Details</h3>
+
+              <div class="grid2">
+                <div>
+                  <label for="medicalNextDate">Next Appointment Date/Time</label>
+                  <input id="medicalNextDate" type="datetime-local" />
+                </div>
+                <div>
+                  <label for="medicalNextLink">Meeting Link (Telehealth)</label>
+                  <input id="medicalNextLink" type="text" placeholder="https://zoom.us/... or https://teams.microsoft.com/..." />
+                </div>
+              </div>
+
+              <label for="medicalNotes" style="margin-top:8px">Appointment Notes / Instructions</label>
+              <textarea id="medicalNotes" placeholder="e.g., No allergy medication two weeks prior; bring ID & insurance card…"></textarea>
+            </div>
+
+            <label for="docFile" class="section" style="margin-top:8px">Attach File (optional)</label>
+            <input id="docFile" type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.heic" />
+            <div class="muted">Files are private; the app uses time-limited links for viewing.</div>
+
+            <div style="margin-top:14px">
+              <button class="btn" type="submit">Save Document</button>
+              <button class="btn secondary" type="reset">Clear</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="rail" aria-hidden="true">
+          <!-- Pencil -->
+          <svg class="pencil" viewBox="0 0 80 460" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="wood" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#f5deb3"/><stop offset="1" stop-color="#e9c999"/></linearGradient></defs>
+            <rect x="10" y="0" width="60" height="70" rx="8" fill="#fca5a5"/>
+            <rect x="10" y="68" width="60" height="10" fill="#9ca3af"/>
+            <rect x="10" y="78" width="60" height="310" fill="#f59e0b"/>
+            <rect x="18" y="78" width="44" height="310" fill="#fbbf24" opacity=".6"/>
+            <polygon points="10,388 70,388 40,458" fill="url(#wood)"/>
+            <polygon points="26,420 54,420 40,458" fill="#111"/>
+          </svg>
+        </div>
+      </div>
+
+      <h2 style="margin-top:22px"><span id="catListLabel">Finance</span> Documents</h2>
+      <div id="docs-list"></div>
+    </div>
+
+    <!-- Right-side tabs -->
+    <aside class="tabs">
+      <!-- Utility -->
+      <a class="tablink" href="/index.html">🏠 Home</a>
+      <a class="tablink active-link" href="./documents.html">📂 Documents</a>
+
+      <!-- Categories -->
+      <button class="tabbtn active" data-cat="Finance">Finance</button>
+      <button class="tabbtn" data-cat="Medical">Medical</button>
+      <button class="tabbtn" data-cat="HR">HR</button>
+      <button class="tabbtn" data-cat="Caregiving">Caregiving</button>
+      <button class="tabbtn" data-cat="ISA">ISA</button>
+      <button class="tabbtn" data-cat="Year End Paperwork">Year End Paperwork</button>
+      <button class="tabbtn" data-cat="Guardianship">Guardianship</button>
+
+      <!-- Minutes -->
+      
+<a class="tabbtn active" id="minutesTab" href="./minutes-form.html">📝 Meeting Minutes</a>
+
+    </aside>
+  </div>
+
+ <!-- documents page logic (module) -->
+<script type="module" src="/documents/documents.js"></script>
+
+<!-- site shell: drawer + bars + floating avatar  -->
+<script defer src="/scripts/appbar-drawer.js"></script>
+<script defer src="/ui-shell.js"></script>
+<script type="module" src="/avatar-float.js"></script>
+

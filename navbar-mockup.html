@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>STAR App – Simplified Nav Mockup</title>
+  <style>
+    :root{
+      --bg: #fffaf4;
+      --paper:#f7efe4;
+      --ink:#2a2420;
+      --accent:#5f4b32; /* warm brown */
+      --brand:#a37c49;  /* button/border */
+      --focus:#4a90e2;
+      --shadow: 0 8px 24px rgba(0,0,0,.08);
+      --radius: 16px;
+    }
+    html,body{height:100%}
+    body{
+      margin:0; background:var(--bg); color:var(--ink);
+      font-family: ui-rounded, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+    }
+    /* --- Top App Bar --- */
+    .appbar{position:sticky; top:0; z-index:50; display:flex; align-items:center; gap:.75rem; background:var(--paper); box-shadow:var(--shadow); padding:.75rem 1rem}
+    .iconbtn{appearance:none; background:#fff; border:1px solid #e8e0d4; border-radius:12px; padding:.6rem .7rem; font-size:1.1rem; cursor:pointer}
+    .iconbtn:focus-visible{outline:3px solid var(--focus); outline-offset:2px}
+    .title{font-weight:700; letter-spacing:.2px}
+
+    /* --- Drawer / Dropdown (grouped) --- */
+    .overlay{position:fixed; inset:0; background:rgba(0,0,0,.35); opacity:0; pointer-events:none; transition:opacity .18s ease}
+    .overlay.show{opacity:1; pointer-events:auto}
+    .drawer{position:fixed; left:0; top:0; bottom:0; width:min(86vw,380px); background:#fff; box-shadow:var(--shadow); border-right:1px solid #efe7db; transform:translateX(-102%); transition:transform .22s ease; overflow:auto}
+    .overlay.show .drawer{transform:none}
+    .drawer header{padding:1rem 1rem .25rem; font-weight:800; color:var(--accent)}
+    .group{border-top:1px dashed #eadfce; padding:.5rem 0}
+    .group h3{font-size:.9rem; font-weight:800; margin:.5rem 1rem; color:var(--brand); text-transform:uppercase; letter-spacing:.08em}
+    .navlist{list-style:none; margin:0; padding:0}
+    .navlist a{display:flex; align-items:center; gap:.75rem; padding:.8rem 1rem; text-decoration:none; color:inherit}
+    .navlist a:hover{background:#faf6f0}
+
+    /* Collapsible subsections */
+    details{border-top:1px dashed #efe3d3}
+    details summary{list-style:none; cursor:pointer; padding:.9rem 1rem; display:flex; align-items:center; gap:.75rem; font-weight:700}
+    details[open] summary{background:#faf6f0}
+    details summary::-webkit-details-marker{display:none}
+    .sub a{padding:.7rem 2.6rem}
+
+    /* --- Bottom Tab Bar --- */
+    .tabbar{position:fixed; bottom:0; left:0; right:0; z-index:40; background:#fff; border-top:1px solid #e9dfd1; box-shadow: 0 -8px 24px rgba(0,0,0,.04)}
+    .tabs{display:grid; grid-template-columns: repeat(5, 1fr);}
+    .tab{appearance:none; background:none; border:0; padding:.6rem .4rem .75rem; font-size:.85rem; display:flex; flex-direction:column; align-items:center; gap:.2rem; cursor:pointer}
+    .tab:focus-visible{outline:3px solid var(--focus); outline-offset:-2px}
+    .tab .ico{font-size:1.25rem}
+    .tab.active{color:var(--brand); font-weight:700}
+
+    /* Floaty quick-checkin sheet */
+    .sheet{position:fixed; left:50%; transform:translateX(-50%); bottom:74px; background:#fff; border:1px solid #ecdcc5; border-radius:var(--radius); box-shadow:var(--shadow); width:min(92vw,520px); padding:.6rem; display:none}
+    .sheet.show{display:block}
+    .sheet h4{margin:.2rem .6rem .4rem; font-size:.95rem; color:var(--accent)}
+    .sheet .row{display:flex; gap:.5rem; padding:.4rem}
+    .chip{flex:1; padding:.85rem; border:1px solid #e9dfd1; border-radius:12px; background:#fff; display:flex; align-items:center; gap:.55rem; justify-content:center; cursor:pointer}
+    .chip:hover{background:#faf6f0}
+
+    /* Demo page content wrapper so you can see scrolling with fixed bars */
+    main{padding:1rem; padding-bottom:96px}
+    .card{background:#fff; border:1px solid #f0e6d6; border-radius:var(--radius); padding:1rem; box-shadow:var(--shadow)}
+
+    @media (min-width: 860px){
+      /* On wider screens you might keep bottom nav but also show a slim side rail */
+      .appbar{padding:1rem 1.2rem}
+      .tabbar{left: max(240px, 10vw)}
+    }
+    @media (prefers-reduced-motion: reduce){
+      *{transition:none !important}
+    }
+  </style>
+</head>
+<body>
+  <!-- Top bar -->
+  <div class="appbar" role="banner">
+    <button class="iconbtn" id="openMenu" aria-label="Open menu" aria-controls="appDrawer" aria-expanded="false">☰</button>
+    <div class="title">⭐️ STAR App</div>
+  </div>
+
+  <!-- Drawer overlay + grouped menu -->
+  <div class="overlay" id="drawerOverlay" aria-hidden="true">
+    <nav class="drawer" id="appDrawer" aria-label="Main">
+      <header>Menu</header>
+
+      <div class="group">
+        <ul class="navlist">
+          <li><a href="home.html">🏠 Home</a></li>
+        </ul>
+      </div>
+
+      <details>
+        <summary>📝 Check‑Ins</summary>
+        <div class="sub">
+          <a href="moodchecker_with_other_moods.html">😊 Individual Check‑In</a>
+          <a href="caregiver-checkin.html">👥 Caregiver Check‑In</a>
+        </div>
+      </details>
+
+      <details>
+        <summary>📊 Reports</summary>
+        <div class="sub">
+          <a href="dashboard.html">📋 Dashboard</a>
+          <a href="caregiver-report.html">📈 Reports</a>
+          <a href="focus-week.html">📝 Weekly Focus</a>
+          <a href="meeting-minutes.html">🗒️ Meeting Minutes</a>
+        </div>
+      </details>
+
+      <details>
+        <summary>ℹ️ Info & Admin</summary>
+        <div class="sub">
+          <a href="emergency-medical.html">🚑 Emergency Info</a>
+          <a href="profile.html">👱 Profile</a>
+          <a href="documents.html">📁 Documents</a>
+          <a href="login.html">🔑 Log In</a>
+        </div>
+      </details>
+
+      <div class="group">
+        <ul class="navlist">
+          <li><a href="group-chat.html">💬 Group Chat</a></li>
+        </ul>
+      </div>
+
+    </nav>
+  </div>
+
+  <!-- Demo content -->
+  <main>
+    <div class="card">
+      <h2>Welcome</h2>
+      <p>This mockup shows a simplified, grouped navigation with a bottom tab bar for the 3–5 highest‑priority actions. You can drop this snippet into any page and adjust hrefs as needed.</p>
+    </div>
+  </main>
+
+  <!-- Bottom tabs: HIGH PRIORITY (adjust to your needs) -->
+  <div class="tabbar" role="navigation" aria-label="Primary">
+    <div class="tabs">
+      <button class="tab active" data-link="home.html"><div class="ico">🏠</div><div>Home</div></button>
+      <button class="tab" id="tabCheckin"><div class="ico">📝</div><div>Check‑In</div></button>
+      <button class="tab" data-link="caregiver-report.html"><div class="ico">📈</div><div>Reports</div></button>
+      <button class="tab" data-link="group-chat.html"><div class="ico">💬</div><div>Chat</div></button>
+      <button class="tab" data-link="emergency-medical.html"><div class="ico">🚑</div><div>Emergency</div></button>
+    </div>
+  </div>
+
+  <!-- Quick check-in sheet (lets user choose which check-in) -->
+  <div class="sheet" id="checkinSheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <h4 id="sheetTitle">Start a check‑in</h4>
+    <div class="row">
+      <a class="chip" href="moodchecker_with_other_moods.html">😊 Individual Check‑In</a>
+      <a class="chip" href="caregiver-checkin.html">👥 Caregiver Check‑In</a>
+    </div>
+  </div>
+
+  <script>
+    const overlay = document.getElementById('drawerOverlay');
+    const openBtn = document.getElementById('openMenu');
+    const checkinSheet = document.getElementById('checkinSheet');
+    const tabCheckin = document.getElementById('tabCheckin');
+
+    function openDrawer(){
+      overlay.classList.add('show');
+      overlay.setAttribute('aria-hidden','false');
+      openBtn.setAttribute('aria-expanded','true');
+    }
+    function closeDrawer(){
+      overlay.classList.remove('show');
+      overlay.setAttribute('aria-hidden','true');
+      openBtn.setAttribute('aria-expanded','false');
+    }
+
+    // Open/close drawer
+    openBtn.addEventListener('click', openDrawer);
+    overlay.addEventListener('click', (e)=>{ if(e.target===overlay) closeDrawer(); });
+    window.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ closeDrawer(); hideSheet(); }});
+
+    // Bottom tab links
+    document.querySelectorAll('.tab[data-link]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{ window.location.href = btn.dataset.link; });
+    });
+
+    // Quick check-in sheet
+    function toggleSheet(){ checkinSheet.classList.toggle('show'); }
+    function hideSheet(){ checkinSheet.classList.remove('show'); }
+    tabCheckin.addEventListener('click', toggleSheet);
+
+    // Optional: close sheet on outside click
+    document.addEventListener('click', (e)=>{
+      if(checkinSheet.classList.contains('show')){
+        const within = checkinSheet.contains(e.target) || e.target===tabCheckin;
+        if(!within) hideSheet();
+      }
+    });
+  </script>
+</body>
+</html>

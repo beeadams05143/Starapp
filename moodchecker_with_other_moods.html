@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daily Mood Tracker</title>
+  <!-- FORCE categories-first + set heading -->
+<script>
+(function () {
+  const params = new URLSearchParams(window.location.search);
+  // try URL first, then sessionStorage (from home.html)
+  let cat = params.get('category') || sessionStorage.getItem('checkinCategory');
+
+  // if user came here directly, send them to pick a category
+  if (!cat) {
+    window.location.replace('home.html');
+    return; // stop loading the page
+  }
+
+  // remember selection for this tab/session
+  sessionStorage.setItem('checkinCategory', cat);
+
+  // pretty label + update heading once DOM is ready
+  const NAMES = { feelings: 'Feelings', body: 'Body', work: 'Work', fun: 'Fun', community: 'Community' };
+  const nice = NAMES[cat] || cat;
+
+  document.addEventListener('DOMContentLoaded', () => {
+    // your h2 id is #category-title (from your screenshot)
+    const h2 = document.getElementById('category-title');
+    if (h2) h2.textContent = `How are you feeling about ${nice} today?`;
+  });
+})();
+</script>
+
+  <link href="style.css" rel="stylesheet" />
+</head>
+
+<body class="plain-page">
+  <!-- ✅ Navbar mounts here (id must be "navbar" to match load-navbar.js) -->
+  
+
+  <div id="wrapper">
+    <h1>🌞 Daily Mood Check-In</h1>
+    <h2 id="category-title">How are you feeling today?</h2>
+
+    <form id="mood-form">
+      <div class="mood-group group-positive">
+        <div class="mood-header">Positive Moods</div>
+        <div class="mood-grid">
+          <div class="mood-btn" data-value="😊 Happy"><span>😊</span><div class="label">Happy</div></div>
+          <div class="mood-btn" data-value="🏅 Proud"><span>🏅</span><div class="label">Proud</div></div>
+          <div class="mood-btn" data-value="😎 Cool"><span>😎</span><div class="label">Cool</div></div>
+          <div class="mood-btn" data-value="❤️ Loved"><span>❤️</span><div class="label">Loved</div></div>
+        </div>
+      </div>
+
+      <div class="mood-group group-neutral">
+        <div class="mood-header">Neutral / Low Energy</div>
+        <div class="mood-grid">
+          <div class="mood-btn" data-value="🙂 OK"><span>🙂</span><div class="label">OK</div></div>
+          <div class="mood-btn" data-value="😐 Neutral"><span>😐</span><div class="label">Neutral</div></div>
+          <div class="mood-btn" data-value="😑 Bored"><span>😑</span><div class="label">Bored</div></div>
+          <div class="mood-btn" data-value="😴 Tired"><span>😴</span><div class="label">Tired</div></div>
+          <div class="mood-btn" data-value="😕 Confused"><span>😕</span><div class="label">Confused</div></div>
+        </div>
+      </div>
+
+      <div class="mood-group group-challenging">
+        <div class="mood-header">Challenging Moods</div>
+        <div class="mood-grid">
+          <div class="mood-btn" data-value="😰 Anxious"><span>😰</span><div class="label">Anxious</div></div>
+          <div class="mood-btn" data-value="😟 Worried"><span>😟</span><div class="label">Worried</div></div>
+          <div class="mood-btn" data-value="😨 Scared"><span>😨</span><div class="label">Scared</div></div>
+          <div class="mood-btn" data-value="😡 Mad"><span>😡</span><div class="label">Mad</div></div>
+          <div class="mood-btn" data-value="😤 Frustrated"><span>😤</span><div class="label">Frustrated</div></div>
+          <div class="mood-btn" data-value="😢 Sad"><span>😢</span><div class="label">Sad</div></div>
+          <div class="mood-btn" data-value="😭 Crying"><span>😭</span><div class="label">Crying</div></div>
+          <div class="mood-btn" data-value="🤒 Sick"><span>🤒</span><div class="label">Sick</div></div>
+          <div class="mood-btn" data-value="🤢 Nauseous"><span>🤢</span><div class="label">Nauseous</div></div>
+          <div class="mood-btn" data-value="🤕 Headache"><span>🤕</span><div class="label">Headache</div></div>
+          <div class="mood-btn" data-value="🤧 Sick"><span>🤧</span><div class="label">Sick</div></div>
+          <div class="mood-btn" data-value="❓ I Don't Know"><span>❓</span><div class="label">I Don't Know</div></div>
+        </div>
+      </div>
+
+      <div class="mood-group" style="background-color:#f5eaff;border-radius:12px;padding:20px;margin-top:20px;">
+        <div class="mood-header" style="color:#5b3d5e;font-weight:bold;text-align:center;">Other Moods</div>
+        <div class="mood-grid" style="justify-content:center;">
+          <div class="mood-btn" data-value="🍽️ Hungry"><span>🍽️</span><div class="label">Hungry</div></div>
+          <div class="mood-btn" data-value="🥤 Thirsty"><span>🥤</span><div class="label">Thirsty</div></div>
+        </div>
+      </div>
+
+      <label for="intensity">How strong is the feeling?</label>
+      <input id="intensity" type="range" min="1" max="5" step="1" value="3"/>
+      <span id="intensity-value">3</span>
+
+      <label for="note">Notes (optional):</label>
+      <input id="note" type="text" placeholder="Anything to add?" />
+
+      <p><strong>Date:</strong> <span id="current-date"></span></p>
+      <p><strong>Time:</strong> <span id="current-time"></span></p>
+
+      <button type="submit">Check In</button>
+    </form>
+  </div> <!-- END #wrapper -->
+
+  <audio id="cheer-sound" src="applause.m4a"></audio>
+
+  <!-- libs -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <!-- Set title context + date/time early -->
+  <script>
+    const selectedCategory = localStorage.getItem("selectedCategory");
+    document.getElementById("category-title").textContent =
+      selectedCategory
+        ? `How are you feeling about ${selectedCategory} today?`
+        : "How are you feeling today?";
+
+    function updateDateTimeDisplay() {
+      const now = new Date();
+      document.getElementById("current-date").textContent = now.toLocaleDateString();
+      document.getElementById("current-time").textContent = now.toLocaleTimeString();
+    }
+    updateDateTimeDisplay();
+  </script>
+
+ <!-- App logic LAST -->
+<script type="module" src="./script.js"></script>
+
+<!-- ✅ Original hamburger menu + bottom tabbar -->
+<script defer src="./scripts/appbar-drawer.js"></script>
+<script defer src="./ui-shell.js"></script>
+
+<!-- Floating avatar (optional) -->
+<script type="module" src="./avatar-float.js"></script>
+
+</body>
+</html>

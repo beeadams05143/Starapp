@@ -1,0 +1,32 @@
+<!-- Bottom Tab Bar: include on ALL pages -->
+<div class="tabbar" role="navigation" aria-label="Primary">
+  <div class="tabs tabs--six">
+    <button class="tab" data-link="index.html" data-key="home">
+      <div class="ico">🏠</div><div>Home</div>
+    </button>
+    <button class="tab" id="tabCheckin" data-key="checkin">
+      <div class="ico">📝</div><div>Check-In</div>
+    </button>
+    <button class="tab" data-link="caregiver-report.html" data-key="reports">
+      <div class="ico">📈</div><div>Reports</div>
+    </button>
+    <button class="tab" data-link="documents.html" data-key="documents">
+      <div class="ico">📂</div><div>Docs</div>
+    </button>
+    <button class="tab" data-link="group-chat.html" data-key="chat">
+      <div class="ico">💬</div><div>Chat</div>
+    </button>
+    <button class="tab" data-link="emergency-medical.html" data-key="emergency">
+      <div class="ico">🚑</div><div>Emergency</div>
+    </button>
+  </div>
+</div>
+
+<!-- Quick check-in chooser -->
+<div class="sheet" id="checkinSheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+  <h4 id="sheetTitle">Start a check-in</h4>
+  <div class="row">
+    <a class="chip" href="moodchecker_with_other_moods.html">😊 Individual Check-In</a>
+    <a class="chip" href="caregiver-checkin.html">👥 Caregiver Check-In</a>
+  </div>
+</div>

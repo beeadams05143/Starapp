@@ -1,0 +1,91 @@
+body {
+  background: url('STAR1.jpg') no-repeat center center fixed;
+  background-size: cover;
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.chat-container {
+  max-width: 600px;
+  margin: 6rem auto 2rem auto; /* adds space for the navbar */
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 1rem;
+  font-size: 1.6rem;
+  color: #333;
+}
+
+.chat-box {
+  height: 300px;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 1rem;
+  background: #f7f7f7;
+  margin-bottom: 1rem;
+}
+
+.chat-input-container {
+  display: flex;
+  gap: 0.5rem;
+}
+
+#chat-input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+#send-btn {
+  padding: 0 1.25rem;
+  background-color: #4CAF50;
+  color: white;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+#send-btn:hover {
+  background-color: #45a049;
+}
+
+.message {
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  max-width: 80%;
+}
+
+.message.you {
+  align-self: flex-end;
+  text-align: right;
+}
+
+.message.other {
+  align-self: flex-start;
+  text-align: left;
+}
+
+.bubble {
+  display: inline-block;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  background-color: #e0ffe0;
+  color: #333;
+  word-wrap: break-word;
+  max-width: 100%;
+}
+
+.message.you .bubble {
+  background-color: #cce5ff;
+}

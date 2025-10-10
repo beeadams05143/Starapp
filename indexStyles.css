@@ -1,0 +1,91 @@
+/* === indexStyles.css — Home (index.html) ONLY === */
+:root {
+  --appbar-h: 56px;
+  --bottombar-h: 72px;
+}
+
+/* Page background: STAR image */
+body {
+  /* STAR1.jpg should be next to index.html; adjust path if moved */
+  background-image: url('STAR1.jpg') !important;
+  background-size: cover !important;
+  background-position: center center !important;
+  background-repeat: no-repeat !important;
+  background-attachment: fixed;
+  /* Ensure content is visible (global CSS may hide overflow) */
+  overflow-y: auto !important;
+  min-height: 100vh;
+  padding-top: var(--appbar-h);
+  padding-bottom: var(--bottombar-h);
+}
+
+/* ---------- TOP NAVBAR (dark, fixed) ---------- */
+.appbar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  display: flex; align-items: center; gap: 12px;
+  width: 100% !important; max-width: none !important;
+  padding: 10px 16px; margin: 0 !important;
+  background: #111 !important; color: #fff !important;
+  border: 0 !important; border-radius: 0 !important;
+  box-shadow: none !important; transform: none !important;
+}
+.appbar:hover, .appbar:focus-within { box-shadow: none !important; transform: none !important; }
+.appbar .iconbtn{
+  appearance: none; border: 0; background: #222 !important; color: #fff !important;
+  font-size: 20px; line-height: 1; padding: 8px 10px; border-radius: 10px; box-shadow: none !important;
+}
+.appbar .brand .title { color: #fff !important; font-weight: 800; }
+
+/* Hint under the bar */
+.nav-hint { margin-top: 8px; }
+
+/* ---------- BOTTOM TABS (fixed, dark) ---------- */
+#bottom-tabs,
+.bottom-tabs,
+.tabs.tabs--six {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 999;
+  background: #111 !important; color: #fff !important;
+  border-top: 2px solid #000 !important;
+  border-radius: 0 !important; box-shadow: none !important; backdrop-filter: none !important;
+}
+#bottom-tabs *, .bottom-tabs *,
+.tabs.tabs--six *, .tabs.tabs--six .tabs__wrap, .tabs.tabs--six .tabs__bar,
+.tabs.tabs--six .tabs__container, .tabs.tabs--six .tabs__inner, .tabs.tabs--six .tabs-bg {
+  background: transparent !important; box-shadow: none !important; border-radius: 0 !important;
+}
+#bottom-tabs a, #bottom-tabs button,
+.bottom-tabs a, .bottom-tabs button,
+.tabs.tabs--six a, .tabs.tabs--six button { color: #ddd !important; }
+#bottom-tabs a:hover, #bottom-tabs button:hover,
+.bottom-tabs a:hover, .bottom-tabs button:hover,
+.tabs.tabs--six a:hover, .tabs.tabs--six button:hover,
+.tabs.tabs--six .active, .tabs.tabs--six [aria-current="page"] {
+  color: #fff !important; background: #222 !important; border-radius: 10px;
+}
+
+/* ---------- Drawer overlay: open below the app bar ---------- */
+#drawerOverlay,
+.overlay {
+  position: fixed !important;
+  top: var(--appbar-h) !important;
+  left: 0; right: 0; bottom: 0;
+  z-index: 900; /* below .appbar (1000) */
+}
+#drawerOverlay .drawer,
+.overlay .drawer {
+  top: var(--appbar-h) !important;
+  max-height: calc(100vh - var(--appbar-h)) !important;
+  margin-top: 0 !important;
+}
+
+/* Hide legacy "STAR pill" UI if any old code injects it */
+.start-container, .star-container, .star-card, .star-emoji, .star-text, .star-pill, .brand-pill, #navbar {
+  display: none !important;
+}
+
+/* Accessibility: hide inert overlay completely when aria-hidden */
+.overlay[aria-hidden="true"], #drawerOverlay[aria-hidden="true"] {
+  display: none !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+}

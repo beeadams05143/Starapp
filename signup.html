@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sign Up - STAR</title>
+  <link href="style.css" rel="stylesheet" />
+  <style>
+    body.plain-page {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      background: #fdfdfd;
+      margin: 0;
+      padding: 0;
+    }
+
+    #wrapper {
+      max-width: 720px;
+      margin: 2rem auto;
+      padding: 2rem;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 2rem;
+      color: #2a2a2a;
+    }
+
+    h1 .star {
+      color: #FFD54D;
+      text-shadow: 0 0 6px #ffecb3, 0 0 12px #fff;
+    }
+
+    .intro {
+      margin-bottom: 1.8rem;
+      font-size: 1rem;
+      color: #333;
+    }
+
+    .intro strong {
+      color: #2a2a2a;
+    }
+
+    ul.objectives {
+      margin: 0.8rem 0 1.2rem 1.2rem;
+      padding: 0;
+      list-style: disc;
+      color: #444;
+    }
+
+    .tagline {
+      text-align: center;
+      margin-top: 1rem;
+      font-style: italic;
+      color: #555;
+    }
+
+    h2 {
+      margin-top: 2rem;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: .75rem;
+    }
+
+    input, button {
+      padding: .65rem;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    button {
+      background-color: #4a6fa5;
+      color: #fff;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background-color: #3a5984;
+    }
+  </style>
+</head>
+<body class="plain-page">
+  <!-- Navbar -->
+  <div id="navbar"></div>
+
+  <div id="wrapper">
+    <h1><span class="star">⭐</span> Welcome to STAR</h1>
+
+    <section class="intro">
+  <p>
+    <strong>STAR (Support Tool for Autonomy and Reflection)</strong> 
+    is designed to help our other-abled community track moods, daily wellness, and personal reflections.
+  </p>
+  <p>
+    The app records not only moods and satisfaction, but also progress toward important life objectives 
+    such as community goals, vocational goals, educational goals, self-help goals, and daily living goals. 
+    By signing up, you’ll be able to log emotions, energy levels, and reflections, while also tracking these objectives over time. 
+  </p>
+  <p>
+    This information supports caregivers, educators, and loved ones in providing meaningful guidance and encouragement. 
+    STAR helps identify patterns, celebrate milestones, and promote independence, self-expression, and well-being — 
+    so everyone can live their best life.
+  </p>
+  <p class="tagline">
+    Guided by the North Star, supporting progress, engagement, and satisfaction.
+  </p>
+</section>
+
+
+    <h2>Sign Up</h2>
+    <form id="signup-form">
+      <input type="email" id="email" placeholder="Email" required />
+      <input type="password" id="password" placeholder="Password" required />
+      <button type="submit">Sign Up</button>
+    </form>
+  </div>
+
+  <!-- Navbar loader -->
+  <script type="module" src="load-navbar.js"></script>
+</body>
+</html>

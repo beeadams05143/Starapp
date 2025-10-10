@@ -1,0 +1,150 @@
+:root { --card: #fff; --line:#e5e7eb; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:#f8fafc; color:#0f172a;}
+.wrap { max-width: 980px; margin: 1rem auto; padding: 0 1rem; }
+h1 { margin: 1rem 0; }
+.panel { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 1rem; margin: 1rem 0; }
+.row { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: .5rem; align-items: center; }
+input, select, button, label { font-size: 1rem; }
+input, select { padding: .55rem .6rem; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+button { padding: .55rem .9rem; border: 1px solid #0ea5e9; background:#0ea5e9; color:#fff; border-radius: 8px; cursor: pointer; }
+button:hover { filter: brightness(0.95); }
+ul { list-style: none; margin: .5rem 0 0 0; padding: 0; }
+li { padding: .5rem 0; border-bottom: 1px solid var(--line); }
+.badge { font-size: .8rem; padding: .1rem .4rem; border: 1px solid var(--line); border-radius: 999px; background:#f1f5f9; margin-left:.4rem;}
+/* --- navbar layout for this page --- */
+#navbar nav { 
+  display: flex; 
+  align-items: center; 
+  gap: 8px; 
+}
+#navbar #userArea {
+  margin-left: auto !important;   /* shove avatar to the right */
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+#navbar #navAvatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  cursor: pointer;
+}
+/* navbar alignment for this page */
+#navbar nav { display: flex !important; align-items: center !important; gap: 8px !important; }
+#navbar #userArea { margin-left: auto !important; display: flex !important; align-items: center !important; gap: 8px !important; }
+#navbar #navAvatar { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; }
+
+/* ===== Calendar header nav (month arrows) ===== */
+.cal-header .cal-nav{
+  width:40px;height:40px;border-radius:12px;border:1px solid #e5e7eb;background:#fff;
+  display:inline-flex;align-items:center;justify-content:center;cursor:pointer;
+  box-shadow:0 1px 0 rgba(0,0,0,.04); font-size:22px;font-weight:800;color:#374151;
+}
+.cal-header .cal-nav svg{ display:none; }
+.cal-header .cal-nav.prev::before{ content:"‹"; }
+.cal-header .cal-nav.next::before{ content:"›"; }
+.cal-header .cal-nav:focus{ outline:2px solid #a78bfa; outline-offset:2px; }
+
+/* Keep the app header (hamburger) above the calendar */
+#navbar, header, .topbar, .appbar {
+  position: sticky; top: 0; z-index: 2000;
+}
+
+/* Make sure the calendar card never overlaps the header */
+.cal-wrap, .notebook, .paper { position: relative; z-index: 1; }
+
+/* Allow page scroll on the calendar page */
+html, body { min-height: 100%; height: auto; }
+body.calendar-page{
+  display: block;              /* prevents flex from killing page scroll */
+  overflow-y: auto;
+  padding-bottom: 84px;        /* room for your bottom tab bar */
+}
+/* Generic drawer styles (used only if your theme doesn't already provide them) */
+#drawer, #navDrawer, #sideDrawer, .drawer, [data-drawer]{
+  position: fixed; top: 0; left: 0; bottom: 0; width: 280px;
+  background: #fff; box-shadow: 24px 0 60px rgba(0,0,0,.15);
+  transform: translateX(-100%); transition: transform .25s ease;
+  z-index: 2100;  /* above the calendar, below header if needed */
+}
+#drawer.open, #navDrawer.open, #sideDrawer.open, .drawer.open, [data-drawer].open{
+  transform: translateX(0);
+}
+body.drawer-open{ overflow: hidden; }
+
+/* Generic drawer styles (fallback) */
+.drawer{
+  position: fixed;
+  top: 0; bottom: 0; left: 0;
+  width: 280px;
+  background: #fff;
+  box-shadow: 24px 0 60px rgba(0,0,0,.15);
+  transform: translateX(-100%);
+  transition: transform .25s ease;
+  z-index: 2200; /* above calendar */
+}
+.drawer.open{ transform: translateX(0); }
+.drawer .drawer__content{ height: 100%; overflow: auto; }
+body.drawer-open{ overflow: hidden; }
+
+/* Keep header clickable above calendar just in case */
+#navbar, header, .topbar, .appbar, #appbar { position: sticky; top: 0; z-index: 3000; }
+.cal-wrap, .notebook, .paper { position: relative; z-index: 1; }
+
+/* Generic drawer styles (used only if your theme lacks its own) */
+.drawer{
+  position: fixed; top: 0; bottom: 0; left: 0;
+  width: 280px; background: #fff;
+  transform: translateX(-100%); transition: transform .25s ease;
+  box-shadow: 24px 0 60px rgba(0,0,0,.15);
+  z-index: 3000;
+}
+.drawer.open{ transform: translateX(0); }
+.drawer .drawer__content{ height: 100%; overflow: auto; }
+body.drawer-open{ overflow: hidden; }
+
+/* Keep header above calendar */
+#navbar, header, .topbar, .appbar, #appbar { position: sticky; top: 0; z-index: 3500; }
+.cal-wrap, .notebook, .paper { position: relative; z-index: 1; }
+
+/* Invisible click area over the hamburger */
+#calMenuHotspot{
+  position: fixed; top: 8px; left: 8px; width: 48px; height: 48px;
+  z-index: 4000; background: transparent; cursor: pointer;
+}
+
+/* Generic drawer styles */
+.drawer{
+  position: fixed; top:0; bottom:0; left:0; width:280px; background:#fff;
+  transform: translateX(-100%); transition: transform .25s ease;
+  box-shadow: 24px 0 60px rgba(0,0,0,.15); z-index: 3500;
+}
+.drawer.open{ transform: translateX(0); }
+.drawer .drawer__content{ height:100%; overflow:auto; }
+
+body.drawer-open{ overflow:hidden; }
+
+/* Keep header above calendar; keep calendar under header */
+#navbar, header, .topbar, .appbar, #appbar { position: sticky; top: 0; z-index: 3600; }
+.cal-wrap, .notebook, .paper { position: relative; z-index: 1; }
+
+/* Invisible click area over the hamburger */
+#calMenuHotspot{
+  position: fixed; top: 8px; left: 8px; width: 48px; height: 48px;
+  z-index: 4000; background: transparent; cursor: pointer;
+}
+
+/* Generic drawer styles */
+.drawer{
+  position: fixed; top:0; bottom:0; left:0; width:280px; background:#fff;
+  transform: translateX(-100%); transition: transform .25s ease;
+  box-shadow: 24px 0 60px rgba(0,0,0,.15); z-index: 3500;
+}
+.drawer.open{ transform: translateX(0); }
+.drawer .drawer__content{ height:100%; overflow:auto; }
+
+body.drawer-open{ overflow:hidden; }
+
+/* Keep header above calendar; keep calendar under header */
+#navbar, header, .topbar, .appbar, #appbar { position: sticky; top: 0; z-index: 3600; }
+.cal-wrap, .notebook, .paper { position: relative; z-index: 1; }

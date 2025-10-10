@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Group Settings</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;margin:16px}
+    h1{margin:8px 0 16px}
+    .card{max-width:560px;border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin:12px 0}
+    .row{display:flex;gap:8px;align-items:center;margin:8px 0}
+    input[type="text"]{flex:1;padding:10px;border:1px solid #ccc;border-radius:8px}
+    button{padding:10px 14px;border:0;border-radius:8px;cursor:pointer}
+    .primary{background:#2563eb;color:#fff}
+    .danger{background:#ef4444;color:#fff}
+    .muted{background:#f3f4f6}
+    small{opacity:.7}
+    .mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+  </style>
+</head>
+<body>
+  <div id="navbar-container"></div>
+  <script type="module" src="./load-navbar.js"></script>
+
+  <h1>Group Settings</h1>
+
+  <div class="card">
+    <h3>Invite people</h3>
+    <div class="row">
+      <label class="mono">Invite code:</label>
+      <input id="inviteCode" type="text" readonly value="loading..."/>
+      <button id="copyBtn" class="muted">Copy</button>
+    </div>
+    <small>Share this code with family. They can join from the form below.</small>
+  </div>
+
+  <div class="card">
+    <h3>Join a group by code</h3>
+    <div class="row">
+      <input id="joinCode" type="text" placeholder="Paste invite code here"/>
+      <button id="joinBtn" class="primary">Join Group</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Leave this group</h3>
+    <div class="row">
+      <button id="leaveBtn" class="danger">Leave Current Group</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { supabase } from './supabaseClient.js';
+
+    const GROUP_KEY = 'currentGroupId';
+    const inviteCodeEl = document.getElementById('inviteCode');
+    const copyBtn      = document.getElementById('copyBtn');
+    const joinCodeEl   = document.getElementById('joinCode');
+    const joinBtn      = document.getElementById('joinBtn');
+    const leaveBtn     = document.getElementById('leaveBtn');
+
+    const getActiveGroupId = () => localStorage.getItem(GROUP_KEY) || null;
+
+    async function requireSession(){
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { alert('Please log in first.'); location.href = './login.html'; throw new Error('no session'); }
+      return session;
+    }
+
+    async function loadInviteCode(){
+      const gid = getActiveGroupId();
+      if (!gid) { inviteCodeEl.value = 'no active group'; return; }
+      const { data, error } = await supabase
+        .from('groups')
+        .select('join_code')
+        .eq('id', gid)
+        .single();
+      if (error){ console.error(error); inviteCodeEl.value='(error)'; return; }
+      inviteCodeEl.value = data?.join_code || '(none)';
+    }
+
+    copyBtn.addEventListener('click', async () => {
+      if (!inviteCodeEl.value || inviteCodeEl.value.includes('loading')) return;
+      await navigator.clipboard.writeText(inviteCodeEl.value);
+      copyBtn.textContent = 'Copied!';
+      setTimeout(()=> copyBtn.textContent='Copy', 900);
+    });
+
+    joinBtn.addEventListener('click', async () => {
+      const code = (joinCodeEl.value || '').trim();
+      if (!code) return alert('Enter a code.');
+      await requireSession();
+      const { data, error } = await supabase.rpc('join_group', { p_code: code });
+      if (error) { console.error(error); alert(error.message || 'Join failed'); return; }
+      const newGroupId = data?.[0]?.group_id;
+      if (newGroupId) {
+        localStorage.setItem(GROUP_KEY, newGroupId);
+        window.loadGroupsIntoSwitcher?.();   // refresh navbar switcher if present
+        alert('Joined group!');
+        await loadInviteCode();
+      }
+    });
+
+    leaveBtn.addEventListener('click', async () => {
+      const gid = getActiveGroupId();
+      if (!gid) return alert('No active group.');
+      if (!confirm('Leave this group?')) return;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return alert('Please log in first.');
+      const { error } = await supabase
+        .from('group_members')
+        .delete()
+        .eq('group_id', gid)
+        .eq('user_id', session.user.id);
+      if (error) { console.error(error); alert('Could not leave group.'); return; }
+      localStorage.removeItem(GROUP_KEY);
+      window.loadGroupsIntoSwitcher?.();
+      inviteCodeEl.value = 'no active group';
+      alert('You left the group.');
+    });
+
+    (async () => {
+      await requireSession();
+      await loadInviteCode();
+    })();
+  </script>
+</body>
+</html>

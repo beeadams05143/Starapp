@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Would You Rather</title>
+  <style>
+    .back-button {
+      position: relative;
+      display: inline-block;
+      margin-top: 60px; /* pushes button down below hamburger menu */
+      margin-left: 16px;
+      z-index: 10;
+      font-size: 1rem;
+      text-decoration: none;
+      color: #333;
+    }
+
+    .back-button:hover {
+      text-decoration: underline;
+    }
+
+    /* OPTIONAL: If your whole page content is too high, add padding */
+    .page-container {
+      padding-top: 60px;
+    }
+  </style>
+</head>
+  <style>
+    :root{
+      --bg:#fff4e8; --card:#ffffff; --text:#0f172a; --muted:#475569;
+      --accent:#059669; --danger:#e11d48; --shadow:0 8px 30px rgba(0,0,0,.08); --radius:16px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji"}
+    .wrap{min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:24px}
+    .container{width:100%;max-width:1100px;position:relative}
+    h1{text-align:center;font-size:2.2rem;margin:0;font-weight:800}
+    h2{font-size:1.6rem;margin:24px 0 8px;text-align:center}
+    p.subtle,.hint{text-align:center;color:var(--muted);margin:0 0 16px}
+    .grid{display:grid;gap:24px;grid-template-columns:repeat(1,minmax(0,1fr))}
+    @media (min-width:720px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+    .card{
+      position:relative;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
+      padding:24px;text-align:center;cursor:pointer;transition:transform .12s ease;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:120px;
+    }
+    .card:hover{transform:scale(1.02)}
+    .icon{font-size:44px;margin-bottom:8px;line-height:1}
+    .icon img{width:56px;height:56px;object-fit:cover;border-radius:12px;box-shadow:var(--shadow)}
+    .label{font-size:20px;font-weight:700}
+    .edit{
+      position:absolute;right:10px;top:10px;border:0;background:#eef2ff;border-radius:10px;
+      padding:6px 8px;cursor:pointer;font-size:16px;box-shadow:var(--shadow)
+    }
+    .btn{border:0;border-radius:14px;padding:16px 24px;font-size:18px;font-weight:700;cursor:pointer;color:#fff;background:var(--accent);box-shadow:var(--shadow)}
+    .btn[disabled]{opacity:.5;pointer-events:none}
+    .btn-danger{background:var(--danger)}
+    .row-center{display:flex;align-items:center;justify-content:center;gap:16px}
+    .timer-face{font-size:64px;font-weight:900;letter-spacing:.08em}
+    .back{position:absolute;left:0;top:0;background:transparent;border:0;font-size:18px;cursor:pointer;color:var(--text);display:inline-flex;align-items:center;gap:8px}
+    .toolbar{height:36px}
+  </style>
+</head>
+<body>
+
+  
+<div class="wrap">
+  <div class="container">
+    <div class="toolbar">
+      <button id="backBtn" class="back">← Back</button>
+    </div>
+    <h1>Would You Rather</h1>
+<div id="content">
+  <table id="wyrTable" style="width:100%; border-collapse:collapse; margin-top:1rem;">
+    <thead></thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+
+<!-- Supabase (kept exactly as you provided) -->
+<script type="module">
+  import { createClient } from 'https://esm.sh/@supabase/supabase-js';
+  window.supabase = createClient(
+    'https://okfsobfyhpforyqogjea.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9rZnNvYmZ5aHBmb3J5cW9namVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2MTg3NDAsImV4cCI6MjA2ODE5NDc0MH0.qtuG1_LbSPdeRtnyElo-F0agTSGclqQQyap-USHKWFw'
+  );
+</script>
+<!-- 3) WYR fetch & render (paste THIS right after the init) -->
+<script type="module">
+  const supabase = window.supabase;
+
+  const thead = document.querySelector('#wyrTable thead');
+  const tbody = document.querySelector('#wyrTable tbody');
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  async function loadWYR() {
+    const { data, error } = await supabase
+      .from('wyr_responses')
+      .select('*')
+      .order('created_at', { ascending: false }); // no user_id filter
+
+    if (error) { console.error('WYR fetch error:', error); return; }
+    if (!data?.length) { thead.innerHTML=''; tbody.innerHTML='<tr><td>No responses yet.</td></tr>'; return; }
+
+    const cols = Object.keys(data[0]);
+    thead.innerHTML = '<tr>' + cols.map(k => `<th style="border:1px solid #ccc;padding:6px;text-align:left;">${esc(k)}</th>`).join('') + '</tr>';
+
+    tbody.innerHTML = data.map(row =>
+      '<tr>' + cols.map(k => {
+        let v = row[k];
+        if (k === 'created_at' && v) v = new Date(v).toLocaleString();
+        return `<td style="border:1px solid #eee;padding:6px;vertical-align:top;">${esc(v)}</td>`;
+      }).join('') + '</tr>'
+    ).join('');
+  }
+
+  loadWYR();
+</script>
+<script>
+(function(){
+  // ===== State =====
+  const state = {
+    step: 'social',          // start here
+    setting: null,           // Inside | Outside | Car Trip
+    family: null,            // e.g., 'Art'
+    choice: null,            // e.g., 'Coloring'
+    withWho: null,           // 'Just Me' | 'One Friend / Family' | 'Group'
+    people: [],              // [{id,name,emoji,photo}]
+    selectedPeople: [],      // chosen names/photos when One Friend/Group
+
+    // timers (Get Ready -> Timer -> Finish)
+    startMs: null,
+    elapsed: 0,
+    timerId: null,
+    timerMode: 'none',       // included for future timer-picker
+    goalSec: 0,
+    interval: null,
+    start: null,
+
+    // Supabase
+    userId: null,            // auth user id OR device id
+    sessionId: null          // row id in 'sessions'
+  };
+
+  // ===== Local persistence =====
+  const KEY_PEOPLE = 'wy_preferred_people';
+  const KEY_ICONS  = 'wy_custom_icons';
+  let CUSTOM = loadCustomIcons(); // { [label]: dataURL }
+
+  function loadPeople(){
+    const raw = localStorage.getItem(KEY_PEOPLE);
+    if (raw) { try { return JSON.parse(raw) || []; } catch {} }
+    // seed defaults first run
+    const seeded = [
+      { id:'mom',    name:'Mom',    emoji:'👩',   photo:null },
+      { id:'dad',    name:'Dad',    emoji:'👨',   photo:null },
+      { id:'josh',   name:'Josh',   emoji:'🧑',   photo:null },
+      { id:'auntie', name:'Auntie', emoji:'👩‍🦳', photo:null }
+    ];
+    localStorage.setItem(KEY_PEOPLE, JSON.stringify(seeded));
+    return seeded;
+  }
+  function savePeople(){ localStorage.setItem(KEY_PEOPLE, JSON.stringify(state.people)); }
+  function loadCustomIcons(){ try { return JSON.parse(localStorage.getItem(KEY_ICONS)||'{}') || {}; } catch { return {}; } }
+  function saveCustomIcons(){ localStorage.setItem(KEY_ICONS, JSON.stringify(CUSTOM)); }
+
+  // ===== Data =====
+  const ICON = {
+    'Inside':'🏠','Outside':'🌳','Car Trip':'🚗',
+    'Music':'🎵','Puzzles':'🧩','Books':'📚','Art':'🎨','Video Games':'🎮','Cooking':'🍳','Computers':'💻','Sensory Space':'🧺','Cards & Games':'🃏',
+    'Walk':'🚶','Playground':'🛝','Nature Hunt':'🔎','Sports':'⚽','Water Play':'💧','Garden':'🌱','Chalk':'🧼','Bike/Scooter':'🚲',
+    'Library':'🏛️','Shop':'🛍️','Food Shop':'🛒','Clothes Shop':'👕','Out to Eat':'🍽️','Get Coffee':'☕','Museum':'🏺','Park Trip':'🌲','Errands':'📋','Other Car Trip':'🚗',
+    'Coloring':'🖍️','Painting':'🖌️','Playdoh':'🟨','Clay':'🧱','Build':'🧩','Cut & Paste':'✂️','Collage':'🖼️','Sewing':'🧵','Glue & Glitter':'✨',
+    'My Playlist':'💿','Drums':'🥁','Keyboard':'🎹',
+    'Big Pieces':'🧩','Standard':'🧩','Floor Puzzle':'🧻','Puzzle Blocks':'🧊','3D Puzzle':'🧊',
+    'Picture Book':'📖','Audiobook':'🎧','Story Time':'🌟',
+    'Short Block':'🧭','Park Loop':'🌳','Trail':'🗺️',
+    'Swing':'🪑','Slide':'🛝','Climb':'🧗',
+    'Catch':'🤾','Kick':'⚽','Hoops':'🏀',
+    'Weighted Blanket':'🧸','Bean Bag':'🛋️','Calm Lights':'✨',
+    'UNO':'🃏','Go Fish':'🎣','War':'♠️','Memory':'🧠','Yahtzee':'🎲','Candy Land':'🍬','Connect Four':'🟡','Jenga':'🧱','Dominoes':'🟦','Dice Games':'🎲',
+    'Add Your Own':'➕'
+  };
+
+  const INSIDE_FAMILIES = ['Music','Puzzles','Books','Art','Cards & Games','Video Games','Cooking','Computers','Sensory Space'];
+  const OUTSIDE_FAMILIES = ['Walk','Playground','Nature Hunt','Sports','Water Play','Garden','Chalk','Bike/Scooter'];
+  const CAR_OPTIONS      = ['Library','Shop','Food Shop','Clothes Shop','Out to Eat','Get Coffee','Museum','Park Trip','Errands','Other Car Trip'];
+
+  const SUB = {
+    'Art': ['Coloring','Painting','Playdoh','Clay','Build','Cut & Paste','Collage','Sewing','Glue & Glitter','Add Your Own'],
+    'Music': ['My Playlist','Drums','Keyboard','Add Your Own'],
+    'Puzzles': ['Big Pieces','Standard','Floor Puzzle','Puzzle Blocks','3D Puzzle','Add Your Own'],
+    'Books': ['Picture Book','Audiobook','Story Time','Add Your Own'],
+    'Walk': ['Short Block','Park Loop','Trail','Add Your Own'],
+    'Playground': ['Swing','Slide','Climb','Add Your Own'],
+    'Sports': ['Catch','Kick','Hoops','Add Your Own'],
+    'Sensory Space': ['Weighted Blanket','Bean Bag','Calm Lights','Add Your Own'],
+    'Cards & Games': ['UNO','Go Fish','War','Memory','Yahtzee','Candy Land','Connect Four','Jenga','Dominoes','Dice Games','Add Your Own'],
+    // simple placeholders so these paths work today
+    'Out to Eat': ['Add Your Own'],
+    'Shop': ['Add Your Own'],
+    'Food Shop': ['Add Your Own'],
+    'Clothes Shop': ['Add Your Own'],
+    'Get Coffee': ['Add Your Own'],
+    'Museum': ['Add Your Own'],
+    'Park Trip': ['Add Your Own'],
+    'Errands': ['Add Your Own'],
+    'Other Car Trip': ['Add Your Own']
+  };
+
+  // ===== Helpers =====
+  const $content = document.getElementById('content');
+  const $back = document.getElementById('backBtn');
+
+  function escapeHtml(t){ return (t || '').replace(/[&<>]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[ch])); }
+  function formatTime(s){ const m=Math.floor(s/60), ss=s%60; return String(m).padStart(2,'0')+':'+String(ss).padStart(2,'0'); }
+
+  function getIconHtml(label){
+    const url = CUSTOM[label];
+    if (url) return `<img src="${url}" alt="">`;
+    return ICON[label] || '✨';
+  }
+  function chooseIconFor(label){
+    const input = document.createElement('input');
+    input.type = 'file'; input.accept = 'image/*';
+    input.onchange = async () => {
+      if (!input.files || !input.files[0]) return;
+      const url = await new Promise(res => { const r = new FileReader(); r.onload = e => res(e.target.result); r.readAsDataURL(input.files[0]); });
+      CUSTOM[label] = url; saveCustomIcons(); render();
+    };
+    input.click();
+  }
+  function changePersonPhoto(person){
+    const input = document.createElement('input');
+    input.type = 'file'; input.accept = 'image/*';
+    input.onchange = async () => {
+      if (input.files && input.files[0]) {
+        const photo = await new Promise(res => { const r = new FileReader(); r.onload = e => res(e.target.result); r.readAsDataURL(input.files[0]); });
+        person.photo = photo; savePeople(); render();
+      }
+    };
+    input.click();
+  }
+  function card(label, onClick, allowEdit=true){
+    const d = document.createElement('div');
+    d.className = 'card';
+    d.innerHTML = `
+      <div class="icon">${getIconHtml(label)}</div>
+      <div class="label">${label}</div>
+      ${allowEdit && label !== 'Add Your Own' ? `<button class="edit" title="Add/Change Image" aria-label="Add/Change Image">🖼️</button>` : ''}
+    `;
+    d.onclick = onClick;
+    if (allowEdit && label !== 'Add Your Own') {
+      const e = d.querySelector('.edit');
+      e.onclick = (ev) => { ev.stopPropagation(); chooseIconFor(label); };
+    }
+    return d;
+  }
+
+  // ----- Supabase logging -----
+  async function logSessionStart(){
+    const { data: { user } } = await supabase.auth.getUser();
+    state.userId = user?.id || null;
+    const { data, error } = await supabase
+      .from('sessions')
+      .insert({
+        user_id: state.userId,
+        with_who: state.withWho,
+        people: state.selectedPeople.map(p => ({ id:p.id, name:p.name })),
+        setting: state.setting,
+        family: state.family,
+        choice: state.choice,
+        timer_mode: 'elapsed',
+        goal_seconds: 0,
+        started_at: new Date().toISOString()
+      })
+      .select('id')
+      .single();
+    if (!error) state.sessionId = data.id;
+  }
+  async function logSessionEnd(){
+    if (!state.sessionId || !state.startMs) return;
+    const elapsed = Math.floor((Date.now() - state.startMs)/1000);
+    await supabase.from('sessions').update({
+      ended_at: new Date().toISOString(),
+      elapsed_seconds: elapsed
+    }).eq('id', state.sessionId);
+  }
+  async function setMood(moodValue){
+    if (!state.sessionId) return;
+    await supabase.from('sessions').update({ mood: moodValue }).eq('id', state.sessionId);
+  }
+
+  // ===== Screens =====
+  function showSocial(){
+    if (!state.people.length) state.people = loadPeople();
+    const wrap = document.createElement('div');
+    wrap.innerHTML = `<h2>Who is joining?</h2><p class="hint">Pick one.</p>`;
+    const grid = document.createElement('div'); grid.className = 'grid';
+    [
+      { label:'Just Me', icon:'🧍' },
+      { label:'One Friend / Family', icon:'👥' },
+      { label:'Group', icon:'👪' }
+    ].forEach(opt => {
+      const c = document.createElement('div');
+      c.className = 'card';
+      c.innerHTML = `<div class="icon">${opt.icon}</div><div class="label">${opt.label}</div>`;
+      c.onclick = () => {
+        state.withWho = opt.label;
+        state.selectedPeople = [];
+        state.step = (opt.label === 'Just Me') ? 'where' : 'people';
+        render();
+      };
+      grid.appendChild(c);
+    });
+    $content.innerHTML = ''; $content.appendChild(wrap); $content.appendChild(grid);
+  }
+
+  function showPeople(){
+    const multi = (state.withWho === 'Group');
+    const wrap = document.createElement('div');
+    wrap.innerHTML = `
+      <h2>${escapeHtml(state.withWho)}</h2>
+      <p class="hint">${multi ? 'Pick one or more people.' : 'Pick one person.'}</p>
+      <div class="grid" id="peopleGrid"></div>
+      <div class="row-center" style="margin-top:8px;">
+        <button class="btn" id="addPersonBtn">Add Person</button>
+        <button class="btn" id="continueBtn" ${state.selectedPeople.length ? '' : 'disabled'}>Continue</button>
+      </div>
+    `;
+    const grid = wrap.querySelector('#peopleGrid');
+    if (!state.people.length) state.people = loadPeople();
+    state.people.forEach(p => {
+      const selected = state.selectedPeople.some(x => x.id === p.id);
+      const c = document.createElement('div');
+      c.className = 'card';
+      if (selected) c.style.border = '3px solid var(--accent)';
+      c.innerHTML = `
+        <button class="edit" title="Change Photo" aria-label="Change Photo">🖼️</button>
+        <div class="icon" style="font-size:36px">${p.photo ? `<img src="${p.photo}" alt="">` : (p.emoji || '👤')}</div>
+        <div class="label">${escapeHtml(p.name)}</div>
+      `;
+      c.onclick = () => {
+        if (multi) {
+          const i = state.selectedPeople.findIndex(x => x.id === p.id);
+          if (i >= 0) state.selectedPeople.splice(i,1); else state.selectedPeople.push(p);
+        } else {
+          state.selectedPeople = [p];
+        }
+        showPeople();
+      };
+      c.querySelector('.edit').onclick = (ev) => { ev.stopPropagation(); changePersonPhoto(p); };
+      grid.appendChild(c);
+    });
+    const addCard = document.createElement('div');
+    addCard.className = 'card';
+    addCard.innerHTML = `<div class="icon">➕</div><div class="label">Add Your Own</div>`;
+    addCard.onclick = addPersonFlow;
+    grid.appendChild(addCard);
+
+    wrap.querySelector('#addPersonBtn').onclick = addPersonFlow;
+    wrap.querySelector('#continueBtn').onclick = () => {
+      if (!state.selectedPeople.length) return;
+      state.step = 'where'; render();
+    };
+
+    $content.innerHTML = ''; $content.appendChild(wrap);
+  }
+
+  async function addPersonFlow(){
+    const name = prompt("Person's name (or nickname):");
+    if (!name) return;
+    const input = document.createElement('input');
+    input.type = 'file'; input.accept = 'image/*';
+    input.onchange = async () => {
+      let photo = null;
+      if (input.files && input.files[0]) {
+        photo = await new Promise(res => { const r = new FileReader(); r.onload = e => res(e.target.result); r.readAsDataURL(input.files[0]); });
+      }
+      const person = { id: crypto.randomUUID(), name, emoji:'👤', photo };
+      state.people.push(person);
+      savePeople();
+      state.selectedPeople = (state.withWho === 'Group') ? [...state.selectedPeople, person] : [person];
+      render();
+    };
+    input.click();
+  }
+
+  function showWhere(){
+    const grid = document.createElement('div'); grid.className = 'grid';
+    ['Inside','Outside','Car Trip'].forEach(s => {
+      grid.appendChild(card(s, () => {
+        state.setting = s; state.family = null; state.choice = null;
+        state.step = (s === 'Car Trip') ? 'car' : 'activity'; render();
+      }, false));
+    });
+    $content.innerHTML = ''; $content.appendChild(grid);
+  }
+
+  function showActivity(){
+    const families = (state.setting === 'Inside') ? INSIDE_FAMILIES : OUTSIDE_FAMILIES;
+    const wrap = document.createElement('div');
+    wrap.innerHTML = `<h2>${state.setting} Activities</h2><p class="subtle">Pick one.</p>`;
+    const grid = document.createElement('div'); grid.className = 'grid';
+    families.forEach(f => {
+      grid.appendChild(card(f, () => { state.family = f; state.step = SUB[f] ? 'sub' : 'prep'; render(); }));
+    });
+    grid.appendChild(card('Add Your Own', () => {
+      const name = prompt('Name the activity:'); if (!name) return;
+      SUB[name] = ['Add Your Own']; INSIDE_FAMILIES.push(name);
+      alert('Added — tap 🖼️ on its card to set a photo.');
+      render();
+    }, false));
+    wrap.appendChild(grid);
+    $content.innerHTML = ''; $content.appendChild(wrap);
+  }
+
+  function showSub(){
+    const options = SUB[state.family] || [];
+    const wrap = document.createElement('div');
+    wrap.innerHTML = `<h2>${state.family}</h2><p class="subtle">Choose what you want to do.</p>`;
+    const grid = document.createElement('div'); grid.className = 'grid';
+    options.forEach(o => {
+      grid.appendChild(card(o, () => {
+        if (o === 'Add Your Own') {
+          const name = prompt(`Add a ${state.family} option:`); if (!name) return;
+          SUB[state.family].splice(SUB[state.family].length-1, 0, name);
+          render();
+        } else {
+          state.choice = o; state.step = 'prep'; render();
+        }
+      }));
+    });
+    wrap.appendChild(grid);
+    $content.innerHTML = ''; $content.appendChild(wrap);
+  }
+
+  function showCar(){
+    const wrap = document.createElement('div');
+    wrap.innerHTML = `<h2>Where are we going?</h2><p class="subtle">Pick one.</p>`;
+    const grid = document.createElement('div'); grid.className = 'grid';
+    CAR_OPTIONS.forEach(dest => {
+      grid.appendChild(card(dest, () => {
+        state.family = dest;
+        state.step = SUB[dest] ? 'sub' : 'prep';
+        render();
+      }));
+    });
+    grid.appendChild(card('Add Your Own', () => {
+      const name = prompt('Add a destination:'); if (!name) return;
+      SUB[name] = ['Add Your Own']; CAR_OPTIONS.push(name); render();
+    }, false));
+    wrap.appendChild(grid);
+    $content.innerHTML = ''; $content.appendChild(wrap);
+  }
+
+  function showPrep(){
+  $content.innerHTML = `
+    <h2>Get Ready</h2>
+    <div class="row-center" style="font-size:56px;margin-top:12px;">⏰ 😊</div>
+    <div class="row-center" style="margin-top:20px;">
+      <button id="startBtn" class="btn">Start ${state.choice || state.family}</button>
+    </div>
+  `;
+  document.getElementById('startBtn').onclick = () => {
+    if (state.timerId) clearInterval(state.timerId);
+    state.startMs = Date.now();
+    state.elapsed = 0;
+
+    // fire-and-forget so a network hiccup doesn't block the screen change
+    (async () => { try { await logSessionStart(); } catch(e){ console.warn('log start failed', e); } })();
+
+    // go to the timer screen FIRST; the interval will start there
+    state.step = 'timer';
+    render();
+  };
+}
+
+
+  function showTimer(){
+  $content.innerHTML = `
+    <div class="row-center" style="margin-top:30px;flex-direction:column;">
+      <div style="font-size:72px;">⏰</div>
+      <div id="timerDigits" class="timer-face">${formatTime(state.elapsed)}</div>
+      <p class="subtle" style="margin-top:8px;">You're doing great—keep going!</p>
+      <div class="row-center" style="margin-top:16px;">
+        <button id="stopBtn" class="btn btn-danger">Stop</button>
+      </div>
+    </div>
+  `;
+
+  // start (or restart) the ticking now that #timerDigits exists
+  if (state.timerId) clearInterval(state.timerId);
+  state.timerId = setInterval(() => {
+    state.elapsed = Math.floor((Date.now() - state.startMs) / 1000);
+    const t = document.getElementById('timerDigits');
+    if (t) t.textContent = formatTime(state.elapsed);
+  }, 1000);
+
+  document.getElementById('stopBtn').onclick = async () => {
+    if (state.timerId) clearInterval(state.timerId);
+    try { await logSessionEnd(); } catch(e){ console.warn('log end failed', e); }
+    state.step = 'finish';
+    render();
+  };
+}
+
+
+
+  function showFinish(){
+    const withNames = state.selectedPeople.length
+      ? ' • ' + state.selectedPeople.map(p => p.name).join(', ')
+      : (state.withWho && state.withWho !== 'Just Me' ? ' • ' + state.withWho : '');
+
+    $content.innerHTML = `
+      <h2>${escapeHtml(state.choice || state.family || 'Activity')}${withNames}</h2>
+      <h2>How did that feel?</h2>
+
+      <div class="row-center" style="font-size:40px;margin-top:8px;">
+        <button class="card mood" data-mood="3" style="min-height:auto;padding:12px 18px;">😊</button>
+        <button class="card mood" data-mood="2" style="min-height:auto;padding:12px 18px;">😐</button>
+        <button class="card mood" data-mood="1" style="min-height:auto;padding:12px 18px;">🙁</button>
+      </div>
+
+      <div class="row-center" style="margin-top:18px;">
+        <button class="btn" id="doneBtn" disabled>Save &amp; Done</button>
+      </div>
+    `;
+
+    // mood -> supabase, then enable Done
+    document.querySelectorAll('.mood').forEach(btn=>{
+      btn.onclick = async () => {
+        document.querySelectorAll('.mood').forEach(b=>b.style.border='');
+        btn.style.border = '3px solid var(--accent)';
+        await setMood(parseInt(btn.dataset.mood,10));
+        document.getElementById('doneBtn').disabled = false;
+      };
+    });
+
+    document.getElementById('doneBtn').onclick = () => location.reload();
+  }
+
+  // ===== Back button (always active) =====
+  $back.onclick = () => {
+    const s = state.step;
+    if (s === 'people')                     state.step = 'social';
+    else if (s === 'activity' || s === 'car') state.step = 'where';
+    else if (s === 'sub')                   state.step = 'activity';
+    else if (s === 'prep')                  state.step = (state.setting === 'Car Trip') ? 'car' : 'where';
+    else if (s === 'timer')                 state.step = 'prep';
+    else if (s === 'finish')                state.step = 'timer';
+    else if (s === 'where')                 state.step = 'social';
+    render();
+  };
+
+  // ===== Render switch =====
+  function render(){
+    if (state.step === 'social')   return showSocial();
+    if (state.step === 'people')   return showPeople();
+    if (state.step === 'where')    return showWhere();
+    if (state.step === 'activity') return showActivity();
+    if (state.step === 'sub')      return showSub();
+    if (state.step === 'car')      return showCar();
+    if (state.step === 'prep')     return showPrep();
+    if (state.step === 'timer')    return showTimer();
+    if (state.step === 'finish')   return showFinish();
+  }
+
+  render();
+})();
+</script>
+<!-- page logic(s) ... -->
+<script defer src="./scripts/appbar-drawer.js"></script>
+<script defer src="./ui-shell.js"></script>
+
+<!-- Floating avatar (optional) -->
+<script type="module" src="./avatar-float.js"></script>
+
+
+</body>
+</html>

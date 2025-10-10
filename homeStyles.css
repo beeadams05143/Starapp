@@ -1,0 +1,319 @@
+/* =========================
+   STAR App — Home (Clean)
+   ========================= */
+
+/* 0) Make sure no page-level background competes with the hero */
+body.home-page{
+  background: transparent !important;
+}
+
+/* 1) HERO — background + rounded scene */
+.home-hero{
+  position: relative !important;
+  min-height: max(740px, 100vh) !important;
+
+  /* 🖼️ update path if needed */
+  background-image: url("./STAR1.jpg") !important;
+  background-repeat: no-repeat !important;
+  background-size: cover !important;
+  /* show more sky/comets at the top */
+  background-position: 50% 15% !important;
+
+  /* room below the dropdowns so the curve never looks clipped */
+  margin-top: 12px !important;
+  padding-top: 100px !important;
+
+  border-radius: 28px !important;
+  overflow: hidden !important;
+}
+
+/* 2) Neutralize any old row/grid so absolute positioning wins */
+#category-layout .category-row{
+  display: contents !important;   /* keeps children, removes layout */
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* 3) Chip (white sparkle card) */
+.category-btn.card{
+  position: absolute !important;
+  transform: translate(-50%, -50%) !important;
+  z-index: 2 !important;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+
+  padding: 10px 14px;
+  min-width: 170px;
+  border-radius: 16px;
+  border: 2px solid transparent;
+  background:
+    linear-gradient(#fff,#fff) padding-box,
+    linear-gradient(90deg,#f6c453,#ffd48a,#f6c453) border-box;
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  color: #0b1120;
+  box-shadow: 0 8px 20px rgba(0,0,0,.18);
+  cursor: pointer;
+}
+.category-btn.card .emoji{ font-size: clamp(20px, 2.2vw, 26px); line-height: 1; }
+.category-btn.card .txt  { font-weight: 800; font-size: clamp(14px, 1.6vw, 17px); }
+.category-btn.card:hover{ transform: translate(-50%, calc(-50% - 2px)); box-shadow: 0 12px 26px rgba(0,0,0,.22); }
+
+/* sparkle */
+.category-btn.card::after{
+  content:"✦"; position:absolute; top:-10px; right:-8px;
+  font-size:16px; color:#f6c453; opacity:.9;
+  filter: drop-shadow(0 0 6px rgba(246,196,83,.6));
+  animation: twinkle 2.6s ease-in-out infinite;
+}
+@keyframes twinkle{
+  0%,100%{ transform: translateY(0) scale(1); opacity:.9; }
+  50%    { transform: translateY(-3px) scale(1.08); opacity:1; }
+}
+
+/* 4) Title + Prompt */
+#checkin-title{
+  position: absolute !important;
+  left: 50% !important;
+  top: 40vh !important;                 /* nudge 38–44vh to taste */
+  transform: translateX(-50%) !important;
+  margin: 0;
+  line-height: 1.05;
+  font-weight: 900;
+  font-size: clamp(22px, 4.2vw, 44px);
+  color: #0b1120;
+  text-shadow: 0 3px 14px rgba(0,0,0,.35);
+  pointer-events: none;
+  z-index: 2;
+  animation: checkin-float 3.5s ease-in-out infinite;
+}
+@keyframes checkin-float{
+  0%,100% { transform: translate(-50%, 0); }
+  50%     { transform: translate(-50%, -5px); }
+}
+
+#checkInPrompt{
+  position: absolute !important;
+  left: 50% !important;
+  top: 54vh !important;                 /* sits under the title; 52–58vh works */
+  transform: translate(-50%, -50%) !important;
+
+  /* text-only (no bubble) */
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+
+  font-weight: 900;
+  font-size: clamp(18px, 2.3vw, 28px);
+  color: #0b1120;
+  text-shadow: 0 2px 10px rgba(0,0,0,.25);
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* Hide any leftover small Check In pill if it exists */
+#checkInBtn{ display: none !important; }
+
+/* 5) Desktop placement (≥900px) — matches your screenshot */
+#feelingsBtn  { left: 50% !important; top: 24% !important; }
+#funBtn       { left: 27% !important; top: 32% !important; }
+#bodyBtn      { left: 73% !important; top: 32% !important; }  /* use #selfcareBtn here if needed */
+#workBtn      { left: 27% !important; top: 46% !important; }
+#communityBtn { left: 73% !important; top: 46% !important; }
+
+/* 6) Mobile placement (<900px) — neat stack */
+@media (max-width: 899px){
+  .category-btn.card{ font-size: 16px; padding: 10px 14px; min-width: 150px; }
+
+  #feelingsBtn  { left: 50% !important; top: 20% !important; }
+  #funBtn       { left: 24% !important; top: 30% !important; }
+  #bodyBtn      { left: 76% !important; top: 30% !important; }
+  #workBtn      { left: 24% !important; top: 44% !important; }
+  #communityBtn { left: 76% !important; top: 44% !important; }
+
+  #checkin-title{ top: 42vh !important; }
+  #checkInPrompt{ top: 56vh !important; max-width: 92vw; }
+}
+/* --- HOME PAGE: kill the global living-room wallpaper --- */
+body.home-page,
+body.home-page #home-screen,
+body.home-page .checkin-content {
+  background-image: none !important;
+  background: #faf6ff !important;
+/* outer page color; try #f8f6ff if you prefer */
+}
+
+/* If the wallpaper is injected via pseudo-elements, nuke them too */
+body.home-page::before,
+body.home-page::after {
+  content: none !important;
+  background: none !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+/* --- Shooting-star friendly placement (desktop) --- */
+#feelingsBtn  { left: 48% !important; top: 20% !important; }  /* just above the comet tail */
+#funBtn       { left: 23% !important; top: 33% !important; }  /* clear of the yellow star */
+#bodyBtn      { left: 77% !important; top: 33% !important; }  /* mirror right side */
+#workBtn      { left: 23% !important; top: 47% !important; }
+#communityBtn { left: 77% !important; top: 47% !important; }
+
+/* Title + prompt spacing relative to scene */
+#checkin-title{ top: 41vh !important; }
+#checkInPrompt{ top: 55vh !important; }
+/* --- HOME PAGE ONLY: replace global wallpaper with lavender --- */
+html, body.home-page, body.home-page #home-screen {
+  background-image: none !important;
+  background: #faf6ff !important;   /* soft lavender */
+}
+
+/* If a wallpaper is injected via pseudo-elements, nuke it */
+html::before, html::after,
+body.home-page::before, body.home-page::after {
+  content: none !important;
+  background: none !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+/* desktop-only fine tune: drop FUN and BODY a bit to clear the comets */
+/* desktop-only fine tune: drop FUN & BODY slightly to clear the comets */
+@media (min-width: 900px){
+  #funBtn  { left: 24% !important; top: 36% !important; }  /* was ~33% */
+  #bodyBtn { left: 76% !important; top: 36% !important; }  /* was ~33% */
+}
+
+/* Want a hair more? Try 36.5% or 37% on top. */
+
+
+
+
+/* remove any top padding/margin meant for a visible navbar */
+body.home-page { padding-top: 0 !important; }
+body.home-page #home-screen { margin-top: 0 !important; }
+
+/* since nav is gone, tighten the hero offset a bit */
+body.home-page .home-hero{
+  margin-top: 0 !important;
+  padding-top: 80px !important;   /* was 100px; bump to 70–90px to taste */
+}
+/* desktop-only fine tune: drop FUN and BODY a bit to clear the comets */
+@media (min-width: 900px){
+  #funBtn  { left: 22% !important; top: 45% !important; }   /* was ~33% */
+  #bodyBtn { left: 87% !important; top: 45% !important; }   /* was ~33% */
+}
+
+/* if you still see overlap, try +0.5% steps:
+   top: 35.5% or 36% — whichever looks perfect on your screen */
+/* HOME: show the navbar again */
+.home-page #navbar { display: block !important; }
+
+/* Hide ONLY the Group control (assumes it’s the 2nd <select> in the navbar) */
+.home-page #navbar select:nth-of-type(2) { display: none !important; }
+
+/* Hide its label too, if there is a <label> right before it */
+.home-page #navbar label:has(+ select:nth-of-type(2)) { display: none !important; }
+
+/* If you can add an ID in your navbar markup/JS, this is even better:
+   .home-page #navbar #groupSelect,
+   .home-page #navbar label[for="groupSelect"] { display:none !important; } */
+@media (min-width: 900px){
+  #funBtn  { top: 100% !important; }   /* try 36.5–37% if you want a hair more */
+  #bodyBtn { top: 39% !important; }
+}
+/* Bottom tab bar */
+.tabbar{
+  position: fixed; left: 0; right: 0; bottom: 0; height: 64px;
+  background: rgba(255,255,255,.92); backdrop-filter: blur(8px);
+  border-top: 1px solid rgba(0,0,0,.08); z-index: 999;
+}
+.tabbar__inner{
+  max-width: 980px; margin: 0 auto; height: 100%; padding: 0 16px;
+  display: flex; align-items: center; justify-content: space-around; gap: 8px;
+}
+.tabbar .tab{ display: inline-flex; flex-direction: column; align-items: center;
+  gap: 4px; min-width: 64px; padding: 6px 10px; border-radius: 12px;
+  text-decoration: none; color:#0b1120; font-weight:700; font-size:12px;
+}
+.tabbar .tab .icon{ font-size: 20px; line-height: 1; }
+.tabbar .tab.is-active{ background:#faf6ff; border:1px solid #f1d58a; box-shadow:0 4px 12px rgba(0,0,0,.08); }
+
+/* keep content from hiding behind the bar */
+.home-page #home-screen{ padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
+
+@media (max-width: 360px){
+  .tabbar .tab .label{ font-size: 11px; }
+}
+
+/* Reset any old absolute positioning inside the hero */
+.home-hero #feelingsBtn,
+.home-hero #funBtn,
+.home-hero #bodyBtn,
+.home-hero #workBtn,
+.home-hero #communityBtn,
+.home-hero #checkin-title,
+.home-hero #checkInPrompt {
+  position: static !important;
+  inset: auto !important;
+  transform: none !important;
+}
+
+/* Constrain the hero & center content */
+.home-hero { width: 100%; margin: 0 auto 16px; }
+.home-inner { width: min(100%, 680px); margin-inline: auto; padding-inline: 12px; }
+@media (min-width: 900px){ .home-inner { max-width: 840px; } }
+
+/* Buttons layout (Feelings full width; others 2-up) */
+.home-inner .category-row{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 14px;
+  margin: 10px 0;
+}
+.home-inner .category-row.top { margin-top: 8px; }
+.home-inner #feelingsBtn { grid-column: 1 / -1; } /* span full width */
+
+/* Button look */
+.home-inner .category-btn.card{
+  display: flex; align-items: center; gap: 10px;
+  width: 100%;
+  padding: 14px 18px;
+  border-radius: 16px;
+  background: #fff;
+  border: 2px solid #f1c655;
+  box-shadow: 0 8px 20px rgba(0,0,0,.12);
+}
+.home-inner .category-btn .emoji{ font-size: 1.25rem; }
+.home-inner .category-btn .txt  { font-weight: 800; font-size: 1.05rem; }
+
+#checkin-title { text-align: center; margin: 10px 0 8px; }
+.home-prompt   { text-align: center; font-weight: 800; margin: 12px 0 8px; }
+
+/* On very small phones, stack */
+@media (max-width: 430px){
+  .home-inner .category-row{ grid-template-columns: 1fr; }
+}
+/* --- Home hero vertical offset (easy knobs) --- */
+:root{
+  /* tweak these until it feels perfect */
+  --hero-spacer-mobile: 11vh;   /* phones */
+  --hero-spacer-desktop: 8;  /* laptops/desktop */
+}
+
+.home-hero .home-inner{
+  padding-top: var(--hero-spacer-mobile);
+}
+
+@media (min-width: 900px){
+  .home-hero .home-inner{
+    padding-top: var(--hero-spacer-desktop);
+  }
+}
+
+/* Optional: small tighten on the prompt spacing */
+.home-prompt{
+  margin-top: 12px; /* was larger; keeps prompt closer to the heads */
+}

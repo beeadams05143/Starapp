@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Focus of the Week • Planning Page</title>
+  <style>
+    :root{
+      --paper:#fffef8; --ink:#2b2b2b;
+      --accent:#ffb703; --accent-2:#8ecae6;
+      --line:rgba(0,0,0,.08); --margin-line:rgba(255,0,0,.25);
+      --ring:#222;
+    }
+    html,body{height:100%;margin:0;background:#f4f1ea;color:var(--ink);
+      font-family:ui-rounded,system-ui,-apple-system,Segoe UI,Roboto,"Comic Neue","Bradley Hand","Segoe Print",sans-serif;}
+    #navbar{position:sticky;top:0;z-index:10;}
+    #groupSelect, .group-select, [data-group-control], .nav-group, .group-dropdown { display:none !important; }
+
+    .wrapper{max-width:960px;margin:24px auto;padding:16px;}
+    .clipboard{position:relative;padding:24px 20px 28px;border-radius:16px;background:#e3d7c6;
+      box-shadow:0 6px 24px rgba(0,0,0,.15), inset 0 1px 0 rgba(255,255,255,.6);}
+    .clip{position:absolute;top:-18px;left:50%;transform:translateX(-50%);
+      width:120px;height:36px;background:#715a3a;border-radius:8px 8px 2px 2px;box-shadow:0 8px 0 rgba(0,0,0,.2);}
+    .sheet{position:relative;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.12);
+      padding:28px 22px 28px 46px;border:1px solid rgba(0,0,0,.08);
+      background:repeating-linear-gradient(to bottom,var(--paper),var(--paper) 28px,var(--line) 29px,var(--paper) 30px);}
+    .sheet::before{content:"";position:absolute;left:32px;top:0;bottom:0;width:2px;background:var(--margin-line);}
+
+    h1,h2,h3,label,.label{font-family:"Comic Neue","Bradley Hand","Segoe Print",system-ui,sans-serif;}
+    h1{margin:0 0 6px;font-size:28px;letter-spacing:.2px;}
+    .sub{font-size:13px;opacity:.8;margin-bottom:14px;}
+
+    .grid{display:grid;gap:12px;}
+    .grid-2{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .grid-3{grid-template-columns:repeat(3,minmax(0,1fr));}
+
+    .row{display:grid;grid-template-columns:160px 1fr;gap:8px;align-items:center;}
+    .row .label{font-weight:700;white-space:nowrap;}
+
+    .card{background:rgba(255,255,255,.7);border:1px dashed rgba(0,0,0,.2);border-radius:12px;padding:14px;}
+    .sticky{background:var(--accent);border:1px solid rgba(0,0,0,.15);transform:rotate(-1.2deg);box-shadow:0 3px 8px rgba(0,0,0,.15);}
+
+    .input, select, textarea{
+      width:100%; box-sizing:border-box;
+      border:2px solid transparent; border-bottom:2px solid rgba(0,0,0,.2);
+      background:transparent; font-size:16px; padding:8px 6px; outline:none;
+    }
+    .input::placeholder, textarea::placeholder{color:rgba(0,0,0,.45);}
+    .input:focus, select:focus, textarea:focus{border-color:var(--ring);border-radius:6px;background:rgba(255,255,255,.7);}
+
+    /* Compact “chip” controls */
+    .input-chip{
+      border:1px solid rgba(0,0,0,.18) !important;
+      border-bottom-color:rgba(0,0,0,.18) !important;
+      background:rgba(255,255,255,.95);
+      border-radius:10px;
+      padding:6px 10px;
+      box-shadow:0 1px 0 rgba(0,0,0,.08);
+      font-size:14px;
+      line-height:1.2;
+    }
+    select.input-chip{padding-right:28px;}
+
+    /* Top line single-row, wide fields */
+    .topline .grid { gap: 10px; }
+    .topline .row { grid-template-columns: 140px minmax(420px,1fr); align-items:center; }
+    #focusArea, #customTitle { width:100%; }
+    #customTitle { min-width:600px; }
+
+    .pill{border:none;padding:0;background:transparent;display:inline-flex;gap:6px;align-items:center;font-size:14px;cursor:pointer;}
+    .pill input{accent-color:#222;transform:scale(.95);}
+
+    .goal{border:2px solid rgba(0,0,0,.18);border-radius:12px;padding:10px;background:rgba(255,255,255,.65);}
+    .goal h3{margin:6px 0 8px;font-size:18px;}
+    .checklist{display:grid;gap:8px;}
+    .checklist input[type="text"]{width:100%;}
+    .support-select{display:grid;gap:6px;grid-template-columns:repeat(3,minmax(0,1fr));}
+
+    .week-grid{width:100%;border-collapse:collapse;}
+    .week-grid th,.week-grid td{border:1px solid rgba(0,0,0,.2);padding:8px;text-align:center;background:rgba(255,255,255,.6);}
+
+    .btns{display:flex;gap:10px;flex-wrap:wrap;}
+    .btn{border:2px solid #222;background:#fff;padding:8px 14px;border-radius:10px;cursor:pointer;font-weight:700;
+      box-shadow:2px 2px 0 #222;transition:transform .05s ease;}
+    .btn:active{transform:translate(1px,1px);box-shadow:1px 1px 0 #222;}
+    .add-goal-wrap{margin-top:18px;}
+
+    .footer-hint{font-size:12px;opacity:.7;text-align:right;margin-top:8px;}
+
+    .section-header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+    .section-header h2{margin:0;}
+    .spacer{flex:1 1 auto;}
+
+    @media print{
+      body{background:white;}
+      .wrapper{margin:0;padding:0;}
+      .clipboard{box-shadow:none;background:transparent;padding:0;}
+      .clip{display:none;}
+      .sheet{box-shadow:none;border:1px solid rgba(0,0,0,.2);}
+      .btns,#navbar{display:none !important;}
+    }
+  </style>
+</head>
+<body>
+  <div id="navbar"></div>
+
+  <div class="wrapper">
+    <div class="clipboard">
+      <div class="clip" aria-hidden="true"></div>
+      <div class="sheet">
+        <header class="grid" style="gap:6px;">
+          <h1>✏️ Focus of the Week</h1>
+          <div class="sub" id="weekRangeText">Week of —</div>
+
+          <!-- Top line -->
+          <section class="card topline">
+            <div class="grid">
+              <div class="row">
+                <div class="label">Focus area</div>
+                <select id="focusArea" class="input input-chip">
+                  <option value="community">Community</option>
+                  <option value="vocational">Vocational</option>
+                  <option value="daily-living">Daily Living</option>
+                  <option value="self-help">Self Help</option>
+                  <option value="advocacy">Advocacy</option>
+                  <option value="communication" selected>Communication</option>
+                </select>
+              </div>
+              <div class="row">
+                <div class="label">Custom title</div>
+                <input id="customTitle" class="input input-chip" type="text"
+                       placeholder="e.g., Ask for help at the store" />
+              </div>
+            </div>
+          </section>
+
+          <!-- Why this focus matters -->
+          <section class="card" style="margin-top:10px;">
+            <h3>Why this focus matters</h3>
+            <textarea id="whyMatters" rows="3" placeholder="Short rationale…"></textarea>
+          </section>
+        </header>
+
+        <!-- Weekly Goals -->
+        <section style="margin-top:14px;">
+          <div class="section-header">
+            <h2>Weekly Goals (up to 3)</h2>
+            <div class="spacer"></div>
+            <label for="weekFreq" class="label">Target Frequency</label>
+            <select id="weekFreq" class="input input-chip" style="max-width:160px;">
+              <option>Daily</option><option>3x/week</option><option>Once</option>
+            </select>
+          </div>
+
+          <div id="goals" class="grid" style="margin-top:12px;"></div>
+          <div class="btns add-goal-wrap">
+            <button class="btn" id="addGoal">+ Add Goal</button>
+          </div>
+        </section>
+
+        <!-- Daily Practice Tracker -->
+        <section style="margin-top:14px;" class="grid">
+          <h2>Daily Practice Tracker</h2>
+          <table class="week-grid" aria-label="Weekly practice tracker">
+            <thead>
+              <tr><th>Day</th><th>Practiced</th><th>Notes</th></tr>
+            </thead>
+            <tbody id="weekTableBody"></tbody>
+          </table>
+        </section>
+
+        <!-- Reflection / Next steps -->
+        <section style="margin-top:14px;" class="grid grid-2">
+          <div class="card">
+            <h3>Reflection</h3>
+            <textarea id="reflection" rows="5" placeholder="What went well? What needs adjusting?"></textarea>
+          </div>
+          <div class="card sticky">
+            <h3>Next Steps</h3>
+            <textarea id="nextSteps" rows="5" placeholder="Continue • Increase challenge • Change focus…"></textarea>
+          </div>
+        </section>
+
+        <div class="btns" style="margin-top:16px;">
+          <button class="btn" id="saveBtn">💾 Save</button>
+          <button class="btn" id="printBtn">🖨️ Print / PDF</button>
+          <button class="btn" id="copyNextBtn">➡️ Copy to Next Week</button>
+          <button class="btn" id="clearBtn">🧹 Clear</button>
+        </div>
+        <div class="footer-hint">Pro tip: Use “Print / PDF” to share at team meetings.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Goal card template -->
+  <template id="goalTemplate">
+    <div class="goal">
+      <h3 contenteditable="true" class="goal-title" data-placeholder="Type goal statement here…">Goal title</h3>
+      <div class="grid grid-3">
+        <div>
+          <div class="label">Action Steps (checklist)</div>
+          <div class="checklist">
+            <label><input type="checkbox" /> <input type="text" placeholder="Step 1" /></label>
+            <label><input type="checkbox" /> <input type="text" placeholder="Step 2" /></label>
+            <label><input type="checkbox" /> <input type="text" placeholder="Step 3" /></label>
+          </div>
+        </div>
+        <div>
+          <div class="label">Support Level</div>
+          <div class="support-select">
+            <label class="pill"><input type="radio" name="support-__ID__" value="Indep." /> Indep.</label>
+            <label class="pill"><input type="radio" name="support-__ID__" value="Verbal Prompt" checked/> Verbal</label>
+            <label class="pill"><input type="radio" name="support-__ID__" value="Hand-over-hand" /> Hand-over-hand</label>
+            <label class="pill"><input type="radio" name="support-__ID__" value="Physical Prompt" /> Physical Prompt</label>
+          </div>
+        </div>
+        <div>
+          <div class="label">Notes</div>
+          <textarea rows="6" class="goal-notes" placeholder="Any specifics for this goal…"></textarea>
+        </div>
+      </div>
+      <div class="btns" style="margin-top:8px;">
+        <button class="btn remove-goal">Remove Goal</button>
+      </div>
+    </div>
+  </template>
+
+  <script>
+    // optional navbar loader
+    (function(){
+      if(!document.getElementById('navbar')) return;
+      const s=document.createElement('script'); s.src='load-navbar.js'; s.defer=true; document.head.appendChild(s);
+    })();
+
+    // --- element refs
+    const weekRangeText = document.getElementById('weekRangeText');
+    const goalsEl       = document.getElementById('goals');
+    const addGoalBtn    = document.getElementById('addGoal');
+    const saveBtn       = document.getElementById('saveBtn');
+    const printBtn      = document.getElementById('printBtn');
+    const copyNextBtn   = document.getElementById('copyNextBtn');
+    const clearBtn      = document.getElementById('clearBtn');
+    const weekTableBody = document.getElementById('weekTableBody');
+    const weekFreqEl    = document.getElementById('weekFreq');
+
+    const fields = {
+      focusArea  : document.getElementById('focusArea'),
+      customTitle: document.getElementById('customTitle'),
+      whyMatters : document.getElementById('whyMatters'),
+      reflection : document.getElementById('reflection'),
+      nextSteps  : document.getElementById('nextSteps')
+    };
+
+    // --- date helpers
+    function startOfWeek(d){ const date=new Date(d); const day=date.getDay(); const diff=(day===0?-6:1)-day; date.setDate(date.getDate()+diff); date.setHours(0,0,0,0); return date; }
+    function endOfWeek(from){ const d=new Date(from); d.setDate(d.getDate()+6); d.setHours(23,59,59,999); return d; }
+    function fmt(d){ return d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}); }
+    function isoDateOnly(d){ return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10); }
+
+    let currentMonday = startOfWeek(new Date());
+
+    // --- build week rows
+    function buildWeekRows(startDate = currentMonday) {
+      if (!weekTableBody) return;
+      const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+      weekTableBody.innerHTML = '';
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(startDate); d.setDate(d.getDate() + i);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${days[i]}</strong><div style="font-size:12px;opacity:.7">${d.toLocaleDateString()}</div></td>
+          <td><input type="checkbox" class="practiced"></td>
+          <td><input type="text" class="input day-note" placeholder="Quick note…"></td>`;
+        weekTableBody.appendChild(tr);
+      }
+    }
+
+    function updateWeekText() {
+      const end = endOfWeek(currentMonday);
+      weekRangeText.textContent = `Week of ${fmt(currentMonday)} – ${fmt(end)}`;
+      buildWeekRows(currentMonday);
+    }
+
+    // --- goals
+    let goalCount=0;
+    function addGoal(data=null){
+      goalCount++;
+      const tpl=document.getElementById('goalTemplate').content.cloneNode(true);
+      tpl.querySelectorAll('[name^="support-"]').forEach(el=>el.name=`support-${goalCount}`);
+      goalsEl.appendChild(tpl);
+      const node=goalsEl.lastElementChild;
+      const titleEl=node.querySelector('.goal-title');
+      const checklistInputs=node.querySelectorAll('.checklist input[type="text"]');
+      const notesEl=node.querySelector('.goal-notes');
+      titleEl.addEventListener('focus',()=>{ if(titleEl.textContent.trim()==='Goal title') titleEl.textContent=''; });
+      node.querySelector('.remove-goal').addEventListener('click',()=>node.remove());
+      if(data){
+        titleEl.textContent=data.title||'Goal title';
+        checklistInputs.forEach((inp,i)=>inp.value=data.steps?.[i]||'');
+        Array.from(node.querySelectorAll('input[type="radio"]')).forEach(r=>r.checked=(r.value===data.support));
+        notesEl.value=data.notes||'';
+      }
+    }
+
+    // --- persistence helpers
+    const getV = (el, f='') => (el && typeof el.value !== 'undefined') ? el.value : f;
+    const setV = (el, v='')   => { if (el && typeof el.value !== 'undefined') el.value = v; };
+    const setChecked = (el,v) => { if (el) el.checked = !!v; };
+
+    const KEY = 'focusOfWeek_v3';
+
+    function collectGoals(){
+      return Array.from(goalsEl.querySelectorAll('.goal')).map(g => {
+        const title   = (g.querySelector('.goal-title')?.textContent || '').trim();
+        const steps   = Array.from(g.querySelectorAll('.checklist input[type="text"]')).map(i => i.value || '');
+        const support = (Array.from(g.querySelectorAll('input[type="radio"]')).find(r => r.checked)?.value) || 'Verbal Prompt';
+        const notes   = g.querySelector('.goal-notes')?.value || '';
+        return { title, steps, support, notes };
+      });
+    }
+    function hydrateGoals(goals){
+      goalsEl.innerHTML = '';
+      (goals && goals.length ? goals : [{}]).forEach(g => addGoal(g));
+    }
+
+    function collectDays(){
+      return Array.from(weekTableBody.querySelectorAll('tr')).map(tr => ({
+        practiced: !!tr.querySelector('.practiced')?.checked,
+        note: tr.querySelector('.day-note')?.value || ''
+      }));
+    }
+    function hydrateDays(days){
+      if (!days || days.length !== 7) return;
+      Array.from(weekTableBody.querySelectorAll('tr')).forEach((tr, i) => {
+        setChecked(tr.querySelector('.practiced'), !!days[i].practiced);
+        setV(tr.querySelector('.day-note'), days[i].note || '');
+      });
+    }
+
+    function save(){
+      try{
+        const data = {
+          weekStart:     isoDateOnly(currentMonday),
+          weekFrequency: getV(weekFreqEl, 'Daily'),
+          focusArea:     getV(fields.focusArea, 'communication'),
+          customTitle:   getV(fields.customTitle, ''),
+          whyMatters:    getV(fields.whyMatters, ''),
+          reflection:    getV(fields.reflection, ''),
+          nextSteps:     getV(fields.nextSteps, ''),
+          goals:         collectGoals(),
+          days:          collectDays(),
+          savedAt:       new Date().toISOString()
+        };
+        localStorage.setItem(KEY, JSON.stringify(data));
+        alert('Saved!');
+      }catch(e){
+        console.error('Save failed', e);
+        alert('Save failed. See console.');
+      }
+    }
+
+    function load(){
+      try{
+        const raw = localStorage.getItem(KEY);
+        if (!raw){ init(true); return; }
+        const data = JSON.parse(raw);
+
+        if (data.weekStart) currentMonday = startOfWeek(new Date(data.weekStart));
+        updateWeekText();
+
+        if (fields.focusArea) fields.focusArea.value = data.focusArea || fields.focusArea.value;
+        setV(fields.customTitle, data.customTitle || '');
+        setV(fields.whyMatters,  data.whyMatters  || '');
+        weekFreqEl.value = data.weekFrequency || 'Daily';
+
+        hydrateGoals(data.goals || []);
+        hydrateDays(data.days || []);
+
+        setV(fields.reflection, data.reflection || '');
+        setV(fields.nextSteps,  data.nextSteps  || '');
+      }catch(e){
+        console.error('Load failed', e);
+        init(true);
+      }
+    }
+
+    function clearAll(){
+      if (!confirm('Clear everything on this page?')) return;
+      try{
+        localStorage.removeItem(KEY);
+        init(true);
+      }catch(e){
+        console.error('Clear failed', e);
+      }
+    }
+
+    function copyToNextWeek(){
+      currentMonday.setDate(currentMonday.getDate() + 7);
+      updateWeekText();
+      // keep goals/notes; clear daily tracker + reflection
+      Array.from(weekTableBody.querySelectorAll('tr')).forEach(tr => {
+        setChecked(tr.querySelector('.practiced'), false);
+        setV(tr.querySelector('.day-note'), '');
+      });
+      setV(fields.reflection, '');
+    }
+
+    // --- initialize page (rebuild rows + one default goal)
+    function init(resetWeek=false){
+      if (resetWeek) currentMonday = startOfWeek(new Date());
+      updateWeekText();                 // builds the 7 day rows
+      goalsEl.innerHTML = '';
+      addGoal();                        // ensure first goal exists
+      setV(fields.customTitle,'');
+      setV(fields.whyMatters,'');
+      setV(fields.reflection,'');
+      setV(fields.nextSteps,'');
+      if (fields.focusArea) fields.focusArea.selectedIndex = 5; // Communication default
+      weekFreqEl.value = 'Daily';
+    }
+
+    // --- wire buttons
+    addGoalBtn  .addEventListener('click', () => addGoal());
+    saveBtn     .addEventListener('click', save);
+    printBtn    .addEventListener('click', () => window.print());
+    copyNextBtn .addEventListener('click', copyToNextWeek);
+    clearBtn    .addEventListener('click', clearAll);
+
+    // first render + try to load saved data
+    init();      // builds rows + 1 goal so page isn't empty
+    load();
+
+    // expose for console if needed
+    window.save = save; window.load = load;
+  </script>
+
+  <!-- app scripts -->
+<script type="module" src="./script.js"></script>
+<script type="module" src="./hide-group-ui.js"></script>
+<script type="module" src="./avatar-float.js"></script>
+
+<!-- ✅ Restore original hamburger menu + bottom tabbar -->
+<script defer src="./ui-shell.js"></script>
+<script defer src="./scripts/appbar-drawer.js"></script>
+
+</body>
+</html>

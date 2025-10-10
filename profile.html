@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Profile</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; padding: 16px; }
+    h1 { margin: 16px 0; }
+    .avatar-block {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .5rem;
+      margin: 1rem 0 1.25rem;
+    }
+    .avatar-big {
+      width: 96px; height: 96px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #ddd;
+      background: #f7f7f7;
+    }
+    .edit-avatar-btn {
+      width: 32px; height: 32px;
+      display: inline-flex; align-items: center; justify-content: center;
+      border: 1px solid #ccc; border-radius: 6px;
+      background: #fff; cursor: pointer;
+      font-size: 16px;
+    }
+    .edit-avatar-btn:hover { background: #f2f2f2; }
+    .form { margin: 12px 0 16px; display: grid; gap: 10px; max-width: 480px; }
+    label { font-weight: 600; }
+    input[type="text"], select {
+      padding: 10px; border: 1px solid #ccc; border-radius: 6px; width: 100%;
+    }
+    #saveBtn { padding: 10px 14px; border: 0; border-radius: 8px; background: #2563eb; color: white; cursor: pointer; }
+    #saveBtn:hover { background: #1f55c8; }
+    small { opacity: .7; display: block; margin-top: 6px; }
+  </style>
+</head>
+<body>
+  
+
+  <h1>Update Your Profile</h1>
+
+  <div class="avatar-block">
+    <img id="avatarPreview" src="IMG/default-avatar.png" alt="Your avatar" class="avatar-big">
+    <button id="editAvatarBtn" class="edit-avatar-btn" title="Change avatar">✏️</button>
+    <input id="avatarFile" type="file" accept="image/*" style="display:none" />
+  </div>
+
+  <div class="form">
+    <div>
+      <label for="displayName">Display Name</label>
+      <input id="displayName" type="text" placeholder="Enter your name" />
+    </div>
+
+    <div>
+      <label for="profile-group-select">Default Group</label>
+      <select id="profile-group-select">
+        <option value="">Loading…</option>
+      </select>
+      <small>This selection is saved to your profile and auto-used across the app.</small>
+    </div>
+  </div>
+
+  <button id="saveBtn">Save Profile</button>
+  <div id="profileStatus" style="margin-top:10px;font-size:0.95rem;"></div>
+
+  <script type="module">
+    import { supabase } from './supabaseClient.js';
+
+    const defaultAvatar     = 'IMG/default-avatar.png';
+    const avatarPreview     = document.getElementById('avatarPreview');
+    const editAvatarBtn     = document.getElementById('editAvatarBtn');
+    const avatarFile        = document.getElementById('avatarFile');
+    const displayNameEl     = document.getElementById('displayName');
+    const groupSelectEl     = document.getElementById('profile-group-select');
+    const saveBtn           = document.getElementById('saveBtn');
+    const statusEl          = document.getElementById('profileStatus');
+
+    const GROUP_KEY_ID      = 'currentGroupId';
+    const GROUP_KEY_NAME    = 'currentGroupName';
+
+    let currentUser = null;
+
+    // -------- helpers --------
+    function reportStatus(text, ok=false) {
+      if (!statusEl) return;
+      statusEl.textContent = text || '';
+      statusEl.style.color = ok ? 'green' : (text ? '#b91c1c' : '');
+    }
+
+    async function loadGroups() {
+      groupSelectEl.disabled = true;
+      groupSelectEl.innerHTML = '<option>Loading…</option>';
+
+      let groups = [];
+      try {
+        const { data, error } = await supabase
+          .from('groups')
+          .select('id,name')
+          .eq('archived', false)
+          .order('name', { ascending: true });
+
+        if (error) throw error;
+        groups = data || [];
+      } catch (err) {
+        console.error('Load groups error:', err);
+        reportStatus('Could not load groups. Please try again after refreshing.');
+      }
+
+      if (!groups?.length) {
+        try {
+          const { data: seeded, error: seedErr } = await supabase
+            .from('groups')
+            .insert({ name: 'Family' })
+            .select('id,name')
+            .single();
+          if (!seedErr && seeded) groups = [seeded];
+        } catch (seedErr) {
+          console.warn('Default group insert failed:', seedErr);
+        }
+      }
+
+      if (!groups?.length) {
+        groupSelectEl.innerHTML = '<option value="">(no groups found)</option>';
+        groupSelectEl.disabled = true;
+      } else {
+        groupSelectEl.innerHTML = groups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+        groupSelectEl.disabled = false;
+      }
+    }
+
+    async function preloadProfile() {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error) console.error(error);
+      currentUser = user || null;
+
+      if (!currentUser) {
+        alert('Please log in first.');
+        return;
+      }
+
+      // fetch display_name, avatar_url, group_id
+      const { data: p, error: pErr } = await supabase
+        .from('profiles')
+        .select('display_name, avatar_url, group_id')
+        .eq('id', currentUser.id)              // use id as key
+        .maybeSingle();
+
+      if (pErr && pErr.code !== 'PGRST116') console.error(pErr);
+
+      displayNameEl.value = p?.display_name || '';
+      avatarPreview.src   = p?.avatar_url || defaultAvatar;
+      reportStatus('');
+
+      // if we already have a group_id saved, select it and cache it
+      if (p?.group_id) {
+        groupSelectEl.value = p.group_id;
+        localStorage.setItem(GROUP_KEY_ID, p.group_id);
+        // cache name too
+        try {
+          const { data: g } = await supabase.from('groups').select('name').eq('id', p.group_id).single();
+          if (g?.name) localStorage.setItem(GROUP_KEY_NAME, g.name);
+        } catch {}
+      }
+    }
+
+    async function saveProfile() {
+      if (!currentUser) return;
+
+      const display_name    = (displayNameEl.value || '').trim() || null;
+      const selectedGroupId = groupSelectEl.value || null;
+      let avatar_url = null;
+      reportStatus('');
+
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving…';
+
+      try {
+        // 1) upload avatar if chosen
+        if (avatarFile.files.length > 0) {
+          const file = avatarFile.files[0];
+          const path = `${currentUser.id}/${file.name}`;
+          const { error: uploadErr } = await supabase
+            .storage.from('avatars')
+            .upload(path, file, { upsert: true });
+          if (uploadErr) {
+            console.error(uploadErr);
+            reportStatus('Error uploading avatar.');
+            return;
+          }
+          const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path);
+          avatar_url = pub.publicUrl;
+        }
+
+        // 2) upsert into profiles using id as key
+        const payload = {
+          id: currentUser.id,
+          display_name,
+          group_id: selectedGroupId
+        };
+        if (avatar_url) payload.avatar_url = avatar_url;
+
+        const { error: upsertErr } = await supabase
+          .from('profiles')
+          .upsert(payload, { onConflict: 'id' });
+
+        if (upsertErr) {
+          console.error(upsertErr);
+          reportStatus('Error saving profile. Please try again.');
+          return;
+        }
+
+        localStorage.setItem(GROUP_KEY_ID, selectedGroupId || '');
+        const selectedName = groupSelectEl.selectedOptions[0]?.textContent || '';
+        localStorage.setItem(GROUP_KEY_NAME, selectedName);
+
+        if (!avatar_url && !avatarPreview.src) avatarPreview.src = defaultAvatar;
+
+        reportStatus('Profile saved! ✅', true);
+      } catch (err) {
+        console.error('Save profile error:', err);
+        reportStatus('Error saving profile. Please try again.');
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save Profile';
+      }
+
+    // -------- wire up UI --------
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadGroups();
+      await preloadProfile();
+    });
+
+    editAvatarBtn.addEventListener('click', () => avatarFile.click());
+    avatarFile.addEventListener('change', () => {
+      const file = avatarFile.files[0];
+      if (file) avatarPreview.src = URL.createObjectURL(file);
+    });
+    saveBtn.addEventListener('click', saveProfile);
+    
+  </script>
+<!-- page logic(s) ... -->
+<script defer src="./scripts/appbar-drawer.js"></script>
+<script defer src="./ui-shell.js"></script>
+
+<!-- Floating avatar (optional) -->
+<script type="module" src="./avatar-float.js"></script>
+
+
+
+</body>
+</html>

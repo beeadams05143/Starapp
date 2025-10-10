@@ -1,0 +1,39 @@
+:root { --tabs-h: 72px; }
+
+/* give every page room for the fixed bottom tabs (with iOS safe-area) */
+body {
+  padding-bottom: calc(var(--tabs-h) + env(safe-area-inset-bottom, 0px));
+}
+
+/* unified bottom tabs, solid black bar with a THICK black top border */
+#bottom-tabs,
+.bottom-tabs,
+.tabs.tabs--six {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 999;
+  height: var(--tabs-h);
+  display: flex; align-items: center; justify-content: space-around; gap: 4px;
+  padding: 6px env(safe-area-inset-left, 0px)
+           calc(6px + env(safe-area-inset-bottom, 0px))
+           env(safe-area-inset-right, 0px);
+  background: #111 !important; color: #fff !important;
+  border-top: 8px solid #000 !important;  /* <-- thicker black line */
+  border-radius: 0 !important; box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+/* tab items */
+#bottom-tabs a, .bottom-tabs a, .tabs.tabs--six a,
+#bottom-tabs button, .bottom-tabs button, .tabs.tabs--six button {
+  color: #ddd !important; text-decoration: none;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  min-width: 64px; padding: 6px 10px; border-radius: 10px;
+}
+
+#bottom-tabs a .icon, .bottom-tabs a .icon, .tabs.tabs--six a .icon { font-size: 20px; line-height: 1; }
+#bottom-tabs a .label, .bottom-tabs a .label, .tabs.tabs--six a .label { font-size: 12px; }
+
+#bottom-tabs a:hover, .bottom-tabs a:hover, .tabs.tabs--six a:hover,
+#bottom-tabs a.active, .bottom-tabs a.active, .tabs.tabs--six a.active,
+#bottom-tabs [aria-current="page"], .tabs.tabs--six [aria-current="page"] {
+  color: #fff !important; background: #222 !important;
+}

@@ -37,6 +37,16 @@
     #saveBtn { padding: 10px 14px; border: 0; border-radius: 8px; background: #2563eb; color: white; cursor: pointer; }
     #saveBtn:hover { background: #1f55c8; }
     small { opacity: .7; display: block; margin-top: 6px; }
+    #avatarFile {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
   </style>
 </head>
 <body>
@@ -46,8 +56,8 @@
 
   <div class="avatar-block">
     <img id="avatarPreview" src="IMG/default-avatar.png" alt="Your avatar" class="avatar-big">
-    <button id="editAvatarBtn" class="edit-avatar-btn" title="Change avatar">✏️</button>
-    <input id="avatarFile" type="file" accept="image/*" style="display:none" />
+    <button id="editAvatarBtn" class="edit-avatar-btn" type="button" title="Change avatar">✏️</button>
+    <input id="avatarFile" type="file" accept="image/*" />
   </div>
 
   <div class="form">
@@ -92,62 +102,48 @@
       statusEl.style.color = ok ? 'green' : (text ? '#b91c1c' : '');
     }
 
-    async function loadGroups() {
+    async function loadGroups(userId) {
       groupSelectEl.disabled = true;
       groupSelectEl.innerHTML = '<option>Loading…</option>';
 
       let groups = [];
       try {
         const { data, error } = await supabase
-          .from('groups')
-          .select('id,name')
-          .eq('archived', false)
-          .order('name', { ascending: true });
+          .from('group_members')
+          .select('group:groups(id,name,archived)')
+          .eq('user_id', userId)
+          .eq('group.archived', false)
+          .order('group(name)', { ascending: true });
 
         if (error) throw error;
-        groups = data || [];
+        groups = (data || [])
+          .map(row => row.group)
+          .filter(Boolean);
       } catch (err) {
         console.error('Load groups error:', err);
         reportStatus('Could not load groups. Please try again after refreshing.');
       }
 
       if (!groups?.length) {
-        try {
-          const { data: seeded, error: seedErr } = await supabase
-            .from('groups')
-            .insert({ name: 'Family' })
-            .select('id,name')
-            .single();
-          if (!seedErr && seeded) groups = [seeded];
-        } catch (seedErr) {
-          console.warn('Default group insert failed:', seedErr);
-        }
-      }
-
-      if (!groups?.length) {
+        console.warn('[profile] no groups for user', userId);
         groupSelectEl.innerHTML = '<option value="">(no groups found)</option>';
         groupSelectEl.disabled = true;
-      } else {
-        groupSelectEl.innerHTML = groups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
-        groupSelectEl.disabled = false;
-      }
-    }
-
-    async function preloadProfile() {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (error) console.error(error);
-      currentUser = user || null;
-
-      if (!currentUser) {
-        alert('Please log in first.');
         return;
       }
 
-      // fetch display_name, avatar_url, group_id
+      console.log('[profile] groups loaded', groups);
+      groupSelectEl.innerHTML = '<option value="">Select group…</option>' +
+        groups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+      groupSelectEl.disabled = false;
+    }
+
+    async function loadProfile(user) {
+      currentUser = user;
+
       const { data: p, error: pErr } = await supabase
         .from('profiles')
         .select('display_name, avatar_url, group_id')
-        .eq('id', currentUser.id)              // use id as key
+        .eq('id', currentUser.id)
         .maybeSingle();
 
       if (pErr && pErr.code !== 'PGRST116') console.error(pErr);
@@ -228,12 +224,31 @@
         saveBtn.disabled = false;
         saveBtn.textContent = 'Save Profile';
       }
+    }
 
     // -------- wire up UI --------
-    document.addEventListener('DOMContentLoaded', async () => {
-      await loadGroups();
-      await preloadProfile();
-    });
+    async function initializeProfilePage() {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error) {
+        console.error('getUser error', error);
+        reportStatus('Could not load profile. Please refresh.');
+        return;
+      }
+      if (!user) {
+        alert('Please log in first.');
+        location.href = './login.html';
+        return;
+      }
+
+      await loadGroups(user.id);
+      await loadProfile(user);
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initializeProfilePage, { once: true });
+    } else {
+      initializeProfilePage();
+    }
 
     editAvatarBtn.addEventListener('click', () => avatarFile.click());
     avatarFile.addEventListener('change', () => {

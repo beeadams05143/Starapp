@@ -102,30 +102,26 @@
       statusEl.style.color = ok ? 'green' : (text ? '#b91c1c' : '');
     }
 
-    async function loadGroups(userId) {
+    async function loadGroups() {
       groupSelectEl.disabled = true;
       groupSelectEl.innerHTML = '<option>Loading…</option>';
 
       let groups = [];
       try {
         const { data, error } = await supabase
-          .from('group_members')
-          .select('group:groups(id,name,archived)')
-          .eq('user_id', userId)
-          .eq('group.archived', false)
-          .order('group(name)', { ascending: true });
+          .from('groups')
+          .select('id,name')
+          .eq('archived', false)
+          .order('name', { ascending: true });
 
         if (error) throw error;
-        groups = (data || [])
-          .map(row => row.group)
-          .filter(Boolean);
+        groups = data || [];
       } catch (err) {
         console.error('Load groups error:', err);
         reportStatus('Could not load groups. Please try again after refreshing.');
       }
 
       if (!groups?.length) {
-        console.warn('[profile] no groups for user', userId);
         groupSelectEl.innerHTML = '<option value="">(no groups found)</option>';
         groupSelectEl.disabled = true;
         return;
@@ -240,7 +236,7 @@
         return;
       }
 
-      await loadGroups(user.id);
+      await loadGroups();
       await loadProfile(user);
     }
 

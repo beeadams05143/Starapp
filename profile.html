@@ -102,35 +102,52 @@
       statusEl.style.color = ok ? 'green' : (text ? '#b91c1c' : '');
     }
 
-    async function loadGroups() {
+    async function loadGroups(userId) {
       groupSelectEl.disabled = true;
       groupSelectEl.innerHTML = '<option>Loading…</option>';
 
-      let groups = [];
       try {
-        const { data, error } = await supabase
+        const { data: memberships, error: membershipError } = await supabase
+          .from('group_members')
+          .select('group_id')
+          .eq('user_id', userId);
+
+        if (membershipError) throw membershipError;
+
+        const groupIds = (memberships || [])
+          .map(row => row.group_id)
+          .filter(Boolean);
+
+        if (!groupIds.length) {
+          groupSelectEl.innerHTML = '<option value="">(no groups found)</option>';
+          groupSelectEl.disabled = true;
+          return;
+        }
+
+        const { data: groups, error: groupError } = await supabase
           .from('groups')
           .select('id,name')
+          .in('id', groupIds)
           .eq('archived', false)
           .order('name', { ascending: true });
 
-        if (error) throw error;
-        groups = data || [];
+        if (groupError) throw groupError;
+
+        if (!groups?.length) {
+          groupSelectEl.innerHTML = '<option value="">(no groups found)</option>';
+          groupSelectEl.disabled = true;
+          return;
+        }
+
+        console.log('[profile] groups loaded', groups);
+        groupSelectEl.innerHTML = '<option value="">Select group…</option>' +
+          groups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+        groupSelectEl.disabled = false;
+        reportStatus('');
       } catch (err) {
         console.error('Load groups error:', err);
         reportStatus('Could not load groups. Please try again after refreshing.');
       }
-
-      if (!groups?.length) {
-        groupSelectEl.innerHTML = '<option value="">(no groups found)</option>';
-        groupSelectEl.disabled = true;
-        return;
-      }
-
-      console.log('[profile] groups loaded', groups);
-      groupSelectEl.innerHTML = '<option value="">Select group…</option>' +
-        groups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
-      groupSelectEl.disabled = false;
     }
 
     async function loadProfile(user) {
@@ -236,7 +253,7 @@
         return;
       }
 
-      await loadGroups();
+      await loadGroups(user.id);
       await loadProfile(user);
     }
 

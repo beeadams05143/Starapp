@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -37,16 +38,6 @@
     #saveBtn { padding: 10px 14px; border: 0; border-radius: 8px; background: #2563eb; color: white; cursor: pointer; }
     #saveBtn:hover { background: #1f55c8; }
     small { opacity: .7; display: block; margin-top: 6px; }
-    #avatarFile {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      border: 0;
-    }
   </style>
 </head>
 <body>
@@ -56,8 +47,8 @@
 
   <div class="avatar-block">
     <img id="avatarPreview" src="IMG/default-avatar.png" alt="Your avatar" class="avatar-big">
-    <button id="editAvatarBtn" class="edit-avatar-btn" type="button" title="Change avatar">✏️</button>
-    <input id="avatarFile" type="file" accept="image/*" />
+    <button id="editAvatarBtn" class="edit-avatar-btn" title="Change avatar">✏️</button>
+    <input id="avatarFile" type="file" accept="image/*" style="display:none" />
   </div>
 
   <div class="form">
@@ -76,8 +67,6 @@
   </div>
 
   <button id="saveBtn">Save Profile</button>
-  <div id="profileStatus" style="margin-top:10px;font-size:0.95rem;"></div>
-  <p id="signedInAs" style="margin-top:6px;font-size:0.9rem;opacity:.7;"></p>
 
   <script type="module">
     import { supabase } from './supabaseClient.js';
@@ -89,8 +78,6 @@
     const displayNameEl     = document.getElementById('displayName');
     const groupSelectEl     = document.getElementById('profile-group-select');
     const saveBtn           = document.getElementById('saveBtn');
-    const statusEl          = document.getElementById('profileStatus');
-    const signedInAsEl      = document.getElementById('signedInAs');
 
     const GROUP_KEY_ID      = 'currentGroupId';
     const GROUP_KEY_NAME    = 'currentGroupName';
@@ -98,80 +85,53 @@
     let currentUser = null;
 
     // -------- helpers --------
-    function reportStatus(text, ok=false) {
-      if (!statusEl) return;
-      statusEl.textContent = text || '';
-      statusEl.style.color = ok ? 'green' : (text ? '#b91c1c' : '');
-    }
-
-    async function loadGroups(userId) {
+    async function loadGroups() {
       groupSelectEl.disabled = true;
       groupSelectEl.innerHTML = '<option>Loading…</option>';
 
-      try {
-        const { data: memberships, error: membershipError } = await supabase
-          .from('group_members')
-          .select('group_id')
-          .eq('user_id', userId);
+      let { data: groups, error } = await supabase
+        .from('groups')
+        .select('id,name')
+        .eq('archived', false)                 // hide archived groups
+        .order('name', { ascending: true });
 
-        if (membershipError) throw membershipError;
+      if (error) { console.error(error); groups = []; }
 
-        const groupIds = (memberships || [])
-          .map(row => row.group_id)
-          .filter(Boolean);
-
-        if (!groupIds.length) {
-          groupSelectEl.innerHTML = '<option value="">(no groups found)</option>';
-          groupSelectEl.disabled = true;
-          reportStatus('No groups yet. Join or create one in Group Settings.', false);
-          return;
-        }
-
-        const { data: groups, error: groupError } = await supabase
+      // If you have no groups yet, create "Family"
+      if (!groups?.length) {
+        const res = await supabase
           .from('groups')
+          .insert({ name: 'Family' })
           .select('id,name')
-          .in('id', groupIds)
-          .eq('archived', false)
-          .order('name', { ascending: true });
-
-        if (groupError) throw groupError;
-
-        if (!groups?.length) {
-          groupSelectEl.innerHTML = '<option value="">(no groups found)</option>';
-          groupSelectEl.disabled = true;
-          reportStatus('No active groups available. Check Group Settings.', false);
-          return;
-        }
-
-        console.log('[profile] groups loaded', groups);
-        groupSelectEl.innerHTML = '<option value="">Select group…</option>' +
-          groups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
-        groupSelectEl.disabled = false;
-        reportStatus('');
-      } catch (err) {
-        console.error('Load groups error:', err);
-        reportStatus(`Could not load groups: ${err.message || err}`, false);
+          .single();
+        if (!res.error && res.data) groups = [res.data];
       }
+
+      groupSelectEl.innerHTML = groups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+      groupSelectEl.disabled = false;
     }
 
-    async function loadProfile(user) {
-      currentUser = user;
+    async function preloadProfile() {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error) console.error(error);
+      currentUser = user || null;
 
+      if (!currentUser) {
+        alert('Please log in first.');
+        return;
+      }
+
+      // fetch display_name, avatar_url, group_id
       const { data: p, error: pErr } = await supabase
         .from('profiles')
         .select('display_name, avatar_url, group_id')
-        .eq('id', currentUser.id)
+        .eq('id', currentUser.id)              // use id as key
         .maybeSingle();
 
       if (pErr && pErr.code !== 'PGRST116') console.error(pErr);
 
       displayNameEl.value = p?.display_name || '';
       avatarPreview.src   = p?.avatar_url || defaultAvatar;
-      reportStatus('');
-      if (signedInAsEl && user) {
-        const name = p?.display_name || user.email || 'Signed in';
-        signedInAsEl.textContent = `Signed in as ${name}`;
-      }
 
       // if we already have a group_id saved, select it and cache it
       if (p?.group_id) {
@@ -191,92 +151,48 @@
       const display_name    = (displayNameEl.value || '').trim() || null;
       const selectedGroupId = groupSelectEl.value || null;
       let avatar_url = null;
-      reportStatus('');
 
-      saveBtn.disabled = true;
-      saveBtn.textContent = 'Saving…';
-
-      try {
-        // 1) upload avatar if chosen
-        if (avatarFile.files.length > 0) {
-          const file = avatarFile.files[0];
-          const path = `${currentUser.id}/${file.name}`;
-          const { error: uploadErr } = await supabase
-            .storage.from('avatars')
-            .upload(path, file, { upsert: true });
-          if (uploadErr) {
-            console.error(uploadErr);
-            reportStatus('Error uploading avatar.');
-            return;
-          }
-          const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path);
-          avatar_url = pub.publicUrl;
-        }
-
-        // 2) upsert into profiles using id as key
-        const payload = {
-          id: currentUser.id,
-          display_name,
-          group_id: selectedGroupId
-        };
-        if (avatar_url) payload.avatar_url = avatar_url;
-
-        const { error: upsertErr } = await supabase
-          .from('profiles')
-          .upsert(payload, { onConflict: 'id' });
-
-        if (upsertErr) {
-          console.error(upsertErr);
-          reportStatus('Error saving profile. Please try again.');
-          return;
-        }
-
-        localStorage.setItem(GROUP_KEY_ID, selectedGroupId || '');
-        const selectedName = groupSelectEl.selectedOptions[0]?.textContent || '';
-        localStorage.setItem(GROUP_KEY_NAME, selectedName);
-
-        if (!avatar_url && !avatarPreview.src) avatarPreview.src = defaultAvatar;
-
-        reportStatus('Profile saved! ✅', true);
-      } catch (err) {
-        console.error('Save profile error:', err);
-        reportStatus('Error saving profile. Please try again.');
-      } finally {
-        saveBtn.disabled = false;
-        saveBtn.textContent = 'Save Profile';
+      // 1) upload avatar if chosen
+      if (avatarFile.files.length > 0) {
+        const file = avatarFile.files[0];
+        const path = `${currentUser.id}/${file.name}`;
+        const { error: uploadErr } = await supabase
+          .storage.from('avatars')
+          .upload(path, file, { upsert: true });
+        if (uploadErr) { console.error(uploadErr); alert('Error uploading avatar'); return; }
+        const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path);
+        avatar_url = pub.publicUrl;
       }
+
+      // 2) upsert into profiles using id as key
+      const payload = {
+        id: currentUser.id,                     // <-- key is id
+        display_name,
+        group_id: selectedGroupId
+      };
+      if (avatar_url) payload.avatar_url = avatar_url;
+
+      const { error: upsertErr } = await supabase
+        .from('profiles')
+        .upsert(payload, { onConflict: 'id' }); // <-- conflict on id
+
+      if (upsertErr) { console.error(upsertErr); alert('Error saving profile'); return; }
+
+      // 3) cache selection for other pages
+      localStorage.setItem(GROUP_KEY_ID, selectedGroupId || '');
+      const selectedName = groupSelectEl.selectedOptions[0]?.textContent || '';
+      localStorage.setItem(GROUP_KEY_NAME, selectedName);
+
+      if (!avatar_url && !avatarPreview.src) avatarPreview.src = defaultAvatar;
+
+      alert('Profile saved! ✅');
     }
 
     // -------- wire up UI --------
-    async function initializeProfilePage() {
-      try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        if (sessionError) {
-          console.error('getSession error', sessionError);
-          reportStatus('Could not load profile. Please refresh.');
-          return;
-        }
-
-        const user = session?.user;
-        if (!user) {
-          alert('Please log in first.');
-          location.href = './login.html';
-          return;
-        }
-
-        await loadGroups(user.id);
-        await loadProfile(user);
-      } catch (err) {
-        console.error('initializeProfilePage error', err);
-        reportStatus('Unexpected error loading profile.');
-      }
-    }
-
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initializeProfilePage, { once: true });
-    } else {
-      initializeProfilePage();
-    }
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadGroups();
+      await preloadProfile();
+    });
 
     editAvatarBtn.addEventListener('click', () => avatarFile.click());
     avatarFile.addEventListener('change', () => {

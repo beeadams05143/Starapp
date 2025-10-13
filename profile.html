@@ -77,6 +77,7 @@
 
   <button id="saveBtn">Save Profile</button>
   <div id="profileStatus" style="margin-top:10px;font-size:0.95rem;"></div>
+  <p id="signedInAs" style="margin-top:6px;font-size:0.9rem;opacity:.7;"></p>
 
   <script type="module">
     import { supabase } from './supabaseClient.js';
@@ -89,6 +90,7 @@
     const groupSelectEl     = document.getElementById('profile-group-select');
     const saveBtn           = document.getElementById('saveBtn');
     const statusEl          = document.getElementById('profileStatus');
+    const signedInAsEl      = document.getElementById('signedInAs');
 
     const GROUP_KEY_ID      = 'currentGroupId';
     const GROUP_KEY_NAME    = 'currentGroupName';
@@ -121,6 +123,7 @@
         if (!groupIds.length) {
           groupSelectEl.innerHTML = '<option value="">(no groups found)</option>';
           groupSelectEl.disabled = true;
+          reportStatus('No groups yet. Join or create one in Group Settings.', false);
           return;
         }
 
@@ -136,6 +139,7 @@
         if (!groups?.length) {
           groupSelectEl.innerHTML = '<option value="">(no groups found)</option>';
           groupSelectEl.disabled = true;
+          reportStatus('No active groups available. Check Group Settings.', false);
           return;
         }
 
@@ -146,7 +150,7 @@
         reportStatus('');
       } catch (err) {
         console.error('Load groups error:', err);
-        reportStatus('Could not load groups. Please try again after refreshing.');
+        reportStatus(`Could not load groups: ${err.message || err}`, false);
       }
     }
 
@@ -164,6 +168,10 @@
       displayNameEl.value = p?.display_name || '';
       avatarPreview.src   = p?.avatar_url || defaultAvatar;
       reportStatus('');
+      if (signedInAsEl && user) {
+        const name = p?.display_name || user.email || 'Signed in';
+        signedInAsEl.textContent = `Signed in as ${name}`;
+      }
 
       // if we already have a group_id saved, select it and cache it
       if (p?.group_id) {
@@ -241,20 +249,27 @@
 
     // -------- wire up UI --------
     async function initializeProfilePage() {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (error) {
-        console.error('getUser error', error);
-        reportStatus('Could not load profile. Please refresh.');
-        return;
-      }
-      if (!user) {
-        alert('Please log in first.');
-        location.href = './login.html';
-        return;
-      }
+      try {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) {
+          console.error('getSession error', sessionError);
+          reportStatus('Could not load profile. Please refresh.');
+          return;
+        }
 
-      await loadGroups(user.id);
-      await loadProfile(user);
+        const user = session?.user;
+        if (!user) {
+          alert('Please log in first.');
+          location.href = './login.html';
+          return;
+        }
+
+        await loadGroups(user.id);
+        await loadProfile(user);
+      } catch (err) {
+        console.error('initializeProfilePage error', err);
+        reportStatus('Unexpected error loading profile.');
+      }
     }
 
     if (document.readyState === 'loading') {

@@ -84,6 +84,15 @@
 
     let currentUser = null;
 
+    async function getCurrentUser() {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error) {
+        console.error('getSession error', error);
+        return null;
+      }
+      return session?.user ?? null;
+    }
+
     // -------- helpers --------
     async function loadGroups() {
       groupSelectEl.disabled = true;
@@ -111,15 +120,9 @@
       groupSelectEl.disabled = false;
     }
 
-    async function preloadProfile() {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (error) console.error(error);
-      currentUser = user || null;
-
-      if (!currentUser) {
-        alert('Please log in first.');
-        return;
-      }
+    async function preloadProfile(user) {
+      if (!user) return;
+      currentUser = user;
 
       // fetch display_name, avatar_url, group_id
       const { data: p, error: pErr } = await supabase
@@ -190,8 +193,22 @@
 
     // -------- wire up UI --------
     document.addEventListener('DOMContentLoaded', async () => {
+      const user = await getCurrentUser();
+      if (!user) {
+        alert('Please log in first.');
+        location.href = './login.html';
+        return;
+      }
+
       await loadGroups();
-      await preloadProfile();
+      await preloadProfile(user);
+    });
+
+    supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        loadGroups();
+        preloadProfile(session.user);
+      }
     });
 
     editAvatarBtn.addEventListener('click', () => avatarFile.click());

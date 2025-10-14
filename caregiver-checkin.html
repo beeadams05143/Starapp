@@ -314,26 +314,97 @@
 
   // Define outer refs so other functions (e.g., submitFinal) can use them
   let formEl, submitBtn;
+  let steps = [];
+  let toggleAllBtn, resumeDraftBtn;
+  let progItems = [];
+  let segs = [];
+
+  const DRAFT_KEY = 'cg-checkin-draft-v1';
 
   // 4) Start logic once DOM is ready
   document.addEventListener('DOMContentLoaded', () => {
-    formEl    = document.getElementById('cg-form');
-    submitBtn = document.getElementById('submitAll');
+    formEl        = document.getElementById('cg-form');
+    submitBtn     = document.getElementById('submitAll');
+    steps         = Array.from(document.querySelectorAll('.step'));
+    toggleAllBtn  = document.getElementById('toggleAll');
+    resumeDraftBtn = document.getElementById('resumeDraftBtn');
+    const progressEl = document.getElementById('progress');
+    progItems     = progressEl ? Array.from(progressEl.querySelectorAll('.prog-item')) : [];
+    segs          = progressEl ? Array.from(progressEl.querySelectorAll('.seg')) : [];
 
-    if (!formEl || !submitBtn) {
-      console.error('❌ Form or button not found!');
+    if (!formEl || !submitBtn || steps.length === 0) {
+      console.error('❌ Form, button, or steps not found!');
       return;
     }
 
-   console.log('✅ Form and button loaded:', formEl, submitBtn);
+    console.log('✅ Form assets ready:', { formEl, submitBtn, steps });
 
-// Wire up the final submit
-submitBtn.addEventListener('click', submitFinal);
-formEl.addEventListener('submit', submitFinal);
+    hydratePromptingSelects();
+    steps.forEach((step, idx) => restore(step, idx));
+    updateSavedButtons();
+    updateProgress();
+    syncAggressionControls();
 
-// Kick off the wizard UI
-go(0);
-}); // <-- end DOMContentLoaded
+    // Wire per-step buttons and autosave
+    steps.forEach((step, idx) => {
+      step.querySelector('[data-next]')?.addEventListener('click', () => {
+        save(step, idx);
+        go(idx + 1);
+      });
+      step.querySelector('[data-prev]')?.addEventListener('click', () => {
+        save(step, idx, true);
+        go(idx - 1);
+      });
+      step.querySelector('[data-save]')?.addEventListener('click', () => save(step, idx));
+      let t;
+      step.addEventListener('input', (e) => {
+        if (e.target?.name === 'aggression_intensity') {
+          const el = document.getElementById('intensityVal');
+          if (el) el.textContent = e.target.value;
+        }
+        clearTimeout(t);
+        t = setTimeout(() => save(step, idx, true), 450);
+      });
+    });
+
+    // Progress nav + show all
+    progItems.forEach((pi) => pi.addEventListener('click', () => go(Number(pi.dataset.step))));
+    toggleAllBtn?.addEventListener('click', () => {
+      showAll = !showAll;
+      if (showAll) {
+        steps.forEach((s) => s.classList.add('active'));
+        toggleAllBtn.textContent = 'Collapse to wizard';
+      } else {
+        steps.forEach((s, i) => s.classList.toggle('active', i === current));
+        toggleAllBtn.textContent = 'Show all sections';
+        steps[current].scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+
+    // Draft resume
+    resumeDraftBtn?.addEventListener('click', () => {
+      draft = loadDraft() || { data: {}, savedAt: {} };
+      steps.forEach((s, i) => hydrate(s, draft.data[i]));
+      const cat = draft.data[3]?.adl_category;
+      if (cat) {
+        setAdlActivities(cat);
+        if (adlActivity) {
+          adlActivity.value = draft.data[3]?.adl_activity || '';
+        }
+      }
+      steps.forEach((s, i) => updateSavedAt(s, i));
+      hydratePromptingSelects();
+      syncAggressionControls();
+      toast('Draft restored');
+    });
+
+    // Final submit handlers
+    submitBtn.addEventListener('click', submitFinal);
+    formEl.addEventListener('submit', submitFinal);
+
+    // Initial position
+    go(0);
+  }); // <-- end DOMContentLoaded
 
   // Helper: normalize truthy/falsey
   const toBool = (v) => {
@@ -394,50 +465,10 @@ go(0);
     }
     adlCategory?.addEventListener('change', e=> setAdlActivities(e.target.value));
 
-    // Wizard state
-    let showAll=false, current=0;
-    let draft = loadDraft() || { data:{}, savedAt:{} };
-
-    // Init
-    steps.forEach((step,idx)=>restore(step,idx));
-    hydratePromptingSelects();
-    updateSavedButtons();
-    updateProgress();
-    syncAggressionControls();
-
-    // Wire per-step buttons and autosave
-    steps.forEach((step, idx) => {
-      step.querySelector('[data-next]')?.addEventListener('click',()=>{ save(step,idx); go(idx+1); });
-      step.querySelector('[data-prev]')?.addEventListener('click',()=>{ save(step,idx,true); go(idx-1); });
-      step.querySelector('[data-save]')?.addEventListener('click',()=> save(step,idx));
-      let t; step.addEventListener('input', e=>{
-        if(e.target?.name==='aggression_intensity'){ const el=document.getElementById('intensityVal'); if(el) el.textContent=e.target.value; }
-        clearTimeout(t); t=setTimeout(()=>save(step,idx,true),450);
-      });
-    });
-
-    // Progress nav + show all
-    progItems.forEach(pi=>pi.addEventListener('click',()=>go(Number(pi.dataset.step))));
-    toggleAllBtn?.addEventListener('click',()=>{
-      showAll=!showAll;
-      if(showAll){ steps.forEach(s=>s.classList.add('active')); toggleAllBtn.textContent='Collapse to wizard'; }
-      else { steps.forEach((s,i)=>s.classList.toggle('active',i===current)); toggleAllBtn.textContent='Show all sections'; steps[current].scrollIntoView({behavior:'smooth',block:'start'}); }
-    });
-
-    // Draft resume
-    resumeDraftBtn?.addEventListener('click',()=>{
-      draft = loadDraft() || { data:{}, savedAt:{} };
-      steps.forEach((s,i)=>hydrate(s,draft.data[i]));
-      const cat = draft.data[3]?.adl_category; if(cat){ setAdlActivities(cat); adlActivity.value = draft.data[3]?.adl_activity || ''; }
-      steps.forEach((s,i)=>updateSavedAt(s,i));
-      hydratePromptingSelects();
-      syncAggressionControls();
-      toast('Draft restored');
-    });
-
-    // Submit handlers
-    submitBtn?.addEventListener('click', submitFinal);
-    formEl?.addEventListener('submit', submitFinal);
+  // Wizard state
+  let showAll = false;
+  let current = 0;
+  let draft = loadDraft() || { data: {}, savedAt: {} };
 
     // ---------- helpers ----------
     function serialize(step){
@@ -469,7 +500,12 @@ go(0);
     }
     function restore(step,idx){
       hydrate(step,draft.data[idx]); updateSavedAt(step,idx);
-      if(idx===3 && draft.data[3]?.adl_category){ setAdlActivities(draft.data[3].adl_category); adlActivity.value=draft.data[3]?.adl_activity || ''; }
+      if(idx===3 && draft.data[3]?.adl_category){
+        setAdlActivities(draft.data[3].adl_category);
+        if (adlActivity) {
+          adlActivity.value = draft.data[3]?.adl_activity || '';
+        }
+      }
     }
     function loadDraft(){ try{ const raw=localStorage.getItem(DRAFT_KEY); return raw?JSON.parse(raw):null; }catch{ return null; } }
     function updateSavedAt(step,idx){
@@ -508,7 +544,10 @@ go(0);
       e?.preventDefault?.();
       if (submitBtn) { submitBtn.disabled=true; submitBtn.textContent='Submitting…'; }
       try {
-        save(steps[current], current, true);
+        const activeStep = steps[current];
+        if (activeStep) {
+          save(activeStep, current, true);
+        }
 
         const { data: { session } } = await supabase.auth.getSession();
         const user_id = session?.user?.id;
@@ -549,8 +588,6 @@ go(0);
         if (submitBtn) { submitBtn.disabled=false; submitBtn.textContent='Submit Final'; }
       }
     }
-go(0);
-}); // end DOMContentLoaded
 </script>
 </body>
 </html>

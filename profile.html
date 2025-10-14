@@ -81,6 +81,10 @@
 
     const GROUP_KEY_ID      = 'currentGroupId';
     const GROUP_KEY_NAME    = 'currentGroupName';
+    const DEFAULT_GROUP     = {
+      id: '3159dde9-8cf3-4a29-af72-01da907f241b',   // existing "Family" group id
+      name: 'Family'
+    };
 
     let currentUser = null;
 
@@ -89,26 +93,42 @@
       groupSelectEl.disabled = true;
       groupSelectEl.innerHTML = '<option>Loading…</option>';
 
-      let { data: groups, error } = await supabase
-        .from('groups')
-        .select('id,name')
-        .eq('archived', false)                 // hide archived groups
-        .order('name', { ascending: true });
-
-      if (error) { console.error(error); groups = []; }
-
-      // If you have no groups yet, create "Family"
-      if (!groups?.length) {
-        const res = await supabase
+      let groups = [];
+      try {
+        const { data, error } = await supabase
           .from('groups')
-          .insert({ name: 'Family' })
-          .select('id,name')
-          .single();
-        if (!res.error && res.data) groups = [res.data];
+          .select('id,name,archived')
+          .order('name', { ascending: true });
+
+        if (error) throw error;
+        groups = (data || []).filter(g => !g?.archived);
+      } catch (err) {
+        console.error('[PROFILE] loadGroups error', err);
+        groups = [];
+      }
+
+      if (!groups.length) {
+        groups = [DEFAULT_GROUP];
       }
 
       groupSelectEl.innerHTML = groups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
       groupSelectEl.disabled = false;
+
+      if (!groupSelectEl.value) {
+        groupSelectEl.value = DEFAULT_GROUP.id;
+      }
+
+      try {
+        const selected = groupSelectEl.selectedOptions[0];
+        if (selected) {
+          localStorage.setItem(GROUP_KEY_ID, selected.value);
+          localStorage.setItem(GROUP_KEY_NAME, selected.textContent || DEFAULT_GROUP.name);
+        }
+      } catch (err) {
+        console.warn('[PROFILE] caching group selection failed', err);
+      }
+
+      return groups;
     }
 
     async function preloadProfile() {
@@ -149,7 +169,7 @@
       if (!currentUser) return;
 
       const display_name    = (displayNameEl.value || '').trim() || null;
-      const selectedGroupId = groupSelectEl.value || null;
+      const selectedGroupId = groupSelectEl.value || DEFAULT_GROUP.id;
       let avatar_url = null;
 
       // 1) upload avatar if chosen
@@ -180,7 +200,7 @@
 
       // 3) cache selection for other pages
       localStorage.setItem(GROUP_KEY_ID, selectedGroupId || '');
-      const selectedName = groupSelectEl.selectedOptions[0]?.textContent || '';
+      const selectedName = groupSelectEl.selectedOptions[0]?.textContent || DEFAULT_GROUP.name;
       localStorage.setItem(GROUP_KEY_NAME, selectedName);
 
       if (!avatar_url && !avatarPreview.src) avatarPreview.src = defaultAvatar;

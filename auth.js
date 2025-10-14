@@ -42,24 +42,60 @@ async function logIn() {
   const password = document.getElementById('password')?.value;
   const msg = document.getElementById('message');
 
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-
-  if (error) {
-    if (msg) msg.textContent = error.message;
+  if (!email || !password) {
+    if (msg) msg.textContent = 'Enter email and password.';
     return;
   }
 
-  if (data?.user) {
-    localStorage.setItem('user_id', data.user.id);
-    window.location.href = 'dashboard.html';
+  try {
+    setAuthBusy(true);
+    if (msg) msg.textContent = '';
+
+    console.time('[AUTH] signInWithPassword');
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    console.timeEnd('[AUTH] signInWithPassword');
+
+    if (error) {
+      console.error('[AUTH] signIn error', error);
+      if (msg) msg.textContent = error.message || 'Could not sign in.';
+      return;
+    }
+
+    if (data?.user) {
+      localStorage.setItem('user_id', data.user.id);
+      window.location.assign(DASHBOARD_URL);
+    } else {
+      if (msg) msg.textContent = 'Signed in, but no user session returned. Try again.';
+    }
+  } catch (err) {
+    console.error('[AUTH] unexpected signIn error', err);
+    if (msg) msg.textContent = 'Unexpected login error. Please retry.';
+  } finally {
+    setAuthBusy(false);
   }
+}
+
+function setAuthBusy(on) {
+  const buttons = [
+    document.getElementById('loginBtn'),
+    document.getElementById('signupBtn'),
+    document.getElementById('forgotBtn'),
+    document.getElementById('logoutBtn')
+  ].filter(Boolean);
+  buttons.forEach(btn => (btn.disabled = on));
 }
 
 /* ------------- LOG OUT -------------- */
 async function logOut() {
-  await supabase.auth.signOut();
-  localStorage.clear();
-  window.location.href = 'login.html';
+  try {
+    await supabase.auth.signOut();
+  } catch (err) {
+    console.warn('[AUTH] signOut error', err);
+  }
+  try {
+    localStorage.clear();
+  } catch {}
+  window.location.assign(LOGIN_URL);
 }
 
 /* --------- ROUTE / SESSION GUARDS --------- */

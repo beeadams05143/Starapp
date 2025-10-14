@@ -1,5 +1,26 @@
 // script.js
 import { supabase } from './supabaseClient.js';
+
+const GROUP_KEY = 'currentGroupId';
+
+async function completeLogout() {
+  try {
+    await supabase.auth.signOut();
+  } catch (err) {
+    console.warn('supabase signOut failed', err);
+  }
+
+  try {
+    localStorage.removeItem(GROUP_KEY);
+    localStorage.removeItem('currentGroupName');
+    localStorage.removeItem('user_id');
+  } catch {}
+
+  location.href = 'login.html';
+}
+
+window.logOut = () => completeLogout();
+
 window.updateAuthLink = async function updateAuthLink() {
   const a = document.getElementById('auth-dash-link');
   if (!a) return;
@@ -10,8 +31,7 @@ window.updateAuthLink = async function updateAuthLink() {
       a.href = '#logout';
       a.onclick = async (e) => {
         e.preventDefault();
-        try { await supabase.auth.signOut(); } catch {}
-        location.href = 'login.html';
+        await completeLogout();
       };
     } else {
       a.textContent = 'Log In';
@@ -25,22 +45,9 @@ window.updateAuthLink = async function updateAuthLink() {
   }
 };
 
-window.logOut = async function logOut() {
-  try {
-    await supabase.auth.signOut();
-  } catch (err) {
-    console.warn('supabase signOut failed', err);
-  } finally {
-    localStorage.removeItem(GROUP_KEY);
-    localStorage.removeItem('currentGroupName');
-    location.href = 'login.html';
-  }
-};
-
 /* =========================
    Shared helpers
    ========================= */
-const GROUP_KEY = 'currentGroupId';
 const getCurrentGroupId = () => localStorage.getItem(GROUP_KEY) || null;
 
 async function getCurrentUserId() {
@@ -203,6 +210,14 @@ window.goToMoodPage = goToMoodPage;
 
 
 window.addEventListener('DOMContentLoaded', () => {
+  const logoutButtons = document.querySelectorAll('#logoutBtn, [data-logout], button[data-action="logout"]');
+  logoutButtons.forEach(btn => {
+    btn.addEventListener('click', (event) => {
+      event.preventDefault();
+      completeLogout();
+    });
+  });
+
   // Always try to populate groups
   loadGroupsIntoSwitcher().then(() => {
     // Mood list refresh on page load if present

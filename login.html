@@ -153,33 +153,40 @@
           console.log('[LOGIN] values', { emailPresent: !!email, pwLength: password?.length });
 
           if (!email || !password) {
-            setBusy(false);
             console.log('[LOGIN] missing email or password');
             showMsg('Enter email & password');
             return;
           }
 
+          console.log('[LOGIN] supabase available', !!supabase);
+          console.log('[LOGIN] supabase.auth available', !!supabase?.auth);
+
           console.time('[LOGIN] signInWithPassword');
-          const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+          let signInResult;
+          try {
+            signInResult = await supabase.auth.signInWithPassword({ email, password });
+          } catch (err) {
+            console.timeEnd('[LOGIN] signInWithPassword');
+            console.error('[LOGIN] signInWithPassword threw', err);
+            showMsg('Network error logging in. Please retry.');
+            return;
+          }
           console.timeEnd('[LOGIN] signInWithPassword');
-          console.log('[LOGIN] result', { data, error });
+          console.log('[LOGIN] result', signInResult);
 
-          setBusy(false);
-
+          const { data, error } = signInResult || {};
           if (error) {
-            showMsg(error.message);
+            showMsg(error.message || 'Could not log in.');
             return;
           }
 
-          // sanity: ensure session exists (some browsers need a beat)
-          const { data: s } = await supabase.auth.getSession();
-          console.log('[LOGIN] session after login', s);
-          if (!s?.session) {
+          const sessionResult = await supabase.auth.getSession();
+          console.log('[LOGIN] session after login', sessionResult);
+          if (!sessionResult?.data?.session) {
             showMsg('Login succeeded but no session yet. Retrying…');
             await new Promise(r => setTimeout(r, 300));
           }
 
-          // optional: ensure profile row
           try {
             const { data: u } = await supabase.auth.getUser();
             if (u?.user) await ensureProfileRow(u.user);
@@ -190,9 +197,10 @@
           console.log('[LOGIN] redirecting to', redirect);
           location.replace(redirect);  // e.g., 'dashboard.html'
         } catch (err) {
-          setBusy(false);
           console.error('[LOGIN] unexpected error', err);
           showMsg('Unexpected error. See console.');
+        } finally {
+          setBusy(false);
         }
       });
 

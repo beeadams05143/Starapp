@@ -164,7 +164,20 @@
     }
 
     async function saveProfile() {
-      if (!currentUser) return;
+      if (!currentUser) {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          currentUser = user || null;
+        } catch (err) {
+          console.warn('[PROFILE] getUser during save failed', err);
+        }
+      }
+
+      if (!currentUser) {
+        alert('Please log in first.');
+        location.href = './login.html';
+        return;
+      }
 
       const display_name    = (displayNameEl.value || '').trim() || null;
       const selectedGroupId = groupSelectEl.value || DEFAULT_GROUP.id;
@@ -190,11 +203,17 @@
       };
       if (avatar_url) payload.avatar_url = avatar_url;
 
-      const { error: upsertErr } = await supabase
-        .from('profiles')
-        .upsert(payload, { onConflict: 'id' }); // <-- conflict on id
+      try {
+        const { error: upsertErr } = await supabase
+          .from('profiles')
+          .upsert(payload, { onConflict: 'id' }); // <-- conflict on id
 
-      if (upsertErr) { console.error(upsertErr); alert('Error saving profile'); return; }
+        if (upsertErr) throw upsertErr;
+      } catch (err) {
+        console.error('[PROFILE] upsert failed', err);
+        alert('Error saving profile. Please try again.');
+        return;
+      }
 
       // 3) cache selection for other pages
       localStorage.setItem(GROUP_KEY_ID, selectedGroupId || '');

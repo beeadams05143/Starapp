@@ -25,6 +25,18 @@ window.updateAuthLink = async function updateAuthLink() {
   }
 };
 
+window.logOut = async function logOut() {
+  try {
+    await supabase.auth.signOut();
+  } catch (err) {
+    console.warn('supabase signOut failed', err);
+  } finally {
+    localStorage.removeItem(GROUP_KEY);
+    localStorage.removeItem('currentGroupName');
+    location.href = 'login.html';
+  }
+};
+
 /* =========================
    Shared helpers
    ========================= */

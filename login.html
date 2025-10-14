@@ -155,6 +155,7 @@
           if (!email || !password) {
             console.log('[LOGIN] missing email or password');
             showMsg('Enter email & password');
+            setBusy(false);
             return;
           }
 
@@ -177,6 +178,7 @@
           const { data, error } = signInResult || {};
           if (error) {
             showMsg(error.message || 'Could not log in.');
+            setBusy(false);
             return;
           }
 
@@ -199,10 +201,18 @@
         } catch (err) {
           console.error('[LOGIN] unexpected error', err);
           showMsg('Unexpected error. See console.');
-        } finally {
           setBusy(false);
+        } finally {
+          if (!loginInProgress()) {
+            setBusy(false);
+          }
         }
       });
+
+      function loginInProgress() {
+        const msgText = msg?.textContent || '';
+        return msgText.includes('Retrying…');
+      }
 
       // ---- Signup (works with or without "Confirm email") ----
       signupBtn?.addEventListener('click', async () => {

@@ -38,6 +38,25 @@
     #saveBtn { padding: 10px 14px; border: 0; border-radius: 8px; background: #2563eb; color: white; cursor: pointer; }
     #saveBtn:hover { background: #1f55c8; }
     small { opacity: .7; display: block; margin-top: 6px; }
+    #profileMessage {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      display: none;
+    }
+    #profileMessage.ok {
+      display: block;
+      background: #dcfce7;
+      color: #166534;
+      border: 1px solid #bbf7d0;
+    }
+    #profileMessage.error {
+      display: block;
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+    }
   </style>
 </head>
 <body>
@@ -67,6 +86,7 @@
   </div>
 
   <button id="saveBtn">Save Profile</button>
+  <div id="profileMessage" role="status" aria-live="polite"></div>
 
   <script type="module">
     import { supabase } from './supabaseClient.js';
@@ -78,6 +98,7 @@
     const displayNameEl     = document.getElementById('displayName');
     const groupSelectEl     = document.getElementById('profile-group-select');
     const saveBtn           = document.getElementById('saveBtn');
+    const profileMessage    = document.getElementById('profileMessage');
 
     const GROUP_KEY_ID      = 'currentGroupId';
     const GROUP_KEY_NAME    = 'currentGroupName';
@@ -174,7 +195,7 @@
       }
 
       if (!currentUser) {
-        alert('Please log in first.');
+        showMessage('Please log in first.', false);
         location.href = './login.html';
         return;
       }
@@ -211,7 +232,7 @@
         if (upsertErr) throw upsertErr;
       } catch (err) {
         console.error('[PROFILE] upsert failed', err);
-        alert('Error saving profile. Please try again.');
+        showMessage('Error saving profile. Please try again.', false);
         return;
       }
 
@@ -222,7 +243,19 @@
 
       if (!avatar_url && !avatarPreview.src) avatarPreview.src = defaultAvatar;
 
-      alert('Profile saved! ✅');
+      showMessage('Profile saved! ✅', true);
+    }
+
+    function showMessage(text, ok) {
+      if (!profileMessage) return;
+      profileMessage.textContent = text || '';
+      profileMessage.classList.remove('ok', 'error');
+      if (!text) {
+        profileMessage.style.display = 'none';
+        return;
+      }
+      profileMessage.style.display = 'block';
+      profileMessage.classList.add(ok ? 'ok' : 'error');
     }
 
     // -------- wire up UI --------

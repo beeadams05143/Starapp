@@ -90,10 +90,17 @@
 
     // -------- helpers --------
     async function loadGroups() {
-      groupSelectEl.disabled = true;
-      groupSelectEl.innerHTML = '<option>Loading…</option>';
+      groupSelectEl.disabled = false;
+      groupSelectEl.innerHTML = `<option value="${DEFAULT_GROUP.id}">${DEFAULT_GROUP.name}</option>`;
+      groupSelectEl.value = DEFAULT_GROUP.id;
 
-      let groups = [];
+      try {
+        localStorage.setItem(GROUP_KEY_ID, DEFAULT_GROUP.id);
+        localStorage.setItem(GROUP_KEY_NAME, DEFAULT_GROUP.name);
+      } catch (err) {
+        console.warn('[PROFILE] localStorage default group failed', err);
+      }
+
       try {
         const { data, error } = await supabase
           .from('groups')
@@ -101,34 +108,25 @@
           .order('name', { ascending: true });
 
         if (error) throw error;
-        groups = (data || []).filter(g => !g?.archived);
-      } catch (err) {
-        console.error('[PROFILE] loadGroups error', err);
-        groups = [];
-      }
 
-      if (!groups.length) {
-        groups = [DEFAULT_GROUP];
-      }
+        const groups = (data || []).filter(g => !g?.archived);
+        if (groups.length) {
+          groupSelectEl.innerHTML = groups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+          groupSelectEl.value = localStorage.getItem(GROUP_KEY_ID) || groups[0].id;
 
-      groupSelectEl.innerHTML = groups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
-      groupSelectEl.disabled = false;
-
-      if (!groupSelectEl.value) {
-        groupSelectEl.value = DEFAULT_GROUP.id;
-      }
-
-      try {
-        const selected = groupSelectEl.selectedOptions[0];
-        if (selected) {
-          localStorage.setItem(GROUP_KEY_ID, selected.value);
-          localStorage.setItem(GROUP_KEY_NAME, selected.textContent || DEFAULT_GROUP.name);
+          try {
+            const selected = groupSelectEl.selectedOptions[0];
+            if (selected) {
+              localStorage.setItem(GROUP_KEY_ID, selected.value);
+              localStorage.setItem(GROUP_KEY_NAME, selected.textContent || DEFAULT_GROUP.name);
+            }
+          } catch (err2) {
+            console.warn('[PROFILE] caching fetched group failed', err2);
+          }
         }
       } catch (err) {
-        console.warn('[PROFILE] caching group selection failed', err);
+        console.warn('[PROFILE] Supabase groups fetch failed; using default', err);
       }
-
-      return groups;
     }
 
     async function preloadProfile() {

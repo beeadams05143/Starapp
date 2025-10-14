@@ -86,6 +86,26 @@
 <script type="module" src="./script.js"></script>
 <script type="module" src="./avatar-float.js"></script>
 
+<script type="module">
+  import { supabase } from './supabaseClient.js';
+
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', async (event) => {
+      event.preventDefault();
+      try {
+        await supabase.auth.signOut();
+      } catch (err) {
+        console.warn('supabase signOut failed', err);
+      }
+      try {
+        localStorage.clear();
+      } catch {}
+      window.location.href = 'login.html';
+    });
+  }
+</script>
+
 <!-- ✅ Restore original hamburger menu + bottom tabbar -->
 <script defer src="./ui-shell.js"></script>
 <script defer src="./scripts/appbar-drawer.js"></script>

@@ -1,7 +1,7 @@
 // /js/supabaseClient.js
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-export const BUILD_VERSION = '2025.10.15b';
+export const BUILD_VERSION = '2025.10.15c';
 
 // ⚠️ Keep straight quotes only
 const SUPABASE_URL = 'https://okfsobfyhpforyqogjea.supabase.co';

@@ -1,5 +1,5 @@
 // script.js
-import { supabase } from './supabaseClient.js?v=2025.10.15b';
+import { supabase } from './supabaseClient.js?v=2025.10.15c';
 
 const GROUP_KEY = 'currentGroupId';
 

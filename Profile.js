@@ -1,6 +1,6 @@
 // Profile.js — vanilla browser version (no React)
-import { supabase } from './supabaseClient.js?v=2025.10.15b';
-import { setupAvatarUpload } from './src/components/AvatarUpload.js?v=2025.10.15b';
+import { supabase } from './supabaseClient.js?v=2025.10.15c';
+import { setupAvatarUpload } from './src/components/AvatarUpload.js?v=2025.10.15c';
 
 document.addEventListener('DOMContentLoaded', async () => {
   // Require session

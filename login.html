@@ -66,7 +66,7 @@
 
   <!-- Auth logic -->
   <script type="module">
-    import { supabase } from './supabaseClient.js?v=2025.10.15b';
+    import { supabase } from './supabaseClient.js?v=2025.10.15c';
 
     // ---- Config (kept the same default) ----
     const params   = new URLSearchParams(location.search);
@@ -296,7 +296,7 @@
 
   <script>
     (function(){
-      const version = window.STAR_BUILD_VERSION || '2025.10.15b';
+      const version = window.STAR_BUILD_VERSION || '2025.10.15c';
       if (!window.STAR_BUILD_VERSION) window.STAR_BUILD_VERSION = version;
       const ensureBadge = () => {
         if (document.getElementById('star-build-version')) return;

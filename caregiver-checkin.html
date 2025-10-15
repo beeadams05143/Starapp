@@ -4,7 +4,7 @@
   <meta charset="UTF-8"/>
   <title>Caregiver Check-In</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <link rel="stylesheet" href="style.css?v=2025.10.15b"/>
+  <link rel="stylesheet" href="style.css?v=2025.10.15c"/>
   <style>
     html,body{height:auto!important;min-height:100%;overflow-y:auto!important;-webkit-overflow-scrolling:touch}
     body{margin:0}
@@ -304,7 +304,7 @@
 <!-- App logic -->
 <script type="module">
   // 1) Imports MUST be first in the module
-  import { supabase } from './supabaseClient.js?v=2025.10.15b';
+  import { supabase } from './supabaseClient.js?v=2025.10.15c';
 
   // 2) Optional: expose for console debugging
   window.supabase = supabase;
@@ -591,7 +591,7 @@
 </script>
 <script>
   (function(){
-    const version = window.STAR_BUILD_VERSION || '2025.10.15b';
+    const version = window.STAR_BUILD_VERSION || '2025.10.15c';
     if (!window.STAR_BUILD_VERSION) window.STAR_BUILD_VERSION = version;
     const ensureBadge = () => {
       if (document.getElementById('star-build-version')) return;

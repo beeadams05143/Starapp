@@ -1,5 +1,5 @@
 // caregiver-report-supabase.js — PRODUCTION SAFE (client-side filtering)
-import { supabase } from './supabaseClient.js?v=2025.10.15c';
+import { supabase } from './supabaseClient.js?v=2025.10.15d';
 
 /* ---------- tiny utils ---------- */
 const toDayISO = d =>

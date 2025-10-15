@@ -1,5 +1,5 @@
 // auth.js
-import { supabase } from './supabaseClient.js?v=2025.10.15c';
+import { supabase } from './supabaseClient.js?v=2025.10.15d';
 // Centralized URLs (use your real paths)
 const DASHBOARD_URL = 'dashboard.html';
 const LOGIN_URL = 'login.html';

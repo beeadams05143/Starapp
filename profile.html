@@ -79,7 +79,7 @@
     <div>
       <label for="profile-group-select">Default Group</label>
       <select id="profile-group-select">
-        <option value="">Loading…</option>
+        <option value="3159dde9-8cf3-4a29-af72-01da907f241b">Family</option>
       </select>
       <small>This selection is saved to your profile and auto-used across the app.</small>
     </div>
@@ -124,7 +124,7 @@
 
     async function loadGroups() {
       groupSelectEl.disabled = true;
-      groupSelectEl.innerHTML = `<option value="">Loading…</option>`;
+      groupSelectEl.innerHTML = `<option value="${DEFAULT_GROUP.id}">${DEFAULT_GROUP.name}</option>`;
 
       let groups = [];
       try {
@@ -306,6 +306,15 @@
     document.addEventListener('DOMContentLoaded', async () => {
       await loadGroups();
       await preloadProfile();
+      setTimeout(() => {
+        if (!groupSelectEl) return;
+        if (groupSelectEl.disabled) {
+          groupSelectEl.disabled = false;
+        }
+        if (!groupSelectEl.options.length) {
+          groupSelectEl.innerHTML = `<option value="${DEFAULT_GROUP.id}">${DEFAULT_GROUP.name}</option>`;
+        }
+      }, 1000);
     });
 
     editAvatarBtn.addEventListener('click', () => avatarFile.click());

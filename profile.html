@@ -256,6 +256,8 @@
           location.href = './login.html';
           return;
         }
+        showMessage('Saving… (session confirmed)', true);
+        console.log('[PROFILE] session user', currentUser?.id);
 
         const display_name    = (displayNameEl.value || '').trim() || currentUser.email || null;
         const selectedGroupId = groupSelectEl.value || DEFAULT_GROUP.id;
@@ -271,6 +273,8 @@
           if (uploadErr) throw uploadErr;
           const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path);
           avatar_url = pub.publicUrl;
+          showMessage('Saving… (photo uploaded)', true);
+          console.log('[PROFILE] avatar uploaded to', path, avatar_url);
         }
 
         const payload = {
@@ -283,6 +287,7 @@
           ...(avatar_url ? { avatar_url } : {})
         };
         console.log('[PROFILE] payload', payload);
+        showMessage('Saving… (writing profile)', true);
 
         const { data: savedRow, error: upsertErr } = await supabase
           .from('profiles')

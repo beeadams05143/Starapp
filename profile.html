@@ -160,7 +160,7 @@
       cacheSelectedGroup();
     }
 
-    async function preloadProfile() {
+    async function preloadProfile({ silent=false } = {}) {
       try {
         const { data: { session }, error: sessionErr } = await supabase.auth.getSession();
         if (sessionErr) console.warn('[PROFILE] getSession error', sessionErr);
@@ -183,7 +183,7 @@
 
         const { data: profile, error: profileErr } = await supabase
           .from('profiles')
-          .select('display_name, avatar_url, group_id, updated_at')
+          .select('display_name, public_name, full_name, avatar_url, group_id, updated_at')
           .eq('id', currentUser.id)
           .maybeSingle();
 
@@ -193,7 +193,7 @@
         }
 
         if (profile) {
-          displayNameEl.value = profile.display_name || metaName;
+          displayNameEl.value = profile.display_name || profile.public_name || profile.full_name || metaName;
           if (profile.avatar_url) {
             avatarPreview.src = profile.avatar_url;
           }
@@ -214,15 +214,17 @@
             }
             cacheSelectedGroup();
           }
-          if (profile.updated_at) {
-            showMessage(`Profile loaded · ${new Date(profile.updated_at).toLocaleString()}`, true);
-          } else {
-            showMessage('Profile loaded ✓', true);
+          if (!silent) {
+            if (profile.updated_at) {
+              showMessage(`Profile loaded · ${new Date(profile.updated_at).toLocaleString()}`, true);
+            } else {
+              showMessage('Profile loaded ✓', true);
+            }
           }
         }
       } catch (err) {
         console.error('[PROFILE] preload failed', err);
-        showMessage('Could not load profile. Try again shortly.', false);
+        if (!silent) showMessage('Could not load profile. Try again shortly.', false);
       }
     }
 
@@ -246,9 +248,10 @@
         return;
       }
 
-      const display_name    = (displayNameEl.value || '').trim() || null;
+      const display_name    = (displayNameEl.value || '').trim() || currentUser.email || null;
       const selectedGroupId = groupSelectEl.value || DEFAULT_GROUP.id;
       let avatar_url = null;
+      const timestamp = new Date().toISOString();
 
       saveBtn.disabled = true;
       saveBtn.textContent = 'Saving…';
@@ -275,7 +278,10 @@
       const payload = {
         id: currentUser.id,                     // <-- key is id
         display_name,
-        group_id: selectedGroupId
+        public_name: display_name,
+        full_name: display_name,
+        group_id: selectedGroupId,
+        updated_at: timestamp
       };
       if (avatar_url) payload.avatar_url = avatar_url;
 
@@ -312,6 +318,7 @@
       if (!avatar_url && !avatarPreview.src) avatarPreview.src = defaultAvatar;
 
       showMessage('Profile saved! ✅', true);
+      await preloadProfile({ silent: true });
       saveBtn.disabled = false;
       saveBtn.textContent = originalLabel;
     }
@@ -332,7 +339,7 @@
         profileMessage.style.display = 'none';
         profileMessage.classList.remove('ok', 'error');
         profileMessage.textContent = '';
-      }, ok ? 4200 : 5000);
+      }, ok ? 4800 : 5000);
     }
 
     // -------- wire up UI --------

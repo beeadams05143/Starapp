@@ -2,7 +2,7 @@
 // Requires: supabaseClient.js in same folder exporting { supabase }
 // and <script type="module" src="chat.js"></script> in chat.html
 
-import { supabase } from './supabaseClient.js?v=2025.10.15d';
+import { supabase } from './supabaseClient.js?v=2025.10.15f';
 
 // ---------- CONFIG ----------
 const GROUP_ID = '3159dde9-8cf3-4a29-af72-01da907f241b'; // Family

@@ -1,5 +1,5 @@
 // calendar.js
-import { supabase } from '../supabaseClient.js?v=2025.10.15d';
+import { supabase } from '../supabaseClient.js?v=2025.10.15f';
 
 const calList = document.getElementById('calList');
 const calSelect = document.getElementById('calendarSelect');

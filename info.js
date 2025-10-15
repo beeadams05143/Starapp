@@ -1,4 +1,4 @@
-import { supabase } from './supabaseClient.js?v=2025.10.14a';
+import { supabase } from './supabaseClient.js?v=2025.10.15b';
 
 const userId = localStorage.getItem('user_id'); // or get from auth session
 

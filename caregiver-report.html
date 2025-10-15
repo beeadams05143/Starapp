@@ -269,7 +269,7 @@
     let loadFromSupabase = null;
     let formatEntryForList = null;
     try {
-      const mod = await import('./caregiver-report-supabase.js?v=2025.10.14a');
+      const mod = await import('./caregiver-report-supabase.js?v=2025.10.15b');
       loadFromSupabase = mod.loadCaregiverCheckins;
       formatEntryForList = mod.formatEntryForList;
     } catch (err) {
@@ -277,7 +277,7 @@
     }
 
     // Supabase client + session gate
-    import { supabase } from './supabaseClient.js?v=2025.10.14a';
+    import { supabase } from './supabaseClient.js?v=2025.10.15b';
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { window.location.href = 'login.html'; throw new Error('No session'); }
     const USER_ID = session.user.id;
@@ -939,7 +939,7 @@
 
 <script>
   (function(){
-    const version = window.STAR_BUILD_VERSION || '2025.10.14a';
+    const version = window.STAR_BUILD_VERSION || '2025.10.15b';
     if (!window.STAR_BUILD_VERSION) window.STAR_BUILD_VERSION = version;
     const ensureBadge = () => {
       if (document.getElementById('star-build-version')) return;
@@ -1137,7 +1137,7 @@
   (async () => {
     if (!currentSupabase) {
       try {
-        const mod = await import('./supabaseClient.js?v=2025.10.14a');
+        const mod = await import('./supabaseClient.js?v=2025.10.15b');
         currentSupabase = mod?.supabase || window.supabase || null;
       } catch (e) {}
     }

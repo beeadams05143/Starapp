@@ -285,12 +285,16 @@
       };
       if (avatar_url) payload.avatar_url = avatar_url;
 
+      let savedRow = null;
       try {
-        const { error: upsertErr } = await supabase
+        const { data: upsertRows, error: upsertErr } = await supabase
           .from('profiles')
-          .upsert(payload, { onConflict: 'id' }); // <-- conflict on id
+          .upsert(payload, { onConflict: 'id' })
+          .select('display_name, public_name, full_name, avatar_url, group_id, updated_at')
+          .maybeSingle();
 
         if (upsertErr) throw upsertErr;
+        savedRow = upsertRows || null;
       } catch (err) {
         console.error('[PROFILE] upsert failed', err);
         showMessage('Error saving profile. Please try again.', false);
@@ -315,9 +319,28 @@
       // 3) cache selection for other pages
       cacheSelectedGroup();
 
-      if (!avatar_url && !avatarPreview.src) avatarPreview.src = defaultAvatar;
+      const applied = savedRow || {
+        display_name,
+        avatar_url: avatar_url || null,
+        group_id: selectedGroupId,
+        updated_at: timestamp
+      };
+      if (applied.display_name) {
+        displayNameEl.value = applied.display_name;
+      }
+      if (applied.avatar_url) {
+        avatarPreview.src = applied.avatar_url;
+      } else if (!avatarPreview.src) {
+        avatarPreview.src = defaultAvatar;
+      }
+      if (applied.group_id) {
+        ensureGroupOption(applied.group_id, groupSelectEl?.selectedOptions?.[0]?.textContent || DEFAULT_GROUP.name);
+        groupSelectEl.value = applied.group_id;
+        cacheSelectedGroup();
+      }
 
-      showMessage('Profile saved! ✅', true);
+      const savedAt = new Date(applied.updated_at || timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+      showMessage(`Profile saved! ✅ ${savedAt}`, true);
       await preloadProfile({ silent: true });
       saveBtn.disabled = false;
       saveBtn.textContent = originalLabel;

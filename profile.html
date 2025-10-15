@@ -311,19 +311,36 @@
 
         cacheSelectedGroup();
 
-        const applied = savedRow || payload;
-        if (applied.display_name) displayNameEl.value = applied.display_name;
-        if (applied.avatar_url) avatarPreview.src = applied.avatar_url;
+        let verifyRow = savedRow || payload;
+        try {
+          showMessage('Saving… (verifying write)', true);
+          const { data: fetched, error: fetchErr } = await supabase
+            .from('profiles')
+            .select('display_name, public_name, full_name, avatar_url, group_id, updated_at')
+            .eq('id', currentUser.id)
+            .maybeSingle();
+          if (fetchErr) {
+            console.warn('[PROFILE] verify fetch error', fetchErr);
+          } else if (fetched) {
+            verifyRow = fetched;
+          }
+        } catch (verifyErr) {
+          console.warn('[PROFILE] verify fetch threw', verifyErr);
+        }
+
+        if (verifyRow.display_name) displayNameEl.value = verifyRow.display_name;
+        if (verifyRow.avatar_url) avatarPreview.src = verifyRow.avatar_url;
         else if (!avatarPreview.src) avatarPreview.src = defaultAvatar;
-        if (applied.group_id) {
-          ensureGroupOption(applied.group_id, groupSelectEl?.selectedOptions?.[0]?.textContent || DEFAULT_GROUP.name);
-          groupSelectEl.value = applied.group_id;
+        if (verifyRow.group_id) {
+          ensureGroupOption(verifyRow.group_id, groupSelectEl?.selectedOptions?.[0]?.textContent || DEFAULT_GROUP.name);
+          groupSelectEl.value = verifyRow.group_id;
           cacheSelectedGroup();
         }
 
-        const savedAt = new Date(applied.updated_at || timestamp)
-          .toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-        showMessage(`Profile saved! ✅ ${savedAt}`, true);
+        console.log('[PROFILE] verifyRow', verifyRow);
+        const savedAt = new Date(verifyRow.updated_at || timestamp).toLocaleString();
+        const debugDetails = JSON.stringify(verifyRow, null, 2);
+        showMessage(`Profile saved! ✅ ${savedAt}\n${debugDetails}`, true);
         await preloadProfile({ silent: true });
       } catch (err) {
         console.error('[PROFILE] save failed', err);

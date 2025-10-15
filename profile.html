@@ -122,6 +122,14 @@
       }
     }
 
+    function ensureGroupOption(id, label) {
+      if (!groupSelectEl || !id) return;
+      const exists = Array.from(groupSelectEl.options || []).some(opt => opt.value === id);
+      if (!exists) {
+        groupSelectEl.add(new Option(label || DEFAULT_GROUP.name, id));
+      }
+    }
+
     async function loadGroups() {
       groupSelectEl.disabled = true;
       groupSelectEl.innerHTML = `<option value="${DEFAULT_GROUP.id}">${DEFAULT_GROUP.name}</option>`;
@@ -153,43 +161,68 @@
     }
 
     async function preloadProfile() {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (error) console.error(error);
-      currentUser = user || null;
+      try {
+        const { data: { session }, error: sessionErr } = await supabase.auth.getSession();
+        if (sessionErr) console.warn('[PROFILE] getSession error', sessionErr);
+        currentUser = session?.user || null;
 
-      if (!currentUser) {
-        alert('Please log in first.');
-        return;
-      }
-
-      // fetch display_name, avatar_url, group_id
-      const { data: p, error: pErr } = await supabase
-        .from('profiles')
-        .select('display_name, avatar_url, group_id')
-        .eq('id', currentUser.id)              // use id as key
-        .maybeSingle();
-
-      if (pErr && pErr.code !== 'PGRST116') console.error(pErr);
-
-      displayNameEl.value = p?.display_name || '';
-      avatarPreview.src   = p?.avatar_url || defaultAvatar;
-
-      // if we already have a group_id saved, ensure the option exists and select it
-      if (p?.group_id) {
-        const hasOption = Array.from(groupSelectEl.options || []).some(opt => opt.value === p.group_id);
-        if (!hasOption) {
-          const placeholderName = p.group_name || 'Selected group';
-          groupSelectEl.add(new Option(placeholderName, p.group_id));
+        if (!currentUser) {
+          showMessage('Please log in first.', false);
+          location.href = './login.html';
+          return;
         }
-        groupSelectEl.value = p.group_id;
-        cacheSelectedGroup();
-        // cache name too
-        try {
-          const { data: g } = await supabase.from('groups').select('name').eq('id', p.group_id).maybeSingle();
-          if (g?.name) localStorage.setItem(GROUP_KEY_NAME, g.name);
-        } catch (err) {
-          console.warn('[PROFILE] failed to cache group name', err);
+
+        const metaName =
+          currentUser.user_metadata?.full_name ||
+          currentUser.user_metadata?.name ||
+          currentUser.email ||
+          '';
+
+        displayNameEl.value = metaName;
+        avatarPreview.src = defaultAvatar;
+
+        const { data: profile, error: profileErr } = await supabase
+          .from('profiles')
+          .select('display_name, avatar_url, group_id, updated_at')
+          .eq('id', currentUser.id)
+          .maybeSingle();
+
+        if (profileErr && profileErr.code !== 'PGRST116') {
+          console.error('[PROFILE] load profile error', profileErr);
+          showMessage(profileErr.message || 'Could not load profile.', false);
         }
+
+        if (profile) {
+          displayNameEl.value = profile.display_name || metaName;
+          if (profile.avatar_url) {
+            avatarPreview.src = profile.avatar_url;
+          }
+          if (profile.group_id) {
+            try {
+              const { data: g } = await supabase
+                .from('groups')
+                .select('name')
+                .eq('id', profile.group_id)
+                .maybeSingle();
+              ensureGroupOption(profile.group_id, g?.name || 'Selected group');
+              groupSelectEl.value = profile.group_id;
+              if (g?.name) localStorage.setItem(GROUP_KEY_NAME, g.name);
+            } catch (groupErr) {
+              console.warn('[PROFILE] fetch group name failed', groupErr);
+              ensureGroupOption(profile.group_id, 'Selected group');
+              groupSelectEl.value = profile.group_id;
+            }
+            cacheSelectedGroup();
+          }
+          if (profile.updated_at) {
+            showMessage(`Profile loaded · ${new Date(profile.updated_at).toLocaleString()}`, true);
+          } else {
+            showMessage('Profile loaded ✓', true);
+          }
+        }
+      } catch (err) {
+        console.error('[PROFILE] preload failed', err);
+        showMessage('Could not load profile. Try again shortly.', false);
       }
     }
 
@@ -299,7 +332,7 @@
         profileMessage.style.display = 'none';
         profileMessage.classList.remove('ok', 'error');
         profileMessage.textContent = '';
-      }, ok ? 2600 : 5000);
+      }, ok ? 4200 : 5000);
     }
 
     // -------- wire up UI --------

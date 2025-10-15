@@ -90,7 +90,7 @@
 <div id="profileMessage" role="status" aria-live="polite"></div>
 
   <script type="module">
-    import { supabase } from './supabaseClient.js?v=2025.10.15f';
+    import { supabase } from './supabaseClient.js?v=2025.10.15j';
 
     const defaultAvatar     = 'IMG/default-avatar.png';
     const avatarPreview     = document.getElementById('avatarPreview');
@@ -247,6 +247,7 @@
       try {
         if (!currentUser) {
           const { data: { user }, error: fetchErr } = await supabase.auth.getUser();
+          console.log('[PROFILE] getUser result', user, fetchErr);
           if (fetchErr) throw fetchErr;
           currentUser = user || null;
         }

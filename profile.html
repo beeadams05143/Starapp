@@ -328,19 +328,28 @@
           console.warn('[PROFILE] verify fetch threw', verifyErr);
         }
 
-        if (verifyRow.display_name) displayNameEl.value = verifyRow.display_name;
-        if (verifyRow.avatar_url) avatarPreview.src = verifyRow.avatar_url;
-        else if (!avatarPreview.src) avatarPreview.src = defaultAvatar;
-        if (verifyRow.group_id) {
-          ensureGroupOption(verifyRow.group_id, groupSelectEl?.selectedOptions?.[0]?.textContent || DEFAULT_GROUP.name);
-          groupSelectEl.value = verifyRow.group_id;
-          cacheSelectedGroup();
+        const hasData = verifyRow && Object.keys(verifyRow).length > 0;
+        if (hasData) {
+          if (verifyRow.display_name) displayNameEl.value = verifyRow.display_name;
+          if (verifyRow.avatar_url) avatarPreview.src = verifyRow.avatar_url;
+          else if (!avatarPreview.src) avatarPreview.src = defaultAvatar;
+          if (verifyRow.group_id) {
+            ensureGroupOption(verifyRow.group_id, groupSelectEl?.selectedOptions?.[0]?.textContent || DEFAULT_GROUP.name);
+            groupSelectEl.value = verifyRow.group_id;
+            cacheSelectedGroup();
+          }
         }
 
         console.log('[PROFILE] verifyRow', verifyRow);
-        const savedAt = new Date(verifyRow.updated_at || timestamp).toLocaleString();
-        const debugDetails = JSON.stringify(verifyRow, null, 2);
-        showMessage(`Profile saved! ✅ ${savedAt}\n${debugDetails}`, true);
+        if (!hasData) {
+          const warnMsg = 'Could not verify saved profile row. Please screenshot console logs.';
+          showMessage(warnMsg, false);
+          alert(warnMsg);
+        } else {
+          const savedAt = new Date(verifyRow.updated_at || timestamp).toLocaleString();
+          const debugDetails = JSON.stringify(verifyRow, null, 2);
+          showMessage(`Profile saved! ✅ ${savedAt}\n${debugDetails}`, true);
+        }
         await preloadProfile({ silent: true });
       } catch (err) {
         console.error('[PROFILE] save failed', err);
@@ -369,11 +378,13 @@
       profileMessage.style.display = 'block';
       profileMessage.classList.add(ok ? 'ok' : 'error');
       profileMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      messageTimer = setTimeout(() => {
-        profileMessage.style.display = 'none';
-        profileMessage.classList.remove('ok', 'error');
-        profileMessage.textContent = '';
-      }, ok ? 4800 : 5000);
+      if (!ok) {
+        messageTimer = setTimeout(() => {
+          profileMessage.style.display = 'none';
+          profileMessage.classList.remove('ok', 'error');
+          profileMessage.textContent = '';
+        }, 8000);
+      }
     }
 
     // -------- wire up UI --------

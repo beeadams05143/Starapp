@@ -66,8 +66,9 @@
 
   <div class="avatar-block">
     <img id="avatarPreview" src="IMG/default-avatar.png" alt="Your avatar" class="avatar-big">
-    <button id="editAvatarBtn" class="edit-avatar-btn" title="Change avatar">✏️</button>
-    <input id="avatarFile" type="file" accept="image/*" style="display:none" />
+    <button id="editAvatarBtn" type="button" class="edit-avatar-btn" title="Change avatar">✏️</button>
+    <input id="avatarFile" type="file" accept="image/*"
+      style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;" />
   </div>
 
   <div class="form">
@@ -420,7 +421,24 @@
       }, 1000);
     });
 
-    editAvatarBtn.addEventListener('click', () => avatarFile.click());
+    const triggerAvatarPicker = () => {
+      if (!avatarFile) return;
+      try {
+        if (typeof avatarFile.showPicker === 'function') {
+          avatarFile.showPicker();
+          return;
+        }
+      } catch (err) {
+        console.warn('[PROFILE] showPicker failed, fallback to click', err);
+      }
+      avatarFile.click();
+    };
+
+    editAvatarBtn.addEventListener('click', (evt) => {
+      evt.preventDefault();
+      triggerAvatarPicker();
+    });
+
     avatarFile.addEventListener('change', () => {
       const file = avatarFile.files[0];
       if (file) avatarPreview.src = URL.createObjectURL(file);

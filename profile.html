@@ -192,7 +192,7 @@
           showMessage(profileErr.message || 'Could not load profile.', false);
         }
 
-        if (profile) {
+        if (profile && Object.keys(profile).length) {
           displayNameEl.value = profile.display_name || profile.public_name || profile.full_name || metaName;
           if (profile.avatar_url) {
             avatarPreview.src = profile.avatar_url;
@@ -231,59 +231,99 @@
     async function saveProfile() {
       const originalLabel = saveBtn.textContent;
 
-      if (!currentUser) {
-        try {
-          const { data: { user } } = await supabase.auth.getUser();
-          currentUser = user || null;
-        } catch (err) {
-          console.warn('[PROFILE] getUser during save failed', err);
-        }
-      }
-
-      if (!currentUser) {
-        showMessage('Please log in first.', false);
+      const startSaving = () => {
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving…';
+        showMessage('Saving…', true);
+      };
+      const finishSaving = () => {
         saveBtn.disabled = false;
         saveBtn.textContent = originalLabel;
-        location.href = './login.html';
-        return;
-      }
+      };
 
-      const display_name    = (displayNameEl.value || '').trim() || currentUser.email || null;
-      const selectedGroupId = groupSelectEl.value || DEFAULT_GROUP.id;
-      let avatar_url = null;
-      const timestamp = new Date().toISOString();
+      startSaving();
+      try {
+        if (!currentUser) {
+          const { data: { user }, error: fetchErr } = await supabase.auth.getUser();
+          if (fetchErr) throw fetchErr;
+          currentUser = user || null;
+        }
 
-      saveBtn.disabled = true;
-      saveBtn.textContent = 'Saving…';
-
-      // 1) upload avatar if chosen
-      if (avatarFile.files.length > 0) {
-        const file = avatarFile.files[0];
-        const path = `${currentUser.id}/${file.name}`;
-        const { error: uploadErr } = await supabase
-          .storage.from('avatars')
-          .upload(path, file, { upsert: true });
-        if (uploadErr) {
-          console.error(uploadErr);
-          showMessage('Error uploading avatar. Please try a smaller file.', false);
-          saveBtn.disabled = false;
-          saveBtn.textContent = originalLabel;
+        if (!currentUser) {
+          showMessage('Please log in first.', false);
+          location.href = './login.html';
           return;
         }
-        const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path);
-        avatar_url = pub.publicUrl;
-      }
 
-      // 2) upsert into profiles using id as key
-      const payload = {
-        id: currentUser.id,                     // <-- key is id
-        display_name,
-        public_name: display_name,
-        full_name: display_name,
-        group_id: selectedGroupId,
-        updated_at: timestamp
-      };
-      if (avatar_url) payload.avatar_url = avatar_url;
+        const display_name    = (displayNameEl.value || '').trim() || currentUser.email || null;
+        const selectedGroupId = groupSelectEl.value || DEFAULT_GROUP.id;
+        let avatar_url = null;
+        const timestamp = new Date().toISOString();
+
+        if (avatarFile.files.length > 0) {
+          const file = avatarFile.files[0];
+          const path = `${currentUser.id}/${file.name}`;
+          const { error: uploadErr } = await supabase
+            .storage.from('avatars')
+            .upload(path, file, { upsert: true });
+          if (uploadErr) throw uploadErr;
+          const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path);
+          avatar_url = pub.publicUrl;
+        }
+
+        const payload = {
+          id: currentUser.id,
+          display_name,
+          public_name: display_name,
+          full_name: display_name,
+          group_id: selectedGroupId,
+          updated_at: timestamp,
+          ...(avatar_url ? { avatar_url } : {})
+        };
+
+        const { data: savedRow, error: upsertErr } = await supabase
+          .from('profiles')
+          .upsert(payload, { onConflict: 'id' })
+          .select('display_name, public_name, full_name, avatar_url, group_id, updated_at')
+          .maybeSingle();
+
+        if (upsertErr) throw upsertErr;
+
+        try {
+          await supabase
+            .from('group_members')
+            .upsert(
+              { group_id: selectedGroupId, user_id: currentUser.id },
+              { onConflict: 'group_id,user_id' }
+            );
+        } catch (memberErr) {
+          console.warn('[PROFILE] group membership upsert failed', memberErr);
+        }
+
+        cacheSelectedGroup();
+
+        const applied = savedRow || payload;
+        if (applied.display_name) displayNameEl.value = applied.display_name;
+        if (applied.avatar_url) avatarPreview.src = applied.avatar_url;
+        else if (!avatarPreview.src) avatarPreview.src = defaultAvatar;
+        if (applied.group_id) {
+          ensureGroupOption(applied.group_id, groupSelectEl?.selectedOptions?.[0]?.textContent || DEFAULT_GROUP.name);
+          groupSelectEl.value = applied.group_id;
+          cacheSelectedGroup();
+        }
+
+        const savedAt = new Date(applied.updated_at || timestamp)
+          .toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        showMessage(`Profile saved! ✅ ${savedAt}`, true);
+        await preloadProfile({ silent: true });
+      } catch (err) {
+        console.error('[PROFILE] save failed', err);
+        const msg = err?.message || 'Could not save profile. Please try again.';
+        showMessage(msg, false);
+      } finally {
+        finishSaving();
+      }
+    }
 
       let savedRow = null;
       try {

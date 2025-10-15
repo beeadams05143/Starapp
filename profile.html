@@ -243,6 +243,7 @@
       };
 
       startSaving();
+      console.log('[PROFILE] starting save');
       try {
         if (!currentUser) {
           const { data: { user }, error: fetchErr } = await supabase.auth.getUser();
@@ -281,6 +282,7 @@
           updated_at: timestamp,
           ...(avatar_url ? { avatar_url } : {})
         };
+        console.log('[PROFILE] payload', payload);
 
         const { data: savedRow, error: upsertErr } = await supabase
           .from('profiles')
@@ -289,6 +291,7 @@
           .maybeSingle();
 
         if (upsertErr) throw upsertErr;
+        console.log('[PROFILE] savedRow', savedRow);
 
         try {
           await supabase
@@ -319,8 +322,14 @@
         await preloadProfile({ silent: true });
       } catch (err) {
         console.error('[PROFILE] save failed', err);
-        const msg = err?.message || 'Could not save profile. Please try again.';
+        const errorDetail =
+          err?.message ||
+          err?.error_description ||
+          err?.error ||
+          (typeof err === 'string' ? err : JSON.stringify(err));
+        const msg = 'Could not save profile: ' + errorDetail;
         showMessage(msg, false);
+        alert(msg);
       } finally {
         finishSaving();
       }

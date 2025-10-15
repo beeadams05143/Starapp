@@ -20,7 +20,7 @@
 </head>
 <body>
   <div id="navbar-container"></div>
-  <script type="module" src="./load-navbar.js"></script>
+  <script type="module" src="./load-navbar.js?v=2025.10.14a"></script>
 
   <h1>Group Settings</h1>
 
@@ -50,7 +50,7 @@
   </div>
 
   <script type="module">
-    import { supabase } from './supabaseClient.js';
+    import { supabase } from './supabaseClient.js?v=2025.10.14a';
 
     const GROUP_KEY = 'currentGroupId';
     const inviteCodeEl = document.getElementById('inviteCode');
@@ -122,6 +122,40 @@
     (async () => {
       await requireSession();
       await loadInviteCode();
+    })();
+  </script>
+  <script>
+    (function(){
+      const version = window.STAR_BUILD_VERSION || '2025.10.14a';
+      if (!window.STAR_BUILD_VERSION) window.STAR_BUILD_VERSION = version;
+      const ensureBadge = () => {
+        if (document.getElementById('star-build-version')) return;
+        const badge = document.createElement('div');
+        badge.id = 'star-build-version';
+        badge.textContent = `Build ${version}`;
+        badge.style.cssText = `
+          position:fixed;
+          right:12px;
+          bottom:12px;
+          background:rgba(17,17,17,0.85);
+          color:#f9fafb;
+          font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+          font-size:11px;
+          font-weight:600;
+          letter-spacing:0.02em;
+          padding:6px 10px;
+          border-radius:10px;
+          box-shadow:0 6px 18px rgba(0,0,0,0.18);
+          z-index:998;
+          pointer-events:none;
+        `;
+        document.body.appendChild(badge);
+      };
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', ensureBadge, { once: true });
+      } else {
+        ensureBadge();
+      }
     })();
   </script>
 </body>

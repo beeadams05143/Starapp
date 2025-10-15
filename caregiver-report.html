@@ -69,6 +69,10 @@
   #cg-status .ok{color:#0f6a2f}
   #cg-status .err{color:#b00020}
   #cg-status button{margin-left:.5rem}
+  @media (max-width: 640px){
+    #cg-status{font-size:12px;padding:8px}
+    #cg-status button{margin:6px 0 0 .5rem}
+  }
 </style>
 <div id="cg-status">
   <div class="row"><b>Caregiver pipeline:</b>
@@ -80,10 +84,19 @@
 
 <script>
 (function(){
+  const Status = document.getElementById('cg-status');
   const L1 = document.getElementById('cg-line1');
   const L2 = document.getElementById('cg-line2');
   const Run = document.getElementById('cg-run');
   const say = (el, txt, cls='') => { el.className=cls; el.textContent = txt; };
+
+  if (Status) {
+    const hideBtn = document.createElement('button');
+    hideBtn.textContent = 'Hide';
+    hideBtn.addEventListener('click', () => { Status.style.display = 'none'; });
+    hideBtn.style.marginLeft = '0.5rem';
+    Status.querySelector('.row')?.appendChild(hideBtn);
+  }
 
   async function smoke(){
     try {
@@ -117,7 +130,6 @@
   }
 
   Run.addEventListener('click', smoke);
-  smoke(); // auto-run so you also see it on phone
 })();
 </script>
 
@@ -255,10 +267,17 @@
   <script type="module">
     /* =============== Optional live data =============== */
     let loadFromSupabase = null;
-    try { loadFromSupabase = (await import('./caregiver-report-supabase.js')).loadCaregiverCheckins; } catch {}
+    let formatEntryForList = null;
+    try {
+      const mod = await import('./caregiver-report-supabase.js?v=2025.10.14a');
+      loadFromSupabase = mod.loadCaregiverCheckins;
+      formatEntryForList = mod.formatEntryForList;
+    } catch (err) {
+      console.warn('[REPORT] caregiver-report-supabase.js not available', err);
+    }
 
     // Supabase client + session gate
-    import { supabase } from './supabaseClient.js';
+    import { supabase } from './supabaseClient.js?v=2025.10.14a';
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { window.location.href = 'login.html'; throw new Error('No session'); }
     const USER_ID = session.user.id;
@@ -269,6 +288,215 @@
     const destroy = key => { charts[key]?.destroy?.(); charts[key]=null; };
     const dayKey = d => new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString().slice(0,10);
     const axisTitle = text => ({ title:{display:true,text} });
+
+    /* =================== Caregiver table helpers =================== */
+    const cgInputs = {
+      start: $('#cgStart'),
+      end: $('#cgEnd'),
+      apply: $('#cgApply'),
+      count: $('#cgCount'),
+      pdf: $('#cgPdf'),
+      csv: $('#cgCsv'),
+      tbody: document.getElementById('cgTbody')
+    };
+
+    const cgState = {
+      entries: [],
+      filtered: []
+    };
+
+    const fallbackFormat = (e) => {
+      const yn = (val) => val === true ? 'Yes' : val === false ? 'No' : '—';
+      const ts = e.timestamp || e.created_at || e.submitted_at || Date.now();
+      const dt = new Date(ts).toLocaleString();
+      return {
+        dateTime: dt,
+        hygiene: yn(e.hygiene ?? e.had_bm),
+        food_prep: yn(e.food_prep),
+        cleanup: yn(e.cleanup),
+        vocational_time: e.vocational_time ?? '—',
+        community_time: e.community_time ?? '—',
+        new_skill_score: e.new_skill_score ?? '—',
+        notes: e.caregiver_notes || e.notes || ''
+      };
+    };
+
+    const normalizeDateOnly = (value) => {
+      if (!value) return null;
+      const parts = value.split('-');
+      if (parts.length !== 3) return null;
+      const date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]), 0, 0, 0, 0);
+      return Number.isFinite(date.getTime()) ? date : null;
+    };
+
+    function normalizeEntryDate(entry){
+      const raw = entry.timestamp || entry.created_at || entry.submitted_at || entry.date;
+      if (!raw) return null;
+      const dt = new Date(raw);
+      if (Number.isNaN(dt.getTime())) return null;
+      dt.setHours(0,0,0,0);
+      return dt;
+    }
+
+    function updateDateInputs(entries){
+      if (!cgInputs.start || !cgInputs.end) return;
+      if (!entries.length) {
+        cgInputs.start.value = '';
+        cgInputs.end.value = '';
+        return;
+      }
+      const sorted = entries
+        .map(e => normalizeEntryDate(e))
+        .filter(d => d && !Number.isNaN(d.getTime()));
+      if (!sorted.length) {
+        cgInputs.start.value = '';
+        cgInputs.end.value = '';
+        return;
+      }
+      const newest = sorted.reduce((acc, cur) => cur > acc ? cur : acc, sorted[0]);
+      const oldest = sorted.reduce((acc, cur) => cur < acc ? cur : acc, sorted[0]);
+      cgInputs.start.value = oldest.toISOString().slice(0,10);
+      cgInputs.end.value   = newest.toISOString().slice(0,10);
+    }
+
+    function renderCaregiverTable(entries){
+      const body = cgInputs.tbody;
+      if (!body) return;
+      body.innerHTML = '';
+
+      if (!entries.length) {
+        body.innerHTML = `<tr><td colspan="8">No caregiver check-ins found for the selected range.</td></tr>`;
+        return;
+      }
+
+      entries.forEach(entry => {
+        const row = formatEntryForList ? formatEntryForList(entry) : fallbackFormat(entry);
+        const tr = document.createElement('tr');
+
+        const cells = [
+          row.dateTime || '—',
+          row.hygiene ?? '—',
+          row.food_prep ?? '—',
+          row.cleanup ?? '—',
+          row.vocational_time ?? '—',
+          row.community_time ?? '—',
+          row.new_skill_score ?? '—'
+        ];
+
+        cells.forEach(value => {
+          const td = document.createElement('td');
+          td.textContent = value === '' ? '—' : value;
+          tr.appendChild(td);
+        });
+
+        const notesTd = document.createElement('td');
+        const notes = (row.notes || '').trim();
+        if (notes) {
+          notesTd.textContent = notes;
+        } else {
+          notesTd.textContent = '—';
+        }
+        if (row.file_url) {
+          const link = document.createElement('a');
+          link.href = row.file_url;
+          link.textContent = ' View file';
+          link.target = '_blank';
+          link.rel = 'noopener';
+          notesTd.appendChild(document.createElement('br'));
+          notesTd.appendChild(link);
+        }
+        tr.appendChild(notesTd);
+        body.appendChild(tr);
+      });
+    }
+
+    function updateCgSummary(filtered, total){
+      if (!cgInputs.count) return;
+      if (!total) {
+        cgInputs.count.textContent = 'No caregiver check-ins yet.';
+        return;
+      }
+      if (!filtered.length) {
+        cgInputs.count.textContent = 'No caregiver check-ins match this range.';
+        return;
+      }
+      const plural = filtered.length === 1 ? 'check-in' : 'check-ins';
+      const base = `${filtered.length} ${plural}`;
+      cgInputs.count.textContent = (filtered.length === total)
+        ? base
+        : `${base} (of ${total} total)`;
+    }
+
+    function filterCaregiverEntries(entries){
+      const start = normalizeDateOnly(cgInputs.start?.value || '');
+      const end   = normalizeDateOnly(cgInputs.end?.value || '');
+      return entries.filter(entry => {
+        const date = normalizeEntryDate(entry);
+        if (!date) return false;
+        if (start && date < start) return false;
+        if (end && date > end) return false;
+        return true;
+      });
+    }
+
+    function applyCaregiverFilters(){
+      const entries = cgState.entries.slice();
+      if (!entries.length) {
+        renderCaregiverTable([]);
+        updateCgSummary([], 0);
+        return;
+      }
+      const filtered = filterCaregiverEntries(entries);
+      cgState.filtered = filtered;
+      renderCaregiverTable(filtered);
+      updateCgSummary(filtered, entries.length);
+    }
+
+    function exportCaregiverCsv(){
+      const source = (cgState.filtered && cgState.filtered.length) ? cgState.filtered : cgState.entries;
+      if (!source.length) {
+        alert('No caregiver check-ins to export yet.');
+        return;
+      }
+      const rows = source.map(entry => (formatEntryForList ? formatEntryForList(entry) : fallbackFormat(entry)));
+      const headers = ['Timestamp','Hygiene','Food','Clean-up','Voc (min)','Comm (min)','Prompt','Notes'];
+      const csvLines = [
+        headers.join(',')
+      ];
+      rows.forEach(row => {
+        const values = [
+          row.dateTime || '',
+          row.hygiene || '',
+          row.food_prep || '',
+          row.cleanup || '',
+          row.vocational_time || '',
+          row.community_time || '',
+          row.new_skill_score || '',
+          (row.notes || '').replace(/\r?\n|\r/g, ' ')
+        ].map(value => {
+          const str = String(value ?? '');
+          return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+        });
+        csvLines.push(values.join(','));
+      });
+      const blob = new Blob([csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `caregiver-checkins-${new Date().toISOString().slice(0,10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function exportCaregiverPdf(){
+      if (!cgState.entries.length) {
+        alert('No caregiver data to export yet.');
+        return;
+      }
+      exportElement('#cg-panel', 'Caregiver_Checkins.pdf');
+    }
 
     /* =================== KPIs & caregiver-derived charts =================== */
     const kpi = {
@@ -339,6 +567,9 @@
       renderKPIs(res.summary);
       drawHealthChart(res.charts.monthly);
       drawSkillChart(res.charts.monthly);
+      cgState.entries = res.entries.slice();
+      updateDateInputs(cgState.entries);
+      applyCaregiverFilters();
       window.dispatchEvent(new Event('caregiverDataReady'));
     }
 
@@ -601,6 +832,12 @@
     /* =================== Wire & boot =================== */
     $('#moodRange').addEventListener('change', renderMoodSection);
 
+    cgInputs.apply?.addEventListener('click', () => applyCaregiverFilters());
+    cgInputs.start?.addEventListener('change', () => applyCaregiverFilters());
+    cgInputs.end?.addEventListener('change', () => applyCaregiverFilters());
+    cgInputs.csv?.addEventListener('click', exportCaregiverCsv);
+    cgInputs.pdf?.addEventListener('click', exportCaregiverPdf);
+
     async function renderMoodSection(){
       const rangeSel = $('#moodRange').value || 'all';
       const full = await fetchMoodEntries(rangeSel);
@@ -698,6 +935,41 @@
 
   document.getElementById('fullExportBtn')?.addEventListener('click', exportFullReportPDF);
   document.getElementById('fullPrintBtn')?.addEventListener('click', printFullReport);
+</script>
+
+<script>
+  (function(){
+    const version = window.STAR_BUILD_VERSION || '2025.10.14a';
+    if (!window.STAR_BUILD_VERSION) window.STAR_BUILD_VERSION = version;
+    const ensureBadge = () => {
+      if (document.getElementById('star-build-version')) return;
+      const badge = document.createElement('div');
+      badge.id = 'star-build-version';
+      badge.textContent = `Build ${version}`;
+      badge.style.cssText = `
+        position:fixed;
+        right:12px;
+        bottom:12px;
+        background:rgba(17,17,17,0.85);
+        color:#f9fafb;
+        font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+        font-size:11px;
+        font-weight:600;
+        letter-spacing:0.02em;
+        padding:6px 10px;
+        border-radius:10px;
+        box-shadow:0 6px 18px rgba(0,0,0,0.18);
+        z-index:998;
+        pointer-events:none;
+      `;
+      document.body.appendChild(badge);
+    };
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', ensureBadge, { once: true });
+    } else {
+      ensureBadge();
+    }
+  })();
 </script>
 
 <script type="module">
@@ -865,7 +1137,7 @@
   (async () => {
     if (!currentSupabase) {
       try {
-        const mod = await import('./supabaseClient.js');
+        const mod = await import('./supabaseClient.js?v=2025.10.14a');
         currentSupabase = mod?.supabase || window.supabase || null;
       } catch (e) {}
     }

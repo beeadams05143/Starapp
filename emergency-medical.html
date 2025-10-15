@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
   <!-- Your app stylesheet (unchanged) -->
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=2025.10.14a" />
 
   <style>
     /* --- Force scrolling even if a global sheet sets overflow: hidden or 100vh --- */
@@ -250,7 +250,7 @@
 
   <!-- ===== Supabase logic (photo + form save/load) ===== -->
   <script type="module">
-    import { supabase } from './supabaseClient.js';
+    import { supabase } from './supabaseClient.js?v=2025.10.14a';
 
     // ---------- PHOTO ----------
     const drop    = document.getElementById('photoDrop');
@@ -485,12 +485,12 @@
   </script>
 
   <!-- Page logic that populates #user-email etc. -->
-<script type="module" src="./script.js"></script>
-<script type="module" src="./avatar-float.js"></script>
+<script type="module" src="./script.js?v=2025.10.14a"></script>
+<script type="module" src="./avatar-float.js?v=2025.10.14a"></script>
 
 <!-- ✅ Restore original hamburger menu + bottom tabbar -->
-<script defer src="./ui-shell.js"></script>
-<script defer src="./scripts/appbar-drawer.js"></script>
+<script defer src="./ui-shell.js?v=2025.10.14a"></script>
+<script defer src="./scripts/appbar-drawer.js?v=2025.10.14a"></script>
 </body>
 </html>
 

@@ -3,7 +3,7 @@
 // Requires: supabaseClient.js exporting `export const supabase = createClient(...)`
 // Bucket name assumed: 'weekly-plan-attachments'
 
-import { supabase } from '../supabaseClient.js';
+import { supabase } from '../supabaseClient.js?v=2025.10.14a';
 
 const LS_KEY = 'focusOfWeek_v1';
 const BUCKET = 'weekly-plan-attachments';

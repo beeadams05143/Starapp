@@ -1,6 +1,8 @@
 // /js/supabaseClient.js
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+export const BUILD_VERSION = '2025.10.14a';
+
 // ⚠️ Keep straight quotes only
 const SUPABASE_URL = 'https://okfsobfyhpforyqogjea.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9rZnNvYmZ5aHBmb3J5cW9namVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2MTg3NDAsImV4cCI6MjA2ODE5NDc0MH0.qtuG1_LbSPdeRtnyElo-F0agTSGclqQQyap-USHKWFw';
@@ -23,6 +25,7 @@ export const supabase =
 
 // Expose globally so non-module scripts and inline helpers can use it
 if (typeof window !== 'undefined') {
+  window.STAR_BUILD_VERSION = window.STAR_BUILD_VERSION || BUILD_VERSION;
   window.supabase = supabase;   // <-- this is the one your smoke test/Save code expects
   window.sb = supabase;         // optional alias (keeps your previous window.sb)
 }

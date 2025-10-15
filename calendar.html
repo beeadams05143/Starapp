@@ -7,8 +7,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <!-- Global + page CSS -->
-  <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="calendar.css">
+  <link rel="stylesheet" href="style.css?v=2025.10.14a">
+  <link rel="stylesheet" href="calendar.css?v=2025.10.14a">
 
   <!-- Page-specific hardening / tweaks -->
   <style>
@@ -210,7 +210,7 @@
 
   <!-- ===== Supabase Calendar logic ===== -->
   <script type="module">
-  import { supabase } from "./supabaseClient.js";
+  import { supabase } from "./supabaseClient.js?v=2025.10.14a";
 
   // ✅ Require login (redirect if not)
   const { data: userData } = await supabase.auth.getUser();
@@ -491,13 +491,12 @@
   <div id="tabbar"></div>
 
   <!-- 🔁 Shared nav + UI shell (match home.html paths exactly) -->
-  <script type="module" src="/script.js"></script>
-  <script defer src="/ui-shell.js"></script>
-  <script defer src="/scripts/appbar-drawer.js"></script>
-  <script type="module" src="/avatar-float.js"></script>
+  <script type="module" src="/script.js?v=2025.10.14a"></script>
+  <script defer src="/ui-shell.js?v=2025.10.14a"></script>
+  <script defer src="/scripts/appbar-drawer.js?v=2025.10.14a"></script>
+  <script type="module" src="/avatar-float.js?v=2025.10.14a"></script>
 
   <!-- ✅ Navbar loader (include once, as a module, absolute path) -->
-  <script type="module" src="/load-navbar.js"></script>
+  <script type="module" src="/load-navbar.js?v=2025.10.14a"></script>
 </body>
 </html>
-

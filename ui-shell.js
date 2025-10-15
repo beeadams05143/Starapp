@@ -1,5 +1,10 @@
 // ui-shell.js  — injects top app bar + bottom tab bar (with Emergency)
 (() => {
+  const BUILD_VERSION = (typeof window !== 'undefined' && window.STAR_BUILD_VERSION) || '2025.10.14a';
+  if (typeof window !== 'undefined' && !window.STAR_BUILD_VERSION) {
+    window.STAR_BUILD_VERSION = BUILD_VERSION;
+  }
+
   // ----- styles for bars (thick black, consistent) -----
   const css = `
     :root{ --appbar-h:56px; --tabbar-h:72px; }
@@ -62,7 +67,31 @@
     </nav>
   `;
 
- 
+
+  // ----- build version footer -----
+  if (!document.getElementById('star-build-version')) {
+    const footer = document.createElement('footer');
+    footer.id = 'star-build-version';
+    footer.style.cssText = `
+      position:fixed;
+      right:12px;
+      bottom:calc(var(--tabbar-h,72px) + 12px);
+      background:rgba(17,17,17,0.85);
+      color:#f9fafb;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      font-size:11px;
+      font-weight:600;
+      letter-spacing:0.02em;
+      padding:6px 10px;
+      border-radius:10px;
+      box-shadow:0 6px 18px rgba(0,0,0,0.18);
+      z-index:998;
+      pointer-events:none;
+    `;
+    footer.textContent = `Build ${BUILD_VERSION}`;
+    document.body.appendChild(footer);
+  }
+
 })();
 // ui-shell.js — remove the inline "Menu" <details> that appears under the app bar
 (function killInlineMenu(){

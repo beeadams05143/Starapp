@@ -65,6 +65,61 @@ export function requireSession() {
   return session;
 }
 
+const REFRESH_MARGIN_SECONDS = 60;
+
+function normalizeSession(payload) {
+  if (!payload || typeof payload !== 'object') return null;
+  if (payload.session) return payload.session;
+  if (!payload.access_token) return null;
+  return {
+    access_token: payload.access_token,
+    refresh_token: payload.refresh_token || null,
+    expires_in: payload.expires_in ?? null,
+    expires_at:
+      payload.expires_at ??
+      (payload.expires_in ? Math.floor(Date.now() / 1000) + Number(payload.expires_in || 0) : null),
+    token_type: payload.token_type || 'bearer',
+    user: payload.user ?? null,
+  };
+}
+
+async function refreshSession(session) {
+  if (!session?.refresh_token) return session;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ refresh_token: session.refresh_token }),
+    });
+    const text = await res.text();
+    if (!res.ok) {
+      throw new Error(text || `Refresh failed ${res.status}`);
+    }
+    const payload = text ? JSON.parse(text) : null;
+    const fresh = normalizeSession(payload) || session;
+    if (payload?.user) fresh.user = payload.user;
+    saveSession(fresh);
+    return fresh;
+  } catch (err) {
+    console.warn('[supabase] refresh session failed', err);
+    return session;
+  }
+}
+
+export async function ensureSession() {
+  let session = getSessionFromStorage();
+  if (!session) return null;
+  const expiresAt = session.expires_at || session.expiresAt || null;
+  if (!expiresAt) return session;
+  const now = Math.floor(Date.now() / 1000);
+  if (expiresAt - REFRESH_MARGIN_SECONDS > now) return session;
+  session = await refreshSession(session);
+  return session;
+}
+
 
 export function buildQuery(params = {}) {
   return Object.entries(params)
@@ -316,7 +371,10 @@ class StorageBucket {
   }
 
   async upload(path, file, { upsert = false, contentType } = {}) {
-    const session = requireSession();
+    const session = await ensureSession();
+    if (!session?.access_token) {
+      return { data: null, error: { message: 'Supabase session missing' } };
+    }
     const headers = {
       apikey: SUPABASE_ANON_KEY,
       Authorization: `Bearer ${session.access_token}`,
@@ -344,7 +402,10 @@ class StorageBucket {
   }
 
   async createSignedUrl(path, expiresIn) {
-    const session = requireSession();
+    const session = await ensureSession();
+    if (!session?.access_token) {
+      return { data: null, error: { message: 'Supabase session missing' } };
+    }
     const res = await fetch(`${SUPABASE_URL}/storage/v1/object/sign/${this.bucket}/${path}`, {
       method: 'POST',
       headers: {

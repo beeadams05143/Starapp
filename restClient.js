@@ -2,20 +2,21 @@ import {
   SUPABASE_URL,
   SUPABASE_ANON_KEY,
   getSessionFromStorage as coreGetSessionFromStorage,
-  requireSession as coreRequireSession,
+  ensureSession as coreEnsureSession,
 } from './supabaseClient.js?v=2025.10.16d';
 
 export function getSessionFromStorage() {
   return coreGetSessionFromStorage();
 }
 
-export function requireSession() {
-  return coreRequireSession();
+export async function requireSession() {
+  const session = await coreEnsureSession();
+  if (!session?.access_token) throw new Error('Supabase session required');
+  return session;
 }
 
 export async function rest(path, { method = 'GET', headers = {}, body } = {}) {
-  const session = requireSession();
-
+  const session = await requireSession();
   const authHeaders = {
     apikey: SUPABASE_ANON_KEY,
     Authorization: `Bearer ${session.access_token}`,

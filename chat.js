@@ -2,7 +2,7 @@
 // Requires: restClient.js exporting { rest, getSessionFromStorage }
 // and <script type="module" src="chat.js"></script> in chat.html
 
-import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.15k';
+import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16a';
 
 // ---------- CONFIG ----------
 const GROUP_ID = '3159dde9-8cf3-4a29-af72-01da907f241b'; // Family

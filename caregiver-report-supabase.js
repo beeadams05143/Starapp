@@ -1,5 +1,5 @@
 // caregiver-report-supabase.js — PRODUCTION SAFE (client-side filtering)
-import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.15k';
+import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16a';
 
 /* ---------- tiny utils ---------- */
 const toDayISO = d =>

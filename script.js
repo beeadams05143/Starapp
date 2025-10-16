@@ -522,9 +522,14 @@ if (caregiverForm) {
       const profileRows = await rest(`profiles?id=eq.${encodeURIComponent(user.id)}&select=public_name,display_name,full_name`);
       const prof = profileRows?.[0] || {};
 
+      const caregiverNameInput = document.querySelector('#caregiver_name');
+      const caregiverNameRaw = caregiverNameInput?.value?.trim() || '';
+      const derivedName = prof.public_name || prof.display_name || prof.full_name || '';
+      const caregiverName = caregiverNameRaw || derivedName || null;
+
       const row = {
         user_id: user.id,
-        caregiver_name: prof.public_name || prof.display_name || prof.full_name || null,
+        caregiver_name: caregiverName,
         hygiene: document.querySelector('#hygieneCheckbox')?.checked ?? false,
         food_prep: document.querySelector('#foodPrepCheckbox')?.checked ?? false,
         cleanup: document.querySelector('#cleanupCheckbox')?.checked ?? false,

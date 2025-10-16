@@ -82,7 +82,9 @@
   <div class="row" id="cg-line2"></div>
 </div>
 
-<script>
+<script type="module">
+import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.15k';
+
 (function(){
   const Status = document.getElementById('cg-status');
   const L1 = document.getElementById('cg-line1');
@@ -100,27 +102,21 @@
 
   async function smoke(){
     try {
-      // 0) client present?
-      if (!window.supabase) { say(L1,'supabase client missing','err'); return; }
-
-      // 1) auth check
+      const session = getSessionFromStorage();
+      if (!session?.user?.id) { say(L1,'not signed in (this domain)','err'); return; }
       say(L1,'checking auth…');
-      const { data:{ user }, error:uerr } = await supabase.auth.getUser();
-      if (uerr){ say(L1, 'auth error: '+uerr.message, 'err'); return; }
-      if (!user){ say(L1,'not signed in (this domain)','err'); return; }
+      const user = session.user;
       say(L1,'auth OK','ok');
 
       // 2) minimal insert only to existing columns
       say(L2,'inserting test row…');
       const d = new Date().toISOString().slice(0,10); // YYYY-MM-DD for DATE column
-      const { data, error } = await supabase
-        .from('caregiver_checkins')
-        .insert([{ user_id: user.id, date: d }])
-        .select()
-        .throwOnError(); // forces throw on RLS / column errors
-
+      await rest('caregiver_checkins', {
+        method: 'POST',
+        headers: { Prefer: 'return=representation' },
+        body: JSON.stringify([{ user_id: user.id, date: d }]),
+      });
       say(L2,'insert success ✔','ok');
-      console.log('insert success:', data);
       alert('Insert success. Check caregiver_checkins for a new row dated '+d);
     } catch(e){
       console.error(e);
@@ -265,6 +261,8 @@
 
   <!-- Single, clean module script -->
   <script type="module">
+    import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.15k';
+
     /* =============== Optional live data =============== */
     let loadFromSupabase = null;
     let formatEntryForList = null;
@@ -277,10 +275,10 @@
     }
 
     // Supabase client + session gate
-    import { supabase } from './supabaseClient.js?v=2025.10.15f';
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { window.location.href = 'login.html'; throw new Error('No session'); }
+    const session = getSessionFromStorage();
+    if (!session?.user?.id) { window.location.href = 'login.html'; throw new Error('No session'); }
     const USER_ID = session.user.id;
+    window.rest = rest;
 
     /* =================== Utilities =================== */
     const $ = sel => document.querySelector(sel);
@@ -596,19 +594,18 @@
   const startISO = start.toISOString();
   const endISO   = end.toISOString();
 
-  // 1) Supabase rows (use BOTH date and created_at safely)
+  // 1) Remote rows (use BOTH date and created_at safely)
   let supaRows = [];
   try {
-    const { data, error } = await supabase
-      .from('mood_entries')
-      .select('created_at,date,mood,intensity,notes,sleep_hours,user_id')
-      .gte('created_at', startISO)   // filter by created_at (always exists)
-      .lte('created_at', endISO)
-      .order('created_at');
-
-    if (!error && Array.isArray(data)) {
+    const path = [
+      'mood_entries?select=created_at,date,mood,intensity,notes,sleep_hours,user_id',
+      `created_at=gte.${encodeURIComponent(startISO)}`,
+      `created_at=lte.${encodeURIComponent(endISO)}`,
+      'order=created_at.asc',
+    ].join('&');
+    const data = await rest(path);
+    if (Array.isArray(data)) {
       supaRows = data.map(r => {
-        // Prefer user-entered date if present, else created_at
         const ts = r.date ? new Date(r.date) : new Date(r.created_at);
         return {
           id: `s:${ts.toISOString()}`,
@@ -623,7 +620,7 @@
       });
     }
   } catch (e) {
-    console.error('fetchMoodEntries supabase error', e);
+    console.error('fetchMoodEntries REST error', e);
   }
 
   // 2) Local rows fallback
@@ -753,9 +750,11 @@
     async function fetchWyr(){
       let rows=[];
       try{
-        const { data } = await supabase.from('wyr_entries').select('created_at,choice,activity,label').order('created_at');
+        const data = await rest('wyr_entries?select=created_at,choice,activity,label&order=created_at.asc');
         rows = (data||[]).map(r=>({ ts:new Date(r.created_at), label:(r.label||r.activity||r.choice||'Unknown') }));
-      }catch{}
+      }catch(e){
+        console.warn('fetchWyr REST error', e);
+      }
       if (!rows.length){
         rows = (JSON.parse(localStorage.getItem('wyrEntries')||'[]')).map(r=>({ ts:new Date(r.timestamp), label:r.label }));
       }
@@ -973,6 +972,8 @@
 </script>
 
 <script type="module">
+import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.15k';
+
 (() => {
   // Bail out quietly if the calendar HTML isn't present
   const root  = document.getElementById('hc-root');
@@ -1042,58 +1043,48 @@
     kvSick&& (kvSick.textContent= '🤒 Sick days: ' + sickDays);
   }
 
-  async function getUid(supabase){
-    try{
-      if (!supabase || !supabase.auth || !supabase.auth.getSession) return null;
-      const { data } = await supabase.auth.getSession();
-      return (data && data.session && data.session.user) ? data.session.user.id : null;
-    }catch(_){ return null; }
-  }
-
-  async function loadMonth(supabase){
+  async function loadMonth(){
     MAP = {};
     const { start, end } = monthBoundsUTC(Y, M);
-    const uid = await getUid(supabase);
+    const session = getSessionFromStorage();
+    const uid = session?.user?.id || null;
 
-    // 1) Supabase (preferred)
-    if (supabase && supabase.from){
-      try{
-        let q = supabase
-          .from('caregiver_checkins')
-          .select('id,user_id,created_at,submitted_at,had_bm,payload')
-          .gte('created_at', start)
-          .lt('created_at', end);
-        if (uid) q = q.eq('user_id', uid);
+    try{
+      const params = [
+        'caregiver_checkins?select=id,user_id,created_at,submitted_at,had_bm,payload',
+        `created_at=gte.${encodeURIComponent(start)}`,
+        `created_at=lt.${encodeURIComponent(end)}`
+      ];
+      if (uid) params.push(`user_id=eq.${encodeURIComponent(uid)}`);
+      params.push('order=created_at.asc');
+      const data = await rest(params.join('&'));
+      if (Array.isArray(data)) {
+        for (let i=0;i<data.length;i++){
+          const row = data[i];
+          const dt  = new Date(row.submitted_at || row.created_at);
+          const key = dt.getFullYear() + '-' + pad(dt.getMonth()+1) + '-' + pad(dt.getDate());
+          const p   = row.payload || {};
 
-        const { data, error } = await q;
-        if (!error && Array.isArray(data)) {
-          for (let i=0;i<data.length;i++){
-            const row = data[i];
-            const dt  = new Date(row.submitted_at || row.created_at);
-            const key = dt.getFullYear() + '-' + pad(dt.getMonth()+1) + '-' + pad(dt.getDate());
-            const p   = row.payload || {};
+          const bm    = (row.had_bm === true) || (/yes/i.test(String(p.bm_today || p.had_bm || '')));
+          let   sleep = null;
+          const hrsRaw = p.hours_sleep;
+          if (typeof hrsRaw === 'string'){
+            if (hrsRaw.indexOf('10') >= 0) sleep = 10;
+            else { const n = parseFloat(hrsRaw); if (isFinite(n)) sleep = n; }
+          } else if (typeof hrsRaw === 'number') { sleep = hrsRaw; }
+          const manic = (/yes/i.test(String(p.aggression_flag || ''))) || ((+p.aggression_intensity || 0) > 0);
+          const sick  = /no/i.test(String(p.appears_good_health || ''));
 
-            const bm    = (row.had_bm === true) || (/yes/i.test(String(p.bm_today || p.had_bm || '')));
-            let   sleep = null;
-            const hrsRaw = p.hours_sleep;
-            if (typeof hrsRaw === 'string'){
-              if (hrsRaw.indexOf('10') >= 0) sleep = 10;
-              else { const n = parseFloat(hrsRaw); if (isFinite(n)) sleep = n; }
-            } else if (typeof hrsRaw === 'number') { sleep = hrsRaw; }
-            const manic = (/yes/i.test(String(p.aggression_flag || ''))) || ((+p.aggression_intensity || 0) > 0);
-            const sick  = /no/i.test(String(p.appears_good_health || ''));
-
-            const cur = MAP[key] || { bm:false, sleep:null, manic:false, sick:false };
-            MAP[key] = {
-              bm:    cur.bm    || bm,
-              sleep: (sleep!=null && (cur.sleep==null || sleep>cur.sleep)) ? sleep : cur.sleep,
-              manic: cur.manic || manic,
-              sick:  cur.sick  || sick
-            };
-          }
+          const cur = MAP[key] || { bm:false, sleep:null, manic:false, sick:false };
+          MAP[key] = {
+            bm:    cur.bm    || bm,
+            sleep: (sleep!=null && (cur.sleep==null || sleep>cur.sleep)) ? sleep : cur.sleep,
+            manic: cur.manic || manic,
+            sick:  cur.sick  || sick
+          };
         }
-      }catch(_){} // ignore and fall back
-    }
+      }
+    }catch(_){}
 
     // 2) Fallback: localStorage
     if (Object.keys(MAP).length === 0) {
@@ -1125,23 +1116,16 @@
   }
 
   const prevBtn = document.getElementById('hc-prev');
-  prevBtn && prevBtn.addEventListener('click', () => { M--; if(M<0){ M=11; Y--; } loadMonth(currentSupabase); });
+  prevBtn && prevBtn.addEventListener('click', () => { M--; if(M<0){ M=11; Y--; } loadMonth(); });
   const nextBtn = document.getElementById('hc-next');
-  nextBtn && nextBtn.addEventListener('click', () => { M++; if(M>11){ M=0; Y++; } loadMonth(currentSupabase); });
+  nextBtn && nextBtn.addEventListener('click', () => { M++; if(M>11){ M=0; Y++; } loadMonth(); });
   document.querySelectorAll('input[data-hc-layer]').forEach(cb=>{
     cb.addEventListener('change', () => { layers[cb.dataset.hcLayer] = cb.checked; render(); });
   });
 
   // Boot
-  let currentSupabase = window.supabase || null;
   (async () => {
-    if (!currentSupabase) {
-      try {
-        const mod = await import('./supabaseClient.js?v=2025.10.15f');
-        currentSupabase = mod?.supabase || window.supabase || null;
-      } catch (e) {}
-    }
-    await loadMonth(currentSupabase);
+    await loadMonth();
   })();
 })();
 </script>

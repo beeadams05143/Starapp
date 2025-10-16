@@ -79,46 +79,39 @@
 </div>
 
 
-<!-- Supabase (kept exactly as you provided) -->
+<!-- 3) WYR fetch & render -->
 <script type="module">
-  import { createClient } from 'https://esm.sh/@supabase/supabase-js';
-  window.supabase = createClient(
-    'https://okfsobfyhpforyqogjea.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9rZnNvYmZ5aHBmb3J5cW9namVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2MTg3NDAsImV4cCI6MjA2ODE5NDc0MH0.qtuG1_LbSPdeRtnyElo-F0agTSGclqQQyap-USHKWFw'
-  );
-</script>
-<!-- 3) WYR fetch & render (paste THIS right after the init) -->
-<script type="module">
-  const supabase = window.supabase;
+  import { rest } from './restClient.js?v=2025.10.15k';
 
   const thead = document.querySelector('#wyrTable thead');
   const tbody = document.querySelector('#wyrTable tbody');
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
   async function loadWYR() {
-    const { data, error } = await supabase
-      .from('wyr_responses')
-      .select('*')
-      .order('created_at', { ascending: false }); // no user_id filter
+    try {
+      const rows = await rest('wyr_responses?select=*&order=created_at.desc');
+      if (!rows?.length) { thead.innerHTML=''; tbody.innerHTML='<tr><td>No responses yet.</td></tr>'; return; }
 
-    if (error) { console.error('WYR fetch error:', error); return; }
-    if (!data?.length) { thead.innerHTML=''; tbody.innerHTML='<tr><td>No responses yet.</td></tr>'; return; }
+      const cols = Object.keys(rows[0]);
+      thead.innerHTML = '<tr>' + cols.map(k => `<th style="border:1px solid #ccc;padding:6px;text-align:left;">${esc(k)}</th>`).join('') + '</tr>';
 
-    const cols = Object.keys(data[0]);
-    thead.innerHTML = '<tr>' + cols.map(k => `<th style="border:1px solid #ccc;padding:6px;text-align:left;">${esc(k)}</th>`).join('') + '</tr>';
-
-    tbody.innerHTML = data.map(row =>
-      '<tr>' + cols.map(k => {
-        let v = row[k];
-        if (k === 'created_at' && v) v = new Date(v).toLocaleString();
-        return `<td style="border:1px solid #eee;padding:6px;vertical-align:top;">${esc(v)}</td>`;
-      }).join('') + '</tr>'
-    ).join('');
+      tbody.innerHTML = rows.map(row =>
+        '<tr>' + cols.map(k => {
+          let v = row[k];
+          if (k === 'created_at' && v) v = new Date(v).toLocaleString();
+          return `<td style="border:1px solid #eee;padding:6px;vertical-align:top;">${esc(v)}</td>`;
+        }).join('') + '</tr>'
+      ).join('');
+    } catch (error) {
+      console.error('WYR fetch error:', error);
+    }
   }
 
   loadWYR();
 </script>
-<script>
+<script type="module">
+import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.15k';
+
 (function(){
   // ===== State =====
   const state = {
@@ -259,38 +252,59 @@
     return d;
   }
 
-  // ----- Supabase logging -----
+  // ----- Session logging -----
   async function logSessionStart(){
-    const { data: { user } } = await supabase.auth.getUser();
-    state.userId = user?.id || null;
-    const { data, error } = await supabase
-      .from('sessions')
-      .insert({
-        user_id: state.userId,
-        with_who: state.withWho,
-        people: state.selectedPeople.map(p => ({ id:p.id, name:p.name })),
-        setting: state.setting,
-        family: state.family,
-        choice: state.choice,
-        timer_mode: 'elapsed',
-        goal_seconds: 0,
-        started_at: new Date().toISOString()
-      })
-      .select('id')
-      .single();
-    if (!error) state.sessionId = data.id;
+    const session = getSessionFromStorage();
+    state.userId = session?.user?.id || null;
+    try {
+      const rows = await rest('sessions', {
+        method: 'POST',
+        headers: { Prefer: 'return=representation' },
+        body: JSON.stringify([{
+          user_id: state.userId,
+          with_who: state.withWho,
+          people: state.selectedPeople.map(p => ({ id:p.id, name:p.name })),
+          setting: state.setting,
+          family: state.family,
+          choice: state.choice,
+          timer_mode: 'elapsed',
+          goal_seconds: 0,
+          started_at: new Date().toISOString()
+        }]),
+      });
+      const inserted = Array.isArray(rows) ? rows[0] : rows;
+      if (inserted?.id) state.sessionId = inserted.id;
+    } catch (error) {
+      console.error('logSessionStart error', error);
+    }
   }
   async function logSessionEnd(){
     if (!state.sessionId || !state.startMs) return;
     const elapsed = Math.floor((Date.now() - state.startMs)/1000);
-    await supabase.from('sessions').update({
-      ended_at: new Date().toISOString(),
-      elapsed_seconds: elapsed
-    }).eq('id', state.sessionId);
+    try {
+      await rest(`sessions?id=eq.${encodeURIComponent(state.sessionId)}`, {
+        method: 'PATCH',
+        headers: { Prefer: 'return=minimal' },
+        body: JSON.stringify({
+          ended_at: new Date().toISOString(),
+          elapsed_seconds: elapsed
+        }),
+      });
+    } catch (error) {
+      console.error('logSessionEnd error', error);
+    }
   }
   async function setMood(moodValue){
     if (!state.sessionId) return;
-    await supabase.from('sessions').update({ mood: moodValue }).eq('id', state.sessionId);
+    try {
+      await rest(`sessions?id=eq.${encodeURIComponent(state.sessionId)}`, {
+        method: 'PATCH',
+        headers: { Prefer: 'return=minimal' },
+        body: JSON.stringify({ mood: moodValue }),
+      });
+    } catch (error) {
+      console.error('setMood error', error);
+    }
   }
 
   // ===== Screens =====
@@ -529,7 +543,7 @@
       </div>
     `;
 
-    // mood -> supabase, then enable Done
+    // mood -> REST API, then enable Done
     document.querySelectorAll('.mood').forEach(btn=>{
       btn.onclick = async () => {
         document.querySelectorAll('.mood').forEach(b=>b.style.border='');

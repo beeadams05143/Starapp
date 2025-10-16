@@ -1,11 +1,10 @@
 // Profile.js — vanilla browser version (no React)
-import { supabase } from './supabaseClient.js?v=2025.10.15f';
+import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.15k';
 import { setupAvatarUpload } from './src/components/AvatarUpload.js?v=2025.10.15f';
 
 document.addEventListener('DOMContentLoaded', async () => {
-  // Require session
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) {
+  const session = getSessionFromStorage();
+  if (!session?.user?.id) {
     alert('Please log in first.');
     location.href = './login.html';
     return;
@@ -56,29 +55,29 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Load profile row (create one if missing)
   try {
-    const { data: row, error } = await supabase
-      .from('profiles')
-      .select('full_name, public_name, display_name, avatar_url')
-      .eq('id', user.id)
-      .maybeSingle();
-
-    if (error && error.code !== 'PGRST116') throw error; // ignore "no rows" code
-
+    const rows = await rest(
+      `profiles?id=eq.${encodeURIComponent(user.id)}&select=full_name,public_name,display_name,avatar_url,updated_at`
+    );
+    const row = rows?.[0] || null;
     const metaName =
       user.user_metadata?.full_name ||
       user.user_metadata?.name ||
       user.email;
 
     if (!row) {
-      // create minimal row
-      const { error: upErr } = await supabase.from('profiles').upsert({
+      const payload = {
         id: user.id,
         full_name: metaName,
         public_name: metaName,
         display_name: metaName,
+        updated_at: new Date().toISOString(),
+      };
+      await rest('profiles', {
+        method: 'POST',
+        headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
+        body: JSON.stringify([payload]),
       });
-      if (upErr) throw upErr;
-      displayNameEl.value = metaName;
+      displayNameEl.value = payload.display_name;
     } else {
       displayNameEl.value = row.public_name || row.display_name || row.full_name || metaName;
       if (row.avatar_url) {
@@ -97,16 +96,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     const name = (displayNameEl.value || '').trim() || user.email;
     profileMsg.textContent = '';
     try {
-      const { error } = await supabase.from('profiles').upsert({
-        id: user.id,
-        full_name: name,
-        public_name: name,
-        display_name: name,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'id' });
-      if (error) throw error;
+      const updated = await rest(`profiles?id=eq.${encodeURIComponent(user.id)}`, {
+        method: 'PATCH',
+        headers: { Prefer: 'return=representation' },
+        body: JSON.stringify({
+          full_name: name,
+          public_name: name,
+          display_name: name,
+          updated_at: new Date().toISOString(),
+        }),
+      });
+      const applied = Array.isArray(updated) ? updated[0] : updated;
       profileMsg.style.color = 'green';
-      profileMsg.textContent = 'Saved ✔';
+      const timestamp = applied?.updated_at
+        ? new Date(applied.updated_at).toLocaleString()
+        : new Date().toLocaleString();
+      profileMsg.textContent = `Saved ✔ · ${timestamp}`;
     } catch (e) {
       console.error('Save profile error:', e);
       profileMsg.style.color = 'crimson';
@@ -116,7 +121,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Hook up avatar upload (bucket: "avatars")
   setupAvatarUpload({
-    supabase,
     user,
     inputSelector: '#avatarInput',
     imgSelector: '#avatarImg',

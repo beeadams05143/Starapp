@@ -1,9 +1,15 @@
 // js/focus-week-supabase.js
 // Syncs Focus of the Week to Supabase (weekly_plans) and uploads attachments to a private bucket.
-// Requires: supabaseClient.js exporting `export const supabase = createClient(...)`
-// Bucket name assumed: 'weekly-plan-attachments'
+// Requires: restClient.js & supabaseClient constants
 
-import { supabase } from '../supabaseClient.js?v=2025.10.15f';
+import {
+  rest,
+  getSessionFromStorage,
+} from '../restClient.js?v=2025.10.15k';
+import {
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY,
+} from '../supabaseClient.js?v=2025.10.15k';
 
 const LS_KEY = 'focusOfWeek_v1';
 const BUCKET = 'weekly-plan-attachments';
@@ -35,7 +41,8 @@ function readLocalPayload() {
 
 // ---------- DB ----------
 async function upsertWeeklyPlan(payload, attachmentPaths = []) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const session = getSessionFromStorage();
+  const user = session?.user;
   if (!user) return;
 
   const upsert = {
@@ -55,49 +62,97 @@ async function upsertWeeklyPlan(payload, attachmentPaths = []) {
     updated_at: new Date().toISOString()
   };
 
-  const { error } = await supabase
-    .from('weekly_plans')
-    .upsert(upsert, { onConflict: 'user_id,week_start' });
-
-  if (error) console.error('Supabase upsert error:', error);
+  try {
+    await rest('weekly_plans?on_conflict=user_id,week_start', {
+      method: 'POST',
+      headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify([upsert]),
+    });
+  } catch (error) {
+    console.error('Supabase upsert error:', error);
+  }
 }
 
 async function loadWeeklyPlan(weekStartISO) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const session = getSessionFromStorage();
+  const user = session?.user;
   if (!user) return null;
 
-  const { data, error } = await supabase
-    .from('weekly_plans')
-    .select('*')
-    .eq('user_id', user.id)
-    .eq('week_start', weekStartISO)
-    .maybeSingle();
-
-  if (error) { console.error('Supabase load error:', error); return null; }
-  return data;
+  try {
+    const rows = await rest([
+      'weekly_plans?select=*',
+      `user_id=eq.${encodeURIComponent(user.id)}`,
+      `week_start=eq.${encodeURIComponent(weekStartISO)}`,
+      'limit=1'
+    ].join('&'));
+    return rows?.[0] || null;
+  } catch (error) {
+    console.error('Supabase load error:', error);
+    return null;
+  }
 }
 
 // ---------- Storage ----------
 async function uploadAttachments(files, userId, weekISO) {
   if (!files || !files.length) return [];
+  const session = getSessionFromStorage();
+  const token = session?.access_token;
+  if (!token) return [];
   const uploaded = [];
   for (const file of files) {
-    const path = `${userId}/${weekISO}/${Date.now()}_${file.name}`;
-    const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
-      cacheControl: '3600',
-      upsert: false
-    });
-    if (error) { console.error('Upload error:', error, file.name); continue; }
+    const safeName = `${Date.now()}_${file.name}`.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const path = `${userId}/${weekISO}/${safeName}`;
+    try {
+      const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`, {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${token}`,
+          'Content-Type': file.type || 'application/octet-stream',
+          'cache-control': '3600',
+          'x-upsert': 'false',
+        },
+        body: file,
+      });
+      if (!res.ok) {
+        console.error('Upload error:', await res.text(), file.name);
+        continue;
+      }
+    } catch (error) {
+      console.error('Upload error:', error, file.name);
+      continue;
+    }
     uploaded.push(path);
   }
   return uploaded;
 }
 async function getSignedUrls(paths) {
   if (!paths?.length) return [];
+  const session = getSessionFromStorage();
+  const token = session?.access_token;
+  if (!token) return [];
   const out = [];
   for (const p of paths) {
-    const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(p, 60 * 60 * 24 * 7); // 7 days
-    if (!error && data?.signedUrl) out.push({ path: p, url: data.signedUrl });
+    try {
+      const res = await fetch(`${SUPABASE_URL}/storage/v1/object/sign/${BUCKET}/${p}`, {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ expiresIn: 60 * 60 * 24 * 7 }),
+      });
+      const text = await res.text();
+      if (!res.ok) {
+        console.error('Signed URL error:', text);
+        continue;
+      }
+      const data = text ? JSON.parse(text) : null;
+      if (data?.signedUrl) out.push({ path: p, url: data.signedUrl });
+    } catch (error) {
+      console.error('Signed URL error:', error);
+    }
   }
   return out;
 }
@@ -136,7 +191,8 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (typeof originalSave === 'function') originalSave(); // writes localStorage
 
     const payload = readLocalPayload();
-    const { data: { user } } = await supabase.auth.getUser();
+    const session = getSessionFromStorage();
+    const user = session?.user;
     if (!user || !payload) return;
 
     let newPaths = [];

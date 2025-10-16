@@ -61,24 +61,24 @@
 <h2>Mood Share (Pie)</h2>
 <canvas id="moodPieChart" width="400" height="200"></canvas>
 <script type="module">
-  import { supabase } from './supabaseClient.js?v=2025.10.15f';
+  import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.15k';
 
   async function fetchMergedMoodEntries() {
     let supa = [];
     let uid = null;
     try {
-      const { data } = await supabase.auth.getSession();
-      uid = data?.session?.user?.id || null;
+      const session = getSessionFromStorage();
+      uid = session?.user?.id || null;
     } catch {}
 
     try {
-      let q = supabase
-        .from('mood_entries')
-        .select('created_at,mood,intensity,notes')
-        .order('created_at', { ascending: true });
-      if (uid) q = q.eq('user_id', uid);   // harmless if column doesn't exist
-      const { data, error } = await q;
-      if (!error && Array.isArray(data)) {
+      const params = [
+        'mood_entries?select=created_at,mood,intensity,notes',
+        'order=created_at.asc'
+      ];
+      if (uid) params.push(`user_id=eq.${encodeURIComponent(uid)}`);
+      const data = await rest(params.join('&'));
+      if (Array.isArray(data)) {
         supa = data.map(r => {
           const iso = new Date(r.created_at).toISOString();
           return {
@@ -113,17 +113,14 @@
 
 <!-- MODULE: fetch merged mood entries from Supabase + local -->
 <script type="module">
-  import { supabase } from './supabaseClient.js?v=2025.10.15f';
+  import { rest } from './restClient.js?v=2025.10.15k';
 
   async function fetchMergedMoodEntries() {
     // 1) Supabase
     let supa = [];
     try {
-      const { data, error } = await supabase
-        .from('mood_entries')
-        .select('created_at,mood,intensity,notes')
-        .order('created_at');
-      if (!error && Array.isArray(data)) {
+      const data = await rest('mood_entries?select=created_at,mood,intensity,notes&order=created_at.asc');
+      if (Array.isArray(data)) {
         supa = data.map(r => {
           const iso = new Date(r.created_at).toISOString();
           return {

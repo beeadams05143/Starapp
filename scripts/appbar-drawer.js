@@ -1,5 +1,12 @@
 // /scripts/appbar-drawer.js — hamburger drawer that hooks to #openMenu
-(() => {
+(function () {
+  const supaGlobals = window.STAR_SUPABASE || {};
+  const {
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY,
+    getSessionFromStorage,
+    clearSavedSession,
+  } = supaGlobals;
   // If we've already injected, don't do it again
   if (document.getElementById('drawerOverlay')) return;
 
@@ -154,25 +161,30 @@
   document.body.appendChild(overlay);
 
   // --- auth toggle for Log In / Log Out inside the drawer ---
+  function buildAuthHeaders(token) {
+    if (!SUPABASE_ANON_KEY) return { 'Content-Type': 'application/json' };
+    const headers = {
+      apikey: SUPABASE_ANON_KEY,
+      'Content-Type': 'application/json',
+    };
+    if (token) headers.Authorization = `Bearer ${token}`;
+    return headers;
+  }
+
   async function updateAuthLink() {
     const el = overlay.querySelector('#auth-dash-link');
     if (!el) return;
-    try {
-      if (!window.supabase?.auth) return; // supabase may not be available on all pages
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        el.textContent = 'Log Out';
-        el.setAttribute('href', '#logout');
-      } else {
-        el.textContent = 'Log In';
-        el.setAttribute('href', '/login.html');
-      }
-    } catch {}
+    const session = typeof getSessionFromStorage === 'function' ? getSessionFromStorage() : null;
+    if (session?.user) {
+      el.textContent = 'Log Out';
+      el.setAttribute('href', '#logout');
+    } else {
+      el.textContent = 'Log In';
+      el.setAttribute('href', '/login.html');
+    }
   }
   updateAuthLink();
-  if (window.supabase?.auth?.onAuthStateChange) {
-    supabase.auth.onAuthStateChange(() => updateAuthLink());
-  }
+  window.addEventListener('storage', updateAuthLink);
 
   // --- open / close helpers ---
   const open  = () => { overlay.setAttribute('aria-hidden','false'); document.body.style.overflow='hidden'; };
@@ -199,7 +211,19 @@
     // Handle logout click
     if (a.id === 'auth-dash-link' && a.getAttribute('href') === '#logout') {
       e.preventDefault();
-      try { if (window.supabase?.auth) await supabase.auth.signOut(); } catch {}
+      const session = typeof getSessionFromStorage === 'function' ? getSessionFromStorage() : null;
+      if (session?.access_token && SUPABASE_URL) {
+        try {
+          await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
+            method: 'POST',
+            headers: buildAuthHeaders(session.access_token),
+            body: JSON.stringify({ scope: 'global' }),
+          });
+        } catch (err) {
+          console.warn('[drawer] logout request failed', err);
+        }
+      }
+      if (typeof clearSavedSession === 'function') clearSavedSession();
       close();
       location.href = '/login.html';
       return;

@@ -1,15 +1,35 @@
-// script.js
-import { supabase } from './supabaseClient.js?v=2025.10.15f';
+// script.js — REST conversions
+import {
+  rest,
+  getSessionFromStorage,
+} from './restClient.js?v=2025.10.15k';
+import {
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY,
+  clearSavedSession,
+} from './supabaseClient.js?v=2025.10.15k';
 
 const GROUP_KEY = 'currentGroupId';
 
 async function completeLogout() {
+  const session = getSessionFromStorage();
   try {
-    await supabase.auth.signOut();
+    if (session?.access_token) {
+      await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ scope: 'global' }),
+      });
+    }
   } catch (err) {
-    console.warn('supabase signOut failed', err);
+    console.warn('logout failed', err);
   }
 
+  clearSavedSession();
   try {
     localStorage.removeItem(GROUP_KEY);
     localStorage.removeItem('currentGroupName');
@@ -25,7 +45,7 @@ window.updateAuthLink = async function updateAuthLink() {
   const a = document.getElementById('auth-dash-link');
   if (!a) return;
   try {
-    const { data: { session } } = await supabase.auth.getSession();
+    const session = getSessionFromStorage();
     if (session) {
       a.textContent = 'Log Out';
       a.href = '#logout';
@@ -51,8 +71,8 @@ window.updateAuthLink = async function updateAuthLink() {
 const getCurrentGroupId = () => localStorage.getItem(GROUP_KEY) || null;
 
 async function getCurrentUserId() {
-  const { data, error } = await supabase.auth.getUser();
-  return error ? null : data?.user?.id || null;
+  const session = getSessionFromStorage();
+  return session?.user?.id || null;
 }
 /* =========================
    Auth link (navbar)
@@ -61,7 +81,7 @@ async function updateAuthLink() {
   const link = document.getElementById('auth-link'); // <a id="auth-link"> in navbar
   if (!link) return;
 
-  const { data: { session } } = await supabase.auth.getSession();
+  const session = getSessionFromStorage();
 
   if (session) {
     // Logged in → show Log Out
@@ -69,13 +89,7 @@ async function updateAuthLink() {
     link.href = '#';
     link.onclick = async (e) => {
       e.preventDefault();
-      try {
-        await supabase.auth.signOut();
-      } catch (err) {
-        console.warn('signOut error', err);
-      }
-      // Route wherever you prefer after logout:
-      window.location.href = 'login.html'; // or 'dashboard.html'
+      await completeLogout();
     };
   } else {
     // Logged out → show Log In
@@ -90,24 +104,29 @@ async function updateAuthLink() {
    Group switcher (navbar)
    ========================= */
 async function ensureDefaultGroup() {
-  const { data: userData } = await supabase.auth.getUser();
-  const userId = userData?.user?.id;
+  const session = getSessionFromStorage();
+  const userId = session?.user?.id;
   if (!userId) return null;
 
-  const { data: groupsNow } = await supabase.from('groups').select('id,name').limit(1);
-  if (groupsNow?.length) return groupsNow[0];
+  try {
+    const groupsNow = await rest('groups?select=id,name&limit=1');
+    if (groupsNow?.length) return groupsNow[0];
+  } catch (error) {
+    console.warn('ensureDefaultGroup fetch error', error);
+  }
 
-  const { data, error } = await supabase
-    .from('groups')
-    .insert([{ name: 'Family' }])
-    .select('id,name')
-    .single();
-
-  if (error) {
+  try {
+    const rows = await rest('groups', {
+      method: 'POST',
+      headers: { Prefer: 'return=representation' },
+      body: JSON.stringify([{ name: 'Family' }]),
+    });
+    const data = Array.isArray(rows) ? rows[0] : rows;
+    return data || null;
+  } catch (error) {
     console.warn('Could not auto-create default group:', error);
     return null;
   }
-  return data;
 }
 
 async function loadGroupsIntoSwitcher() {
@@ -122,14 +141,12 @@ async function loadGroupsIntoSwitcher() {
   sel.disabled = true;
 
   let list = [];
-  const { data: groups, error } = await supabase
-    .from('groups')
-    .select('id,name')
-    .eq('archived', false)              // ✅ show only active groups
-    .order('name', { ascending: true });
-
-  if (!error) list = groups || [];
-  else console.error('loadGroupsIntoSwitcher error', error);
+  try {
+    const groups = await rest('groups?select=id,name&archived=eq.false&order=name.asc');
+    list = groups || [];
+  } catch (error) {
+    console.error('loadGroupsIntoSwitcher error', error);
+  }
 
   if (list.length === 0) {
     const created = await ensureDefaultGroup();
@@ -172,14 +189,15 @@ async function loadEntriesFromSupabase() {
   const gid = getCurrentGroupId();
   if (!gid) return;
 
-  const { data, error } = await supabase
-    .from('mood_entries')
-    .select('*')
-    .eq('group_id', gid)
-    .order('date', { ascending: false });
-
-  if (error) {
-    console.error('Error fetching entries:', error.message);
+  let data = [];
+  try {
+    data = await rest([
+      'mood_entries?select=*',
+      `group_id=eq.${encodeURIComponent(gid)}`,
+      'order=date.desc'
+    ].join('&'));
+  } catch (error) {
+    console.error('Error fetching entries:', error?.message || error);
     return;
   }
 
@@ -365,15 +383,17 @@ window.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('moodEntries', JSON.stringify(moodEntriesLocal));
     renderEntriesLocal(moodEntriesLocal);
 
-    const { error } = await supabase
-      .from('mood_entries')
-      .insert([{ date: today, mood: selectedMood, intensity, notes: note, user_id: userId, group_id: groupId }]);
-
-      if (error) {
-        console.error('Supabase insert error:', error);
-        alert('Error saving mood.');
-        return;
-      }
+    try {
+      await rest('mood_entries', {
+        method: 'POST',
+        headers: { Prefer: 'return=minimal' },
+        body: JSON.stringify([{ date: today, mood: selectedMood, intensity, notes: note, user_id: userId, group_id: groupId }]),
+      });
+    } catch (error) {
+      console.error('Mood insert error:', error);
+      alert('Error saving mood.');
+      return;
+    }
 
       cheerSound?.play();
       window.confetti?.({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
@@ -439,13 +459,17 @@ window.addEventListener('DOMContentLoaded', () => {
         media_upload: obj.mediaUpload || null
       };
 
-      const { error } = await supabase.from('caregiver_checkins').insert([supaData]);
-      if (error) {
-        console.error('Caregiver insert error:', error);
-        alert('Error saving caregiver check-in.');
-      } else {
+      try {
+        await rest('caregiver_checkins', {
+          method: 'POST',
+          headers: { Prefer: 'return=minimal' },
+          body: JSON.stringify([supaData]),
+        });
         alert('Caregiver check-in saved!');
         caregiverForm.reset();
+      } catch (error) {
+        console.error('Caregiver insert error:', error);
+        alert('Error saving caregiver check-in.');
       }
     });
   }
@@ -482,312 +506,51 @@ window.downloadEntry = async function (index) {
   pdf.save(`caregiver_checkin_${index + 1}.pdf`);
 };
 
-/* =========================
-   GROUP CHAT — status + realtime
-   ========================= */
-
-// Only run chat code on pages that have these:
-const CHAT_BOX   = document.getElementById('chat-box');
-const CHAT_INPUT = document.getElementById('chat-input');
-const SEND_BTN   = document.getElementById('send-btn');
-
-if (CHAT_BOX && CHAT_INPUT && SEND_BTN) {
-  const el = (id) => document.getElementById(id);
-  const setConnectionStatus = (m='') => { const n=el('status-connection'); if(n) n.textContent = m; };
-  const setTypingStatus     = (m='') => { const n=el('status-typing');     if(n) n.textContent = m; };
-  const setSendStatus       = (m='') => { const n=el('status-send');       if(n) n.textContent = m; };
-  const setContextNote      = (m='') => { const n=el('status-context');    if(n) n.textContent = m; };
-  const setReadStatus       = (m='') => { const n=el('status-read');       if(n) n.textContent = m; };
-  window.setStatus = (m='') => setSendStatus(m); // back-compat
-
-  let currentGroupId = null;
-  let dbChannel = null;
-  let typingChannel = null;
-  let typingTimer = null;
-
-  (async function bootChat(){
-    setConnectionStatus('🔌 Connecting…');
-    setContextNote('📅 Showing messages from the last 24 hours');
-
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { setConnectionStatus('⚠️ Please log in to chat'); return; }
-
-    // Ensure the user has a profile row (id = auth user id)
-    const defaultName =
-      session?.user?.user_metadata?.full_name ||
-      session?.user?.email?.split('@')[0] ||
-      'User';
-
-    await supabase.from('profiles').upsert(
-      {
-        id: session.user.id, // profiles PK = auth user id
-        display_name: defaultName,
-        avatar_url: session?.user?.user_metadata?.avatar_url || null
-      },
-      { onConflict: 'id' }   // important: conflict on id
-    );
-
-    currentGroupId = await resolveInitialGroupId(session.user.id);
-    if (!currentGroupId) {
-      setConnectionStatus('⚠️ You are not a member of any groups yet');
-      return;
-    }
-
-    await loadMessages24h();
-    await subscribeMessages();
-    await setupTypingChannel();
-
-    SEND_BTN.addEventListener('click', onSend);
-    CHAT_INPUT.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) onSend(e); });
-    CHAT_INPUT.addEventListener('input', broadcastTyping);
-
-    const sel = document.getElementById('groupSelect');
-    if (sel) {
-      sel.addEventListener('change', async () => {
-        currentGroupId = sel.value;
-        await loadMessages24h();
-        await subscribeMessages();
-        await setupTypingChannel();
-      });
-    }
-  })().catch(console.error);
-
-  // Profile-first resolver
-  async function resolveInitialGroupId(userId){
-    // 1) profile-first
-    const { data: p } = await supabase
-      .from('profiles')
-      .select('group_id')
-      .eq('id', userId)
-      .maybeSingle();
-
-    if (p?.group_id) {
-      localStorage.setItem(GROUP_KEY, p.group_id);
-      return p.group_id;
-    }
-
-    // 2) fallback: cached
-    const cached = localStorage.getItem(GROUP_KEY);
-    if (cached) return cached;
-
-    // 3) last resort: first membership
-    const { data } = await supabase
-      .from('group_members')
-      .select('group_id')
-      .eq('user_id', userId)
-      .order('joined_at', { ascending: true })
-      .limit(1);
-
-    return data?.[0]?.group_id || null;
-  }
-
-  function groupName(){
-    const sel = document.getElementById('groupSelect');
-    return sel?.selectedOptions?.[0]?.textContent || 'group';
-  }
-
-  function renderMsg(row){
-    const div = document.createElement('div');
-    div.className = 'chat-row';
-    const time = new Date(row.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const safe = String(row.message || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
-    div.innerHTML = `<strong>user_${(row.user_id||'').slice(0,6)}</strong> <small>${time}</small><div>${safe}</div>`;
-    CHAT_BOX.appendChild(div);
-  }
-
-  async function loadMessages24h(){
-    if (!currentGroupId) return;
-
-    const since = new Date(Date.now() - 24*60*60*1000).toISOString();
-    const { data, error } = await supabase
-      .from('group_chat')
-      .select('id, user_id, message, created_at')
-      .eq('group_id', currentGroupId)
-      .gte('created_at', since)
-      .order('created_at', { ascending: true })
-      .limit(200);
-
-    if (error) { console.error(error); setConnectionStatus('⚠️ Failed to load messages'); return; }
-
-    CHAT_BOX.innerHTML = '';
-    (data || []).forEach(renderMsg);
-    CHAT_BOX.scrollTop = CHAT_BOX.scrollHeight;
-
-    if (data && data.length) {
-      await markMessageRead(data[data.length - 1].id).catch(()=>{});
-      await updateReadStatusForLatest().catch(()=>{});
-    }
-  }
-
-  async function markMessageRead(messageId){
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
-    const payload = { message_id: messageId, user_id: session.user.id };
-    const { error } = await supabase
-      .from('group_chat_reads')
-      .upsert(payload, { onConflict: 'message_id,user_id' });
-    if (error) console.error('read upsert error', error);
-  }
-
-  async function updateReadStatusForLatest() {
-    if (!currentGroupId) return;
-
-    const { data: last, error: lastErr } = await supabase
-      .from('group_chat')
-      .select('id')
-      .eq('group_id', currentGroupId)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (lastErr) { console.error('latest message fetch error', lastErr); setReadStatus(''); return; }
-    if (!last) { setReadStatus(''); return; }
-
-    const [{ data: members, error: memErr }, { data: reads, error: readErr }] = await Promise.all([
-      supabase.from('group_members').select('user_id').eq('group_id', currentGroupId),
-      supabase.from('group_chat_reads').select('user_id').eq('message_id', last.id)
-    ]);
-    if (memErr || readErr) { console.error(memErr || readErr); return; }
-
-    const total   = (members || []).length;
-    const readers = new Set((reads || []).map(r => r.user_id));
-
-    if (total > 0 && readers.size >= total) {
-      setReadStatus('👀 All members have read the latest message');
-    } else if (total > 0) {
-      setReadStatus(`👀 Read by ${readers.size}/${total}`);
-    } else {
-      setReadStatus('');
-    }
-  }
-
-  async function subscribeMessages(){
-    if (dbChannel) supabase.removeChannel(dbChannel);
-
-    dbChannel = supabase
-      .channel(`gc:${currentGroupId}`)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'group_chat',
-        filter: `group_id=eq.${currentGroupId}`
-      }, async (payload) => {
-        renderMsg(payload.new);
-        CHAT_BOX.scrollTop = CHAT_BOX.scrollHeight;
-        await markMessageRead(payload.new.id).catch(()=>{});
-        await updateReadStatusForLatest().catch(()=>{});
-      })
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED')   setConnectionStatus(`✅ Connected to ${groupName()}`);
-        if (status === 'CHANNEL_ERROR') setConnectionStatus('⚠️ Connection error (retrying)…');
-        if (status === 'TIMED_OUT')    setConnectionStatus('⏳ Connection timed out (retrying)…');
-        if (status === 'CLOSED')       setConnectionStatus('🔌 Disconnected');
-      });
-  }
-
-  async function setupTypingChannel(){
-    if (typingChannel) supabase.removeChannel(typingChannel);
-    const { data: { session } } = await supabase.auth.getSession();
-    const userId = session?.user?.id;
-    if (!userId) return;
-
-    typingChannel = supabase.channel(`typing:${currentGroupId}`);
-    typingChannel.on('broadcast', { event: 'typing' }, ({ payload }) => {
-      const { userId: other, isTyping, name } = payload || {};
-      if (!other || other === userId) return;
-      setTypingStatus(isTyping ? `💬 ${name || 'Someone'} is typing…` : '');
-      if (isTyping) setTimeout(() => setTypingStatus(''), 1200);
-    });
-    await typingChannel.subscribe();
-  }
-
-  async function broadcastTyping(){
-    const { data: { session } } = await supabase.auth.getSession();
-    const name = session?.user?.email?.split('@')[0] || 'User';
-    typingChannel?.send({ type:'broadcast', event:'typing', payload: { userId: session.user.id, name, isTyping: true }});
-    clearTimeout(typingTimer);
-    typingTimer = setTimeout(() => {
-      typingChannel?.send({ type:'broadcast', event:'typing', payload: { userId: session.user.id, name, isTyping: false }});
-    }, 900);
-  }
-
-  async function onSend(e){
-    e?.preventDefault?.();
-    const text = (CHAT_INPUT.value || '').trim();
-    if (!text || !currentGroupId) { setSendStatus('Pick a group first'); return; }
-
-    setSendStatus('📤 Sending…');
-    const { data: { session } } = await supabase.auth.getSession();
-    const { error } = await supabase.from('group_chat').insert({
-      group_id: currentGroupId,
-      user_id: session.user.id,
-      message: text
-    });
-    if (error) { console.error(error); setSendStatus('❌ Failed to send'); return; }
-    CHAT_INPUT.value = '';
-    setSendStatus('✅ Sent');
-    setTimeout(() => setSendStatus(''), 800);
-  }
-}
 const caregiverForm = document.getElementById('caregiverForm');
 if (caregiverForm) {
   caregiverForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    // 1. Get the current user
-    const { data: { user }, error: userErr } = await supabase.auth.getUser();
-    if (error) {
-  console.error('Insert failed:', error);
-  alert('Save failed. Please try again.');
-  return;
-}
+    const session = getSessionFromStorage();
+    const user = session?.user;
+    if (!user?.id) {
+      alert('Save failed. Please log in.');
+      return;
+    }
 
-// ✅ success → clear UI
-caregiverForm.reset();
-document.querySelectorAll('.selected').forEach(b => b.classList.remove('selected'));
-// (optional) re-sync any range readouts:
-caregiverForm.querySelectorAll('input[type="range"]').forEach(r => {
-  const out = caregiverForm.querySelector(`#${r.id}-value`);
-  if (out) out.textContent = r.value;
-});
+    try {
+      const profileRows = await rest(`profiles?id=eq.${encodeURIComponent(user.id)}&select=public_name,display_name,full_name`);
+      const prof = profileRows?.[0] || {};
 
+      const row = {
+        user_id: user.id,
+        caregiver_name: prof.public_name || prof.display_name || prof.full_name || null,
+        hygiene: document.querySelector('#hygieneCheckbox')?.checked ?? false,
+        food_prep: document.querySelector('#foodPrepCheckbox')?.checked ?? false,
+        cleanup: document.querySelector('#cleanupCheckbox')?.checked ?? false,
+        vocational_time: parseInt(document.querySelector('#vocationalTime')?.value, 10) || 0,
+        community_time: parseInt(document.querySelector('#communityTime')?.value, 10) || 0,
+        new_skill_score: parseInt(document.querySelector('#newSkillScore')?.value, 10) || 0,
+        caregiver_notes: document.querySelector('#caregiverNotes')?.value || '',
+        submitted_at: new Date().toISOString()
+      };
 
-    // 2. Fetch profile name fields
-    const { data: prof, error: profErr } = await supabase
-      .from('profiles')
-      .select('public_name, display_name, full_name')
-      .eq('id', user.id)
-      .maybeSingle();
+      await rest('caregiver_checkins', {
+        method: 'POST',
+        headers: { Prefer: 'return=minimal' },
+        body: JSON.stringify([row]),
+      });
 
-    if (profErr) console.warn('Profile fetch error:', profErr);
-
-    // 3. Build row from form fields
-    const row = {
-      user_id: user.id,
-      caregiver_name: prof?.public_name || prof?.display_name || prof?.full_name || null,
-      hygiene: document.querySelector('#hygieneCheckbox').checked,
-      food_prep: document.querySelector('#foodPrepCheckbox').checked,
-      cleanup: document.querySelector('#cleanupCheckbox').checked,
-      vocational_time: parseInt(document.querySelector('#vocationalTime').value) || 0,
-      community_time: parseInt(document.querySelector('#communityTime').value) || 0,
-      new_skill_score: parseInt(document.querySelector('#newSkillScore').value) || 0,
-      caregiver_notes: document.querySelector('#caregiverNotes').value,
-      submitted_at: new Date().toISOString()
-    };
-
-    // 4. Insert into Supabase
-    const { data: ins, error: insErr, status } = await supabase
-      .from('caregiver_checkins')
-      .insert(row)
-      .select('*')
-      .single();
-
-    console.log('INSERT →', { status, ins, insErr });
-
-    if (insErr) {
-      alert('Insert error: ' + (insErr.message || JSON.stringify(insErr)));
-    } else {
       alert('Saved!');
       caregiverForm.reset();
+      document.querySelectorAll('.selected').forEach(b => b.classList.remove('selected'));
+      caregiverForm.querySelectorAll('input[type="range"]').forEach(r => {
+        const out = caregiverForm.querySelector(`#${r.id}-value`);
+        if (out) out.textContent = r.value;
+      });
+    } catch (error) {
+      console.error('Insert failed:', error);
+      alert('Save failed. Please try again.');
     }
   });
 }

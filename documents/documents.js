@@ -1,10 +1,6 @@
 // documents.js
-import { createClient } from "https://esm.sh/@supabase/supabase-js";
-
-const supabase = createClient(
-  "https://okfsobfyhpforyqogjea.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9rZnNvYmZ5aHBmb3J5cW9namVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2MTg3NDAsImV4cCI6MjA2ODE5NDc0MH0.qtuG1_LbSPdeRtnyElo-F0agTSGclqQQyap-USHKWFw"
-);
+import { rest, getSessionFromStorage } from "../restClient.js?v=2025.10.15k";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../supabaseClient.js?v=2025.10.15k";
 
 // Inject CSS so visited links aren't purple, without breaking the active (black) tabs
 (() => {
@@ -31,9 +27,10 @@ const supabase = createClient(
 
 /* ------------ helpers ------------ */
 async function uploadFileToBucket({ file }) {
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData?.user) throw new Error("Not logged in.");
-  const userId = userData.user.id;
+  const session = getSessionFromStorage();
+  const userId = session?.user?.id;
+  const token = session?.access_token;
+  if (!userId || !token) throw new Error("Not logged in.");
 
   const now = new Date();
   const y = now.getFullYear();
@@ -41,14 +38,37 @@ async function uploadFileToBucket({ file }) {
   const safe = file.name.replace(/\s+/g, "_");
   const path = `${userId}/${y}/${m}/${crypto.randomUUID()}_${safe}`;
 
-  const { error } = await supabase.storage.from("documents").upload(path, file, { upsert: false });
-  if (error) throw error;
+  const uploadRes = await fetch(`${SUPABASE_URL}/storage/v1/object/documents/${path}`, {
+    method: "POST",
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${token}`,
+      "Content-Type": file.type || "application/octet-stream",
+      "x-upsert": "false",
+    },
+    body: file,
+  });
+  if (!uploadRes.ok) throw new Error(await uploadRes.text() || "Upload failed");
   return path;
 }
 
 async function getSignedUrl(storagePath) {
-  const { data, error } = await supabase.storage.from("documents").createSignedUrl(storagePath, 60 * 60);
-  if (error) throw error;
+  const session = getSessionFromStorage();
+  const token = session?.access_token;
+  if (!token) throw new Error("Not logged in.");
+  const res = await fetch(`${SUPABASE_URL}/storage/v1/object/sign/documents/${storagePath}`, {
+    method: "POST",
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ expiresIn: 60 * 60 }),
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(text || "Signed URL failed");
+  const data = text ? JSON.parse(text) : null;
+  if (!data?.signedUrl) throw new Error("Signed URL missing");
   return data.signedUrl;
 }
 
@@ -116,8 +136,9 @@ if (prettyForm) {
       let storage_path = null;
       if (file) storage_path = await uploadFileToBucket({ file });
 
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData?.user) throw new Error("Not logged in.");
+      const session = getSessionFromStorage();
+      const user = session?.user;
+      if (!user?.id) throw new Error("Not logged in.");
 
       const extraTags = tagsStr ? tagsStr.split(",").map(s => s.trim()).filter(Boolean) : [];
       const tags = [activeCategory, ...extraTags];
@@ -129,16 +150,19 @@ if (prettyForm) {
         content_json.medical_notes         = medNotes;
       }
 
-      const { error } = await supabase.from("documents").insert([{
+      await rest("documents", {
+        method: "POST",
+        headers: { Prefer: "return=minimal" },
+        body: JSON.stringify([{
         title,
         doc_type: docType,
         content: desc || null,
         content_json,
         tags,
         storage_path,
-        created_by: userData.user.id
-      }]);
-      if (error) throw error;
+        created_by: user.id
+      }]),
+      });
 
       alert("Saved!");
       prettyForm.reset();
@@ -156,12 +180,13 @@ async function loadDocuments() {
   const list = document.getElementById("docs-list");
   if (!list) return;
 
-  const { data, error } = await supabase
-    .from("documents")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  if (error) { console.error(error); return; }
+  let data = [];
+  try {
+    data = await rest("documents?select=*&order=created_at.desc");
+  } catch (error) {
+    console.error(error);
+    return;
+  }
 
   const filtered = (data || []).filter(d => {
     const inTags = Array.isArray(d.tags) && d.tags.includes(activeCategory);

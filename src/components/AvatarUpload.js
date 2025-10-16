@@ -1,6 +1,14 @@
 // src/components/AvatarUpload.js — vanilla helper (no React)
+import {
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY,
+} from '../../supabaseClient.js?v=2025.10.15k';
+import {
+  rest,
+  getSessionFromStorage,
+} from '../../restClient.js?v=2025.10.15k';
+
 export function setupAvatarUpload({
-  supabase,
   user,
   inputSelector = '#avatarInput',
   imgSelector = '#avatarImg',
@@ -23,23 +31,42 @@ export function setupAvatarUpload({
     const file = e.target.files?.[0];
     if (!file) return;
     say('Uploading...', '#555');
-    try {
-      const path = `${user.id}/${Date.now()}_${file.name}`;
-      const { error: upErr } = await supabase.storage
-        .from(bucket)
-        .upload(path, file, { upsert: true });
-      if (upErr) throw upErr;
 
-      const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(path);
-      const publicUrl = urlData.publicUrl;
+    try {
+      const session = getSessionFromStorage();
+      if (!session?.access_token || !user?.id) {
+        throw new Error('You need to be signed in to upload an avatar.');
+      }
+
+      const safeName = `${Date.now()}_${file.name}`.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+      const path = `${user.id}/${safeName}`;
+      const storageUrl = `${SUPABASE_URL}/storage/v1/object/${bucket}/${path}`;
+      const response = await fetch(storageUrl, {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${session.access_token}`,
+          'x-upsert': 'true',
+          'Content-Type': file.type || 'application/octet-stream',
+        },
+        body: file,
+      });
+      if (!response.ok) {
+        throw new Error((await response.text()) || 'Avatar upload failed');
+      }
+
+      const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
 
       if (img) img.src = publicUrl;
 
-      const { error: updErr } = await supabase
-        .from('profiles')
-        .update({ avatar_url: publicUrl, updated_at: new Date().toISOString() })
-        .eq('id', user.id);
-      if (updErr) throw updErr;
+      await rest(`profiles?id=eq.${encodeURIComponent(user.id)}`, {
+        method: 'PATCH',
+        headers: { Prefer: 'return=representation' },
+        body: JSON.stringify({
+          avatar_url: publicUrl,
+          updated_at: new Date().toISOString(),
+        }),
+      });
 
       say('Avatar updated ✔', 'green');
     } catch (err) {

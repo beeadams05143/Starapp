@@ -1,5 +1,5 @@
 // caregiver-report-supabase.js — PRODUCTION SAFE (client-side filtering)
-import { supabase } from './supabaseClient.js?v=2025.10.15f';
+import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.15k';
 
 /* ---------- tiny utils ---------- */
 const toDayISO = d =>
@@ -67,8 +67,8 @@ export async function loadCaregiverCheckins(userId, { range='all' } = {}){
   let uid = userId || null;
   if (!uid) {
     try {
-      const { data } = await supabase.auth.getSession();
-      uid = data?.session?.user?.id || null;
+      const session = getSessionFromStorage();
+      uid = session?.user?.id || null;
     } catch {}
   }
 
@@ -80,12 +80,33 @@ export async function loadCaregiverCheckins(userId, { range='all' } = {}){
   if (range === 'year')    { start = new Date(now.getFullYear(), 0, 1); }
   if (range === '6months') { start = new Date(now); start.setDate(start.getDate()-183); }
 
-  // SAFEST query: no server-side filters/order that might reference missing columns
-  let q = supabase.from('caregiver_checkins').select('*');
-  if (uid) q = q.eq('user_id', uid);
+  try {
+    let path = 'caregiver_checkins?select=*';
+    if (uid) {
+      path += `&user_id=eq.${encodeURIComponent(uid)}`;
+    }
+    const data = await rest(path);
 
-  const { data, error } = await q;
-  if (error) {
+    // Normalize & filter client-side
+    const all = (data || []).map(r => ({
+      ...r,
+      timestamp: r.timestamp || r.created_at || r.submitted_at
+    }));
+
+    const filtered = all.filter(r => {
+      const ts = normTs(r);
+      return ts >= start && ts <= now;
+    });
+
+    filtered.sort((a,b) => normTs(b) - normTs(a));
+
+    return {
+      entries: filtered,
+      summary: summarize(filtered),
+      charts: buildSeries(filtered),
+      range_label: (range==='all' ? 'All time' : range)
+    };
+  } catch (error) {
     console.error('Supabase caregiver_checkins error:', error);
     return {
       entries: [],
@@ -94,28 +115,6 @@ export async function loadCaregiverCheckins(userId, { range='all' } = {}){
       range_label: (range==='all' ? 'All time' : range)
     };
   }
-
-  // Normalize & filter client-side
-  const all = (data || []).map(r => ({
-    ...r,
-    // unify for downstream UI:
-    timestamp: r.timestamp || r.created_at || r.submitted_at
-  }));
-
-  const filtered = all.filter(r => {
-    const ts = normTs(r);
-    return ts >= start && ts <= now;
-  });
-
-  // Sort newest → oldest
-  filtered.sort((a,b) => normTs(b) - normTs(a));
-
-  return {
-    entries: filtered,
-    summary: summarize(filtered),
-    charts: buildSeries(filtered),
-    range_label: (range==='all' ? 'All time' : range)
-  };
 }
 
 /* ---------- row formatter for simple tables ---------- */

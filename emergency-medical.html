@@ -250,7 +250,8 @@
 
   <!-- ===== Supabase logic (photo + form save/load) ===== -->
   <script type="module">
-    import { supabase } from './supabaseClient.js?v=2025.10.15f';
+    import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.15k';
+    import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabaseClient.js?v=2025.10.15k';
 
     // ---------- PHOTO ----------
     const drop    = document.getElementById('photoDrop');
@@ -266,13 +267,16 @@
 
     async function initExistingPhoto() {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const session = getSessionFromStorage();
         const uid = session?.user?.id;
         if (uid) {
-          const { data: p } = await supabase.from('profiles').select('avatar_url').eq('id', uid).maybeSingle();
-          if (p?.avatar_url) { setPreview(p.avatar_url); return; }
+          const rows = await rest(`profiles?id=eq.${encodeURIComponent(uid)}&select=avatar_url&limit=1`);
+          const profile = rows?.[0] || null;
+          if (profile?.avatar_url) { setPreview(profile.avatar_url); return; }
         }
-      } catch {}
+      } catch (error) {
+        console.warn('initExistingPhoto error', error);
+      }
       const localUrl = localStorage.getItem('emergencyProfilePhotoURL');
       if (localUrl) setPreview(localUrl);
     }
@@ -300,17 +304,32 @@
       saveBtn.disabled = true; saveStatus.textContent = 'Saving photo…';
       if (!pendingFile && preview.src) { localStorage.setItem('emergencyProfilePhotoURL', preview.src); saveStatus.textContent = 'Saved locally.'; saveBtn.disabled = false; return; }
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const session = getSessionFromStorage();
         const uid = session?.user?.id;
         if (!uid) throw new Error('Not signed in');
+        const token = session?.access_token;
+        if (!token) throw new Error('Missing access token');
         const ext = (pendingFile?.name?.split('.').pop() || 'jpg').toLowerCase();
-        const path = `${uid}/${Date.now()}.${ext}`;
-        const { error: upErr } = await supabase.storage.from('profile-photos').upload(path, pendingFile, { upsert: true, contentType: pendingFile.type });
-        if (upErr) throw upErr;
-        const { data: publicData } = supabase.storage.from('profile-photos').getPublicUrl(path);
-        const publicUrl = publicData?.publicUrl;
-        if (!publicUrl) throw new Error('No public URL returned');
-        await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', uid);
+        const safeName = `${Date.now()}.${ext}`;
+        const path = `${uid}/${safeName}`;
+        const storageUrl = `${SUPABASE_URL}/storage/v1/object/profile-photos/${path}`;
+        const uploadRes = await fetch(storageUrl, {
+          method: 'POST',
+          headers: {
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${token}`,
+            'Content-Type': pendingFile.type || 'application/octet-stream',
+            'x-upsert': 'true',
+          },
+          body: pendingFile,
+        });
+        if (!uploadRes.ok) throw new Error(await uploadRes.text() || 'Upload failed');
+        const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/profile-photos/${path}`;
+        await rest(`profiles?id=eq.${encodeURIComponent(uid)}`, {
+          method: 'PATCH',
+          headers: { Prefer: 'return=minimal' },
+          body: JSON.stringify({ avatar_url: publicUrl }),
+        });
         localStorage.setItem('emergencyProfilePhotoURL', publicUrl);
         setPreview(publicUrl); pendingFile = null; saveStatus.textContent = 'Photo saved!';
         const navAvatar = document.getElementById('navAvatar'); if (navAvatar) navAvatar.src = publicUrl;
@@ -437,13 +456,16 @@
     async function saveToCloud(){
       document.getElementById('cloudStatus').textContent = 'Saving…';
       try{
-        const { data: { session } } = await supabase.auth.getSession();
+        const session = getSessionFromStorage();
         const uid = session?.user?.id;
         if(!uid) throw new Error('Not signed in');
         const payload = buildPayload();
         const row = { id: uid, ...payload, updated_at: new Date().toISOString() };
-        const { error } = await supabase.from('emergency_medical').upsert(row, { onConflict: 'id' });
-        if(error) throw error;
+        await rest('emergency_medical?on_conflict=id', {
+          method: 'POST',
+          headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+          body: JSON.stringify([row]),
+        });
         document.getElementById('cloudStatus').textContent = 'Saved to cloud ✓';
       }catch(err){
         console.error(err);
@@ -455,11 +477,11 @@
     async function loadFromCloud(){
       document.getElementById('cloudStatus').textContent = 'Loading…';
       try{
-        const { data: { session } } = await supabase.auth.getSession();
+        const session = getSessionFromStorage();
         const uid = session?.user?.id;
         if(!uid) throw new Error('Not signed in');
-        const { data, error } = await supabase.from('emergency_medical').select('*').eq('id', uid).maybeSingle();
-        if(error) throw error;
+        const rows = await rest(`emergency_medical?id=eq.${encodeURIComponent(uid)}&select=*&limit=1`);
+        const data = rows?.[0] || null;
         if(!data){ document.getElementById('cloudStatus').textContent = 'No cloud record yet'; return; }
         hydrateForm(data);
         document.getElementById('cloudStatus').textContent = 'Loaded from cloud ✓';

@@ -89,346 +89,272 @@
 <button id="saveBtn" type="button">Save Profile</button>
 <div id="profileMessage" role="status" aria-live="polite"></div>
 
-  <script type="module">
-    import { supabase } from './supabaseClient.js?v=2025.10.15j';
+<script type="module">
+  import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabaseClient.js?v=2025.10.15k';
+  import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.15k';
 
-    const defaultAvatar     = 'IMG/default-avatar.png';
-    const avatarPreview     = document.getElementById('avatarPreview');
-    const editAvatarBtn     = document.getElementById('editAvatarBtn');
-    const avatarFile        = document.getElementById('avatarFile');
-    const displayNameEl     = document.getElementById('displayName');
-    const groupSelectEl     = document.getElementById('profile-group-select');
-    const saveBtn           = document.getElementById('saveBtn');
-    const profileMessage    = document.getElementById('profileMessage');
-    let messageTimer        = null;
+  const defaultAvatar     = 'IMG/default-avatar.png';
+  const avatarPreview     = document.getElementById('avatarPreview');
+  const editAvatarBtn     = document.getElementById('editAvatarBtn');
+  const avatarFile        = document.getElementById('avatarFile');
+  const displayNameEl     = document.getElementById('displayName');
+  const groupSelectEl     = document.getElementById('profile-group-select');
+  const saveBtn           = document.getElementById('saveBtn');
+  const profileMessage    = document.getElementById('profileMessage');
+  let messageTimer        = null;
 
-    const GROUP_KEY_ID      = 'currentGroupId';
-    const GROUP_KEY_NAME    = 'currentGroupName';
-    const DEFAULT_GROUP     = {
-      id: '3159dde9-8cf3-4a29-af72-01da907f241b',   // existing "Family" group id
-      name: 'Family'
-    };
+  const STORAGE_BUCKET    = 'avatars';
+  const GROUP_KEY_ID      = 'currentGroupId';
+  const GROUP_KEY_NAME    = 'currentGroupName';
+  const DEFAULT_GROUP     = {
+    id: '3159dde9-8cf3-4a29-af72-01da907f241b',
+    name: 'Family'
+  };
 
-    let currentUser = null;
+  const SESSION_REDIRECT_DELAY = 1500;
 
-    // -------- helpers --------
-    function cacheSelectedGroup() {
-      try {
-        const opt = groupSelectEl.options?.[groupSelectEl.selectedIndex] || null;
-        if (!opt) return;
-        localStorage.setItem(GROUP_KEY_ID, opt.value || '');
-        localStorage.setItem(GROUP_KEY_NAME, opt.textContent || DEFAULT_GROUP.name);
-      } catch (err) {
-        console.warn('[PROFILE] cacheSelectedGroup failed', err);
+  let session = null;
+  let accessToken = null;
+  let currentUser = null;
+  let currentAvatarUrl = null;
+
+  function ensureSession(redirect = true) {
+    session = getSessionFromStorage();
+    if (!session?.access_token || !session?.user?.id) {
+      if (redirect) {
+        showMessage('Session expired. Redirecting to login…', false);
+        setTimeout(() => {
+          window.location.href = 'login.html?redirect=profile.html';
+        }, SESSION_REDIRECT_DELAY);
       }
+      throw new Error('No Supabase session available');
     }
+    accessToken = session.access_token;
+    currentUser = session.user;
+    return session;
+  }
 
-    function ensureGroupOption(id, label) {
-      if (!groupSelectEl || !id) return;
-      const exists = Array.from(groupSelectEl.options || []).some(opt => opt.value === id);
-      if (!exists) {
-        groupSelectEl.add(new Option(label || DEFAULT_GROUP.name, id));
-      }
+  function cacheSelectedGroup() {
+    try {
+      const opt = groupSelectEl.options?.[groupSelectEl.selectedIndex] || null;
+      if (!opt) return;
+      localStorage.setItem(GROUP_KEY_ID, opt.value || '');
+      localStorage.setItem(GROUP_KEY_NAME, opt.textContent || DEFAULT_GROUP.name);
+    } catch (err) {
+      console.warn('[PROFILE] cacheSelectedGroup failed', err);
     }
+  }
 
-    async function loadGroups() {
-      groupSelectEl.disabled = true;
-      groupSelectEl.innerHTML = `<option value="${DEFAULT_GROUP.id}">${DEFAULT_GROUP.name}</option>`;
-
-      let groups = [];
-      try {
-        const { data, error } = await supabase
-          .from('groups')
-          .select('id,name,archived')
-          .order('name', { ascending: true });
-
-        if (error) throw error;
-        groups = (data || []).filter(g => !g?.archived);
-      } catch (err) {
-        console.warn('[PROFILE] Supabase groups fetch failed; falling back to default', err);
-      }
-
-      if (!groups.length) {
-        groups = [DEFAULT_GROUP];
-      }
-
-      groupSelectEl.innerHTML = groups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
-
-      const cachedId = localStorage.getItem(GROUP_KEY_ID);
-      const match = groups.find(g => g.id === cachedId);
-      groupSelectEl.value = match ? match.id : groups[0].id;
-      groupSelectEl.disabled = false;
-      cacheSelectedGroup();
+  function ensureGroupOption(id, label) {
+    if (!groupSelectEl || !id) return;
+    const exists = Array.from(groupSelectEl.options || []).some(opt => opt.value === id);
+    if (!exists) {
+      groupSelectEl.add(new Option(label || DEFAULT_GROUP.name, id));
     }
+  }
 
-    async function preloadProfile({ silent=false } = {}) {
-      try {
-        const { data: { session }, error: sessionErr } = await supabase.auth.getSession();
-        if (sessionErr) console.warn('[PROFILE] getSession error', sessionErr);
-        currentUser = session?.user || null;
-
-        if (!currentUser) {
-          showMessage('Please log in first.', false);
-          location.href = './login.html';
-          return;
-        }
-
-        const metaName =
-          currentUser.user_metadata?.full_name ||
-          currentUser.user_metadata?.name ||
-          currentUser.email ||
-          '';
-
-        displayNameEl.value = metaName;
-        avatarPreview.src = defaultAvatar;
-
-        const { data: profile, error: profileErr } = await supabase
-          .from('profiles')
-          .select('display_name, public_name, full_name, avatar_url, group_id, updated_at')
-          .eq('id', currentUser.id)
-          .maybeSingle();
-
-        if (profileErr && profileErr.code !== 'PGRST116') {
-          console.error('[PROFILE] load profile error', profileErr);
-          showMessage(profileErr.message || 'Could not load profile.', false);
-        }
-
-        if (profile && Object.keys(profile).length) {
-          displayNameEl.value = profile.display_name || profile.public_name || profile.full_name || metaName;
-          if (profile.avatar_url) {
-            avatarPreview.src = profile.avatar_url;
-          }
-          if (profile.group_id) {
-            try {
-              const { data: g } = await supabase
-                .from('groups')
-                .select('name')
-                .eq('id', profile.group_id)
-                .maybeSingle();
-              ensureGroupOption(profile.group_id, g?.name || 'Selected group');
-              groupSelectEl.value = profile.group_id;
-              if (g?.name) localStorage.setItem(GROUP_KEY_NAME, g.name);
-            } catch (groupErr) {
-              console.warn('[PROFILE] fetch group name failed', groupErr);
-              ensureGroupOption(profile.group_id, 'Selected group');
-              groupSelectEl.value = profile.group_id;
-            }
-            cacheSelectedGroup();
-          }
-          if (!silent) {
-            if (profile.updated_at) {
-              showMessage(`Profile loaded · ${new Date(profile.updated_at).toLocaleString()}`, true);
-            } else {
-              showMessage('Profile loaded ✓', true);
-            }
-          }
-        }
-      } catch (err) {
-        console.error('[PROFILE] preload failed', err);
-        if (!silent) showMessage('Could not load profile. Try again shortly.', false);
-      }
-    }
-
-    async function saveProfile() {
-      const originalLabel = saveBtn.textContent;
-
-      const startSaving = () => {
-        saveBtn.disabled = true;
-        saveBtn.textContent = 'Saving…';
-        showMessage('Saving…', true);
-      };
-      const finishSaving = () => {
-        saveBtn.disabled = false;
-        saveBtn.textContent = originalLabel;
-      };
-
-      startSaving();
-      console.log('[PROFILE] starting save');
-      try {
-        if (!currentUser) {
-          const { data: { user }, error: fetchErr } = await supabase.auth.getUser();
-          console.log('[PROFILE] getUser result', user, fetchErr);
-          if (fetchErr) throw fetchErr;
-          currentUser = user || null;
-        }
-
-        if (!currentUser) {
-          showMessage('Please log in first.', false);
-          location.href = './login.html';
-          return;
-        }
-        showMessage('Saving… (session confirmed)', true);
-        console.log('[PROFILE] session user', currentUser?.id);
-
-        const display_name    = (displayNameEl.value || '').trim() || currentUser.email || null;
-        const selectedGroupId = groupSelectEl.value || DEFAULT_GROUP.id;
-        let avatar_url = null;
-        const timestamp = new Date().toISOString();
-
-        if (avatarFile.files.length > 0) {
-          const file = avatarFile.files[0];
-          const path = `${currentUser.id}/${file.name}`;
-          const { error: uploadErr } = await supabase
-            .storage.from('avatars')
-            .upload(path, file, { upsert: true });
-          if (uploadErr) throw uploadErr;
-          const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path);
-          avatar_url = pub.publicUrl;
-          showMessage('Saving… (photo uploaded)', true);
-          console.log('[PROFILE] avatar uploaded to', path, avatar_url);
-        }
-
-        const payload = {
-          id: currentUser.id,
-          display_name,
-          public_name: display_name,
-          full_name: display_name,
-          group_id: selectedGroupId,
-          updated_at: timestamp,
-          ...(avatar_url ? { avatar_url } : {})
-        };
-        console.log('[PROFILE] payload', payload);
-        showMessage('Saving… (writing profile)', true);
-
-        const { data: savedRow, error: upsertErr } = await supabase
-          .from('profiles')
-          .upsert(payload, { onConflict: 'id' })
-          .select('display_name, public_name, full_name, avatar_url, group_id, updated_at')
-          .maybeSingle();
-
-        if (upsertErr) throw upsertErr;
-        console.log('[PROFILE] savedRow', savedRow);
-
-        try {
-          await supabase
-            .from('group_members')
-            .upsert(
-              { group_id: selectedGroupId, user_id: currentUser.id },
-              { onConflict: 'group_id,user_id' }
-            );
-        } catch (memberErr) {
-          console.warn('[PROFILE] group membership upsert failed', memberErr);
-        }
-
-        cacheSelectedGroup();
-
-        let verifyRow = savedRow || payload;
-        try {
-          showMessage('Saving… (verifying write)', true);
-          const { data: fetched, error: fetchErr } = await supabase
-            .from('profiles')
-            .select('display_name, public_name, full_name, avatar_url, group_id, updated_at')
-            .eq('id', currentUser.id)
-            .maybeSingle();
-          if (fetchErr) {
-            console.warn('[PROFILE] verify fetch error', fetchErr);
-          } else if (fetched) {
-            verifyRow = fetched;
-          }
-        } catch (verifyErr) {
-          console.warn('[PROFILE] verify fetch threw', verifyErr);
-        }
-
-        const hasData = verifyRow && Object.keys(verifyRow).length > 0;
-        if (hasData) {
-          if (verifyRow.display_name) displayNameEl.value = verifyRow.display_name;
-          if (verifyRow.avatar_url) avatarPreview.src = verifyRow.avatar_url;
-          else if (!avatarPreview.src) avatarPreview.src = defaultAvatar;
-          if (verifyRow.group_id) {
-            ensureGroupOption(verifyRow.group_id, groupSelectEl?.selectedOptions?.[0]?.textContent || DEFAULT_GROUP.name);
-            groupSelectEl.value = verifyRow.group_id;
-            cacheSelectedGroup();
-          }
-        }
-
-        console.log('[PROFILE] verifyRow', verifyRow);
-        if (!hasData) {
-          const warnMsg = 'Could not verify saved profile row. Please screenshot console logs.';
-          showMessage(warnMsg, false);
-          alert(warnMsg);
-        } else {
-          const savedAt = new Date(verifyRow.updated_at || timestamp).toLocaleString();
-          const debugDetails = JSON.stringify(verifyRow, null, 2);
-          showMessage(`Profile saved! ✅ ${savedAt}\n${debugDetails}`, true);
-        }
-        await preloadProfile({ silent: true });
-      } catch (err) {
-        console.error('[PROFILE] save failed', err);
-        const errorDetail =
-          err?.message ||
-          err?.error_description ||
-          err?.error ||
-          (typeof err === 'string' ? err : JSON.stringify(err));
-        const msg = 'Could not save profile: ' + errorDetail;
-        showMessage(msg, false);
-        alert(msg);
-      } finally {
-        finishSaving();
-      }
-    }
-
-    function showMessage(text, ok) {
-      if (!profileMessage) return;
-      clearTimeout(messageTimer);
-      profileMessage.textContent = text || '';
-      profileMessage.classList.remove('ok', 'error');
-      if (!text) {
-        profileMessage.style.display = 'none';
-        return;
-      }
-      profileMessage.style.display = 'block';
-      profileMessage.classList.add(ok ? 'ok' : 'error');
+  function showMessage(text, ok = true) {
+    if (!profileMessage) return;
+    clearTimeout(messageTimer);
+    profileMessage.classList.remove('ok', 'error');
+    profileMessage.classList.add(ok ? 'ok' : 'error');
+    profileMessage.style.display = text ? 'block' : 'none';
+    profileMessage.textContent = text || '';
+    if (text) {
       profileMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
       if (!ok) {
         messageTimer = setTimeout(() => {
           profileMessage.style.display = 'none';
-          profileMessage.classList.remove('ok', 'error');
           profileMessage.textContent = '';
+          profileMessage.classList.remove('ok', 'error');
         }, 8000);
       }
     }
+  }
 
-    // -------- wire up UI --------
-    document.addEventListener('DOMContentLoaded', async () => {
-      await loadGroups();
-      await preloadProfile();
-      setTimeout(() => {
-        if (!groupSelectEl) return;
-        if (groupSelectEl.disabled) {
-          groupSelectEl.disabled = false;
-        }
-        if (!groupSelectEl.options.length) {
-          groupSelectEl.innerHTML = `<option value="${DEFAULT_GROUP.id}">${DEFAULT_GROUP.name}</option>`;
-        }
-      }, 1000);
-    });
+  async function loadGroups() {
+    groupSelectEl.disabled = true;
+    groupSelectEl.innerHTML = `<option value="${DEFAULT_GROUP.id}">${DEFAULT_GROUP.name}</option>`;
 
-    const triggerAvatarPicker = () => {
-      if (!avatarFile) return;
-      try {
-        if (typeof avatarFile.showPicker === 'function') {
-          avatarFile.showPicker();
-          return;
+    let groups = [];
+    try {
+      ensureSession();
+      const rows = await rest('groups?select=id,name,archived&order=name.asc');
+      groups = (rows || []).filter(g => !g?.archived);
+    } catch (err) {
+      console.warn('[PROFILE] groups fetch failed; using default', err);
+    }
+
+    if (!groups.length) {
+      groups = [DEFAULT_GROUP];
+    }
+
+    groupSelectEl.innerHTML = groups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+    const cachedId = localStorage.getItem(GROUP_KEY_ID);
+    const match = groups.find(g => g.id === cachedId);
+    groupSelectEl.value = match ? match.id : groups[0].id;
+    groupSelectEl.disabled = false;
+    cacheSelectedGroup();
+  }
+
+  async function fetchProfile({ silent = false } = {}) {
+    try {
+      ensureSession();
+      const metaName =
+        currentUser.user_metadata?.full_name ||
+        currentUser.user_metadata?.name ||
+        currentUser.email ||
+        '';
+
+      displayNameEl.value = metaName;
+      avatarPreview.src = defaultAvatar;
+      currentAvatarUrl = null;
+
+      const rows = await rest(
+        `profiles?id=eq.${encodeURIComponent(currentUser.id)}&select=display_name,public_name,full_name,avatar_url,group_id,updated_at`
+      );
+      const profile = rows?.[0] || null;
+      if (profile) {
+        displayNameEl.value = profile.display_name || profile.public_name || profile.full_name || metaName;
+        if (profile.avatar_url) {
+          avatarPreview.src = profile.avatar_url;
+          currentAvatarUrl = profile.avatar_url;
         }
-      } catch (err) {
-        console.warn('[PROFILE] showPicker failed, fallback to click', err);
+        if (profile.group_id) {
+          ensureGroupOption(profile.group_id, groupSelectEl?.selectedOptions?.[0]?.textContent || DEFAULT_GROUP.name);
+          groupSelectEl.value = profile.group_id;
+          cacheSelectedGroup();
+        }
+        if (!silent) {
+          showMessage(profile.updated_at ? `Profile loaded · ${new Date(profile.updated_at).toLocaleString()}` : 'Profile loaded ✓', true);
+        }
       }
-      avatarFile.click();
-    };
+    } catch (err) {
+      console.error('[PROFILE] fetchProfile failed', err);
+      showMessage('Could not load profile. Try again shortly.', false);
+    }
+  }
 
-    editAvatarBtn.addEventListener('click', (evt) => {
-      evt.preventDefault();
-      triggerAvatarPicker();
+  async function uploadAvatar(file) {
+    if (!file) return currentAvatarUrl;
+    ensureSession(false);
+    const safeName = `${Date.now()}-${file.name}`.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+    const objectPath = `${currentUser.id}/${safeName}`;
+    const storageUrl = `${SUPABASE_URL}/storage/v1/object/${STORAGE_BUCKET}/${objectPath}`;
+
+    const response = await fetch(storageUrl, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${accessToken}`,
+        'x-upsert': 'true',
+        'Content-Type': file.type || 'application/octet-stream'
+      },
+      body: file
     });
 
-    avatarFile.addEventListener('change', () => {
-      const file = avatarFile.files[0];
-      if (file) avatarPreview.src = URL.createObjectURL(file);
-    });
-    saveBtn.addEventListener('click', saveProfile);
-    groupSelectEl?.addEventListener('change', cacheSelectedGroup);
-    
-  </script>
+    if (!response.ok) {
+      throw new Error(await response.text() || 'Avatar upload failed');
+    }
+
+    const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${STORAGE_BUCKET}/${objectPath}`;
+    return publicUrl;
+  }
+
+  async function saveProfile() {
+    try {
+      ensureSession();
+    } catch (err) {
+      return;
+    }
+
+    const displayName = (displayNameEl.value || '').trim() || currentUser.email;
+    const selectedGroupId = groupSelectEl.value || DEFAULT_GROUP.id;
+
+    showMessage('Saving…', true);
+    saveBtn.disabled = true;
+    const originalLabel = saveBtn.textContent;
+    saveBtn.textContent = 'Saving…';
+
+    try {
+      let avatarUrl = currentAvatarUrl;
+      if (avatarFile.files?.length) {
+        showMessage('Uploading avatar…', true);
+        avatarUrl = await uploadAvatar(avatarFile.files[0]);
+        currentAvatarUrl = avatarUrl;
+      }
+
+      const payload = {
+        id: currentUser.id,
+        display_name: displayName,
+        public_name: displayName,
+        full_name: displayName,
+        group_id: selectedGroupId,
+        updated_at: new Date().toISOString(),
+        avatar_url: avatarUrl || null
+      };
+
+      const rows = await rest('profiles', {
+        method: 'POST',
+        headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
+        body: JSON.stringify([payload])
+      });
+
+      const saved = rows?.[0] || payload;
+      const savedAt = saved.updated_at ? new Date(saved.updated_at).toLocaleString() : new Date().toLocaleString();
+      showMessage(`Profile saved! ✅ ${savedAt}`, true);
+      avatarFile.value = '';
+      await fetchProfile({ silent: true });
+    } catch (err) {
+      console.error('[PROFILE] save failed', err);
+      showMessage(err?.message || 'Could not save profile. Please try again.', false);
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = originalLabel;
+    }
+  }
+
+  function triggerAvatarPicker() {
+    try {
+      if (typeof avatarFile.showPicker === 'function') {
+        avatarFile.showPicker();
+        return;
+      }
+    } catch (err) {
+      console.warn('[PROFILE] showPicker unavailable', err);
+    }
+    avatarFile.click();
+  }
+
+  editAvatarBtn.addEventListener('click', (evt) => {
+    evt.preventDefault();
+    triggerAvatarPicker();
+  });
+
+  avatarFile.addEventListener('change', () => {
+    const file = avatarFile.files?.[0];
+    if (file) {
+      avatarPreview.src = URL.createObjectURL(file);
+    } else if (currentAvatarUrl) {
+      avatarPreview.src = currentAvatarUrl;
+    } else {
+      avatarPreview.src = defaultAvatar;
+    }
+  });
+
+  saveBtn.addEventListener('click', saveProfile);
+  groupSelectEl.addEventListener('change', cacheSelectedGroup);
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    try {
+      ensureSession();
+      await loadGroups();
+      await fetchProfile();
+    } catch (err) {
+      console.error('[PROFILE] init failed', err);
+    }
+  });
+</script>
 <!-- page logic(s) ... -->
 <script defer src="./scripts/appbar-drawer.js?v=2025.10.15f"></script>
 <script defer src="./ui-shell.js?v=2025.10.15f"></script>

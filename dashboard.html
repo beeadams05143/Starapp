@@ -87,17 +87,34 @@
 <script type="module" src="./avatar-float.js?v=2025.10.15f"></script>
 
 <script type="module">
-  import { supabase } from './supabaseClient.js?v=2025.10.15f';
+  import {
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY,
+    getSessionFromStorage,
+    clearSavedSession,
+  } from './supabaseClient.js?v=2025.10.15k';
 
   const logoutBtn = document.getElementById('logoutBtn');
   if (logoutBtn) {
     logoutBtn.addEventListener('click', async (event) => {
       event.preventDefault();
-      try {
-        await supabase.auth.signOut();
-      } catch (err) {
-        console.warn('supabase signOut failed', err);
+      const session = getSessionFromStorage();
+      if (session?.access_token) {
+        try {
+          await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
+            method: 'POST',
+            headers: {
+              apikey: SUPABASE_ANON_KEY,
+              Authorization: `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ scope: 'global' }),
+          });
+        } catch (err) {
+          console.warn('logout request failed', err);
+        }
       }
+      clearSavedSession();
       try {
         localStorage.clear();
       } catch {}

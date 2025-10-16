@@ -1,19 +1,20 @@
-// chat.js — hard-wired to Family group, realtime-ready
-// Requires: supabaseClient.js in same folder exporting { supabase }
+// chat.js — hard-wired to Family group, REST version (polling-based)
+// Requires: restClient.js exporting { rest, getSessionFromStorage }
 // and <script type="module" src="chat.js"></script> in chat.html
 
-import { supabase } from './supabaseClient.js?v=2025.10.15f';
+import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.15k';
 
 // ---------- CONFIG ----------
 const GROUP_ID = '3159dde9-8cf3-4a29-af72-01da907f241b'; // Family
 
 // ---------- Require login ----------
-const { data: { session } } = await supabase.auth.getSession();
-if (!session) {
+const session = getSessionFromStorage();
+if (!session?.user?.id || !session?.access_token) {
   const ret = encodeURIComponent('chat.html');
   window.location.href = `login.html?redirect=${ret}`;
   throw new Error('No session');
 }
+const currentUserId = session.user.id;
 
 // ---------- DOM refs ----------
 const chatBox = document.getElementById('chatBox');
@@ -36,22 +37,30 @@ const profiles = new Map();
 async function loadProfiles(userIds) {
   const ids = [...new Set(userIds)].filter(Boolean).filter(id => !profiles.has(id));
   if (!ids.length) return;
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('id, display_name, avatar_url')
-    .in('id', ids);
-  if (error) { console.error('profiles load error', error); return; }
-  for (const p of data) profiles.set(p.id, p);
+  const encodedIds = ids.map(id => encodeURIComponent(id)).join(',');
+  try {
+    const rows = await rest(
+      `profiles?select=id,display_name,avatar_url&id=in.(${encodedIds})`
+    );
+    for (const p of rows || []) profiles.set(p.id, p);
+  } catch (error) {
+    console.error('profiles load error', error);
+  }
 }
 
 // ---------- read receipts ----------
 async function fetchReadsFor(messageIds, myId) {
   if (!messageIds.length) return new Map();
-  const { data, error } = await supabase
-    .from('message_reads')
-    .select('message_id, user_id')
-    .in('message_id', messageIds);
-  if (error) { console.error('reads load error', error); return new Map(); }
+  const encodedIds = messageIds.map(id => encodeURIComponent(id)).join(',');
+  let data = [];
+  try {
+    data = await rest(
+      `message_reads?select=message_id,user_id&message_id=in.(${encodedIds})`
+    );
+  } catch (error) {
+    console.error('reads load error', error);
+    return new Map();
+  }
   const map = new Map();
   for (const r of data) {
     if (r.user_id === myId) continue;          // only count others' reads
@@ -65,10 +74,15 @@ async function markReadFor(messages, myId) {
     .filter(m => m.sender_id !== myId)
     .map(m => ({ message_id: m.id, user_id: myId }));
   if (!rows.length) return;
-  const { error } = await supabase
-    .from('message_reads')
-    .upsert(rows, { onConflict: 'message_id,user_id' });
-  if (error) console.error('mark read error', error);
+  try {
+    await rest('message_reads', {
+      method: 'POST',
+      headers: { Prefer: 'resolution=merge-duplicates' },
+      body: JSON.stringify(rows),
+    });
+  } catch (error) {
+    console.error('mark read error', error);
+  }
 }
 
 // ---------- render ----------
@@ -100,17 +114,21 @@ function render(messages, myId, readsByMsgId) {
 
 // ---------- data load ----------
 async function loadMessages() {
-  const { data: auth } = await supabase.auth.getUser();
-  const myId = auth?.user?.id;
+  const myId = getSessionFromStorage()?.user?.id || currentUserId;
 
-  const { data: msgs, error } = await supabase
-    .from('messages')
-    .select('id, message, created_at, sender_id, group_id')
-    .eq('group_id', GROUP_ID)
-    .order('created_at', { ascending: true })
-    .order('id', { ascending: true });
-
-  if (error) { console.error('load messages error', error); return; }
+  let msgs = [];
+  try {
+    const path = [
+      'messages?select=id,message,created_at,sender_id,group_id',
+      `group_id=eq.${GROUP_ID}`,
+      'order=created_at.asc',
+      'order=id.asc'
+    ].join('&');
+    msgs = await rest(path);
+  } catch (error) {
+    console.error('load messages error', error);
+    return;
+  }
 
   await loadProfiles(msgs.map(m => m.sender_id));
   await markReadFor(msgs, myId);
@@ -123,8 +141,7 @@ async function sendMessage() {
   const text = (input.value || '').trim();
   if (!text) return;
 
-  const { data: auth } = await supabase.auth.getUser();
-  const myId = auth?.user?.id;
+  const myId = getSessionFromStorage()?.user?.id || currentUserId;
 
   const row = {
     group_id: GROUP_ID,
@@ -133,15 +150,14 @@ async function sendMessage() {
     delivered_at: new Date().toISOString()
   };
 
-  const { error } = await supabase.from('messages').insert([row]);
-  if (error) {
-    console.error('Insert error:', {
-      message: error.message,
-      details: error.details,
-      hint: error.hint,
-      code: error.code,
-      row
+  try {
+    await rest('messages', {
+      method: 'POST',
+      body: JSON.stringify([row]),
+      headers: { Prefer: 'return=minimal' },
     });
+  } catch (error) {
+    console.error('Insert error:', error);
     alert('Could not send message.');
     return;
   }
@@ -154,38 +170,12 @@ async function sendMessage() {
 sendBtn.addEventListener('click', sendMessage);
 input.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendMessage(); });
 
-// ---------- realtime subscriptions ----------
-const msgSub = supabase
-  .channel('messages:changes')
-  .on('postgres_changes', {
-    event: 'INSERT',
-    schema: 'public',
-    table: 'messages',
-    filter: `group_id=eq.${GROUP_ID}`
-  }, async () => {
-    await loadMessages();
-  })
-  .subscribe((status) => console.log('[realtime:messages] status:', status));
-
-const readSub = supabase
-  .channel('reads:inserts')
-  .on('postgres_changes', {
-    event: 'INSERT',
-    schema: 'public',
-    table: 'message_reads'
-  }, async () => {
-    await loadMessages();
-  })
-  .subscribe((status) => console.log('[realtime:reads] status:', status));
-
-// Optional: belt-and-suspenders polling until realtime confirmed
+// Poll for updates (fallback while realtime client unavailable)
 const pollId = setInterval(() => loadMessages().catch(() => {}), 5000);
 
 // Clean up on page exit
 window.addEventListener('beforeunload', () => {
   clearInterval(pollId);
-  supabase.removeChannel(msgSub);
-  supabase.removeChannel(readSub);
 });
 
 // Initial load

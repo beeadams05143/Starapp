@@ -66,13 +66,18 @@
 
   <!-- Auth logic -->
   <script type="module">
-    import { supabase } from './supabaseClient.js?v=2025.10.15f';
+    import {
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY,
+      saveSession,
+      clearSavedSession,
+      getSessionFromStorage,
+    } from './supabaseClient.js?v=2025.10.15k';
+    import { rest } from './restClient.js?v=2025.10.15k';
 
-    // ---- Config (kept the same default) ----
     const params   = new URLSearchParams(location.search);
     const redirect = params.get('redirect') || 'dashboard.html';
 
-    // ---- Elements ----
     const form      = document.getElementById('authForm');
     const emailEl   = document.getElementById('email');
     const passEl    = document.getElementById('password');
@@ -90,6 +95,117 @@
     const show = (el, on) => { if (el) el.style.display = on ? '' : 'none'; };
     const setBusy = (on) => { [loginBtn, signupBtn, forgotBtn, logoutBtn].forEach(b => b && (b.disabled = on)); };
 
+    const authHeaders = (includeToken = false) => {
+      const headers = {
+        apikey: SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json',
+      };
+      if (includeToken) {
+        const session = getSessionFromStorage();
+        if (!session?.access_token) throw new Error('Not signed in');
+        headers.Authorization = `Bearer ${session.access_token}`;
+      }
+      return headers;
+    };
+
+    async function authRequest(path, { body, requireToken = false } = {}) {
+      const res = await fetch(`${SUPABASE_URL}${path}`, {
+        method: 'POST',
+        headers: authHeaders(requireToken),
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      const text = await res.text();
+      const payload = text ? JSON.parse(text) : null;
+      if (!res.ok) {
+        const message =
+          payload?.error_description ||
+          payload?.error ||
+          payload?.message ||
+          text ||
+          'Auth request failed';
+        throw new Error(message);
+      }
+      if (payload?.session) saveSession(payload.session);
+      return payload;
+    }
+
+    async function ensureProfileRow(user) {
+      if (!user?.id) return;
+      const name =
+        user.user_metadata?.full_name ||
+        user.user_metadata?.name ||
+        user.email;
+      try {
+        await rest('profiles', {
+          method: 'POST',
+          headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+          body: JSON.stringify([{
+            id: user.id,
+            full_name: name,
+            public_name: name,
+            display_name: name,
+          }]),
+        });
+      } catch (error) {
+        console.warn('[AUTH] ensureProfileRow failed', error);
+      }
+    }
+
+    function currentSession() {
+      return getSessionFromStorage();
+    }
+
+    async function render() {
+      const session = currentSession();
+      const authed = !!session?.user;
+      show(form, !authed);
+      show(logoutBtn, authed);
+      whoami.textContent = authed ? `Signed in as ${session.user.email}` : '';
+    }
+
+    function loginInProgress() {
+      const msgText = msg?.textContent || '';
+      return msgText.includes('Retrying…');
+    }
+
+    async function handleLogin(email, password) {
+      const payload = await authRequest('/auth/v1/token?grant_type=password', {
+        body: { email, password },
+      });
+      const session = currentSession();
+      if (session?.user) {
+        await ensureProfileRow(session.user);
+        try { localStorage.setItem('user_id', session.user.id); } catch {}
+      }
+      return payload;
+    }
+
+    async function handleSignup(email, password) {
+      const payload = await authRequest('/auth/v1/signup', { body: { email, password } });
+      const session = currentSession();
+      if (session?.user) {
+        await ensureProfileRow(session.user);
+        try { localStorage.setItem('user_id', session.user.id); } catch {}
+      }
+      return payload;
+    }
+
+    async function handleReset(email) {
+      await authRequest('/auth/v1/recover', { body: { email } });
+    }
+
+    async function handleLogout() {
+      try {
+        await authRequest('/auth/v1/logout', { body: { scope: 'global' }, requireToken: true });
+      } catch (err) {
+        console.warn('[AUTH] logout request failed', err);
+      } finally {
+        clearSavedSession();
+        try { localStorage.removeItem('user_id'); } catch {}
+        render();
+      }
+    }
+
     async function boot() {
       if (!form || !emailEl || !passEl) {
         console.error('[AUTH] Required form elements not found.');
@@ -101,92 +217,23 @@
 
       try {
         showMsg('');
+        render();
 
-        // Ensure a profile row exists so names show up elsewhere
-        async function ensureProfileRow(user) {
-          try {
-            await supabase.from('profiles').upsert({
-              id: user.id,
-              full_name:    user.user_metadata?.full_name || user.user_metadata?.name || user.email,
-              public_name:  user.user_metadata?.full_name || user.user_metadata?.name || user.email,
-              display_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email
-            }, { onConflict: 'id' });
-          } catch (e) {
-            console.warn('[AUTH] ensureProfileRow failed', e);
-          }
-        }
-
-        async function render() {
-          try {
-            const { data: { session }, error } = await supabase.auth.getSession();
-            if (error) console.warn('[AUTH] getSession error:', error);
-
-            const authed = !!session?.user;
-            show(form, !authed);
-            show(logoutBtn, authed);
-
-            whoami.textContent = authed ? `Signed in as ${session.user.email}` : '';
-          } catch (err) {
-            console.error('[AUTH] render failed', err);
-            showMsg('Auth status unavailable. Retry shortly.');
-          }
-        }
-
-        // ---- Login (instrumented) ----
         form.addEventListener('submit', async (e) => {
           e.preventDefault();
-          console.log('[LOGIN] submit fired');
           showMsg('');
           setBusy(true);
 
           try {
             const email = (emailEl.value || '').trim();
             const password = passEl.value;
-            console.log('[LOGIN] values', { emailPresent: !!email, pwLength: password?.length });
-
             if (!email || !password) {
-              console.log('[LOGIN] missing email or password');
               showMsg('Enter email & password');
               setBusy(false);
               return;
             }
 
-            console.log('[LOGIN] supabase available', !!supabase);
-            console.log('[LOGIN] supabase.auth available', !!supabase?.auth);
-
-            console.time('[LOGIN] signInWithPassword');
-            let signInResult;
-            try {
-              signInResult = await supabase.auth.signInWithPassword({ email, password });
-            } catch (err) {
-              console.timeEnd('[LOGIN] signInWithPassword');
-              console.error('[LOGIN] signInWithPassword threw', err);
-              showMsg('Network error logging in. Please retry.');
-              return;
-            }
-            console.timeEnd('[LOGIN] signInWithPassword');
-            console.log('[LOGIN] result', signInResult);
-
-            const { data, error } = signInResult || {};
-            if (error) {
-              showMsg(error.message || 'Could not log in.');
-              setBusy(false);
-              return;
-            }
-
-            const sessionResult = await supabase.auth.getSession();
-            console.log('[LOGIN] session after login', sessionResult);
-            if (!sessionResult?.data?.session) {
-              showMsg('Login succeeded but no session yet. Retrying…');
-              await new Promise(r => setTimeout(r, 300));
-            }
-
-            try {
-              const { data: u } = await supabase.auth.getUser();
-              if (u?.user) await ensureProfileRow(u.user);
-            } catch (e2) {
-              console.warn('[LOGIN] ensureProfileRow failed:', e2);
-            }
+            await handleLogin(email, password);
 
             showMsg('Success! Redirecting…', true);
             setTimeout(() => {
@@ -197,91 +244,66 @@
                 window.location.href = redirect;
               }
             }, 120);
-            return;
           } catch (err) {
-            console.error('[LOGIN] unexpected error', err);
-            showMsg('Unexpected error. See console.');
-            setBusy(false);
-          } finally {
-            if (!loginInProgress()) {
-              setBusy(false);
-            }
+            console.error('[LOGIN] error', err);
+            showMsg(err.message || 'Unexpected error. See console.');
+            if (!loginInProgress()) setBusy(false);
           }
         });
 
-        function loginInProgress() {
-          const msgText = msg?.textContent || '';
-          return msgText.includes('Retrying…');
-        }
-
-        // ---- Signup (works with or without "Confirm email") ----
         signupBtn?.addEventListener('click', async () => {
           showMsg('');
           setBusy(true);
+          try {
+            const email = (emailEl.value || '').trim();
+            const password = passEl.value;
+            if (!email || !password) {
+              showMsg('Enter email & password');
+              return;
+            }
 
-          const email = (emailEl.value || '').trim();
-          const password = passEl.value;
-          if (!email || !password) {
+            const result = await handleSignup(email, password);
+            const hasSession = !!currentSession()?.user;
+            if (hasSession) {
+              location.replace(redirect);
+            } else {
+              showMsg('Check your email to confirm, then log in.', true);
+            }
+          } catch (err) {
+            showMsg(err.message || 'Signup failed.');
+          } finally {
             setBusy(false);
-            return showMsg('Enter email & password');
-          }
-
-          const { data, error } = await supabase.auth.signUp({ email, password });
-          setBusy(false);
-          if (error) return showMsg(error.message);
-
-          const hasSession = !!data?.session;
-          if (hasSession) {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) await ensureProfileRow(user);
-            return location.replace(redirect);
-          } else {
-            return showMsg('Check your email to confirm, then log in.', true);
           }
         });
 
-        // ---- Forgot password ----
         forgotBtn?.addEventListener('click', async () => {
           const email = (emailEl.value || '').trim();
           if (!email) {
             showMsg('Enter your email first.');
             return;
           }
-
           setBusy(true);
           showMsg('Sending reset email…');
           try {
-            const { error } = await supabase.auth.resetPasswordForEmail(email);
-            if (error) {
-              showMsg(error.message);
-            } else {
-              showMsg('Password reset email sent. Check your inbox (and spam).', true);
-            }
+            await handleReset(email);
+            showMsg('Password reset email sent. Check your inbox (and spam).', true);
           } catch (err) {
-            console.error('[AUTH] resetPasswordForEmail failed', err);
-            showMsg('Could not send reset email. Try again shortly.');
+            console.error('[AUTH] reset failed', err);
+            showMsg(err.message || 'Could not send reset email. Try again shortly.');
           } finally {
             setBusy(false);
           }
         });
 
-        // ---- Logout ----
         logoutBtn?.addEventListener('click', async () => {
           showMsg('');
           setBusy(true);
-          try {
-            await supabase.auth.signOut();
-            showMsg('Logged out.', true);
-          } catch (e) {
-            console.warn('[AUTH] signOut failed', e);
-            showMsg('Logout failed. Try again.');
-          } finally {
-            setBusy(false);
-            await render();
-          }
+          await handleLogout();
+          showMsg('Logged out.', true);
+          setBusy(false);
         });
 
-        supabase.auth.onAuthStateChange(() => render());
+        window.addEventListener('storage', render);
         render();
       } catch (initErr) {
         console.error('[AUTH] boot failed', initErr);

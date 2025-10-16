@@ -1,5 +1,36 @@
-// auth.js
-import { supabase } from './supabaseClient.js?v=2025.10.15f';
+// auth.js — REST-based auth helpers
+import {
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY,
+  saveSession,
+  clearSavedSession,
+  getSessionFromStorage,
+} from './supabaseClient.js?v=2025.10.15k';
+
+async function postAuth(path, body, { withToken = false } = {}) {
+  const headers = {
+    apikey: SUPABASE_ANON_KEY,
+    'Content-Type': 'application/json',
+  };
+  if (withToken) {
+    const session = getSessionFromStorage();
+    if (!session?.access_token) throw new Error('No active session');
+    headers.Authorization = `Bearer ${session.access_token}`;
+  }
+  const res = await fetch(`${SUPABASE_URL}${path}`, {
+    method: 'POST',
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const text = await res.text();
+  const json = text ? JSON.parse(text) : null;
+  if (!res.ok) {
+    const message = json?.error_description || json?.error || json?.message || text || 'Auth request failed';
+    throw new Error(message);
+  }
+  if (json?.session) saveSession(json.session);
+  return json;
+}
 // Centralized URLs (use your real paths)
 const DASHBOARD_URL = 'dashboard.html';
 const LOGIN_URL = 'login.html';
@@ -16,23 +47,17 @@ async function signUp() {
   const password = document.getElementById('password')?.value;
   const msg = document.getElementById('message');
 
-  const { data, error } = await supabase.auth.signUp({ email, password });
-
-  if (error) {
+  try {
+    const data = await postAuth('/auth/v1/signup', { email, password });
+    if (data?.user) localStorage.setItem('user_id', data.user.id);
+    if (data?.session) {
+      window.location.assign(DASHBOARD_URL);
+    } else if (msg) {
+      msg.textContent = 'Check your email to confirm!';
+    }
+  } catch (error) {
     if (msg) msg.textContent = error.message;
     return;
-  }
-
-  // Optional helper: keep user_id locally (Supabase already persists the session)
-  if (data?.user) localStorage.setItem('user_id', data.user.id);
-
-  if (data?.session) {
-    // Email confirmation NOT required → user is signed in now
-    window.location.assign(DASHBOARD_URL);
-
-  } else {
-    // Email confirmation required in Supabase settings
-    if (msg) msg.textContent = 'Check your email to confirm!';
   }
 }
 
@@ -51,21 +76,13 @@ async function logIn() {
     setAuthBusy(true);
     if (msg) msg.textContent = '';
 
-    console.time('[AUTH] signInWithPassword');
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    console.timeEnd('[AUTH] signInWithPassword');
-
-    if (error) {
-      console.error('[AUTH] signIn error', error);
-      if (msg) msg.textContent = error.message || 'Could not sign in.';
-      return;
-    }
-
+    const data = await postAuth('/auth/v1/token?grant_type=password', { email, password });
     if (data?.user) {
       localStorage.setItem('user_id', data.user.id);
       window.location.assign(DASHBOARD_URL);
-    } else {
-      if (msg) msg.textContent = 'Signed in, but no user session returned. Try again.';
+    } else if (msg) {
+      msg.textContent = 'Signed in, but no user session returned. Try again.';
+      return;
     }
   } catch (err) {
     console.error('[AUTH] unexpected signIn error', err);
@@ -88,18 +105,20 @@ function setAuthBusy(on) {
 /* ------------- LOG OUT -------------- */
 async function logOut() {
   try {
-    await supabase.auth.signOut();
+    await postAuth('/auth/v1/logout', { scope: 'global' }, { withToken: true });
   } catch (err) {
     console.warn('[AUTH] signOut error', err);
   }
   try {
     localStorage.clear();
   } catch {}
+  clearSavedSession();
   window.location.assign(LOGIN_URL);
 }
 
 /* --------- ROUTE / SESSION GUARDS --------- */
-supabase.auth.getSession().then(({ data: { session } }) => {
+const sessionGuard = () => {
+  const session = getSessionFromStorage();
   const path = window.location.pathname.toLowerCase();
 
   const onLogin  = path.endsWith('/login.html');
@@ -123,4 +142,7 @@ supabase.auth.getSession().then(({ data: { session } }) => {
     const el = document.getElementById('user-email');
     if (el) el.textContent = `Logged in as: ${session.user.email}`;
   }
-});
+};
+
+sessionGuard();
+window.addEventListener('storage', sessionGuard);

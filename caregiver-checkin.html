@@ -304,10 +304,10 @@
 <!-- App logic -->
 <script type="module">
   // 1) Imports MUST be first in the module
-  import { supabase } from './supabaseClient.js?v=2025.10.15f';
+  import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.15k';
 
   // 2) Optional: expose for console debugging
-  window.supabase = supabase;
+  window.rest = rest;
 
   // 3) Simple load marker
   console.log('[cg] script loaded v4');
@@ -549,7 +549,7 @@
           save(activeStep, current, true);
         }
 
-        const { data: { session } } = await supabase.auth.getSession();
+        const session = getSessionFromStorage();
         const user_id = session?.user?.id;
         if (!user_id) throw new Error('Not signed in');
 
@@ -566,13 +566,12 @@
           submitted_at: new Date().toISOString()
         };
 
-        const { data, error } = await supabase
-          .from('caregiver_checkins')
-          .insert([row])
-          .select('id, submitted_at')
-          .single();
-
-        if (error) throw error;
+        const inserted = await rest('caregiver_checkins', {
+          method: 'POST',
+          headers: { Prefer: 'return=representation' },
+          body: JSON.stringify([row]),
+        });
+        const data = Array.isArray(inserted) ? inserted[0] : inserted;
 
         const when = new Date(data?.submitted_at || row.submitted_at).toLocaleString();
         const slot = document.getElementById('finalSubmittedAt');

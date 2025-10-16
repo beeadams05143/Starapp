@@ -210,15 +210,15 @@
 
   <!-- ===== Supabase Calendar logic ===== -->
   <script type="module">
-  import { supabase } from "./supabaseClient.js?v=2025.10.15f";
+  import { rest, getSessionFromStorage } from "./restClient.js?v=2025.10.15k";
 
   // ✅ Require login (redirect if not)
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData?.user) {
+  const session = getSessionFromStorage();
+  if (!session?.user?.id) {
     location.href = `/login.html?redirect=${encodeURIComponent(location.pathname)}`;
     throw new Error("Not signed in");
   }
-  const currentUserId = userData.user.id;
+  const currentUserId = session.user.id;
 
   (async () => {
     // routes for the event-type links
@@ -259,21 +259,21 @@
         const from = first.toISOString().slice(0, 10);
         const to = last.toISOString().slice(0, 10);
 
-        let q = supabase
-          .from("calendar_events")
-          .select("*")
-          .gte("start_date", from)
-          .lte("start_date", to)
-          .order("start_date", { ascending: true });
+        const params = [
+          "calendar_events?select=*",
+          `start_date=gte.${encodeURIComponent(from)}`,
+          `start_date=lte.${encodeURIComponent(to)}`,
+          "order=start_date.asc",
+        ];
+        if (GROUP_ID) params.push(`group_id=eq.${encodeURIComponent(GROUP_ID)}`);
 
-        if (GROUP_ID) q = q.eq("group_id", GROUP_ID);
-
-        const { data, error } = await q;
-        if (error) {
-          console.error(error.message);
+        try {
+          const data = await rest(params.join("&"));
+          return data || [];
+        } catch (error) {
+          console.error(error?.message || error);
           return [];
         }
-        return data || [];
       },
 
       async addEvent(evt) {
@@ -289,18 +289,27 @@
           created_by: currentUserId,
           group_id: GROUP_ID,
         };
-        const { data, error } = await supabase
-          .from("calendar_events")
-          .insert(payload)
-          .select("*")
-          .single();
-        if (error) throw error;
-        return data;
+        try {
+          const rows = await rest("calendar_events", {
+            method: "POST",
+            headers: { Prefer: "return=representation" },
+            body: JSON.stringify([payload]),
+          });
+          return Array.isArray(rows) ? rows[0] : rows;
+        } catch (error) {
+          throw error;
+        }
       },
 
       async deleteEvent(id) {
-        const { error } = await supabase.from("calendar_events").delete().eq("id", id);
-        if (error) throw error;
+        try {
+          await rest(`calendar_events?id=eq.${encodeURIComponent(id)}`, {
+            method: "DELETE",
+            headers: { Prefer: "return=minimal" },
+          });
+        } catch (error) {
+          throw error;
+        }
       },
     };
 

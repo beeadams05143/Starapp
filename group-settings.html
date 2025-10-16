@@ -50,7 +50,7 @@
   </div>
 
   <script type="module">
-    import { supabase } from './supabaseClient.js?v=2025.10.15f';
+    import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.15k';
 
     const GROUP_KEY = 'currentGroupId';
     const inviteCodeEl = document.getElementById('inviteCode');
@@ -62,21 +62,21 @@
     const getActiveGroupId = () => localStorage.getItem(GROUP_KEY) || null;
 
     async function requireSession(){
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { alert('Please log in first.'); location.href = './login.html'; throw new Error('no session'); }
+      const session = getSessionFromStorage();
+      if (!session?.user?.id) { alert('Please log in first.'); location.href = './login.html'; throw new Error('no session'); }
       return session;
     }
 
     async function loadInviteCode(){
       const gid = getActiveGroupId();
       if (!gid) { inviteCodeEl.value = 'no active group'; return; }
-      const { data, error } = await supabase
-        .from('groups')
-        .select('join_code')
-        .eq('id', gid)
-        .single();
-      if (error){ console.error(error); inviteCodeEl.value='(error)'; return; }
-      inviteCodeEl.value = data?.join_code || '(none)';
+      try {
+        const rows = await rest(`groups?id=eq.${encodeURIComponent(gid)}&select=join_code`);
+        inviteCodeEl.value = rows?.[0]?.join_code || '(none)';
+      } catch (error){
+        console.error(error);
+        inviteCodeEl.value='(error)';
+      }
     }
 
     copyBtn.addEventListener('click', async () => {
@@ -90,14 +90,22 @@
       const code = (joinCodeEl.value || '').trim();
       if (!code) return alert('Enter a code.');
       await requireSession();
-      const { data, error } = await supabase.rpc('join_group', { p_code: code });
-      if (error) { console.error(error); alert(error.message || 'Join failed'); return; }
-      const newGroupId = data?.[0]?.group_id;
-      if (newGroupId) {
-        localStorage.setItem(GROUP_KEY, newGroupId);
-        window.loadGroupsIntoSwitcher?.();   // refresh navbar switcher if present
-        alert('Joined group!');
-        await loadInviteCode();
+      try {
+        const rows = await rest('rpc/join_group', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ p_code: code }),
+        });
+        const newGroupId = rows?.[0]?.group_id;
+        if (newGroupId) {
+          localStorage.setItem(GROUP_KEY, newGroupId);
+          window.loadGroupsIntoSwitcher?.();   // refresh navbar switcher if present
+          alert('Joined group!');
+          await loadInviteCode();
+        }
+      } catch (error) {
+        console.error(error);
+        alert(error?.message || 'Join failed');
       }
     });
 
@@ -105,14 +113,18 @@
       const gid = getActiveGroupId();
       if (!gid) return alert('No active group.');
       if (!confirm('Leave this group?')) return;
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return alert('Please log in first.');
-      const { error } = await supabase
-        .from('group_members')
-        .delete()
-        .eq('group_id', gid)
-        .eq('user_id', session.user.id);
-      if (error) { console.error(error); alert('Could not leave group.'); return; }
+      const session = getSessionFromStorage();
+      if (!session?.user?.id) return alert('Please log in first.');
+      try {
+        await rest(`group_members?group_id=eq.${encodeURIComponent(gid)}&user_id=eq.${encodeURIComponent(session.user.id)}`, {
+          method: 'DELETE',
+          headers: { Prefer: 'return=minimal' },
+        });
+      } catch (error) {
+        console.error(error);
+        alert('Could not leave group.');
+        return;
+      }
       localStorage.removeItem(GROUP_KEY);
       window.loadGroupsIntoSwitcher?.();
       inviteCodeEl.value = 'no active group';

@@ -1,6 +1,7 @@
-import { supabase } from './supabaseClient.js?v=2025.10.15f';
+import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.15k';
 
-const userId = localStorage.getItem('user_id'); // or get from auth session
+const session = getSessionFromStorage();
+const userId = session?.user?.id || localStorage.getItem('user_id');
 
 const form = document.getElementById('support-form');
 const fields = [
@@ -13,39 +14,54 @@ const fields = [
 ];
 
 async function loadSupportInfo() {
-  const { data, error } = await supabase
-    .from('support_info')
-    .select('*')
-    .eq('user_id', userId)
-    .single();
-
-  if (data) {
-    fields.forEach(id => {
-      document.getElementById(id).value = data[id] || '';
-    });
+  if (!userId) {
+    console.warn('No user id available for support info.');
+    return;
   }
 
-  if (error && error.code !== 'PGRST116') {
-    console.error('Load error:', error.message);
+  try {
+    const rows = await rest(
+      `support_info?user_id=eq.${encodeURIComponent(userId)}&select=*`
+    );
+    const data = rows?.[0] || null;
+    if (data) {
+      fields.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = data[id] || '';
+      });
+    }
+  } catch (error) {
+    fields.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    console.error('Load error:', error?.message || error);
   }
 }
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
 
+  if (!userId) {
+    alert('No user session found.');
+    return;
+  }
+
   const formData = {};
   fields.forEach(id => {
-    formData[id] = document.getElementById(id).value;
+    const el = document.getElementById(id);
+    formData[id] = el ? el.value : '';
   });
 
-  const { data, error } = await supabase
-    .from('support_info')
-    .upsert({ user_id: userId, ...formData }, { onConflict: ['user_id'] });
-
-  if (error) {
-    alert('Error saving info: ' + error.message);
-  } else {
+  try {
+    await rest('support_info', {
+      method: 'POST',
+      headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
+      body: JSON.stringify([{ user_id: userId, ...formData }]),
+    });
     alert('✅ Information saved successfully.');
+  } catch (error) {
+    alert('Error saving info: ' + (error?.message || error));
   }
 });
 

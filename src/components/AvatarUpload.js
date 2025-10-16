@@ -2,11 +2,11 @@
 import {
   SUPABASE_URL,
   SUPABASE_ANON_KEY,
-} from '../../supabaseClient.js?v=2025.10.16a';
+} from '../../supabaseClient.js?v=2025.10.16b';
 import {
   rest,
   getSessionFromStorage,
-} from '../../restClient.js?v=2025.10.16a';
+} from '../../restClient.js?v=2025.10.16b';
 
 export function setupAvatarUpload({
   user,

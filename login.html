@@ -72,11 +72,33 @@
       saveSession,
       clearSavedSession,
       getSessionFromStorage,
-    } from './supabaseClient.js?v=2025.10.16a';
-    import { rest } from './restClient.js?v=2025.10.16a';
+    } from './supabaseClient.js?v=2025.10.16b';
+    import { rest } from './restClient.js?v=2025.10.16b';
 
     const params   = new URLSearchParams(location.search);
-    const redirect = params.get('redirect') || 'dashboard.html';
+    const normalizeRedirect = (value) => {
+      if (!value) return null;
+      const trimmed = value.replace(/^\/+/, '').split('?')[0];
+      return trimmed || null;
+    };
+    const ALLOWED_REDIRECTS = new Set([
+      'dashboard.html',
+      'home.html',
+      'calendar.html',
+      'caregiver-checkin.html',
+      'caregiver-report.html',
+      'chat.html',
+      'mood-report.html',
+      'moodchecker_with_other_moods.html',
+      'wouldyourather.html',
+      'focus-week.html',
+      'documents/documents.html',
+      'documents/minutes-form.html',
+      'emergency-medical.html',
+      'group-settings.html'
+    ]);
+    const rawRedirect = normalizeRedirect(params.get('redirect'));
+    const redirect = ALLOWED_REDIRECTS.has(rawRedirect) ? rawRedirect : 'dashboard.html';
 
     const form      = document.getElementById('authForm');
     const emailEl   = document.getElementById('email');
@@ -318,7 +340,7 @@
 
   <script>
     (function(){
-      const version = window.STAR_BUILD_VERSION || '2025.10.16a';
+      const version = window.STAR_BUILD_VERSION || '2025.10.16b';
       if (!window.STAR_BUILD_VERSION) window.STAR_BUILD_VERSION = version;
       const ensureBadge = () => {
         if (document.getElementById('star-build-version')) return;

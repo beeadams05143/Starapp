@@ -83,7 +83,7 @@
 </div>
 
 <script type="module">
-import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16b';
+import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
 
 (function(){
   const Status = document.getElementById('cg-status');
@@ -261,13 +261,13 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16b';
 
   <!-- Single, clean module script -->
   <script type="module">
-    import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16b';
+    import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
 
     /* =============== Optional live data =============== */
     let loadFromSupabase = null;
     let formatEntryForList = null;
     try {
-      const mod = await import('./caregiver-report-supabase.js?v=2025.10.16b');
+      const mod = await import('./caregiver-report-supabase.js?v=2025.10.16d');
       loadFromSupabase = mod.loadCaregiverCheckins;
       formatEntryForList = mod.formatEntryForList;
     } catch (err) {
@@ -938,7 +938,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16b';
 
 <script>
   (function(){
-    const version = window.STAR_BUILD_VERSION || '2025.10.16b';
+    const version = window.STAR_BUILD_VERSION || '2025.10.16d';
     if (!window.STAR_BUILD_VERSION) window.STAR_BUILD_VERSION = version;
     const ensureBadge = () => {
       if (document.getElementById('star-build-version')) return;
@@ -972,7 +972,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16b';
 </script>
 
 <script type="module">
-import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16b';
+import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
 
 (() => {
   // Bail out quietly if the calendar HTML isn't present

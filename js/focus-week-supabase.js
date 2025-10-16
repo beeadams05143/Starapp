@@ -5,11 +5,11 @@
 import {
   rest,
   getSessionFromStorage,
-} from '../restClient.js?v=2025.10.16b';
+} from '../restClient.js?v=2025.10.16d';
 import {
   SUPABASE_URL,
   SUPABASE_ANON_KEY,
-} from '../supabaseClient.js?v=2025.10.16b';
+} from '../supabaseClient.js?v=2025.10.16d';
 
 const LS_KEY = 'focusOfWeek_v1';
 const BUCKET = 'weekly-plan-attachments';

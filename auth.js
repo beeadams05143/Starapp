@@ -5,7 +5,7 @@ import {
   saveSession,
   clearSavedSession,
   getSessionFromStorage,
-} from './supabaseClient.js?v=2025.10.16b';
+} from './supabaseClient.js?v=2025.10.16d';
 
 function normalizeSession(payload) {
   if (!payload || typeof payload !== 'object') return null;

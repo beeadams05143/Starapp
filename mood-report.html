@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>Mood Report</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="style.css?v=2025.10.16b" />
+  <link rel="stylesheet" href="style.css?v=2025.10.16d" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body.plain-page {
@@ -61,7 +61,7 @@
 <h2>Mood Share (Pie)</h2>
 <canvas id="moodPieChart" width="400" height="200"></canvas>
 <script type="module">
-  import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16b';
+  import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
 
   async function fetchMergedMoodEntries() {
     let supa = [];
@@ -113,7 +113,7 @@
 
 <!-- MODULE: fetch merged mood entries from Supabase + local -->
 <script type="module">
-  import { rest } from './restClient.js?v=2025.10.16b';
+  import { rest } from './restClient.js?v=2025.10.16d';
 
   async function fetchMergedMoodEntries() {
     // 1) Supabase
@@ -349,10 +349,10 @@
 </script>
 
 <!-- Other scripts you already use -->
-<script type="module" src="./script.js?v=2025.10.16b"></script>
-<script defer src="./ui-shell.js?v=2025.10.16b"></script>
-<script defer src="./scripts/appbar-drawer.js?v=2025.10.16b"></script>
-<script type="module" src="./avatar-float.js?v=2025.10.16b"></script>
+<script type="module" src="./script.js?v=2025.10.16d"></script>
+<script defer src="./ui-shell.js?v=2025.10.16d"></script>
+<script defer src="./scripts/appbar-drawer.js?v=2025.10.16d"></script>
+<script type="module" src="./avatar-float.js?v=2025.10.16d"></script>
 
 </body>
 </html>

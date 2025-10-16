@@ -321,6 +321,26 @@
 
   const DRAFT_KEY = 'cg-checkin-draft-v1';
 
+  const durationToMinutes = (value) => {
+    if (!value) return null;
+    const map = {
+      '0': 0,
+      '15–30 min': 30,
+      '30–60 min': 60,
+      '1–2 hrs': 120,
+      '2+ hrs': 150,
+    };
+    if (map[value] !== undefined) return map[value];
+    const num = Number(value);
+    return Number.isFinite(num) ? num : null;
+  };
+
+  const trimOrNull = (value) => {
+    if (value == null) return null;
+    const trimmed = String(value).trim();
+    return trimmed ? trimmed : null;
+  };
+
   // 4) Start logic once DOM is ready
   document.addEventListener('DOMContentLoaded', () => {
     formEl        = document.getElementById('cg-form');
@@ -550,7 +570,8 @@
         }
 
         const session = getSessionFromStorage();
-        const user_id = session?.user?.id;
+        const user = session?.user || null;
+        const user_id = user?.id;
         if (!user_id) throw new Error('Not signed in');
 
         const payload = buildPayload();
@@ -558,10 +579,50 @@
           payload.had_bm === true ||
           /yes/i.test(String(payload.had_bm ?? payload.bm_today ?? ''));
 
+        const group_id = typeof getCurrentGroupId === 'function' ? getCurrentGroupId() : null;
+        const caregiverName = trimOrNull(payload.caregiver_name) ||
+          trimOrNull(user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email);
+
+        const adlCategory = payload.adl_category || '';
+        const hygiene = adlCategory === 'Hygiene / Toileting';
+        const foodPrep = adlCategory === 'Cooking / Food';
+        const cleanup = adlCategory === 'Cleaning / Household';
+
+        const vocationalMinutes = durationToMinutes(payload.vocational_time);
+        const homeMinutes = durationToMinutes(payload.home_activity_time);
+        const publicMinutes = durationToMinutes(payload.public_activity_time);
+        const communityMinutes = [homeMinutes, publicMinutes]
+          .filter((n) => Number.isFinite(n))
+          .reduce((sum, n) => sum + n, 0);
+        const community_time = Number.isFinite(communityMinutes) && communityMinutes > 0 ? communityMinutes : null;
+
+        const newSkillScore = Number.isFinite(Number(payload.prompting_level))
+          ? Number(payload.prompting_level)
+          : null;
+
+        const caregiverNotes = [
+          payload.physical_notes,
+          payload.behavior_notes,
+          payload.community_notes,
+          payload.daily_living_notes,
+        ]
+          .map((note) => trimOrNull(note))
+          .filter(Boolean)
+          .join('\n\n') || null;
+
         const row = {
           user_id,
+          group_id,
+          caregiver_name: caregiverName,
           date: new Date().toISOString().slice(0,10),
           had_bm,
+          hygiene,
+          food_prep: foodPrep,
+          cleanup,
+          vocational_time: Number.isFinite(vocationalMinutes) ? vocationalMinutes : null,
+          community_time,
+          new_skill_score: newSkillScore,
+          caregiver_notes: caregiverNotes,
           payload,
           submitted_at: new Date().toISOString()
         };

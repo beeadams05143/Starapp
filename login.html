@@ -131,6 +131,22 @@
       return headers;
     };
 
+    const normalizeSession = (payload) => {
+      if (!payload || typeof payload !== 'object') return null;
+      if (payload.session) return payload.session;
+      if (!payload.access_token) return null;
+      return {
+        access_token: payload.access_token,
+        refresh_token: payload.refresh_token || null,
+        expires_in: payload.expires_in ?? null,
+        expires_at:
+          payload.expires_at ??
+          (payload.expires_in ? Math.floor(Date.now() / 1000) + Number(payload.expires_in || 0) : null),
+        token_type: payload.token_type || 'bearer',
+        user: payload.user ?? null,
+      };
+    };
+
     async function authRequest(path, { body, requireToken = false } = {}) {
       const res = await fetch(`${SUPABASE_URL}${path}`, {
         method: 'POST',
@@ -148,7 +164,8 @@
           'Auth request failed';
         throw new Error(message);
       }
-      if (payload?.session) saveSession(payload.session);
+      const session = normalizeSession(payload);
+      if (session) saveSession(session);
       return payload;
     }
 

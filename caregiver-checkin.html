@@ -75,6 +75,10 @@
             <label>Hours of sleep:
               <select name="hours_sleep" class="yn"><option value="">Select</option><option>4</option><option>6</option><option>8</option><option>10+</option></select>
             </label>
+            <label style="display:flex;align-items:center;gap:8px;margin-top:28px">
+              <input type="checkbox" name="sleep_onset_difficulty" style="width:auto"/>
+              <span>Difficulty falling asleep (took ~2+ hours)</span>
+            </label>
           </div>
           <div class="row cols-3 compact">
            <label for="had_bm">Had a BM today?</label>
@@ -118,6 +122,17 @@
               <div class="savedAt"><span id="intensityVal">0</span></div>
             </label>
           </div>
+          <hr class="soft"/>
+          <div class="subcap">Anomalies</div>
+          <div class="row cols-2">
+            <label>Noticed anything unusual?
+              <select name="behavior_anomaly_flag" class="yn"><option value="">Select</option><option>No</option><option>Yes</option></select>
+            </label>
+            <label>Trigger or context:
+              <input type="text" name="behavior_anomaly_trigger" placeholder="e.g., loud noise, new staff, schedule change"/>
+            </label>
+          </div>
+          <label>Anomaly details:<textarea name="behavior_anomaly_notes" placeholder="Describe what felt off, how long it lasted, what helped"></textarea></label>
           <label>Behavior notes:<textarea name="behavior_notes" placeholder="What happened, what helped"></textarea></label>
           <div class="controls">
             <div class="left-actions"><button class="btn" type="button" data-save>Save</button><span class="savedAt" data-savedat></span></div>

@@ -62,14 +62,16 @@ function buildSeries(entries){
 }
 
 /* ---------- main loader (safe) ---------- */
-export async function loadCaregiverCheckins(userId, { range='all' } = {}){
-  // Resolve user id if not passed
-  let uid = userId || null;
-  if (!uid) {
+export async function loadCaregiverCheckins(userId, { range='all', includeAllUsers=false, groupId=null } = {}){
+  // Resolve user id if needed
+  let uid = userId ?? null;
+  if (!includeAllUsers && !uid) {
     try {
       const session = getSessionFromStorage();
       uid = session?.user?.id || null;
     } catch {}
+  } else if (includeAllUsers) {
+    uid = null;
   }
 
   // Compute client-side date window
@@ -81,10 +83,12 @@ export async function loadCaregiverCheckins(userId, { range='all' } = {}){
   if (range === '6months') { start = new Date(now); start.setDate(start.getDate()-183); }
 
   try {
+    const filters = [];
+    if (uid) filters.push(`user_id=eq.${encodeURIComponent(uid)}`);
+    if (groupId) filters.push(`group_id=eq.${encodeURIComponent(groupId)}`);
+
     let path = 'caregiver_checkins?select=*';
-    if (uid) {
-      path += `&user_id=eq.${encodeURIComponent(uid)}`;
-    }
+    if (filters.length) path += `&${filters.join('&')}`;
     const data = await rest(path);
 
     // Normalize & filter client-side

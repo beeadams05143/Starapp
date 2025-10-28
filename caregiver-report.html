@@ -288,6 +288,65 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
     const destroy = key => { charts[key]?.destroy?.(); charts[key]=null; };
     const dayKey = d => new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString().slice(0,10);
     const axisTitle = text => ({ title:{display:true,text} });
+    const GROUP_KEY = 'currentGroupId';
+    const getCurrentGroupId = () => localStorage.getItem(GROUP_KEY) || null;
+
+    function summarizeEntries(entries){
+      const yesNo = key => {
+        const vals = entries.map(e => e[key]).filter(v => v === true || v === false);
+        const y = vals.filter(Boolean).length;
+        return vals.length ? Math.round((100 * y) / vals.length) : 0;
+      };
+      const sum = key => entries.reduce((acc, cur) => acc + (Number(cur[key] || 0)), 0);
+      const promptVals = entries
+        .map(e => Number(e.new_skill_score))
+        .filter(Number.isFinite);
+      const promptAvg = promptVals.length
+        ? +(promptVals.reduce((a, b) => a + b, 0) / promptVals.length).toFixed(2)
+        : '—';
+
+      return {
+        counts: { entries: entries.length },
+        percents: {
+          hygiene_yes: yesNo('hygiene'),
+          food_prep_yes: yesNo('food_prep'),
+          cleanup_yes: yesNo('cleanup'),
+        },
+        totals: {
+          vocational_minutes: sum('vocational_time'),
+          community_minutes: sum('community_time'),
+        },
+        averages: { new_skill_score: promptAvg },
+      };
+    }
+
+    function buildMonthlySeries(entries){
+      const byMonth = new Map();
+      for (const entry of entries){
+        const ts = new Date(entry.timestamp || entry.created_at || entry.submitted_at || Date.now());
+        const key = ts.toISOString().slice(0, 7);
+        const bucket = byMonth.get(key) || { h:0, f:0, c:0, prompts: [], total:0 };
+        bucket.total += 1;
+        if (entry.hygiene === true) bucket.h += 1;
+        if (entry.food_prep === true) bucket.f += 1;
+        if (entry.cleanup === true) bucket.c += 1;
+        const prompt = Number(entry.new_skill_score);
+        if (Number.isFinite(prompt)) bucket.prompts.push(prompt);
+        byMonth.set(key, bucket);
+      }
+
+      return Array.from(byMonth.entries())
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([month, bucket]) => ({
+          x: month,
+          hygiene_yes: bucket.h,
+          food_prep_yes: bucket.f,
+          cleanup_yes: bucket.c,
+          avg_new_skill_score: bucket.prompts.length
+            ? +(bucket.prompts.reduce((sum, v) => sum + v, 0) / bucket.prompts.length).toFixed(2)
+            : null,
+        }));
+    }
 
     /* =================== Caregiver table helpers =================== */
     const cgInputs = {
@@ -542,9 +601,16 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
 
     async function loadCaregiverData(){
       let res = null;
+      const activeGroupId = getCurrentGroupId();
 
       if (loadFromSupabase){
-        try { res = await loadFromSupabase(USER_ID, { range:'all' }); } catch {}
+        try {
+          res = await loadFromSupabase(USER_ID, {
+            range: 'all',
+            includeAllUsers: true,
+            groupId: activeGroupId
+          });
+        } catch {}
       }
 
       // If no rows from Supabase, keep structures valid
@@ -563,11 +629,22 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
         };
       }
 
-      window.latestCaregiverEntries = res.entries;
-      renderKPIs(res.summary);
-      drawHealthChart(res.charts.monthly);
-      drawSkillChart(res.charts.monthly);
-      cgState.entries = res.entries.slice();
+      let entries = res.entries || [];
+      if (activeGroupId) {
+        entries = entries.filter(entry => {
+          const gid = entry.group_id || entry.payload?.group_id || null;
+          return gid ? String(gid) === String(activeGroupId) : true;
+        });
+      }
+
+      const summary = summarizeEntries(entries);
+      const monthlySeries = buildMonthlySeries(entries);
+
+      window.latestCaregiverEntries = entries;
+      renderKPIs(summary);
+      drawHealthChart(monthlySeries);
+      drawSkillChart(monthlySeries);
+      cgState.entries = entries.slice();
       updateDateInputs(cgState.entries);
       applyCaregiverFilters();
       window.dispatchEvent(new Event('caregiverDataReady'));
@@ -983,19 +1060,62 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
   const title = document.getElementById('hc-monthTitle');
   if (!root || !grid || !title) return;
 
-  const kvBm  = document.getElementById('hc-kv-bm');
-  const kvSlp = document.getElementById('hc-kv-sleep');
-  const kvMan = document.getElementById('hc-kv-manic');
-  const kvSick= document.getElementById('hc-kv-sick');
+  const kvBm   = document.getElementById('hc-kv-bm');
+  const kvSlp  = document.getElementById('hc-kv-sleep');
+  const kvOnst = document.getElementById('hc-kv-onset');
+  const kvMan  = document.getElementById('hc-kv-manic');
+  const kvSick = document.getElementById('hc-kv-sick');
 
   function $(s){ return document.querySelector(s); }
   function pad(n){ return String(n).padStart(2,'0'); }
-  const EMO = { bm:'💩', sleep:'😴', manic:'⚡️', sick:'🤒' };
+  const GROUP_KEY = 'currentGroupId';
+  const getCurrentGroupId = () => localStorage.getItem(GROUP_KEY) || null;
+
+  function parseSleepOnset(value){
+    if (value == null || value === '') return null;
+    if (typeof value === 'boolean') return value ? 180 : 0;
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    const str = String(value).toLowerCase();
+    if (!str) return null;
+
+    if (/under\s*30|<\s*30/.test(str)) return 20;
+    if (/30(?:\s*[-–]\s*60)?/.test(str)) return 45;
+    if (/60(?:\s*[-–]\s*120)?|1-2|one to two/.test(str)) return 90;
+    if (/120(?:\s*[-–]\s*180)?|2-3|two to three/.test(str)) return 150;
+    if (/180|3\+|over 3|three plus/.test(str)) return 210;
+
+    const hours = str.match(/(\d+(?:\.\d+)?)\s*(?:h|hour)/);
+    if (hours) return Math.round(parseFloat(hours[1]) * 60);
+    const minutes = str.match(/(\d+(?:\.\d+)?)\s*(?:m|min)/);
+    if (minutes) return Math.round(parseFloat(minutes[1]));
+
+    return null;
+  }
+
+  function hasLateSleepOnset(source){
+    if (!source) return false;
+    const direct = source.sleep_onset_difficulty ?? source.difficulty_sleep_onset ?? null;
+    if (typeof direct === 'boolean') return direct;
+    if (typeof direct === 'string') {
+      const norm = direct.trim().toLowerCase();
+      if (['yes','true','y','1','late','on','🦉'].includes(norm)) return true;
+      if (['no','false','n','0','off'].includes(norm)) return false;
+    }
+    const mins = parseSleepOnset(
+      source.sleep_onset_duration ??
+      source.sleep_onset_minutes ??
+      source.sleep_onset ??
+      source.sleep_latency ??
+      source.sleep_latency_minutes
+    );
+    return mins != null && mins >= 120;
+  }
+  const EMO = { bm:'💩', sleep:'😴', onset:'🦉', manic:'⚡️', sick:'🤒' };
 
   let Y = (new Date()).getFullYear();
   let M = (new Date()).getMonth(); // 0-11
   let MAP = {};                    // { 'YYYY-MM-DD': { bm, sleep, manic, sick } }
-  const layers = { bm:true, sleep:true, manic:true, sick:true };
+  const layers = { bm:true, sleep:true, onset:true, manic:true, sick:true };
 
   function fmtMonth(y,m){ return new Date(y,m,1).toLocaleString(undefined,{month:'long',year:'numeric'}); }
   function monthBoundsUTC(y,m){
@@ -1018,7 +1138,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
     const startPad = first.getDay();
     for(let i=0;i<startPad;i++){ const b=document.createElement('div'); b.className='hc-cell'; grid.appendChild(b); }
 
-    let bmDays=0, sleepDays=0, manicDays=0, sickDays=0;
+  let bmDays=0, sleepDays=0, onsetDays=0, manicDays=0, sickDays=0;
 
     for(let day=1; day<=last.getDate(); day++){
       const cell = document.createElement('div'); cell.className='hc-cell'; cell.setAttribute('role','gridcell');
@@ -1030,6 +1150,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       const icons = document.createElement('div'); icons.className='hc-icons';
       if (rec.bm    && layers.bm   ){ const s=document.createElement('span'); s.textContent=EMO.bm;    s.setAttribute('aria-label','BM'); icons.appendChild(s); bmDays++; }
       if (rec.sleep!=null && rec.sleep>=8 && layers.sleep){ const s=document.createElement('span'); s.textContent=EMO.sleep; s.setAttribute('aria-label','Sleep ≥ 8h'); icons.appendChild(s); sleepDays++; }
+      if (rec.onset && layers.onset){ const s=document.createElement('span'); s.textContent=EMO.onset; s.setAttribute('aria-label','Late sleep onset'); icons.appendChild(s); onsetDays++; }
       if (rec.manic && layers.manic){ const s=document.createElement('span'); s.textContent=EMO.manic; s.setAttribute('aria-label','Manic'); icons.appendChild(s); manicDays++; }
       if (rec.sick  && layers.sick ){ const s=document.createElement('span'); s.textContent=EMO.sick;  s.setAttribute('aria-label','Sick'); icons.appendChild(s); sickDays++; }
 
@@ -1041,6 +1162,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
 
     kvBm  && (kvBm.textContent  = '💩 BM days: ' + bmDays);
     kvSlp && (kvSlp.textContent = '😴 Sleep ≥ 8h days: ' + sleepDays);
+    kvOnst && (kvOnst.textContent = '🦉 Late sleep onset days: ' + onsetDays);
     kvMan && (kvMan.textContent = '⚡️ Manic days: ' + manicDays);
     kvSick&& (kvSick.textContent= '🤒 Sick days: ' + sickDays);
   }
@@ -1050,6 +1172,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
     const { start, end } = monthBoundsUTC(Y, M);
     const session = getSessionFromStorage();
     const uid = session?.user?.id || null;
+    const groupId = getCurrentGroupId();
 
     try{
       const params = [
@@ -1057,7 +1180,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
         `created_at=gte.${encodeURIComponent(start)}`,
         `created_at=lt.${encodeURIComponent(end)}`
       ];
-      if (uid) params.push(`user_id=eq.${encodeURIComponent(uid)}`);
+      if (groupId) params.push(`group_id=eq.${encodeURIComponent(groupId)}`);
+      else if (uid) params.push(`user_id=eq.${encodeURIComponent(uid)}`);
       params.push('order=created_at.asc');
       const data = await rest(params.join('&'));
       if (Array.isArray(data)) {
@@ -1074,13 +1198,15 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
             if (hrsRaw.indexOf('10') >= 0) sleep = 10;
             else { const n = parseFloat(hrsRaw); if (isFinite(n)) sleep = n; }
           } else if (typeof hrsRaw === 'number') { sleep = hrsRaw; }
+          const onsetLate = hasLateSleepOnset(p) || hasLateSleepOnset(row);
           const manic = (/yes/i.test(String(p.aggression_flag || ''))) || ((+p.aggression_intensity || 0) > 0);
           const sick  = /no/i.test(String(p.appears_good_health || ''));
 
-          const cur = MAP[key] || { bm:false, sleep:null, manic:false, sick:false };
+          const cur = MAP[key] || { bm:false, sleep:null, onset:false, manic:false, sick:false };
           MAP[key] = {
             bm:    cur.bm    || bm,
             sleep: (sleep!=null && (cur.sleep==null || sleep>cur.sleep)) ? sleep : cur.sleep,
+            onset: cur.onset || onsetLate,
             manic: cur.manic || manic,
             sick:  cur.sick  || sick
           };
@@ -1096,17 +1222,23 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
           const e = ls[i];
           const dt = new Date(e.timestamp || e.created_at || Date.now());
           if (dt < new Date(start) || dt >= new Date(end)) continue;
+          if (groupId){
+            const gid = e.group_id || e.payload?.group_id || null;
+            if (gid && String(gid) !== String(groupId)) continue;
+          }
           const key = dt.getFullYear() + '-' + pad(dt.getMonth()+1) + '-' + pad(dt.getDate());
 
           const bm    = (e.had_bm === true) || (/yes/i.test(String(e.had_bm || e.bm_today || '')));
           const sleep = (typeof e.hours_sleep === 'number') ? e.hours_sleep : null;
+          const onsetLate = hasLateSleepOnset(e);
           const manic = (/yes/i.test(String(e.aggression_flag || ''))) || ((+e.aggression_intensity || 0) > 0);
           const sick  = /no/i.test(String(e.appears_good_health || ''));
 
-          const cur = MAP[key] || { bm:false, sleep:null, manic:false, sick:false };
+          const cur = MAP[key] || { bm:false, sleep:null, onset:false, manic:false, sick:false };
           MAP[key] = {
             bm:    cur.bm    || bm,
             sleep: (sleep!=null && (cur.sleep==null || sleep>cur.sleep)) ? sleep : cur.sleep,
+            onset: cur.onset || onsetLate,
             manic: cur.manic || manic,
             sick:  cur.sick  || sick
           };

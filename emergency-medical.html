@@ -55,6 +55,7 @@
       width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px;
     }
     textarea { min-height: 80px; resize: vertical; }
+    input.read-only, textarea.read-only { background:#f9fafb; color:#374151; }
 
     /* Responsive rows */
     .row { display: grid; gap: 12px; }
@@ -263,11 +264,72 @@
     const removeBtn = document.getElementById('removeBtn');
     const saveStatus = document.getElementById('saveStatus');
 
+    const GROUP_KEY = 'currentGroupId';
+    const session = getSessionFromStorage();
+    const currentUserId = session?.user?.id || null;
+
     let pendingFile = null;
+    let activeGroupId = null;
+    let ownerUserId = null;
+    let canEdit = true;
+
+    async function ensureGroupId(userId){
+      if (!userId) return null;
+      let gid = null;
+      try { gid = localStorage.getItem(GROUP_KEY) || null; } catch { gid = null; }
+      if (gid) return gid;
+      try{
+        const rows = await rest([
+          'group_members?select=group_id',
+          `user_id=eq.${encodeURIComponent(userId)}`,
+          'order=joined_at.asc',
+          'limit=1'
+        ].join('&'));
+        gid = rows?.[0]?.group_id || null;
+        if (gid) try { localStorage.setItem(GROUP_KEY, gid); } catch {}
+      }catch(err){
+        console.warn('ensureGroupId error', err);
+      }
+      return gid;
+    }
+
+    function applyEditMode(editable){
+      canEdit = !!editable;
+      const readOnly = !canEdit;
+
+      const toggleBtn = (btn, hideWhenReadOnly=false) => {
+        if (!btn) return;
+        btn.disabled = readOnly;
+        if (hideWhenReadOnly) btn.style.display = readOnly ? 'none' : '';
+      };
+
+      toggleBtn(chooseBtn, true);
+      toggleBtn(saveBtn, true);
+      toggleBtn(removeBtn, true);
+      toggleBtn(document.getElementById('addEmergency'), true);
+      toggleBtn(document.getElementById('addMedication'), true);
+      toggleBtn(document.getElementById('saveDraftBtn'), true);
+      toggleBtn(document.getElementById('saveCloudBtn'), true);
+
+      const lastSaved = document.getElementById('lastSaved');
+      if (lastSaved) lastSaved.textContent = readOnly ? 'View only' : '';
+
+      const inputs = document.querySelectorAll('input[type="text"], input[type="tel"], input[type="email"], textarea, select');
+      inputs.forEach(input => {
+        if (input === document.getElementById('profileInput')) return;
+        input.readOnly = readOnly;
+        if (readOnly) {
+          input.classList.add('read-only');
+        } else {
+          input.classList.remove('read-only');
+        }
+      });
+
+      renderLists(); // refresh remove buttons visibility
+    }
 
     async function initExistingPhoto() {
       try {
-        const session = getSessionFromStorage();
         const uid = session?.user?.id;
         if (uid) {
           const rows = await rest(`profiles?id=eq.${encodeURIComponent(uid)}&select=avatar_url&limit=1`);
@@ -291,20 +353,29 @@
       placeholder.style.display = 'grid';
       pendingFile = null;
     }
-    chooseBtn.addEventListener('click', () => input.click());
-    drop.addEventListener('click', () => input.click());
-    ['dragenter','dragover'].forEach(evt => drop.addEventListener(evt, e => { e.preventDefault(); drop.classList.add('dragover'); }));
-    ['dragleave','drop'].forEach(evt => drop.addEventListener(evt, e => { e.preventDefault(); drop.classList.remove('dragover'); }));
-    drop.addEventListener('drop', e => { const f = e.dataTransfer.files?.[0]; if (f && f.type.startsWith('image/')) handleChosenFile(f); });
-    input.addEventListener('change', e => { const f = e.target.files?.[0]; if (f && f.type.startsWith('image/')) handleChosenFile(f); });
+    chooseBtn.addEventListener('click', () => { if (canEdit) input.click(); });
+    drop.addEventListener('click', () => { if (canEdit) input.click(); });
+    ['dragenter','dragover'].forEach(evt => drop.addEventListener(evt, e => { if (!canEdit) return; e.preventDefault(); drop.classList.add('dragover'); }));
+    ['dragleave','drop'].forEach(evt => drop.addEventListener(evt, e => { if (!canEdit) return; e.preventDefault(); drop.classList.remove('dragover'); }));
+    drop.addEventListener('drop', e => {
+      if (!canEdit) return;
+      const f = e.dataTransfer.files?.[0];
+      if (f && f.type.startsWith('image/')) handleChosenFile(f);
+    });
+    input.addEventListener('change', e => { if (!canEdit) return; const f = e.target.files?.[0]; if (f && f.type.startsWith('image/')) handleChosenFile(f); });
     function handleChosenFile(file) { pendingFile = file; const url = URL.createObjectURL(file); setPreview(url); saveStatus.textContent = 'Ready to save…'; }
-    removeBtn.addEventListener('click', () => { localStorage.removeItem('emergencyProfilePhotoURL'); clearPreview(); saveStatus.textContent = 'Photo removed (not yet saved to cloud).'; });
+    removeBtn.addEventListener('click', () => {
+      if (!canEdit) return;
+      localStorage.removeItem('emergencyProfilePhotoURL');
+      clearPreview();
+      saveStatus.textContent = 'Photo removed (not yet saved to cloud).';
+    });
 
     saveBtn.addEventListener('click', async () => {
+      if (!canEdit) { alert('View-only mode: only the owner can update this record.'); return; }
       saveBtn.disabled = true; saveStatus.textContent = 'Saving photo…';
       if (!pendingFile && preview.src) { localStorage.setItem('emergencyProfilePhotoURL', preview.src); saveStatus.textContent = 'Saved locally.'; saveBtn.disabled = false; return; }
       try {
-        const session = getSessionFromStorage();
         const uid = session?.user?.id;
         if (!uid) throw new Error('Not signed in');
         const token = session?.access_token;
@@ -359,10 +430,10 @@
     function renderLists(){
       // contacts
       const ecList = $('ecList'); ecList.innerHTML = '';
-      contacts.forEach((c, i) => {
-        const el = document.createElement('div'); el.className = 'list-item';
+        contacts.forEach((c, i) => {
+          const el = document.createElement('div'); el.className = 'list-item';
         el.innerHTML = `<div>${c.name || ''} ${c.relationship ? '('+c.relationship+')' : ''} — ${[c.phone,c.email].filter(Boolean).join(' • ')}</div>
-                        <button class="btn secondary" data-remove-contact="${i}" type="button">Remove</button>`;
+                        ${canEdit ? `<button class="btn secondary" data-remove-contact="${i}" type="button">Remove</button>` : ''}`;
         ecList.appendChild(el);
       });
       ecList.querySelectorAll('[data-remove-contact]').forEach(btn => {
@@ -374,7 +445,7 @@
       medications.forEach((m, i) => {
         const el = document.createElement('div'); el.className = 'list-item';
         el.innerHTML = `<div>${m.name || ''}${m.dosage ? ' — '+m.dosage : ''}${m.frequency ? ' — '+m.frequency : ''}</div>
-                        <button class="btn secondary" data-remove-med="${i}" type="button">Remove</button>`;
+                        ${canEdit ? `<button class="btn secondary" data-remove-med="${i}" type="button">Remove</button>` : ''}`;
         medList.appendChild(el);
       });
       medList.querySelectorAll('[data-remove-med]').forEach(btn => {
@@ -383,6 +454,7 @@
     }
 
     $('addEmergency').addEventListener('click', () => {
+      if (!canEdit) return;
       const c = { name: $('ecName').value.trim(), relationship: $('ecRel').value.trim(), phone: $('ecPhone').value.trim(), email: $('ecEmail').value.trim() };
       if(!c.name){ alert('Add a contact name first.'); return; }
       contacts.push(c);
@@ -391,6 +463,7 @@
     });
 
     $('addMedication').addEventListener('click', () => {
+      if (!canEdit) return;
       const m = { name: $('medName').value.trim(), dosage: $('medDose').value.trim(), frequency: $('medFreq').value.trim() };
       if(!m.name){ alert('Add a medication name first.'); return; }
       medications.push(m);
@@ -440,6 +513,7 @@
 
     // Local draft
     function saveDraft(){
+      if (!canEdit) return;
       const payload = buildPayload();
       localStorage.setItem(DRAFT_KEY, JSON.stringify(payload));
       const ts = new Date().toLocaleString();
@@ -454,18 +528,21 @@
 
     // Cloud save/load
     async function saveToCloud(){
+      if (!canEdit) { alert('View-only mode: only the owner can update this record.'); return; }
       document.getElementById('cloudStatus').textContent = 'Saving…';
       try{
-        const session = getSessionFromStorage();
         const uid = session?.user?.id;
         if(!uid) throw new Error('Not signed in');
+        if (!activeGroupId) activeGroupId = await ensureGroupId(uid);
         const payload = buildPayload();
-        const row = { id: uid, ...payload, updated_at: new Date().toISOString() };
+        const rowId = ownerUserId || uid;
+        const row = { id: rowId, group_id: activeGroupId, ...payload, updated_at: new Date().toISOString() };
         await rest('emergency_medical?on_conflict=id', {
           method: 'POST',
           headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
           body: JSON.stringify([row]),
         });
+        ownerUserId = rowId;
         document.getElementById('cloudStatus').textContent = 'Saved to cloud ✓';
       }catch(err){
         console.error(err);
@@ -477,14 +554,19 @@
     async function loadFromCloud(){
       document.getElementById('cloudStatus').textContent = 'Loading…';
       try{
-        const session = getSessionFromStorage();
         const uid = session?.user?.id;
         if(!uid) throw new Error('Not signed in');
-        const rows = await rest(`emergency_medical?id=eq.${encodeURIComponent(uid)}&select=*&limit=1`);
+        const rows = await rest('emergency_medical?select=*&limit=1');
         const data = rows?.[0] || null;
+        ownerUserId = data?.id || null;
+        activeGroupId = data?.group_id || activeGroupId || await ensureGroupId(uid);
+        const editable = !ownerUserId || ownerUserId === uid;
+        applyEditMode(editable);
         if(!data){ document.getElementById('cloudStatus').textContent = 'No cloud record yet'; return; }
         hydrateForm(data);
-        document.getElementById('cloudStatus').textContent = 'Loaded from cloud ✓';
+        document.getElementById('cloudStatus').textContent = editable
+          ? 'Loaded from cloud ✓'
+          : 'Loaded from cloud — view only';
       }catch(err){
         console.error(err);
         document.getElementById('cloudStatus').textContent = 'Cloud load failed';
@@ -500,8 +582,9 @@
     document.querySelectorAll('input, textarea').forEach(el => el.addEventListener('input', debounce(saveDraft, 600)));
 
     // Init
-    loadDraft();  // local first
-    await loadFromCloud(); // then cloud (if available) to override local
+    if (!currentUserId) applyEditMode(false);
+    await loadFromCloud(); // load shared record first
+    if (canEdit) loadDraft(); // overlay local edits if you are the owner
 
     function debounce(fn, ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
   </script>

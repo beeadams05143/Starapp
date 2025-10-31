@@ -335,6 +335,33 @@
   let segs = [];
 
   const DRAFT_KEY = 'cg-checkin-draft-v1';
+  const GROUP_KEY = 'currentGroupId';
+
+  async function ensureGroupId(userId){
+    let groupId = null;
+    try {
+      groupId = typeof getCurrentGroupId === 'function' ? getCurrentGroupId() : null;
+    } catch { groupId = null; }
+
+    if (groupId) return groupId;
+    if (!userId) return null;
+
+    try {
+      const rows = await rest([
+        'group_members?select=group_id',
+        `user_id=eq.${encodeURIComponent(userId)}`,
+        'order=joined_at.asc',
+        'limit=1'
+      ].join('&'));
+      groupId = rows?.[0]?.group_id || null;
+      if (groupId) {
+        try { localStorage.setItem(GROUP_KEY, groupId); } catch {}
+      }
+    } catch (error) {
+      console.warn('ensureGroupId lookup failed', error);
+    }
+    return groupId;
+  }
 
   const durationToMinutes = (value) => {
     if (!value) return null;
@@ -594,7 +621,7 @@
           payload.had_bm === true ||
           /yes/i.test(String(payload.had_bm ?? payload.bm_today ?? ''));
 
-        const group_id = typeof getCurrentGroupId === 'function' ? getCurrentGroupId() : null;
+        const group_id = await ensureGroupId(user_id);
         const caregiverName = trimOrNull(payload.caregiver_name) ||
           trimOrNull(user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email);
 

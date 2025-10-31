@@ -291,6 +291,27 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
     const GROUP_KEY = 'currentGroupId';
     const getCurrentGroupId = () => localStorage.getItem(GROUP_KEY) || null;
 
+    async function ensureActiveGroupId(userId){
+      let gid = getCurrentGroupId();
+      if (gid) return gid;
+      if (!userId) return null;
+      try {
+        const rows = await rest([
+          'group_members?select=group_id',
+          `user_id=eq.${encodeURIComponent(userId)}`,
+          'order=joined_at.asc',
+          'limit=1'
+        ].join('&'));
+        gid = rows?.[0]?.group_id || null;
+        if (gid) {
+          try { localStorage.setItem(GROUP_KEY, gid); } catch {}
+        }
+      } catch (error) {
+        console.warn('ensureActiveGroupId error', error);
+      }
+      return gid;
+    }
+
     function summarizeEntries(entries){
       const yesNo = key => {
         const vals = entries.map(e => e[key]).filter(v => v === true || v === false);
@@ -601,7 +622,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
 
     async function loadCaregiverData(){
       let res = null;
-      const activeGroupId = getCurrentGroupId();
+      const activeGroupId = await ensureActiveGroupId(USER_ID);
 
       if (loadFromSupabase){
         try {
@@ -668,69 +689,99 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       return { start, end: now };
     }
 
- async function fetchMoodEntries(viewRange){
-  const { start, end } = moodBoundsFor(viewRange);
-  const startISO = start.toISOString();
-  const endISO   = end.toISOString();
+    async function fetchMoodEntries(viewRange){
+      const { start, end } = moodBoundsFor(viewRange);
+      const startISO = start.toISOString();
+      const endISO   = end.toISOString();
 
-  // 1) Remote rows (use BOTH date and created_at safely)
-  let supaRows = [];
-  try {
-    const path = [
-      'mood_entries?select=created_at,date,mood,intensity,notes,sleep_hours,user_id',
-      `created_at=gte.${encodeURIComponent(startISO)}`,
-      `created_at=lte.${encodeURIComponent(endISO)}`,
-      'order=created_at.asc',
-    ].join('&');
-    const data = await rest(path);
-    if (Array.isArray(data)) {
-      supaRows = data.map(r => {
-        const ts = r.date ? new Date(r.date) : new Date(r.created_at);
-        return {
-          id: `s:${ts.toISOString()}`,
-          timestamp: ts.toISOString(),
-          dateObj: ts,
-          mood: r.mood || 'Unknown',
-          intensity: (r.intensity != null) ? +r.intensity : null,
-          notes: r.notes ?? null,
-          sleep_hours: r.sleep_hours ?? null,
-          source: 'supabase'
-        };
-      });
-    }
-  } catch (e) {
-    console.error('fetchMoodEntries REST error', e);
-  }
-
-  // 2) Local rows fallback
-  const localRows = (JSON.parse(localStorage.getItem('moodEntries') || '[]'))
-    .filter(r => {
-      const ts = new Date(r.timestamp || r.created_at || r.date || Date.now());
-      return ts >= start && ts <= end;
-    })
-    .map(r => {
-      const ts = new Date(r.timestamp || r.created_at || r.date || Date.now());
-      return {
-        id: `l:${ts.toISOString()}:${r.mood||''}:${r.intensity??''}`,
-        timestamp: ts.toISOString(),
-        dateObj: ts,
-        mood: r.mood || 'Unknown',
-        intensity: (r.intensity != null) ? +r.intensity : null,
-        notes: r.notes ?? r.note ?? null,
-        sleep_hours: r.sleep_hours ?? null,
-        source: 'local'
+      const toNumber = (value) => {
+        if (value === null || value === undefined || value === '') return null;
+        if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+        const num = Number(value);
+        return Number.isFinite(num) ? num : null;
       };
-    });
 
-  // 3) Merge & de-dupe (prefer Supabase)
-  const byKey = new Map();
-  [...supaRows, ...localRows].forEach(row => {
-    const key = `${row.timestamp}|${row.mood}|${row.intensity ?? ''}`;
-    if (!byKey.has(key) || row.source === 'supabase') byKey.set(key, row);
-  });
+      const pickSleepHours = (row) => {
+        const candidates = [
+          row?.sleep_hours,
+          row?.sleepHours,
+          row?.sleep,
+          row?.hours_sleep,
+          row?.hoursSleep,
+          row?.payload?.sleep_hours,
+          row?.payload?.sleepHours,
+          row?.payload?.hours_sleep,
+          row?.content?.sleep_hours,
+          row?.content_json?.sleep_hours,
+          row?.content_json?.hours_sleep,
+          row?.notes?.sleep_hours
+        ];
+        for (const value of candidates) {
+          const num = toNumber(value);
+          if (num !== null) return num;
+        }
+        return null;
+      };
 
-  return [...byKey.values()].sort((a,b) => a.dateObj - b.dateObj);
-}
+      // 1) Remote rows (use BOTH date and created_at safely)
+      let supaRows = [];
+      try {
+        const query = [
+          'select=*',
+          `created_at=gte.${encodeURIComponent(startISO)}`,
+          `created_at=lte.${encodeURIComponent(endISO)}`,
+          'order=created_at.asc',
+        ].join('&');
+        const data = await rest(`mood_entries?${query}`);
+        if (Array.isArray(data)) {
+          supaRows = data.map(r => {
+            const ts = r.date ? new Date(r.date) : new Date(r.created_at || r.timestamp || Date.now());
+            const sleep = pickSleepHours(r);
+            return {
+              id: `s:${ts.toISOString()}:${r.id ?? ''}`,
+              timestamp: ts.toISOString(),
+              dateObj: ts,
+              mood: r.mood || 'Unknown',
+              intensity: toNumber(r.intensity),
+              notes: r.notes ?? r.note ?? null,
+              sleep_hours: sleep,
+              source: 'supabase'
+            };
+          });
+        }
+      } catch (e) {
+        console.warn('fetchMoodEntries REST error', e?.message || e);
+      }
+
+      // 2) Local rows fallback
+      const localRows = (JSON.parse(localStorage.getItem('moodEntries') || '[]'))
+        .filter(r => {
+          const ts = new Date(r.timestamp || r.created_at || r.date || Date.now());
+          return ts >= start && ts <= end;
+        })
+        .map(r => {
+          const ts = new Date(r.timestamp || r.created_at || r.date || Date.now());
+          return {
+            id: `l:${ts.toISOString()}:${r.mood||''}:${r.intensity??''}`,
+            timestamp: ts.toISOString(),
+            dateObj: ts,
+            mood: r.mood || 'Unknown',
+            intensity: toNumber(r.intensity),
+            notes: r.notes ?? r.note ?? null,
+            sleep_hours: toNumber(r.sleep_hours),
+            source: 'local'
+          };
+        });
+
+      // 3) Merge & de-dupe (prefer Supabase)
+      const byKey = new Map();
+      [...supaRows, ...localRows].forEach(row => {
+        const key = `${row.timestamp}|${row.mood}|${row.intensity ?? ''}`;
+        if (!byKey.has(key) || row.source === 'supabase') byKey.set(key, row);
+      });
+
+      return [...byKey.values()].sort((a,b) => a.dateObj - b.dateObj);
+    }
 
 
     let pieMain=null;
@@ -945,6 +996,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       drawSleepOverlay(full);
     }
 
+    await ensureActiveGroupId(USER_ID);
     await loadCaregiverData();
     await renderMoodSection();
     await renderWyr();

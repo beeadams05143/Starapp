@@ -343,6 +343,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
 
     function buildMonthlySeries(entries){
       const byMonth = new Map();
+      const byDay = new Map(); // YYYY-MM-DD -> { prompts: [] }
       for (const entry of entries){
         const ts = new Date(entry.timestamp || entry.created_at || entry.submitted_at || Date.now());
         const key = ts.toISOString().slice(0, 7);
@@ -354,19 +355,37 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
         const prompt = Number(entry.new_skill_score);
         if (Number.isFinite(prompt)) bucket.prompts.push(prompt);
         byMonth.set(key, bucket);
+
+        if (Number.isFinite(prompt)) {
+          const dayKeyStr = ts.toISOString().slice(0, 10);
+          const dayBucket = byDay.get(dayKeyStr) || { prompts: [] };
+          dayBucket.prompts.push(prompt);
+          byDay.set(dayKeyStr, dayBucket);
+        }
       }
 
-      return Array.from(byMonth.entries())
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([month, bucket]) => ({
+      const monthly = Array.from(byMonth.entries())
+        .sort(([a],[b])=>a.localeCompare(b))
+        .map(([month,bucket])=>({
           x: month,
           hygiene_yes: bucket.h,
           food_prep_yes: bucket.f,
           cleanup_yes: bucket.c,
           avg_new_skill_score: bucket.prompts.length
-            ? +(bucket.prompts.reduce((sum, v) => sum + v, 0) / bucket.prompts.length).toFixed(2)
+            ? +(bucket.prompts.reduce((sum,v)=>sum+v,0)/bucket.prompts.length).toFixed(2)
             : null,
         }));
+
+      const promptDaily = Array.from(byDay.entries())
+        .sort(([a],[b])=>a.localeCompare(b))
+        .map(([day,bucket])=>({
+          x: day,
+          avg_new_skill_score: bucket.prompts.length
+            ? +(bucket.prompts.reduce((sum,v)=>sum+v,0)/bucket.prompts.length).toFixed(2)
+            : null,
+        }));
+
+      return { monthly, promptDaily };
     }
 
     /* =================== Caregiver table helpers =================== */
@@ -637,7 +656,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       // If no rows from Supabase, keep structures valid
       if (!res || !Array.isArray(res.entries)) {
         const entries = [];
-        const monthly = [];
         res = {
           entries,
           summary:{
@@ -646,7 +664,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
             totals:{vocational_minutes:0,community_minutes:0},
             averages:{new_skill_score:'—'}
           },
-          charts:{ monthly }
+          charts:{ monthly: [], promptDaily: [] }
         };
       }
 
@@ -659,12 +677,12 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       }
 
       const summary = summarizeEntries(entries);
-      const monthlySeries = buildMonthlySeries(entries);
+      const { monthly, promptDaily } = buildMonthlySeries(entries);
 
       window.latestCaregiverEntries = entries;
       renderKPIs(summary);
-      drawHealthChart(monthlySeries);
-      drawSkillChart(monthlySeries);
+      drawHealthChart(monthly);
+      drawSkillChart(promptDaily);
       cgState.entries = entries.slice();
       updateDateInputs(cgState.entries);
       applyCaregiverFilters();
@@ -697,8 +715,24 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       const toNumber = (value) => {
         if (value === null || value === undefined || value === '') return null;
         if (typeof value === 'number') return Number.isFinite(value) ? value : null;
-        const num = Number(value);
-        return Number.isFinite(num) ? num : null;
+        if (typeof value === 'string') {
+          const trimmed = value.trim();
+          if (!trimmed) return null;
+          const direct = Number(trimmed);
+          if (Number.isFinite(direct)) return direct;
+          if (/\b10\+|\bten\+/i.test(trimmed)) return 10;
+          const range = trimmed.match(/(-?\d+(?:\.\d+)?)\s*(?:[-–to]+\s*)(-?\d+(?:\.\d+)?)/i);
+          if (range) {
+            const upper = Number(range[2]);
+            if (Number.isFinite(upper)) return upper;
+          }
+          const match = trimmed.match(/-?\d+(?:\.\d+)?/);
+          if (match) {
+            const parsed = Number(match[0]);
+            if (Number.isFinite(parsed)) return parsed;
+          }
+        }
+        return null;
       };
 
       const pickSleepHours = (row) => {
@@ -837,6 +871,46 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       const den=Math.sqrt(dx*dy); return den ? +(num/den).toFixed(3) : null;
     }
 
+    function parseSleepHours(val){
+      if (val === null || val === undefined || val === '') return null;
+      if (typeof val === 'number') return Number.isFinite(val) ? val : null;
+      const str = String(val).trim();
+      if (!str) return null;
+      const direct = Number(str);
+      if (Number.isFinite(direct)) return direct;
+      if (/\b10\+|\bten\+/i.test(str)) return 10;
+      const range = str.match(/(-?\d+(?:\.\d+)?)\s*(?:[-–to]+\s*)(-?\d+(?:\.\d+)?)/i);
+      if (range) {
+        const upper = Number(range[2]);
+        if (Number.isFinite(upper)) return upper;
+      }
+      const match = str.match(/-?\d+(?:\.\d+)?/);
+      if (match) {
+        const parsed = Number(match[0]);
+        if (Number.isFinite(parsed)) return parsed;
+      }
+      return null;
+    }
+
+    function caregiverSleepHours(entry){
+      const payload = entry?.payload || {};
+      const candidates = [
+        entry?.sleep_hours,
+        entry?.hours_sleep,
+        payload.sleep_hours,
+        payload.hours_sleep,
+        payload.sleepHours,
+        payload.hoursSleep,
+        payload.sleep_duration,
+        payload.sleepDuration
+      ];
+      for (const val of candidates){
+        const hrs = parseSleepHours(val);
+        if (hrs !== null) return hrs;
+      }
+      return null;
+    }
+
     function drawSleepOverlay(allMoodEntries){
       const end=new Date(); const start=new Date(end); start.setDate(end.getDate()-6); start.setHours(0,0,0,0);
       const moods=allMoodEntries.filter(e=>e.dateObj>=start&&e.dateObj<=end);
@@ -845,13 +919,19 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       const dk=d=>new Date(d.getFullYear(),d.getMonth(),d.getDate()).toISOString().slice(0,10);
       const sleepByDay=new Map(), engByDay=new Map();
       for(const e of moods){
-        const k=dk(e.dateObj); const s=e.sleep_hours ?? (e.notes?.match(/sleep(?:ed)?\s*[:=\-]?\s*(\d+(?:\.\d+)?)/i)?.[1]);
-        if (s!=null) sleepByDay.set(k,+s);
+        const k=dk(e.dateObj);
+        const sourceVal = e.sleep_hours ?? (e.notes?.match(/sleep(?:ed)?\s*[:=\-]?\s*(\d+(?:\.\d+)?)/i)?.[1]) ?? null;
+        const parsed = parseSleepHours(sourceVal);
+        if (parsed !== null) sleepByDay.set(k, parsed);
       }
       for(const e of caregiver){
         const k=dk(new Date(e.timestamp||e.created_at||Date.now()));
         const mins=(+e.home_time||0)+(+e.vocational_time||0)+(+e.community_time||0)+(+e.leisure_time||0);
         engByDay.set(k,(engByDay.get(k)||0)+mins);
+        if (!sleepByDay.has(k)){
+          const hrs = caregiverSleepHours(e);
+          if (hrs !== null) sleepByDay.set(k, hrs);
+        }
       }
 
       const allDays=[...new Set([...sleepByDay.keys(),...engByDay.keys()])].sort();
@@ -864,10 +944,23 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
           labels,
           datasets:[
             { type:'bar',  label:'Engagement Minutes', data:minutes, yAxisID:'y', order:2, datalabels:{anchor:'end',align:'top',formatter:v=>v?String(v):''} },
-            { type:'line', label:'Sleep Hours', data:hours,   yAxisID:'y1', tension:.25, pointRadius:3, datalabels:{align:'top',formatter:v=>v==null?'':`${v}h`,font:{size:10}}, order:1 }
+            { type:'line', label:'Sleep Hours', data:hours,   yAxisID:'y1', tension:.25, pointRadius:3, datalabels:{align:'top',formatter:v=>v==null?'':`${v}h (${Math.round(v*60)}m)`,font:{size:10}}, order:1 }
           ]
         },
         options:{ responsive:true, interaction:{mode:'index',intersect:false},
+          plugins:{
+            tooltip:{
+              callbacks:{
+                label(context){
+                  if (context.dataset.label === 'Sleep Hours' && context.parsed.y != null){
+                    const hrs = context.parsed.y;
+                    return `Sleep: ${hrs} h (${Math.round(hrs*60)} min)`;
+                  }
+                  return `${context.dataset.label}: ${context.parsed.y}`;
+                }
+              }
+            }
+          },
           scales:{ y:{beginAtZero:true,...axisTitle('Minutes')}, y1:{beginAtZero:true,suggestedMax:12,position:'right',grid:{drawOnChartArea:false},...axisTitle('Hours')} } }
       });
 

@@ -374,7 +374,6 @@ export async function loadCaregiverCheckins(
   try {
     const filters = [];
     if (uid) filters.push(`user_id=eq.${encodeURIComponent(uid)}`);
-    if (groupId) filters.push(`group_id=eq.${encodeURIComponent(groupId)}`);
 
     const params = [
       'select=*',

@@ -17,7 +17,10 @@
     .panel{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin:14px 0}
     .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:center;margin:.5rem 0 .75rem}
     select,button{padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:#fff}
-    button{cursor:pointer}
+    button{cursor:pointer;transition:background .15s ease}
+    button:hover{background:#f5f5f5}
+    button:active{background:#f0f0f0}
+    button:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
 
     table{width:100%;border-collapse:collapse}
     th,td{border:1px solid #ddd;padding:8px;vertical-align:top}
@@ -144,7 +147,12 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       <div class="toolbar">
         <label>From <input type="date" id="cgStart"></label>
         <label>To <input type="date" id="cgEnd"></label>
-        <button id="cgApply">Apply</button>
+        <button id="cgApply" type="button">Apply v2025-11-03b</button>
+        <label>Caregiver
+          <select id="cgCaregiver">
+            <option value="all">All caregivers</option>
+          </select>
+        </label>
 
         <span style="flex:1"></span>
         <button id="cgPdf"  class="no-export">📄 PDF</button>
@@ -393,16 +401,148 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       start: $('#cgStart'),
       end: $('#cgEnd'),
       apply: $('#cgApply'),
+      caregiver: $('#cgCaregiver'),
       count: $('#cgCount'),
       pdf: $('#cgPdf'),
       csv: $('#cgCsv'),
       tbody: document.getElementById('cgTbody')
     };
 
+    const CAREGIVER_FILTER_KEY = 'caregiverReportCaregiverFilter';
+    const CAREGIVER_ID_PREFIX = 'id:';
+    const CAREGIVER_NAME_PREFIX = 'name:';
+
+    const readCaregiverFilter = () => {
+      try {
+        const stored = localStorage.getItem(CAREGIVER_FILTER_KEY);
+        return stored === null ? null : stored;
+      } catch {
+        return null;
+      }
+    };
+    const writeCaregiverFilter = (value) => {
+      try { localStorage.setItem(CAREGIVER_FILTER_KEY, value); } catch {}
+    };
+
     const cgState = {
       entries: [],
-      filtered: []
+      filtered: [],
+      caregiverFilter: readCaregiverFilter() || 'all'
     };
+
+    const caregiverIdFromEntry = (entry = {}) => {
+      const payload = entry.payload || {};
+      const candidates = [
+        entry.user_id,
+        entry.caregiver_id,
+        payload.user_id,
+        payload.caregiver_id,
+        payload.owner_id
+      ];
+      for (const value of candidates) {
+        if (value === null || value === undefined) continue;
+        const str = String(value).trim();
+        if (str) return str;
+      }
+      return '';
+    };
+
+    const caregiverNameFromEntry = (entry = {}) => {
+      const payload = entry.payload || {};
+      const candidates = [
+        entry.caregiver_name,
+        payload.caregiver_name,
+        payload.caregiver,
+        payload.submitted_by,
+        payload.entered_by,
+        payload.caregiver_email
+      ];
+      for (const value of candidates) {
+        if (typeof value !== 'string') continue;
+        const trimmed = value.trim();
+        if (trimmed) return trimmed;
+      }
+      return '';
+    };
+
+    const matchesCaregiverFilter = (entry, filterValue) => {
+      if (!filterValue || filterValue === 'all') return true;
+      if (filterValue.startsWith(CAREGIVER_ID_PREFIX)) {
+        const id = caregiverIdFromEntry(entry);
+        return id && id === filterValue.slice(CAREGIVER_ID_PREFIX.length);
+      }
+      if (filterValue.startsWith(CAREGIVER_NAME_PREFIX)) {
+        const name = caregiverNameFromEntry(entry).toLowerCase();
+        return name && name === filterValue.slice(CAREGIVER_NAME_PREFIX.length);
+      }
+      return true;
+    };
+
+    function populateCaregiverOptions(entries){
+      const select = cgInputs.caregiver;
+      if (!select) return;
+
+      const storedFilter = readCaregiverFilter();
+      const previous = cgState.caregiverFilter || storedFilter || 'all';
+      const hadStoredPreference = storedFilter !== null;
+      select.innerHTML = '';
+
+      const addOption = (value, label) => {
+        if (!value) return;
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = label || value;
+        select.appendChild(option);
+      };
+
+      addOption('all', 'All caregivers');
+
+      const session = getSessionFromStorage();
+      const selfId = session?.user?.id ? String(session.user.id) : '';
+      const selfLabel = session?.user?.user_metadata?.full_name ||
+        session?.user?.user_metadata?.name ||
+        session?.user?.email ||
+        (selfId ? `Me (${selfId.slice(0,6)}…)` : '');
+      if (selfId) {
+        addOption(CAREGIVER_ID_PREFIX + selfId, selfLabel ? `${selfLabel} (Me)` : 'My check-ins');
+      }
+
+      const optionMap = new Map();
+      for (const entry of entries) {
+        const id = caregiverIdFromEntry(entry);
+        const name = caregiverNameFromEntry(entry);
+        if (id) {
+          const key = CAREGIVER_ID_PREFIX + id;
+          if (!optionMap.has(key)) {
+            optionMap.set(key, name || `Caregiver ${id.slice(0,6)}…`);
+          }
+        } else if (name) {
+          const key = CAREGIVER_NAME_PREFIX + name.toLowerCase();
+          if (!optionMap.has(key)) {
+            optionMap.set(key, name);
+          }
+        }
+      }
+
+      const existingValues = new Set(Array.from(select.options).map(opt => opt.value));
+      for (const [value, label] of optionMap.entries()) {
+        if (existingValues.has(value)) continue;
+        addOption(value, label || 'Unnamed caregiver');
+        existingValues.add(value);
+      }
+
+      let desired = previous;
+      const available = Array.from(select.options).map(opt => opt.value);
+      if (!available.includes(desired)) {
+        desired = selfId ? CAREGIVER_ID_PREFIX + selfId : 'all';
+      }
+      if (!hadStoredPreference && desired === 'all' && selfId) {
+        desired = CAREGIVER_ID_PREFIX + selfId;
+      }
+      select.value = desired;
+      cgState.caregiverFilter = desired;
+      writeCaregiverFilter(desired);
+    }
 
     const fallbackFormat = (e) => {
       const yn = (val) => val === true ? 'Yes' : val === false ? 'No' : '—';
@@ -422,9 +562,29 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
 
     const normalizeDateOnly = (value) => {
       if (!value) return null;
-      const parts = value.split('-');
-      if (parts.length !== 3) return null;
-      const date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]), 0, 0, 0, 0);
+      const trimmed = String(value).trim();
+      if (!trimmed) return null;
+
+      let year, month, day;
+
+      if (trimmed.includes('-')) {
+        const parts = trimmed.split('-');
+        if (parts.length !== 3) return null;
+        year = Number(parts[0]);
+        month = Number(parts[1]) - 1;
+        day = Number(parts[2]);
+      } else if (trimmed.includes('/')) {
+        const parts = trimmed.split('/');
+        if (parts.length !== 3) return null;
+        month = Number(parts[0]) - 1;
+        day = Number(parts[1]);
+        year = Number(parts[2]);
+      } else {
+        return null;
+      }
+
+      if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) return null;
+      const date = new Date(Date.UTC(year, month, day));
       return Number.isFinite(date.getTime()) ? date : null;
     };
 
@@ -433,8 +593,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       if (!raw) return null;
       const dt = new Date(raw);
       if (Number.isNaN(dt.getTime())) return null;
-      dt.setHours(0,0,0,0);
-      return dt;
+      return new Date(Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate()));
     }
 
     function updateDateInputs(entries){
@@ -529,7 +688,9 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
     function filterCaregiverEntries(entries){
       const start = normalizeDateOnly(cgInputs.start?.value || '');
       const end   = normalizeDateOnly(cgInputs.end?.value || '');
+      const caregiverFilter = cgState.caregiverFilter || 'all';
       return entries.filter(entry => {
+        if (!matchesCaregiverFilter(entry, caregiverFilter)) return false;
         const date = normalizeEntryDate(entry);
         if (!date) return false;
         if (start && date < start) return false;
@@ -544,6 +705,10 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
         renderCaregiverTable([]);
         updateCgSummary([], 0);
         return;
+      }
+      if (cgInputs.caregiver) {
+        cgState.caregiverFilter = cgInputs.caregiver.value || 'all';
+        writeCaregiverFilter(cgState.caregiverFilter);
       }
       const filtered = filterCaregiverEntries(entries);
       cgState.filtered = filtered;
@@ -641,14 +806,13 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
 
     async function loadCaregiverData(){
       let res = null;
-      const activeGroupId = await ensureActiveGroupId(USER_ID);
+      await ensureActiveGroupId(USER_ID);
 
       if (loadFromSupabase){
         try {
           res = await loadFromSupabase(USER_ID, {
             range: 'all',
-            includeAllUsers: true,
-            groupId: activeGroupId
+            includeAllUsers: true
           });
         } catch {}
       }
@@ -669,13 +833,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       }
 
       let entries = res.entries || [];
-      if (activeGroupId) {
-        entries = entries.filter(entry => {
-          const gid = entry.group_id || entry.payload?.group_id || null;
-          return gid ? String(gid) === String(activeGroupId) : true;
-        });
-      }
-
       const summary = summarizeEntries(entries);
       const { monthly, promptDaily } = buildMonthlySeries(entries);
 
@@ -684,6 +841,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       drawHealthChart(monthly);
       drawSkillChart(promptDaily);
       cgState.entries = entries.slice();
+      populateCaregiverOptions(cgState.entries);
       updateDateInputs(cgState.entries);
       applyCaregiverFilters();
       window.dispatchEvent(new Event('caregiverDataReady'));
@@ -1054,9 +1212,18 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
     /* =================== Wire & boot =================== */
     $('#moodRange').addEventListener('change', renderMoodSection);
 
-    cgInputs.apply?.addEventListener('click', () => applyCaregiverFilters());
+    cgInputs.apply?.addEventListener('click', (event) => {
+      event?.preventDefault?.();
+      console.log('[Caregiver Report] Apply clicked');
+      applyCaregiverFilters();
+    });
     cgInputs.start?.addEventListener('change', () => applyCaregiverFilters());
     cgInputs.end?.addEventListener('change', () => applyCaregiverFilters());
+    cgInputs.caregiver?.addEventListener('change', () => {
+      cgState.caregiverFilter = cgInputs.caregiver.value || 'all';
+      writeCaregiverFilter(cgState.caregiverFilter);
+      applyCaregiverFilters();
+    });
     cgInputs.csv?.addEventListener('click', exportCaregiverCsv);
     cgInputs.pdf?.addEventListener('click', exportCaregiverPdf);
 
@@ -1196,7 +1363,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
 </script>
 
 <script type="module">
-import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
+import { rest } from './restClient.js?v=2025.10.16d';
 
 (() => {
   // Bail out quietly if the calendar HTML isn't present
@@ -1213,8 +1380,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
 
   function $(s){ return document.querySelector(s); }
   function pad(n){ return String(n).padStart(2,'0'); }
-  const GROUP_KEY = 'currentGroupId';
-  const getCurrentGroupId = () => localStorage.getItem(GROUP_KEY) || null;
 
   function parseSleepOnset(value){
     if (value == null || value === '') return null;
@@ -1315,18 +1480,12 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
   async function loadMonth(){
     MAP = {};
     const { start, end } = monthBoundsUTC(Y, M);
-    const session = getSessionFromStorage();
-    const uid = session?.user?.id || null;
-    const groupId = getCurrentGroupId();
-
     try{
       const params = [
         'caregiver_checkins?select=id,user_id,created_at,submitted_at,had_bm,payload',
         `created_at=gte.${encodeURIComponent(start)}`,
         `created_at=lt.${encodeURIComponent(end)}`
       ];
-      if (groupId) params.push(`group_id=eq.${encodeURIComponent(groupId)}`);
-      else if (uid) params.push(`user_id=eq.${encodeURIComponent(uid)}`);
       params.push('order=created_at.asc');
       const data = await rest(params.join('&'));
       if (Array.isArray(data)) {
@@ -1367,10 +1526,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
           const e = ls[i];
           const dt = new Date(e.timestamp || e.created_at || Date.now());
           if (dt < new Date(start) || dt >= new Date(end)) continue;
-          if (groupId){
-            const gid = e.group_id || e.payload?.group_id || null;
-            if (gid && String(gid) !== String(groupId)) continue;
-          }
           const key = dt.getFullYear() + '-' + pad(dt.getMonth()+1) + '-' + pad(dt.getDate());
 
           const bm    = (e.had_bm === true) || (/yes/i.test(String(e.had_bm || e.bm_today || '')));

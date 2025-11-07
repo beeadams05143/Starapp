@@ -50,11 +50,79 @@
     .hc-emo{font-size:22px}
     .hc-grid{display:grid;grid-template-columns:repeat(7,minmax(110px,1fr));border-top:1px solid #e9e9e9}
     .hc-dow{padding:10px 8px;text-align:center;font-weight:800;color:#6b7280;background:#fafafa;border-bottom:1px solid #e9e9e9}
-    .hc-cell{min-height:100px;padding:8px;border-bottom:1px solid #e9e9e9;border-right:1px solid #e9e9e9;position:relative;background:#fff}
+    .hc-cell{min-height:120px;padding:8px;border-bottom:1px solid #e9e9e9;border-right:1px solid #e9e9e9;position:relative;background:#fff;cursor:pointer}
     .hc-cell:nth-child(7n){border-right:0}
     .hc-date{font-weight:900;font-size:13px;color:#111}
-    .hc-icons{display:flex;gap:6px;margin-top:6px;font-size:28px;line-height:1}
+    .hc-icons{display:flex;gap:6px;margin-top:6px;font-size:24px;line-height:1;flex-wrap:wrap}
     .hc-empty{color:#6b7280;position:absolute;left:8px;bottom:8px;font-size:12px}
+    .hc-events{margin-top:6px;display:flex;flex-direction:column;gap:4px}
+    .hc-event-pill{display:inline-flex;align-items:center;gap:6px;padding:3px 6px;border-radius:8px;background:#eef2ff;font-size:11px;font-weight:600;color:#1d4ed8;max-width:100%}
+    .hc-event-pill span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .hc-legend label{display:flex;align-items:center;gap:4px;font-weight:600}
+    .hc-legend select{padding:6px 8px;border-radius:8px;border:1px solid #e5e7eb;background:#fff}
+
+    /* ===== Quick Look summary ===== */
+    .is-hidden{display:none !important}
+    .quick-look{border:1px dashed #d4d4d8;border-radius:12px;padding:12px;margin:10px 0 16px;background:#fffef9;box-shadow:0 10px 18px rgba(148,163,184,.15)}
+    .quick-look-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
+    .quick-look-label{font-size:15px;font-weight:700}
+    .quick-look-subtitle{font-size:12px;color:var(--muted)}
+    .quick-look-content{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+    .quick-look-card{border:1px solid #e5e7eb;border-radius:14px;padding:12px;background:#fff;box-shadow:0 8px 18px rgba(15,23,42,.07);display:flex;flex-direction:column;gap:8px}
+    .quick-look-header{display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .quick-look-date{font-size:16px;font-weight:700}
+    .quick-look-print{border:1px solid #d4d4d8;border-radius:8px;padding:4px 8px;background:#f8fafc;font-size:12px;font-weight:600;cursor:pointer}
+    .quick-look-print:hover{background:#eef2ff}
+    .quick-look-count{font-size:13px;color:#4b5563;font-weight:600;margin-top:-4px}
+    .quick-look-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0 0 8px}
+    .quick-look-metric{border:1px solid #e2e8f0;border-radius:8px;padding:6px;background:#f8fafc;display:flex;flex-direction:column;gap:2px}
+    .quick-look-metric .metric-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+    .quick-look-metric .metric-value{font-size:15px;font-weight:600}
+    .quick-look-caregivers{font-size:12px;color:var(--muted);margin:4px 0 0}
+    .quick-look-note{font-size:13px;color:#374151;margin:6px 0 0}
+    .quick-look-notes-btn{margin-top:4px;font-size:12px;border:1px solid #d4d4d8;border-radius:8px;padding:4px 8px;background:#fff;cursor:pointer;font-weight:600}
+    .quick-look-notes-btn:hover{background:#f1f5f9}
+    .quick-look-notes{margin-top:6px;border-top:1px dashed #e5e7eb;padding-top:6px}
+    .quick-look-notes-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px;font-size:13px}
+    .quick-look-note-row{border:1px solid #e5e7eb;border-radius:8px;padding:6px;background:#fafafa}
+    .quick-look-note-meta{font-size:12px;color:#6b7280;margin-bottom:4px;font-weight:600}
+    .quick-look-note-text{white-space:pre-wrap}
+    .quick-look-print-sheet{max-width:640px;margin:0 auto;padding:20px;border:1px solid #d4d4d8;border-radius:16px;background:#fff;box-shadow:0 25px 40px rgba(15,23,42,.15)}
+    .quick-look-print-sheet.is-hidden{display:none}
+    .quick-look-print-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+    .quick-look-print-head h2{margin:0;font-size:20px}
+    .quick-look-print-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px}
+    .quick-look-print-notes{border-top:1px solid #e5e7eb;padding-top:10px}
+    .quick-look-print-note{border:1px solid #e5e7eb;border-radius:8px;padding:8px;margin-bottom:6px;font-size:12px}
+    .quick-look-print-note:last-child{margin-bottom:0}
+    @media (max-width:640px){
+      .quick-look-content{grid-template-columns:1fr}
+    }
+    body.quick-look-mode .top-actions{display:none}
+    body.quick-look-mode main.page > :not([data-print-section="Caregiver Overview"]){display:none}
+    body.quick-look-mode #cg-panel .cg-hide-when-quick-look{display:none}
+    body.quick-look-mode #cgQuickLook{display:block}
+    body.quick-look-mode #cgQuickLook.is-hidden{display:block}
+
+    .hc-editor-overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;z-index:10000}
+    .hc-editor-overlay.is-hidden{display:none}
+    .hc-editor{background:#fff;border-radius:18px;padding:20px;width:min(420px,90vw);box-shadow:0 32px 60px rgba(15,23,42,.35);display:flex;flex-direction:column;gap:12px}
+    .hc-editor h3{margin:0;font-size:18px}
+    .hc-editor fieldset{border:0;padding:0;margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+    .hc-editor label{display:flex;align-items:center;gap:6px;font-weight:600;font-size:13px}
+    .hc-editor textarea,
+    .hc-editor input[type="number"],
+    .hc-editor select{width:100%;padding:8px;border-radius:8px;border:1px solid #d4d4d8;font-size:13px;font-family:inherit}
+    .hc-editor textarea{min-height:70px;resize:vertical}
+    .hc-editor .actions{display:flex;justify-content:flex-end;gap:10px;margin-top:4px}
+    .hc-editor .actions button{padding:8px 14px;border-radius:8px;border:1px solid #d4d4d8;background:#fff;cursor:pointer;font-weight:600}
+    .hc-editor .actions button.primary{background:#111827;color:#fff;border-color:#111827}
+
+    #chart-stack{display:flex;flex-direction:column;gap:16px}
+    body.print-export main.page{max-width:980px}
+    body.print-export #chart-stack{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
+    body.print-export .chart{margin:0}
+    body.print-export .chart canvas{max-height:260px!important}
   </style>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
@@ -141,6 +209,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
   <main class="page">
     <h1>Reports</h1>
 
+    <div data-print-section="Caregiver Overview">
     <section class="panel" id="cg-panel">
       <h2>Caregiver Check-Ins</h2>
 
@@ -155,11 +224,25 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
         </label>
 
         <span style="flex:1"></span>
+        <button id="cgQuickLookToggle" type="button" class="no-export" aria-controls="cgQuickLook" aria-expanded="false">⚡ Quick Look</button>
         <button id="cgPdf"  class="no-export">📄 PDF</button>
         <button id="cgCsv"  class="no-export">⬇️ CSV</button>
       </div>
 
-      <div style="max-height:340px;overflow:auto;border-radius:8px">
+      <div id="cgQuickLook" class="quick-look is-hidden" role="region" aria-live="polite">
+        <div class="quick-look-head">
+          <div>
+            <div class="quick-look-label">Quick Look</div>
+            <div class="quick-look-subtitle">Last five caregiver days (respects filters)</div>
+          </div>
+          <button id="cgQuickLookClose" type="button" aria-label="Exit Quick Look" class="no-export">Exit</button>
+        </div>
+        <div id="cgQuickLookContent" class="quick-look-content"></div>
+        <p id="cgQuickLookEmpty" class="muted" style="margin:0">Need caregiver check-ins to build this snapshot.</p>
+      </div>
+      <div id="cgQuickLookPrint" class="quick-look-print-sheet is-hidden"></div>
+
+      <div class="cg-table-wrap cg-hide-when-quick-look" style="max-height:340px;overflow:auto;border-radius:8px">
         <table id="cgTable">
           <thead>
             <tr>
@@ -177,10 +260,12 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
         </table>
       </div>
 
-      <p class="muted" id="cgCount"></p>
+      <p class="muted cg-hide-when-quick-look" id="cgCount"></p>
     </section>
+    </div>
 
     <!-- Keep: Daily Mood Check-Ins (table) -->
+    <div data-print-section="Daily Mood & Calendar">
     <section class="panel" id="mood-panel">
       <h2>Daily Mood Check-Ins</h2>
       <div class="toolbar">
@@ -230,6 +315,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
             <div class="hc-kv" id="hc-kv-onset">🦉 Late sleep onset days: 0</div>
             <div class="hc-kv" id="hc-kv-manic">⚡️ Manic days: 0</div>
             <div class="hc-kv" id="hc-kv-sick">🤒 Sick days: 0</div>
+            <div class="hc-kv" id="hc-kv-anomaly">🚩 Anomaly days: 0</div>
           </div>
         </div>
 
@@ -239,35 +325,77 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
           <label><input type="checkbox" data-hc-layer="onset" checked/> <span class="hc-emo" aria-hidden="true">🦉</span> Late sleep onset</label>
           <label><input type="checkbox" data-hc-layer="manic" checked/> <span class="hc-emo" aria-hidden="true">⚡️</span> Manic</label>
           <label><input type="checkbox" data-hc-layer="sick" checked/> <span class="hc-emo" aria-hidden="true">🤒</span> Sick</label>
+          <label><input type="checkbox" data-hc-layer="anomaly" checked/> <span class="hc-emo" aria-hidden="true">🚩</span> Anomaly</label>
         </div>
 
         <div class="hc-grid" id="hc-grid" role="grid" aria-label="Health calendar"></div>
       </div>
     </section>
+    </div>
 
     <!-- Charts -->
-    <div class="chart"><h2>Physical & Daily Living Overview</h2><canvas id="healthChart"></canvas></div>
-    <div class="chart"><h2>Prompt Level Over Time</h2><canvas id="skillChart"></canvas></div>
-    <div class="chart"><h2>Individual Mood Share (Pie)</h2><canvas id="moodPieMain"></canvas></div>
+    <section id="chart-stack" data-print-section="Trends & Charts">
+      <div class="chart"><h2>Physical & Daily Living Overview</h2><canvas id="healthChart"></canvas></div>
+      <div class="chart"><h2>Prompt Level Over Time</h2><canvas id="skillChart"></canvas></div>
+      <div class="chart"><h2>Individual Mood Share (Pie)</h2><canvas id="moodPieMain"></canvas></div>
 
-    <div class="chart">
-      <h2>Engagement vs Mood — Average Minutes by Activity</h2>
-      <canvas id="engagementVsMood"></canvas>
-      <p class="muted">X = Mood bucket. Y = Average minutes. Bars = Home / Vocational / Community / Leisure.</p>
-    </div>
+      <div class="chart">
+        <h2>Engagement vs Mood — Average Minutes by Activity</h2>
+        <canvas id="engagementVsMood"></canvas>
+        <p class="muted">X = Mood bucket. Y = Average minutes. Bars = Home / Vocational / Community / Leisure.</p>
+      </div>
 
-    <div class="chart small">
-      <h2 style="margin:0 0 8px;">Sleep Hours vs Engagement Minutes</h2>
-      <canvas id="sleepOverlay" height="200"></canvas>
-      <p class="muted" id="sleepNote">Correlation preview of sleep hours and engagement minutes.</p>
-    </div>
+      <div class="chart small">
+        <h2 style="margin:0 0 8px;">Sleep Hours vs Engagement Minutes</h2>
+        <canvas id="sleepOverlay" height="200"></canvas>
+        <p class="muted" id="sleepNote">Correlation preview of sleep hours and engagement minutes.</p>
+      </div>
 
-    <div class="chart small">
-      <h2 style="margin:0 0 8px;">Leisure (Would-You-Rather) — Minutes & Picks</h2>
-      <canvas id="wyrBar" height="220"></canvas>
-      <p class="muted" id="wyrNote">Bars = total leisure minutes credited to each choice; line = number of picks.</p>
-    </div>
+      <div class="chart small">
+        <h2 style="margin:0 0 8px;">Leisure (Would-You-Rather) — Minutes & Picks</h2>
+        <canvas id="wyrBar" height="220"></canvas>
+        <p class="muted" id="wyrNote">Bars = total leisure minutes credited to each choice; line = number of picks.</p>
+      </div>
+    </section>
   </main>
+
+  <div id="hc-editor-overlay" class="hc-editor-overlay is-hidden">
+    <form id="hcEditorForm" class="hc-editor">
+      <h3 id="hcEditorDate">Edit day</h3>
+      <label>
+        Quick tag
+        <select id="hcEditorQuickTag">
+          <option value="">Choose…</option>
+          <option value="bm">BM</option>
+          <option value="sleep">Sleep ≥ 8h</option>
+          <option value="onset">Late sleep onset</option>
+          <option value="manic">Manic</option>
+          <option value="sick">Sick</option>
+          <option value="anomaly">Anomaly</option>
+        </select>
+      </label>
+      <fieldset>
+        <label><input type="checkbox" name="bm"> 💩 BM</label>
+        <label><input type="checkbox" name="sleep"> 😴 Sleep ≥ 8h</label>
+        <label><input type="checkbox" name="onset"> 🦉 Late sleep onset</label>
+        <label><input type="checkbox" name="manic"> ⚡️ Manic</label>
+        <label><input type="checkbox" name="sick"> 🤒 Sick</label>
+        <label><input type="checkbox" name="anomaly"> 🚩 Anomaly</label>
+      </fieldset>
+      <label>
+        Sleep hours
+        <input type="number" id="hcEditorSleepHours" name="sleepHours" min="0" max="24" step="0.25" placeholder="e.g. 8.5">
+      </label>
+      <label>
+        Notes
+        <textarea id="hcEditorNotes" name="notes" placeholder="Optional note for this day"></textarea>
+      </label>
+      <div class="actions">
+        <button type="button" id="hcEditorCancel">Cancel</button>
+        <button type="submit" class="primary">Save</button>
+      </div>
+    </form>
+  </div>
 
   <!-- Single, clean module script -->
   <script type="module">
@@ -408,6 +536,15 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       tbody: document.getElementById('cgTbody')
     };
 
+    const quickLookUi = {
+      panel: $('#cgQuickLook'),
+      content: $('#cgQuickLookContent'),
+      empty: $('#cgQuickLookEmpty'),
+      toggle: $('#cgQuickLookToggle'),
+      close: $('#cgQuickLookClose'),
+      printSheet: $('#cgQuickLookPrint')
+    };
+
     const CAREGIVER_FILTER_KEY = 'caregiverReportCaregiverFilter';
     const CAREGIVER_ID_PREFIX = 'id:';
     const CAREGIVER_NAME_PREFIX = 'name:';
@@ -477,6 +614,383 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       }
       return true;
     };
+
+    function parseEntryDate(entry = {}) {
+      const payload = entry.payload || {};
+      const candidates = [
+        entry.timestamp,
+        entry.created_at,
+        entry.createdAt,
+        entry.date,
+        entry.date_recorded,
+        payload.timestamp,
+        payload.created_at,
+        payload.date
+      ];
+      for (const value of candidates) {
+        if (!value) continue;
+        const date = new Date(value);
+        if (!Number.isNaN(date.getTime())) return date;
+      }
+      return null;
+    }
+
+    function extractEntryNotes(entry = {}) {
+      const payload = entry.payload || {};
+      const candidates = [
+        entry.notes,
+        entry.caregiver_notes,
+        entry.daily_notes,
+        entry.day_notes,
+        payload.notes,
+        payload.caregiver_notes,
+        payload.physical_notes,
+        payload.behavior_notes,
+        payload.community_notes,
+        payload.daily_living_notes,
+        payload.note
+      ];
+      const parts = [];
+      for (const candidate of candidates) {
+        if (Array.isArray(candidate)) {
+          candidate.forEach(item => {
+            if (typeof item === 'string') {
+              const trimmed = item.trim();
+              if (trimmed && !parts.includes(trimmed)) parts.push(trimmed);
+            }
+          });
+          continue;
+        }
+        if (typeof candidate === 'string') {
+          const trimmed = candidate.trim();
+          if (trimmed && !parts.includes(trimmed)) parts.push(trimmed);
+        }
+      }
+      return parts.join('\n\n');
+    }
+
+    function pickNumber(...values) {
+      for (const value of values) {
+        if (value === null || value === undefined || value === '') continue;
+        const num = Number(value);
+        if (Number.isFinite(num)) return num;
+      }
+      return null;
+    }
+
+    function isAffirmative(value) {
+      if (value === true) return true;
+      if (value === false) return false;
+      if (typeof value === 'number') return value > 0;
+      if (typeof value === 'string') {
+        const normalized = value.trim().toLowerCase();
+        if (!normalized) return false;
+        return ['yes','y','true','1','done','complete','completed'].includes(normalized);
+      }
+      return false;
+    }
+
+    const isCalendarOnlyEntry = (entry = {}) =>
+      entry?.payload?.calendar_only === true;
+
+    function formatQuickLookDate(dateStr) {
+      if (!dateStr) return '—';
+      const parts = dateStr.split('-').map(Number);
+      const date = new Date(parts[0] || 0, (parts[1] || 1) - 1, parts[2] || 1);
+      if (Number.isNaN(date.getTime())) return dateStr;
+      return date.toLocaleDateString(undefined, { weekday:'short', month:'short', day:'numeric' });
+    }
+
+    function truncateText(text, max = 160) {
+      if (!text) return '';
+      const normalized = String(text).trim();
+      if (normalized.length <= max) return normalized;
+      return `${normalized.slice(0, max - 1).trim()}…`;
+    }
+
+    function collectRecentCaregiverDays(entries, limit = 5) {
+      const buckets = new Map();
+      for (const entry of entries) {
+        if (isCalendarOnlyEntry(entry)) continue;
+        const ts = parseEntryDate(entry);
+        if (!ts) continue;
+        const key = ts.toISOString().slice(0, 10);
+        let bucket = buckets.get(key);
+        if (!bucket) {
+          bucket = {
+            date: key,
+            entryCount: 0,
+            hygieneYes: 0,
+            foodYes: 0,
+            cleanupYes: 0,
+            vocMinutes: 0,
+            comMinutes: 0,
+            promptTotal: 0,
+            promptCount: 0,
+            caregivers: new Set(),
+            latestNote: '',
+            latestTs: 0,
+            entries: []
+          };
+          buckets.set(key, bucket);
+        }
+        const payload = entry.payload || {};
+        bucket.entryCount += 1;
+        if (isAffirmative(entry.hygiene ?? payload.hygiene)) bucket.hygieneYes += 1;
+        if (isAffirmative(entry.food_prep ?? payload.food_prep)) bucket.foodYes += 1;
+        if (isAffirmative(entry.cleanup ?? payload.cleanup)) bucket.cleanupYes += 1;
+
+        const voc = pickNumber(entry.vocational_time, entry.vocational_minutes, payload.vocational_time, payload.vocational_minutes);
+        if (voc !== null) bucket.vocMinutes += voc;
+
+        const com = pickNumber(entry.community_time, entry.community_minutes, payload.community_time, payload.community_minutes);
+        if (com !== null) bucket.comMinutes += com;
+
+        const promptVal = pickNumber(entry.new_skill_score, entry.prompt_level, payload.new_skill_score, payload.prompt_level);
+        if (promptVal !== null) {
+          bucket.promptTotal += promptVal;
+          bucket.promptCount += 1;
+        }
+
+        const caregiverName = caregiverNameFromEntry(entry);
+        if (caregiverName) bucket.caregivers.add(caregiverName);
+
+        const note = extractEntryNotes(entry);
+        const stamp = ts.getTime();
+        if (note && stamp >= bucket.latestTs) {
+          bucket.latestNote = note;
+          bucket.latestTs = stamp;
+        }
+
+        bucket.entries.push({
+          id: entry.id || `${key}-${bucket.entryCount}`,
+          timestamp: ts.toLocaleString(undefined, {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit'
+          }),
+          iso: ts.toISOString(),
+          caregiver: caregiverNameFromEntry(entry) || 'Unknown caregiver',
+          notes: note || '',
+          rawNotes: note || '',
+          prompt: pickNumber(entry.new_skill_score, entry.prompt_level, payload.new_skill_score, payload.prompt_level),
+          hygiene: entry.hygiene ?? payload.hygiene,
+          food: entry.food_prep ?? payload.food_prep,
+          cleanup: entry.cleanup ?? payload.cleanup
+        });
+      }
+
+      return [...buckets.values()]
+        .sort((a, b) => b.date.localeCompare(a.date))
+        .slice(0, limit)
+        .map(bucket => ({
+          date: bucket.date,
+          entryCount: bucket.entryCount,
+          hygieneYes: bucket.hygieneYes,
+          foodYes: bucket.foodYes,
+          cleanupYes: bucket.cleanupYes,
+          vocMinutes: Math.round(bucket.vocMinutes),
+          comMinutes: Math.round(bucket.comMinutes),
+          avgPrompt: bucket.promptCount ? (bucket.promptTotal / bucket.promptCount).toFixed(1) : null,
+          caregivers: Array.from(bucket.caregivers),
+          latestNote: bucket.latestNote,
+          entries: bucket.entries.sort((a, b) => (a.iso || '').localeCompare(b.iso || ''))
+        }));
+    }
+
+    function buildQuickLookMetric(label, value) {
+      const wrap = document.createElement('div');
+      wrap.className = 'quick-look-metric';
+      const labelEl = document.createElement('span');
+      labelEl.className = 'metric-label';
+      labelEl.textContent = label;
+      const valueEl = document.createElement('span');
+      valueEl.className = 'metric-value';
+      valueEl.textContent = value;
+      wrap.append(labelEl, valueEl);
+      return wrap;
+    }
+
+    function buildQuickLookCard(day) {
+      const card = document.createElement('article');
+      card.className = 'quick-look-card';
+      card.id = `quick-look-card-${day.date}`;
+
+      const header = document.createElement('div');
+      header.className = 'quick-look-header';
+      const dateEl = document.createElement('div');
+      dateEl.className = 'quick-look-date';
+      dateEl.textContent = formatQuickLookDate(day.date);
+      const printBtn = document.createElement('button');
+      printBtn.type = 'button';
+      printBtn.className = 'quick-look-print no-export';
+      printBtn.textContent = '🖨 Print day';
+      printBtn.addEventListener('click', () => printQuickLookDay(card, day));
+      header.append(dateEl, printBtn);
+      card.appendChild(header);
+
+      const countEl = document.createElement('div');
+      countEl.className = 'quick-look-count';
+      countEl.textContent = `${day.entryCount} check-in${day.entryCount === 1 ? '' : 's'}`;
+      card.appendChild(countEl);
+
+      const metrics = document.createElement('div');
+      metrics.className = 'quick-look-metrics';
+      metrics.append(
+        buildQuickLookMetric('Hygiene', `${day.hygieneYes} yes`),
+        buildQuickLookMetric('Food', `${day.foodYes} yes`),
+        buildQuickLookMetric('Clean-up', `${day.cleanupYes} yes`),
+        buildQuickLookMetric('Voc mins', `${day.vocMinutes}`),
+        buildQuickLookMetric('Comm mins', `${day.comMinutes}`),
+        buildQuickLookMetric('Prompt avg', day.avgPrompt ?? '—')
+      );
+      card.appendChild(metrics);
+
+      const caregivers = document.createElement('p');
+      caregivers.className = 'quick-look-caregivers';
+      caregivers.textContent = day.caregivers.length
+        ? `Caregivers: ${day.caregivers.join(', ')}`
+        : 'Caregivers: —';
+      card.appendChild(caregivers);
+
+      if (day.latestNote) {
+        const note = document.createElement('p');
+        note.className = 'quick-look-note';
+        note.textContent = `Last note: ${truncateText(day.latestNote)}`;
+        card.appendChild(note);
+      }
+
+      const notesBtn = document.createElement('button');
+      notesBtn.type = 'button';
+      notesBtn.className = 'quick-look-notes-btn no-export';
+      notesBtn.textContent = 'Show notes';
+      card.appendChild(notesBtn);
+
+      const notesWrap = document.createElement('div');
+      notesWrap.className = 'quick-look-notes is-hidden';
+      const entries = (Array.isArray(day.entries) ? day.entries : []).filter(entry => (entry.notes || '').trim().length);
+      if (!entries.length) {
+        const empty = document.createElement('p');
+        empty.className = 'muted';
+        empty.textContent = 'No notes for this day.';
+        notesWrap.appendChild(empty);
+      } else {
+        const notesList = document.createElement('ul');
+        notesList.className = 'quick-look-notes-list';
+        entries.forEach(entry => {
+          const row = document.createElement('li');
+          row.className = 'quick-look-note-row';
+          const meta = document.createElement('div');
+          meta.className = 'quick-look-note-meta';
+          meta.textContent = `${entry.timestamp} • ${entry.caregiver}`;
+          const text = document.createElement('div');
+          text.className = 'quick-look-note-text';
+          text.textContent = entry.notes.trim();
+          row.append(meta, text);
+          notesList.appendChild(row);
+        });
+        notesWrap.appendChild(notesList);
+      }
+      card.appendChild(notesWrap);
+
+      notesBtn.addEventListener('click', () => {
+        const currentlyHidden = notesWrap.classList.contains('is-hidden');
+        notesWrap.classList.toggle('is-hidden', !currentlyHidden);
+        notesBtn.textContent = currentlyHidden ? 'Hide notes' : 'Show notes';
+      });
+
+      return card;
+    }
+
+    function renderQuickLookPrintSheet(day) {
+      const sheet = quickLookUi.printSheet;
+      if (!sheet) return null;
+      const metrics = [
+        ['Hygiene yes', `${day.hygieneYes}`],
+        ['Food yes', `${day.foodYes}`],
+        ['Clean-up yes', `${day.cleanupYes}`],
+        ['Voc mins', `${day.vocMinutes}`],
+        ['Comm mins', `${day.comMinutes}`],
+        ['Prompt avg', day.avgPrompt ?? '—']
+      ];
+      const notes = (Array.isArray(day.entries) ? day.entries : [])
+        .filter(entry => (entry.notes || '').trim().length);
+
+      sheet.innerHTML = `
+        <div class="quick-look-print-head">
+          <div>
+            <h2>${formatQuickLookDate(day.date)}</h2>
+            <p>${day.entryCount} check-in${day.entryCount === 1 ? '' : 's'}</p>
+          </div>
+          <div>${day.caregivers.length ? `Caregivers: ${day.caregivers.join(', ')}` : ''}</div>
+        </div>
+        <div class="quick-look-print-grid">
+          ${metrics.map(([label,value])=>`
+            <div class="quick-look-metric">
+              <span class="metric-label">${label}</span>
+              <span class="metric-value">${value}</span>
+            </div>`).join('')}
+        </div>
+        <div class="quick-look-print-notes">
+          <h3>Notes</h3>
+          ${notes.length ? notes.map(entry => `
+            <div class="quick-look-print-note">
+              <div class="quick-look-note-meta">${entry.timestamp} • ${entry.caregiver}</div>
+              <div>${entry.notes.trim()}</div>
+            </div>
+          `).join('') : '<p>No notes recorded for this day.</p>'}
+        </div>
+      `;
+      return sheet;
+    }
+
+    async function printQuickLookDay(card, day) {
+      const sheet = renderQuickLookPrintSheet(day);
+      if (!sheet) return;
+      sheet.classList.remove('is-hidden');
+      try {
+        await exportElement('#cgQuickLookPrint', `Caregiver_${day.date}_Quick_Look.pdf`);
+      } finally {
+        sheet.classList.add('is-hidden');
+      }
+    }
+
+    function renderQuickLook(sourceEntries) {
+      if (!quickLookUi.content) return;
+      const entries = Array.isArray(sourceEntries)
+        ? sourceEntries
+        : (Array.isArray(cgState.filtered) ? cgState.filtered : cgState.entries);
+      const days = collectRecentCaregiverDays(entries || [], 5);
+      quickLookUi.content.innerHTML = '';
+      if (!days.length) {
+        quickLookUi.content.classList.add('is-hidden');
+        quickLookUi.empty?.classList.remove('is-hidden');
+        return;
+      }
+      quickLookUi.content.classList.remove('is-hidden');
+      quickLookUi.empty?.classList.add('is-hidden');
+      days.forEach(day => {
+        quickLookUi.content.appendChild(buildQuickLookCard(day));
+      });
+    }
+
+    function toggleQuickLook(force) {
+      if (!quickLookUi.panel) return;
+      const isActive = document.body.classList.contains('quick-look-mode');
+      const shouldShow = typeof force === 'boolean' ? force : !isActive;
+      document.body.classList.toggle('quick-look-mode', shouldShow);
+      quickLookUi.panel.classList.toggle('is-hidden', !shouldShow);
+      quickLookUi.toggle?.setAttribute('aria-expanded', shouldShow ? 'true' : 'false');
+      if (quickLookUi.toggle) {
+        quickLookUi.toggle.textContent = shouldShow ? '↩ Exit Quick Look' : '⚡ Quick Look';
+      }
+      if (shouldShow) {
+        const source = Array.isArray(cgState.filtered) ? cgState.filtered : cgState.entries;
+        renderQuickLook(source);
+      }
+    }
 
     function populateCaregiverOptions(entries){
       const select = cgInputs.caregiver;
@@ -704,6 +1218,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       if (!entries.length) {
         renderCaregiverTable([]);
         updateCgSummary([], 0);
+        renderQuickLook([]);
         return;
       }
       if (cgInputs.caregiver) {
@@ -714,6 +1229,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       cgState.filtered = filtered;
       renderCaregiverTable(filtered);
       updateCgSummary(filtered, entries.length);
+      renderQuickLook(filtered);
     }
 
     function exportCaregiverCsv(){
@@ -832,11 +1348,11 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
         };
       }
 
-      let entries = res.entries || [];
+      let entries = (res.entries || []).filter(entry => !isCalendarOnlyEntry(entry));
       const summary = summarizeEntries(entries);
       const { monthly, promptDaily } = buildMonthlySeries(entries);
 
-      window.latestCaregiverEntries = entries;
+      window.latestCaregiverEntries = entries.slice();
       renderKPIs(summary);
       drawHealthChart(monthly);
       drawSkillChart(promptDaily);
@@ -1226,6 +1742,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
     });
     cgInputs.csv?.addEventListener('click', exportCaregiverCsv);
     cgInputs.pdf?.addEventListener('click', exportCaregiverPdf);
+    quickLookUi.toggle?.addEventListener('click', () => toggleQuickLook());
+    quickLookUi.close?.addEventListener('click', () => toggleQuickLook(false));
 
     async function renderMoodSection(){
       const rangeSel = $('#moodRange').value || 'all';
@@ -1274,49 +1792,50 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
   }
 
   async function exportFullReportPDF() {
-    const root = document.querySelector('main.page') || document.body;
-
-    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    const sections = [...document.querySelectorAll('[data-print-section]')];
+    if (!sections.length) {
+      alert('No printable sections found.');
+      return;
+    }
     toggleExportHiders(true);
+    document.body.classList.add('print-export');
     try {
       const { jsPDF } = window.jspdf;
-
-      const w = root.scrollWidth;
-      const h = root.scrollHeight;
-
-      const canvas = await html2canvas(root, {
-        scale: 2,
-        backgroundColor: '#ffffff',
-        width: w,
-        height: h,
-        windowWidth: w,
-        windowHeight: h,
-        scrollX: 0,
-        scrollY: -window.scrollY
-      });
-
-      const img = canvas.toDataURL('image/png');
       const pdf = new jsPDF({ unit:'pt', format:'a4' });
       const pageW = pdf.internal.pageSize.getWidth();
       const pageH = pdf.internal.pageSize.getHeight();
+      const margin = 36;
 
-      const imgW = pageW;
-      const imgH = canvas.height * (imgW / canvas.width);
-
-      let heightLeft = imgH;
-      let y = 0;
-
-      pdf.addImage(img, 'PNG', 0, y, imgW, imgH);
-      heightLeft -= pageH;
-
-      while (heightLeft > 0) {
-        pdf.addPage();
-        y = heightLeft - imgH;
-        pdf.addImage(img, 'PNG', 0, y, imgW, imgH);
-        heightLeft -= pageH;
+      for (let i = 0; i < sections.length; i++) {
+        const section = sections[i];
+        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+        const canvas = await html2canvas(section, {
+          scale: 2,
+          backgroundColor: '#ffffff',
+          width: section.scrollWidth,
+          height: section.scrollHeight,
+          scrollX: 0,
+          scrollY: -window.scrollY
+        });
+        const aspect = canvas.height / canvas.width || 1;
+        let imgW = pageW - margin * 2;
+        let imgH = imgW * aspect;
+        if (imgH > pageH - margin * 2) {
+          imgH = pageH - margin * 2;
+          imgW = imgH / aspect;
+        }
+        if (i > 0) pdf.addPage();
+        const label = section.getAttribute('data-print-section');
+        if (label) {
+          pdf.setFontSize(14);
+          pdf.text(label, margin, margin - 12);
+        }
+        const offsetX = (pageW - imgW) / 2;
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', offsetX, margin, imgW, imgH);
       }
       pdf.save('Full_Report.pdf');
     } finally {
+      document.body.classList.remove('print-export');
       toggleExportHiders(false);
     }
   }
@@ -1363,7 +1882,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
 </script>
 
 <script type="module">
-import { rest } from './restClient.js?v=2025.10.16d';
+import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
 
 (() => {
   // Bail out quietly if the calendar HTML isn't present
@@ -1377,9 +1896,25 @@ import { rest } from './restClient.js?v=2025.10.16d';
   const kvOnst = document.getElementById('hc-kv-onset');
   const kvMan  = document.getElementById('hc-kv-manic');
   const kvSick = document.getElementById('hc-kv-sick');
+  const kvAno  = document.getElementById('hc-kv-anomaly');
+
+  const editorOverlay   = document.getElementById('hc-editor-overlay');
+  const editorForm      = document.getElementById('hcEditorForm');
+  const editorDateLabel = document.getElementById('hcEditorDate');
+  const editorQuick     = document.getElementById('hcEditorQuickTag');
+  const editorSleep     = document.getElementById('hcEditorSleepHours');
+  const editorNotes     = document.getElementById('hcEditorNotes');
+  const editorCancelBtn = document.getElementById('hcEditorCancel');
+  let editorDateKey = null;
 
   function $(s){ return document.querySelector(s); }
   function pad(n){ return String(n).padStart(2,'0'); }
+  const sessionInfo = getSessionFromStorage?.();
+  const CURRENT_USER_ID = sessionInfo?.user?.id || null;
+  const GROUP_STORAGE_KEY = 'currentGroupId';
+  const LOCAL_HEALTH_KEY = 'healthCalendarAnnotations';
+  let LOCAL_HEALTH = {};
+  try { LOCAL_HEALTH = JSON.parse(localStorage.getItem(LOCAL_HEALTH_KEY) || '{}'); } catch { LOCAL_HEALTH = {}; }
 
   function parseSleepOnset(value){
     if (value == null || value === '') return null;
@@ -1402,6 +1937,28 @@ import { rest } from './restClient.js?v=2025.10.16d';
     return null;
   }
 
+  async function ensureGroupId(){
+    let gid = localStorage.getItem(GROUP_STORAGE_KEY);
+    if (gid) return gid;
+    if (!CURRENT_USER_ID) return null;
+    try{
+      const rows = await rest([
+        'group_members?select=group_id',
+        `user_id=eq.${encodeURIComponent(CURRENT_USER_ID)}`,
+        'order=joined_at.asc',
+        'limit=1'
+      ].join('&'));
+      gid = rows?.[0]?.group_id || null;
+      if (gid) {
+        try { localStorage.setItem(GROUP_STORAGE_KEY, gid); } catch {}
+      }
+      return gid;
+    } catch (error){
+      console.warn('ensureGroupId error', error?.message || error);
+      return null;
+    }
+  }
+
   function hasLateSleepOnset(source){
     if (!source) return false;
     const direct = source.sleep_onset_difficulty ?? source.difficulty_sleep_onset ?? null;
@@ -1420,12 +1977,31 @@ import { rest } from './restClient.js?v=2025.10.16d';
     );
     return mins != null && mins >= 120;
   }
-  const EMO = { bm:'💩', sleep:'😴', onset:'🦉', manic:'⚡️', sick:'🤒' };
+  const EMO = { bm:'💩', sleep:'😴', onset:'🦉', manic:'⚡️', sick:'🤒', anomaly:'🚩' };
+
+  function saveLocalHealth(){
+    try { localStorage.setItem(LOCAL_HEALTH_KEY, JSON.stringify(LOCAL_HEALTH)); } catch {}
+  }
+
+  function applyHealthFlagToMap(key, data = {}){
+    const base = MAP[key] || { bm:false, sleep:null, onset:false, manic:false, sick:false, anomaly:false };
+    const hours = data.sleepHours != null ? Number(data.sleepHours) : (data.sleep ? 8 : null);
+    MAP[key] = {
+      bm: base.bm || !!data.bm,
+      sleep: hours != null ? Math.max(base.sleep ?? 0, hours) : base.sleep,
+      onset: base.onset || !!data.onset,
+      manic: base.manic || !!data.manic,
+      sick: base.sick || !!data.sick,
+      anomaly: base.anomaly || !!data.anomaly
+    };
+  }
 
   let Y = (new Date()).getFullYear();
   let M = (new Date()).getMonth(); // 0-11
-  let MAP = {};                    // { 'YYYY-MM-DD': { bm, sleep, manic, sick } }
-  const layers = { bm:true, sleep:true, onset:true, manic:true, sick:true };
+  let MAP = {};                    // { 'YYYY-MM-DD': { bm, sleep, manic, sick, anomaly } }
+  let EVENT_MAP = {};              // meetings/appointments
+  let HEALTH_FLAGS = {};           // persisted manual flags
+  const layers = { bm:true, sleep:true, onset:true, manic:true, sick:true, anomaly:true };
 
   function fmtMonth(y,m){ return new Date(y,m,1).toLocaleString(undefined,{month:'long',year:'numeric'}); }
   function monthBoundsUTC(y,m){
@@ -1433,6 +2009,10 @@ import { rest } from './restClient.js?v=2025.10.16d';
     const end   = new Date(Date.UTC(m===11?y+1:y, (m+1)%12, 1)).toISOString();
     return { start, end };
   }
+  const humanDate = (key) => {
+    const dt = new Date(key);
+    return Number.isNaN(dt.getTime()) ? key : dt.toLocaleDateString(undefined, { weekday:'short', month:'short', day:'numeric' });
+  };
 
   function render(){
     if (!grid || !title) return;
@@ -1448,12 +2028,13 @@ import { rest } from './restClient.js?v=2025.10.16d';
     const startPad = first.getDay();
     for(let i=0;i<startPad;i++){ const b=document.createElement('div'); b.className='hc-cell'; grid.appendChild(b); }
 
-  let bmDays=0, sleepDays=0, onsetDays=0, manicDays=0, sickDays=0;
+  let bmDays=0, sleepDays=0, onsetDays=0, manicDays=0, sickDays=0, anomalyDays=0;
 
     for(let day=1; day<=last.getDate(); day++){
       const cell = document.createElement('div'); cell.className='hc-cell'; cell.setAttribute('role','gridcell');
       const key = Y + '-' + pad(M+1) + '-' + pad(day);
-      const rec = MAP[key] || {};
+      const rec = MAP[key] || { bm:false, sleep:null, onset:false, manic:false, sick:false, anomaly:false };
+      cell.dataset.date = key;
 
       const head = document.createElement('div'); head.className='hc-date'; head.textContent = day; cell.appendChild(head);
 
@@ -1463,10 +2044,32 @@ import { rest } from './restClient.js?v=2025.10.16d';
       if (rec.onset && layers.onset){ const s=document.createElement('span'); s.textContent=EMO.onset; s.setAttribute('aria-label','Late sleep onset'); icons.appendChild(s); onsetDays++; }
       if (rec.manic && layers.manic){ const s=document.createElement('span'); s.textContent=EMO.manic; s.setAttribute('aria-label','Manic'); icons.appendChild(s); manicDays++; }
       if (rec.sick  && layers.sick ){ const s=document.createElement('span'); s.textContent=EMO.sick;  s.setAttribute('aria-label','Sick'); icons.appendChild(s); sickDays++; }
+      if (rec.anomaly && layers.anomaly){ const s=document.createElement('span'); s.textContent=EMO.anomaly; s.setAttribute('aria-label','Anomaly'); icons.appendChild(s); anomalyDays++; }
 
       if (icons.children.length) cell.appendChild(icons);
       else { const e=document.createElement('div'); e.className='hc-empty'; e.textContent='—'; cell.appendChild(e); }
 
+      const dayEvents = EVENT_MAP[key] || [];
+      if (dayEvents.length) {
+        const list = document.createElement('div');
+        list.className = 'hc-events';
+        dayEvents.slice(0,2).forEach(evt => {
+          const pill = document.createElement('div');
+          pill.className = 'hc-event-pill';
+          const timeLabel = evt.all_day ? 'All day' : (evt.start_time || '').slice(0,5) || '—';
+          pill.innerHTML = `<strong>${timeLabel}</strong><span>${evt.title || 'Event'}</span>`;
+          list.appendChild(pill);
+        });
+        if (dayEvents.length > 2) {
+          const more = document.createElement('div');
+          more.className = 'hc-event-pill';
+          more.textContent = `+${dayEvents.length - 2} more`;
+          list.appendChild(more);
+        }
+        cell.appendChild(list);
+      }
+
+      cell.addEventListener('click', () => openEditor(key));
       grid.appendChild(cell);
     }
 
@@ -1475,78 +2078,240 @@ import { rest } from './restClient.js?v=2025.10.16d';
     kvOnst && (kvOnst.textContent = '🦉 Late sleep onset days: ' + onsetDays);
     kvMan && (kvMan.textContent = '⚡️ Manic days: ' + manicDays);
     kvSick&& (kvSick.textContent= '🤒 Sick days: ' + sickDays);
+    kvAno && (kvAno.textContent = '🚩 Anomaly days: ' + anomalyDays);
   }
 
-  async function loadMonth(){
-    MAP = {};
-    const { start, end } = monthBoundsUTC(Y, M);
+  async function loadCaregiverFlags(start, end){
     try{
       const params = [
         'caregiver_checkins?select=id,user_id,created_at,submitted_at,had_bm,payload',
         `created_at=gte.${encodeURIComponent(start)}`,
-        `created_at=lt.${encodeURIComponent(end)}`
+        `created_at=lt.${encodeURIComponent(end)}`,
+        'order=created_at.asc'
       ];
-      params.push('order=created_at.asc');
       const data = await rest(params.join('&'));
       if (Array.isArray(data)) {
-        for (let i=0;i<data.length;i++){
-          const row = data[i];
+        for (const row of data){
           const dt  = new Date(row.submitted_at || row.created_at);
+          if (Number.isNaN(dt.getTime())) continue;
           const key = dt.getFullYear() + '-' + pad(dt.getMonth()+1) + '-' + pad(dt.getDate());
           const p   = row.payload || {};
-
           const bm    = (row.had_bm === true) || (/yes/i.test(String(p.bm_today || p.had_bm || '')));
           let   sleep = null;
           const hrsRaw = p.hours_sleep;
           if (typeof hrsRaw === 'string'){
-            if (hrsRaw.indexOf('10') >= 0) sleep = 10;
+            if (hrsRaw.includes('10')) sleep = 10;
             else { const n = parseFloat(hrsRaw); if (isFinite(n)) sleep = n; }
           } else if (typeof hrsRaw === 'number') { sleep = hrsRaw; }
           const onsetLate = hasLateSleepOnset(p) || hasLateSleepOnset(row);
           const manic = (/yes/i.test(String(p.aggression_flag || ''))) || ((+p.aggression_intensity || 0) > 0);
           const sick  = /no/i.test(String(p.appears_good_health || ''));
+          const anomaly = p.anomaly_flag === true || /yes/i.test(String(p.anomaly || ''));
 
-          const cur = MAP[key] || { bm:false, sleep:null, onset:false, manic:false, sick:false };
+          const cur = MAP[key] || { bm:false, sleep:null, onset:false, manic:false, sick:false, anomaly:false };
           MAP[key] = {
             bm:    cur.bm    || bm,
             sleep: (sleep!=null && (cur.sleep==null || sleep>cur.sleep)) ? sleep : cur.sleep,
             onset: cur.onset || onsetLate,
             manic: cur.manic || manic,
-            sick:  cur.sick  || sick
+            sick:  cur.sick  || sick,
+            anomaly: cur.anomaly || anomaly
           };
         }
       }
-    }catch(_){}
+    }catch(error){
+      console.warn('caregiver flags load error', error?.message || error);
+    }
 
-    // 2) Fallback: localStorage
     if (Object.keys(MAP).length === 0) {
       try{
         const ls = JSON.parse(localStorage.getItem('caregiverEntries') || '[]');
-        for (let i=0;i<ls.length;i++){
-          const e = ls[i];
+        for (const e of ls){
           const dt = new Date(e.timestamp || e.created_at || Date.now());
           if (dt < new Date(start) || dt >= new Date(end)) continue;
           const key = dt.getFullYear() + '-' + pad(dt.getMonth()+1) + '-' + pad(dt.getDate());
-
           const bm    = (e.had_bm === true) || (/yes/i.test(String(e.had_bm || e.bm_today || '')));
           const sleep = (typeof e.hours_sleep === 'number') ? e.hours_sleep : null;
           const onsetLate = hasLateSleepOnset(e);
           const manic = (/yes/i.test(String(e.aggression_flag || ''))) || ((+e.aggression_intensity || 0) > 0);
           const sick  = /no/i.test(String(e.appears_good_health || ''));
-
-          const cur = MAP[key] || { bm:false, sleep:null, onset:false, manic:false, sick:false };
+          const anomaly = e.anomaly_flag === true || /yes/i.test(String(e.anomaly || ''));
+          const cur = MAP[key] || { bm:false, sleep:null, onset:false, manic:false, sick:false, anomaly:false };
           MAP[key] = {
             bm:    cur.bm    || bm,
             sleep: (sleep!=null && (cur.sleep==null || sleep>cur.sleep)) ? sleep : cur.sleep,
             onset: cur.onset || onsetLate,
             manic: cur.manic || manic,
-            sick:  cur.sick  || sick
+            sick:  cur.sick  || sick,
+            anomaly: cur.anomaly || anomaly
           };
         }
-      }catch(_){}
+      }catch(error){
+        console.warn('local caregiver flags error', error?.message || error);
+      }
+    }
+  }
+
+  function applyLocalAnnotations(startIso, endIso){
+    const start = new Date(startIso);
+    const end = new Date(endIso);
+    Object.entries(LOCAL_HEALTH).forEach(([key,data])=>{
+      const dt = new Date(key);
+      if (dt >= start && dt < end) {
+        HEALTH_FLAGS[key] = HEALTH_FLAGS[key] || { id:null, data };
+        applyHealthFlagToMap(key, data);
+      }
+    });
+  }
+
+  async function loadCalendarEventsInRange(start, end){
+    EVENT_MAP = {};
+    const groupId = await ensureGroupId();
+    if (!groupId) {
+      applyLocalAnnotations(start, end);
+      return;
+    }
+    try{
+      const params = [
+        'calendar_events?select=id,title,type,start_date,start_time,all_day,notes,location',
+        `group_id=eq.${encodeURIComponent(groupId)}`,
+        `start_date=gte.${encodeURIComponent(start.slice(0,10))}`,
+        `start_date=lt.${encodeURIComponent(end.slice(0,10))}`,
+        'order=start_date.asc'
+      ];
+      const rows = await rest(params.join('&'));
+      (rows || []).forEach(evt => {
+        const key = evt.start_date;
+        if (!key) return;
+        if (evt.type === 'health-flag') {
+          let data = {};
+          try { data = JSON.parse(evt.notes || '{}'); } catch {}
+          HEALTH_FLAGS[key] = { id: evt.id, data };
+          applyHealthFlagToMap(key, data);
+        } else {
+          if (!EVENT_MAP[key]) EVENT_MAP[key] = [];
+          EVENT_MAP[key].push(evt);
+        }
+      });
+    } catch (error) {
+      console.warn('calendar events error', error?.message || error);
+    }
+    applyLocalAnnotations(start, end);
+  }
+
+  async function loadMonth(){
+    MAP = {};
+    EVENT_MAP = {};
+    HEALTH_FLAGS = {};
+    const { start, end } = monthBoundsUTC(Y, M);
+    await loadCaregiverFlags(start, end);
+    await loadCalendarEventsInRange(start, end);
+    render();
+  }
+
+  function openEditor(dateKey){
+    if (!editorOverlay || !editorForm) return;
+    editorDateKey = dateKey;
+    editorForm.reset();
+    const existing = HEALTH_FLAGS[dateKey]?.data || {};
+    const rec = MAP[dateKey] || {};
+    editorDateLabel.textContent = `Update ${humanDate(dateKey)}`;
+    const setBox = (name, value) => {
+      const input = editorForm.elements[name];
+      if (input) input.checked = !!value;
+    };
+    setBox('bm', existing.bm ?? rec.bm);
+    setBox('sleep', existing.sleep ?? (rec.sleep != null && rec.sleep >= 8));
+    setBox('onset', existing.onset ?? rec.onset);
+    setBox('manic', existing.manic ?? rec.manic);
+    setBox('sick', existing.sick ?? rec.sick);
+    setBox('anomaly', existing.anomaly ?? rec.anomaly);
+    editorSleep.value = existing.sleepHours ?? (rec.sleep ?? '');
+    editorNotes.value = existing.note || '';
+    if (editorQuick) editorQuick.value = '';
+    editorOverlay.classList.remove('is-hidden');
+  }
+
+  function closeEditor(){
+    editorForm?.reset();
+    editorOverlay?.classList.add('is-hidden');
+    editorDateKey = null;
+  }
+
+  async function saveHealthFlagEntry(dateKey, payload){
+    const normalized = {
+      bm: !!payload.bm,
+      sleep: !!payload.sleep,
+      sleepHours: Number.isFinite(Number(payload.sleepHours)) ? Number(payload.sleepHours) : null,
+      onset: !!payload.onset,
+      manic: !!payload.manic,
+      sick: !!payload.sick,
+      anomaly: !!payload.anomaly,
+      note: payload.note ? String(payload.note).trim() : null
+    };
+    const groupId = await ensureGroupId();
+    if (!groupId || !CURRENT_USER_ID) {
+      LOCAL_HEALTH[dateKey] = normalized;
+      saveLocalHealth();
+      HEALTH_FLAGS[dateKey] = { id:null, data:normalized };
+      applyHealthFlagToMap(dateKey, normalized);
+      render();
+      return;
     }
 
-    render();
+    const summaryBits = [];
+    if (normalized.bm) summaryBits.push('BM');
+    if (normalized.sleep || (normalized.sleepHours ?? 0) >= 8) summaryBits.push('Sleep');
+    if (normalized.onset) summaryBits.push('Late sleep');
+    if (normalized.manic) summaryBits.push('Manic');
+    if (normalized.sick) summaryBits.push('Sick');
+    if (normalized.anomaly) summaryBits.push('Anomaly');
+    const eventBody = {
+      title: summaryBits.length ? `Health: ${summaryBits.join(', ')}` : 'Health update',
+      type: 'health-flag',
+      start_date: dateKey,
+      start_time: null,
+      end_time: null,
+      all_day: true,
+      notes: JSON.stringify(normalized),
+      location: null,
+      group_id: groupId,
+      created_by: CURRENT_USER_ID
+    };
+    const existing = HEALTH_FLAGS[dateKey];
+    try {
+      let savedRow = null;
+      if (existing?.id) {
+        const resp = await rest(`calendar_events?id=eq.${encodeURIComponent(existing.id)}`, {
+          method:'PATCH',
+          headers:{ Prefer:'return=representation' },
+          body: JSON.stringify(eventBody)
+        });
+        savedRow = Array.isArray(resp) ? resp[0] : resp;
+      } else {
+        const rows = await rest('calendar_events', {
+          method:'POST',
+          headers:{ Prefer:'return=representation' },
+          body: JSON.stringify([eventBody])
+        });
+        savedRow = Array.isArray(rows) ? rows[0] : rows;
+      }
+      if (LOCAL_HEALTH[dateKey]) {
+        delete LOCAL_HEALTH[dateKey];
+        saveLocalHealth();
+      }
+      const id = savedRow?.id || existing?.id || null;
+      HEALTH_FLAGS[dateKey] = { id, data: normalized };
+      applyHealthFlagToMap(dateKey, normalized);
+      render();
+    } catch (error) {
+      console.warn('health flag save failed (using local cache)', error?.message || error);
+      LOCAL_HEALTH[dateKey] = normalized;
+      saveLocalHealth();
+      HEALTH_FLAGS[dateKey] = { id:null, data:normalized };
+      applyHealthFlagToMap(dateKey, normalized);
+      render();
+    }
   }
 
   const prevBtn = document.getElementById('hc-prev');
@@ -1555,6 +2320,33 @@ import { rest } from './restClient.js?v=2025.10.16d';
   nextBtn && nextBtn.addEventListener('click', () => { M++; if(M>11){ M=0; Y++; } loadMonth(); });
   document.querySelectorAll('input[data-hc-layer]').forEach(cb=>{
     cb.addEventListener('change', () => { layers[cb.dataset.hcLayer] = cb.checked; render(); });
+  });
+  editorForm?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!editorDateKey) return;
+    await saveHealthFlagEntry(editorDateKey, {
+      bm: editorForm.elements.bm?.checked,
+      sleep: editorForm.elements.sleep?.checked,
+      onset: editorForm.elements.onset?.checked,
+      manic: editorForm.elements.manic?.checked,
+      sick: editorForm.elements.sick?.checked,
+      anomaly: editorForm.elements.anomaly?.checked,
+      sleepHours: editorSleep.value,
+      note: editorNotes.value
+    });
+    closeEditor();
+  });
+  editorCancelBtn?.addEventListener('click', closeEditor);
+  editorOverlay?.addEventListener('click', (event) => {
+    if (event.target === editorOverlay) closeEditor();
+  });
+  editorQuick?.addEventListener('change', () => {
+    const value = editorQuick.value;
+    if (!value) return;
+    const input = editorForm?.elements[value];
+    if (input) input.checked = true;
+    if (value === 'sleep' && !editorSleep.value) editorSleep.value = '8';
+    editorQuick.value = '';
   });
 
   // Boot

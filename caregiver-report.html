@@ -87,13 +87,14 @@
     .quick-look-note-row{border:1px solid #e5e7eb;border-radius:8px;padding:6px;background:#fafafa}
     .quick-look-note-meta{font-size:12px;color:#6b7280;margin-bottom:4px;font-weight:600}
     .quick-look-note-text{white-space:pre-wrap}
-    .quick-look-print-sheet{max-width:640px;margin:0 auto;padding:20px;border:1px solid #d4d4d8;border-radius:16px;background:#fff;box-shadow:0 25px 40px rgba(15,23,42,.15)}
+    .quick-look-print-sheet{max-width:640px;margin:0 auto;padding:18px;border:1px solid #d4d4d8;border-radius:16px;background:#fff;box-shadow:0 25px 40px rgba(15,23,42,.15);font-size:12px;line-height:1.35}
     .quick-look-print-sheet.is-hidden{display:none}
     .quick-look-print-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
-    .quick-look-print-head h2{margin:0;font-size:20px}
-    .quick-look-print-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px}
-    .quick-look-print-notes{border-top:1px solid #e5e7eb;padding-top:10px}
-    .quick-look-print-note{border:1px solid #e5e7eb;border-radius:8px;padding:8px;margin-bottom:6px;font-size:12px}
+    .quick-look-print-head h2{margin:0;font-size:18px}
+    .quick-look-print-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px}
+    .quick-look-print-notes{border-top:1px solid #e5e7eb;padding-top:8px}
+    .quick-look-print-note{border:1px solid #e5e7eb;border-radius:8px;padding:6px;margin-bottom:6px;font-size:11px;line-height:1.4}
+    .quick-look-print-note-text{white-space:pre-wrap}
     .quick-look-print-note:last-child{margin-bottom:0}
     @media (max-width:640px){
       .quick-look-content{grid-template-columns:1fr}
@@ -904,9 +905,14 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       return card;
     }
 
-    function renderQuickLookPrintSheet(day) {
-      const sheet = quickLookUi.printSheet;
-      if (!sheet) return null;
+    async function printQuickLookDay(card, day) {
+      const entries = (Array.isArray(day.entries) ? day.entries : []).filter(entry => (entry.notes || '').trim().length);
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({ unit:'pt', format:'a4' });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const margin = 40;
+      const bodyWidth = pageW - margin * 2;
       const metrics = [
         ['Hygiene yes', `${day.hygieneYes}`],
         ['Food yes', `${day.foodYes}`],
@@ -915,46 +921,68 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
         ['Comm mins', `${day.comMinutes}`],
         ['Prompt avg', day.avgPrompt ?? '—']
       ];
-      const notes = (Array.isArray(day.entries) ? day.entries : [])
-        .filter(entry => (entry.notes || '').trim().length);
 
-      sheet.innerHTML = `
-        <div class="quick-look-print-head">
-          <div>
-            <h2>${formatQuickLookDate(day.date)}</h2>
-            <p>${day.entryCount} check-in${day.entryCount === 1 ? '' : 's'}</p>
-          </div>
-          <div>${day.caregivers.length ? `Caregivers: ${day.caregivers.join(', ')}` : ''}</div>
-        </div>
-        <div class="quick-look-print-grid">
-          ${metrics.map(([label,value])=>`
-            <div class="quick-look-metric">
-              <span class="metric-label">${label}</span>
-              <span class="metric-value">${value}</span>
-            </div>`).join('')}
-        </div>
-        <div class="quick-look-print-notes">
-          <h3>Notes</h3>
-          ${notes.length ? notes.map(entry => `
-            <div class="quick-look-print-note">
-              <div class="quick-look-note-meta">${entry.timestamp} • ${entry.caregiver}</div>
-              <div>${entry.notes.trim()}</div>
-            </div>
-          `).join('') : '<p>No notes recorded for this day.</p>'}
-        </div>
-      `;
-      return sheet;
-    }
+      let y = margin;
+      const ensureSpace = (needed = 0) => {
+        if (y + needed > pageH - margin) {
+          pdf.addPage();
+          y = margin;
+        }
+      };
 
-    async function printQuickLookDay(card, day) {
-      const sheet = renderQuickLookPrintSheet(day);
-      if (!sheet) return;
-      sheet.classList.remove('is-hidden');
-      try {
-        await exportElement('#cgQuickLookPrint', `Caregiver_${day.date}_Quick_Look.pdf`);
-      } finally {
-        sheet.classList.add('is-hidden');
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(18);
+      pdf.text(`Quick Look — ${formatQuickLookDate(day.date)}`, margin, y);
+      y += 20;
+      pdf.setFontSize(12);
+      const caregiversLine = day.caregivers.length ? day.caregivers.join(', ') : '—';
+      pdf.text(`Check-ins: ${day.entryCount}    Caregivers: ${caregiversLine}`, margin, y);
+      y += 18;
+
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(11);
+      const colWidth = bodyWidth / 3;
+      metrics.forEach((metric, idx) => {
+        const col = idx % 3;
+        const row = Math.floor(idx / 3);
+        const x = margin + col * colWidth;
+        const line = `${metric[0]}: ${metric[1]}`;
+        pdf.text(line, x, y + row * 14);
+      });
+      y += Math.ceil(metrics.length / 3) * 14 + 6;
+      pdf.setDrawColor(220);
+      pdf.line(margin, y, pageW - margin, y);
+      y += 16;
+
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(13);
+      pdf.text('Notes', margin, y);
+      y += 14;
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(11);
+
+      if (!entries.length) {
+        pdf.text('No notes recorded for this day.', margin, y);
+      } else {
+        for (const entry of entries) {
+          const meta = `${entry.timestamp} • ${entry.caregiver}`;
+          const body = entry.notes.trim();
+          ensureSpace(28);
+          pdf.setFont('helvetica', 'bold');
+          pdf.text(meta, margin, y);
+          y += 14;
+          pdf.setFont('helvetica', 'normal');
+          const lines = pdf.splitTextToSize(body, bodyWidth);
+          lines.forEach(line => {
+            ensureSpace(14);
+            pdf.text(line, margin, y);
+            y += 14;
+          });
+          y += 10;
+        }
       }
+
+      pdf.save(`Caregiver_${day.date}_Quick_Look.pdf`);
     }
 
     function renderQuickLook(sourceEntries) {
@@ -2171,12 +2199,14 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       applyLocalAnnotations(start, end);
       return;
     }
+    const startDate = start.slice(0,10);
+    const endDate = end.slice(0,10);
     try{
       const params = [
         'calendar_events?select=id,title,type,start_date,start_time,all_day,notes,location',
         `group_id=eq.${encodeURIComponent(groupId)}`,
-        `start_date=gte.${encodeURIComponent(start.slice(0,10))}`,
-        `start_date=lt.${encodeURIComponent(end.slice(0,10))}`,
+        `start_date=gte.${encodeURIComponent(startDate)}`,
+        `start_date=lt.${encodeURIComponent(endDate)}`,
         'order=start_date.asc'
       ];
       const rows = await rest(params.join('&'));
@@ -2238,47 +2268,47 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
     editorDateKey = null;
   }
 
-  async function saveHealthFlagEntry(dateKey, payload){
-    const normalized = {
-      bm: !!payload.bm,
-      sleep: !!payload.sleep,
-      sleepHours: Number.isFinite(Number(payload.sleepHours)) ? Number(payload.sleepHours) : null,
-      onset: !!payload.onset,
-      manic: !!payload.manic,
-      sick: !!payload.sick,
-      anomaly: !!payload.anomaly,
-      note: payload.note ? String(payload.note).trim() : null
-    };
-    const groupId = await ensureGroupId();
-    if (!groupId || !CURRENT_USER_ID) {
-      LOCAL_HEALTH[dateKey] = normalized;
-      saveLocalHealth();
-      HEALTH_FLAGS[dateKey] = { id:null, data:normalized };
-      applyHealthFlagToMap(dateKey, normalized);
-      render();
-      return;
-    }
+    async function saveHealthFlagEntry(dateKey, payload){
+      const normalized = {
+        bm: !!payload.bm,
+        sleep: !!payload.sleep,
+        sleepHours: Number.isFinite(Number(payload.sleepHours)) ? Number(payload.sleepHours) : null,
+        onset: !!payload.onset,
+        manic: !!payload.manic,
+        sick: !!payload.sick,
+        anomaly: !!payload.anomaly,
+        note: payload.note ? String(payload.note).trim() : null
+      };
+      const groupId = await ensureGroupId();
+      if (!groupId || !CURRENT_USER_ID) {
+        LOCAL_HEALTH[dateKey] = normalized;
+        saveLocalHealth();
+        HEALTH_FLAGS[dateKey] = { id:null, data:normalized };
+        applyHealthFlagToMap(dateKey, normalized);
+        render();
+        return;
+      }
 
-    const summaryBits = [];
-    if (normalized.bm) summaryBits.push('BM');
-    if (normalized.sleep || (normalized.sleepHours ?? 0) >= 8) summaryBits.push('Sleep');
-    if (normalized.onset) summaryBits.push('Late sleep');
-    if (normalized.manic) summaryBits.push('Manic');
-    if (normalized.sick) summaryBits.push('Sick');
-    if (normalized.anomaly) summaryBits.push('Anomaly');
-    const eventBody = {
-      title: summaryBits.length ? `Health: ${summaryBits.join(', ')}` : 'Health update',
-      type: 'health-flag',
-      start_date: dateKey,
-      start_time: null,
-      end_time: null,
-      all_day: true,
-      notes: JSON.stringify(normalized),
-      location: null,
-      group_id: groupId,
-      created_by: CURRENT_USER_ID
-    };
-    const existing = HEALTH_FLAGS[dateKey];
+      const summaryBits = [];
+      if (normalized.bm) summaryBits.push('BM');
+      if (normalized.sleep || (normalized.sleepHours ?? 0) >= 8) summaryBits.push('Sleep');
+      if (normalized.onset) summaryBits.push('Late sleep');
+      if (normalized.manic) summaryBits.push('Manic');
+      if (normalized.sick) summaryBits.push('Sick');
+      if (normalized.anomaly) summaryBits.push('Anomaly');
+      const eventBody = {
+        title: summaryBits.length ? `Health: ${summaryBits.join(', ')}` : 'Health update',
+        type: 'health-flag',
+        start_date: dateKey,
+        start_time: null,
+        end_time: null,
+        all_day: true,
+        notes: JSON.stringify(normalized),
+        location: null,
+        group_id: groupId,
+        created_by: CURRENT_USER_ID
+      };
+      const existing = HEALTH_FLAGS[dateKey];
     try {
       let savedRow = null;
       if (existing?.id) {

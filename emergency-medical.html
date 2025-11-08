@@ -253,6 +253,7 @@
   <script type="module">
     import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
     import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabaseClient.js?v=2025.10.16d';
+    import { uploadJsonToBucket, downloadJsonFromBucket } from './shared-storage.js?v=2025.10.16d';
 
     // ---------- PHOTO ----------
     const drop    = document.getElementById('photoDrop');
@@ -267,11 +268,15 @@
     const GROUP_KEY = 'currentGroupId';
     const session = getSessionFromStorage();
     const currentUserId = session?.user?.id || null;
+    const currentUserName = () => session?.user?.user_metadata?.full_name || session?.user?.email || 'Caregiver';
 
     let pendingFile = null;
     let activeGroupId = null;
-    let ownerUserId = null;
     let canEdit = true;
+    let sharedEnvelope = null;
+    const SHARED_BUCKET = 'documents';
+    const SHARED_PREFIX = 'shared/emergency';
+    const sharedPathForGroup = (groupId) => `${SHARED_PREFIX}/${groupId}.json`;
 
     async function ensureGroupId(userId){
       if (!userId) return null;
@@ -291,6 +296,33 @@
         console.warn('ensureGroupId error', err);
       }
       return gid;
+    }
+
+    async function getActiveGroupId(){
+      if (activeGroupId) return activeGroupId;
+      activeGroupId = await ensureGroupId(currentUserId);
+      return activeGroupId;
+    }
+
+    async function loadSharedEnvelope(){
+      const gid = await getActiveGroupId();
+      if (!gid) return null;
+      return await downloadJsonFromBucket(SHARED_BUCKET, sharedPathForGroup(gid));
+    }
+
+    async function saveSharedEnvelope(payload){
+      const gid = await getActiveGroupId();
+      if (!gid) throw new Error('Join a group to share this info.');
+      const envelope = {
+        updated_at: new Date().toISOString(),
+        updated_by: currentUserId,
+        updated_by_name: currentUserName(),
+        group_id: gid,
+        data: payload
+      };
+      await uploadJsonToBucket(SHARED_BUCKET, sharedPathForGroup(gid), envelope);
+      sharedEnvelope = envelope;
+      return envelope;
     }
 
     function applyEditMode(editable){
@@ -511,6 +543,30 @@
       renderLists();
     }
 
+    const textOrEmpty = (value) => (typeof value === 'string' ? value : (value ?? ''));
+    const arrayOrEmpty = (value) => (Array.isArray(value) ? value : []);
+
+    function payloadFromRow(row){
+      if (!row) return null;
+      return {
+        name: textOrEmpty(row.name),
+        address: textOrEmpty(row.address),
+        phone: textOrEmpty(row.phone),
+        email: textOrEmpty(row.email),
+        allergies: textOrEmpty(row.allergies),
+        other_medical_info: textOrEmpty(row.other_medical_info),
+        preferred_hospital: textOrEmpty(row.preferred_hospital),
+        insurance_info: textOrEmpty(row.insurance_info),
+        primary_language: textOrEmpty(row.primary_language),
+        communication_needs: textOrEmpty(row.communication_needs),
+        emergency_instructions: textOrEmpty(row.emergency_instructions),
+        interaction_tips: textOrEmpty(row.interaction_tips),
+        avatar_url: row.avatar_url || null,
+        contacts: arrayOrEmpty(row.contacts),
+        medications: arrayOrEmpty(row.medications)
+      };
+    }
+
     // Local draft
     function saveDraft(){
       if (!canEdit) return;
@@ -533,17 +589,22 @@
       try{
         const uid = session?.user?.id;
         if(!uid) throw new Error('Not signed in');
-        if (!activeGroupId) activeGroupId = await ensureGroupId(uid);
         const payload = buildPayload();
-        const rowId = ownerUserId || uid;
-        const row = { id: rowId, group_id: activeGroupId, ...payload, updated_at: new Date().toISOString() };
-        await rest('emergency_medical?on_conflict=id', {
-          method: 'POST',
-          headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
-          body: JSON.stringify([row]),
-        });
-        ownerUserId = rowId;
-        document.getElementById('cloudStatus').textContent = 'Saved to cloud ✓';
+        await saveSharedEnvelope(payload);
+        document.getElementById('cloudStatus').textContent = 'Saved for group ✓';
+        try {
+          const gid = await getActiveGroupId();
+          if (gid) {
+            const row = { id: uid, group_id: gid, ...payload, updated_at: new Date().toISOString() };
+            await rest('emergency_medical?on_conflict=id', {
+              method: 'POST',
+              headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+              body: JSON.stringify([row]),
+            });
+          }
+        } catch (syncErr) {
+          console.warn('legacy emergency_medical sync failed', syncErr?.message || syncErr);
+        }
       }catch(err){
         console.error(err);
         document.getElementById('cloudStatus').textContent = 'Cloud save failed';
@@ -556,21 +617,47 @@
       try{
         const uid = session?.user?.id;
         if(!uid) throw new Error('Not signed in');
-        const rows = await rest('emergency_medical?select=*&limit=1');
-        const data = rows?.[0] || null;
-        ownerUserId = data?.id || null;
-        activeGroupId = data?.group_id || activeGroupId || await ensureGroupId(uid);
-        const editable = !ownerUserId || ownerUserId === uid;
-        applyEditMode(editable);
-        if(!data){ document.getElementById('cloudStatus').textContent = 'No cloud record yet'; return; }
-        hydrateForm(data);
-        document.getElementById('cloudStatus').textContent = editable
-          ? 'Loaded from cloud ✓'
-          : 'Loaded from cloud — view only';
+        const gid = await getActiveGroupId();
+        if (!gid) throw new Error('Join a group to share this record.');
+        let envelope = await loadSharedEnvelope();
+        if (!envelope || !envelope.data) {
+          envelope = await seedFromLegacy(uid, gid);
+        }
+        if (envelope?.data) {
+          sharedEnvelope = envelope;
+          hydrateForm(envelope.data);
+          document.getElementById('cloudStatus').textContent = 'Loaded shared record ✓';
+        } else {
+          document.getElementById('cloudStatus').textContent = 'No shared record yet';
+        }
+        applyEditMode(true);
+        if (canEdit) loadDraft();
       }catch(err){
         console.error(err);
         document.getElementById('cloudStatus').textContent = 'Cloud load failed';
         alert(err.message || 'Loading from cloud failed.');
+      }
+    }
+
+    async function seedFromLegacy(uid, gid){
+      try{
+        const rows = await rest('emergency_medical?select=*&limit=1');
+        const data = rows?.[0] || null;
+        if (!data) return null;
+        const payload = payloadFromRow(data);
+        if (!payload) return null;
+        const envelope = {
+          updated_at: data.updated_at || new Date().toISOString(),
+          updated_by: data.id || uid,
+          updated_by_name: data.updated_by_name || currentUserName(),
+          group_id: gid,
+          data: payload
+        };
+        await uploadJsonToBucket(SHARED_BUCKET, sharedPathForGroup(gid), envelope);
+        return envelope;
+      } catch (error) {
+        console.warn('legacy emergency load failed', error?.message || error);
+        return null;
       }
     }
 
@@ -582,9 +669,11 @@
     document.querySelectorAll('input, textarea').forEach(el => el.addEventListener('input', debounce(saveDraft, 600)));
 
     // Init
-    if (!currentUserId) applyEditMode(false);
-    await loadFromCloud(); // load shared record first
-    if (canEdit) loadDraft(); // overlay local edits if you are the owner
+    if (!currentUserId) {
+      applyEditMode(false);
+    } else {
+      await loadFromCloud(); // load shared record first
+    }
 
     function debounce(fn, ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
   </script>

@@ -15,12 +15,20 @@
     h3{margin:.25rem 0 .5rem;text-align:center}
 
     .panel{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin:14px 0}
-    .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:center;margin:.5rem 0 .75rem}
-    select,button{padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:#fff}
+    .toolbar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:center;margin:.5rem 0 .75rem}
+    select,button{padding:10px 14px;border:1px solid var(--border);border-radius:12px;background:#fff;font-size:15px;font-weight:600}
+    .toolbar input[type="date"],
+    .toolbar select,
+    .toolbar button{min-height:46px}
+    .toolbar label{display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:600}
     button{cursor:pointer;transition:background .15s ease}
     button:hover{background:#f5f5f5}
     button:active{background:#f0f0f0}
     button:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
+    #cgCaregiver{min-width:230px;font-weight:700}
+    #cgQuickLookToggle,
+    #cgPdf,
+    #cgCsv{font-size:15px}
 
     table{width:100%;border-collapse:collapse}
     th,td{border:1px solid #ddd;padding:8px;vertical-align:top}
@@ -71,7 +79,7 @@
     .quick-look-card{border:1px solid #e5e7eb;border-radius:14px;padding:12px;background:#fff;box-shadow:0 8px 18px rgba(15,23,42,.07);display:flex;flex-direction:column;gap:8px}
     .quick-look-header{display:flex;align-items:center;justify-content:space-between;gap:10px}
     .quick-look-date{font-size:16px;font-weight:700}
-    .quick-look-print{border:1px solid #d4d4d8;border-radius:8px;padding:4px 8px;background:#f8fafc;font-size:12px;font-weight:600;cursor:pointer}
+    .quick-look-print{border:1px solid #d4d4d8;border-radius:10px;padding:8px 12px;background:#f8fafc;font-size:13px;font-weight:700;cursor:pointer}
     .quick-look-print:hover{background:#eef2ff}
     .quick-look-count{font-size:13px;color:#4b5563;font-weight:600;margin-top:-4px}
     .quick-look-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0 0 8px}
@@ -201,7 +209,12 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
 })();
 </script>
 
+<!-- Shared navigation shell -->
+<script defer src="./ui-shell.js?v=2025.10.16d"></script>
+<script defer src="./scripts/appbar-drawer.js?v=2025.10.16d"></script>
+
 <body>
+  <div id="navbar"></div>
   <div class="top-actions no-export" style="display:flex;gap:8px;justify-content:center;margin:8px 0 14px;">
     <button id="fullExportBtn">📄 Export Full Report (PDF)</button>
     <button id="fullPrintBtn">🖨️ Print</button>
@@ -316,6 +329,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
             <div class="hc-kv" id="hc-kv-onset">🦉 Late sleep onset days: 0</div>
             <div class="hc-kv" id="hc-kv-manic">⚡️ Manic days: 0</div>
             <div class="hc-kv" id="hc-kv-sick">🤒 Sick days: 0</div>
+            <div class="hc-kv" id="hc-kv-appetite">🍽️ Appetite change days: 0</div>
             <div class="hc-kv" id="hc-kv-anomaly">🚩 Anomaly days: 0</div>
           </div>
         </div>
@@ -326,6 +340,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
           <label><input type="checkbox" data-hc-layer="onset" checked/> <span class="hc-emo" aria-hidden="true">🦉</span> Late sleep onset</label>
           <label><input type="checkbox" data-hc-layer="manic" checked/> <span class="hc-emo" aria-hidden="true">⚡️</span> Manic</label>
           <label><input type="checkbox" data-hc-layer="sick" checked/> <span class="hc-emo" aria-hidden="true">🤒</span> Sick</label>
+          <label><input type="checkbox" data-hc-layer="appetite" checked/> <span class="hc-emo" aria-hidden="true">🍽️</span> Appetite change</label>
           <label><input type="checkbox" data-hc-layer="anomaly" checked/> <span class="hc-emo" aria-hidden="true">🚩</span> Anomaly</label>
         </div>
 
@@ -372,6 +387,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
           <option value="onset">Late sleep onset</option>
           <option value="manic">Manic</option>
           <option value="sick">Sick</option>
+          <option value="appetite">Change in appetite</option>
           <option value="anomaly">Anomaly</option>
         </select>
       </label>
@@ -381,6 +397,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
         <label><input type="checkbox" name="onset"> 🦉 Late sleep onset</label>
         <label><input type="checkbox" name="manic"> ⚡️ Manic</label>
         <label><input type="checkbox" name="sick"> 🤒 Sick</label>
+        <label><input type="checkbox" name="appetite"> 🍽️ Change in appetite</label>
         <label><input type="checkbox" name="anomaly"> 🚩 Anomaly</label>
       </fieldset>
       <label>
@@ -562,6 +579,16 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       try { localStorage.setItem(CAREGIVER_FILTER_KEY, value); } catch {}
     };
 
+    const FRIENDLY_CAREGIVER_LABELS = {
+      'countrygirlinvt@gmail.com': 'Beth',
+      'jcadams05143@gmail.com': 'Josh'
+    };
+    const friendlyNameFromEmail = (email) => {
+      if (!email) return null;
+      const normalized = String(email).trim().toLowerCase();
+      return FRIENDLY_CAREGIVER_LABELS[normalized] || null;
+    };
+
     const cgState = {
       entries: [],
       filtered: [],
@@ -585,15 +612,37 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       return '';
     };
 
+    const emailFromEntry = (entry = {}) => {
+      const payload = entry.payload || {};
+      const candidates = [
+        entry.caregiver_email,
+        payload.caregiver_email,
+        payload.caregiver_mail,
+        entry.email,
+        payload.email,
+        entry.user_email,
+        payload.user_email,
+        entry.owner_email,
+        payload.owner_email
+      ];
+      for (const value of candidates) {
+        if (typeof value !== 'string') continue;
+        const trimmed = value.trim();
+        if (trimmed) return trimmed.toLowerCase();
+      }
+      return '';
+    };
+
     const caregiverNameFromEntry = (entry = {}) => {
+      const friendly = friendlyNameFromEmail(emailFromEntry(entry));
+      if (friendly) return friendly;
       const payload = entry.payload || {};
       const candidates = [
         entry.caregiver_name,
         payload.caregiver_name,
         payload.caregiver,
         payload.submitted_by,
-        payload.entered_by,
-        payload.caregiver_email
+        payload.entered_by
       ];
       for (const value of candidates) {
         if (typeof value !== 'string') continue;
@@ -1041,9 +1090,12 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
 
       const session = getSessionFromStorage();
       const selfId = session?.user?.id ? String(session.user.id) : '';
-      const selfLabel = session?.user?.user_metadata?.full_name ||
+      const selfEmail = session?.user?.email?.toLowerCase() || '';
+      const friendlySelf = friendlyNameFromEmail(selfEmail);
+      const selfLabel = friendlySelf ||
+        session?.user?.user_metadata?.full_name ||
         session?.user?.user_metadata?.name ||
-        session?.user?.email ||
+        (selfEmail ? selfEmail.split('@')[0] : '') ||
         (selfId ? `Me (${selfId.slice(0,6)}…)` : '');
       if (selfId) {
         addOption(CAREGIVER_ID_PREFIX + selfId, selfLabel ? `${selfLabel} (Me)` : 'My check-ins');
@@ -1053,15 +1105,18 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       for (const entry of entries) {
         const id = caregiverIdFromEntry(entry);
         const name = caregiverNameFromEntry(entry);
+        const email = emailFromEntry(entry);
+        const friendly = friendlyNameFromEmail(email);
+        const fallbackName = friendly || name || (email ? email.split('@')[0] : '');
         if (id) {
           const key = CAREGIVER_ID_PREFIX + id;
           if (!optionMap.has(key)) {
-            optionMap.set(key, name || `Caregiver ${id.slice(0,6)}…`);
+            optionMap.set(key, fallbackName || `Caregiver ${id.slice(0,6)}…`);
           }
-        } else if (name) {
-          const key = CAREGIVER_NAME_PREFIX + name.toLowerCase();
+        } else if (fallbackName) {
+          const key = CAREGIVER_NAME_PREFIX + fallbackName.toLowerCase();
           if (!optionMap.has(key)) {
-            optionMap.set(key, name);
+            optionMap.set(key, fallbackName);
           }
         }
       }
@@ -1806,7 +1861,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
     await loadCaregiverData();
     await renderMoodSection();
     await renderWyr();
-  </script>
+</script>
+
 </body>
 </html>
 
@@ -1924,6 +1980,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
   const kvOnst = document.getElementById('hc-kv-onset');
   const kvMan  = document.getElementById('hc-kv-manic');
   const kvSick = document.getElementById('hc-kv-sick');
+  const kvApp  = document.getElementById('hc-kv-appetite');
   const kvAno  = document.getElementById('hc-kv-anomaly');
 
   const editorOverlay   = document.getElementById('hc-editor-overlay');
@@ -1941,6 +1998,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
   const CURRENT_USER_ID = sessionInfo?.user?.id || null;
   const GROUP_STORAGE_KEY = 'currentGroupId';
   const LOCAL_HEALTH_KEY = 'healthCalendarAnnotations';
+  const HEALTH_LAST_SAVED_KEY = 'healthCalendarLastSavedAt';
   let LOCAL_HEALTH = {};
   try { LOCAL_HEALTH = JSON.parse(localStorage.getItem(LOCAL_HEALTH_KEY) || '{}'); } catch { LOCAL_HEALTH = {}; }
 
@@ -2005,14 +2063,43 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
     );
     return mins != null && mins >= 120;
   }
-  const EMO = { bm:'💩', sleep:'😴', onset:'🦉', manic:'⚡️', sick:'🤒', anomaly:'🚩' };
+  function hasAppetiteChange(source){
+    if (!source) return false;
+    const candidates = [
+      source.appetite,
+      source.appetite_change,
+      source.change_in_appetite,
+      source.appetite_flag,
+      source.behavior_appetite,
+      source.appetite_notes
+    ];
+    for (const value of candidates) {
+      if (typeof value === 'boolean') return value;
+      if (typeof value === 'number') return value !== 0;
+      if (typeof value === 'string') {
+        const norm = value.trim().toLowerCase();
+        if (!norm) continue;
+        if (['yes','y','true','1','less','more','low','high','off','reduced','increase','decrease'].some(token => norm.includes(token))) {
+          if (norm.includes('no change') || norm === 'normal') continue;
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+  const EMO = { bm:'💩', sleep:'😴', onset:'🦉', manic:'⚡️', sick:'🤒', appetite:'🍽️', anomaly:'🚩' };
 
   function saveLocalHealth(){
     try { localStorage.setItem(LOCAL_HEALTH_KEY, JSON.stringify(LOCAL_HEALTH)); } catch {}
+    stampHealthUpdate();
+  }
+
+  function stampHealthUpdate(){
+    try { localStorage.setItem(HEALTH_LAST_SAVED_KEY, String(Date.now())); } catch {}
   }
 
   function applyHealthFlagToMap(key, data = {}){
-    const base = MAP[key] || { bm:false, sleep:null, onset:false, manic:false, sick:false, anomaly:false };
+    const base = MAP[key] || { bm:false, sleep:null, onset:false, manic:false, sick:false, appetite:false, anomaly:false };
     const hours = data.sleepHours != null ? Number(data.sleepHours) : (data.sleep ? 8 : null);
     MAP[key] = {
       bm: base.bm || !!data.bm,
@@ -2020,16 +2107,17 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       onset: base.onset || !!data.onset,
       manic: base.manic || !!data.manic,
       sick: base.sick || !!data.sick,
+      appetite: base.appetite || !!data.appetite,
       anomaly: base.anomaly || !!data.anomaly
     };
   }
 
   let Y = (new Date()).getFullYear();
   let M = (new Date()).getMonth(); // 0-11
-  let MAP = {};                    // { 'YYYY-MM-DD': { bm, sleep, manic, sick, anomaly } }
+  let MAP = {};                    // { 'YYYY-MM-DD': { bm, sleep, manic, sick, appetite, anomaly } }
   let EVENT_MAP = {};              // meetings/appointments
   let HEALTH_FLAGS = {};           // persisted manual flags
-  const layers = { bm:true, sleep:true, onset:true, manic:true, sick:true, anomaly:true };
+  const layers = { bm:true, sleep:true, onset:true, manic:true, sick:true, appetite:true, anomaly:true };
 
   function fmtMonth(y,m){ return new Date(y,m,1).toLocaleString(undefined,{month:'long',year:'numeric'}); }
   function monthBoundsUTC(y,m){
@@ -2056,12 +2144,12 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
     const startPad = first.getDay();
     for(let i=0;i<startPad;i++){ const b=document.createElement('div'); b.className='hc-cell'; grid.appendChild(b); }
 
-  let bmDays=0, sleepDays=0, onsetDays=0, manicDays=0, sickDays=0, anomalyDays=0;
+  let bmDays=0, sleepDays=0, onsetDays=0, manicDays=0, sickDays=0, appetiteDays=0, anomalyDays=0;
 
     for(let day=1; day<=last.getDate(); day++){
       const cell = document.createElement('div'); cell.className='hc-cell'; cell.setAttribute('role','gridcell');
       const key = Y + '-' + pad(M+1) + '-' + pad(day);
-      const rec = MAP[key] || { bm:false, sleep:null, onset:false, manic:false, sick:false, anomaly:false };
+      const rec = MAP[key] || { bm:false, sleep:null, onset:false, manic:false, sick:false, appetite:false, anomaly:false };
       cell.dataset.date = key;
 
       const head = document.createElement('div'); head.className='hc-date'; head.textContent = day; cell.appendChild(head);
@@ -2072,6 +2160,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       if (rec.onset && layers.onset){ const s=document.createElement('span'); s.textContent=EMO.onset; s.setAttribute('aria-label','Late sleep onset'); icons.appendChild(s); onsetDays++; }
       if (rec.manic && layers.manic){ const s=document.createElement('span'); s.textContent=EMO.manic; s.setAttribute('aria-label','Manic'); icons.appendChild(s); manicDays++; }
       if (rec.sick  && layers.sick ){ const s=document.createElement('span'); s.textContent=EMO.sick;  s.setAttribute('aria-label','Sick'); icons.appendChild(s); sickDays++; }
+      if (rec.appetite && layers.appetite){ const s=document.createElement('span'); s.textContent=EMO.appetite; s.setAttribute('aria-label','Change in appetite'); icons.appendChild(s); appetiteDays++; }
       if (rec.anomaly && layers.anomaly){ const s=document.createElement('span'); s.textContent=EMO.anomaly; s.setAttribute('aria-label','Anomaly'); icons.appendChild(s); anomalyDays++; }
 
       if (icons.children.length) cell.appendChild(icons);
@@ -2106,6 +2195,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
     kvOnst && (kvOnst.textContent = '🦉 Late sleep onset days: ' + onsetDays);
     kvMan && (kvMan.textContent = '⚡️ Manic days: ' + manicDays);
     kvSick&& (kvSick.textContent= '🤒 Sick days: ' + sickDays);
+    kvApp && (kvApp.textContent = '🍽️ Appetite change days: ' + appetiteDays);
     kvAno && (kvAno.textContent = '🚩 Anomaly days: ' + anomalyDays);
   }
 
@@ -2134,15 +2224,17 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
           const onsetLate = hasLateSleepOnset(p) || hasLateSleepOnset(row);
           const manic = (/yes/i.test(String(p.aggression_flag || ''))) || ((+p.aggression_intensity || 0) > 0);
           const sick  = /no/i.test(String(p.appears_good_health || ''));
+          const appetite = hasAppetiteChange(p) || hasAppetiteChange(row);
           const anomaly = p.anomaly_flag === true || /yes/i.test(String(p.anomaly || ''));
 
-          const cur = MAP[key] || { bm:false, sleep:null, onset:false, manic:false, sick:false, anomaly:false };
+          const cur = MAP[key] || { bm:false, sleep:null, onset:false, manic:false, sick:false, appetite:false, anomaly:false };
           MAP[key] = {
             bm:    cur.bm    || bm,
             sleep: (sleep!=null && (cur.sleep==null || sleep>cur.sleep)) ? sleep : cur.sleep,
             onset: cur.onset || onsetLate,
             manic: cur.manic || manic,
             sick:  cur.sick  || sick,
+            appetite: cur.appetite || appetite,
             anomaly: cur.anomaly || anomaly
           };
         }
@@ -2163,14 +2255,16 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
           const onsetLate = hasLateSleepOnset(e);
           const manic = (/yes/i.test(String(e.aggression_flag || ''))) || ((+e.aggression_intensity || 0) > 0);
           const sick  = /no/i.test(String(e.appears_good_health || ''));
+          const appetite = hasAppetiteChange(e);
           const anomaly = e.anomaly_flag === true || /yes/i.test(String(e.anomaly || ''));
-          const cur = MAP[key] || { bm:false, sleep:null, onset:false, manic:false, sick:false, anomaly:false };
+          const cur = MAP[key] || { bm:false, sleep:null, onset:false, manic:false, sick:false, appetite:false, anomaly:false };
           MAP[key] = {
             bm:    cur.bm    || bm,
             sleep: (sleep!=null && (cur.sleep==null || sleep>cur.sleep)) ? sleep : cur.sleep,
             onset: cur.onset || onsetLate,
             manic: cur.manic || manic,
             sick:  cur.sick  || sick,
+            appetite: cur.appetite || appetite,
             anomaly: cur.anomaly || anomaly
           };
         }
@@ -2255,6 +2349,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
     setBox('onset', existing.onset ?? rec.onset);
     setBox('manic', existing.manic ?? rec.manic);
     setBox('sick', existing.sick ?? rec.sick);
+    setBox('appetite', existing.appetite ?? rec.appetite);
     setBox('anomaly', existing.anomaly ?? rec.anomaly);
     editorSleep.value = existing.sleepHours ?? (rec.sleep ?? '');
     editorNotes.value = existing.note || '';
@@ -2276,6 +2371,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
         onset: !!payload.onset,
         manic: !!payload.manic,
         sick: !!payload.sick,
+        appetite: !!payload.appetite,
         anomaly: !!payload.anomaly,
         note: payload.note ? String(payload.note).trim() : null
       };
@@ -2286,6 +2382,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
         HEALTH_FLAGS[dateKey] = { id:null, data:normalized };
         applyHealthFlagToMap(dateKey, normalized);
         render();
+        stampHealthUpdate();
         return;
       }
 
@@ -2295,6 +2392,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       if (normalized.onset) summaryBits.push('Late sleep');
       if (normalized.manic) summaryBits.push('Manic');
       if (normalized.sick) summaryBits.push('Sick');
+      if (normalized.appetite) summaryBits.push('Appetite');
       if (normalized.anomaly) summaryBits.push('Anomaly');
       const eventBody = {
         title: summaryBits.length ? `Health: ${summaryBits.join(', ')}` : 'Health update',
@@ -2334,6 +2432,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       HEALTH_FLAGS[dateKey] = { id, data: normalized };
       applyHealthFlagToMap(dateKey, normalized);
       render();
+      stampHealthUpdate();
     } catch (error) {
       console.warn('health flag save failed (using local cache)', error?.message || error);
       LOCAL_HEALTH[dateKey] = normalized;
@@ -2341,6 +2440,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       HEALTH_FLAGS[dateKey] = { id:null, data:normalized };
       applyHealthFlagToMap(dateKey, normalized);
       render();
+      stampHealthUpdate();
     }
   }
 
@@ -2360,6 +2460,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       onset: editorForm.elements.onset?.checked,
       manic: editorForm.elements.manic?.checked,
       sick: editorForm.elements.sick?.checked,
+      appetite: editorForm.elements.appetite?.checked,
       anomaly: editorForm.elements.anomaly?.checked,
       sleepHours: editorSleep.value,
       note: editorNotes.value

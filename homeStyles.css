@@ -262,7 +262,7 @@ body.home-page .home-hero{
 }
 
 /* Constrain the hero & center content */
-.home-hero { width: 100%; margin: 0 auto 16px; }
+.home-hero { width: 100%; margin: 0 auto 16px; position: relative; }
 .home-inner { width: min(100%, 680px); margin-inline: auto; padding-inline: 12px; }
 @media (min-width: 900px){ .home-inner { max-width: 840px; } }
 

@@ -63,6 +63,8 @@
   <!-- Top navbar host (ui-shell will fill this; safe to keep) -->
   <div id="navbar"></div>
 
+  <div id="activityBannerHost" class="activity-banner-host is-hidden" role="region" aria-live="polite" aria-label="Recent updates"></div>
+
   <main class="wrap">
    <section class="card" 
          style="background: rgba(255,255,255,0.45); border-radius: 20px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
@@ -85,6 +87,7 @@
 <!-- Page logic that populates #user-email etc. -->
 <script type="module" src="./script.js?v=2025.10.16d"></script>
 <script type="module" src="./avatar-float.js?v=2025.10.16d"></script>
+<script type="module" src="./home-activity.js?v=2025.10.16d"></script>
 
 <script type="module">
   import {

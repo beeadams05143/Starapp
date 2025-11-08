@@ -1,6 +1,7 @@
 // documents.js
 import { rest, getSessionFromStorage } from "../restClient.js?v=2025.10.16d";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../supabaseClient.js?v=2025.10.16d";
+import { uploadJsonToBucket, downloadJsonFromBucket } from "../shared-storage.js?v=2025.10.16d";
 
 // Inject CSS so visited links aren't purple, without breaking the active (black) tabs
 (() => {
@@ -23,6 +24,118 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../supabaseClient.js?v=2025.10.
   `;
   document.head.appendChild(style);
 })();
+
+const session = getSessionFromStorage();
+const currentUser = session?.user || null;
+if (!currentUser?.id) {
+  alert("Please sign in to manage documents.");
+  window.location.href = "/login.html";
+  throw new Error("Not logged in.");
+}
+const USER_ID = currentUser.id;
+const USER_NAME = currentUser.user_metadata?.full_name || currentUser.email || "Caregiver";
+const GROUP_KEY = "currentGroupId";
+const SHARED_DOC_BUCKET = "documents";
+const DOCS_PREFIX = "shared/docs";
+const docsPathForGroup = (groupId) => `${DOCS_PREFIX}/${groupId}.json`;
+let GROUP_ID = null;
+let docsStore = { documents: [] };
+let docsStoreLoaded = false;
+let docsStorePromise = null;
+
+async function ensureGroupId(userId) {
+  if (!userId) return null;
+  let cached = null;
+  try { cached = localStorage.getItem(GROUP_KEY); } catch { cached = null; }
+  if (cached) return cached;
+  try {
+    const rows = await rest([
+      "group_members?select=group_id",
+      `user_id=eq.${encodeURIComponent(userId)}`,
+      "order=joined_at.asc",
+      "limit=1"
+    ].join("&"));
+    const gid = rows?.[0]?.group_id || null;
+    if (gid) {
+      try { localStorage.setItem(GROUP_KEY, gid); } catch {}
+    }
+    return gid;
+  } catch (error) {
+    console.warn("group lookup failed", error?.message || error);
+    return null;
+  }
+}
+
+const normalizeTags = (tags) => Array.isArray(tags) ? tags : (typeof tags === "string" ? tags.split(",").map(s => s.trim()).filter(Boolean) : []);
+
+function mapDocRow(row) {
+  if (!row) return null;
+  return {
+    id: row.id || crypto.randomUUID(),
+    title: row.title || "Untitled",
+    doc_type: row.doc_type || "upload",
+    content: row.content || "",
+    content_json: row.content_json || {},
+    tags: normalizeTags(row.tags),
+    storage_path: row.storage_path || null,
+    created_by: row.created_by || USER_ID,
+    created_at: row.created_at || new Date().toISOString()
+  };
+}
+
+async function ensureDocsStore(forceReload = false) {
+  if (docsStoreLoaded && !forceReload) return docsStore;
+  if (docsStorePromise && !forceReload) return docsStorePromise;
+  docsStorePromise = (async () => {
+    GROUP_ID = GROUP_ID || await ensureGroupId(USER_ID);
+    if (!GROUP_ID) throw new Error("Join a group to share documents.");
+    let data = await downloadJsonFromBucket(SHARED_DOC_BUCKET, docsPathForGroup(GROUP_ID));
+    if (!data || typeof data !== "object") {
+      data = await seedDocsFromSupabase();
+    }
+    docsStore = {
+      documents: Array.isArray(data?.documents) ? data.documents : [],
+      updated_at: data?.updated_at || null,
+    };
+    docsStoreLoaded = true;
+    return docsStore;
+  })();
+  try {
+    return await docsStorePromise;
+  } finally {
+    docsStorePromise = null;
+  }
+}
+
+async function seedDocsFromSupabase() {
+  try {
+    const rows = await rest("documents?select=*&order=created_at.desc");
+    if (!Array.isArray(rows) || !rows.length) {
+      return { documents: [], updated_at: null };
+    }
+    const normalized = rows.map(mapDocRow).filter(Boolean);
+    const payload = {
+      documents: normalized,
+      migrated_from: "documents",
+      updated_at: new Date().toISOString(),
+    };
+    await uploadJsonToBucket(SHARED_DOC_BUCKET, docsPathForGroup(GROUP_ID), payload);
+    return payload;
+  } catch (error) {
+    console.warn("docs legacy load failed", error?.message || error);
+    return { documents: [], updated_at: null };
+  }
+}
+
+async function persistDocsStore(updatedAt = null) {
+  if (!GROUP_ID) return;
+  const payload = {
+    group_id: GROUP_ID,
+    updated_at: updatedAt || new Date().toISOString(),
+    documents: docsStore.documents
+  };
+  await uploadJsonToBucket(SHARED_DOC_BUCKET, docsPathForGroup(GROUP_ID), payload);
+}
 
 
 /* ------------ helpers ------------ */
@@ -139,6 +252,7 @@ if (prettyForm) {
       const session = getSessionFromStorage();
       const user = session?.user;
       if (!user?.id) throw new Error("Not logged in.");
+      await ensureDocsStore();
 
       const extraTags = tagsStr ? tagsStr.split(",").map(s => s.trim()).filter(Boolean) : [];
       const tags = [activeCategory, ...extraTags];
@@ -164,6 +278,20 @@ if (prettyForm) {
       }]),
       });
 
+      const newEntry = {
+        id: crypto.randomUUID(),
+        title,
+        doc_type: docType,
+        content: desc || "",
+        content_json,
+        tags,
+        storage_path,
+        created_by: user.id,
+        created_at: new Date().toISOString()
+      };
+      docsStore.documents = [newEntry, ...(docsStore.documents || [])].slice(0, 200);
+      await persistDocsStore(newEntry.created_at);
+
       alert("Saved!");
       prettyForm.reset();
       if (catInput) catInput.value = activeCategory; // keep tab label
@@ -179,16 +307,21 @@ if (prettyForm) {
 async function loadDocuments() {
   const list = document.getElementById("docs-list");
   if (!list) return;
-
-  let data = [];
+  list.innerHTML = "";
   try {
-    data = await rest("documents?select=*&order=created_at.desc");
+    const store = await ensureDocsStore();
+    await renderDocuments(list, store.documents || []);
   } catch (error) {
     console.error(error);
-    return;
+    const empty = document.createElement("div");
+    empty.className = "card";
+    empty.textContent = error?.message || "Unable to load documents.";
+    list.appendChild(empty);
   }
+}
 
-  const filtered = (data || []).filter(d => {
+async function renderDocuments(list, docs) {
+  const filtered = (docs || []).filter(d => {
     const inTags = Array.isArray(d.tags) && d.tags.includes(activeCategory);
     const inJson = d.content_json?.primary_category === activeCategory;
     return inTags || inJson;
@@ -206,7 +339,7 @@ async function loadDocuments() {
       } catch {}
     }
     const desc = doc.content
-      ? `<div class="muted" style="margin-top:6px; white-space:pre-wrap">${(doc.content || "").slice(0,240)}${doc.content.length>240?"…":""}</div>`
+      ? `<div class="muted" style="margin-top:6px; white-space:pre-wrap">${(doc.content || "").slice(0,240)}${(doc.content || "").length>240?"…":""}</div>`
       : "";
     const dateStr = doc.content_json?.document_date
       ? new Date(doc.content_json.document_date).toLocaleString()

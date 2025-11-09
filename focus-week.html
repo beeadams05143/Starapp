@@ -163,7 +163,7 @@
           <h2>Daily Practice Tracker</h2>
           <table class="week-grid" aria-label="Weekly practice tracker">
             <thead>
-              <tr><th>Day</th><th>Practiced</th><th>Notes</th></tr>
+              <tr><th>Day</th><th>Practiced</th><th>Prompt level used</th><th>Notes</th></tr>
             </thead>
             <tbody id="weekTableBody"></tbody>
           </table>
@@ -206,13 +206,10 @@
           </div>
         </div>
         <div>
-          <div class="label">Support Level</div>
-          <div class="support-select">
-            <label class="pill"><input type="radio" name="support-__ID__" value="Indep." /> Indep.</label>
-            <label class="pill"><input type="radio" name="support-__ID__" value="Verbal Prompt" checked/> Verbal</label>
-            <label class="pill"><input type="radio" name="support-__ID__" value="Hand-over-hand" /> Hand-over-hand</label>
-            <label class="pill"><input type="radio" name="support-__ID__" value="Physical Prompt" /> Physical Prompt</label>
-          </div>
+          <div class="label">Prompt Level Goal</div>
+          <select class="goal-prompt input input-chip" aria-label="Prompt level goal">
+            <option value="">Select prompt level</option>
+          </select>
         </div>
         <div>
           <div class="label">Notes</div>
@@ -225,7 +222,18 @@
     </div>
   </template>
 
-  <script>
+  <script type="module">
+    import {
+      loadFocusForCurrentUser,
+      saveFocusForGroup,
+      ensureGroupId,
+      withGoalIds,
+      readLocalFocusDraft,
+      writeLocalFocusDraft,
+      clearLocalFocusDraft,
+      LOCAL_FOCUS_KEY
+    } from './focus-data.js?v=2025.10.16d';
+    import { getSessionFromStorage } from './restClient.js?v=2025.10.16d';
     // optional navbar loader
     (function(){
       if(!document.getElementById('navbar')) return;
@@ -242,6 +250,16 @@
     const clearBtn      = document.getElementById('clearBtn');
     const weekTableBody = document.getElementById('weekTableBody');
     const weekFreqEl    = document.getElementById('weekFreq');
+
+    const KEY = LOCAL_FOCUS_KEY;
+    const makeGoalId = () =>
+      (typeof crypto !== 'undefined' && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : `goal-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+    let activeGroupId = null;
+    let sharedFocus = null;
+    let focusDataReady = false;
 
     const fields = {
       focusArea  : document.getElementById('focusArea'),
@@ -260,6 +278,15 @@
     let currentMonday = startOfWeek(new Date());
 
     // --- build week rows
+    const PROMPT_SCALE = [
+      { value:"", label:"Select prompt level" },
+      { value:"0", label:"0 – Independent" },
+      { value:"1", label:"1 – 1–2 prompts" },
+      { value:"2", label:"2 – Periodic prompts" },
+      { value:"3", label:"3 – Frequent prompts" },
+      { value:"4", label:"4 – Dependent" }
+    ];
+
     function buildWeekRows(startDate = currentMonday) {
       if (!weekTableBody) return;
       const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
@@ -270,9 +297,15 @@
         tr.innerHTML = `
           <td><strong>${days[i]}</strong><div style="font-size:12px;opacity:.7">${d.toLocaleDateString()}</div></td>
           <td><input type="checkbox" class="practiced"></td>
+          <td>
+            <select class="input input-chip day-prompt" aria-label="Prompt level used">
+              ${PROMPT_SCALE.map(o => `<option value="${o.value}">${o.label}</option>`).join('')}
+            </select>
+          </td>
           <td><input type="text" class="input day-note" placeholder="Quick note…"></td>`;
         weekTableBody.appendChild(tr);
       }
+      wireDayInputs();
     }
 
     function updateWeekText() {
@@ -289,15 +322,24 @@
       tpl.querySelectorAll('[name^="support-"]').forEach(el=>el.name=`support-${goalCount}`);
       goalsEl.appendChild(tpl);
       const node=goalsEl.lastElementChild;
+      node.dataset.goalId = data?.id || makeGoalId();
       const titleEl=node.querySelector('.goal-title');
       const checklistInputs=node.querySelectorAll('.checklist input[type="text"]');
       const notesEl=node.querySelector('.goal-notes');
+      const promptSelect=node.querySelector('.goal-prompt');
+      if (promptSelect){
+        promptSelect.innerHTML = PROMPT_SCALE.map(o=>`<option value="${o.value}">${o.label}</option>`).join('');
+        promptSelect.addEventListener('change', scheduleAutoSave);
+      }
       titleEl.addEventListener('focus',()=>{ if(titleEl.textContent.trim()==='Goal title') titleEl.textContent=''; });
+      titleEl.addEventListener('blur', scheduleAutoSave);
+      checklistInputs.forEach(inp => inp.addEventListener('input', scheduleAutoSave));
+      notesEl.addEventListener('input', scheduleAutoSave);
       node.querySelector('.remove-goal').addEventListener('click',()=>node.remove());
       if(data){
         titleEl.textContent=data.title||'Goal title';
         checklistInputs.forEach((inp,i)=>inp.value=data.steps?.[i]||'');
-        Array.from(node.querySelectorAll('input[type="radio"]')).forEach(r=>r.checked=(r.value===data.support));
+        if (promptSelect) promptSelect.value = data.promptGoal || data.support || '';
         notesEl.value=data.notes||'';
       }
     }
@@ -307,25 +349,26 @@
     const setV = (el, v='')   => { if (el && typeof el.value !== 'undefined') el.value = v; };
     const setChecked = (el,v) => { if (el) el.checked = !!v; };
 
-    const KEY = 'focusOfWeek_v3';
-
     function collectGoals(){
       return Array.from(goalsEl.querySelectorAll('.goal')).map(g => {
         const title   = (g.querySelector('.goal-title')?.textContent || '').trim();
         const steps   = Array.from(g.querySelectorAll('.checklist input[type="text"]')).map(i => i.value || '');
-        const support = (Array.from(g.querySelectorAll('input[type="radio"]')).find(r => r.checked)?.value) || 'Verbal Prompt';
+        const promptGoal = g.querySelector('.goal-prompt')?.value || '';
         const notes   = g.querySelector('.goal-notes')?.value || '';
-        return { title, steps, support, notes };
+        const id      = g.dataset.goalId || makeGoalId();
+        return { id, title, steps, promptGoal, notes };
       });
     }
     function hydrateGoals(goals){
       goalsEl.innerHTML = '';
-      (goals && goals.length ? goals : [{}]).forEach(g => addGoal(g));
+      const list = withGoalIds(goals && goals.length ? goals : [{}]);
+      list.forEach(g => addGoal(g));
     }
 
     function collectDays(){
       return Array.from(weekTableBody.querySelectorAll('tr')).map(tr => ({
         practiced: !!tr.querySelector('.practiced')?.checked,
+        promptLevel: tr.querySelector('.day-prompt')?.value || '',
         note: tr.querySelector('.day-note')?.value || ''
       }));
     }
@@ -333,11 +376,35 @@
       if (!days || days.length !== 7) return;
       Array.from(weekTableBody.querySelectorAll('tr')).forEach((tr, i) => {
         setChecked(tr.querySelector('.practiced'), !!days[i].practiced);
+        setV(tr.querySelector('.day-prompt'), days[i].promptLevel || '');
         setV(tr.querySelector('.day-note'), days[i].note || '');
       });
     }
 
-    function save(){
+    let autoSaveTimer = null;
+    function scheduleAutoSave(){
+      if (!focusDataReady) return;
+      clearTimeout(autoSaveTimer);
+      autoSaveTimer = setTimeout(() => {
+        save(true).catch(()=>{});
+      }, 800);
+    }
+
+    async function persistShared(data){
+      try{
+        const session = getSessionFromStorage();
+        const userId = session?.user?.id || null;
+        const gid = activeGroupId || await ensureGroupId(userId);
+        if (!gid) return;
+        activeGroupId = gid;
+        await saveFocusForGroup(gid, data);
+        sharedFocus = data;
+      } catch (error){
+        console.warn('focus save (shared) failed', error);
+      }
+    }
+
+    async function save(silent = false){
       try{
         const data = {
           weekStart:     isoDateOnly(currentMonday),
@@ -351,44 +418,87 @@
           days:          collectDays(),
           savedAt:       new Date().toISOString()
         };
-        localStorage.setItem(KEY, JSON.stringify(data));
-        alert('Saved!');
+        writeLocalFocusDraft(data);
+        await persistShared(data);
+        if (!silent) alert('Saved!');
       }catch(e){
         console.error('Save failed', e);
-        alert('Save failed. See console.');
+        if (!silent) alert('Save failed. See console.');
+      }
+    }
+    function applyFocusData(data){
+      if (!data) {
+        init(true);
+        return;
+      }
+      const normalized = {
+        ...data,
+        goals: withGoalIds(data.goals || []),
+      };
+      if (normalized.weekStart) currentMonday = startOfWeek(new Date(normalized.weekStart));
+      updateWeekText();
+      if (fields.focusArea) fields.focusArea.value = normalized.focusArea || fields.focusArea.value;
+      setV(fields.customTitle, normalized.customTitle || '');
+      setV(fields.whyMatters,  normalized.whyMatters  || '');
+      weekFreqEl.value = normalized.weekFrequency || 'Daily';
+      hydrateGoals(normalized.goals || []);
+      hydrateDays(normalized.days || []);
+      setV(fields.reflection, normalized.reflection || '');
+      setV(fields.nextSteps,  normalized.nextSteps  || '');
+    }
+
+    async function load(){
+      const sharedLoaded = await loadSharedFocus();
+      let localSnapshot = null;
+      if (!sharedLoaded) {
+        localSnapshot = hydrateFromLocal();
+      }
+      focusDataReady = true;
+      wireDayInputs();
+      if (!sharedLoaded && localSnapshot) {
+        try {
+          await persistShared(localSnapshot);
+        } catch (error) {
+          console.warn('focus sync (local→shared) failed', error);
+        }
       }
     }
 
-    function load(){
+    async function loadSharedFocus(){
       try{
-        const raw = localStorage.getItem(KEY);
-        if (!raw){ init(true); return; }
-        const data = JSON.parse(raw);
+        const { focus, groupId } = await loadFocusForCurrentUser();
+        if (groupId) activeGroupId = groupId;
+        if (focus){
+          sharedFocus = focus;
+          applyFocusData(focus);
+          writeLocalFocusDraft(focus);
+          return true;
+        }
+      } catch (error){
+        console.warn('focus shared load failed', error);
+      }
+      return false;
+    }
 
-        if (data.weekStart) currentMonday = startOfWeek(new Date(data.weekStart));
-        updateWeekText();
-
-        if (fields.focusArea) fields.focusArea.value = data.focusArea || fields.focusArea.value;
-        setV(fields.customTitle, data.customTitle || '');
-        setV(fields.whyMatters,  data.whyMatters  || '');
-        weekFreqEl.value = data.weekFrequency || 'Daily';
-
-        hydrateGoals(data.goals || []);
-        hydrateDays(data.days || []);
-
-        setV(fields.reflection, data.reflection || '');
-        setV(fields.nextSteps,  data.nextSteps  || '');
+    function hydrateFromLocal(){
+      try{
+        const data = readLocalFocusDraft();
+        if (!data){ init(true); return null; }
+        applyFocusData(data);
+        return data;
       }catch(e){
         console.error('Load failed', e);
         init(true);
+        return null;
       }
     }
 
     function clearAll(){
       if (!confirm('Clear everything on this page?')) return;
       try{
-        localStorage.removeItem(KEY);
+        clearLocalFocusDraft();
         init(true);
+        scheduleAutoSave();
       }catch(e){
         console.error('Clear failed', e);
       }
@@ -400,9 +510,11 @@
       // keep goals/notes; clear daily tracker + reflection
       Array.from(weekTableBody.querySelectorAll('tr')).forEach(tr => {
         setChecked(tr.querySelector('.practiced'), false);
+        setV(tr.querySelector('.day-prompt'), '');
         setV(tr.querySelector('.day-note'), '');
       });
       setV(fields.reflection, '');
+      scheduleAutoSave();
     }
 
     // --- initialize page (rebuild rows + one default goal)
@@ -419,12 +531,29 @@
       weekFreqEl.value = 'Daily';
     }
 
+    function wireDayInputs(){
+      if (!weekTableBody) return;
+      weekTableBody.querySelectorAll('.practiced, .day-prompt, .day-note').forEach(el => {
+        const event = el.matches('.day-note') ? 'input' : 'change';
+        if (!el.dataset.focusBound){
+          el.addEventListener(event, scheduleAutoSave);
+          el.dataset.focusBound = '1';
+        }
+      });
+    }
+
     // --- wire buttons
-    addGoalBtn  .addEventListener('click', () => addGoal());
-    saveBtn     .addEventListener('click', save);
+    addGoalBtn  .addEventListener('click', () => { addGoal(); scheduleAutoSave(); });
+    saveBtn     .addEventListener('click', () => save());
     printBtn    .addEventListener('click', () => window.print());
     copyNextBtn .addEventListener('click', copyToNextWeek);
     clearBtn    .addEventListener('click', clearAll);
+    weekFreqEl?.addEventListener('change', scheduleAutoSave);
+    Object.values(fields).forEach(el => {
+      if (!el) return;
+      const evt = el.tagName === 'TEXTAREA' ? 'input' : 'change';
+      el.addEventListener(evt, scheduleAutoSave);
+    });
 
     // first render + try to load saved data
     init();      // builds rows + 1 goal so page isn't empty

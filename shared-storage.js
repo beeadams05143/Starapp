@@ -37,36 +37,11 @@ export async function uploadJsonToBucket(bucket, objectPath, payload, { upsert =
   return true;
 }
 
-async function signObject(bucket, objectPath, expiresIn = 60 * 5) {
-  const session = requireSession();
-  const res = await fetch(`${SUPABASE_URL}/storage/v1/object/sign/${bucket}/${objectPath}`, {
-    method: 'POST',
-    headers: {
-      apikey: SUPABASE_ANON_KEY,
-      Authorization: `Bearer ${session.access_token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ expiresIn }),
-  });
-  const text = await res.text();
-  if (!res.ok) {
-    if (res.status === 404 || /not found/i.test(text)) return null;
-    throw new Error(text || 'Sign URL failed');
-  }
-  try {
-    const data = text ? JSON.parse(text) : null;
-    return data?.signedUrl ? `${SUPABASE_URL}${data.signedUrl}` : null;
-  } catch {
-    return null;
-  }
-}
-
 export async function downloadJsonFromBucket(bucket, objectPath) {
   try {
-    const signedUrl = await signObject(bucket, objectPath);
-    if (!signedUrl) return null;
-    const res = await fetch(signedUrl);
-    if (!res.ok) return null;
+    const res = await requestStorage(`${bucket}/${objectPath}`, { method: 'GET' });
+    if (res.status === 404) return null;
+    if (!res.ok) throw new Error(await res.text());
     const text = await res.text();
     if (!text) return null;
     return JSON.parse(text);

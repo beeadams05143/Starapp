@@ -105,10 +105,8 @@ li {
    GLOBAL ACTIVITY BANNER
    ========================= */
 .activity-banner-host{
-  position:fixed;
-  top:calc(var(--appbar-h,56px) + 12px);
-  left:50%;
-  transform:translateX(-50%);
+  position:relative;
+  margin:calc(var(--appbar-h,56px) + 32px) auto 0;
   display:flex;
   flex-direction:column;
   gap:10px;
@@ -149,7 +147,8 @@ li {
 .activity-banner button:hover{ background:rgba(226,232,240,.9); }
 @media (max-width:600px){
   .activity-banner-host{
-    top:calc(var(--appbar-h,56px) + 8px);
+    margin:calc(var(--appbar-h,56px) + 20px) auto 0;
+    padding:0 10px;
   }
 }
 

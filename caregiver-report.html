@@ -82,6 +82,17 @@
     .quick-look-print{border:1px solid #d4d4d8;border-radius:10px;padding:8px 12px;background:#f8fafc;font-size:13px;font-weight:700;cursor:pointer}
     .quick-look-print:hover{background:#eef2ff}
     .quick-look-count{font-size:13px;color:#4b5563;font-weight:600;margin-top:-4px}
+    .focus-board{background:#fff9f3;border:1px dashed #fcd34d;border-radius:14px;padding:14px;margin:14px 0}
+    .focus-board h2{margin-top:0}
+    .focus-board .muted{margin-bottom:10px}
+    .focus-goal-list{list-style:none;padding:0;margin:0;display:grid;gap:10px}
+    .focus-goal-list li{background:#fff;border:1px solid #fcd34d;border-radius:12px;padding:10px;font-size:14px;line-height:1.4}
+    .focus-goal-list li strong{display:block;margin-bottom:4px}
+    .planner-chart-panel{max-width:760px;margin:12px auto 22px}
+    .planner-chart-panel.is-hidden{display:none}
+    .planner-chart-wrap{margin:0;border:1px solid rgba(250,204,21,.55);border-radius:14px;padding:10px 12px;background:#fffdf4;box-shadow:inset 0 1px 0 rgba(253,224,71,.25)}
+    .planner-chart-wrap.is-hidden{display:none}
+    .hc-kv span{white-space:nowrap}
     .quick-look-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0 0 8px}
     .quick-look-metric{border:1px solid #e2e8f0;border-radius:8px;padding:6px;background:#f8fafc;display:flex;flex-direction:column;gap:2px}
     .quick-look-metric .metric-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
@@ -223,6 +234,13 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
   <main class="page">
     <h1>Reports</h1>
 
+    <section class="panel focus-board" id="reportFocusPanel" data-print-section="Weekly Focus">
+      <h2>Weekly Focus</h2>
+      <p id="reportFocusSummary" class="muted">Loading weekly focus…</p>
+      <ul id="reportFocusGoals" class="focus-goal-list"></ul>
+      <canvas id="focusGoalChart" height="220"></canvas>
+    </section>
+
     <div data-print-section="Caregiver Overview">
     <section class="panel" id="cg-panel">
       <h2>Caregiver Check-Ins</h2>
@@ -341,6 +359,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
           <label><input type="checkbox" data-hc-layer="manic" checked/> <span class="hc-emo" aria-hidden="true">⚡️</span> Manic</label>
           <label><input type="checkbox" data-hc-layer="sick" checked/> <span class="hc-emo" aria-hidden="true">🤒</span> Sick</label>
           <label><input type="checkbox" data-hc-layer="appetite" checked/> <span class="hc-emo" aria-hidden="true">🍽️</span> Appetite change</label>
+          <label><input type="checkbox" data-hc-layer="moon" checked/> <span class="hc-emo" aria-hidden="true">🌕</span> Full moon</label>
           <label><input type="checkbox" data-hc-layer="anomaly" checked/> <span class="hc-emo" aria-hidden="true">🚩</span> Anomaly</label>
         </div>
 
@@ -351,7 +370,15 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
 
     <!-- Charts -->
     <section id="chart-stack" data-print-section="Trends & Charts">
-      <div class="chart"><h2>Physical & Daily Living Overview</h2><canvas id="healthChart"></canvas></div>
+    <section id="plannerChartSection" data-print-section="Planner Tracker" class="chart planner-chart-panel is-hidden">
+      <h2>Practice Tracker (Planner)</h2>
+      <p id="focusPlannerStats" class="muted is-hidden" style="margin:-6px 0 8px"></p>
+      <div id="plannerChartWrap" class="planner-chart-wrap is-hidden">
+        <canvas id="focusPlannerChart" height="140"></canvas>
+      </div>
+    </section>
+
+    <div class="chart"><h2>Physical & Daily Living Overview</h2><canvas id="healthChart"></canvas></div>
       <div class="chart"><h2>Prompt Level Over Time</h2><canvas id="skillChart"></canvas></div>
       <div class="chart"><h2>Individual Mood Share (Pie)</h2><canvas id="moodPieMain"></canvas></div>
 
@@ -387,6 +414,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
           <option value="onset">Late sleep onset</option>
           <option value="manic">Manic</option>
           <option value="sick">Sick</option>
+          <option value="moon">Full moon</option>
           <option value="appetite">Change in appetite</option>
           <option value="anomaly">Anomaly</option>
         </select>
@@ -397,6 +425,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
         <label><input type="checkbox" name="onset"> 🦉 Late sleep onset</label>
         <label><input type="checkbox" name="manic"> ⚡️ Manic</label>
         <label><input type="checkbox" name="sick"> 🤒 Sick</label>
+        <label><input type="checkbox" name="moon"> 🌕 Full moon</label>
         <label><input type="checkbox" name="appetite"> 🍽️ Change in appetite</label>
         <label><input type="checkbox" name="anomaly"> 🚩 Anomaly</label>
       </fieldset>
@@ -418,6 +447,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
   <!-- Single, clean module script -->
   <script type="module">
     import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
+    import { loadFocusForCurrentUser, readLocalFocusDraft } from './focus-data.js?v=2025.10.16d';
 
     /* =============== Optional live data =============== */
     let loadFromSupabase = null;
@@ -563,6 +593,31 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       printSheet: $('#cgQuickLookPrint')
     };
 
+    const focusUi = {
+      panel: document.getElementById('reportFocusPanel'),
+      summary: document.getElementById('reportFocusSummary'),
+      planner: document.getElementById('focusPlannerStats'),
+      plannerPanel: document.getElementById('plannerChartSection'),
+      plannerChartWrap: document.getElementById('plannerChartWrap'),
+      plannerChartCanvas: document.getElementById('focusPlannerChart'),
+      goals: document.getElementById('reportFocusGoals'),
+      chartEl: document.getElementById('focusGoalChart')
+    };
+    let currentFocusPlan = null;
+    let focusChart = null;
+    let plannerChart = null;
+    let plannerTrackerStats = null;
+    let plannerTrackerDays = [];
+    let plannerChartNotes = [];
+    const WEEKDAY_LABELS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    const PROMPT_LABELS = {
+      '0': 'Independent',
+      '1': '1–2 prompts',
+      '2': 'Periodic prompts',
+      '3': 'Frequent prompts',
+      '4': 'Dependent'
+    };
+
     const CAREGIVER_FILTER_KEY = 'caregiverReportCaregiverFilter';
     const CAREGIVER_ID_PREFIX = 'id:';
     const CAREGIVER_NAME_PREFIX = 'name:';
@@ -592,7 +647,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
     const cgState = {
       entries: [],
       filtered: [],
-      caregiverFilter: readCaregiverFilter() || 'all'
+      caregiverFilter: readCaregiverFilter() || 'all',
+      focusStats: new Map()
     };
 
     const caregiverIdFromEntry = (entry = {}) => {
@@ -1053,6 +1109,334 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       });
     }
 
+    function normalizePlannerDays(days = []){
+      const normalized = [];
+      for (let i = 0; i < 7; i++){
+        const raw = days[i] || {};
+        const promptVal = Number(raw.promptLevel ?? raw.prompt_level);
+        normalized.push({
+          label: WEEKDAY_LABELS[i] || `Day ${i + 1}`,
+          practiced: !!raw.practiced,
+          prompt: Number.isFinite(promptVal) ? promptVal : null,
+          note: raw.note || raw.notes || '',
+          raw
+        });
+      }
+      return normalized;
+    }
+
+    function summarizePlannerDays(days = []){
+      if (!Array.isArray(days) || !days.length) return null;
+      const practiced = days.filter(day => day && (day.practiced || day.completed));
+      if (!practiced.length) return null;
+      const promptVals = practiced
+        .map(day => Number(day.promptLevel ?? day.prompt_level))
+        .filter(Number.isFinite);
+      const avgPrompt = promptVals.length
+        ? Number((promptVals.reduce((sum, val) => sum + val, 0) / promptVals.length).toFixed(1))
+        : null;
+      const last = practiced[practiced.length - 1] || {};
+      return {
+        count: practiced.length,
+        avgPrompt,
+        lastNote: last.note || last.notes || '',
+        lastDay: last.day || last.date || null,
+      };
+    }
+
+    function renderPlannerStats(stats, days){
+      plannerTrackerStats = stats || null;
+      plannerTrackerDays = Array.isArray(days) ? days : [];
+      if (!focusUi.planner) {
+        renderPlannerChart(plannerTrackerDays);
+        return;
+      }
+      if (!stats?.count){
+        focusUi.planner.classList.add('is-hidden');
+        focusUi.planner.textContent = '';
+        renderPlannerChart(plannerTrackerDays);
+        return;
+      }
+      const pieces = [`${stats.count} practice day${stats.count === 1 ? '' : 's'} recorded in planner`];
+      if (stats.avgPrompt != null) {
+        pieces.push(`avg prompt level ${stats.avgPrompt}`);
+      }
+      if (stats.lastNote) {
+        pieces.push(`last note: ${stats.lastNote}`);
+      }
+      focusUi.planner.textContent = pieces.join(' • ');
+      focusUi.planner.classList.remove('is-hidden');
+      renderPlannerChart(plannerTrackerDays);
+    }
+
+    async function loadFocusPanel(){
+      if (!focusUi.summary) return;
+      try{
+        let focus = null;
+        let localFallback = false;
+        try {
+          const result = await loadFocusForCurrentUser();
+          focus = result?.focus || null;
+        } catch (err) {
+          console.warn('focus panel load failed (shared)', err);
+        }
+        if (!focus) {
+          focus = readLocalFocusDraft();
+          localFallback = !!focus;
+        }
+        if (!focus){
+        focusUi.summary.textContent = 'Set the weekly focus on the Focus of the Week page to highlight it here.';
+        focusUi.goals.innerHTML = '';
+        focusUi.chartEl?.classList.add('is-hidden');
+        focusChart?.destroy();
+        focusChart = null;
+        currentFocusPlan = null;
+        renderPlannerStats(null, []);
+        return;
+      }
+        currentFocusPlan = focus;
+        const start = focus.weekStart ? new Date(focus.weekStart) : null;
+        const end = start ? new Date(start) : null;
+        if (end) end.setDate(end.getDate() + 6);
+        const range = start && end ? `${start.toLocaleDateString()} – ${end.toLocaleDateString()}` : '';
+        const title = focus.customTitle || 'Weekly focus';
+        const area = focus.focusArea ? `(${focus.focusArea})` : '';
+        const next = focus.nextSteps ? `<br><small>Next: ${focus.nextSteps}</small>` : '';
+        const offlineTag = localFallback ? '<br><small>(Showing draft saved on this device)</small>' : '';
+        focusUi.summary.innerHTML = `<strong>${title}</strong> ${area}${range ? `<br><small>${range}</small>` : ''}${focus.whyMatters ? `<br>${focus.whyMatters}` : ''}${next}${offlineTag}`;
+        renderPlannerStats(summarizePlannerDays(focus.days), focus.days || []);
+        renderFocusGoalList(focus.goals || []);
+        renderFocusGoalChart(focus.goals || []);
+      } catch (error){
+        const fallback = readLocalFocusDraft();
+        if (fallback) {
+          const next = fallback.nextSteps ? `<br><small>Next: ${fallback.nextSteps}</small>` : '';
+          focusUi.summary.innerHTML = `<strong>${fallback.customTitle || 'Weekly focus'}</strong>${fallback.whyMatters ? `<br>${fallback.whyMatters}` : ''}${next}<br><small>(Offline copy)</small>`;
+          renderPlannerStats(summarizePlannerDays(fallback.days), fallback.days || []);
+          renderFocusGoalList(fallback.goals || []);
+          renderFocusGoalChart(fallback.goals || []);
+          currentFocusPlan = fallback;
+        } else {
+          focusUi.summary.textContent = 'Unable to load weekly focus.';
+          currentFocusPlan = null;
+          renderPlannerStats(null, []);
+        }
+        console.warn('focus panel load failed', error);
+      }
+    }
+
+    function renderFocusGoalList(goals){
+      if (!focusUi.goals) return;
+      focusUi.goals.innerHTML = '';
+      if (!Array.isArray(goals) || !goals.length){
+        const li = document.createElement('li');
+        li.textContent = 'Add weekly goals to the Focus page.';
+        focusUi.goals.appendChild(li);
+        return;
+      }
+      goals.forEach(goal => {
+        const stat = stats.get(goal.id);
+        const practiced = stat?.count || 0;
+        const avgPromptVal = stat?.promptCount ? (stat.promptSum / stat.promptCount).toFixed(1) : null;
+        const avgPromptLabel = avgPromptVal != null
+          ? `${avgPromptVal} avg (${PROMPT_LABELS[String(Math.round(avgPromptVal))] || 'prompt level'})`
+          : 'No prompt data yet';
+        const li = document.createElement('li');
+        li.innerHTML = `<strong>${goal.title || 'Goal'}</strong>${goal.notes ? `<span>${goal.notes}</span>` : ''}<br><small>${practiced} practices · ${avgPromptLabel}</small>`;
+        focusUi.goals.appendChild(li);
+      });
+    }
+
+    function buildFocusStats(entries = []){
+      const stats = new Map();
+      entries.forEach(entry => {
+        const logs = Array.isArray(entry.focus_goal_logs)
+          ? entry.focus_goal_logs
+          : Array.isArray(entry.payload?.focus_goal_logs)
+            ? entry.payload.focus_goal_logs
+            : [];
+        logs.forEach(log => {
+          const id = log.goal_id || log.goal_title || 'goal';
+          if (!stats.has(id)) {
+            stats.set(id, { id, title: log.goal_title || id, count: 0, promptSum: 0, promptCount: 0 });
+          }
+          const stat = stats.get(id);
+          if (log.practiced) stat.count += 1;
+          const num = Number(log.prompt_level);
+          if (Number.isFinite(num)) {
+            stat.promptSum += num;
+            stat.promptCount += 1;
+          }
+        });
+      });
+      return stats;
+    }
+
+    function renderPlannerChart(days = []){
+      if (!focusUi.plannerChartWrap || !focusUi.plannerChartCanvas) return;
+      const normalized = normalizePlannerDays(days);
+      const practicedCount = normalized.filter(day => day.practiced).length;
+      if (!practicedCount){
+        focusUi.plannerChartWrap.classList.add('is-hidden');
+        focusUi.plannerPanel?.classList.add('is-hidden');
+        plannerChart?.destroy();
+        plannerChart = null;
+        return;
+      }
+      focusUi.plannerPanel?.classList.remove('is-hidden');
+      focusUi.plannerChartWrap.classList.remove('is-hidden');
+      plannerChartNotes = normalized.map(day => day.note || '');
+      const labels = normalized.map(day => day.label);
+      const practiceBars = normalized.map(day => (day.practiced ? 1 : 0));
+      const promptLevels = normalized.map(day => (day.practiced ? day.prompt : null));
+
+      plannerChart?.destroy();
+      plannerChart = new Chart(focusUi.plannerChartCanvas, {
+        data: {
+          labels,
+          datasets: [
+            {
+              type: 'bar',
+              label: 'Practiced',
+              data: practiceBars,
+              backgroundColor: '#fde68a',
+              borderColor: '#f59e0b',
+              borderWidth: 1,
+              borderRadius: 6,
+              barThickness: 22,
+              yAxisID: 'practiceAxis',
+            },
+        {
+          type: 'line',
+          label: 'Prompt level',
+          data: promptLevels,
+          borderColor: '#ec4899',
+          backgroundColor: '#ec4899',
+          borderWidth: 3,
+          yAxisID: 'promptAxis',
+          tension: 0.3,
+          spanGaps: true,
+          pointRadius: 5,
+          pointHoverRadius: 6,
+          pointBackgroundColor: '#ec4899',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2
+        }
+      ]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            practiceAxis: {
+              type: 'linear',
+              position: 'left',
+              beginAtZero: true,
+              ticks: {
+                callback: (value) => (value ? 'Yes' : 'No'),
+                stepSize: 1,
+                max: 1
+              },
+              grid: { display: false }
+            },
+            promptAxis: {
+              type: 'linear',
+              position: 'right',
+              min: 0,
+              max: 4,
+              ticks: {
+                stepSize: 1,
+                callback: (value) => {
+                  const label = PROMPT_LABELS[String(value)];
+                  return label ? `${value} – ${label}` : value;
+                }
+              }
+            }
+          },
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label(context){
+                  if (context.dataset.type === 'line') {
+                    const val = context.parsed.y;
+                    if (val == null) return 'Prompt level: —';
+                    const label = PROMPT_LABELS[String(val)];
+                    return label ? `Prompt level: ${label}` : `Prompt level: ${val}`;
+                  }
+                  return context.raw ? 'Practiced' : 'No practice';
+                },
+                afterLabel(context){
+                  if (context.dataset.type !== 'line') return;
+                  const note = plannerChartNotes[context.dataIndex];
+                  return note ? `Note: ${note}` : undefined;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function renderFocusGoalChart(goals){
+      if (!focusUi.chartEl) return;
+      const stats = cgState.focusStats || new Map();
+      const plannerCount = plannerTrackerStats?.count || 0;
+      const hasGoals = Array.isArray(goals) && goals.length > 0;
+      const counts = hasGoals ? goals.map(g => stats.get(g.id)?.count || 0) : [];
+      const hasLoggedCounts = counts.some(count => count > 0);
+
+      if (!hasGoals && !plannerCount){
+        focusUi.chartEl.classList.add('is-hidden');
+        focusChart?.destroy();
+        focusChart = null;
+        return;
+      }
+
+      if (!hasLoggedCounts && !plannerCount){
+        focusUi.chartEl.classList.add('is-hidden');
+        focusChart?.destroy();
+        focusChart = null;
+        return;
+      }
+
+      let chartLabels = [];
+      let chartData = [];
+      let chartLabel = '# practices logged';
+      let chartColor = '#fcd34d';
+      let borderColor = '#f97316';
+
+      if (hasLoggedCounts){
+        chartLabels = goals.map(g => g.title || 'Goal');
+        chartData = counts;
+      } else if (plannerCount){
+        chartLabels = ['Practice days'];
+        chartData = [plannerCount];
+        chartLabel = 'Planner tracker';
+        chartColor = '#fde047';
+        borderColor = '#ca8a04';
+      }
+
+      focusUi.chartEl.classList.remove('is-hidden');
+      focusChart?.destroy();
+      focusChart = new Chart(focusUi.chartEl, {
+        type: 'bar',
+        data: {
+          labels: chartLabels,
+          datasets: [{
+            label: chartLabel,
+            data: chartData,
+            backgroundColor: chartColor,
+            borderColor
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: { beginAtZero: true, ticks: { precision:0 } }
+          }
+        }
+      });
+    }
+
     function toggleQuickLook(force) {
       if (!quickLookUi.panel) return;
       const isActive = document.body.classList.contains('quick-look-mode');
@@ -1440,9 +1824,14 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       drawHealthChart(monthly);
       drawSkillChart(promptDaily);
       cgState.entries = entries.slice();
+      cgState.focusStats = buildFocusStats(entries);
       populateCaregiverOptions(cgState.entries);
       updateDateInputs(cgState.entries);
       applyCaregiverFilters();
+      if (currentFocusPlan) {
+        renderFocusGoalList(currentFocusPlan.goals || []);
+        renderFocusGoalChart(currentFocusPlan.goals || []);
+      }
       window.dispatchEvent(new Event('caregiverDataReady'));
     }
 
@@ -1859,6 +2248,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
 
     await ensureActiveGroupId(USER_ID);
     await loadCaregiverData();
+    await loadFocusPanel();
     await renderMoodSection();
     await renderWyr();
 </script>
@@ -1981,6 +2371,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
   const kvMan  = document.getElementById('hc-kv-manic');
   const kvSick = document.getElementById('hc-kv-sick');
   const kvApp  = document.getElementById('hc-kv-appetite');
+  const kvMoon = document.getElementById('hc-kv-moon');
   const kvAno  = document.getElementById('hc-kv-anomaly');
 
   const editorOverlay   = document.getElementById('hc-editor-overlay');
@@ -2087,7 +2478,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
     }
     return false;
   }
-  const EMO = { bm:'💩', sleep:'😴', onset:'🦉', manic:'⚡️', sick:'🤒', appetite:'🍽️', anomaly:'🚩' };
+  const EMO = { bm:'💩', sleep:'😴', onset:'🦉', manic:'⚡️', sick:'🤒', appetite:'🍽️', moon:'🌕', anomaly:'🚩' };
 
   function saveLocalHealth(){
     try { localStorage.setItem(LOCAL_HEALTH_KEY, JSON.stringify(LOCAL_HEALTH)); } catch {}
@@ -2099,7 +2490,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
   }
 
   function applyHealthFlagToMap(key, data = {}){
-    const base = MAP[key] || { bm:false, sleep:null, onset:false, manic:false, sick:false, appetite:false, anomaly:false };
+    const base = MAP[key] || { bm:false, sleep:null, onset:false, manic:false, sick:false, appetite:false, moon:false, anomaly:false };
     const hours = data.sleepHours != null ? Number(data.sleepHours) : (data.sleep ? 8 : null);
     MAP[key] = {
       bm: base.bm || !!data.bm,
@@ -2108,16 +2499,27 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       manic: base.manic || !!data.manic,
       sick: base.sick || !!data.sick,
       appetite: base.appetite || !!data.appetite,
+      moon: base.moon || !!data.moon,
       anomaly: base.anomaly || !!data.anomaly
     };
   }
 
   let Y = (new Date()).getFullYear();
   let M = (new Date()).getMonth(); // 0-11
-  let MAP = {};                    // { 'YYYY-MM-DD': { bm, sleep, manic, sick, appetite, anomaly } }
+  let MAP = {};
   let EVENT_MAP = {};              // meetings/appointments
   let HEALTH_FLAGS = {};           // persisted manual flags
-  const layers = { bm:true, sleep:true, onset:true, manic:true, sick:true, appetite:true, anomaly:true };
+  const layers = { bm:true, sleep:true, onset:true, manic:true, sick:true, appetite:true, moon:true, anomaly:true };
+  const SYNODIC_MONTH = 29.530588853; // days
+  const BASE_FULL_MOON = Date.UTC(2024, 8, 17, 18, 34); // Sep 17 2024 full moon reference
+
+  const isFullMoonKey = (key) => {
+    const dt = new Date(`${key}T00:00:00Z`);
+    if (Number.isNaN(dt)) return false;
+    const diffDays = (dt.getTime() - BASE_FULL_MOON) / 86400000;
+    const phase = ((diffDays % SYNODIC_MONTH) + SYNODIC_MONTH) % SYNODIC_MONTH;
+    return phase < 1 || phase > SYNODIC_MONTH - 1;
+  };
 
   function fmtMonth(y,m){ return new Date(y,m,1).toLocaleString(undefined,{month:'long',year:'numeric'}); }
   function monthBoundsUTC(y,m){
@@ -2144,12 +2546,17 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
     const startPad = first.getDay();
     for(let i=0;i<startPad;i++){ const b=document.createElement('div'); b.className='hc-cell'; grid.appendChild(b); }
 
-  let bmDays=0, sleepDays=0, onsetDays=0, manicDays=0, sickDays=0, appetiteDays=0, anomalyDays=0;
+  let bmDays=0, sleepDays=0, onsetDays=0, manicDays=0, sickDays=0, appetiteDays=0, moonDays=0, anomalyDays=0;
 
     for(let day=1; day<=last.getDate(); day++){
       const cell = document.createElement('div'); cell.className='hc-cell'; cell.setAttribute('role','gridcell');
       const key = Y + '-' + pad(M+1) + '-' + pad(day);
-      const rec = MAP[key] || { bm:false, sleep:null, onset:false, manic:false, sick:false, appetite:false, anomaly:false };
+      const rec = MAP[key] || { bm:false, sleep:null, onset:false, manic:false, sick:false, appetite:false, moon:false, anomaly:false };
+      const moonToday = isFullMoonKey(key);
+      if (!rec.moon && moonToday) {
+        rec.moon = true;
+        MAP[key] = { ...rec };
+      }
       cell.dataset.date = key;
 
       const head = document.createElement('div'); head.className='hc-date'; head.textContent = day; cell.appendChild(head);
@@ -2161,6 +2568,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       if (rec.manic && layers.manic){ const s=document.createElement('span'); s.textContent=EMO.manic; s.setAttribute('aria-label','Manic'); icons.appendChild(s); manicDays++; }
       if (rec.sick  && layers.sick ){ const s=document.createElement('span'); s.textContent=EMO.sick;  s.setAttribute('aria-label','Sick'); icons.appendChild(s); sickDays++; }
       if (rec.appetite && layers.appetite){ const s=document.createElement('span'); s.textContent=EMO.appetite; s.setAttribute('aria-label','Change in appetite'); icons.appendChild(s); appetiteDays++; }
+      if (rec.moon && layers.moon){ const s=document.createElement('span'); s.textContent=EMO.moon; s.setAttribute('aria-label','Full moon'); icons.appendChild(s); moonDays++; }
       if (rec.anomaly && layers.anomaly){ const s=document.createElement('span'); s.textContent=EMO.anomaly; s.setAttribute('aria-label','Anomaly'); icons.appendChild(s); anomalyDays++; }
 
       if (icons.children.length) cell.appendChild(icons);
@@ -2196,6 +2604,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
     kvMan && (kvMan.textContent = '⚡️ Manic days: ' + manicDays);
     kvSick&& (kvSick.textContent= '🤒 Sick days: ' + sickDays);
     kvApp && (kvApp.textContent = '🍽️ Appetite change days: ' + appetiteDays);
+    kvMoon&& (kvMoon.textContent= '🌕 Full moon days: ' + moonDays);
     kvAno && (kvAno.textContent = '🚩 Anomaly days: ' + anomalyDays);
   }
 
@@ -2227,7 +2636,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
           const appetite = hasAppetiteChange(p) || hasAppetiteChange(row);
           const anomaly = p.anomaly_flag === true || /yes/i.test(String(p.anomaly || ''));
 
-          const cur = MAP[key] || { bm:false, sleep:null, onset:false, manic:false, sick:false, appetite:false, anomaly:false };
+          const cur = MAP[key] || { bm:false, sleep:null, onset:false, manic:false, sick:false, appetite:false, moon:false, anomaly:false };
           MAP[key] = {
             bm:    cur.bm    || bm,
             sleep: (sleep!=null && (cur.sleep==null || sleep>cur.sleep)) ? sleep : cur.sleep,
@@ -2235,6 +2644,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
             manic: cur.manic || manic,
             sick:  cur.sick  || sick,
             appetite: cur.appetite || appetite,
+            moon: cur.moon || isFullMoonKey(key),
             anomaly: cur.anomaly || anomaly
           };
         }
@@ -2349,6 +2759,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
     setBox('onset', existing.onset ?? rec.onset);
     setBox('manic', existing.manic ?? rec.manic);
     setBox('sick', existing.sick ?? rec.sick);
+    setBox('moon', existing.moon ?? rec.moon ?? isFullMoonKey(dateKey));
     setBox('appetite', existing.appetite ?? rec.appetite);
     setBox('anomaly', existing.anomaly ?? rec.anomaly);
     editorSleep.value = existing.sleepHours ?? (rec.sleep ?? '');
@@ -2372,6 +2783,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
         manic: !!payload.manic,
         sick: !!payload.sick,
         appetite: !!payload.appetite,
+        moon: !!payload.moon,
         anomaly: !!payload.anomaly,
         note: payload.note ? String(payload.note).trim() : null
       };
@@ -2393,6 +2805,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       if (normalized.manic) summaryBits.push('Manic');
       if (normalized.sick) summaryBits.push('Sick');
       if (normalized.appetite) summaryBits.push('Appetite');
+      if (normalized.moon) summaryBits.push('Full moon');
       if (normalized.anomaly) summaryBits.push('Anomaly');
       const eventBody = {
         title: summaryBits.length ? `Health: ${summaryBits.join(', ')}` : 'Health update',
@@ -2460,6 +2873,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       onset: editorForm.elements.onset?.checked,
       manic: editorForm.elements.manic?.checked,
       sick: editorForm.elements.sick?.checked,
+      moon: editorForm.elements.moon?.checked,
       appetite: editorForm.elements.appetite?.checked,
       anomaly: editorForm.elements.anomaly?.checked,
       sleepHours: editorSleep.value,

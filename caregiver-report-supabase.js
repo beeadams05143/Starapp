@@ -263,6 +263,7 @@ const normalizeSupabaseEntry = (row = {}) => {
     public_time: publicMinutes,
     leisure_time: leisureMinutes,
     new_skill_score: promptScore,
+    focus_goal_logs: Array.isArray(payload.focus_goal_logs) ? payload.focus_goal_logs : [],
   };
 };
 

@@ -1,9 +1,14 @@
 import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
 import { downloadJsonFromBucket } from './shared-storage.js?v=2025.10.16d';
 
-const host = document.getElementById('activityBannerHost');
+let host = null;
 
-if (host) {
+function boot(){
+  host = document.getElementById('activityBannerHost');
+  if (!host) return;
+
+  // show placeholder immediately so users see "All caught up" before data loads
+  renderPlaceholder([]);
   const session = getSessionFromStorage();
   const currentUser = session?.user;
   if (!currentUser?.id) return;
@@ -109,14 +114,31 @@ if (host) {
 
   async function init() {
     const groupId = await ensureGroupId(USER_ID, GROUP_KEY);
+    if (!groupId) {
+      renderPlaceholder([]);
+      return;
+    }
     const summary = await fetchActivitySummary(groupId);
     const unseen = summary.updates.filter((entry) => entry.ts && entry.label && entry.ts > (seenMap[entry.key] || 0));
     if (!unseen.length) {
-      host.innerHTML = '';
-      host.classList.add('is-hidden');
+      renderPlaceholder(summary.updates || []);
       return;
     }
     renderBanners(unseen);
+  }
+
+  function renderPlaceholder(updates){
+    host.innerHTML = '';
+    host.classList.remove('is-hidden');
+    const latestTs = updates.reduce((max, entry) => Math.max(max, entry.ts || 0), 0);
+    const when = latestTs ? new Date(latestTs).toLocaleString() : 'No updates yet';
+    const card = document.createElement('article');
+    card.className = 'activity-banner';
+    const copy = document.createElement('div');
+    copy.className = 'banner-copy';
+    copy.innerHTML = `<strong>All caught up</strong><span>We&rsquo;ll alert you when something new happens.<br><small>Last activity: ${when}</small></span>`;
+    card.appendChild(copy);
+    host.appendChild(card);
   }
 
   function renderBanners(entries) {
@@ -269,4 +291,10 @@ if (host) {
       localStorage.setItem(SEEN_KEY, JSON.stringify(seenMap));
     } catch {}
   }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', boot, { once: true });
+} else {
+  boot();
 }

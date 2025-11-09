@@ -72,18 +72,9 @@
         <div class="sub"><a href="/profile.html">View / Edit Profile</a></div>
       </details>
 
-      <!-- HOME -->
-      <details open>
-        <summary>🏠 Home</summary>
-        <div class="sub">
-          <a href="/home.html">Home</a>
-          <a href="/dashboard.html">Home / Dashboard</a>
-        </div>
-      </details>
-
       <!-- DASHBOARD (dynamic: Log In / Log Out) -->
       <details open>
-        <summary>📊 Dashboard</summary>
+        <summary>🏠 Dashboard</summary>
         <div class="sub">
           <a href="/dashboard.html">Dashboard</a>
           <a id="auth-dash-link" href="/login.html">Log In</a>

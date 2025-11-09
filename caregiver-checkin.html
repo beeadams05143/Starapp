@@ -11,7 +11,7 @@
     .page-wrap{max-width:940px;margin:24px auto 96px;padding:16px;background:rgba(255,255,255,.92);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.08)}
     h1{margin:8px 0 6px;font-size:clamp(28px,4.2vw,44px)}
     .sub{color:#6b7280;margin-bottom:12px}
-    .progress{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:.25rem 0 .5rem}
+    .progress{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:14px;margin:.25rem 0 .5rem}
     .prog-item{display:grid;gap:6px;cursor:pointer}
     .prog-label{text-align:center;font-size:13px;color:#6b7280;font-weight:700}
     .seg{height:8px;background:#e9edf2;border-radius:999px}
@@ -41,6 +41,37 @@
     .step{display:none}
     .step.active{display:block}
     #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:88px;background:#111;color:#fff;padding:10px 14px;border-radius:10px;font-weight:800;z-index:9999;opacity:0;transition:opacity .2s}
+    .focus-panel{background:#fffdf5;border:1px dashed #fcd34d;margin-bottom:18px;padding:14px;border-radius:14px}
+    .focus-header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:4px}
+    .focus-panel .section-title{margin:0;font-size:15px;text-transform:uppercase;letter-spacing:.04em;color:#a16207}
+    .focus-panel .focus-summary{flex:1;margin:0;font-weight:600;color:#92400e;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+    .focus-panel .focus-summary strong{font-size:15px;color:#7c2d12}
+    .focus-panel .focus-summary .focus-title-text{font-weight:700;color:#7c2d12}
+    .focus-panel .focus-summary .focus-chip{background:#fff1c2;border-radius:999px;padding:2px 10px;font-size:13px;color:#92400e}
+    .focus-panel .focus-summary .focus-range{font-size:12px;color:#b45309;font-style:italic}
+    .focus-panel .focus-summary .focus-dot{color:#eab308;font-weight:700}
+    .focus-details{margin:0 0 6px;font-size:13px;color:#7c2d12}
+    .focus-details.is-hidden{display:none}
+    .focus-goals{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+    .focus-goals li{background:#fff;border:1px solid #fde68a;border-radius:12px;padding:10px;font-size:14px;line-height:1.4}
+    .focus-goals li strong{display:block;font-size:15px;margin-bottom:2px}
+    .focus-planner-stats{color:#92400e;font-size:13px;margin:4px 0 0}
+    .focus-actions{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 10px}
+    .focus-link{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;background:#fef3c7;border:1px solid #fcd34d;color:#92400e;font-weight:600;text-decoration:none;font-size:14px}
+    .focus-track-list{list-style:none;padding:0;margin:12px 0 0;display:grid;gap:10px}
+    .focus-track-item{background:#fff;border:1px solid #fde68a;border-radius:12px;padding:10px;display:grid;gap:8px}
+    .focus-track-item label{margin:0;font-weight:600;color:#92400e;display:flex;align-items:center;gap:8px}
+    .focus-track-item textarea{width:100%;min-height:60px;border-radius:10px}
+    .focus-track-header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+    .focus-track-practiced{display:flex;align-items:center;gap:12px;font-weight:700;color:#92400e}
+    .focus-track-practiced input{width:26px;height:26px;cursor:pointer;accent-color:#f59e0b}
+    .focus-track-target{font-size:12px;color:#b45309;font-weight:600}
+    .focus-track-prompt select{min-width:200px}
+    .adl-entry-list{list-style:none;padding:0;margin:12px 0 0;display:grid;gap:10px}
+    .adl-entry{border:1px solid #e5e7eb;border-radius:12px;padding:10px;background:#f8fafc;display:flex;gap:12px;justify-content:space-between;flex-wrap:wrap}
+    .adl-entry strong{display:block;font-size:15px;margin-bottom:2px;color:#111827}
+    .adl-entry small{display:block;color:#6b7280;font-size:12px}
+    .adl-entry-actions{display:flex;gap:8px;align-items:center}
   </style>
 </head>
 <body>
@@ -48,11 +79,26 @@
     <h1>Caregiver Check-In</h1>
     <div class="sub">Autosaves as you type. Use <strong>Save &amp; Next</strong> to step through.</div>
 
+    <section class="panel focus-panel" id="caregiver-focus-panel">
+      <div class="focus-header">
+        <p class="focus-summary" id="focusSummary">Loading weekly focus…</p>
+      </div>
+      <p class="focus-details is-hidden" id="focusDetails"></p>
+      <p class="focus-planner-stats is-hidden" id="focusPlannerStats"></p>
+      <div class="focus-actions">
+        <a class="focus-link" href="focus-week.html" target="_blank" rel="noopener">Open Focus Planner ↗</a>
+      </div>
+      <ul class="focus-goals" id="focusGoalsList"></ul>
+      <div id="focusTrackingList" class="focus-track-list"></div>
+    </section>
+
     <div class="progress" id="progress">
       <div class="prog-item" data-step="0"><div class="prog-label">Physical</div><div class="seg active"></div></div>
       <div class="prog-item" data-step="1"><div class="prog-label">Behavior</div><div class="seg"></div></div>
-      <div class="prog-item" data-step="2"><div class="prog-label">Community</div><div class="seg"></div></div>
-      <div class="prog-item" data-step="3"><div class="prog-label">Daily Living</div><div class="seg"></div></div>
+      <div class="prog-item" data-step="2"><div class="prog-label">Vocational</div><div class="seg"></div></div>
+      <div class="prog-item" data-step="3"><div class="prog-label">Home / Family</div><div class="seg"></div></div>
+      <div class="prog-item" data-step="4"><div class="prog-label">Community</div><div class="seg"></div></div>
+      <div class="prog-item" data-step="5"><div class="prog-label">Daily Living</div><div class="seg"></div></div>
     </div>
 
     <div class="top-actions">
@@ -141,12 +187,10 @@
         </fieldset>
       </div>
 
-      <!-- STEP 3: Community (restored full set) -->
+      <!-- STEP 3: Vocational -->
       <div class="step" data-step="2">
         <fieldset class="panel">
-          <div class="section-title">Community / Vocational Outcomes</div>
-
-          <!-- Vocational -->
+          <div class="section-title">Vocational Participation</div>
           <div class="row cols-3 compact">
             <label>Participated in vocational activity?
               <select name="vocational_participation" class="yn"><option value="">Select</option><option>Yes</option><option>No</option></select>
@@ -161,11 +205,18 @@
               <select name="vocational_prompting" data-scale="prompting"></select>
             </label>
           </div>
+          <label>Vocational notes:<textarea name="vocational_notes" placeholder="Describe tasks, progress, or challenges during vocational time."></textarea></label>
+          <div class="controls">
+            <div class="left-actions"><button class="btn" type="button" data-save>Save</button><span class="savedAt" data-savedat></span></div>
+            <div><button class="btn" type="button" data-prev>← Back</button><button class="btn primary" type="button" data-next>Save &amp; Next →</button></div>
+          </div>
+        </fieldset>
+      </div>
 
-          <hr class="soft"/>
-
-          <!-- HOME / FAMILY COMMUNITY -->
-          <div class="subcap">Home / family community</div>
+      <!-- STEP 4: Home / Family -->
+      <div class="step" data-step="3">
+        <fieldset class="panel">
+          <div class="section-title">Home / Family Community</div>
           <div class="row cols-3 compact">
             <label>Engaged in a home/community activity?
               <select name="home_activity_flag" class="yn"><option value="">Select</option><option>Yes</option><option>No</option></select>
@@ -196,10 +247,18 @@
             </label>
             <label>Home activity note:<input type="text" name="home_activity_note" placeholder="e.g., hosted grandma for dinner"/></label>
           </div>
+          <label>Home / family notes:<textarea name="home_notes" placeholder="Interactions, meals, visitors, or notable moments at home."></textarea></label>
+          <div class="controls">
+            <div class="left-actions"><button class="btn" type="button" data-save>Save</button><span class="savedAt" data-savedat></span></div>
+            <div><button class="btn" type="button" data-prev>← Back</button><button class="btn primary" type="button" data-next>Save &amp; Next →</button></div>
+          </div>
+        </fieldset>
+      </div>
 
-          <hr class="soft"/>
-
-          <!-- COMMUNITY AT LARGE -->
+      <!-- STEP 5: Community / Interaction -->
+      <div class="step" data-step="4">
+        <fieldset class="panel">
+          <div class="section-title">Community &amp; Social Interaction</div>
           <div class="subcap">Community at large</div>
           <div class="row cols-3 compact">
             <label>Engaged in a community-at-large activity?
@@ -237,10 +296,8 @@
             </label>
             <label>Community activity note:<input type="text" name="public_activity_note" placeholder="e.g., went to library, checked out 2 books"/></label>
           </div>
-
           <hr class="soft"/>
-
-          <!-- INTERACTION + LEISURE -->
+          <div class="subcap">Interactions</div>
           <div class="row cols-3 compact">
             <label>Engaged with a community member appropriately?
               <select name="community_interaction_ok" class="yn"><option value="">Select</option><option>Yes</option><option>No</option></select>
@@ -261,9 +318,7 @@
           <div class="row cols-2">
             <label>Interaction note:<input type="text" name="interaction_note" placeholder="e.g., greeted neighbor with 'Hi' and smile"/></label>
           </div>
-
-          <label>Community / Vocational Notes:<textarea name="community_notes" placeholder="Additional context for community or vocational participation"></textarea></label>
-
+          <label>Community notes:<textarea name="community_notes" placeholder="Additional context for community participation or interactions."></textarea></label>
           <div class="controls">
             <div class="left-actions"><button class="btn" type="button" data-save>Save</button><span class="savedAt" data-savedat></span></div>
             <div><button class="btn" type="button" data-prev>← Back</button><button class="btn primary" type="button" data-next>Save &amp; Next →</button></div>
@@ -271,8 +326,8 @@
         </fieldset>
       </div>
 
-      <!-- STEP 4: Daily Living -->
-      <div class="step" data-step="3">
+      <!-- STEP 6: Daily Living -->
+      <div class="step" data-step="5" id="daily-living-step">
         <fieldset class="panel">
           <div class="section-title">Daily Living Activities</div>
           <div class="row cols-2">
@@ -296,6 +351,10 @@
               <select name="prompting_level" id="prompting_level" data-scale="prompting"></select>
             </label>
           </div>
+          <p class="muted" style="margin:8px 0 4px">Add each ADL as you go so the log prints clearly.</p>
+          <button class="btn" type="button" id="addAdlEntry">+ Add ADL entry</button>
+          <ul class="adl-entry-list" id="adlEntryList"></ul>
+          <input type="hidden" name="adl_entries" id="adl_entries" value=""/>
           <label>Daily living notes:<textarea name="daily_living_notes" id="daily_living_notes" placeholder="Cooking, cleaning, laundry, errands, etc."></textarea></label>
           <div class="controls">
             <div class="left-actions">
@@ -320,6 +379,7 @@
 <script type="module">
   // 1) Imports MUST be first in the module
   import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
+  import { loadFocusForCurrentUser, readLocalFocusDraft } from './focus-data.js?v=2025.10.16d';
 
   // 2) Optional: expose for console debugging
   window.rest = rest;
@@ -333,6 +393,34 @@
   let toggleAllBtn, resumeDraftBtn;
   let progItems = [];
   let segs = [];
+  const focusSummaryEl = document.getElementById('focusSummary');
+  const focusDetailsEl = document.getElementById('focusDetails');
+  const focusGoalsListEl = document.getElementById('focusGoalsList');
+  const focusTrackingListEl = document.getElementById('focusTrackingList');
+  const focusPanel = document.getElementById('caregiver-focus-panel');
+  const focusPlannerStatsEl = document.getElementById('focusPlannerStats');
+  let focusGoalMeta = [];
+  let plannerTrackerStats = null;
+  let adlStepIndex = -1;
+  let adlCategory, adlActivity, adlNoteInput, adlPromptingSelect, adlEntryListEl, addAdlEntryBtn, adlEntriesField;
+  let adlEntries = [];
+  let adlHandlersBound = false;
+
+  const PROMPT_SCALE = [
+    { value:"", label:"Select prompt level" },
+    { value:"0", label:"0 – Independent" },
+    { value:"1", label:"1 – 1–2 prompts" },
+    { value:"2", label:"2 – Periodic prompts" },
+    { value:"3", label:"3 – Frequent prompts" },
+    { value:"4", label:"4 – Dependent" }
+  ];
+  const PROMPT_LABELS = {
+    '0':'Independent',
+    '1':'1–2 prompts',
+    '2':'Periodic prompts',
+    '3':'Frequent prompts',
+    '4':'Dependent'
+  };
 
   const DRAFT_KEY = 'cg-checkin-draft-v1';
   const GROUP_KEY = 'currentGroupId';
@@ -383,11 +471,259 @@
     return trimmed ? trimmed : null;
   };
 
+  const parseAdlEntries = (value) => {
+    if (!value) return [];
+    if (Array.isArray(value)) return value.filter(Boolean);
+    try {
+      const parsed = typeof value === 'string' ? JSON.parse(value) : value;
+      return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const cleanGoalTitle = (raw) => {
+    if (!raw) return '';
+    const trimmed = String(raw).trim();
+    if (!trimmed) return '';
+    const lower = trimmed.toLowerCase();
+    if (lower === 'goal title') return '';
+    if (/^goal\s+\d+/.test(lower)) return '';
+    return trimmed;
+  };
+  const escapeHtml = (str = '') =>
+    String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
+  function summarizePlannerDays(days = []){
+    if (!Array.isArray(days) || !days.length) return null;
+    const practiced = days.filter(day => day && (day.practiced || day.completed));
+    if (!practiced.length) return null;
+    const promptVals = practiced
+      .map(day => Number(day.promptLevel ?? day.prompt_level))
+      .filter(Number.isFinite);
+    const avgPrompt = promptVals.length
+      ? Number((promptVals.reduce((sum, val) => sum + val, 0) / promptVals.length).toFixed(1))
+      : null;
+    const last = practiced[practiced.length - 1] || {};
+    return {
+      count: practiced.length,
+      avgPrompt,
+      lastNote: last.note || last.notes || '',
+      lastDay: last.day || last.date || null,
+    };
+  }
+
+  function setPlannerStats(stats){
+    plannerTrackerStats = stats || null;
+    if (!focusPlannerStatsEl) return;
+    if (!stats?.count){
+      focusPlannerStatsEl.textContent = '';
+      focusPlannerStatsEl.classList.add('is-hidden');
+      return;
+    }
+    const pieces = [`${stats.count} practice day${stats.count === 1 ? '' : 's'} recorded in planner`];
+    if (stats.avgPrompt != null) pieces.push(`avg prompt level ${stats.avgPrompt}`);
+    if (stats.lastNote) pieces.push(`last note: ${stats.lastNote}`);
+    focusPlannerStatsEl.textContent = pieces.join(' • ');
+    focusPlannerStatsEl.classList.remove('is-hidden');
+  }
+
+  function buildFocusSummaryLine(focus, range, localFallback){
+    if (!focus) return '';
+    const parts = [];
+    const rawTitle = focus.customTitle || focus.title || '';
+    const cleanTitle = cleanGoalTitle(rawTitle) || 'Not set';
+    parts.push(`<strong>WEEKLY FOCUS TITLE:</strong> <span class="focus-title-text">${escapeHtml(cleanTitle)}</span>`);
+    if (focus.focusArea) parts.push(`<span class="focus-range">${escapeHtml(focus.focusArea)}</span>`);
+    const goalNames = (focus.goals || [])
+      .map((goal, index) => cleanGoalTitle(goal.title || goal.customTitle || `Goal ${index + 1}`))
+      .filter(Boolean);
+    if (goalNames.length){
+      const display = goalNames.slice(0, 2).join(', ');
+      const suffix = goalNames.length > 2 ? '…' : '';
+      parts.push(`<span class="focus-chip">${escapeHtml(display)}${suffix}</span>`);
+    }
+    if (range) parts.push(`<span class="focus-range">${escapeHtml(range)}</span>`);
+    if (localFallback) parts.push('<span class="focus-chip">Draft on this device</span>');
+    return parts.join('<span class="focus-dot">•</span>');
+  }
+
+  function buildFocusDetails(focus){
+    if (!focus) return '';
+    const bits = [];
+    if (focus.whyMatters) bits.push(escapeHtml(focus.whyMatters));
+    if (focus.nextSteps) bits.push(`Next: ${escapeHtml(focus.nextSteps)}`);
+    return bits.join(' • ');
+  }
+
+  async function loadFocusSummary(){
+    if (!focusSummaryEl) return;
+    try{
+      let focus = null;
+      let localFallback = false;
+      try {
+        const result = await loadFocusForCurrentUser();
+        focus = result?.focus || null;
+      } catch (err) {
+        console.warn('[cg] focus shared load failed', err);
+      }
+      if (!focus) {
+        focus = readLocalFocusDraft();
+        localFallback = !!focus;
+      }
+      if (!focus){
+        focusSummaryEl.innerHTML = '<strong>WEEKLY FOCUS TITLE:</strong> Set this week’s focus on the Focus Planner.';
+        focusDetailsEl?.classList.add('is-hidden');
+        focusTrackingListEl && (focusTrackingListEl.style.display = 'none');
+        focusGoalMeta = [];
+        focusGoalsListEl.innerHTML = '';
+        setPlannerStats(null);
+        return;
+      }
+      const start = focus.weekStart ? new Date(focus.weekStart) : null;
+      const end = start ? new Date(start) : null;
+      if (end) end.setDate(end.getDate() + 6);
+      const range = start && end ? `${start.toLocaleDateString()} – ${end.toLocaleDateString()}` : '';
+      focusGoalMeta = Array.isArray(focus.goals) ? focus.goals : [];
+      focusSummaryEl.innerHTML = buildFocusSummaryLine(focus, range, localFallback) || '<strong>WEEKLY FOCUS TITLE:</strong> Not set';
+      const details = buildFocusDetails(focus);
+      if (details){
+        focusDetailsEl.innerHTML = details;
+        focusDetailsEl.classList.remove('is-hidden');
+      } else {
+        focusDetailsEl.classList.add('is-hidden');
+      }
+      focusTrackingListEl && (focusTrackingListEl.style.display = '');
+      setPlannerStats(summarizePlannerDays(focus.days));
+      renderFocusGoals(focusGoalMeta);
+      renderFocusTrackingFields(focusGoalMeta);
+    } catch (error){
+      const fallback = readLocalFocusDraft();
+      if (fallback) {
+        focusGoalMeta = Array.isArray(fallback.goals) ? fallback.goals : [];
+        focusSummaryEl.innerHTML = buildFocusSummaryLine(fallback, null, true) || '<strong>WEEKLY FOCUS TITLE:</strong> Not set';
+        const details = buildFocusDetails(fallback);
+        if (details){
+          focusDetailsEl.innerHTML = details;
+          focusDetailsEl.classList.remove('is-hidden');
+        } else {
+          focusDetailsEl.classList.add('is-hidden');
+        }
+        focusTrackingListEl && (focusTrackingListEl.style.display = '');
+        setPlannerStats(summarizePlannerDays(fallback.days));
+        renderFocusGoals(focusGoalMeta);
+        renderFocusTrackingFields(focusGoalMeta);
+      } else {
+        focusSummaryEl.innerHTML = '<strong>WEEKLY FOCUS TITLE:</strong> Unable to load focus.';
+        focusDetailsEl?.classList.add('is-hidden');
+        setPlannerStats(null);
+      }
+      console.warn('[cg] focus summary load failed', error);
+    }
+  }
+
+  function renderFocusGoals(goals){
+    if (!focusGoalsListEl) return;
+    focusGoalsListEl.innerHTML = '';
+    const cleaned = Array.isArray(goals)
+      ? goals
+          .map((goal) => ({
+            title: cleanGoalTitle(goal.title || goal.customTitle || ''),
+            notes: trimOrNull(goal.notes),
+          }))
+          .filter((item) => item.title)
+      : [];
+    if (!cleaned.length){
+      const li = document.createElement('li');
+      li.textContent = 'Add weekly goals on the Focus page to see them here.';
+      focusGoalsListEl.appendChild(li);
+      return;
+    }
+    cleaned.forEach(({ title, notes }) => {
+      const li = document.createElement('li');
+      const strong = document.createElement('strong');
+      strong.textContent = title;
+      li.appendChild(strong);
+      if (notes){
+        const span = document.createElement('span');
+        span.textContent = notes;
+        li.appendChild(span);
+      }
+      focusGoalsListEl.appendChild(li);
+    });
+  }
+
+  function renderFocusTrackingFields(goals){
+    if (!focusTrackingListEl) return;
+    focusTrackingListEl.innerHTML = '';
+    if (!Array.isArray(goals) || !goals.length) {
+      focusTrackingListEl.style.display = 'none';
+      return;
+    }
+    focusTrackingListEl.style.display = '';
+    goals.forEach((goal, index) => {
+      const li = document.createElement('div');
+      li.className = 'focus-track-item';
+      const cleanTitle = cleanGoalTitle(goal.title || goal.customTitle || '') || '';
+      li.dataset.goalId = goal.id || goal.goal_id || cleanTitle || `goal-${index}`;
+      const targetLabel = goal.promptGoal ? (PROMPT_LABELS[goal.promptGoal] || goal.promptGoal) : '';
+      const titleFragment = cleanTitle ? ` (${escapeHtml(cleanTitle)})` : '';
+      const targetFragment = targetLabel
+        ? `<span class="focus-track-target">Target: ${escapeHtml(targetLabel)}</span>`
+        : '';
+      li.innerHTML = `
+        <div class="focus-track-header">
+          <label class="focus-track-practiced">
+            <input type="checkbox" data-focus-practiced>
+            <span>Practiced${titleFragment}</span>
+            ${targetFragment}
+          </label>
+          <div class="focus-track-prompt">
+            <select class="input input-chip" data-focus-prompt aria-label="Prompt level used">
+              ${PROMPT_SCALE.map(o => `<option value="${o.value}">${o.label}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        <textarea data-focus-note placeholder="Notes from today…"></textarea>
+      `;
+      focusTrackingListEl.appendChild(li);
+    });
+  }
+
+  function collectFocusLogs(){
+    if (!focusTrackingListEl) return [];
+    return Array.from(focusTrackingListEl.querySelectorAll('.focus-track-item')).map(item => ({
+      goal_id: item.dataset.goalId || null,
+      goal_title: focusGoalMeta.find(g => g.id === item.dataset.goalId)?.title || item.dataset.goalId || '',
+      practiced: item.querySelector('[data-focus-practiced]')?.checked || false,
+      prompt_level: item.querySelector('[data-focus-prompt]')?.value || '',
+      note: item.querySelector('[data-focus-note]')?.value || ''
+    })).filter(entry => entry.practiced || entry.note || entry.prompt_level);
+  }
+
+  function clearFocusTrackingFields(){
+    if (!focusTrackingListEl) return;
+    focusTrackingListEl.querySelectorAll('.focus-track-item').forEach(item => {
+      const practiced = item.querySelector('[data-focus-practiced]');
+      const promptSel = item.querySelector('[data-focus-prompt]');
+      const note = item.querySelector('[data-focus-note]');
+      if (practiced) practiced.checked = false;
+      if (promptSel) promptSel.value = '';
+      if (note) note.value = '';
+    });
+  }
+
   // 4) Start logic once DOM is ready
   document.addEventListener('DOMContentLoaded', () => {
     formEl        = document.getElementById('cg-form');
     submitBtn     = document.getElementById('submitAll');
     steps         = Array.from(document.querySelectorAll('.step'));
+    adlStepIndex  = steps.findIndex((step) => step.id === 'daily-living-step');
     toggleAllBtn  = document.getElementById('toggleAll');
     resumeDraftBtn = document.getElementById('resumeDraftBtn');
     const progressEl = document.getElementById('progress');
@@ -401,11 +737,13 @@
 
     console.log('✅ Form assets ready:', { formEl, submitBtn, steps });
 
+    initAdlControls();
     hydratePromptingSelects();
     steps.forEach((step, idx) => restore(step, idx));
     updateSavedButtons();
     updateProgress();
     syncAggressionControls();
+    loadFocusSummary();
 
     // Wire per-step buttons and autosave
     steps.forEach((step, idx) => {
@@ -446,15 +784,7 @@
     // Draft resume
     resumeDraftBtn?.addEventListener('click', () => {
       draft = loadDraft() || { data: {}, savedAt: {} };
-      steps.forEach((s, i) => hydrate(s, draft.data[i]));
-      const cat = draft.data[3]?.adl_category;
-      if (cat) {
-        setAdlActivities(cat);
-        if (adlActivity) {
-          adlActivity.value = draft.data[3]?.adl_activity || '';
-        }
-      }
-      steps.forEach((s, i) => updateSavedAt(s, i));
+      steps.forEach((s, i) => restore(s, i));
       hydratePromptingSelects();
       syncAggressionControls();
       toast('Draft restored');
@@ -482,15 +812,7 @@
 
 
  
-    // Prompting scale
-    const PROMPT_SCALE = [
-      { value:"", label:"Select one", desc:"Select a level to see description." },
-      { value:"0", label:"0 – Dependent", desc:"hand-over-hand or full physical assistance; caregiver initiates and guides most steps." },
-      { value:"1", label:"1 – Frequent prompts", desc:"needs prompts on most steps (verbal/gesture/model); little sustained independence." },
-      { value:"2", label:"2 – Periodic prompts", desc:"needs prompts several times during the task but completes stretches independently." },
-      { value:"3", label:"3 – 1–2 prompts", desc:"needs one or two prompts/cues to complete." },
-      { value:"4", label:"4 – Independent", desc:"completes without prompts (supervision okay, no cues given)." }
-    ];
+    // Prompting scale (shared with planner)
     function populatePromptingSelect(sel){
       const prev = sel.value;
       sel.innerHTML = PROMPT_SCALE.map(o=>`<option value="${o.value}">${o.label}</option>`).join('');
@@ -519,13 +841,135 @@
       'Cooking / Food': ['Prepared snack','Prepared drink','Made sandwich','Helped cook','Used microwave','Helped bake'],
       'Community / Errands': ['Brought trash out','Sorted recycling','Carried grocery bag']
     };
-    const adlCategory = document.getElementById('adl_category');
-    const adlActivity = document.getElementById('adl_activity');
     function setAdlActivities(cat){
+      if (!adlActivity) return;
       const list = ADL_OPTIONS[cat] || [];
       adlActivity.innerHTML = '<option value="">Select activity</option>' + list.map(x=>`<option>${x}</option>`).join('');
     }
-    adlCategory?.addEventListener('change', e=> setAdlActivities(e.target.value));
+
+    function renderAdlEntries(){
+      if (!adlEntryListEl) return;
+      adlEntryListEl.innerHTML = '';
+      if (!adlEntries.length){
+        const li = document.createElement('li');
+        li.className = 'muted';
+        li.textContent = 'No ADL entries added yet.';
+        adlEntryListEl.appendChild(li);
+        return;
+      }
+      adlEntries.forEach((entry, idx) => {
+        const li = document.createElement('li');
+        li.className = 'adl-entry';
+
+        const info = document.createElement('div');
+        const title = document.createElement('strong');
+        title.textContent = entry.category || 'ADL';
+        info.appendChild(title);
+        if (entry.activity){
+          const act = document.createElement('small');
+          act.textContent = entry.activity;
+          info.appendChild(act);
+        }
+        if (entry.note){
+          const note = document.createElement('small');
+          note.textContent = entry.note;
+          info.appendChild(note);
+        }
+
+        const actions = document.createElement('div');
+        actions.className = 'adl-entry-actions';
+        if (entry.prompting){
+          const prompt = document.createElement('small');
+          prompt.textContent = `Prompt: ${PROMPT_LABELS[entry.prompting] || entry.prompting}`;
+          actions.appendChild(prompt);
+        }
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'btn';
+        removeBtn.dataset.removeAdl = idx;
+        removeBtn.textContent = 'Remove';
+        actions.appendChild(removeBtn);
+
+        li.appendChild(info);
+        li.appendChild(actions);
+        adlEntryListEl.appendChild(li);
+      });
+    }
+
+    function syncAdlEntriesField({ silent } = {}){
+      if (adlEntriesField){
+        adlEntriesField.value = adlEntries.length ? JSON.stringify(adlEntries) : '';
+        if (!silent){
+          adlEntriesField.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      }
+      renderAdlEntries();
+    }
+
+    function resetAdlEntries(){
+      adlEntries = [];
+      syncAdlEntriesField({ silent: true });
+    }
+
+    function hydrateAdlFieldsFromData(stepData, { silent } = {}){
+      if (stepData?.adl_category){
+        setAdlActivities(stepData.adl_category);
+        if (adlActivity) adlActivity.value = stepData.adl_activity || '';
+      } else {
+        setAdlActivities('');
+        if (adlActivity) adlActivity.value = '';
+      }
+      adlEntries = parseAdlEntries(stepData?.adl_entries);
+      syncAdlEntriesField({ silent: true });
+    }
+
+    function addAdlEntry(){
+      const category = adlCategory?.value || '';
+      const activity = adlActivity?.value || '';
+      const note = (adlNoteInput?.value || '').trim();
+      const prompting = adlPromptingSelect?.value || '';
+      if (!category){
+        alert('Select an ADL category before adding an entry.');
+        return;
+      }
+      adlEntries.push({
+        category,
+        activity,
+        note,
+        prompting
+      });
+      syncAdlEntriesField();
+      if (adlActivity) adlActivity.value = '';
+      if (adlNoteInput) adlNoteInput.value = '';
+    }
+
+    function handleAdlRemoval(event){
+      const target = event.target.closest('[data-remove-adl]');
+      if (!target) return;
+      const idx = Number(target.dataset.removeAdl);
+      if (!Number.isFinite(idx)) return;
+      adlEntries.splice(idx, 1);
+      syncAdlEntriesField();
+    }
+
+    function initAdlControls(){
+      adlCategory = document.getElementById('adl_category');
+      adlActivity = document.getElementById('adl_activity');
+      adlNoteInput = document.getElementById('adl_note');
+      adlPromptingSelect = document.getElementById('prompting_level');
+      adlEntryListEl = document.getElementById('adlEntryList');
+      addAdlEntryBtn = document.getElementById('addAdlEntry');
+      adlEntriesField = document.getElementById('adl_entries');
+      if (!adlHandlersBound){
+        adlCategory?.addEventListener('change', e=> setAdlActivities(e.target.value));
+        addAdlEntryBtn?.addEventListener('click', addAdlEntry);
+        adlEntryListEl?.addEventListener('click', handleAdlRemoval);
+        adlHandlersBound = true;
+      }
+      setAdlActivities(adlCategory?.value || '');
+      if (!adlEntries.length) resetAdlEntries();
+      else renderAdlEntries();
+    }
 
   // Wizard state
   let showAll = false;
@@ -561,12 +1005,10 @@
       if(!silent) toast('Saved');
     }
     function restore(step,idx){
-      hydrate(step,draft.data[idx]); updateSavedAt(step,idx);
-      if(idx===3 && draft.data[3]?.adl_category){
-        setAdlActivities(draft.data[3].adl_category);
-        if (adlActivity) {
-          adlActivity.value = draft.data[3]?.adl_activity || '';
-        }
+      hydrate(step,draft.data[idx]);
+      updateSavedAt(step,idx);
+      if(idx===adlStepIndex){
+        hydrateAdlFieldsFromData(draft.data[idx] || {}, { silent: true });
       }
     }
     function loadDraft(){ try{ const raw=localStorage.getItem(DRAFT_KEY); return raw?JSON.parse(raw):null; }catch{ return null; } }
@@ -597,8 +1039,22 @@
       payload._submitted_at = new Date().toISOString();
       return payload;
     }
-    function resetFormValues(){ formEl.reset(); const iv=document.getElementById('intensityVal'); if(iv) iv.textContent='0'; setAdlActivities(''); hydratePromptingSelects(); }
-    function clearDraftUI(){ draft={ data:{}, savedAt:{} }; localStorage.removeItem(DRAFT_KEY); steps.forEach((s,i)=>updateSavedAt(s,i)); updateSavedButtons(); }
+    function resetFormValues(){
+      formEl.reset();
+      const iv=document.getElementById('intensityVal');
+      if(iv) iv.textContent='0';
+      resetAdlEntries();
+      setAdlActivities('');
+      hydratePromptingSelects();
+      clearFocusTrackingFields();
+    }
+    function clearDraftUI(){
+      draft={ data:{}, savedAt:{} };
+      localStorage.removeItem(DRAFT_KEY);
+      steps.forEach((s,i)=>updateSavedAt(s,i));
+      updateSavedButtons();
+      resetAdlEntries();
+    }
     function toast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.style.opacity='1'; clearTimeout(el._t); el._t=setTimeout(()=>el.style.opacity='0',1400); }
 
     // ---------- FINAL SUBMIT ----------
@@ -617,6 +1073,8 @@
         if (!user_id) throw new Error('Not signed in');
 
         const payload = buildPayload();
+        const adlEntriesFromPayload = parseAdlEntries(payload.adl_entries);
+        payload.adl_entries = adlEntriesFromPayload;
         const had_bm =
           payload.had_bm === true ||
           /yes/i.test(String(payload.had_bm ?? payload.bm_today ?? ''));
@@ -625,10 +1083,16 @@
         const caregiverName = trimOrNull(payload.caregiver_name) ||
           trimOrNull(user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email);
 
-        const adlCategory = payload.adl_category || '';
-        const hygiene = adlCategory === 'Hygiene / Toileting';
-        const foodPrep = adlCategory === 'Cooking / Food';
-        const cleanup = adlCategory === 'Cleaning / Household';
+        const adlCategorySet = new Set();
+        adlEntriesFromPayload.forEach(entry => {
+          if (entry?.category) adlCategorySet.add(entry.category);
+        });
+        if (!adlCategorySet.size && payload.adl_category) {
+          adlCategorySet.add(payload.adl_category);
+        }
+        const hygiene = adlCategorySet.has('Hygiene / Toileting');
+        const foodPrep = adlCategorySet.has('Cooking / Food');
+        const cleanup = adlCategorySet.has('Cleaning / Household');
 
         const vocationalMinutes = durationToMinutes(payload.vocational_time);
         const homeMinutes = durationToMinutes(payload.home_activity_time);
@@ -645,12 +1109,17 @@
         const caregiverNotes = [
           payload.physical_notes,
           payload.behavior_notes,
+          payload.vocational_notes,
+          payload.home_notes,
           payload.community_notes,
           payload.daily_living_notes,
         ]
           .map((note) => trimOrNull(note))
           .filter(Boolean)
           .join('\n\n') || null;
+
+        const focusLogs = collectFocusLogs();
+        payload.focus_goal_logs = focusLogs;
 
         const row = {
           user_id,
@@ -665,7 +1134,9 @@
           community_time,
           new_skill_score: newSkillScore,
           caregiver_notes: caregiverNotes,
+          focus_goal_logs: focusLogs,
           payload,
+          adl_entries: adlEntriesFromPayload,
           submitted_at: new Date().toISOString()
         };
 
@@ -725,5 +1196,10 @@
     }
   })();
 </script>
+<div id="tabbar"></div>
+<!-- Bottom tab bar + hamburger drawer -->
+<script defer src="./load-tabbar.js?v=2025.10.16d"></script>
+<script defer src="./ui-shell.js?v=2025.10.16d"></script>
+<script defer src="./scripts/appbar-drawer.js?v=2025.10.16d"></script>
 </body>
 </html>

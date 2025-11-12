@@ -129,14 +129,15 @@
       <details>
         <summary>📂 Documents</summary>
         <div class="sub">
+          <a href="/documents/documents.html">📁 Docs Home</a>
+          <a href="/documents/documents.html?cat=Finance">💵 Finance</a>
+          <a href="/documents/documents.html?cat=Medical">🩺 Medical</a>
+          <a href="/documents/documents.html?cat=HR">🏢 HR</a>
+          <a href="/documents/documents.html?cat=Caregiving">🧩 Caregiving</a>
+          <a href="/documents/documents.html?cat=ISA">📚 ISA / IEP</a>
+          <a href="/documents/documents.html?cat=Year%20End%20Paperwork">📦 Year End</a>
+          <a href="/documents/documents.html?cat=Guardianship">🛡 Guardianship</a>
           <a href="/documents/minutes-form.html">📝 Meeting Minutes</a>
-          <a href="/documents/finance.html">💵 Finance</a>
-          <a href="/documents/medical.html">🩺 Medical</a>
-          <a href="/documents/hr.html">🏢 HR</a>
-          <a href="/documents/caregiving.html">🧩 Caregiving</a>
-          <a href="/documents/isa-iep.html">📚 ISA/IEP</a>
-          <a href="/documents/year-end-paperwork.html">📦 Year End Paperwork</a>
-          <a href="/documents/guardianship.html">🛡 Guardianship</a>
         </div>
       </details>
 

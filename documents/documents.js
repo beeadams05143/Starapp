@@ -188,6 +188,7 @@ async function getSignedUrl(storagePath) {
 /* ------------ category tabs + deep link ------------ */
 const urlParams = new URLSearchParams(location.search);
 let activeCategory = urlParams.get("cat") || "Finance";
+document.body.dataset.docCat = activeCategory;
 
 const tabs = document.querySelectorAll(".tabbtn");
 const catInput = document.getElementById("docCategory");

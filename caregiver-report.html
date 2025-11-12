@@ -237,6 +237,13 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
     <section class="panel focus-board" id="reportFocusPanel" data-print-section="Weekly Focus">
       <h2>Weekly Focus</h2>
       <p id="reportFocusSummary" class="muted">Loading weekly focus…</p>
+      <div id="plannerChartSection" data-print-section="Planner Tracker" class="planner-chart-panel is-hidden">
+        <h3>Practice Tracker (Planner)</h3>
+        <p id="focusPlannerStats" class="muted is-hidden" style="margin:-6px 0 8px"></p>
+        <div id="plannerChartWrap" class="planner-chart-wrap is-hidden">
+          <canvas id="focusPlannerChart" height="140"></canvas>
+        </div>
+      </div>
       <ul id="reportFocusGoals" class="focus-goal-list"></ul>
       <canvas id="focusGoalChart" height="220"></canvas>
     </section>
@@ -370,14 +377,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
 
     <!-- Charts -->
     <section id="chart-stack" data-print-section="Trends & Charts">
-    <section id="plannerChartSection" data-print-section="Planner Tracker" class="chart planner-chart-panel is-hidden">
-      <h2>Practice Tracker (Planner)</h2>
-      <p id="focusPlannerStats" class="muted is-hidden" style="margin:-6px 0 8px"></p>
-      <div id="plannerChartWrap" class="planner-chart-wrap is-hidden">
-        <canvas id="focusPlannerChart" height="140"></canvas>
-      </div>
-    </section>
-
     <div class="chart"><h2>Physical & Daily Living Overview</h2><canvas id="healthChart"></canvas></div>
       <div class="chart"><h2>Prompt Level Over Time</h2><canvas id="skillChart"></canvas></div>
       <div class="chart"><h2>Individual Mood Share (Pie)</h2><canvas id="moodPieMain"></canvas></div>
@@ -636,6 +635,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
 
     const FRIENDLY_CAREGIVER_LABELS = {
       'countrygirlinvt@gmail.com': 'Beth',
+      'bethadams05143@gmail.com': 'Beth',
+      'skr.tysonroad@gmail.com': 'Shirley',
       'jcadams05143@gmail.com': 'Josh'
     };
     const friendlyNameFromEmail = (email) => {
@@ -690,8 +691,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
     };
 
     const caregiverNameFromEntry = (entry = {}) => {
-      const friendly = friendlyNameFromEmail(emailFromEntry(entry));
-      if (friendly) return friendly;
       const payload = entry.payload || {};
       const candidates = [
         entry.caregiver_name,
@@ -705,7 +704,10 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
         const trimmed = value.trim();
         if (trimmed) return trimmed;
       }
-      return '';
+      const friendly = friendlyNameFromEmail(emailFromEntry(entry));
+      if (friendly) return friendly;
+      const email = emailFromEntry(entry);
+      return email || '';
     };
 
     const matchesCaregiverFilter = (entry, filterValue) => {

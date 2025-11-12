@@ -166,21 +166,21 @@
     @media print { .edge-tabs { display: none !important; } }
   </style>
 </head>
-<body>
+<body data-doc-page="minutes">
 
   <div id="navbar"></div>
 
   <!-- Quick links to other Documents pages -->
   <nav class="edge-tabs" aria-label="Documents quick links">
-    <a href="documents.html" title="Docs Home">📁</a>
-    <a href="finance.html" title="Finance">💵</a>
-    <a href="medical.html" title="Medical">🩺</a>
-    <a href="hr.html" title="HR">🏢</a>
-    <a href="caregiving.html" title="Caregiving">🧩</a>
-    <a href="isa-iep.html" title="ISA/IEP">📚</a>
-    <a href="year-end-paperwork.html" title="Year End">📦</a>
-    <a href="guardianship.html" title="Guardianship">🛡️</a>
-    <a href="minutes-form.html" aria-current="page" title="Meeting Minutes">📝</a>
+    <a href="/documents/documents.html" data-doc-page="docs" title="Docs home">📁</a>
+    <a href="/documents/documents.html?cat=Finance" data-cat="Finance" title="Finance">💵</a>
+    <a href="/documents/documents.html?cat=Medical" data-cat="Medical" title="Medical">🩺</a>
+    <a href="/documents/documents.html?cat=HR" data-cat="HR" title="HR">🏢</a>
+    <a href="/documents/documents.html?cat=Caregiving" data-cat="Caregiving" title="Caregiving">🧩</a>
+    <a href="/documents/documents.html?cat=ISA" data-cat="ISA" title="ISA / IEP">📚</a>
+    <a href="/documents/documents.html?cat=Year%20End%20Paperwork" data-cat="Year End Paperwork" title="Year End">📦</a>
+    <a href="/documents/documents.html?cat=Guardianship" data-cat="Guardianship" title="Guardianship">🛡️</a>
+    <a href="/documents/minutes-form.html" data-doc-page="minutes" title="Meeting Minutes">📝</a>
   </nav>
 
   <div class="wrap">
@@ -383,6 +383,19 @@
 
   <!-- Floating avatar (top-right across pages) -->
   <script type="module" src="/avatar-float.js?v=2025.10.16d"></script>
+  <script>
+    (function(){
+      const cat = (document.body.dataset.docCat || '').toLowerCase();
+      const page = document.body.dataset.docPage || '';
+      document.querySelectorAll('.edge-tabs a').forEach(link => {
+        const linkCat = (link.dataset.cat || '').toLowerCase();
+        const linkPage = link.dataset.docPage || '';
+        if ((cat && linkCat === cat) || (page && linkPage === page)) {
+          link.setAttribute('aria-current', 'page');
+        }
+      });
+    })();
+  </script>
 
 </body>
 </html>

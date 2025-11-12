@@ -8,7 +8,7 @@
     :root{ --ink:#1f2937; --accent:#f59e0b; --paper:#fffdfa; --rule:#e5e7eb; --punch:#d1d5db; }
     *{box-sizing:border-box}
     body{margin:0; padding:24px; font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial; background:#fafaf9; color:var(--ink);}
-    .page{max-width:1200px; margin:0 auto; display:grid; grid-template-columns: 1fr 220px; gap:18px;}
+    .page{max-width:1200px; margin:0 auto;}
 
     /* Notebook */
     .notebook{position:relative; border-radius:18px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,.08); display:grid; grid-template-columns:1fr 110px; background:var(--paper)}
@@ -38,53 +38,66 @@
     .card{border:1px solid #e5e7eb; border-radius:12px; padding:12px; margin-top:10px; background:#fff}
     .row{display:flex; gap:8px; align-items:center; justify-content:space-between}
 
-    /* Right-side binder tabs */
-.tabs{
-  position:sticky; top:18px;
-  display:flex; flex-direction:column; gap:12px;    /* <- use gap, not margins */
-  height:max-content;
-  padding:12px;
-  border:1px solid #e5e7eb; border-radius:12px; background:#fff;
-}
-
-/* Shared pill styles for both buttons and links */
-.tabbtn, .tablink{
-  display:block; width:100%;
-  text-align:right;
-  padding:12px 14px;
-  border:1px solid #e5e7eb; border-radius:999px;
-  background:#fff;
-  cursor:pointer; font-weight:700;
-  line-height:1.1; min-height:46px;                 /* consistent height */
-  margin:0;                                         /* remove old margins */
-  text-decoration:none;
-}
-
-.tabbtn:hover, .tablink:hover{ transform:translateX(2px) }
-
-.tabbtn.active, .tablink.active, .active-link{
-  background:#111; color:#fff !important; border-color:#111;
-}
-
-/* Ensure visited links don't turn purple, but keep active white text */
-.tabbtn:not(.active), .tabbtn:not(.active):visited,
-.tablink:not(.active), .tablink:not(.active):visited{
-  color:#111 !important;
-}
-
-/* Optional: keep pills tidy on very narrow screens */
-@media (max-width: 420px){
-  .tabs{ position:static; }
-}
+    /* Right-edge quick nav bubbles */
+    .edge-tabs {
+      position: fixed;
+      right: 12px;
+      top: 88px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 1050;
+    }
+    .edge-tabs a {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      text-decoration: none;
+      background: #111;
+      color: #fff;
+      box-shadow: 0 8px 18px rgba(0,0,0,.22);
+      opacity: .92;
+      transition: transform .08s ease, opacity .08s ease;
+      font-size: 20px;
+    }
+    .edge-tabs a:hover { transform: translateY(-1px); opacity: 1; }
+    .edge-tabs a[aria-current="page"] {
+      outline: 3px solid #ffd166;
+      outline-offset: 2px;
+      background: #1b1b1b;
+    }
+    @media (max-width: 680px) {
+      .edge-tabs {
+        top: auto;
+        bottom: 96px;
+        right: 10px;
+        flex-direction: row;
+      }
+    }
+    @media print { .edge-tabs { display: none !important; } }
 
 
     /* Hide Group switcher (navbar) on docs pages */
     #group-switcher, label[for="group-switcher"], #groupSwitcherStatus { display:none !important; }
   </style>
 </head>
-<body>
+<body data-doc-page="docs">
   <!-- Shared navbar -->
   <div id="navbar"></div>
+
+  <nav class="edge-tabs" aria-label="Documents quick links">
+    <a href="/documents/documents.html" data-doc-page="docs" title="Docs home">📁</a>
+    <a href="/documents/documents.html?cat=Finance" data-cat="Finance" title="Finance">💵</a>
+    <a href="/documents/documents.html?cat=Medical" data-cat="Medical" title="Medical">🩺</a>
+    <a href="/documents/documents.html?cat=HR" data-cat="HR" title="HR">🏢</a>
+    <a href="/documents/documents.html?cat=Caregiving" data-cat="Caregiving" title="Caregiving">🧩</a>
+    <a href="/documents/documents.html?cat=ISA" data-cat="ISA" title="ISA / IEP">📚</a>
+    <a href="/documents/documents.html?cat=Year%20End%20Paperwork" data-cat="Year End Paperwork" title="Year End">📦</a>
+    <a href="/documents/documents.html?cat=Guardianship" data-cat="Guardianship" title="Guardianship">🛡️</a>
+    <a href="/documents/minutes-form.html" data-doc-page="minutes" title="Meeting Minutes">📝</a>
+  </nav>
 
   <div class="page">
     <!-- Main content -->
@@ -178,26 +191,6 @@
       <div id="docs-list"></div>
     </div>
 
-    <!-- Right-side tabs -->
-    <aside class="tabs">
-      <!-- Utility -->
-      <a class="tablink" href="/index.html">🏠 Home</a>
-      <a class="tablink active-link" href="./documents.html">📂 Documents</a>
-
-      <!-- Categories -->
-      <button class="tabbtn active" data-cat="Finance">Finance</button>
-      <button class="tabbtn" data-cat="Medical">Medical</button>
-      <button class="tabbtn" data-cat="HR">HR</button>
-      <button class="tabbtn" data-cat="Caregiving">Caregiving</button>
-      <button class="tabbtn" data-cat="ISA">ISA</button>
-      <button class="tabbtn" data-cat="Year End Paperwork">Year End Paperwork</button>
-      <button class="tabbtn" data-cat="Guardianship">Guardianship</button>
-
-      <!-- Minutes -->
-      
-<a class="tabbtn active" id="minutesTab" href="./minutes-form.html">📝 Meeting Minutes</a>
-
-    </aside>
   </div>
 
  <!-- documents page logic (module) -->
@@ -207,3 +200,18 @@
 <script defer src="/scripts/appbar-drawer.js?v=2025.10.16d"></script>
 <script defer src="/ui-shell.js?v=2025.10.16d"></script>
 <script type="module" src="/avatar-float.js?v=2025.10.16d"></script>
+<script>
+  (function(){
+    const cat = (document.body.dataset.docCat || '').toLowerCase();
+    const page = document.body.dataset.docPage || '';
+    document.querySelectorAll('.edge-tabs a').forEach(link => {
+      const linkCat = (link.dataset.cat || '').toLowerCase();
+      const linkPage = link.dataset.docPage || '';
+      if ((cat && linkCat === cat) || (page && linkPage === page)) {
+        link.setAttribute('aria-current', 'page');
+      }
+    });
+  })();
+</script>
+</body>
+</html>

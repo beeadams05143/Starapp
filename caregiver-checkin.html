@@ -72,6 +72,10 @@
     .adl-entry strong{display:block;font-size:15px;margin-bottom:2px;color:#111827}
     .adl-entry small{display:block;color:#6b7280;font-size:12px}
     .adl-entry-actions{display:flex;gap:8px;align-items:center}
+    .entry-date-row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:6px 0 14px}
+    .entry-date-row label{margin:0;font-weight:800}
+    .entry-date-row input[type="date"]{padding:8px 10px;border:1px solid #d1d5db;border-radius:10px;font-size:15px}
+    .entry-date-row .muted{font-size:13px}
   </style>
 </head>
 <body>
@@ -110,6 +114,11 @@
       <!-- STEP 1: Physical -->
       <div class="step active" data-step="0">
         <fieldset class="panel">
+          <div class="entry-date-row">
+            <label for="entryDateInput">Date of shift:</label>
+            <input type="date" id="entryDateInput" name="entry_date"/>
+            <span class="muted">Pick another day if you missed logging it.</span>
+          </div>
           <div class="section-title">Physical Factors</div>
           <div class="row cols-3 compact">
             <label>Appears in good health?
@@ -393,6 +402,7 @@
   let toggleAllBtn, resumeDraftBtn;
   let progItems = [];
   let segs = [];
+  let entryDateInput;
   const focusSummaryEl = document.getElementById('focusSummary');
   const focusDetailsEl = document.getElementById('focusDetails');
   const focusGoalsListEl = document.getElementById('focusGoalsList');
@@ -405,6 +415,7 @@
   let adlCategory, adlActivity, adlNoteInput, adlPromptingSelect, adlEntryListEl, addAdlEntryBtn, adlEntriesField;
   let adlEntries = [];
   let adlHandlersBound = false;
+  const todayISO = () => new Date().toISOString().slice(0,10);
 
   const PROMPT_SCALE = [
     { value:"", label:"Select prompt level" },
@@ -724,6 +735,7 @@
     submitBtn     = document.getElementById('submitAll');
     steps         = Array.from(document.querySelectorAll('.step'));
     adlStepIndex  = steps.findIndex((step) => step.id === 'daily-living-step');
+    entryDateInput = document.getElementById('entryDateInput');
     toggleAllBtn  = document.getElementById('toggleAll');
     resumeDraftBtn = document.getElementById('resumeDraftBtn');
     const progressEl = document.getElementById('progress');
@@ -738,6 +750,9 @@
     console.log('✅ Form assets ready:', { formEl, submitBtn, steps });
 
     initAdlControls();
+    if (entryDateInput && !entryDateInput.value) {
+      entryDateInput.value = todayISO();
+    }
     hydratePromptingSelects();
     steps.forEach((step, idx) => restore(step, idx));
     updateSavedButtons();
@@ -1041,6 +1056,7 @@
     }
     function resetFormValues(){
       formEl.reset();
+      if (entryDateInput) entryDateInput.value = todayISO();
       const iv=document.getElementById('intensityVal');
       if(iv) iv.textContent='0';
       resetAdlEntries();
@@ -1073,6 +1089,11 @@
         if (!user_id) throw new Error('Not signed in');
 
         const payload = buildPayload();
+        const entryDateRaw = payload.entry_date || entryDateInput?.value || '';
+        const entryDate = /^\d{4}-\d{2}-\d{2}$/.test(entryDateRaw)
+          ? entryDateRaw
+          : todayISO();
+        payload.entry_date = entryDate;
         const adlEntriesFromPayload = parseAdlEntries(payload.adl_entries);
         payload.adl_entries = adlEntriesFromPayload;
         const had_bm =
@@ -1125,7 +1146,7 @@
           user_id,
           group_id,
           caregiver_name: caregiverName,
-          date: new Date().toISOString().slice(0,10),
+          date: entryDate,
           had_bm,
           hygiene,
           food_prep: foodPrep,

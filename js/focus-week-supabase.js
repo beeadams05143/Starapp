@@ -149,7 +149,8 @@ async function getSignedUrls(paths) {
         continue;
       }
       const data = text ? JSON.parse(text) : null;
-      if (data?.signedUrl) out.push({ path: p, url: data.signedUrl });
+      const signed = data?.signedUrl || data?.signedURL;
+      if (signed) out.push({ path: p, url: signed });
     } catch (error) {
       console.error('Signed URL error:', error);
     }

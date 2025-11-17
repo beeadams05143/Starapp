@@ -25,6 +25,112 @@ import { uploadJsonToBucket, downloadJsonFromBucket } from "../shared-storage.js
   document.head.appendChild(style);
 })();
 
+(() => {
+  const style = document.createElement("style");
+  style.textContent = `
+    .doc-links {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .doc-links .btn {
+      font-size: 14px;
+      padding: 8px 12px;
+    }
+    .doc-viewer-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.66);
+      z-index: 4000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+    }
+    .doc-viewer-overlay.open { display: flex; }
+    .doc-viewer {
+      background: #fff;
+      border-radius: 16px;
+      width: min(520px, 95vw);
+      max-height: 92vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 30px 80px rgba(0,0,0,.45);
+    }
+    .doc-viewer-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.4);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+    .doc-viewer-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0;
+    }
+    .doc-viewer-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .doc-viewer-download {
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+      color: #2563eb;
+    }
+    .doc-viewer-close {
+      border: none;
+      background: #0f172a;
+      color: #fff;
+      border-radius: 999px;
+      width: 34px;
+      height: 34px;
+      font-size: 20px;
+      cursor: pointer;
+    }
+    .doc-viewer-content {
+      padding: 18px;
+      overflow: auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 220px;
+      flex: 1;
+      text-align: center;
+    }
+    .doc-viewer-status {
+      font-size: 14px;
+      color: #475569;
+    }
+    .doc-viewer-content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 12px;
+      box-shadow: 0 18px 38px rgba(0,0,0,.25);
+    }
+    .doc-viewer-note {
+      font-size: 13px;
+      color: #475569;
+      margin-top: 8px;
+    }
+    @media (max-width: 640px) {
+      .doc-viewer {
+        width: 100vw;
+        height: 100vh;
+        border-radius: 0;
+      }
+      .doc-viewer-content {
+        min-height: unset;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+})();
+
 const session = getSessionFromStorage();
 const currentUser = session?.user || null;
 if (!currentUser?.id) {
@@ -42,6 +148,49 @@ let GROUP_ID = null;
 let docsStore = { documents: [] };
 let docsStoreLoaded = false;
 let docsStorePromise = null;
+const BUCKET_NOT_FOUND_RE = /bucket not found/i;
+
+function isBucketMissing(error) {
+  if (!error) return false;
+  if (typeof error === "string") return BUCKET_NOT_FOUND_RE.test(error);
+  return BUCKET_NOT_FOUND_RE.test(error?.message || "");
+}
+
+function ensureAbsoluteUrl(url = "") {
+  if (!url) return "";
+  if (/^https?:\/\//i.test(url)) return url;
+  const base = (SUPABASE_URL || "").replace(/\/$/, "");
+  const path = url.startsWith("/") ? url : `/${url}`;
+  return `${base}${path}`;
+}
+
+function buildInlineFileMeta(file, dataUrl, reason = "bucket_missing") {
+  if (!file || !dataUrl) return null;
+  return {
+    name: file.name || "attachment",
+    type: file.type || "application/octet-stream",
+    size: file.size || 0,
+    data_url: dataUrl,
+    uploaded_at: new Date().toISOString(),
+    fallback_reason: reason,
+  };
+}
+
+function normalizeAttachmentResult(result = {}) {
+  return {
+    storagePath: result.storagePath || null,
+    inlineFile: result.inlineFile || null,
+  };
+}
+
+function readFileAsDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error || new Error("File read failed"));
+    reader.readAsDataURL(file);
+  });
+}
 
 async function ensureGroupId(userId) {
   if (!userId) return null;
@@ -108,23 +257,28 @@ async function ensureDocsStore(forceReload = false) {
 }
 
 async function seedDocsFromSupabase() {
+  let rows = [];
   try {
-    const rows = await rest("documents?select=*&order=created_at.desc");
-    if (!Array.isArray(rows) || !rows.length) {
-      return { documents: [], updated_at: null };
-    }
-    const normalized = rows.map(mapDocRow).filter(Boolean);
-    const payload = {
-      documents: normalized,
-      migrated_from: "documents",
-      updated_at: new Date().toISOString(),
-    };
-    await uploadJsonToBucket(SHARED_DOC_BUCKET, docsPathForGroup(GROUP_ID), payload);
-    return payload;
+    rows = await rest("documents?select=*&order=created_at.desc");
   } catch (error) {
     console.warn("docs legacy load failed", error?.message || error);
     return { documents: [], updated_at: null };
   }
+  if (!Array.isArray(rows) || !rows.length) {
+    return { documents: [], updated_at: null };
+  }
+  const normalized = rows.map(mapDocRow).filter(Boolean);
+  const payload = {
+    documents: normalized,
+    migrated_from: "documents",
+    updated_at: new Date().toISOString(),
+  };
+  try {
+    await uploadJsonToBucket(SHARED_DOC_BUCKET, docsPathForGroup(GROUP_ID), payload);
+  } catch (error) {
+    console.warn("docs cache store skipped", error?.message || error);
+  }
+  return payload;
 }
 
 async function persistDocsStore(updatedAt = null) {
@@ -134,12 +288,89 @@ async function persistDocsStore(updatedAt = null) {
     updated_at: updatedAt || new Date().toISOString(),
     documents: docsStore.documents
   };
-  await uploadJsonToBucket(SHARED_DOC_BUCKET, docsPathForGroup(GROUP_ID), payload);
+  try {
+    await uploadJsonToBucket(SHARED_DOC_BUCKET, docsPathForGroup(GROUP_ID), payload);
+  } catch (error) {
+    console.warn("docs persist skipped", error?.message || error);
+  }
 }
+
+const IMAGE_EXT_RE = /\.(png|jpe?g|gif|bmp|webp|svg|heic|heif|tiff)$/i;
+function looksLikeImageMeta(meta = {}) {
+  if (!meta) return false;
+  const type = meta.type || "";
+  if (type && /^image\//i.test(type)) return true;
+  const source = (meta.name || meta.path || meta.url || "").split("?")[0].toLowerCase();
+  if (!source) return false;
+  return IMAGE_EXT_RE.test(source);
+}
+
+const attachmentViewer = (() => {
+  let overlay = null;
+  function ensure() {
+    if (overlay) return overlay;
+    overlay = document.createElement("div");
+    overlay.className = "doc-viewer-overlay";
+    overlay.innerHTML = `
+      <div class="doc-viewer" role="dialog" aria-modal="true" aria-label="Attachment preview">
+        <div class="doc-viewer-header">
+          <p class="doc-viewer-title">Attachment</p>
+          <div class="doc-viewer-actions">
+            <a class="doc-viewer-download" href="#" target="_blank" rel="noopener">Download</a>
+            <button type="button" class="doc-viewer-close" aria-label="Close attachment viewer">&times;</button>
+          </div>
+        </div>
+        <div class="doc-viewer-content">
+          <div class="doc-viewer-status">Loading…</div>
+        </div>
+        <div class="doc-viewer-note" hidden></div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.addEventListener("click", (event) => {
+      if (event.target === overlay || event.target.closest(".doc-viewer-close")) {
+        overlay.classList.remove("open");
+      }
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") overlay?.classList.remove("open");
+    });
+    return overlay;
+  }
+  function open({ title, url, downloadName, note } = {}) {
+    if (!url) return;
+    const wrap = ensure();
+    wrap.classList.add("open");
+    const titleEl = wrap.querySelector(".doc-viewer-title");
+    const downloadEl = wrap.querySelector(".doc-viewer-download");
+    const contentEl = wrap.querySelector(".doc-viewer-content");
+    const noteEl = wrap.querySelector(".doc-viewer-note");
+    titleEl.textContent = title || "Attachment";
+    downloadEl.href = url;
+    if (downloadName) downloadEl.download = downloadName;
+    else downloadEl.removeAttribute("download");
+    contentEl.innerHTML = "";
+    const img = document.createElement("img");
+    img.alt = title || "Attachment";
+    img.src = url;
+    contentEl.appendChild(img);
+    if (note) {
+      noteEl.textContent = note;
+      noteEl.hidden = false;
+    } else {
+      noteEl.hidden = true;
+    }
+  }
+  function close() {
+    overlay?.classList.remove("open");
+  }
+  return { open, close };
+})();
 
 
 /* ------------ helpers ------------ */
-async function uploadFileToBucket({ file }) {
+export async function uploadFileToBucket({ file, bucket = SHARED_DOC_BUCKET } = {}) {
+  if (!file) return { storagePath: null, inlineFile: null };
   const session = getSessionFromStorage();
   const userId = session?.user?.id;
   const token = session?.access_token;
@@ -150,19 +381,34 @@ async function uploadFileToBucket({ file }) {
   const m = String(now.getMonth() + 1).padStart(2, "0");
   const safe = file.name.replace(/\s+/g, "_");
   const path = `${userId}/${y}/${m}/${crypto.randomUUID()}_${safe}`;
+  const endpoint = `${SUPABASE_URL}/storage/v1/object/${bucket}/${path}`;
 
-  const uploadRes = await fetch(`${SUPABASE_URL}/storage/v1/object/documents/${path}`, {
-    method: "POST",
-    headers: {
-      apikey: SUPABASE_ANON_KEY,
-      Authorization: `Bearer ${token}`,
-      "Content-Type": file.type || "application/octet-stream",
-      "x-upsert": "false",
-    },
-    body: file,
-  });
-  if (!uploadRes.ok) throw new Error(await uploadRes.text() || "Upload failed");
-  return path;
+  try {
+    const uploadRes = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${token}`,
+        "Content-Type": file.type || "application/octet-stream",
+        "x-upsert": "false",
+      },
+      body: file,
+    });
+    if (uploadRes.status === 404) {
+      const inlineData = await readFileAsDataURL(file);
+      return { storagePath: null, inlineFile: buildInlineFileMeta(file, inlineData) };
+    }
+    if (!uploadRes.ok) {
+      throw new Error((await uploadRes.text()) || "Upload failed");
+    }
+  } catch (error) {
+    if (isBucketMissing(error)) {
+      const inlineData = await readFileAsDataURL(file);
+      return { storagePath: null, inlineFile: buildInlineFileMeta(file, inlineData) };
+    }
+    throw error;
+  }
+  return { storagePath: path, inlineFile: null };
 }
 
 async function getSignedUrl(storagePath) {
@@ -181,8 +427,9 @@ async function getSignedUrl(storagePath) {
   const text = await res.text();
   if (!res.ok) throw new Error(text || "Signed URL failed");
   const data = text ? JSON.parse(text) : null;
-  if (!data?.signedUrl) throw new Error("Signed URL missing");
-  return data.signedUrl;
+  const signed = data?.signedUrl || data?.signedURL;
+  if (!signed) throw new Error("Signed URL missing");
+  return ensureAbsoluteUrl(signed);
 }
 
 /* ------------ category tabs + deep link ------------ */
@@ -248,7 +495,12 @@ if (prettyForm) {
       const medNotes = document.getElementById("medicalNotes")?.value?.trim() || null;
 
       let storage_path = null;
-      if (file) storage_path = await uploadFileToBucket({ file });
+      let inline_file = null;
+      if (file) {
+        const uploadResult = await uploadFileToBucket({ file });
+        storage_path = uploadResult.storagePath;
+        inline_file = uploadResult.inlineFile;
+      }
 
       const session = getSessionFromStorage();
       const user = session?.user;
@@ -263,6 +515,9 @@ if (prettyForm) {
         content_json.medical_next_datetime = medNext;
         content_json.medical_next_link     = medLink;
         content_json.medical_notes         = medNotes;
+      }
+      if (inline_file) {
+        content_json.inline_file = inline_file;
       }
 
       await rest("documents", {
@@ -290,6 +545,7 @@ if (prettyForm) {
         created_by: user.id,
         created_at: new Date().toISOString()
       };
+      if (inline_file) newEntry.content_json.inline_file = inline_file;
       docsStore.documents = [newEntry, ...(docsStore.documents || [])].slice(0, 200);
       await persistDocsStore(newEntry.created_at);
 
@@ -321,6 +577,50 @@ async function loadDocuments() {
   }
 }
 
+export async function saveMinutesRich(payload = {}, attachment = {}) {
+  const session = getSessionFromStorage();
+  const user = session?.user;
+  if (!user?.id) throw new Error("Not logged in.");
+  await ensureDocsStore();
+
+  const { storagePath, inlineFile } = normalizeAttachmentResult(attachment);
+  const category = payload.primary_category || payload.category || "Minutes";
+  const docDate = payload.datetime || payload.dateTime || null;
+  const content_json = {
+    primary_category: category,
+    document_date: docDate,
+    minutes_payload: payload,
+  };
+  if (inlineFile) content_json.inline_file = inlineFile;
+
+  const tags = [category, "Minutes", payload.facilitator ? `Facilitator: ${payload.facilitator}` : null]
+    .filter(Boolean);
+  const record = {
+    title: payload.title || "Meeting Minutes",
+    doc_type: "meeting_minutes",
+    content: payload.discussion || payload.notes || "",
+    content_json,
+    tags,
+    storage_path: storagePath,
+    created_by: user.id,
+  };
+
+  await rest("documents", {
+    method: "POST",
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify([record]),
+  });
+
+  const newEntry = {
+    ...record,
+    id: crypto.randomUUID(),
+    created_at: new Date().toISOString(),
+  };
+  docsStore.documents = [newEntry, ...(docsStore.documents || [])].slice(0, 200);
+  await persistDocsStore(newEntry.created_at);
+  return newEntry;
+}
+
 async function renderDocuments(list, docs) {
   const filtered = (docs || []).filter(d => {
     const inTags = Array.isArray(d.tags) && d.tags.includes(activeCategory);
@@ -333,12 +633,7 @@ async function renderDocuments(list, docs) {
     const card = document.createElement("div");
     card.className = "card";
 
-    let linkHTML = "";
-    if (doc.storage_path) {
-      try {
-        linkHTML = `<a href="${await getSignedUrl(doc.storage_path)}" target="_blank" rel="noopener">Download</a>`;
-      } catch {}
-    }
+    const inlineFile = doc.content_json?.inline_file || null;
     const desc = doc.content
       ? `<div class="muted" style="margin-top:6px; white-space:pre-wrap">${(doc.content || "").slice(0,240)}${(doc.content || "").length>240?"…":""}</div>`
       : "";
@@ -367,8 +662,44 @@ async function renderDocuments(list, docs) {
       ${desc}
       ${medicalBlock}
       <div class="muted" style="margin-top:6px">${(doc.tags||[]).join(" • ")}</div>
-      <div style="margin-top:8px">${linkHTML}</div>
+      <div class="doc-links" style="margin-top:8px"></div>
     `;
+    const linksHolder = card.querySelector(".doc-links");
+    const hasAttachment = Boolean(doc.storage_path || inlineFile?.data_url);
+    if (hasAttachment) {
+      const canPreview = inlineFile
+        ? looksLikeImageMeta({ name: inlineFile.name, type: inlineFile.type })
+        : looksLikeImageMeta({ path: doc.storage_path || "" });
+
+      const viewBtn = document.createElement("button");
+      viewBtn.type = "button";
+      viewBtn.className = "btn secondary doc-attachment-action";
+      viewBtn.dataset.docId = doc.id;
+      viewBtn.dataset.action = "view";
+      viewBtn.dataset.previewable = canPreview ? "1" : "";
+      viewBtn.textContent = canPreview ? "View Attachment" : "Open Attachment";
+      linksHolder.appendChild(viewBtn);
+
+      const downloadBtn = document.createElement("button");
+      downloadBtn.type = "button";
+      downloadBtn.className = "btn secondary doc-attachment-action";
+      downloadBtn.dataset.docId = doc.id;
+      downloadBtn.dataset.action = "download";
+      downloadBtn.textContent = "Download";
+      linksHolder.appendChild(downloadBtn);
+
+      if (inlineFile?.data_url && !doc.storage_path) {
+        const note = document.createElement("div");
+        note.className = "muted";
+        note.style.fontSize = "13px";
+        note.style.flexBasis = "100%";
+        note.textContent = "File stored inline until storage bucket is available.";
+        linksHolder.appendChild(note);
+      }
+    } else {
+      linksHolder.textContent = "";
+    }
+
     list.appendChild(card);
   }
 
@@ -380,36 +711,84 @@ async function renderDocuments(list, docs) {
   }
 }
 loadDocuments();
-document.addEventListener('DOMContentLoaded', () => {
-  const f = document.getElementById('minutesForm');
-  if (!f) return;
+async function handleAttachmentAction(trigger) {
+  const docId = trigger.dataset.docId;
+  if (!docId) return;
+  const doc = (docsStore.documents || []).find((d) => d.id === docId);
+  if (!doc) {
+    alert("Unable to locate this document.");
+    return;
+  }
+  const action = trigger.dataset.action || "view";
+  const inlineFile = doc.content_json?.inline_file || null;
+  const canPreview = trigger.dataset.previewable === "1"
+    || (inlineFile
+      ? looksLikeImageMeta({ name: inlineFile.name, type: inlineFile.type })
+      : looksLikeImageMeta({ path: doc.storage_path || "" }));
 
-  f.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const val = id => document.getElementById(id)?.value || '';
-    const minutes = {
-      title: val('title'),
-      dateTime: val('dateTime'),
-      location: val('location'),
-      facilitator: val('facilitator'),
-      attendees: val('attendeesField'),
-      agenda: val('agenda'),
-      notes: val('notes'),
-      decisions: val('decisions'),
-      actions: val('actions'),
-      nextDate: val('nextDate'),
-      nextLink: val('nextLink'),
-    };
-    console.log('Minutes to save:', minutes);
-    // TODO: save to Supabase/localStorage as you prefer
-  });
-});
-// keep this
-document.getElementById('minutesForm')?.addEventListener('submit', (e) => {
-  e.preventDefault();
-  saveMinutesRich();       // whatever you call to save
-});
+  let url = inlineFile?.data_url || doc._cachedSignedUrl || "";
+  const originalText = trigger.dataset.label || trigger.textContent;
+  if (!trigger.dataset.label) trigger.dataset.label = trigger.textContent;
 
-document.getElementById('clearMinutesBtn')?.addEventListener('click', () => {
-  document.getElementById('minutesForm')?.reset();
+  if (!url && doc.storage_path) {
+    try {
+      trigger.disabled = true;
+      trigger.textContent = action === "download" ? "Preparing…" : "Opening…";
+      url = await getSignedUrl(doc.storage_path);
+      doc._cachedSignedUrl = url;
+    } catch (error) {
+      console.error("Attachment link failed", error);
+      alert("Unable to fetch this attachment right now. Please try again.");
+      return;
+    } finally {
+      trigger.disabled = false;
+      trigger.textContent = originalText;
+    }
+  }
+
+  if (!url) {
+    alert("This attachment is no longer available.");
+    return;
+  }
+
+  if (action === "download") {
+    const a = document.createElement("a");
+    a.href = url;
+    a.target = "_blank";
+    a.rel = "noopener";
+    if (inlineFile?.name) {
+      a.download = inlineFile.name;
+    } else if (doc.storage_path) {
+      a.download = doc.storage_path.split("/").pop() || "document";
+    }
+    a.style.display = "none";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    return;
+  }
+
+  if (canPreview) {
+    attachmentViewer.open({
+      title: doc.title || "Attachment",
+      url,
+      downloadName: inlineFile?.name || (doc.storage_path || "").split("/").pop() || "",
+      note: inlineFile && !doc.storage_path
+        ? "Attachment stored inline until the shared bucket is reachable."
+        : "",
+    });
+    return;
+  }
+  const opened = window.open(url, "_blank", "noopener");
+  if (!opened) {
+    window.location.href = url;
+  }
+}
+
+document.addEventListener("click", (event) => {
+  const trigger = event.target.closest(".doc-attachment-action");
+  if (trigger) {
+    event.preventDefault();
+    handleAttachmentAction(trigger);
+  }
 });

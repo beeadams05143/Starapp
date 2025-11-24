@@ -355,9 +355,9 @@
       };
 
       try{
-        let storagePath = null;
-        if (file) storagePath = await uploadFileToBucket({ file }); // goes to private 'documents' bucket
-        await saveMinutesRich(payload, storagePath);                  // inserts markdown + optional file path
+        let attachment = { storagePath: null, inlineFile: null };
+        if (file) attachment = await uploadFileToBucket({ file }); // handles bucket fallback internally
+        await saveMinutesRich(payload, attachment);                 // inserts markdown + optional file data
         alert("Saved!");
         window.location.href = "./documents.html";
       }catch(err){

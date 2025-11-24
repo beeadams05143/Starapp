@@ -33,6 +33,8 @@
     table{width:100%;border-collapse:collapse}
     th,td{border:1px solid #ddd;padding:8px;vertical-align:top}
     thead th{background:#fafafa;position:sticky;top:0}
+    .cg-edit-btn{padding:6px 10px;font-size:13px;border-radius:8px;border:1px solid #c4c4c8;background:#f8fafc}
+    .cg-edit-btn:hover{background:#eef2ff}
 
     .muted{color:var(--muted);font-size:13px;text-align:center;margin:.35rem 0}
 
@@ -137,6 +139,22 @@
     .hc-editor .actions{display:flex;justify-content:flex-end;gap:10px;margin-top:4px}
     .hc-editor .actions button{padding:8px 14px;border-radius:8px;border:1px solid #d4d4d8;background:#fff;cursor:pointer;font-weight:600}
     .hc-editor .actions button.primary{background:#111827;color:#fff;border-color:#111827}
+
+    .cg-edit-overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(15,23,42,.55);z-index:10000;padding:16px}
+    .cg-edit-overlay.is-hidden{display:none!important}
+    .cg-edit-form{background:#fff;border-radius:18px;padding:20px;width:min(540px,95vw);max-height:90vh;overflow:auto;box-shadow:0 25px 65px rgba(15,23,42,.35);display:flex;flex-direction:column;gap:14px}
+    .cg-edit-form h3{margin:0;font-size:20px}
+    .cg-edit-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+    .cg-edit-form label{display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:600}
+    .cg-edit-form input,
+    .cg-edit-form select,
+    .cg-edit-form textarea{width:100%;padding:10px;border-radius:8px;border:1px solid #d4d4d8;font-size:14px;font-family:inherit}
+    .cg-edit-form textarea{min-height:90px;resize:vertical}
+    .cg-edit-status{font-size:13px;color:var(--muted);margin:0}
+    .cg-edit-file-note{font-size:13px;color:#2563eb;margin:4px 0 0}
+    .cg-edit-actions{display:flex;justify-content:flex-end;gap:10px}
+    .cg-edit-actions button{padding:8px 14px;border-radius:10px;border:1px solid #d4d4d8;background:#fff;font-weight:600;cursor:pointer}
+    .cg-edit-actions .primary{background:#111827;color:#fff;border-color:#111827}
 
     #chart-stack{display:flex;flex-direction:column;gap:16px}
     body.print-export main.page{max-width:980px}
@@ -293,14 +311,86 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
               <th>Comm (min)</th>
               <th>Prompt</th>
               <th>Notes</th>
+              <th>Actions</th>
             </tr>
           </thead>
-          <tbody id="cgTbody"><tr><td colspan="8">Loading…</td></tr></tbody>
+          <tbody id="cgTbody"><tr><td colspan="9">Loading…</td></tr></tbody>
         </table>
       </div>
 
       <p class="muted cg-hide-when-quick-look" id="cgCount"></p>
     </section>
+    </div>
+
+    <div id="cgEditOverlay" class="cg-edit-overlay is-hidden" role="dialog" aria-modal="true" aria-labelledby="cgEditTitle">
+      <form id="cgEditForm" class="cg-edit-form">
+        <h3 id="cgEditTitle">Edit Caregiver Check-In</h3>
+        <p id="cgEditStatus" class="cg-edit-status">Select a row to load its Supabase data.</p>
+        <div class="cg-edit-grid">
+          <label>Entry date
+            <input type="date" id="cgEditDate" name="entry_date">
+          </label>
+          <label>Entry time
+            <input type="time" id="cgEditTime" name="entry_time" step="60">
+          </label>
+          <label>Had a BM?
+            <select id="cgEditBm" name="had_bm">
+              <option value="">Select…</option>
+              <option value="true">Yes</option>
+              <option value="false">No</option>
+            </select>
+          </label>
+          <label>Anomaly flag
+            <select id="cgEditAnomaly" name="anomaly_flag">
+              <option value="">Select…</option>
+              <option value="true">Yes</option>
+              <option value="false">No</option>
+            </select>
+          </label>
+          <label>Hygiene
+            <select id="cgEditHygiene" name="hygiene">
+              <option value="">Select…</option>
+              <option value="true">Yes</option>
+              <option value="false">No</option>
+            </select>
+          </label>
+          <label>Food prep
+            <select id="cgEditFoodPrep" name="food_prep">
+              <option value="">Select…</option>
+              <option value="true">Yes</option>
+              <option value="false">No</option>
+            </select>
+          </label>
+          <label>Clean-up
+            <select id="cgEditCleanup" name="cleanup">
+              <option value="">Select…</option>
+              <option value="true">Yes</option>
+              <option value="false">No</option>
+            </select>
+          </label>
+          <label>Vocational minutes
+            <input type="number" id="cgEditVoc" name="vocational_time" min="0" step="1" placeholder="e.g., 60">
+          </label>
+          <label>Community minutes
+            <input type="number" id="cgEditCommunity" name="community_time" min="0" step="1" placeholder="e.g., 45">
+          </label>
+          <label>Prompt level (0–4)
+            <input type="number" id="cgEditSkill" name="new_skill_score" min="0" max="4" step="1" placeholder="0–4">
+          </label>
+        </div>
+        <label>Caregiver notes
+          <textarea id="cgEditNotes" name="caregiver_notes" placeholder="Add notes about the day…"></textarea>
+        </label>
+        <label>Attachment
+          <input type="file" id="cgEditFile" name="file" accept="image/*,.pdf,.doc,.docx,.txt">
+          <span id="cgEditFileNote" class="cg-edit-file-note">No file uploaded for this entry.</span>
+        </label>
+        <input type="hidden" id="cgEditId" name="checkin_id">
+        <div class="cg-edit-actions">
+          <button type="button" id="cgEditCancel">Cancel</button>
+          <button type="submit" class="primary" id="cgEditSave">Save Changes</button>
+        </div>
+      </form>
     </div>
 
     <!-- Keep: Daily Mood Check-Ins (table) -->
@@ -446,6 +536,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
   <!-- Single, clean module script -->
   <script type="module">
     import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
+    import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabaseClient.js?v=2025.10.16d';
     import { loadFocusForCurrentUser, readLocalFocusDraft } from './focus-data.js?v=2025.10.16d';
 
     /* =============== Optional live data =============== */
@@ -471,6 +562,57 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
     const destroy = key => { charts[key]?.destroy?.(); charts[key]=null; };
     const dayKey = d => new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString().slice(0,10);
     const axisTitle = text => ({ title:{display:true,text} });
+    const CAREGIVER_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+    const parseCaregiverDate = (value) => {
+      if (!value && value !== 0) return null;
+      if (value instanceof Date) {
+        return Number.isNaN(value.getTime()) ? null : value;
+      }
+      const str = String(value).trim();
+      if (!str) return null;
+      if (CAREGIVER_DATE_REGEX.test(str)) {
+        const dt = new Date(`${str}T00:00:00`);
+        return Number.isNaN(dt.getTime()) ? null : dt;
+      }
+      const dt = new Date(str);
+      return Number.isNaN(dt.getTime()) ? null : dt;
+    };
+    // Converts Supabase timestamps (stored in UTC) into concise local strings so dates don't appear one day ahead.
+    const formatLocalDate = (value) => {
+      const dt = parseCaregiverDate(value);
+      if (!dt) return null;
+      return dt.toLocaleDateString(undefined, { month: 'short', day: '2-digit', year: 'numeric' });
+    };
+    // Normalizes any timestamp into a YYYY-MM-DD key in the viewer's timezone so grouping respects local days.
+    const localDateKey = (value) => {
+      const dt = parseCaregiverDate(value);
+      if (!dt) return null;
+      const month = String(dt.getMonth() + 1).padStart(2, '0');
+      const day = String(dt.getDate()).padStart(2, '0');
+      return `${dt.getFullYear()}-${month}-${day}`;
+    };
+    const formatLocalDateTimeLabel = (value) => {
+      const dt = parseCaregiverDate(value);
+      if (!dt) return '—';
+      const dateLabel = formatLocalDate(dt) || dt.toLocaleDateString();
+      const timeLabel = dt.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+      return `${dateLabel} • ${timeLabel}`;
+    };
+    const formatDateInputValue = (date) => {
+      const dt = parseCaregiverDate(date);
+      if (!dt) return '';
+      const y = dt.getFullYear();
+      const m = String(dt.getMonth() + 1).padStart(2, '0');
+      const d = String(dt.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    };
+    const formatTimeInputValue = (date) => {
+      const dt = parseCaregiverDate(date);
+      if (!dt) return '';
+      const h = String(dt.getHours()).padStart(2, '0');
+      const min = String(dt.getMinutes()).padStart(2, '0');
+      return `${h}:${min}`;
+    };
     const GROUP_KEY = 'currentGroupId';
     const getCurrentGroupId = () => localStorage.getItem(GROUP_KEY) || null;
 
@@ -529,18 +671,19 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       const byDay = new Map(); // YYYY-MM-DD -> { prompts: [] }
       for (const entry of entries){
         const ts = new Date(entry.timestamp || entry.created_at || entry.submitted_at || Date.now());
-        const key = ts.toISOString().slice(0, 7);
-        const bucket = byMonth.get(key) || { h:0, f:0, c:0, prompts: [], total:0 };
+        if (Number.isNaN(ts.getTime())) continue;
+        const monthKey = `${ts.getFullYear()}-${String(ts.getMonth() + 1).padStart(2, '0')}`;
+        const bucket = byMonth.get(monthKey) || { h:0, f:0, c:0, prompts: [], total:0 };
         bucket.total += 1;
         if (entry.hygiene === true) bucket.h += 1;
         if (entry.food_prep === true) bucket.f += 1;
         if (entry.cleanup === true) bucket.c += 1;
         const prompt = Number(entry.new_skill_score);
         if (Number.isFinite(prompt)) bucket.prompts.push(prompt);
-        byMonth.set(key, bucket);
+        byMonth.set(monthKey, bucket);
 
         if (Number.isFinite(prompt)) {
-          const dayKeyStr = ts.toISOString().slice(0, 10);
+          const dayKeyStr = `${monthKey}-${String(ts.getDate()).padStart(2, '0')}`;
           const dayBucket = byDay.get(dayKeyStr) || { prompts: [] };
           dayBucket.prompts.push(prompt);
           byDay.set(dayKeyStr, dayBucket);
@@ -582,6 +725,29 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       csv: $('#cgCsv'),
       tbody: document.getElementById('cgTbody')
     };
+    const CAREGIVER_FILE_BUCKET = 'caregiver-files'; // Change if caregiver attachments live in a different bucket.
+    const editUi = {
+      overlay: document.getElementById('cgEditOverlay'),
+      form: document.getElementById('cgEditForm'),
+      status: document.getElementById('cgEditStatus'),
+      date: document.getElementById('cgEditDate'),
+      time: document.getElementById('cgEditTime'),
+      bm: document.getElementById('cgEditBm'),
+      anomaly: document.getElementById('cgEditAnomaly'),
+      hygiene: document.getElementById('cgEditHygiene'),
+      foodPrep: document.getElementById('cgEditFoodPrep'),
+      cleanup: document.getElementById('cgEditCleanup'),
+      vocational: document.getElementById('cgEditVoc'),
+      community: document.getElementById('cgEditCommunity'),
+      skill: document.getElementById('cgEditSkill'),
+      notes: document.getElementById('cgEditNotes'),
+      file: document.getElementById('cgEditFile'),
+      fileNote: document.getElementById('cgEditFileNote'),
+      idInput: document.getElementById('cgEditId'),
+      cancel: document.getElementById('cgEditCancel'),
+      save: document.getElementById('cgEditSave')
+    };
+    const editState = { currentId: null, record: null };
 
     const quickLookUi = {
       panel: $('#cgQuickLook'),
@@ -736,9 +902,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
         payload.date
       ];
       for (const value of candidates) {
-        if (!value) continue;
-        const date = new Date(value);
-        if (!Number.isNaN(date.getTime())) return date;
+        const date = parseCaregiverDate(value);
+        if (date) return date;
       }
       return null;
     }
@@ -822,7 +987,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
         if (isCalendarOnlyEntry(entry)) continue;
         const ts = parseEntryDate(entry);
         if (!ts) continue;
-        const key = ts.toISOString().slice(0, 10);
+        const key = localDateKey(ts);
+        if (!key) continue;
         let bucket = buckets.get(key);
         if (!bucket) {
           bucket = {
@@ -1530,16 +1696,17 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
     const fallbackFormat = (e) => {
       const yn = (val) => val === true ? 'Yes' : val === false ? 'No' : '—';
       const ts = e.timestamp || e.created_at || e.submitted_at || Date.now();
-      const dt = new Date(ts).toLocaleString();
       return {
-        dateTime: dt,
+        id: e.id || e.uuid || null,
+        dateTime: formatLocalDateTimeLabel(ts),
         hygiene: yn(e.hygiene ?? e.had_bm),
         food_prep: yn(e.food_prep),
         cleanup: yn(e.cleanup),
         vocational_time: e.vocational_time ?? '—',
         community_time: e.community_time ?? '—',
         new_skill_score: e.new_skill_score ?? '—',
-        notes: e.caregiver_notes || e.notes || ''
+        notes: e.caregiver_notes || e.notes || '',
+        file_url: e.file_url || ''
       };
     };
 
@@ -1567,16 +1734,16 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       }
 
       if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) return null;
-      const date = new Date(Date.UTC(year, month, day));
+      const date = new Date(year, month, day);
       return Number.isFinite(date.getTime()) ? date : null;
     };
 
     function normalizeEntryDate(entry){
       const raw = entry.timestamp || entry.created_at || entry.submitted_at || entry.date;
       if (!raw) return null;
-      const dt = new Date(raw);
-      if (Number.isNaN(dt.getTime())) return null;
-      return new Date(Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate()));
+      const dt = parseCaregiverDate(raw);
+      if (!dt) return null;
+      return new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
     }
 
     function updateDateInputs(entries){
@@ -1596,17 +1763,17 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       }
       const newest = sorted.reduce((acc, cur) => cur > acc ? cur : acc, sorted[0]);
       const oldest = sorted.reduce((acc, cur) => cur < acc ? cur : acc, sorted[0]);
-      cgInputs.start.value = oldest.toISOString().slice(0,10);
-      cgInputs.end.value   = newest.toISOString().slice(0,10);
+      cgInputs.start.value = formatDateInputValue(oldest);
+      cgInputs.end.value   = formatDateInputValue(newest);
     }
 
-    function renderCaregiverTable(entries){
+    function renderCaregiverCheckins(entries){
       const body = cgInputs.tbody;
       if (!body) return;
       body.innerHTML = '';
 
       if (!entries.length) {
-        body.innerHTML = `<tr><td colspan="8">No caregiver check-ins found for the selected range.</td></tr>`;
+        body.innerHTML = `<tr><td colspan="9">No caregiver check-ins found for the selected range.</td></tr>`;
         return;
       }
 
@@ -1647,8 +1814,290 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
           notesTd.appendChild(link);
         }
         tr.appendChild(notesTd);
+        const actionTd = document.createElement('td');
+        // Each Edit button carries the Supabase row id so the delegation handler can load it in the modal.
+        const checkinId = entry.id || row.id;
+        if (checkinId) {
+          const editBtn = document.createElement('button');
+          editBtn.type = 'button';
+          editBtn.className = 'cg-edit-btn';
+          editBtn.textContent = 'Edit';
+          editBtn.dataset.checkinId = checkinId;
+          actionTd.appendChild(editBtn);
+        } else {
+          actionTd.textContent = '—';
+        }
+        tr.appendChild(actionTd);
         body.appendChild(tr);
       });
+    }
+
+    const boolToFieldValue = (value) => (value === true ? 'true' : value === false ? 'false' : '');
+    const fieldValueToBool = (value) => (value === 'true' ? true : value === 'false' ? false : null);
+    const numberFromField = (value) => {
+      if (value === '' || value === null || value === undefined) return null;
+      const num = Number(value);
+      return Number.isFinite(num) ? num : null;
+    };
+    const parseLooseBoolean = (value) => {
+      if (value === true || value === false) return value;
+      if (typeof value === 'number') {
+        if (value === 1) return true;
+        if (value === 0) return false;
+      }
+      if (typeof value === 'string') {
+        const norm = value.trim().toLowerCase();
+        if (!norm) return null;
+        if (['true','t','yes','y','1'].includes(norm)) return true;
+        if (['false','f','no','n','0'].includes(norm)) return false;
+      }
+      return null;
+    };
+    const parseRecordTimestamp = (record) => {
+      if (!record) return null;
+      return parseCaregiverDate(
+        record.submitted_at ||
+        record.created_at ||
+        record.timestamp ||
+        (record.date ? `${record.date}` : null)
+      );
+    };
+    const buildTimestampFromInputs = (record, dateStr, timeStr) => {
+      if (!dateStr && !timeStr) return null;
+      const base = parseRecordTimestamp(record);
+      const day = dateStr || (base ? formatDateInputValue(base) : '');
+      if (!day) return null;
+      let time = timeStr || (base ? formatTimeInputValue(base) : '');
+      if (!time) time = '00:00';
+      const dt = parseCaregiverDate(`${day}T${time}`);
+      return dt ? dt.toISOString() : null;
+    };
+    const setEditStatus = (message) => {
+      if (editUi.status) editUi.status.textContent = message || '';
+    };
+
+    async function fetchCaregiverCheckin(checkinId){
+      if (!checkinId) throw new Error('Missing check-in id.');
+      const path = `caregiver_checkins?select=*&id=eq.${encodeURIComponent(checkinId)}`;
+      const rows = await rest(path);
+      const record = Array.isArray(rows) ? rows[0] : rows;
+      if (!record) throw new Error('Check-in not found.');
+      return record;
+    }
+
+    function populateEditForm(checkinData){
+      if (!checkinData || !editUi.form) return;
+      const payload = checkinData.payload || {};
+      const timestamp = parseRecordTimestamp(checkinData);
+      editUi.idInput.value = checkinData.id || '';
+      if (editUi.date) {
+        const existingDate = checkinData.date || (timestamp ? formatDateInputValue(timestamp) : '');
+        editUi.date.value = existingDate || '';
+      }
+      if (editUi.time) {
+        editUi.time.value = formatTimeInputValue(timestamp) || '';
+      }
+      if (editUi.bm) {
+        const bmVal = parseLooseBoolean(
+          checkinData.had_bm ??
+          payload.had_bm ??
+          payload.bm_today
+        );
+        editUi.bm.value = boolToFieldValue(bmVal);
+      }
+      if (editUi.anomaly) {
+        const anomalyVal = parseLooseBoolean(
+          checkinData.anomaly_flag ??
+          payload.anomaly_flag ??
+          payload.anomaly
+        );
+        editUi.anomaly.value = boolToFieldValue(anomalyVal);
+      }
+      editUi.hygiene.value = boolToFieldValue(parseLooseBoolean(
+        checkinData.hygiene ??
+        payload.hygiene ??
+        payload.hygiene_flag
+      ));
+      editUi.foodPrep.value = boolToFieldValue(parseLooseBoolean(
+        checkinData.food_prep ??
+        payload.food_prep ??
+        payload.prepared_food
+      ));
+      editUi.cleanup.value = boolToFieldValue(parseLooseBoolean(
+        checkinData.cleanup ??
+        payload.cleanup ??
+        payload.cleanup_flag
+      ));
+      editUi.vocational.value = checkinData.vocational_time ?? '';
+      editUi.community.value = checkinData.community_time ?? '';
+      editUi.skill.value = checkinData.new_skill_score ?? '';
+      editUi.notes.value = checkinData.caregiver_notes || '';
+      if (editUi.file) editUi.file.value = '';
+      if (editUi.fileNote) {
+        editUi.fileNote.textContent = checkinData.file_url
+          ? 'Existing file uploaded. Uploading a new file will replace it.'
+          : 'No file uploaded for this entry.';
+      }
+    }
+
+    function closeEditModal(){
+      if (!editUi.overlay) return;
+      editState.currentId = null;
+      editState.record = null;
+      editUi.form?.reset();
+      if (editUi.fileNote) editUi.fileNote.textContent = 'No file uploaded for this entry.';
+      setEditStatus('Select a row to load its Supabase data.');
+      if (editUi.save) {
+        editUi.save.disabled = false;
+        editUi.save.textContent = 'Save Changes';
+      }
+      editUi.overlay.classList.add('is-hidden');
+    }
+
+    // openEditModal fetches a single caregiver_checkins row (select().eq('id').single()) and fills the modal form.
+    async function openEditModal(checkinId){
+      if (!editUi.overlay) return;
+      editState.currentId = checkinId;
+      editState.record = null;
+      if (editUi.save) {
+        editUi.save.disabled = true;
+        editUi.save.textContent = 'Save Changes';
+      }
+      setEditStatus('Loading check-in…');
+      editUi.overlay.classList.remove('is-hidden');
+      try {
+        const record = await fetchCaregiverCheckin(checkinId);
+        editState.record = record;
+        populateEditForm(record);
+        const when = record.created_at || record.submitted_at || record.timestamp;
+        setEditStatus(`Editing entry from ${formatLocalDateTimeLabel(when || new Date())}`);
+        if (editUi.save) editUi.save.disabled = false;
+      } catch (error) {
+        console.error('Edit load failed', error);
+        alert('Could not load that check-in. Please refresh and try again.');
+        closeEditModal();
+      }
+    }
+
+    // Uploads a replacement attachment to Supabase Storage and returns the public URL for file_url.
+    async function uploadCaregiverFile(file){
+      if (!file) return editState.record?.file_url || null;
+      const session = getSessionFromStorage();
+      const token = session?.access_token;
+      const userId = session?.user?.id;
+      if (!token || !userId) throw new Error('Sign in again to upload files.');
+      const now = new Date();
+      const folder = `${userId}/${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const safeName = (file.name || 'attachment').replace(/\s+/g, '_').replace(/[^a-zA-Z0-9._-]/g, '');
+      const unique = typeof crypto?.randomUUID === 'function' ? crypto.randomUUID() : Date.now().toString(36);
+      const path = `${folder}/${unique}_${safeName}`;
+      const endpoint = `${SUPABASE_URL}/storage/v1/object/${CAREGIVER_FILE_BUCKET}/${path}`;
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${token}`,
+          'x-upsert': 'true',
+          'Content-Type': file.type || 'application/octet-stream'
+        },
+        body: file
+      });
+      if (!res.ok) {
+        const message = await res.text();
+        throw new Error(message || 'Upload failed.');
+      }
+      return `${SUPABASE_URL}/storage/v1/object/public/${CAREGIVER_FILE_BUCKET}/${path}`;
+    }
+
+    // handleUpdateCheckin mirrors supabase.from('caregiver_checkins').update(...).eq('id', currentId) then refreshes the view.
+    async function handleUpdateCheckin(event){
+      event.preventDefault();
+      if (!editState.currentId) return;
+      const originalLabel = editUi.save ? editUi.save.textContent : 'Save Changes';
+      if (editUi.save) {
+        editUi.save.disabled = true;
+        editUi.save.textContent = 'Saving…';
+      }
+      setEditStatus('Saving changes…');
+
+      try {
+        const dateValue = editUi.date?.value || '';
+        const timeValue = editUi.time?.value || '';
+        const timestampIso = buildTimestampFromInputs(editState.record, dateValue, timeValue);
+        const hadBmValue = fieldValueToBool(editUi.bm?.value || '');
+        const anomalyValue = fieldValueToBool(editUi.anomaly?.value || '');
+        const updates = {
+          hygiene: fieldValueToBool(editUi.hygiene.value),
+          food_prep: fieldValueToBool(editUi.foodPrep.value),
+          cleanup: fieldValueToBool(editUi.cleanup.value),
+          vocational_time: numberFromField(editUi.vocational.value),
+          community_time: numberFromField(editUi.community.value),
+          new_skill_score: numberFromField(editUi.skill.value),
+          caregiver_notes: editUi.notes.value.trim() || null,
+          date: dateValue || null,
+          had_bm: hadBmValue
+        };
+        if (timestampIso) {
+          updates.submitted_at = timestampIso;
+        }
+        const payloadClone = { ...(editState.record?.payload || {}) };
+        if (dateValue) {
+          payloadClone.entry_date = dateValue;
+        } else {
+          delete payloadClone.entry_date;
+        }
+        if (hadBmValue === true) {
+          payloadClone.had_bm = 'yes';
+          payloadClone.bm_today = 'yes';
+        } else if (hadBmValue === false) {
+          payloadClone.had_bm = 'no';
+          payloadClone.bm_today = 'no';
+        } else {
+          delete payloadClone.had_bm;
+          delete payloadClone.bm_today;
+        }
+        if (anomalyValue === true) {
+          payloadClone.anomaly_flag = true;
+          payloadClone.anomaly = 'yes';
+        } else if (anomalyValue === false) {
+          payloadClone.anomaly_flag = false;
+          payloadClone.anomaly = 'no';
+        } else {
+          delete payloadClone.anomaly_flag;
+          delete payloadClone.anomaly;
+        }
+
+        const file = editUi.file?.files?.[0] || null;
+        let fileUrl = editState.record?.file_url || payloadClone.file_url || null;
+        if (file) {
+          fileUrl = await uploadCaregiverFile(file);
+        }
+        if (fileUrl) {
+          payloadClone.file_url = fileUrl;
+        } else {
+          delete payloadClone.file_url;
+        }
+        updates.payload = payloadClone;
+
+        const path = `caregiver_checkins?id=eq.${encodeURIComponent(editState.currentId)}`;
+        await rest(path, {
+          method: 'PATCH',
+          headers: { Prefer: 'return=representation' },
+          body: JSON.stringify(updates)
+        });
+
+        await loadCaregiverData();
+        closeEditModal();
+      } catch (error) {
+        console.error('Caregiver update failed', error);
+        alert(error?.message || 'Could not update this check-in.');
+        setEditStatus('Update failed. Please try again.');
+      } finally {
+        if (editUi.save) {
+          editUi.save.disabled = false;
+          editUi.save.textContent = originalLabel;
+        }
+      }
     }
 
     function updateCgSummary(filtered, total){
@@ -1685,7 +2134,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
     function applyCaregiverFilters(){
       const entries = cgState.entries.slice();
       if (!entries.length) {
-        renderCaregiverTable([]);
+        renderCaregiverCheckins([]);
         updateCgSummary([], 0);
         renderQuickLook([]);
         return;
@@ -1696,7 +2145,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       }
       const filtered = filterCaregiverEntries(entries);
       cgState.filtered = filtered;
-      renderCaregiverTable(filtered);
+      renderCaregiverCheckins(filtered);
       updateCgSummary(filtered, entries.length);
       renderQuickLook(filtered);
     }
@@ -2201,6 +2650,27 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
 
     /* =================== Wire & boot =================== */
     $('#moodRange').addEventListener('change', renderMoodSection);
+
+    // Event delegation keeps Edit buttons working as the table refreshes.
+    cgInputs.tbody?.addEventListener('click', (event) => {
+      const btn = event.target.closest('.cg-edit-btn');
+      if (!btn) return;
+      const checkinId = btn.dataset.checkinId;
+      if (checkinId) {
+        openEditModal(checkinId);
+      }
+    });
+
+    editUi.cancel?.addEventListener('click', () => closeEditModal());
+    editUi.form?.addEventListener('submit', handleUpdateCheckin);
+    editUi.overlay?.addEventListener('click', (event) => {
+      if (event.target === editUi.overlay) closeEditModal();
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && !editUi.overlay?.classList.contains('is-hidden')) {
+        closeEditModal();
+      }
+    });
 
     cgInputs.apply?.addEventListener('click', (event) => {
       event?.preventDefault?.();

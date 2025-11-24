@@ -307,6 +307,9 @@ function looksLikeImageMeta(meta = {}) {
 
 const attachmentViewer = (() => {
   let overlay = null;
+  function cleanupPreviewUrl() {
+    // reserved for future object URLs; no-op now
+  }
   function ensure() {
     if (overlay) return overlay;
     overlay = document.createElement("div");
@@ -337,10 +340,46 @@ const attachmentViewer = (() => {
     });
     return overlay;
   }
-  function open({ title, url, downloadName, note } = {}) {
+  function renderImage(contentEl, { title, url } = {}) {
+    const status = document.createElement("div");
+    status.className = "doc-viewer-status";
+    status.textContent = "Loading preview…";
+    contentEl.innerHTML = "";
+    contentEl.appendChild(status);
+
+    const img = document.createElement("img");
+    img.alt = title || "Attachment";
+    img.decoding = "async";
+    img.loading = "lazy";
+    let fallbackTimer = setTimeout(() => {
+      showPreviewFallback(contentEl);
+    }, 8000);
+    img.addEventListener("load", () => {
+      clearTimeout(fallbackTimer);
+      contentEl.innerHTML = "";
+      contentEl.appendChild(img);
+    });
+    img.addEventListener("error", () => {
+      clearTimeout(fallbackTimer);
+      showPreviewFallback(contentEl);
+    });
+    img.src = url;
+  }
+  function showPreviewFallback(contentEl) {
+    const fallback = document.createElement("div");
+    fallback.className = "doc-viewer-status";
+    fallback.innerHTML = `
+      Preview unavailable. This file type may not be supported here.
+      <button type="button" class="btn secondary doc-viewer-open-tab">Open in new tab</button>
+    `;
+    contentEl.innerHTML = "";
+    contentEl.appendChild(fallback);
+  }
+  function open({ title, url, downloadName, note, previewable = true } = {}) {
     if (!url) return;
     const wrap = ensure();
     wrap.classList.add("open");
+    wrap.querySelector(".doc-viewer").focus?.();
     const titleEl = wrap.querySelector(".doc-viewer-title");
     const downloadEl = wrap.querySelector(".doc-viewer-download");
     const contentEl = wrap.querySelector(".doc-viewer-content");
@@ -349,21 +388,34 @@ const attachmentViewer = (() => {
     downloadEl.href = url;
     if (downloadName) downloadEl.download = downloadName;
     else downloadEl.removeAttribute("download");
-    contentEl.innerHTML = "";
-    const img = document.createElement("img");
-    img.alt = title || "Attachment";
-    img.src = url;
-    contentEl.appendChild(img);
+    if (previewable) {
+      renderImage(contentEl, { title, url });
+    } else {
+      showPreviewFallback(contentEl);
+    }
     if (note) {
       noteEl.textContent = note;
       noteEl.hidden = false;
     } else {
       noteEl.hidden = true;
     }
+    wrap.dataset.currentUrl = url;
   }
   function close() {
     overlay?.classList.remove("open");
+    cleanupPreviewUrl();
   }
+  function openCurrentInTab() {
+    const url = overlay?.dataset?.currentUrl;
+    if (!url) return;
+    const opened = window.open(url, "_blank", "noopener");
+    if (!opened) window.location.href = url;
+  }
+  document.addEventListener("click", (event) => {
+    if (event.target.closest(".doc-viewer-open-tab")) {
+      openCurrentInTab();
+    }
+  });
   return { open, close };
 })();
 
@@ -773,6 +825,7 @@ async function handleAttachmentAction(trigger) {
       title: doc.title || "Attachment",
       url,
       downloadName: inlineFile?.name || (doc.storage_path || "").split("/").pop() || "",
+      previewable: true,
       note: inlineFile && !doc.storage_path
         ? "Attachment stored inline until the shared bucket is reachable."
         : "",

@@ -33,11 +33,18 @@ const DURATION_MAP = new Map([
 ]);
 
 const normTs = (row) => {
+  let dateOnly = null;
+  if (row?.date) {
+    const trimmed = `${row.date}`.trim();
+    dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(trimmed)
+      ? `${trimmed}T00:00:00`
+      : trimmed;
+  }
   const raw =
     row?.timestamp ||
     row?.submitted_at ||
     row?.created_at ||
-    (row?.date ? `${row.date}` : null);
+    dateOnly;
   if (!raw) return new Date(NaN);
   const dt = new Date(raw);
   if (!Number.isNaN(dt.getTime())) return dt;
@@ -314,7 +321,8 @@ const buildSeries = (entries) => {
   for (const entry of entries) {
     const ts = normTs(entry);
     if (Number.isNaN(ts.getTime())) continue;
-    const key = ts.toISOString().slice(0, 7); // YYYY-MM
+    const key = toLocalMonthKey(ts);
+    if (!key) continue;
     const agg = byMonth.get(key) || { h: 0, f: 0, c: 0, prompts: [] };
     if (parseBoolean(entry.hygiene) === true) agg.h += 1;
     if (parseBoolean(entry.food_prep) === true) agg.f += 1;
@@ -431,6 +439,23 @@ const yesNoLabel = (value) => {
   return '—';
 };
 
+// Generates YYYY-MM keys using local time so chart groupings reflect the caregiver's timezone.
+const toLocalMonthKey = (value) => {
+  const dt = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(dt.getTime())) return null;
+  const month = String(dt.getMonth() + 1).padStart(2, '0');
+  return `${dt.getFullYear()}-${month}`;
+};
+
+// Converts UTC timestamps from Supabase into local strings so the caregiver report does not shift forward a day.
+const toLocalDateTimeLabel = (value) => {
+  const dt = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(dt.getTime())) return '—';
+  const dateLabel = dt.toLocaleDateString(undefined, { month: 'short', day: '2-digit', year: 'numeric' });
+  const timeLabel = dt.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  return `${dateLabel} • ${timeLabel}`;
+};
+
 const minutesLabel = (value, fallback) => {
   const num =
     numberOrNull(value) ??
@@ -441,9 +466,7 @@ const minutesLabel = (value, fallback) => {
 export function formatEntryForList(entry = {}) {
   const payload = ensurePayload(entry);
   const ts = normTs(entry);
-  const dateTime = Number.isNaN(ts.getTime())
-    ? '—'
-    : ts.toLocaleString('en-US', { hour12: true });
+  const dateTime = toLocalDateTimeLabel(ts);
 
   const hygiene = coalesce(
     entry.hygiene,
@@ -488,6 +511,7 @@ export function formatEntryForList(entry = {}) {
     '';
 
   return {
+    id: entry.id || entry.uuid || null,
     dateTime,
     hygiene: yesNoLabel(hygiene),
     food_prep: yesNoLabel(foodPrep),

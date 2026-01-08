@@ -1183,7 +1183,6 @@ async function handleDocExport(trigger) {
   }
   // Open a placeholder window immediately so browsers don't block the final PDF window.
   const pendingWin = openPrepWindow();
-  if (!pendingWin) return;
   const initialLabel = trigger.textContent;
   try {
     trigger.disabled = true;
@@ -1274,6 +1273,7 @@ function getPrintableStyles() {
     .print-top h1{margin:0;font-size:26px;}
     .print-generated{margin:0;color:#475569;font-size:14px;}
     .print-action{border:none;background:#0f172a;color:#fff;padding:10px 20px;border-radius:999px;font-weight:600;cursor:pointer;}
+    .print-action.secondary{background:#e2e8f0;color:#0f172a;}
     .print-card{background:#fff;border-radius:18px;padding:20px;margin-bottom:18px;box-shadow:0 18px 35px rgba(15,23,42,.12);}
     .print-card header{margin-bottom:12px;}
     .print-label{margin:0 0 4px;font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:#64748b;}
@@ -1301,7 +1301,7 @@ function isIOSDevice() {
 }
 
 function openPrepWindow(message = "Building PDF…") {
-  if (!isIOSDevice()) return null;
+  if (isIOSDevice()) return null;
   const win = window.open("about:blank", "_blank", "noopener,width=900,height=700");
   if (!win) return null;
   try {
@@ -1324,8 +1324,11 @@ function openPrintableDocsWindow(docs = [], categoryLabel = "Documents", targetW
   <html>
     <head>
       <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
       <title>${safeCategory} — Printable Docs</title>
       <style>${printableStyles}</style>
+      <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     </head>
     <body>
       <header class="print-top">
@@ -1333,10 +1336,65 @@ function openPrintableDocsWindow(docs = [], categoryLabel = "Documents", targetW
           <h1>${safeCategory} Documents</h1>
           <p class="print-generated">Generated ${generatedAt}</p>
         </div>
-        <button class="print-action" onclick="window.print()">Print</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="print-action" onclick="window.print()">Print</button>
+          <button class="print-action secondary" id="sharePdfBtn" type="button">Share PDF</button>
+        </div>
       </header>
       ${bodyContent}
       <script>
+        async function sharePdf(){
+          const btn = document.getElementById('sharePdfBtn');
+          if (!btn) return;
+          const jsPDF = window.jspdf && window.jspdf.jsPDF;
+          if (!window.html2canvas || !jsPDF) {
+            alert('PDF tools are still loading. Please try again in a moment.');
+            return;
+          }
+          btn.disabled = true;
+          const original = btn.textContent;
+          btn.textContent = 'Preparing…';
+          try{
+            const canvas = await window.html2canvas(document.body, { scale: 2, backgroundColor: '#ffffff' });
+            const pdf = new jsPDF({ unit: 'pt', format: 'a4' });
+            const pageW = pdf.internal.pageSize.getWidth();
+            const pageH = pdf.internal.pageSize.getHeight();
+            const imgData = canvas.toDataURL('image/png');
+            const imgW = pageW;
+            const imgH = canvas.height * (imgW / canvas.width);
+            let heightLeft = imgH;
+            let y = 0;
+            pdf.addImage(imgData, 'PNG', 0, 0, imgW, imgH);
+            heightLeft -= pageH;
+            while (heightLeft > 0) {
+              pdf.addPage();
+              y = heightLeft - imgH;
+              pdf.addImage(imgData, 'PNG', 0, y, imgW, imgH);
+              heightLeft -= pageH;
+            }
+            const blob = pdf.output('blob');
+            const file = new File([blob], '${safeCategory.replace(/\\s+/g,'_')}_Documents.pdf', { type: 'application/pdf' });
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+              await navigator.share({ files: [file], title: '${safeCategory} Documents' });
+            } else {
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = file.name;
+              document.body.appendChild(a);
+              a.click();
+              a.remove();
+              setTimeout(() => URL.revokeObjectURL(url), 60000);
+            }
+          } catch (err){
+            console.error('PDF share failed', err);
+            alert('Unable to create a PDF right now.');
+          } finally {
+            btn.disabled = false;
+            btn.textContent = original;
+          }
+        }
+        document.getElementById('sharePdfBtn')?.addEventListener('click', sharePdf);
         window.addEventListener('load', function(){
           window.focus();
           setTimeout(function(){ window.print(); }, 350);
@@ -1357,8 +1415,11 @@ function openSingleDocPrintWindow(doc = {}, categoryLabel = "Documents", attachm
   <html>
     <head>
       <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
       <title>${safeCategory} — Document</title>
       <style>${printableStyles}</style>
+      <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     </head>
     <body>
       <header class="print-top">
@@ -1366,10 +1427,65 @@ function openSingleDocPrintWindow(doc = {}, categoryLabel = "Documents", attachm
           <h1>${safeCategory} Document</h1>
           <p class="print-generated">Generated ${generatedAt}</p>
         </div>
-        <button class="print-action" onclick="window.print()">Print / Save PDF</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="print-action" onclick="window.print()">Print / Save PDF</button>
+          <button class="print-action secondary" id="sharePdfBtn" type="button">Share PDF</button>
+        </div>
       </header>
       ${bodyContent}
       <script>
+        async function sharePdf(){
+          const btn = document.getElementById('sharePdfBtn');
+          if (!btn) return;
+          const jsPDF = window.jspdf && window.jspdf.jsPDF;
+          if (!window.html2canvas || !jsPDF) {
+            alert('PDF tools are still loading. Please try again in a moment.');
+            return;
+          }
+          btn.disabled = true;
+          const original = btn.textContent;
+          btn.textContent = 'Preparing…';
+          try{
+            const canvas = await window.html2canvas(document.body, { scale: 2, backgroundColor: '#ffffff' });
+            const pdf = new jsPDF({ unit: 'pt', format: 'a4' });
+            const pageW = pdf.internal.pageSize.getWidth();
+            const pageH = pdf.internal.pageSize.getHeight();
+            const imgData = canvas.toDataURL('image/png');
+            const imgW = pageW;
+            const imgH = canvas.height * (imgW / canvas.width);
+            let heightLeft = imgH;
+            let y = 0;
+            pdf.addImage(imgData, 'PNG', 0, 0, imgW, imgH);
+            heightLeft -= pageH;
+            while (heightLeft > 0) {
+              pdf.addPage();
+              y = heightLeft - imgH;
+              pdf.addImage(imgData, 'PNG', 0, y, imgW, imgH);
+              heightLeft -= pageH;
+            }
+            const blob = pdf.output('blob');
+            const file = new File([blob], '${safeCategory.replace(/\\s+/g,'_')}_Document.pdf', { type: 'application/pdf' });
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+              await navigator.share({ files: [file], title: '${safeCategory} Document' });
+            } else {
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = file.name;
+              document.body.appendChild(a);
+              a.click();
+              a.remove();
+              setTimeout(() => URL.revokeObjectURL(url), 60000);
+            }
+          } catch (err){
+            console.error('PDF share failed', err);
+            alert('Unable to create a PDF right now.');
+          } finally {
+            btn.disabled = false;
+            btn.textContent = original;
+          }
+        }
+        document.getElementById('sharePdfBtn')?.addEventListener('click', sharePdf);
         window.addEventListener('load', function(){
           window.focus();
           setTimeout(function(){ window.print(); }, 350);
@@ -1383,6 +1499,16 @@ function openSingleDocPrintWindow(doc = {}, categoryLabel = "Documents", attachm
 
 function openPrintHtml(html, targetWin = null) {
   const isIOS = isIOSDevice();
+  if (isIOS) {
+    try {
+      window.document.open();
+      window.document.write(html);
+      window.document.close();
+      return;
+    } catch (error) {
+      console.warn("inline print fallback failed", error);
+    }
+  }
   const writeToWindow = (win) => {
     if (!win || win.closed) return false;
     try {
@@ -1405,18 +1531,6 @@ function openPrintHtml(html, targetWin = null) {
     console.warn("popup blocked, using same tab", error);
   }
   if (writeToWindow(popup)) return;
-
-  // Fallbacks for mobile browsers that struggle with blob navigation.
-  if (isIOS) {
-    try {
-      window.document.open();
-      window.document.write(html);
-      window.document.close();
-      return;
-    } catch (error) {
-      console.warn("inline print fallback failed", error);
-    }
-  }
 
   const url = URL.createObjectURL(new Blob([html], { type: "text/html" }));
   window.location.href = url;

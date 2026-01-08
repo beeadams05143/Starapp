@@ -283,6 +283,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
         <span style="flex:1"></span>
         <button id="cgQuickLookToggle" type="button" class="no-export" aria-controls="cgQuickLook" aria-expanded="false">⚡ Quick Look</button>
         <button id="cgPdf"  class="no-export">📄 PDF</button>
+        <button id="cgSharePdf" class="no-export">📤 Share PDF</button>
         <button id="cgCsv"  class="no-export">⬇️ CSV</button>
       </div>
 
@@ -810,6 +811,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       caregiver: $('#cgCaregiver'),
       count: $('#cgCount'),
       pdf: $('#cgPdf'),
+      sharePdf: $('#cgSharePdf'),
       csv: $('#cgCsv'),
       tbody: document.getElementById('cgTbody')
     };
@@ -2860,6 +2862,77 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
     }
     window.exportElement = window.exportElement || exportElement;
 
+    async function exportElementToBlob(selector){
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const { jsPDF } = window.jspdf;
+      const el = document.querySelector(selector); if (!el) return null;
+
+      const w = el.scrollWidth, h = el.scrollHeight;
+      const canvas = await html2canvas(el, {
+        scale: 2, backgroundColor: '#ffffff',
+        width: w, height: h, windowWidth: w, windowHeight: h,
+        scrollX: 0, scrollY: -window.scrollY
+      });
+
+      const img = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({ unit:'pt', format:'a4' });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const imgW = pageW;
+      const imgH = canvas.height * (imgW / canvas.width);
+
+      let heightLeft = imgH;
+      let y = 0;
+      pdf.addImage(img, 'PNG', 0, 0, imgW, imgH);
+      heightLeft -= pageH;
+      while (heightLeft > 0) {
+        pdf.addPage();
+        y = heightLeft - imgH;
+        pdf.addImage(img, 'PNG', 0, y, imgW, imgH);
+        heightLeft -= pageH;
+      }
+      return pdf.output('blob');
+    }
+
+    async function shareCaregiverPdf(){
+      if (!cgState.entries.length) {
+        alert('No caregiver data to export yet.');
+        return;
+      }
+      const btn = cgInputs.sharePdf;
+      if (btn) {
+        btn.disabled = true;
+        btn.dataset.original = btn.textContent;
+        btn.textContent = 'Preparing…';
+      }
+      try {
+        const blob = await exportElementToBlob('#cg-panel');
+        if (!blob) throw new Error('PDF failed');
+        const fileName = `Caregiver_Checkins_${new Date().toISOString().slice(0,10)}.pdf`;
+        const file = new File([blob], fileName, { type: 'application/pdf' });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: 'Caregiver Check-Ins' });
+        } else {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = fileName;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }
+      } catch (error) {
+        console.error('Share PDF failed', error);
+        alert('Unable to create a PDF right now.');
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = btn.dataset.original || '📤 Share PDF';
+        }
+      }
+    }
+
     /* =================== Wire & boot =================== */
     $('#moodRange').addEventListener('change', renderMoodSection);
 
@@ -2898,6 +2971,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
     });
     cgInputs.csv?.addEventListener('click', exportCaregiverCsv);
     cgInputs.pdf?.addEventListener('click', exportCaregiverPdf);
+    cgInputs.sharePdf?.addEventListener('click', shareCaregiverPdf);
     quickLookUi.toggle?.addEventListener('click', () => toggleQuickLook());
     quickLookUi.close?.addEventListener('click', () => toggleQuickLook(false));
 

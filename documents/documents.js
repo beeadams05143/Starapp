@@ -1,5 +1,5 @@
 // documents.js
-import { rest, getSessionFromStorage } from "../restClient.js?v=2025.10.16d";
+import { rest, getSessionFromStorage, requireSession } from "../restClient.js?v=2025.10.16d";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../supabaseClient.js?v=2025.10.16d";
 import { uploadJsonToBucket, downloadJsonFromBucket } from "../shared-storage.js?v=2025.10.16d";
 
@@ -112,6 +112,13 @@ import { uploadJsonToBucket, downloadJsonFromBucket } from "../shared-storage.js
       border-radius: 12px;
       box-shadow: 0 18px 38px rgba(0,0,0,.25);
     }
+    .doc-viewer-content iframe {
+      width: 100%;
+      height: 70vh;
+      border: none;
+      border-radius: 12px;
+      box-shadow: 0 18px 38px rgba(0,0,0,.18);
+    }
     .doc-viewer-note {
       font-size: 13px;
       color: #475569;
@@ -149,6 +156,24 @@ let docsStore = { documents: [] };
 let docsStoreLoaded = false;
 let docsStorePromise = null;
 const BUCKET_NOT_FOUND_RE = /bucket not found/i;
+
+function readStoredGroupId() {
+  try {
+    return localStorage.getItem(GROUP_KEY) || null;
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredGroupId(value) {
+  try {
+    if (value) localStorage.setItem(GROUP_KEY, value);
+  } catch { /* ignore */ }
+}
+
+function fallbackGroupId(userId) {
+  return userId ? `solo-${userId}` : null;
+}
 
 function isBucketMissing(error) {
   if (!error) return false;
@@ -194,8 +219,7 @@ function readFileAsDataURL(file) {
 
 async function ensureGroupId(userId) {
   if (!userId) return null;
-  let cached = null;
-  try { cached = localStorage.getItem(GROUP_KEY); } catch { cached = null; }
+  let cached = readStoredGroupId();
   if (cached) return cached;
   try {
     const rows = await rest([
@@ -206,30 +230,86 @@ async function ensureGroupId(userId) {
     ].join("&"));
     const gid = rows?.[0]?.group_id || null;
     if (gid) {
-      try { localStorage.setItem(GROUP_KEY, gid); } catch {}
+      writeStoredGroupId(gid);
+      return gid;
     }
-    return gid;
   } catch (error) {
     console.warn("group lookup failed", error?.message || error);
-    return null;
   }
+  const fallback = fallbackGroupId(userId);
+  if (fallback) writeStoredGroupId(fallback);
+  return fallback;
 }
 
 const normalizeTags = (tags) => Array.isArray(tags) ? tags : (typeof tags === "string" ? tags.split(",").map(s => s.trim()).filter(Boolean) : []);
 
-function mapDocRow(row) {
-  if (!row) return null;
+const normalizeCategoryValue = (value) => {
+  if (value === null || value === undefined) return "";
+  return String(value).trim().toLowerCase();
+};
+
+function mergeTags(a = [], b = []) {
+  const seen = new Set();
+  [...(a || []), ...(b || [])].forEach((tag) => {
+    const t = (tag ?? "").toString().trim();
+    if (t) seen.add(t);
+  });
+  return Array.from(seen);
+}
+
+function normalizeDoc(raw = {}, index = 0) {
+  const content_json = raw.content_json && typeof raw.content_json === "object"
+    ? raw.content_json
+    : {};
   return {
-    id: row.id || crypto.randomUUID(),
-    title: row.title || "Untitled",
-    doc_type: row.doc_type || "upload",
-    content: row.content || "",
-    content_json: row.content_json || {},
-    tags: normalizeTags(row.tags),
-    storage_path: row.storage_path || null,
-    created_by: row.created_by || USER_ID,
-    created_at: row.created_at || new Date().toISOString()
+    ...raw,
+    id: raw.id
+      || raw.doc_id
+      || raw.uuid
+      || content_json.id
+      || raw.storage_path
+      || `doc-${index + 1}-${raw.created_at || Date.now()}`,
+    title: raw.title || "Untitled",
+    doc_type: raw.doc_type || raw.type || "upload",
+    content: raw.content || raw.description || "",
+    content_json,
+    tags: mergeTags(normalizeTags(raw.tags), normalizeTags(content_json.tags)),
+    storage_path: raw.storage_path || raw.storagePath || content_json.storage_path || null,
+    created_by: raw.created_by || raw.user_id || USER_ID,
+    created_at: raw.created_at || raw.inserted_at || new Date().toISOString(),
   };
+}
+
+function normalizeDocList(list = []) {
+  return (list || []).map((doc, idx) => normalizeDoc(doc, idx)).filter(Boolean);
+}
+
+function mergeDocRecords(base = {}, incoming = {}) {
+  const mergedJson = { ...(base.content_json || {}), ...(incoming.content_json || {}) };
+  const merged = {
+    ...base,
+    ...incoming,
+    tags: mergeTags(base.tags, incoming.tags),
+    content_json: mergedJson,
+  };
+  if (!merged.storage_path) merged.storage_path = incoming.storage_path || base.storage_path || null;
+  if (!merged.created_at) merged.created_at = incoming.created_at || base.created_at || new Date().toISOString();
+  if (!merged.created_by) merged.created_by = incoming.created_by || base.created_by || USER_ID;
+  return merged;
+}
+
+function mergeDocLists(primary = [], secondary = []) {
+  const map = new Map();
+  const keyFor = (doc = {}) => doc.id || doc.storage_path || `${doc.title || "doc"}-${doc.created_at || ""}`;
+  const add = (doc) => {
+    const key = keyFor(doc);
+    if (!key) return;
+    const existing = map.get(key);
+    map.set(key, existing ? mergeDocRecords(existing, doc) : doc);
+  };
+  primary.forEach(add);
+  secondary.forEach(add);
+  return Array.from(map.values()).sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
 }
 
 async function ensureDocsStore(forceReload = false) {
@@ -238,15 +318,21 @@ async function ensureDocsStore(forceReload = false) {
   docsStorePromise = (async () => {
     GROUP_ID = GROUP_ID || await ensureGroupId(USER_ID);
     if (!GROUP_ID) throw new Error("Join a group to share documents.");
-    let data = await downloadJsonFromBucket(SHARED_DOC_BUCKET, docsPathForGroup(GROUP_ID));
-    if (!data || typeof data !== "object") {
-      data = await seedDocsFromSupabase();
-    }
+    const [bucketData, supabaseDocs] = await Promise.all([
+      downloadJsonFromBucket(SHARED_DOC_BUCKET, docsPathForGroup(GROUP_ID)),
+      fetchDocsFromSupabase(),
+    ]);
+    const bucketDocs = normalizeDocList(bucketData?.documents || []);
+    const mergedDocs = mergeDocLists(bucketDocs, supabaseDocs);
     docsStore = {
-      documents: Array.isArray(data?.documents) ? data.documents : [],
-      updated_at: data?.updated_at || null,
+      documents: mergedDocs,
+      updated_at: bucketData?.updated_at || new Date().toISOString(),
     };
     docsStoreLoaded = true;
+    const shouldPersist = !bucketData || (mergedDocs.length && mergedDocs.length !== bucketDocs.length);
+    if (shouldPersist) {
+      await persistDocsStore(docsStore.updated_at);
+    }
     return docsStore;
   })();
   try {
@@ -254,31 +340,6 @@ async function ensureDocsStore(forceReload = false) {
   } finally {
     docsStorePromise = null;
   }
-}
-
-async function seedDocsFromSupabase() {
-  let rows = [];
-  try {
-    rows = await rest("documents?select=*&order=created_at.desc");
-  } catch (error) {
-    console.warn("docs legacy load failed", error?.message || error);
-    return { documents: [], updated_at: null };
-  }
-  if (!Array.isArray(rows) || !rows.length) {
-    return { documents: [], updated_at: null };
-  }
-  const normalized = rows.map(mapDocRow).filter(Boolean);
-  const payload = {
-    documents: normalized,
-    migrated_from: "documents",
-    updated_at: new Date().toISOString(),
-  };
-  try {
-    await uploadJsonToBucket(SHARED_DOC_BUCKET, docsPathForGroup(GROUP_ID), payload);
-  } catch (error) {
-    console.warn("docs cache store skipped", error?.message || error);
-  }
-  return payload;
 }
 
 async function persistDocsStore(updatedAt = null) {
@@ -295,6 +356,16 @@ async function persistDocsStore(updatedAt = null) {
   }
 }
 
+async function fetchDocsFromSupabase() {
+  try {
+    const rows = await rest("documents?select=*&order=created_at.desc&limit=500");
+    return normalizeDocList(rows || []);
+  } catch (error) {
+    console.warn("docs table load failed", error?.message || error);
+    return [];
+  }
+}
+
 const IMAGE_EXT_RE = /\.(png|jpe?g|gif|bmp|webp|svg|heic|heif|tiff)$/i;
 function looksLikeImageMeta(meta = {}) {
   if (!meta) return false;
@@ -303,6 +374,22 @@ function looksLikeImageMeta(meta = {}) {
   const source = (meta.name || meta.path || meta.url || "").split("?")[0].toLowerCase();
   if (!source) return false;
   return IMAGE_EXT_RE.test(source);
+}
+
+const PDF_EXT_RE = /\.pdf$/i;
+function looksLikePdfMeta(meta = {}) {
+  if (!meta) return false;
+  const type = meta.type || "";
+  if (type && /pdf$/i.test(type)) return true;
+  const source = (meta.name || meta.path || meta.url || "").split("?")[0].toLowerCase();
+  if (!source) return false;
+  return PDF_EXT_RE.test(source);
+}
+
+function detectPreviewType(meta = {}) {
+  if (looksLikeImageMeta(meta)) return "image";
+  if (looksLikePdfMeta(meta)) return "pdf";
+  return null;
 }
 
 const attachmentViewer = (() => {
@@ -365,6 +452,14 @@ const attachmentViewer = (() => {
     });
     img.src = url;
   }
+  function renderPdf(contentEl, { title, url } = {}) {
+    const frame = document.createElement("iframe");
+    frame.title = title || "Attachment";
+    frame.src = url;
+    frame.loading = "lazy";
+    contentEl.innerHTML = "";
+    contentEl.appendChild(frame);
+  }
   function showPreviewFallback(contentEl) {
     const fallback = document.createElement("div");
     fallback.className = "doc-viewer-status";
@@ -375,7 +470,7 @@ const attachmentViewer = (() => {
     contentEl.innerHTML = "";
     contentEl.appendChild(fallback);
   }
-  function open({ title, url, downloadName, note, previewable = true } = {}) {
+  function open({ title, url, downloadName, note, previewType = null } = {}) {
     if (!url) return;
     const wrap = ensure();
     wrap.classList.add("open");
@@ -388,11 +483,9 @@ const attachmentViewer = (() => {
     downloadEl.href = url;
     if (downloadName) downloadEl.download = downloadName;
     else downloadEl.removeAttribute("download");
-    if (previewable) {
-      renderImage(contentEl, { title, url });
-    } else {
-      showPreviewFallback(contentEl);
-    }
+    if (previewType === "image") renderImage(contentEl, { title, url });
+    else if (previewType === "pdf") renderPdf(contentEl, { title, url });
+    else showPreviewFallback(contentEl);
     if (note) {
       noteEl.textContent = note;
       noteEl.hidden = false;
@@ -464,10 +557,11 @@ export async function uploadFileToBucket({ file, bucket = SHARED_DOC_BUCKET } = 
 }
 
 async function getSignedUrl(storagePath) {
-  const session = getSessionFromStorage();
+  const session = await requireSession();
   const token = session?.access_token;
   if (!token) throw new Error("Not logged in.");
-  const res = await fetch(`${SUPABASE_URL}/storage/v1/object/sign/documents/${storagePath}`, {
+  const safePath = encodeURIComponent(normalizeStoragePath(storagePath)).replace(/%2F/g, "/");
+  const res = await fetch(`${SUPABASE_URL}/storage/v1/object/sign/documents/${safePath}`, {
     method: "POST",
     headers: {
       apikey: SUPABASE_ANON_KEY,
@@ -484,6 +578,39 @@ async function getSignedUrl(storagePath) {
   return ensureAbsoluteUrl(signed);
 }
 
+const SIGNED_URL_TTL_MS = 50 * 60 * 1000;
+async function getSignedUrlForDoc(doc = {}) {
+  if (!doc?.storage_path) return "";
+  const cachedAt = doc._cachedSignedUrlAt || 0;
+  if (doc._cachedSignedUrl && Date.now() - cachedAt < SIGNED_URL_TTL_MS) {
+    return doc._cachedSignedUrl;
+  }
+  const url = await getSignedUrl(doc.storage_path);
+  doc._cachedSignedUrl = url;
+  doc._cachedSignedUrlAt = Date.now();
+  return url;
+}
+
+function normalizeStoragePath(path) {
+  if (!path) return "";
+  let cleaned = String(path).trim();
+  // Remove any query/hash fragments first.
+  cleaned = cleaned.replace(/[?#].*$/, "");
+  // Strip a full URL to the storage object if it was stored that way (covers sign/public/authenticated).
+  cleaned = cleaned.replace(/^https?:\/\/[^/]+\/storage\/v1\/object\/(?:sign\/|public\/|authenticated\/)?documents\//i, "");
+  // Strip leading bucket name if it was included.
+  cleaned = cleaned.replace(/^documents\//i, "");
+  // Remove leading slashes.
+  cleaned = cleaned.replace(/^\/+/, "");
+  try {
+    // Decode once in case the path was already encoded, so we don't double-encode.
+    cleaned = decodeURIComponent(cleaned);
+  } catch {
+    /* ignore decode errors and keep the raw string */
+  }
+  return cleaned;
+}
+
 /* ------------ category tabs + deep link ------------ */
 const urlParams = new URLSearchParams(location.search);
 let activeCategory = urlParams.get("cat") || "Finance";
@@ -494,6 +621,78 @@ const catInput = document.getElementById("docCategory");
 const catLabel = document.getElementById("catLabel");
 const catListLabel = document.getElementById("catListLabel");
 const medicalExtrasEl = document.getElementById("medicalExtras");
+const formHeading = document.getElementById("formHeading");
+const docSubmitBtn = document.getElementById("docSubmitBtn");
+const docResetBtn = document.getElementById("docResetBtn");
+const docCancelEdit = document.getElementById("docCancelEdit");
+const editNotice = document.getElementById("editNotice");
+let editingDocId = null;
+
+function updateFormHeading() {
+  if (formHeading?.firstChild) {
+    formHeading.firstChild.nodeValue = editingDocId ? "Edit Document — " : "Add Document — ";
+  }
+  if (catLabel) catLabel.textContent = activeCategory;
+}
+
+function formatLocalInputValue(value) {
+  if (!value) return "";
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 16);
+}
+
+function enterEditMode(doc) {
+  if (!doc) return;
+  editingDocId = doc.id;
+  const meta = doc.content_json || {};
+  const title = document.getElementById("docTitle");
+  const when = document.getElementById("docDate");
+  const docType = document.getElementById("docType");
+  const desc = document.getElementById("docDescription");
+  const tags = document.getElementById("docTags");
+  const medNext = document.getElementById("medicalNextDate");
+  const medLink = document.getElementById("medicalNextLink");
+  const medNotes = document.getElementById("medicalNotes");
+
+  if (title) title.value = doc.title || "";
+  if (when) when.value = formatLocalInputValue(meta.document_date || doc.created_at);
+  if (docType) docType.value = doc.doc_type || "upload";
+  if (desc) desc.value = doc.content || "";
+  if (tags) {
+    const filtered = (doc.tags || []).filter((tag) => {
+      return normalizeCategoryValue(tag) !== normalizeCategoryValue(activeCategory);
+    });
+    tags.value = filtered.join(", ");
+  }
+  if (medNext) medNext.value = formatLocalInputValue(meta.medical_next_datetime);
+  if (medLink) medLink.value = meta.medical_next_link || "";
+  if (medNotes) medNotes.value = meta.medical_notes || "";
+
+  if (docSubmitBtn) docSubmitBtn.textContent = "Save Changes";
+  if (docResetBtn) docResetBtn.style.display = "none";
+  if (docCancelEdit) docCancelEdit.style.display = "inline-block";
+  if (editNotice) editNotice.style.display = "block";
+  updateFormHeading();
+  updateExtrasVisibility();
+  document.getElementById("doc-form-pretty")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function exitEditMode({ keepForm = false } = {}) {
+  editingDocId = null;
+  if (!keepForm) {
+    const form = document.getElementById("doc-form-pretty");
+    form?.reset();
+    if (catInput) catInput.value = activeCategory;
+  }
+  if (docSubmitBtn) docSubmitBtn.textContent = "Save Document";
+  if (docResetBtn) docResetBtn.style.display = "inline-block";
+  if (docCancelEdit) docCancelEdit.style.display = "none";
+  if (editNotice) editNotice.style.display = "none";
+  updateFormHeading();
+  updateExtrasVisibility();
+}
 
 function updateExtrasVisibility() {
   if (!medicalExtrasEl) return;
@@ -506,12 +705,14 @@ if (catLabel) catLabel.textContent = activeCategory;
 if (catListLabel) catListLabel.textContent = activeCategory;
 tabs.forEach(btn => btn.classList.toggle("active", btn.dataset.cat === activeCategory));
 updateExtrasVisibility();
+updateFormHeading();
 
 tabs.forEach(btn => {
   btn.addEventListener("click", async () => {
     tabs.forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
     activeCategory = btn.dataset.cat;
+    if (editingDocId) exitEditMode();
 
     if (catInput) catInput.value = activeCategory;
     if (catLabel) catLabel.textContent = activeCategory;
@@ -522,6 +723,7 @@ tabs.forEach(btn => {
     history.replaceState(null, "", `${location.pathname}?${p.toString()}`);
 
     updateExtrasVisibility();
+    updateFormHeading();
     await loadDocuments();
   });
 });
@@ -546,14 +748,6 @@ if (prettyForm) {
       const medLink  = document.getElementById("medicalNextLink")?.value?.trim() || null;
       const medNotes = document.getElementById("medicalNotes")?.value?.trim() || null;
 
-      let storage_path = null;
-      let inline_file = null;
-      if (file) {
-        const uploadResult = await uploadFileToBucket({ file });
-        storage_path = uploadResult.storagePath;
-        inline_file = uploadResult.inlineFile;
-      }
-
       const session = getSessionFromStorage();
       const user = session?.user;
       if (!user?.id) throw new Error("Not logged in.");
@@ -562,54 +756,144 @@ if (prettyForm) {
       const extraTags = tagsStr ? tagsStr.split(",").map(s => s.trim()).filter(Boolean) : [];
       const tags = [activeCategory, ...extraTags];
 
-      const content_json = { primary_category: activeCategory, document_date: when || null };
+      let storage_path = null;
+      let inline_file = null;
+      const existingDoc = editingDocId
+        ? (docsStore.documents || []).find((d) => d.id === editingDocId)
+        : null;
+      if (editingDocId && !existingDoc) {
+        throw new Error("Document not found for editing.");
+      }
+      if (editingDocId && existingDoc) {
+        storage_path = existingDoc.storage_path || null;
+        inline_file = existingDoc.content_json?.inline_file || null;
+      }
+      if (file) {
+        const uploadResult = await uploadFileToBucket({ file });
+        storage_path = uploadResult.storagePath;
+        inline_file = uploadResult.inlineFile;
+      }
+
+      const content_json = {
+        ...(existingDoc?.content_json || {}),
+        primary_category: activeCategory,
+        document_date: when || null,
+      };
       if (activeCategory === "Medical") {
         content_json.medical_next_datetime = medNext;
         content_json.medical_next_link     = medLink;
         content_json.medical_notes         = medNotes;
+      } else {
+        delete content_json.medical_next_datetime;
+        delete content_json.medical_next_link;
+        delete content_json.medical_notes;
       }
-      if (inline_file) {
-        content_json.inline_file = inline_file;
+      if (inline_file) content_json.inline_file = inline_file;
+      else delete content_json.inline_file;
+
+      if (editingDocId && existingDoc) {
+        const updatedPayload = {
+          title,
+          doc_type: docType,
+          content: desc || null,
+          content_json,
+          tags,
+          storage_path,
+          updated_at: new Date().toISOString(),
+        };
+        let updatedRows = [];
+        try {
+          updatedRows = await rest(`documents?id=eq.${encodeURIComponent(existingDoc.id)}`, {
+            method: "PATCH",
+            headers: { Prefer: "return=representation" },
+            body: JSON.stringify(updatedPayload),
+          }) || [];
+        } catch (error) {
+          console.warn("Update by id failed", error?.message || error);
+        }
+        if (!updatedRows.length && existingDoc.storage_path) {
+          try {
+            updatedRows = await rest([
+              "documents",
+              `storage_path=eq.${encodeURIComponent(existingDoc.storage_path)}`,
+              `created_by=eq.${encodeURIComponent(existingDoc.created_by || user.id)}`,
+            ].join("&"), {
+              method: "PATCH",
+              headers: { Prefer: "return=representation" },
+              body: JSON.stringify(updatedPayload),
+            }) || [];
+          } catch (error) {
+            console.warn("Update by storage_path failed", error?.message || error);
+          }
+        }
+
+        const merged = mergeDocRecords(existingDoc, {
+          ...updatedPayload,
+          content: desc || "",
+          created_at: existingDoc.created_at,
+        });
+        const normalized = normalizeDoc(merged);
+        docsStore.documents = (docsStore.documents || []).map((doc) =>
+          doc.id === editingDocId ? normalized : doc
+        );
+        await persistDocsStore(normalized.updated_at || new Date().toISOString());
+        alert("Updated!");
+        exitEditMode();
+        await loadDocuments();
+        return;
       }
 
-      await rest("documents", {
-        method: "POST",
-        headers: { Prefer: "return=minimal" },
-        body: JSON.stringify([{
+      const record = {
         title,
         doc_type: docType,
         content: desc || null,
         content_json,
         tags,
         storage_path,
-        created_by: user.id
-      }]),
+        created_by: user.id,
+      };
+      const inserted = await rest("documents", {
+        method: "POST",
+        headers: { Prefer: "return=representation" },
+        body: JSON.stringify([record]),
       });
 
-      const newEntry = {
-        id: crypto.randomUUID(),
-        title,
-        doc_type: docType,
-        content: desc || "",
-        content_json,
-        tags,
-        storage_path,
-        created_by: user.id,
-        created_at: new Date().toISOString()
-      };
-      if (inline_file) newEntry.content_json.inline_file = inline_file;
+      const insertedRow = Array.isArray(inserted) ? inserted[0] : null;
+      const newEntry = normalizeDoc({
+        ...record,
+        ...(insertedRow || {}),
+        id: insertedRow?.id || crypto.randomUUID(),
+        created_at: insertedRow?.created_at || new Date().toISOString(),
+      });
       docsStore.documents = [newEntry, ...(docsStore.documents || [])].slice(0, 200);
       await persistDocsStore(newEntry.created_at);
 
       alert("Saved!");
       prettyForm.reset();
       if (catInput) catInput.value = activeCategory; // keep tab label
+      updateFormHeading();
       await loadDocuments();
     } catch (err) {
       console.error(err);
       alert("Save failed: " + err.message);
     }
   });
+}
+
+if (prettyForm) {
+  prettyForm.addEventListener("reset", () => {
+    if (!editingDocId) {
+      setTimeout(() => {
+        if (catInput) catInput.value = activeCategory;
+        updateFormHeading();
+        updateExtrasVisibility();
+      }, 0);
+    }
+  });
+}
+
+if (docCancelEdit) {
+  docCancelEdit.addEventListener("click", () => exitEditMode());
 }
 
 /* ------------ list (filter by category) ------------ */
@@ -668,20 +952,37 @@ export async function saveMinutesRich(payload = {}, attachment = {}) {
     id: crypto.randomUUID(),
     created_at: new Date().toISOString(),
   };
-  docsStore.documents = [newEntry, ...(docsStore.documents || [])].slice(0, 200);
-  await persistDocsStore(newEntry.created_at);
-  return newEntry;
+  const normalized = normalizeDoc(newEntry);
+  docsStore.documents = [normalized, ...(docsStore.documents || [])].slice(0, 200);
+  await persistDocsStore(normalized.created_at);
+  return normalized;
+}
+
+function filterDocsByCategory(docs = []) {
+  const active = normalizeCategoryValue(activeCategory);
+  return (docs || []).filter((d) => {
+    const tags = Array.isArray(d.tags) ? d.tags.map(normalizeCategoryValue) : [];
+    const jsonCat = normalizeCategoryValue(
+      d.content_json?.primary_category
+      || d.content_json?.primaryCategory
+      || d.content_json?.category
+      || d.primary_category
+      || d.category
+    );
+    const matchesTags = active ? tags.includes(active) : false;
+    const matchesJson = active ? jsonCat === active : false;
+    return matchesTags || matchesJson || (!active && (!tags.length && !jsonCat));
+  });
 }
 
 async function renderDocuments(list, docs) {
-  const filtered = (docs || []).filter(d => {
-    const inTags = Array.isArray(d.tags) && d.tags.includes(activeCategory);
-    const inJson = d.content_json?.primary_category === activeCategory;
-    return inTags || inJson;
-  });
+  const filtered = filterDocsByCategory(docs);
 
   list.innerHTML = "";
   for (const doc of filtered) {
+    const docId = doc.id || doc.storage_path || `doc-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    if (!doc.id) doc.id = docId;
+
     const card = document.createElement("div");
     card.className = "card";
 
@@ -719,25 +1020,31 @@ async function renderDocuments(list, docs) {
     const linksHolder = card.querySelector(".doc-links");
     const hasAttachment = Boolean(doc.storage_path || inlineFile?.data_url);
     if (hasAttachment) {
-      const canPreview = inlineFile
-        ? looksLikeImageMeta({ name: inlineFile.name, type: inlineFile.type })
-        : looksLikeImageMeta({ path: doc.storage_path || "" });
+      const previewType = inlineFile
+        ? detectPreviewType({ name: inlineFile.name, type: inlineFile.type })
+        : detectPreviewType({ path: doc.storage_path || "", type: doc.file_type || doc.mime_type });
 
       const viewBtn = document.createElement("button");
       viewBtn.type = "button";
       viewBtn.className = "btn secondary doc-attachment-action";
-      viewBtn.dataset.docId = doc.id;
+      viewBtn.dataset.docId = docId;
       viewBtn.dataset.action = "view";
-      viewBtn.dataset.previewable = canPreview ? "1" : "";
-      viewBtn.textContent = canPreview ? "View Attachment" : "Open Attachment";
+      viewBtn.dataset.previewType = previewType || "";
+      viewBtn.textContent = previewType === "pdf"
+        ? "Preview PDF"
+        : previewType === "image"
+          ? "View Attachment"
+          : "Open Attachment";
+      viewBtn.setAttribute("aria-label", `${viewBtn.textContent} for ${doc.title}`);
       linksHolder.appendChild(viewBtn);
 
       const downloadBtn = document.createElement("button");
       downloadBtn.type = "button";
       downloadBtn.className = "btn secondary doc-attachment-action";
-      downloadBtn.dataset.docId = doc.id;
+      downloadBtn.dataset.docId = docId;
       downloadBtn.dataset.action = "download";
       downloadBtn.textContent = "Download";
+      downloadBtn.setAttribute("aria-label", `Download attachment for ${doc.title}`);
       linksHolder.appendChild(downloadBtn);
 
       if (inlineFile?.data_url && !doc.storage_path) {
@@ -748,9 +1055,22 @@ async function renderDocuments(list, docs) {
         note.textContent = "File stored inline until storage bucket is available.";
         linksHolder.appendChild(note);
       }
-    } else {
-      linksHolder.textContent = "";
     }
+    const editBtn = document.createElement("button");
+    editBtn.type = "button";
+    editBtn.className = "btn secondary doc-edit-action";
+    editBtn.dataset.docId = docId;
+    editBtn.textContent = "Edit";
+    editBtn.setAttribute("aria-label", `Edit ${doc.title}`);
+    linksHolder.appendChild(editBtn);
+
+    const exportBtn = document.createElement("button");
+    exportBtn.type = "button";
+    exportBtn.className = "btn doc-export-action";
+    exportBtn.dataset.docId = docId;
+    exportBtn.textContent = "Export PDF";
+    exportBtn.setAttribute("aria-label", `Export ${doc.title} as PDF`);
+    linksHolder.appendChild(exportBtn);
 
     list.appendChild(card);
   }
@@ -763,6 +1083,11 @@ async function renderDocuments(list, docs) {
   }
 }
 loadDocuments();
+const docsPrintBtn = document.getElementById("docsPrintBtn");
+if (docsPrintBtn) {
+  docsPrintBtn.addEventListener("click", () => handleDocsPrintClick(docsPrintBtn));
+}
+
 async function handleAttachmentAction(trigger) {
   const docId = trigger.dataset.docId;
   if (!docId) return;
@@ -773,12 +1098,12 @@ async function handleAttachmentAction(trigger) {
   }
   const action = trigger.dataset.action || "view";
   const inlineFile = doc.content_json?.inline_file || null;
-  const canPreview = trigger.dataset.previewable === "1"
+  const previewType = trigger.dataset.previewType
     || (inlineFile
-      ? looksLikeImageMeta({ name: inlineFile.name, type: inlineFile.type })
-      : looksLikeImageMeta({ path: doc.storage_path || "" }));
+      ? detectPreviewType({ name: inlineFile.name, type: inlineFile.type })
+      : detectPreviewType({ path: doc.storage_path || "", type: doc.file_type || doc.mime_type }));
 
-  let url = inlineFile?.data_url || doc._cachedSignedUrl || "";
+  let url = inlineFile?.data_url || "";
   const originalText = trigger.dataset.label || trigger.textContent;
   if (!trigger.dataset.label) trigger.dataset.label = trigger.textContent;
 
@@ -786,8 +1111,7 @@ async function handleAttachmentAction(trigger) {
     try {
       trigger.disabled = true;
       trigger.textContent = action === "download" ? "Preparing…" : "Opening…";
-      url = await getSignedUrl(doc.storage_path);
-      doc._cachedSignedUrl = url;
+      url = await getSignedUrlForDoc(doc);
     } catch (error) {
       console.error("Attachment link failed", error);
       alert("Unable to fetch this attachment right now. Please try again.");
@@ -820,12 +1144,12 @@ async function handleAttachmentAction(trigger) {
     return;
   }
 
-  if (canPreview) {
+  if (previewType) {
     attachmentViewer.open({
       title: doc.title || "Attachment",
       url,
       downloadName: inlineFile?.name || (doc.storage_path || "").split("/").pop() || "",
-      previewable: true,
+      previewType,
       note: inlineFile && !doc.storage_path
         ? "Attachment stored inline until the shared bucket is reachable."
         : "",
@@ -838,6 +1162,66 @@ async function handleAttachmentAction(trigger) {
   }
 }
 
+function handleEditAction(trigger) {
+  const docId = trigger.dataset.docId;
+  if (!docId) return;
+  const doc = (docsStore.documents || []).find((d) => d.id === docId);
+  if (!doc) {
+    alert("Unable to locate this document.");
+    return;
+  }
+  enterEditMode(doc);
+}
+
+async function handleDocExport(trigger) {
+  const docId = trigger.dataset.docId;
+  if (!docId) return;
+  const doc = (docsStore.documents || []).find((d) => d.id === docId);
+  if (!doc) {
+    alert("Unable to locate this document.");
+    return;
+  }
+  // Open a placeholder window immediately so browsers don't block the final PDF window.
+  const pendingWin = openPrepWindow();
+  if (!pendingWin) return;
+  const initialLabel = trigger.textContent;
+  try {
+    trigger.disabled = true;
+    trigger.textContent = "Preparing…";
+    const inlineFile = doc.content_json?.inline_file || null;
+    let attachmentUrl = "";
+    let attachmentName = "";
+    let attachmentNote = "";
+    const previewType = inlineFile
+      ? detectPreviewType({ name: inlineFile.name, type: inlineFile.type })
+      : detectPreviewType({ path: doc.storage_path || "", type: doc.file_type || doc.mime_type });
+    if (inlineFile?.data_url) {
+      attachmentUrl = inlineFile.data_url;
+      attachmentName = inlineFile.name || "attachment";
+      attachmentNote = "Embedded from device upload";
+    } else if (doc.storage_path) {
+      attachmentName = doc.storage_path.split("/").pop() || "attachment";
+      try {
+        attachmentUrl = await getSignedUrlForDoc(doc);
+      } catch (error) {
+        console.warn("signed url for export failed", error);
+        attachmentNote = "Link unavailable right now (use Download in Docs list).";
+      }
+    }
+    const attachmentDetails = (attachmentUrl || attachmentName || attachmentNote)
+      ? { url: attachmentUrl, name: attachmentName, note: attachmentNote, previewType }
+      : null;
+    openSingleDocPrintWindow(doc, activeCategory, attachmentDetails, pendingWin);
+  } catch (error) {
+    console.error("Export failed", error);
+    alert("Unable to build the PDF right now. Please try again.");
+    pendingWin?.close?.();
+  } finally {
+    trigger.disabled = false;
+    trigger.textContent = initialLabel;
+  }
+}
+
 document.addEventListener("click", (event) => {
   const trigger = event.target.closest(".doc-attachment-action");
   if (trigger) {
@@ -845,3 +1229,399 @@ document.addEventListener("click", (event) => {
     handleAttachmentAction(trigger);
   }
 });
+
+document.addEventListener("click", (event) => {
+  const trigger = event.target.closest(".doc-edit-action");
+  if (trigger) {
+    event.preventDefault();
+    handleEditAction(trigger);
+  }
+});
+
+document.addEventListener("click", (event) => {
+  const trigger = event.target.closest(".doc-export-action");
+  if (trigger) {
+    event.preventDefault();
+    handleDocExport(trigger);
+  }
+});
+
+async function handleDocsPrintClick(button) {
+  if (!button) return;
+  const pendingWin = openPrepWindow("Preparing documents…");
+  const initialLabel = button.textContent;
+  try {
+    button.disabled = true;
+    button.textContent = "Preparing…";
+    const store = await ensureDocsStore();
+    const docs = await preparePrintDocs(filterDocsByCategory(store.documents || []));
+    openPrintableDocsWindow(docs, activeCategory, pendingWin);
+  } catch (error) {
+    console.error("Printable docs view failed", error);
+    alert("Unable to build the printable view right now. Please try again.");
+    pendingWin?.close?.();
+  } finally {
+    button.disabled = false;
+    button.textContent = initialLabel;
+  }
+}
+
+function getPrintableStyles() {
+  return `
+    *{box-sizing:border-box;}
+    body{margin:0;padding:24px;font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial;background:#f7f7f4;color:#0f172a;}
+    .print-top{display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:18px;}
+    .print-top h1{margin:0;font-size:26px;}
+    .print-generated{margin:0;color:#475569;font-size:14px;}
+    .print-action{border:none;background:#0f172a;color:#fff;padding:10px 20px;border-radius:999px;font-weight:600;cursor:pointer;}
+    .print-card{background:#fff;border-radius:18px;padding:20px;margin-bottom:18px;box-shadow:0 18px 35px rgba(15,23,42,.12);}
+    .print-card header{margin-bottom:12px;}
+    .print-label{margin:0 0 4px;font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:#64748b;}
+    .print-card h2{margin:0;font-size:20px;}
+    .print-meta{display:flex;flex-wrap:wrap;gap:12px 24px;font-size:14px;color:#334155;margin-bottom:10px;}
+    .print-tags{font-size:13px;color:#475569;margin-bottom:12px;}
+    .print-body section{margin-bottom:14px;}
+    .print-body h3,.print-body h4{margin:0 0 6px;font-size:16px;}
+    .print-body p{margin:4px 0;font-size:14px;line-height:1.55;}
+    .print-list ul{margin:4px 0 0 20px;padding:0;}
+    .print-note{margin-top:10px;font-size:12px;color:#475569;font-style:italic;}
+    .print-attach{font-size:14px;color:#334155;margin-top:10px;}
+    .print-empty{font-size:16px;color:#475569;}
+    .print-muted{color:#94a3b8;font-size:14px;margin:0;}
+    @media print{
+      body{padding:0;background:#fff;}
+      .print-card{box-shadow:none;border:1px solid #e2e8f0;page-break-inside:avoid;}
+      .print-action{display:none;}
+    }
+  `;
+}
+
+function openPrepWindow(message = "Building PDF…") {
+  const win = window.open("about:blank", "_blank", "noopener,width=900,height=700");
+  if (!win) return null;
+  try {
+    win.document.write(`<!DOCTYPE html><html><head><title>Preparing…</title></head><body style="font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial;padding:32px;background:#f8fafc;color:#0f172a;"><p style="margin:0;font-size:16px;">${escapeHtml(message)}</p></body></html>`);
+    win.document.close();
+  } catch {
+    /* ignore; we'll fall back to same-tab if needed */
+  }
+  return win;
+}
+
+function openPrintableDocsWindow(docs = [], categoryLabel = "Documents") {
+  const safeCategory = escapeHtml(categoryLabel || "Documents");
+  const generatedAt = escapeHtml(new Date().toLocaleString());
+  const printableStyles = getPrintableStyles();
+  const bodyContent = (docs && docs.length)
+    ? docs.map((doc) => buildPrintableDocCard(doc, categoryLabel, doc._printAttachment || null)).join("\n")
+    : `<p class="print-empty">No documents saved yet for ${safeCategory}.</p>`;
+  const html = `<!DOCTYPE html>
+  <html>
+    <head>
+      <meta charset="UTF-8" />
+      <title>${safeCategory} — Printable Docs</title>
+      <style>${printableStyles}</style>
+    </head>
+    <body>
+      <header class="print-top">
+        <div>
+          <h1>${safeCategory} Documents</h1>
+          <p class="print-generated">Generated ${generatedAt}</p>
+        </div>
+        <button class="print-action" onclick="window.print()">Print</button>
+      </header>
+      ${bodyContent}
+      <script>
+        window.addEventListener('load', function(){
+          window.focus();
+          setTimeout(function(){ window.print(); }, 350);
+        });
+      </script>
+    </body>
+  </html>`;
+
+  openPrintHtml(html);
+}
+
+function openSingleDocPrintWindow(doc = {}, categoryLabel = "Documents", attachment = null) {
+  const safeCategory = escapeHtml(categoryLabel || "Documents");
+  const generatedAt = escapeHtml(new Date().toLocaleString());
+  const printableStyles = getPrintableStyles();
+  const bodyContent = buildPrintableDocCard(doc, categoryLabel, attachment);
+  const html = `<!DOCTYPE html>
+  <html>
+    <head>
+      <meta charset="UTF-8" />
+      <title>${safeCategory} — Document</title>
+      <style>${printableStyles}</style>
+    </head>
+    <body>
+      <header class="print-top">
+        <div>
+          <h1>${safeCategory} Document</h1>
+          <p class="print-generated">Generated ${generatedAt}</p>
+        </div>
+        <button class="print-action" onclick="window.print()">Print / Save PDF</button>
+      </header>
+      ${bodyContent}
+      <script>
+        window.addEventListener('load', function(){
+          window.focus();
+          setTimeout(function(){ window.print(); }, 350);
+        });
+      </script>
+    </body>
+  </html>`;
+
+  openPrintHtml(html);
+}
+
+function openPrintHtml(html) {
+  const url = URL.createObjectURL(new Blob([html], { type: "text/html" }));
+  let popup = null;
+  try {
+    popup = window.open(url, "_blank", "noopener,width=900,height=700");
+  } catch (error) {
+    console.warn("popup blocked, using same tab", error);
+  }
+  if (!popup) {
+    window.location.href = url;
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    return;
+  }
+  // If browser opens about:blank first, ensure it navigates to the blob URL shortly after.
+  setTimeout(() => {
+    try {
+      if (!popup.location || popup.location.href === "about:blank") {
+        popup.location.href = url;
+      }
+    } catch {
+      // ignore cross-window access issues; user will still see the popup
+    }
+  }, 150);
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
+function buildPrintableDocCard(doc = {}, categoryLabel = "", attachment = null) {
+  const meta = doc.content_json || {};
+  const category = escapeHtml(categoryLabel || meta.primary_category || "Documents");
+  const docTitle = escapeHtml(doc.title || "Document");
+  const docType = escapeHtml(doc.doc_type || "General");
+  const docDate = formatPrintableDate(meta.document_date);
+  const createdAt = formatPrintableDate(doc.created_at);
+  const tagsLine = Array.isArray(doc.tags) && doc.tags.length
+    ? `<div class="print-tags"><strong>Tags:</strong> ${doc.tags.map(escapeHtml).join(", ")}</div>`
+    : "";
+  const attachmentBlock = (() => {
+    const att = attachment
+      || doc._printAttachment
+      || (meta.inline_file ? {
+        url: meta.inline_file.data_url,
+        name: meta.inline_file.name || "attachment",
+        previewType: detectPreviewType({ name: meta.inline_file.name, type: meta.inline_file.type }),
+        note: "Embedded from upload",
+      } : null);
+    if (!att && !doc.storage_path && !meta.inline_file) return "";
+    const name = escapeHtml(
+      att?.name
+      || (doc.storage_path || "").split("/").pop()
+      || meta.inline_file?.name
+      || "Attachment"
+    );
+    const note = att?.note ? `<span class="print-muted">(${escapeHtml(att.note)})</span>` : "";
+    if (att?.url && att.previewType === "image") {
+      const safeUrl = escapeHtml(att.url);
+      return `<div class="print-attach"><strong>Attachment:</strong> ${name} ${note}</div><div style="margin-top:10px;"><img src="${safeUrl}" alt="${name}" style="max-width:100%;border-radius:12px;box-shadow:0 12px 24px rgba(15,23,42,.18);"></div>`;
+    }
+    if (att?.url) {
+      const safeUrl = escapeHtml(att.url);
+      return `<div class="print-attach"><strong>Attachment:</strong> <a href="${safeUrl}" target="_blank" rel="noopener">${name}</a> ${note}</div>`;
+    }
+    return `<div class="print-attach"><strong>Attachment:</strong> ${name} ${note}</div>`;
+  })();
+
+  const sections = [];
+  if (doc.content) {
+    sections.push(`<section><h3>Notes</h3>${formatParagraphs(doc.content)}</section>`);
+  }
+  const medical = buildMedicalPrintable(meta);
+  if (medical) sections.push(medical);
+  const minutes = buildMinutesPrintable(meta.minutes_payload);
+  if (minutes) sections.push(minutes);
+  if (!sections.length) {
+    sections.push(`<p class="print-muted">No extended notes saved for this entry.</p>`);
+  }
+
+  const attachmentNote = (doc.storage_path || meta.inline_file) && !attachment?.url
+    ? `<div class="print-note">Attachments stay private. Download from the STAR Docs page to share files.</div>`
+    : "";
+
+  return `
+    <article class="print-card">
+      <header>
+        <p class="print-label">${category}</p>
+        <h2>${docTitle}</h2>
+      </header>
+      <div class="print-meta">
+        <div><strong>Type:</strong> ${docType}</div>
+        ${docDate ? `<div><strong>Document Date:</strong> ${docDate}</div>` : ""}
+        ${createdAt ? `<div><strong>Saved:</strong> ${createdAt}</div>` : ""}
+      </div>
+      ${tagsLine}
+      ${attachmentBlock}
+      <div class="print-body">
+        ${sections.join("")}
+      </div>
+      ${attachmentNote}
+    </article>
+  `;
+}
+
+function buildMedicalPrintable(meta = {}) {
+  const rows = [];
+  if (meta.medical_next_datetime) {
+    rows.push(`<div><strong>Next Appointment:</strong> ${formatPrintableDate(meta.medical_next_datetime)}</div>`);
+  }
+  if (meta.medical_next_link) {
+    rows.push(`<div><strong>Meeting Link:</strong> ${formatLink(meta.medical_next_link)}</div>`);
+  }
+  if (meta.medical_notes) {
+    rows.push(`<div><strong>Instructions:</strong> ${formatParagraphs(meta.medical_notes)}</div>`);
+  }
+  if (!rows.length) return "";
+  return `<section><h3>Medical Details</h3>${rows.join("")}</section>`;
+}
+
+function buildMinutesPrintable(payload = null) {
+  if (!payload || typeof payload !== "object") return "";
+  const sections = [];
+  const summary = [];
+  if (payload.datetime) {
+    summary.push(`<div><strong>Date:</strong> ${formatPrintableDate(payload.datetime)}</div>`);
+  }
+  if (payload.location) {
+    summary.push(`<div><strong>Location:</strong> ${escapeHtml(payload.location)}</div>`);
+  }
+  if (payload.facilitator) {
+    summary.push(`<div><strong>Facilitator:</strong> ${escapeHtml(payload.facilitator)}</div>`);
+  }
+  if (payload.next_datetime) {
+    summary.push(`<div><strong>Next Meeting:</strong> ${formatPrintableDate(payload.next_datetime)}</div>`);
+  }
+  if (payload.next_link) {
+    summary.push(`<div><strong>Next Link:</strong> ${formatLink(payload.next_link)}</div>`);
+  }
+  if (summary.length) {
+    sections.push(`<div class="print-meta">${summary.join("")}</div>`);
+  }
+  const attendeesSection = formatListSection("Attendees", payload.attendees);
+  if (attendeesSection) sections.push(attendeesSection);
+  const agendaSection = formatListSection("Agenda", payload.agenda);
+  if (agendaSection) sections.push(agendaSection);
+  if (payload.discussion) {
+    sections.push(`<section><h4>Discussion</h4>${formatParagraphs(payload.discussion)}</section>`);
+  }
+  const decisionsSection = formatListSection("Decisions", payload.decisions);
+  if (decisionsSection) sections.push(decisionsSection);
+  const actionsSection = formatListSection("Action Items", payload.action_items);
+  if (actionsSection) sections.push(actionsSection);
+  if (!sections.length) return "";
+  return `<section><h3>Meeting Minutes</h3>${sections.join("")}</section>`;
+}
+
+function formatListSection(title, items = []) {
+  if (!Array.isArray(items) || !items.length) return "";
+  const safeTitle = escapeHtml(title);
+  const list = items.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+  return `<section class="print-list"><h4>${safeTitle}</h4><ul>${list}</ul></section>`;
+}
+
+function formatParagraphs(text = "") {
+  if (!text) return "";
+  const safe = escapeHtml(text).replace(/\r\n/g, "\n");
+  const blocks = safe.split(/\n\s*\n/);
+  return blocks.map((block) => `<p>${block.replace(/\n/g, "<br>")}</p>`).join("");
+}
+
+function formatPrintableDate(value) {
+  if (!value) return "";
+  try {
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) return escapeHtml(String(value));
+    return date.toLocaleString();
+  } catch {
+    return escapeHtml(String(value));
+  }
+}
+
+function formatLink(url = "") {
+  if (!url) return "";
+  const trimmed = String(url).trim();
+  const safe = escapeHtml(trimmed);
+  return `<a href="${safe}" target="_blank" rel="noopener">${safe}</a>`;
+}
+
+function escapeHtml(input = "") {
+  return String(input)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+async function preparePrintDocs(docs = []) {
+  const prepared = [];
+  for (const doc of docs || []) {
+    const meta = doc.content_json || {};
+    let attachment = null;
+    if (meta.inline_file?.data_url) {
+      attachment = {
+        url: meta.inline_file.data_url,
+        name: meta.inline_file.name || "attachment",
+        previewType: detectPreviewType({ name: meta.inline_file.name, type: meta.inline_file.type }),
+        note: "Embedded from upload",
+      };
+    } else if (doc.storage_path) {
+      attachment = {
+        url: null,
+        name: (doc.storage_path || "").split("/").pop() || "attachment",
+        previewType: detectPreviewType({ path: doc.storage_path, type: doc.file_type || doc.mime_type }),
+        note: "Attachments stay private. Download from the STAR Docs page to share files.",
+      };
+      try {
+        const signed = await getSignedUrlForDoc(doc);
+        attachment.url = signed;
+        attachment.note = "";
+        if (attachment.previewType === "image") {
+          try {
+            attachment.url = await fetchAsDataUrl(signed);
+            attachment.note = "Embedded for printing";
+          } catch (embedErr) {
+            console.warn("print image embed failed", embedErr?.message || embedErr);
+            // leave signed URL; image may still load remotely
+            attachment.url = signed;
+            attachment.note = "Attachment image could not be embedded (link only)";
+          }
+        }
+      } catch (error) {
+        console.warn("print doc signed url failed", error?.message || error, "path:", doc.storage_path);
+        attachment.note = `Attachment unavailable (${error?.message || "signed URL failed"})`;
+      }
+    }
+    prepared.push({ ...doc, _printAttachment: attachment });
+  }
+  return prepared;
+}
+
+async function fetchAsDataUrl(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`fetch failed ${res.status}`);
+  const blob = await res.blob();
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error || new Error("read failed"));
+    reader.readAsDataURL(blob);
+  });
+}

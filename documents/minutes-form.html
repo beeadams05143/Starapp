@@ -186,6 +186,7 @@
   <div class="wrap">
     <div class="toolbar">
       <a href="./documents.html">← Back to Documents</a>
+      <button class="btn secondary" type="button" id="minutesPrintBtn">View / Print</button>
     </div>
 
     <div class="paper">
@@ -273,8 +274,8 @@
      
      <!-- Buttons INSIDE the form (recommended) -->
 <div class="actions" style="margin:16px 0;">
-  <button type="submit" class="btn primary">Save Minutes</button>
-  <button type="button" id="clearMinutesBtn" class="btn">Clear</button>
+  <button type="submit" class="btn primary" id="saveBtn">Save Minutes</button>
+  <button type="button" id="clearBtn" class="btn">Clear</button>
 </div>
 
 </form> <!-- CLOSE minutesForm -->
@@ -370,6 +371,11 @@
       document.querySelectorAll('input, textarea').forEach(el => { if (el.type !== 'file') el.value = '' });
       attendees.splice(0, attendees.length); renderAttendees();
     });
+
+    const printBtn = document.getElementById('minutesPrintBtn');
+    if (printBtn) {
+      printBtn.addEventListener('click', () => window.print());
+    }
   </script>
 
   <!-- Page-specific logic (keep if you use it) -->

@@ -1301,7 +1301,7 @@ function isIOSDevice() {
 }
 
 function openPrepWindow(message = "Building PDF…") {
-  if (!isIOSDevice()) return null;
+  if (isIOSDevice()) return null;
   const win = window.open("about:blank", "_blank", "noopener,width=900,height=700");
   if (!win) return null;
   try {
@@ -1396,7 +1396,7 @@ function openPrintHtml(html, targetWin = null) {
       return false;
     }
   };
-  if (writeToWindow(targetWin)) return;
+  if (!isIOS && writeToWindow(targetWin)) return;
 
   let popup = null;
   try {
@@ -1404,14 +1404,14 @@ function openPrintHtml(html, targetWin = null) {
   } catch (error) {
     console.warn("popup blocked, using same tab", error);
   }
-  if (writeToWindow(popup)) return;
+  if (!isIOS && writeToWindow(popup)) return;
 
   // Fallbacks for mobile browsers that struggle with blob navigation.
   if (isIOS) {
     try {
-      document.open();
-      document.write(html);
-      document.close();
+      const url = URL.createObjectURL(new Blob([html], { type: "text/html" }));
+      window.location.href = url;
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
       return;
     } catch (error) {
       console.warn("inline print fallback failed", error);

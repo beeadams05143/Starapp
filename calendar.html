@@ -9,6 +9,8 @@
   <!-- Global + page CSS -->
   <link rel="stylesheet" href="style.css?v=2025.10.16d">
   <link rel="stylesheet" href="calendar.css?v=2025.10.16d">
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
   <!-- Page-specific hardening / tweaks -->
   <style>
@@ -66,7 +68,14 @@
     .dlg-actions{ display:flex; justify-content:flex-end; gap:10px; padding:12px 16px; border-top:1px solid #f1f5f9; }
     .chip{ display:inline-flex; align-items:center; gap:6px; background:var(--chip); border:1px solid #e5e7eb; border-radius:999px; padding:6px 10px; }
 
-    .tape{ position:absolute; left:50%; transform:translateX(-50%); top:-12px; width:96px; height:22px; background:#b9915f; border-radius:6px; opacity:.75; }
+    .tape{ display:none; }
+    .calendar-actions{
+      position:fixed; left:0; right:0;
+      bottom:56px; background:#fffdfa;
+      border-top:1px solid #e5e7eb;
+      padding:12px 16px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap;
+      z-index:2100;
+    }
     @media (max-width: 720px){ .day{ min-height:64px; } .paper{ padding-left:26px; } .paper:before{ left:6px; } }
 
     /* ===== Calendar hardening overrides ===== */
@@ -102,16 +111,18 @@
       width:44px; height:44px; display:inline-flex; align-items:center; justify-content:center; box-shadow:none !important;
     }
     #openMenu svg { display:block; }
+
+    @media print{
+      #navbar, .calendar-actions, .rail { display:none !important; }
+      body.calendar-page{ padding-bottom:0; }
+      .notebook{ grid-template-columns:1fr; }
+    }
   </style>
 </head>
 
 <body class="calendar-page">
   <!-- Shared navbar mounts here -->
   <div id="navbar"></div>
-
-  <main class="cal-wrap">
-    ...
-
 
   <main class="cal-wrap">
     <div class="notebook">
@@ -150,6 +161,11 @@
       </div>
     </div>
   </main>
+
+  <div class="calendar-actions">
+    <button class="btn secondary" type="button" id="calendarPrintBtn">View / Print</button>
+    <button class="btn" type="button" id="calendarShareBtn">Share PDF</button>
+  </div>
 
   <!-- Add Event dialog -->
   <dialog id="eventDialog">
@@ -211,6 +227,8 @@
   <!-- ===== Supabase Calendar logic ===== -->
   <script type="module">
   import { rest, getSessionFromStorage } from "./restClient.js?v=2025.10.16d";
+  const printBtn = document.getElementById('calendarPrintBtn');
+  const shareBtn = document.getElementById('calendarShareBtn');
 
   // ✅ Require login (redirect if not)
   const session = getSessionFromStorage();
@@ -219,6 +237,68 @@
     throw new Error("Not signed in");
   }
   const currentUserId = session.user.id;
+
+  if (printBtn) {
+    printBtn.addEventListener('click', () => window.print());
+  }
+
+  async function exportCalendarPdf(){
+    const target = document.querySelector('.paper');
+    if (!target) return;
+    if (!window.html2canvas || !window.jspdf?.jsPDF) {
+      alert('PDF tools are still loading. Please try again.');
+      return;
+    }
+    if (shareBtn) {
+      shareBtn.disabled = true;
+      shareBtn.dataset.original = shareBtn.textContent;
+      shareBtn.textContent = 'Preparing…';
+    }
+    try{
+      const canvas = await window.html2canvas(target, { scale: 2, backgroundColor: '#ffffff' });
+      const pdf = new window.jspdf.jsPDF({ unit: 'pt', format: 'a4' });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const imgData = canvas.toDataURL('image/png');
+      const imgW = pageW;
+      const imgH = canvas.height * (imgW / canvas.width);
+      let heightLeft = imgH;
+      let y = 0;
+      pdf.addImage(imgData, 'PNG', 0, 0, imgW, imgH);
+      heightLeft -= pageH;
+      while (heightLeft > 0) {
+        pdf.addPage();
+        y = heightLeft - imgH;
+        pdf.addImage(imgData, 'PNG', 0, y, imgW, imgH);
+        heightLeft -= pageH;
+      }
+      const blob = pdf.output('blob');
+      const label = (document.getElementById('monthLabel')?.textContent || 'Calendar').replace(/\\s+/g, '_');
+      const file = new File([blob], `${label}.pdf`, { type: 'application/pdf' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'Calendar' });
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = file.name;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+      }
+    } catch (err){
+      console.error('calendar PDF failed', err);
+      alert('Unable to create a PDF right now.');
+    } finally {
+      if (shareBtn) {
+        shareBtn.disabled = false;
+        shareBtn.textContent = shareBtn.dataset.original || 'Share PDF';
+      }
+    }
+  }
+
+  shareBtn?.addEventListener('click', exportCalendarPdf);
 
   (async () => {
     // routes for the event-type links

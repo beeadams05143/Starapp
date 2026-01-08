@@ -39,17 +39,35 @@
         overflow-x:hidden;
         -webkit-overflow-scrolling:touch;
         padding-bottom: calc(var(--bottombar-h) + 24px); /* last items never hide */
+        font-size:16px;
       }
       #drawerOverlay[aria-hidden="false"] nav.drawer{ transform:translateX(0); }
 
       nav.drawer header{
-        font-weight:800; padding:14px 16px; border-bottom:1px solid #eee;
+        font-weight:800; padding:14px 16px; border-bottom:1px solid #eee; font-size:18px;
       }
-      nav.drawer details{ padding:8px 12px; }
-      nav.drawer details>summary{ cursor:pointer; font-weight:700; list-style:none; }
+      nav.drawer .drawer-item{
+        display:block; padding:10px 14px;
+      }
+      nav.drawer .drawer-item a{
+        display:flex; align-items:center; gap:8px;
+        text-decoration:none; color:#111; font-weight:800; font-size:16px;
+      }
+      nav.drawer .mode-toggle{
+        display:flex; gap:8px; padding:12px 14px; border-bottom:1px solid #f1f5f9;
+      }
+      nav.drawer .mode-btn{
+        flex:1; border:1px solid #e2e8f0; background:#f8fafc; color:#0f172a;
+        border-radius:999px; padding:8px 10px; font-weight:800; cursor:pointer;
+      }
+      nav.drawer .mode-btn.active{
+        background:#0f172a; color:#fff; border-color:#0f172a;
+      }
+      nav.drawer details{ padding:6px 12px; }
+      nav.drawer details>summary{ cursor:pointer; font-weight:800; list-style:none; font-size:16px; }
       nav.drawer .sub a{
-        display:block; padding:8px 10px; border-radius:10px;
-        text-decoration:none; color:#111;
+        display:block; padding:9px 10px; border-radius:10px;
+        text-decoration:none; color:#111; font-size:15px;
       }
       nav.drawer .sub a:hover{ background:#f1f5f9; }
     `;
@@ -65,87 +83,44 @@
   overlay.innerHTML = `
     <nav class="drawer" id="appDrawer" aria-label="Main">
       <header>Menu</header>
+      <div class="mode-toggle" role="group" aria-label="Menu mode">
+        <button type="button" class="mode-btn" data-role-btn="individual">Individual</button>
+        <button type="button" class="mode-btn" data-role-btn="caregiver">Caregiver</button>
+      </div>
 
-      <!-- PROFILE -->
-      <details open>
-        <summary>👤 Profile</summary>
-        <div class="sub"><a href="/profile.html">View / Edit Profile</a></div>
-      </details>
-
-      <!-- DASHBOARD (dynamic: Log In / Log Out) -->
-      <details open>
-        <summary>🏠 Dashboard</summary>
-        <div class="sub">
-          <a href="/dashboard.html">Dashboard</a>
-          <a id="auth-dash-link" href="/login.html">Log In</a>
-        </div>
-      </details>
-
-      <!-- CHECK INS -->
-      <details open>
-        <summary>📝 Check Ins</summary>
-        <div class="sub">
-          <a href="/home.html">😊 Individual</a>
-          <a href="/caregiver-checkin.html">👥 Caregiver</a>
-        </div>
-      </details>
-
-      <!-- ACTIVITIES -->
-      <details open>
-        <summary>🎯 Activities</summary>
-        <div class="sub">
-          <a href="/wouldyourather.html">🤔 Would You Rather</a>
-        </div>
-      </details>
-
-      <!-- REPORTS -->
-      <details open>
-        <summary>📈 Reports</summary>
-        <div class="sub">
-          <a href="/mood-report.html">🙂 Mood Report</a>
-          <a href="/caregiver-report.html">📊 Caregiver Report</a>
-        </div>
-      </details>
-
-      <!-- GROUP CHAT -->
-      <details open>
-        <summary>💬 Group Chat</summary>
-        <div class="sub"><a href="/chat.html">Open Chat</a></div>
-      </details>
-
-      <!-- CALENDAR -->
-      <details open>
-        <summary>📅 Calendar</summary>
-        <div class="sub"><a href="/calendar.html">Calendar</a></div>
-      </details>
-
-      <!-- FOCUS OF THE WEEK -->
-      <details open>
-        <summary>⭐ Focus of the Week</summary>
-        <div class="sub"><a href="/focus-week.html">Weekly Focus</a></div>
-      </details>
-
-      <!-- DOCUMENTS -->
-      <details>
-        <summary>📂 Documents</summary>
-        <div class="sub">
-          <a href="/documents/documents.html">📁 Docs Home</a>
-          <a href="/documents/documents.html?cat=Finance">💵 Finance</a>
-          <a href="/documents/documents.html?cat=Medical">🩺 Medical</a>
-          <a href="/documents/documents.html?cat=HR">🏢 HR</a>
-          <a href="/documents/documents.html?cat=Caregiving">🧩 Caregiving</a>
-          <a href="/documents/documents.html?cat=ISA">📚 ISA / IEP</a>
-          <a href="/documents/documents.html?cat=Year%20End%20Paperwork">📦 Year End</a>
-          <a href="/documents/documents.html?cat=Guardianship">🛡 Guardianship</a>
-          <a href="/documents/minutes-form.html">📝 Meeting Minutes</a>
-        </div>
-      </details>
-
-      <!-- EMERGENCY -->
-      <details>
-        <summary>🚨 Emergency</summary>
-        <div class="sub"><a href="/emergency-medical.html">Emergency Info</a></div>
-      </details>
+      <div class="drawer-item" data-role="shared">
+        <a href="/profile.html">👤 Profile</a>
+      </div>
+      <div class="drawer-item" data-role="shared">
+        <a href="/dashboard.html">🏠 Dashboard</a>
+      </div>
+      <div class="drawer-item" data-role="shared">
+        <a id="auth-dash-link" href="/login.html">Log In</a>
+      </div>
+      <div class="drawer-item" data-role="individual">
+        <a href="/home.html">😊 Mood Check-In</a>
+      </div>
+      <div class="drawer-item" data-role="caregiver">
+        <a href="/caregiver-checkin.html">👥 Caregiver Check-In</a>
+      </div>
+      <div class="drawer-item" data-role="caregiver">
+        <a href="/caregiver-report.html">📊 Caregiver Report</a>
+      </div>
+      <div class="drawer-item" data-role="shared">
+        <a href="/chat.html">💬 Group Chat</a>
+      </div>
+      <div class="drawer-item" data-role="shared">
+        <a href="/calendar.html">📅 Calendar</a>
+      </div>
+      <div class="drawer-item" data-role="caregiver">
+        <a href="/focus-week.html">⭐ Focus of the Week</a>
+      </div>
+      <div class="drawer-item" data-role="caregiver">
+        <a href="/documents/documents.html">📂 Documents</a>
+      </div>
+      <div class="drawer-item" data-role="shared">
+        <a href="/emergency-medical.html">🚨 Emergency</a>
+      </div>
     </nav>
   `;
 
@@ -177,6 +152,25 @@
   }
   updateAuthLink();
   window.addEventListener('storage', updateAuthLink);
+
+  const MODE_KEY = 'star_menu_mode';
+  function applyMenuMode(mode){
+    const role = mode === 'caregiver' ? 'caregiver' : 'individual';
+    try { localStorage.setItem(MODE_KEY, role); } catch {}
+    overlay.querySelectorAll('[data-role-btn]').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.roleBtn === role);
+    });
+    overlay.querySelectorAll('[data-role]').forEach(node => {
+      const nodeRole = node.dataset.role;
+      node.style.display = (nodeRole === 'shared' || nodeRole === role) ? '' : 'none';
+    });
+  }
+  let storedMode = 'caregiver';
+  try { storedMode = localStorage.getItem(MODE_KEY) || storedMode; } catch {}
+  applyMenuMode(storedMode);
+  overlay.querySelectorAll('[data-role-btn]').forEach(btn => {
+    btn.addEventListener('click', () => applyMenuMode(btn.dataset.roleBtn));
+  });
 
   // --- open / close helpers ---
   const open  = () => { overlay.setAttribute('aria-hidden','false'); document.body.style.overflow='hidden'; };

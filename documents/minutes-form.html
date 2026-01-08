@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Meeting Minutes</title>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   
   <style>
     :root{
@@ -19,8 +21,8 @@
 
     body{
       margin:0;
-      /* add bottom padding for the fixed save bar space (approx 88px) */
-      padding:24px 24px 112px;
+      /* add bottom padding for the fixed save bar space (approx 120px) */
+      padding:24px 24px 140px;
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
       color:var(--ink); background:#fafaf9;
       display:block; /* allow natural page scroll */
@@ -28,9 +30,7 @@
 
     .wrap{ max-width:900px; width:100%; margin: 0 auto; }
 
-    .toolbar{
-      display:flex; align-items:center; gap:12px; margin-bottom:16px;
-    }
+    .toolbar{ display:none; }
     .toolbar a{ color:#6b7280; text-decoration:none; }
     .btn{
       appearance:none; border:1px solid #e5e7eb; background:#111; color:#fff;
@@ -114,15 +114,15 @@
     .hint{ color:#6b7280; font-size:13px; margin-top:6px; }
     .divider{ height:1px; background:#f1f5f9; margin:16px 0; }
 
-    /* Fixed bottom save bar above tabbar */
+    /* Fixed bottom action bar above tabbar */
     .save-bar{
       position:fixed;
       left:0; right:0;
-      bottom:56px; /* move it up above your bottom nav (adjust if nav is taller) */
+      bottom:84px; /* move it up above your bottom nav + quick tabs */
       background:#fffdfa;
       border-top:1px solid #e5e7eb;
       padding:12px 24px;
-      display:flex; gap:12px; justify-content:center;
+      display:flex; gap:12px; justify-content:center; flex-wrap:wrap;
       z-index:1000;
     }
     .save-bar .btn { max-width: 220px; }
@@ -163,7 +163,7 @@
         flex-direction: row;
       }
     }
-    @media print { .edge-tabs { display: none !important; } }
+    @media print { .edge-tabs, .save-bar { display: none !important; } }
   </style>
 </head>
 <body data-doc-page="minutes">
@@ -306,6 +306,11 @@
     </div> <!-- /.notebook -->
   </div>   <!-- /.wrap -->
 
+  <div class="save-bar">
+    <button class="btn secondary" type="button" id="minutesPrintBtnBottom">View / Print</button>
+    <button class="btn" type="button" id="minutesShareBtn">Share PDF</button>
+  </div>
+
  
 
   <!-- Logic -->
@@ -373,9 +378,69 @@
     });
 
     const printBtn = document.getElementById('minutesPrintBtn');
-    if (printBtn) {
-      printBtn.addEventListener('click', () => window.print());
+    const printBtnBottom = document.getElementById('minutesPrintBtnBottom');
+    const shareBtn = document.getElementById('minutesShareBtn');
+    const handlePrint = () => window.print();
+    printBtn?.addEventListener('click', handlePrint);
+    printBtnBottom?.addEventListener('click', handlePrint);
+
+    async function shareMinutesPdf(){
+      const target = document.querySelector('.notebook .paper') || document.querySelector('.paper');
+      if (!target) return;
+      if (!window.html2canvas || !window.jspdf?.jsPDF) {
+        alert('PDF tools are still loading. Please try again.');
+        return;
+      }
+      if (shareBtn) {
+        shareBtn.disabled = true;
+        shareBtn.dataset.original = shareBtn.textContent;
+        shareBtn.textContent = 'Preparing…';
+      }
+      try{
+        const canvas = await window.html2canvas(target, { scale: 2, backgroundColor: '#ffffff' });
+        const pdf = new window.jspdf.jsPDF({ unit: 'pt', format: 'a4' });
+        const pageW = pdf.internal.pageSize.getWidth();
+        const pageH = pdf.internal.pageSize.getHeight();
+        const imgData = canvas.toDataURL('image/png');
+        const imgW = pageW;
+        const imgH = canvas.height * (imgW / canvas.width);
+        let heightLeft = imgH;
+        let y = 0;
+        pdf.addImage(imgData, 'PNG', 0, 0, imgW, imgH);
+        heightLeft -= pageH;
+        while (heightLeft > 0) {
+          pdf.addPage();
+          y = heightLeft - imgH;
+          pdf.addImage(imgData, 'PNG', 0, y, imgW, imgH);
+          heightLeft -= pageH;
+        }
+        const blob = pdf.output('blob');
+        const title = document.getElementById('title')?.value?.trim() || 'Meeting_Minutes';
+        const safeTitle = title.replace(/[^\w\-]+/g, '_');
+        const file = new File([blob], `${safeTitle}.pdf`, { type: 'application/pdf' });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: 'Meeting Minutes' });
+        } else {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = file.name;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 60000);
+        }
+      } catch (err){
+        console.error('minutes PDF failed', err);
+        alert('Unable to create a PDF right now.');
+      } finally {
+        if (shareBtn) {
+          shareBtn.disabled = false;
+          shareBtn.textContent = shareBtn.dataset.original || 'Share PDF';
+        }
+      }
     }
+    shareBtn?.addEventListener('click', shareMinutesPdf);
   </script>
 
   <!-- Page-specific logic (keep if you use it) -->

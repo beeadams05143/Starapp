@@ -63,15 +63,31 @@
 
     /* Top line single-row, wide fields */
     .topline .grid { gap: 10px; }
-    .topline .row { grid-template-columns: 140px minmax(420px,1fr); align-items:center; }
+    .topline .row { grid-template-columns: 140px minmax(240px,1fr); align-items:center; }
     #focusArea, #customTitle { width:100%; }
-    #customTitle { min-width:600px; }
+    #customTitle { min-width:0; max-width:100%; }
 
     .pill{border:none;padding:0;background:transparent;display:inline-flex;gap:6px;align-items:center;font-size:14px;cursor:pointer;}
     .pill input{accent-color:#222;transform:scale(.95);}
 
     .goal{border:2px solid rgba(0,0,0,.18);border-radius:12px;padding:10px;background:rgba(255,255,255,.65);}
     .goal h3{margin:6px 0 8px;font-size:18px;}
+    .goal-title{
+      display:block;
+      max-width:100%;
+      overflow-wrap:anywhere;
+    }
+    .goal-notes{
+      background:var(--accent);
+      border:1px solid rgba(0,0,0,.15);
+      border-radius:10px;
+      padding:10px 12px;
+      box-shadow:0 3px 8px rgba(0,0,0,.15);
+    }
+    .goal-notes:focus{
+      border-color:#222;
+      background:#ffe18a;
+    }
     .checklist{display:grid;gap:8px;}
     .checklist input[type="text"]{width:100%;}
     .support-select{display:grid;gap:6px;grid-template-columns:repeat(3,minmax(0,1fr));}

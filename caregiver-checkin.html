@@ -76,6 +76,28 @@
     .entry-date-row label{margin:0;font-weight:800}
     .entry-date-row input[type="date"]{padding:8px 10px;border:1px solid #d1d5db;border-radius:10px;font-size:15px}
     .entry-date-row .muted{font-size:13px}
+    .movement-panel{background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:12px;margin-top:12px}
+    .movement-head{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+    .movement-title{font-weight:900}
+    .movement-desc{margin:4px 0 0;color:#64748b;font-size:13px}
+    .movement-yn{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:8px 0}
+    .movement-pill{display:inline-flex;align-items:center;gap:6px;border:1px solid #d1d5db;border-radius:999px;padding:6px 10px;background:#fff;font-weight:700}
+    .movement-pill input{width:auto}
+    .movement-body.is-collapsed{display:none}
+    .movement-row{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));align-items:end}
+    .movement-label{font-weight:800;color:#1f2937;margin-bottom:6px}
+    .movement-chips{display:flex;flex-wrap:wrap;gap:8px}
+    .movement-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid #cbd5f5;border-radius:10px;padding:6px 10px;background:#fff;font-weight:700;font-size:14px}
+    .movement-chip input{width:auto}
+    .movement-severity{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+    .movement-sev-btn{border:1px solid #cbd5f5;background:#fff;color:#1e3a8a;border-radius:10px;padding:6px 10px;font-weight:800;cursor:pointer;min-width:36px}
+    .movement-sev-btn.active{background:#1d4ed8;color:#fff;border-color:#1d4ed8}
+    .movement-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+    .movement-details{margin-top:12px;border-top:1px dashed #e2e8f0;padding-top:12px}
+    .movement-details.is-hidden{display:none}
+    .movement-grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+    .movement-inline-input{display:flex;gap:8px;align-items:center}
+    .movement-inline-input input[type="text"]{flex:1}
   </style>
 </head>
 <body>
@@ -166,28 +188,176 @@
             <label>Did the individual display any aggression?
               <select name="aggression_flag" id="aggression_flag" class="yn"><option value="">Select</option><option>No</option><option>Yes</option></select>
             </label>
-            <label>Aggression type:
-              <select name="aggression_type" id="aggression_type" disabled>
-                <option value="">Select type</option>
-                <option>Posturing</option><option>Physical</option><option>Verbal</option><option>Self-harm</option>
-              </select>
-            </label>
-            <label>Intensity (0–5):
-              <input type="range" min="0" max="5" step="1" value="0" name="aggression_intensity" id="aggression_intensity" disabled/>
-              <div class="savedAt"><span id="intensityVal">0</span></div>
-            </label>
+            <div id="aggressionDetails" class="row cols-3 compact" style="margin:0">
+              <label>Aggression type:
+                <select name="aggression_type" id="aggression_type" disabled>
+                  <option value="">Select type</option>
+                  <option>Posturing</option><option>Physical</option><option>Verbal</option><option>Self-harm</option>
+                </select>
+              </label>
+              <label>Intensity (0–5):
+                <input type="range" min="0" max="5" step="1" value="0" name="aggression_intensity" id="aggression_intensity" disabled/>
+                <div class="savedAt"><span id="intensityVal">0</span></div>
+              </label>
+            </div>
           </div>
+          <label id="aggressionNotesWrap">Aggression notes:
+            <textarea name="aggression_notes" placeholder="What happened, what helped"></textarea>
+          </label>
           <hr class="soft"/>
           <div class="subcap">Anomalies</div>
           <div class="row cols-2">
             <label>Noticed anything unusual?
-              <select name="behavior_anomaly_flag" class="yn"><option value="">Select</option><option>No</option><option>Yes</option></select>
+              <select name="behavior_anomaly_flag" id="behavior_anomaly_flag" class="yn"><option value="">Select</option><option>No</option><option>Yes</option></select>
             </label>
-            <label>Trigger or context:
+            <label id="anomalyTriggerWrap" style="display:none">Trigger or context:
               <input type="text" name="behavior_anomaly_trigger" placeholder="e.g., loud noise, new staff, schedule change"/>
             </label>
           </div>
-          <label>Anomaly details:<textarea name="behavior_anomaly_notes" placeholder="Describe what felt off, how long it lasted, what helped"></textarea></label>
+          <label id="anomalyNotesWrap" style="display:none">Anomaly details:<textarea name="behavior_anomaly_notes" placeholder="Describe what felt off, how long it lasted, what helped"></textarea></label>
+
+          <div class="movement-panel" id="movementSymptomsPanel">
+            <div class="movement-head">
+              <div>
+                <div class="movement-title">Movement Symptoms <span class="muted">(Tremor / Dyskinesia)</span></div>
+                <p class="movement-desc">Track unusual movements, shaking, grimacing, or repetitive motions.</p>
+              </div>
+            </div>
+
+            <div class="movement-yn" role="group" aria-label="Movement symptoms today">
+              <strong>Movement symptoms today?</strong>
+              <label class="movement-pill"><input type="radio" name="movement_present" value="no" checked> No</label>
+              <label class="movement-pill"><input type="radio" name="movement_present" value="yes"> Yes</label>
+            </div>
+
+            <div class="movement-body is-collapsed" data-movement-body-wrap>
+              <div class="movement-row">
+                <div>
+                  <div class="movement-label">Main type</div>
+                  <div class="movement-chips">
+                    <label class="movement-chip"><input type="radio" name="movement_main_type" value="hands_shaking">Hands shaking</label>
+                    <label class="movement-chip"><input type="radio" name="movement_main_type" value="face_mouth">Face / mouth</label>
+                    <label class="movement-chip"><input type="radio" name="movement_main_type" value="arms_legs">Arms / legs</label>
+                    <label class="movement-chip"><input type="radio" name="movement_main_type" value="other">Other</label>
+                  </div>
+                </div>
+                <div>
+                  <div class="movement-label">Severity</div>
+                  <div class="movement-severity" data-movement-severity>
+                    <button class="movement-sev-btn" type="button" data-sev="0">0</button>
+                    <button class="movement-sev-btn" type="button" data-sev="1">1</button>
+                    <button class="movement-sev-btn" type="button" data-sev="2">2</button>
+                    <button class="movement-sev-btn" type="button" data-sev="3">3</button>
+                    <button class="movement-sev-btn" type="button" data-sev="4">4</button>
+                  </div>
+                  <input type="hidden" name="movement_severity" id="movement_severity" value=""/>
+                </div>
+              </div>
+
+              <div class="movement-row" style="margin-top:10px">
+                <div>
+                  <div class="movement-label">Times</div>
+                  <div class="movement-chips">
+                    <label class="movement-chip"><input type="checkbox" data-movement-time value="AM">AM</label>
+                    <label class="movement-chip"><input type="checkbox" data-movement-time value="PM">PM</label>
+                    <label class="movement-chip"><input type="checkbox" data-movement-time value="Overnight">Overnight</label>
+                  </div>
+                  <input type="hidden" name="movement_times" id="movement_times" value=""/>
+                </div>
+                <div>
+                  <label class="movement-label" for="movement_notes">Notes (optional)</label>
+                  <input type="text" name="movement_notes" id="movement_notes" placeholder="Short note, e.g. shaky at breakfast"/>
+                </div>
+              </div>
+
+              <div class="movement-actions">
+                <button class="btn" type="button" id="movementSameBtn">Same as last check-in</button>
+                <button class="btn" type="button" id="movementDetailsToggle" aria-expanded="false" aria-controls="movementDetails">Add details (optional)</button>
+              </div>
+
+              <div class="movement-details is-hidden" id="movementDetails">
+                <div class="movement-label">Body map</div>
+                <div class="movement-grid">
+                  <label class="movement-chip"><input type="checkbox" data-movement-body value="eyes_blinking">Eyes blinking / eye movements</label>
+                  <label class="movement-chip"><input type="checkbox" data-movement-body value="face_grimacing">Face grimacing</label>
+                  <label class="movement-chip"><input type="checkbox" data-movement-body value="mouth_lips">Mouth / lips (smacking / chewing)</label>
+                  <label class="movement-chip"><input type="checkbox" data-movement-body value="tongue_movements">Tongue movements</label>
+                  <label class="movement-chip"><input type="checkbox" data-movement-body value="jaw_movements">Jaw movements</label>
+                  <label class="movement-chip"><input type="checkbox" data-movement-body value="hands_tremor">Hands tremor</label>
+                  <label class="movement-chip"><input type="checkbox" data-movement-body value="arms_jerks">Arms jerks / “air punching”</label>
+                  <label class="movement-chip"><input type="checkbox" data-movement-body value="legs_feet">Legs / feet tapping / kicking</label>
+                  <label class="movement-chip"><input type="checkbox" data-movement-body value="neck_trunk">Neck / trunk movements</label>
+                  <label class="movement-chip"><input type="checkbox" data-movement-body value="other_movement">Other movement</label>
+                </div>
+                <div class="movement-inline-input" style="margin-top:8px">
+                  <input type="text" name="movement_other_text" id="movement_other_text" placeholder="Other movement (optional)"/>
+                </div>
+                <input type="hidden" name="movement_body_map" id="movement_body_map" value=""/>
+
+                <div class="soft" style="margin:12px 0"></div>
+
+                <div class="movement-label">Frequency</div>
+                <div class="movement-chips">
+                  <label class="movement-chip"><input type="radio" name="movement_frequency" value="once">Once</label>
+                  <label class="movement-chip"><input type="radio" name="movement_frequency" value="few_times">A few times</label>
+                  <label class="movement-chip"><input type="radio" name="movement_frequency" value="often">Often</label>
+                  <label class="movement-chip"><input type="radio" name="movement_frequency" value="nearly_constant">Nearly constant</label>
+                </div>
+
+                <div class="soft" style="margin:12px 0"></div>
+
+                <div class="movement-label">Triggers</div>
+                <div class="movement-grid">
+                  <label class="movement-chip"><input type="checkbox" data-movement-trigger value="stress">Stress / anxiety</label>
+                  <label class="movement-chip"><input type="checkbox" data-movement-trigger value="around_meds">Around meds</label>
+                  <label class="movement-chip"><input type="checkbox" data-movement-trigger value="tired_sleep">Tired / poor sleep</label>
+                  <label class="movement-chip"><input type="checkbox" data-movement-trigger value="before_eating">Before eating</label>
+                  <label class="movement-chip"><input type="checkbox" data-movement-trigger value="after_eating">After eating</label>
+                  <label class="movement-chip"><input type="checkbox" data-movement-trigger value="excitement">Excited / overstimulated</label>
+                  <label class="movement-chip"><input type="checkbox" data-movement-trigger value="unknown">Unknown</label>
+                  <label class="movement-chip"><input type="checkbox" data-movement-trigger value="other">Other</label>
+                </div>
+                <div class="movement-inline-input" style="margin-top:8px">
+                  <input type="text" name="movement_trigger_other" id="movement_trigger_other" placeholder="Other trigger (optional)"/>
+                </div>
+                <input type="hidden" name="movement_triggers" id="movement_triggers" value=""/>
+
+                <div class="soft" style="margin:12px 0"></div>
+
+                <div class="movement-row">
+                  <div>
+                    <div class="movement-label">Interfered with function?</div>
+                    <div class="movement-chips">
+                      <label class="movement-chip"><input type="radio" name="movement_interfered" value="no">No</label>
+                      <label class="movement-chip"><input type="radio" name="movement_interfered" value="yes">Yes</label>
+                    </div>
+                    <input type="text" name="movement_interfered_notes" placeholder="Notes (optional)" />
+                  </div>
+                  <div>
+                    <div class="movement-label">Awareness</div>
+                    <div class="movement-chips">
+                      <label class="movement-chip"><input type="radio" name="movement_awareness" value="unaware">Unaware</label>
+                      <label class="movement-chip"><input type="radio" name="movement_awareness" value="aware_not_bothered">Aware not bothered</label>
+                      <label class="movement-chip"><input type="radio" name="movement_awareness" value="aware_bothered">Aware bothered</label>
+                      <label class="movement-chip"><input type="radio" name="movement_awareness" value="unknown">Unknown</label>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="movement-row" style="margin-top:10px">
+                  <div>
+                    <div class="movement-label">Safety risk?</div>
+                    <div class="movement-chips">
+                      <label class="movement-chip"><input type="radio" name="movement_safety_risk" value="no">No</label>
+                      <label class="movement-chip"><input type="radio" name="movement_safety_risk" value="yes">Yes</label>
+                    </div>
+                    <input type="text" name="movement_safety_notes" placeholder="Safety notes (optional)" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <label>Behavior notes:<textarea name="behavior_notes" placeholder="What happened, what helped"></textarea></label>
           <div class="controls">
             <div class="left-actions"><button class="btn" type="button" data-save>Save</button><span class="savedAt" data-savedat></span></div>
@@ -202,19 +372,21 @@
           <div class="section-title">Vocational Participation</div>
           <div class="row cols-3 compact">
             <label>Participated in vocational activity?
-              <select name="vocational_participation" class="yn"><option value="">Select</option><option>Yes</option><option>No</option></select>
+              <select name="vocational_participation" id="vocational_participation" class="yn"><option value="">Select</option><option>Yes</option><option>No</option></select>
             </label>
-            <label>Time in vocational activity:
-              <select name="vocational_time">
-                <option value="">Select duration</option>
-                <option>0</option><option>15–30 min</option><option>30–60 min</option><option>1–2 hrs</option><option>2+ hrs</option>
-              </select>
-            </label>
-            <label>Prompting (vocational):
-              <select name="vocational_prompting" data-scale="prompting"></select>
-            </label>
+            <div id="vocationalDetails" class="row cols-3 compact" style="margin:0;display:none">
+              <label>Time in vocational activity:
+                <select name="vocational_time">
+                  <option value="">Select duration</option>
+                  <option>0</option><option>15–30 min</option><option>30–60 min</option><option>1–2 hrs</option><option>2+ hrs</option>
+                </select>
+              </label>
+              <label>Prompting (vocational):
+                <select name="vocational_prompting" data-scale="prompting"></select>
+              </label>
+            </div>
           </div>
-          <label>Vocational notes:<textarea name="vocational_notes" placeholder="Describe tasks, progress, or challenges during vocational time."></textarea></label>
+          <label id="vocationalNotesWrap" style="display:none">Vocational notes:<textarea name="vocational_notes" placeholder="Describe tasks, progress, or challenges during vocational time."></textarea></label>
           <div class="controls">
             <div class="left-actions"><button class="btn" type="button" data-save>Save</button><span class="savedAt" data-savedat></span></div>
             <div><button class="btn" type="button" data-prev>← Back</button><button class="btn primary" type="button" data-next>Save &amp; Next →</button></div>
@@ -228,8 +400,10 @@
           <div class="section-title">Home / Family Community</div>
           <div class="row cols-3 compact">
             <label>Engaged in a home/community activity?
-              <select name="home_activity_flag" class="yn"><option value="">Select</option><option>Yes</option><option>No</option></select>
+              <select name="home_activity_flag" id="home_activity_flag" class="yn"><option value="">Select</option><option>Yes</option><option>No</option></select>
             </label>
+          </div>
+          <div id="homeDetails" class="row cols-3 compact" style="display:none">
             <label>Time spent (home):
               <select name="home_activity_time">
                 <option value="">Select duration</option>
@@ -240,7 +414,7 @@
               <select name="home_activity_prompting" data-scale="prompting"></select>
             </label>
           </div>
-          <div class="row cols-2">
+          <div id="homeDetailsNotes" class="row cols-2" style="display:none">
             <label>Home activity type:
               <select name="home_activity_type">
                 <option value="">Select type</option>
@@ -256,7 +430,7 @@
             </label>
             <label>Home activity note:<input type="text" name="home_activity_note" placeholder="e.g., hosted grandma for dinner"/></label>
           </div>
-          <label>Home / family notes:<textarea name="home_notes" placeholder="Interactions, meals, visitors, or notable moments at home."></textarea></label>
+          <label id="homeNotesWrap" style="display:none">Home / family notes:<textarea name="home_notes" placeholder="Interactions, meals, visitors, or notable moments at home."></textarea></label>
           <div class="controls">
             <div class="left-actions"><button class="btn" type="button" data-save>Save</button><span class="savedAt" data-savedat></span></div>
             <div><button class="btn" type="button" data-prev>← Back</button><button class="btn primary" type="button" data-next>Save &amp; Next →</button></div>
@@ -271,8 +445,10 @@
           <div class="subcap">Community at large</div>
           <div class="row cols-3 compact">
             <label>Engaged in a community-at-large activity?
-              <select name="public_activity_flag" class="yn"><option value="">Select</option><option>Yes</option><option>No</option></select>
+              <select name="public_activity_flag" id="public_activity_flag" class="yn"><option value="">Select</option><option>Yes</option><option>No</option></select>
             </label>
+          </div>
+          <div id="publicDetails" class="row cols-3 compact" style="display:none">
             <label>Time spent (community-at-large):
               <select name="public_activity_time">
                 <option value="">Select duration</option>
@@ -283,7 +459,7 @@
               <select name="public_activity_prompting" data-scale="prompting"></select>
             </label>
           </div>
-          <div class="row cols-2">
+          <div id="publicDetailsNotes" class="row cols-2" style="display:none">
             <label>Community activity type:
               <select name="public_activity_type">
                 <option value="">Select type</option>
@@ -309,8 +485,10 @@
           <div class="subcap">Interactions</div>
           <div class="row cols-3 compact">
             <label>Engaged with a community member appropriately?
-              <select name="community_interaction_ok" class="yn"><option value="">Select</option><option>Yes</option><option>No</option></select>
+              <select name="community_interaction_ok" id="community_interaction_ok" class="yn"><option value="">Select</option><option>Yes</option><option>No</option></select>
             </label>
+          </div>
+          <div id="interactionDetails" class="row cols-3 compact" style="display:none">
             <label>Interaction type:
               <select name="interaction_type">
                 <option value="">Select type</option>
@@ -324,10 +502,10 @@
               <select name="interaction_prompting" data-scale="prompting"></select>
             </label>
           </div>
-          <div class="row cols-2">
+          <div id="interactionDetailsNotes" class="row cols-2" style="display:none">
             <label>Interaction note:<input type="text" name="interaction_note" placeholder="e.g., greeted neighbor with 'Hi' and smile"/></label>
           </div>
-          <label>Community notes:<textarea name="community_notes" placeholder="Additional context for community participation or interactions."></textarea></label>
+          <label id="communityNotesWrap" style="display:none">Community notes:<textarea name="community_notes" placeholder="Additional context for community participation or interactions."></textarea></label>
           <div class="controls">
             <div class="left-actions"><button class="btn" type="button" data-save>Save</button><span class="savedAt" data-savedat></span></div>
             <div><button class="btn" type="button" data-prev>← Back</button><button class="btn primary" type="button" data-next>Save &amp; Next →</button></div>
@@ -412,6 +590,7 @@
   let focusGoalMeta = [];
   let plannerTrackerStats = null;
   let adlStepIndex = -1;
+  let movementStepIndex = -1;
   let adlCategory, adlActivity, adlNoteInput, adlPromptingSelect, adlEntryListEl, addAdlEntryBtn, adlEntriesField;
   let adlEntries = [];
   let adlHandlersBound = false;
@@ -435,6 +614,7 @@
 
   const DRAFT_KEY = 'cg-checkin-draft-v1';
   const GROUP_KEY = 'currentGroupId';
+  const MOVEMENT_LAST_KEY = 'cg-movement-last-v1';
 
   async function ensureGroupId(userId){
     let groupId = null;
@@ -509,6 +689,17 @@
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
+
+  const parseJsonArray = (value) => {
+    if (!value) return [];
+    if (Array.isArray(value)) return value.filter(Boolean);
+    try {
+      const parsed = typeof value === 'string' ? JSON.parse(value) : value;
+      return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+    } catch {
+      return [];
+    }
+  };
 
   function summarizePlannerDays(days = []){
     if (!Array.isArray(days) || !days.length) return null;
@@ -729,12 +920,136 @@
     });
   }
 
+  let movementEls = {};
+  const getMovementCheckboxValues = (selector) =>
+    Array.from(document.querySelectorAll(selector))
+      .filter((el) => el.checked)
+      .map((el) => el.value);
+
+  const setMovementCheckboxValues = (selector, values = []) => {
+    const set = new Set(values || []);
+    document.querySelectorAll(selector).forEach((el) => {
+      el.checked = set.has(el.value);
+    });
+  };
+
+  const syncMovementHiddenField = (hiddenEl, values) => {
+    if (!hiddenEl) return;
+    hiddenEl.value = values.length ? JSON.stringify(values) : '';
+    hiddenEl.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+
+  const setMovementSeverity = (value) => {
+    if (!movementEls.severityInput) return;
+    movementEls.severityInput.value = value ?? '';
+    movementEls.severityButtons?.forEach((btn) => {
+      const active = String(btn.dataset.sev) === String(value);
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+    movementEls.severityInput.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+
+  const syncMovementArrays = () => {
+    const times = getMovementCheckboxValues('[data-movement-time]');
+    const bodyMap = getMovementCheckboxValues('[data-movement-body]');
+    const triggers = getMovementCheckboxValues('[data-movement-trigger]');
+    syncMovementHiddenField(movementEls.timesInput, times);
+    syncMovementHiddenField(movementEls.bodyMapInput, bodyMap);
+    syncMovementHiddenField(movementEls.triggersInput, triggers);
+  };
+
+  const setMovementPresent = (present) => {
+    if (!movementEls.bodyWrap) return;
+    movementEls.bodyWrap.classList.toggle('is-collapsed', !present);
+    if (!present) {
+      clearMovementFields({ keepPresent: true });
+      movementEls.detailsPanel?.classList.add('is-hidden');
+      movementEls.detailsToggle?.setAttribute('aria-expanded', 'false');
+    } else {
+      const times = parseJsonArray(movementEls.timesInput?.value);
+      if (!times.length) {
+        setMovementCheckboxValues('[data-movement-time]', ['AM']);
+        syncMovementArrays();
+      }
+    }
+  };
+
+  const clearMovementFields = ({ keepPresent = false } = {}) => {
+    if (!keepPresent) {
+      document.querySelectorAll('input[name="movement_present"]').forEach((el) => {
+        el.checked = el.value === 'no';
+      });
+    }
+    document.querySelectorAll('input[name="movement_main_type"]').forEach((el) => (el.checked = false));
+    setMovementSeverity('');
+    setMovementCheckboxValues('[data-movement-time]', []);
+    setMovementCheckboxValues('[data-movement-body]', []);
+    setMovementCheckboxValues('[data-movement-trigger]', []);
+    ['movement_notes','movement_other_text','movement_trigger_other','movement_interfered_notes','movement_safety_notes']
+      .forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+    ['movement_frequency','movement_interfered','movement_awareness','movement_safety_risk']
+      .forEach((name) => {
+        document.querySelectorAll(`input[name="${name}"]`).forEach((el) => (el.checked = false));
+      });
+    syncMovementArrays();
+  };
+
+  const hydrateMovementFromData = (data = {}) => {
+    const present = String(data.movement_present || '').toLowerCase() === 'yes'
+      || data.movement_present === true;
+    document.querySelectorAll('input[name="movement_present"]').forEach((el) => {
+      el.checked = present ? el.value === 'yes' : el.value === 'no';
+    });
+    setMovementPresent(present);
+    if (!present) return;
+
+    document.querySelectorAll('input[name="movement_main_type"]').forEach((el) => {
+      el.checked = el.value === (data.movement_main_type || '');
+    });
+    setMovementSeverity(data.movement_severity ?? '');
+    const times = parseJsonArray(data.movement_times);
+    setMovementCheckboxValues('[data-movement-time]', times);
+    const bodyMap = parseJsonArray(data.movement_body_map);
+    setMovementCheckboxValues('[data-movement-body]', bodyMap);
+    const triggers = parseJsonArray(data.movement_triggers);
+    setMovementCheckboxValues('[data-movement-trigger]', triggers);
+    if (movementEls.timesInput) movementEls.timesInput.value = times.length ? JSON.stringify(times) : '';
+    if (movementEls.bodyMapInput) movementEls.bodyMapInput.value = bodyMap.length ? JSON.stringify(bodyMap) : '';
+    if (movementEls.triggersInput) movementEls.triggersInput.value = triggers.length ? JSON.stringify(triggers) : '';
+
+    const simpleFields = [
+      ['movement_notes', data.movement_notes],
+      ['movement_other_text', data.movement_other_text],
+      ['movement_trigger_other', data.movement_trigger_other],
+      ['movement_interfered_notes', data.movement_interfered_notes],
+      ['movement_safety_notes', data.movement_safety_notes],
+    ];
+    simpleFields.forEach(([id, value]) => {
+      const el = document.getElementById(id);
+      if (el && value != null) el.value = value;
+    });
+    ['movement_frequency','movement_interfered','movement_awareness','movement_safety_risk']
+      .forEach((name) => {
+        const val = data[name];
+        if (!val) return;
+        document.querySelectorAll(`input[name="${name}"]`).forEach((el) => {
+          el.checked = el.value === val;
+        });
+      });
+    syncMovementArrays();
+  };
+
   // 4) Start logic once DOM is ready
   document.addEventListener('DOMContentLoaded', () => {
     formEl        = document.getElementById('cg-form');
     submitBtn     = document.getElementById('submitAll');
     steps         = Array.from(document.querySelectorAll('.step'));
     adlStepIndex  = steps.findIndex((step) => step.id === 'daily-living-step');
+    movementStepIndex = steps.findIndex((step) => step.dataset.step === '1');
     entryDateInput = document.getElementById('entryDateInput');
     toggleAllBtn  = document.getElementById('toggleAll');
     resumeDraftBtn = document.getElementById('resumeDraftBtn');
@@ -750,6 +1065,17 @@
     console.log('✅ Form assets ready:', { formEl, submitBtn, steps });
 
     initAdlControls();
+    movementEls = {
+      bodyWrap: document.querySelector('[data-movement-body-wrap]'),
+      severityButtons: Array.from(document.querySelectorAll('[data-movement-severity] .movement-sev-btn')),
+      severityInput: document.getElementById('movement_severity'),
+      timesInput: document.getElementById('movement_times'),
+      bodyMapInput: document.getElementById('movement_body_map'),
+      triggersInput: document.getElementById('movement_triggers'),
+      detailsToggle: document.getElementById('movementDetailsToggle'),
+      detailsPanel: document.getElementById('movementDetails'),
+      sameBtn: document.getElementById('movementSameBtn')
+    };
     if (entryDateInput && !entryDateInput.value) {
       entryDateInput.value = todayISO();
     }
@@ -759,6 +1085,12 @@
     updateProgress();
     syncAggressionControls();
     loadFocusSummary();
+    syncMovementArrays();
+    const movementCached = localStorage.getItem(MOVEMENT_LAST_KEY);
+    if (movementEls.sameBtn) {
+      movementEls.sameBtn.disabled = !movementCached;
+      if (!movementCached) movementEls.sameBtn.title = 'No previous movement log found on this device.';
+    }
 
     // Wire per-step buttons and autosave
     steps.forEach((step, idx) => {
@@ -782,6 +1114,40 @@
       });
     });
 
+    document.querySelectorAll('input[name="movement_present"]').forEach((el) => {
+      el.addEventListener('change', () => {
+        const present = el.value === 'yes';
+        setMovementPresent(present);
+        save(steps[movementStepIndex], movementStepIndex, true);
+      });
+    });
+    movementEls.severityButtons?.forEach((btn) => {
+      btn.addEventListener('click', () => setMovementSeverity(btn.dataset.sev));
+    });
+    document.addEventListener('change', (event) => {
+      if (event.target?.matches('[data-movement-time],[data-movement-body],[data-movement-trigger]')) {
+        syncMovementArrays();
+      }
+    });
+    movementEls.detailsToggle?.addEventListener('click', () => {
+      const isHidden = movementEls.detailsPanel?.classList.contains('is-hidden');
+      movementEls.detailsPanel?.classList.toggle('is-hidden', !isHidden);
+      movementEls.detailsToggle.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+    });
+    movementEls.sameBtn?.addEventListener('click', () => {
+      const raw = localStorage.getItem(MOVEMENT_LAST_KEY);
+      if (!raw) return;
+      try {
+        const data = JSON.parse(raw);
+        hydrateMovementFromData(data || {});
+        movementEls.detailsPanel?.classList.add('is-hidden');
+        movementEls.detailsToggle?.setAttribute('aria-expanded', 'false');
+        if (movementStepIndex >= 0) save(steps[movementStepIndex], movementStepIndex, true);
+      } catch (error) {
+        console.warn('movement copy failed', error);
+      }
+    });
+
     // Progress nav + show all
     progItems.forEach((pi) => pi.addEventListener('click', () => go(Number(pi.dataset.step))));
     toggleAllBtn?.addEventListener('click', () => {
@@ -802,6 +1168,8 @@
       steps.forEach((s, i) => restore(s, i));
       hydratePromptingSelects();
       syncAggressionControls();
+      hydrateMovementFromData(draft.data[movementStepIndex] || {});
+      applyConditionalSections();
       toast('Draft restored');
     });
 
@@ -811,6 +1179,15 @@
 
     // Initial position
     go(0);
+    applyConditionalSections();
+
+    ['behavior_anomaly_flag','vocational_participation','home_activity_flag','public_activity_flag','community_interaction_ok']
+      .forEach((id) => {
+        const sel = document.getElementById(id);
+        sel?.addEventListener('change', () => {
+          applyConditionalSections();
+        });
+      });
   }); // <-- end DOMContentLoaded
 
   // Helper: normalize truthy/falsey
@@ -841,12 +1218,52 @@
     const flag = document.getElementById('aggression_flag');
     const aType = document.getElementById('aggression_type');
     const aInt  = document.getElementById('aggression_intensity');
+    const aggressionDetails = document.getElementById('aggressionDetails');
+    const aggressionNotesWrap = document.getElementById('aggressionNotesWrap');
     function syncAggressionControls(){
       const yes = flag?.value === 'Yes';
       [aType,aInt].forEach(el=>el && (el.disabled=!yes));
       if(!yes){ if(aType) aType.value=''; if(aInt){ aInt.value=0; const iv=document.getElementById('intensityVal'); if(iv) iv.textContent='0'; } }
+      if (aggressionDetails) aggressionDetails.style.display = yes ? '' : 'none';
+      if (aggressionNotesWrap) aggressionNotesWrap.style.display = yes ? '' : 'none';
     }
     flag?.addEventListener('change', syncAggressionControls);
+
+    const toggleFieldGroup = (selectId, { showWhen = 'Yes', targets = [] } = {}) => {
+      const sel = document.getElementById(selectId);
+      if (!sel) return;
+      const isMatch = sel.value === showWhen;
+      targets.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = isMatch ? '' : 'none';
+      });
+    };
+    const applyConditionalSections = () => {
+      toggleFieldGroup('behavior_anomaly_flag', {
+        showWhen: 'Yes',
+        targets: ['anomalyTriggerWrap', 'anomalyNotesWrap']
+      });
+      toggleFieldGroup('vocational_participation', {
+        showWhen: 'Yes',
+        targets: ['vocationalDetails', 'vocationalNotesWrap']
+      });
+      toggleFieldGroup('home_activity_flag', {
+        showWhen: 'Yes',
+        targets: ['homeDetails', 'homeDetailsNotes', 'homeNotesWrap']
+      });
+      toggleFieldGroup('public_activity_flag', {
+        showWhen: 'Yes',
+        targets: ['publicDetails', 'publicDetailsNotes']
+      });
+      toggleFieldGroup('community_interaction_ok', {
+        showWhen: 'Yes',
+        targets: ['interactionDetails', 'interactionDetailsNotes']
+      });
+      const publicYes = document.getElementById('public_activity_flag')?.value === 'Yes';
+      const interactionYes = document.getElementById('community_interaction_ok')?.value === 'Yes';
+      const communityNotesWrap = document.getElementById('communityNotesWrap');
+      if (communityNotesWrap) communityNotesWrap.style.display = (publicYes || interactionYes) ? '' : 'none';
+    };
 
     // ADL activity options
     const ADL_OPTIONS = {
@@ -1025,6 +1442,9 @@
       if(idx===adlStepIndex){
         hydrateAdlFieldsFromData(draft.data[idx] || {}, { silent: true });
       }
+      if (idx === movementStepIndex) {
+        hydrateMovementFromData(draft.data[idx] || {});
+      }
     }
     function loadDraft(){ try{ const raw=localStorage.getItem(DRAFT_KEY); return raw?JSON.parse(raw):null; }catch{ return null; } }
     function updateSavedAt(step,idx){
@@ -1063,6 +1483,9 @@
       setAdlActivities('');
       hydratePromptingSelects();
       clearFocusTrackingFields();
+      clearMovementFields();
+      movementEls.detailsPanel?.classList.add('is-hidden');
+      movementEls.detailsToggle?.setAttribute('aria-expanded', 'false');
     }
     function clearDraftUI(){
       draft={ data:{}, savedAt:{} };
@@ -1070,6 +1493,7 @@
       steps.forEach((s,i)=>updateSavedAt(s,i));
       updateSavedButtons();
       resetAdlEntries();
+      clearMovementFields();
     }
     function toast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.style.opacity='1'; clearTimeout(el._t); el._t=setTimeout(()=>el.style.opacity='0',1400); }
 
@@ -1094,6 +1518,40 @@
           ? entryDateRaw
           : todayISO();
         payload.entry_date = entryDate;
+        const normalizeMovement = () => {
+          const presentRaw = String(payload.movement_present || '').toLowerCase();
+          const movementPresent = presentRaw === 'yes' || presentRaw === 'true';
+          const severityVal = Number(payload.movement_severity);
+          const times = parseJsonArray(payload.movement_times);
+          const bodyMap = parseJsonArray(payload.movement_body_map);
+          const triggers = parseJsonArray(payload.movement_triggers);
+          const cleaned = {
+            movement_present: movementPresent,
+            movement_main_type: trimOrNull(payload.movement_main_type),
+            movement_severity: Number.isFinite(severityVal) ? severityVal : null,
+            movement_times: times,
+            movement_notes: trimOrNull(payload.movement_notes),
+            movement_body_map: bodyMap,
+            movement_other_text: trimOrNull(payload.movement_other_text),
+            movement_frequency: trimOrNull(payload.movement_frequency),
+            movement_triggers: triggers,
+            movement_trigger_other: trimOrNull(payload.movement_trigger_other),
+            movement_interfered: trimOrNull(payload.movement_interfered),
+            movement_interfered_notes: trimOrNull(payload.movement_interfered_notes),
+            movement_awareness: trimOrNull(payload.movement_awareness),
+            movement_safety_risk: trimOrNull(payload.movement_safety_risk),
+            movement_safety_notes: trimOrNull(payload.movement_safety_notes),
+          };
+          if (!movementPresent) {
+            Object.keys(cleaned).forEach((key) => {
+              if (key === 'movement_present') return;
+              cleaned[key] = Array.isArray(cleaned[key]) ? [] : null;
+            });
+          }
+          Object.assign(payload, cleaned);
+          return cleaned;
+        };
+        const movementData = normalizeMovement();
         const adlEntriesFromPayload = parseAdlEntries(payload.adl_entries);
         payload.adl_entries = adlEntriesFromPayload;
         const had_bm =
@@ -1141,6 +1599,9 @@
 
         const focusLogs = collectFocusLogs();
         payload.focus_goal_logs = focusLogs;
+        try {
+          localStorage.setItem(MOVEMENT_LAST_KEY, JSON.stringify(movementData));
+        } catch {}
 
         const row = {
           user_id,
@@ -1157,14 +1618,61 @@
           caregiver_notes: caregiverNotes,
           payload,
           adl_entries: adlEntriesFromPayload,
-          submitted_at: new Date().toISOString()
+          submitted_at: new Date().toISOString(),
+          movement_present: movementData.movement_present,
+          movement_main_type: movementData.movement_main_type,
+          movement_severity: movementData.movement_severity,
+          movement_times: movementData.movement_times,
+          movement_notes: movementData.movement_notes,
+          movement_body_map: movementData.movement_body_map,
+          movement_frequency: movementData.movement_frequency,
+          movement_triggers: movementData.movement_triggers,
+          movement_other_text: movementData.movement_other_text,
+          movement_trigger_other: movementData.movement_trigger_other,
+          movement_interfered: movementData.movement_interfered,
+          movement_interfered_notes: movementData.movement_interfered_notes,
+          movement_awareness: movementData.movement_awareness,
+          movement_safety_risk: movementData.movement_safety_risk,
+          movement_safety_notes: movementData.movement_safety_notes
         };
 
-        const inserted = await rest('caregiver_checkins', {
-          method: 'POST',
-          headers: { Prefer: 'return=representation' },
-          body: JSON.stringify([row]),
-        });
+        let inserted = null;
+        try {
+          inserted = await rest('caregiver_checkins', {
+            method: 'POST',
+            headers: { Prefer: 'return=representation' },
+            body: JSON.stringify([row]),
+          });
+        } catch (error) {
+          const msg = String(error?.message || '');
+          if (/column .*movement_|schema cache/i.test(msg)) {
+            const {
+              movement_present,
+              movement_main_type,
+              movement_severity,
+              movement_times,
+              movement_notes,
+              movement_body_map,
+              movement_frequency,
+              movement_triggers,
+              movement_other_text,
+              movement_trigger_other,
+              movement_interfered,
+              movement_interfered_notes,
+              movement_awareness,
+              movement_safety_risk,
+              movement_safety_notes,
+              ...fallbackRow
+            } = row;
+            inserted = await rest('caregiver_checkins', {
+              method: 'POST',
+              headers: { Prefer: 'return=representation' },
+              body: JSON.stringify([fallbackRow]),
+            });
+          } else {
+            throw error;
+          }
+        }
         const data = Array.isArray(inserted) ? inserted[0] : inserted;
 
         const when = new Date(data?.submitted_at || row.submitted_at).toLocaleString();

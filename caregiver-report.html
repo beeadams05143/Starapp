@@ -319,6 +319,23 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       </div>
 
       <p class="muted cg-hide-when-quick-look" id="cgCount"></p>
+
+      <div class="chart">
+        <h2>Movement Symptoms — Severity Over Time</h2>
+        <canvas id="movementSeverityChart" height="180"></canvas>
+      </div>
+      <div class="chart">
+        <h2>Movement Symptoms — Main Type Counts</h2>
+        <canvas id="movementMainTypeChart" height="180"></canvas>
+      </div>
+      <div class="chart small">
+        <h2 style="margin:0 0 8px;">Movement Symptoms — Body Map (Top 5)</h2>
+        <canvas id="movementBodyMapChart" height="200"></canvas>
+      </div>
+      <div class="chart small">
+        <h2 style="margin:0 0 8px;">Movement Symptoms — Trigger Frequency</h2>
+        <canvas id="movementTriggerChart" height="200"></canvas>
+      </div>
     </section>
     </div>
 
@@ -427,6 +444,9 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       <div class="kpi"><div class="label">Total Vocational (min)</div><div class="value" id="kpi-voc">—</div></div>
       <div class="kpi"><div class="label">Total Community (min)</div><div class="value" id="kpi-com">—</div></div>
       <div class="kpi"><div class="label">Avg Prompt Level</div><div class="value" id="kpi-prompt">—</div></div>
+      <div class="kpi"><div class="label">Movement Symptom Days</div><div class="value" id="kpi-move-days">—</div></div>
+      <div class="kpi"><div class="label">Avg Movement Severity</div><div class="value" id="kpi-move-avg">—</div></div>
+      <div class="kpi"><div class="label">Max Movement Severity</div><div class="value" id="kpi-move-max">—</div></div>
     </div>
 
     <!-- Health calendar -->
@@ -637,6 +657,51 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       return gid;
     }
 
+    const parseMovementBool = (value) => {
+      if (value === true || value === false) return value;
+      if (value == null) return null;
+      const norm = String(value).trim().toLowerCase();
+      if (!norm) return null;
+      if (['yes','true','1','y'].includes(norm)) return true;
+      if (['no','false','0','n'].includes(norm)) return false;
+      return null;
+    };
+    const parseMovementArray = (value) => {
+      if (!value) return [];
+      if (Array.isArray(value)) return value.filter(Boolean);
+      if (typeof value === 'string') {
+        try {
+          const parsed = JSON.parse(value);
+          return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+        } catch {
+          return value.split(',').map((item) => item.trim()).filter(Boolean);
+        }
+      }
+      return [];
+    };
+    const movementFromEntry = (entry) => {
+      const payload = entry?.payload || {};
+      const present = parseMovementBool(entry.movement_present ?? payload.movement_present);
+      const severityVal = Number(entry.movement_severity ?? payload.movement_severity);
+      const severity = Number.isFinite(severityVal) ? severityVal : null;
+      return {
+        present,
+        severity,
+        mainType: entry.movement_main_type ?? payload.movement_main_type ?? null,
+        bodyMap: parseMovementArray(entry.movement_body_map ?? payload.movement_body_map),
+        triggers: parseMovementArray(entry.movement_triggers ?? payload.movement_triggers),
+      };
+    };
+    const dayKeyFor = (entry) => {
+      const raw = entry.date || entry.timestamp || entry.created_at || entry.submitted_at;
+      const dt = parseCaregiverDate(raw);
+      if (!dt) return null;
+      const y = dt.getFullYear();
+      const m = String(dt.getMonth() + 1).padStart(2, '0');
+      const d = String(dt.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    };
+
     function summarizeEntries(entries){
       const yesNo = key => {
         const vals = entries.map(e => e[key]).filter(v => v === true || v === false);
@@ -650,6 +715,22 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       const promptAvg = promptVals.length
         ? +(promptVals.reduce((a, b) => a + b, 0) / promptVals.length).toFixed(2)
         : '—';
+      const movementDays = new Set();
+      const movementSeverities = [];
+      entries.forEach((entry) => {
+        const movement = movementFromEntry(entry);
+        if (movement.present) {
+          const dayKey = dayKeyFor(entry);
+          if (dayKey) movementDays.add(dayKey);
+          if (movement.severity !== null) movementSeverities.push(movement.severity);
+        }
+      });
+      const movementAvg = movementSeverities.length
+        ? +(movementSeverities.reduce((sum, val) => sum + val, 0) / movementSeverities.length).toFixed(2)
+        : null;
+      const movementMax = movementSeverities.length
+        ? Math.max(...movementSeverities)
+        : null;
 
       return {
         counts: { entries: entries.length },
@@ -662,7 +743,14 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
           vocational_minutes: sum('vocational_time'),
           community_minutes: sum('community_time'),
         },
-        averages: { new_skill_score: promptAvg },
+        averages: {
+          new_skill_score: promptAvg,
+          movement_severity: movementAvg,
+        },
+        movement: {
+          days: movementDays.size,
+          max_severity: movementMax,
+        }
       };
     }
 
@@ -2199,7 +2287,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
     /* =================== KPIs & caregiver-derived charts =================== */
     const kpi = {
       entries: $('#kpi-entries'), hygiene: $('#kpi-hygiene'), food: $('#kpi-food'),
-      cleanup: $('#kpi-cleanup'), voc: $('#kpi-voc'), com: $('#kpi-com'), prompt: $('#kpi-prompt')
+      cleanup: $('#kpi-cleanup'), voc: $('#kpi-voc'), com: $('#kpi-com'), prompt: $('#kpi-prompt'),
+      moveDays: $('#kpi-move-days'), moveAvg: $('#kpi-move-avg'), moveMax: $('#kpi-move-max')
     };
 
     function renderKPIs(summary){
@@ -2210,6 +2299,9 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       kpi.voc.textContent     = summary.totals.vocational_minutes ?? 0;
       kpi.com.textContent     = summary.totals.community_minutes ?? 0;
       kpi.prompt.textContent  = summary.averages.new_skill_score ?? '—';
+      if (kpi.moveDays) kpi.moveDays.textContent = summary.movement?.days ?? 0;
+      if (kpi.moveAvg) kpi.moveAvg.textContent = summary.averages?.movement_severity ?? '—';
+      if (kpi.moveMax) kpi.moveMax.textContent = summary.movement?.max_severity ?? '—';
     }
 
     function drawHealthChart(series){
@@ -2235,6 +2327,121 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
         type:'line',
         data:{ labels, datasets:[{ label:'Avg Prompt Level', data, tension:.25, pointRadius:3 }]},
         options:{ responsive:true, scales:{ x:axisTitle('Date'), y:{ min:0,max:4,ticks:{stepSize:1}, ...axisTitle('Prompt (0–4)') } } }
+      });
+    }
+
+    const MOVEMENT_TYPE_LABELS = {
+      hands_shaking: 'Hands shaking',
+      face_mouth: 'Face / mouth',
+      arms_legs: 'Arms / legs',
+      other: 'Other'
+    };
+    const MOVEMENT_BODY_LABELS = {
+      eyes_blinking: 'Eyes blinking / eye movements',
+      face_grimacing: 'Face grimacing',
+      mouth_lips: 'Mouth / lips',
+      tongue_movements: 'Tongue movements',
+      jaw_movements: 'Jaw movements',
+      hands_tremor: 'Hands tremor',
+      arms_jerks: 'Arms jerks',
+      legs_feet: 'Legs / feet',
+      neck_trunk: 'Neck / trunk',
+      other_movement: 'Other movement'
+    };
+    const MOVEMENT_TRIGGER_LABELS = {
+      stress: 'Stress / anxiety',
+      around_meds: 'Around meds',
+      tired_sleep: 'Tired / poor sleep',
+      before_eating: 'Before eating',
+      after_eating: 'After eating',
+      excitement: 'Excited / overstimulated',
+      unknown: 'Unknown',
+      other: 'Other'
+    };
+
+    function buildMovementInsights(entries){
+      const daily = new Map();
+      const typeCounts = {};
+      const bodyCounts = {};
+      const triggerCounts = {};
+      entries.forEach((entry) => {
+        const movement = movementFromEntry(entry);
+        if (!movement.present) return;
+        const dayKey = dayKeyFor(entry);
+        if (dayKey) {
+          const bucket = daily.get(dayKey) || { severities: [] };
+          if (movement.severity !== null) bucket.severities.push(movement.severity);
+          daily.set(dayKey, bucket);
+        }
+        const typeKey = movement.mainType || 'other';
+        typeCounts[typeKey] = (typeCounts[typeKey] || 0) + 1;
+        movement.bodyMap.forEach((item) => {
+          if (!item) return;
+          bodyCounts[item] = (bodyCounts[item] || 0) + 1;
+        });
+        movement.triggers.forEach((item) => {
+          if (!item) return;
+          triggerCounts[item] = (triggerCounts[item] || 0) + 1;
+        });
+      });
+      const severitySeries = Array.from(daily.entries())
+        .sort(([a],[b]) => a.localeCompare(b))
+        .map(([day, bucket]) => ({
+          x: day,
+          y: bucket.severities.length
+            ? +(bucket.severities.reduce((sum, val) => sum + val, 0) / bucket.severities.length).toFixed(2)
+            : null
+        }));
+      return { severitySeries, typeCounts, bodyCounts, triggerCounts };
+    }
+
+    function drawMovementSeverityChart(series){
+      destroy('movementSeverity');
+      const labels = series?.map(p=>p.x) ?? [];
+      const data   = series?.map(p=>p.y ?? null) ?? [];
+      charts.movementSeverity = new Chart($('#movementSeverityChart'), {
+        type:'line',
+        data:{ labels, datasets:[{ label:'Avg Severity (0–4)', data, tension:.25, pointRadius:3 }]},
+        options:{ responsive:true, scales:{ x:axisTitle('Date'), y:{ min:0,max:4,ticks:{stepSize:1}, ...axisTitle('Severity (0–4)') } } }
+      });
+    }
+
+    function drawMovementTypeChart(counts = {}){
+      destroy('movementType');
+      const labels = Object.keys(counts).map(key => MOVEMENT_TYPE_LABELS[key] || key);
+      const data = Object.keys(counts).map(key => counts[key]);
+      charts.movementType = new Chart($('#movementMainTypeChart'), {
+        type:'bar',
+        data:{ labels, datasets:[{ label:'Count', data, backgroundColor:'#93c5fd' }]},
+        options:{ responsive:true, scales:{ x:axisTitle('Main Type'), y:{ beginAtZero:true, ticks:{precision:0}, ...axisTitle('Count') } } }
+      });
+    }
+
+    function drawMovementBodyChart(counts = {}){
+      destroy('movementBody');
+      const sorted = Object.entries(counts)
+        .sort((a,b)=>b[1]-a[1])
+        .slice(0,5);
+      const labels = sorted.map(([key]) => MOVEMENT_BODY_LABELS[key] || key);
+      const data = sorted.map(([,val]) => val);
+      charts.movementBody = new Chart($('#movementBodyMapChart'), {
+        type:'bar',
+        data:{ labels, datasets:[{ label:'Count', data, backgroundColor:'#fcd34d' }]},
+        options:{ responsive:true, scales:{ x:axisTitle('Body Map'), y:{ beginAtZero:true, ticks:{precision:0}, ...axisTitle('Count') } } }
+      });
+    }
+
+    function drawMovementTriggerChart(counts = {}){
+      destroy('movementTrigger');
+      const sorted = Object.entries(counts)
+        .sort((a,b)=>b[1]-a[1])
+        .slice(0,6);
+      const labels = sorted.map(([key]) => MOVEMENT_TRIGGER_LABELS[key] || key);
+      const data = sorted.map(([,val]) => val);
+      charts.movementTrigger = new Chart($('#movementTriggerChart'), {
+        type:'bar',
+        data:{ labels, datasets:[{ label:'Count', data, backgroundColor:'#a7f3d0' }]},
+        options:{ responsive:true, scales:{ x:axisTitle('Trigger'), y:{ beginAtZero:true, ticks:{precision:0}, ...axisTitle('Count') } } }
       });
     }
 
@@ -2269,11 +2476,16 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       let entries = (res.entries || []).filter(entry => !isCalendarOnlyEntry(entry));
       const summary = summarizeEntries(entries);
       const { monthly, promptDaily } = buildMonthlySeries(entries);
+      const movementInsights = buildMovementInsights(entries);
 
       window.latestCaregiverEntries = entries.slice();
       renderKPIs(summary);
       drawHealthChart(monthly);
       drawSkillChart(promptDaily);
+      drawMovementSeverityChart(movementInsights.severitySeries);
+      drawMovementTypeChart(movementInsights.typeCounts);
+      drawMovementBodyChart(movementInsights.bodyCounts);
+      drawMovementTriggerChart(movementInsights.triggerCounts);
       cgState.entries = entries.slice();
       cgState.focusStats = buildFocusStats(entries);
       populateCaregiverOptions(cgState.entries);

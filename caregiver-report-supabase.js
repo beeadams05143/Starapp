@@ -131,6 +131,20 @@ const minutesFrom = (value) => {
   return null;
 };
 
+const parseArrayField = (value) => {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.filter(Boolean);
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+    } catch {
+      return value.split(',').map((item) => item.trim()).filter(Boolean);
+    }
+  }
+  return [];
+};
+
 const gleanAdlFlag = (payload, substrings) => {
   if (!payload) return null;
   const rawCategory =
@@ -244,6 +258,27 @@ const normalizeSupabaseEntry = (row = {}) => {
     row.pk ??
     (timestampIso ? `row-${timestampIso}` : `row-${Date.now()}`);
 
+  const movementPresent = coalesce(
+    parseBoolean(row.movement_present),
+    parseBoolean(payload.movement_present)
+  );
+  const movementSeverity = numberOrNull(
+    row.movement_severity ?? payload.movement_severity
+  );
+  const movementMainType = coalesce(
+    row.movement_main_type,
+    payload.movement_main_type
+  );
+  const movementTimes = parseArrayField(
+    row.movement_times ?? payload.movement_times
+  );
+  const movementBodyMap = parseArrayField(
+    row.movement_body_map ?? payload.movement_body_map
+  );
+  const movementTriggers = parseArrayField(
+    row.movement_triggers ?? payload.movement_triggers
+  );
+
   return {
     ...row,
     id: uniqueId,
@@ -271,6 +306,21 @@ const normalizeSupabaseEntry = (row = {}) => {
     leisure_time: leisureMinutes,
     new_skill_score: promptScore,
     focus_goal_logs: Array.isArray(payload.focus_goal_logs) ? payload.focus_goal_logs : [],
+    movement_present: movementPresent,
+    movement_main_type: movementMainType,
+    movement_severity: movementSeverity,
+    movement_times: movementTimes,
+    movement_notes: row.movement_notes ?? payload.movement_notes ?? null,
+    movement_body_map: movementBodyMap,
+    movement_other_text: row.movement_other_text ?? payload.movement_other_text ?? null,
+    movement_frequency: row.movement_frequency ?? payload.movement_frequency ?? null,
+    movement_triggers: movementTriggers,
+    movement_trigger_other: row.movement_trigger_other ?? payload.movement_trigger_other ?? null,
+    movement_interfered: row.movement_interfered ?? payload.movement_interfered ?? null,
+    movement_interfered_notes: row.movement_interfered_notes ?? payload.movement_interfered_notes ?? null,
+    movement_awareness: row.movement_awareness ?? payload.movement_awareness ?? null,
+    movement_safety_risk: row.movement_safety_risk ?? payload.movement_safety_risk ?? null,
+    movement_safety_notes: row.movement_safety_notes ?? payload.movement_safety_notes ?? null,
   };
 };
 

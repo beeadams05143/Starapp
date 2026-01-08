@@ -1296,7 +1296,12 @@ function getPrintableStyles() {
   `;
 }
 
+function isIOSDevice() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent || "");
+}
+
 function openPrepWindow(message = "Building PDF…") {
+  if (!isIOSDevice()) return null;
   const win = window.open("about:blank", "_blank", "noopener,width=900,height=700");
   if (!win) return null;
   try {
@@ -1308,7 +1313,7 @@ function openPrepWindow(message = "Building PDF…") {
   return win;
 }
 
-function openPrintableDocsWindow(docs = [], categoryLabel = "Documents") {
+function openPrintableDocsWindow(docs = [], categoryLabel = "Documents", targetWin = null) {
   const safeCategory = escapeHtml(categoryLabel || "Documents");
   const generatedAt = escapeHtml(new Date().toLocaleString());
   const printableStyles = getPrintableStyles();
@@ -1340,10 +1345,10 @@ function openPrintableDocsWindow(docs = [], categoryLabel = "Documents") {
     </body>
   </html>`;
 
-  openPrintHtml(html);
+  openPrintHtml(html, targetWin);
 }
 
-function openSingleDocPrintWindow(doc = {}, categoryLabel = "Documents", attachment = null) {
+function openSingleDocPrintWindow(doc = {}, categoryLabel = "Documents", attachment = null, targetWin = null) {
   const safeCategory = escapeHtml(categoryLabel || "Documents");
   const generatedAt = escapeHtml(new Date().toLocaleString());
   const printableStyles = getPrintableStyles();
@@ -1373,32 +1378,48 @@ function openSingleDocPrintWindow(doc = {}, categoryLabel = "Documents", attachm
     </body>
   </html>`;
 
-  openPrintHtml(html);
+  openPrintHtml(html, targetWin);
 }
 
-function openPrintHtml(html) {
-  const url = URL.createObjectURL(new Blob([html], { type: "text/html" }));
+function openPrintHtml(html, targetWin = null) {
+  const isIOS = isIOSDevice();
+  const writeToWindow = (win) => {
+    if (!win || win.closed) return false;
+    try {
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+      win.focus?.();
+      return true;
+    } catch (error) {
+      console.warn("print window write failed", error);
+      return false;
+    }
+  };
+  if (writeToWindow(targetWin)) return;
+
   let popup = null;
   try {
-    popup = window.open(url, "_blank", "noopener,width=900,height=700");
+    popup = window.open("about:blank", "_blank", "noopener,width=900,height=700");
   } catch (error) {
     console.warn("popup blocked, using same tab", error);
   }
-  if (!popup) {
-    window.location.href = url;
-    setTimeout(() => URL.revokeObjectURL(url), 60000);
-    return;
-  }
-  // If browser opens about:blank first, ensure it navigates to the blob URL shortly after.
-  setTimeout(() => {
+  if (writeToWindow(popup)) return;
+
+  // Fallbacks for mobile browsers that struggle with blob navigation.
+  if (isIOS) {
     try {
-      if (!popup.location || popup.location.href === "about:blank") {
-        popup.location.href = url;
-      }
-    } catch {
-      // ignore cross-window access issues; user will still see the popup
+      document.open();
+      document.write(html);
+      document.close();
+      return;
+    } catch (error) {
+      console.warn("inline print fallback failed", error);
     }
-  }, 150);
+  }
+
+  const url = URL.createObjectURL(new Blob([html], { type: "text/html" }));
+  window.location.href = url;
   setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 

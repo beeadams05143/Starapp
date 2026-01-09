@@ -145,6 +145,10 @@
         <header class="grid" style="gap:6px;">
           <h1>✏️ Focus of the Week</h1>
           <div class="sub" id="weekRangeText">Week of —</div>
+          <div class="row" style="max-width:360px;">
+            <div class="label">Week start</div>
+            <input id="weekStartPicker" class="input input-chip" type="date" />
+          </div>
 
           <!-- Top line -->
           <section class="card topline">
@@ -276,6 +280,7 @@
 
     // --- element refs
     const weekRangeText = document.getElementById('weekRangeText');
+    const weekStartPicker = document.getElementById('weekStartPicker');
     const goalsEl       = document.getElementById('goals');
     const addGoalBtn    = document.getElementById('addGoal');
     const saveBtn       = document.getElementById('saveBtn');
@@ -307,9 +312,13 @@
     function startOfWeek(d){ const date=new Date(d); const day=date.getDay(); const diff=(day===0?-6:1)-day; date.setDate(date.getDate()+diff); date.setHours(0,0,0,0); return date; }
     function endOfWeek(from){ const d=new Date(from); d.setDate(d.getDate()+6); d.setHours(23,59,59,999); return d; }
     function fmt(d){ return d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}); }
+    function fmtTime(d){
+      return d.toLocaleString(undefined,{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'});
+    }
     function isoDateOnly(d){ return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10); }
 
     let currentMonday = startOfWeek(new Date());
+    let lastUpdatedAt = null;
 
     // --- build week rows
     const PROMPT_SCALE = [
@@ -344,7 +353,10 @@
 
     function updateWeekText() {
       const end = endOfWeek(currentMonday);
-      weekRangeText.textContent = `Week of ${fmt(currentMonday)} – ${fmt(end)}`;
+      const stamp = lastUpdatedAt || new Date();
+      const updatedLabel = `Updated ${fmtTime(stamp)}`;
+      weekRangeText.textContent = `Week of ${fmt(currentMonday)} – ${fmt(end)} • ${updatedLabel}`;
+      if (weekStartPicker) weekStartPicker.value = isoDateOnly(currentMonday);
       buildWeekRows(currentMonday);
     }
 
@@ -440,6 +452,7 @@
 
     async function save(silent = false){
       try{
+        const now = new Date();
         const data = {
           weekStart:     isoDateOnly(currentMonday),
           weekFrequency: getV(weekFreqEl, 'Daily'),
@@ -450,10 +463,12 @@
           nextSteps:     getV(fields.nextSteps, ''),
           goals:         collectGoals(),
           days:          collectDays(),
-          savedAt:       new Date().toISOString()
+          savedAt:       now.toISOString()
         };
         writeLocalFocusDraft(data);
         await persistShared(data);
+        lastUpdatedAt = now;
+        updateWeekText();
         if (!silent) alert('Saved!');
       }catch(e){
         console.error('Save failed', e);
@@ -470,6 +485,9 @@
         goals: withGoalIds(data.goals || []),
       };
       if (normalized.weekStart) currentMonday = startOfWeek(new Date(normalized.weekStart));
+      lastUpdatedAt = normalized.updated_at
+        ? new Date(normalized.updated_at)
+        : (normalized.savedAt ? new Date(normalized.savedAt) : new Date());
       updateWeekText();
       if (fields.focusArea) fields.focusArea.value = normalized.focusArea || fields.focusArea.value;
       setV(fields.customTitle, normalized.customTitle || '');
@@ -551,9 +569,20 @@
       scheduleAutoSave();
     }
 
+    if (weekStartPicker) {
+      weekStartPicker.addEventListener('change', () => {
+        if (!weekStartPicker.value) return;
+        currentMonday = startOfWeek(new Date(weekStartPicker.value));
+        lastUpdatedAt = new Date();
+        updateWeekText();
+        scheduleAutoSave();
+      });
+    }
+
     // --- initialize page (rebuild rows + one default goal)
     function init(resetWeek=false){
       if (resetWeek) currentMonday = startOfWeek(new Date());
+      lastUpdatedAt = new Date();
       updateWeekText();                 // builds the 7 day rows
       goalsEl.innerHTML = '';
       addGoal();                        // ensure first goal exists

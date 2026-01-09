@@ -156,6 +156,10 @@
     .practice-dot.on{background:#fcd34d;color:#111;border:2px solid #f59e0b}
     .practice-dot.off{background:#f8fafc;color:#cbd5f5;border:1px dashed #e2e8f0}
     .practice-dot.off::after{content:"–";font-weight:700}
+    .focus-pdf-summary{border:1px solid #e5e7eb;border-radius:12px;padding:10px;margin:8px 0;background:#fff;box-shadow:0 6px 18px rgba(148,163,184,.12)}
+    .focus-pdf-title{font-weight:700;margin-bottom:6px}
+    .focus-pdf-body{font-size:13px;line-height:1.4;color:#111}
+    .focus-pdf-stats{font-size:12px;color:#4b5563;margin-top:6px}
     .hc-kv span{white-space:nowrap}
     .quick-look-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0 0 8px}
     .quick-look-metric{border:1px solid #e2e8f0;border-radius:8px;padding:6px;background:#f8fafc;display:flex;flex-direction:column;gap:2px}
@@ -311,6 +315,7 @@
   #cg-status .ok{color:#0f6a2f}
   #cg-status .err{color:#b00020}
   #cg-status button{margin-left:.5rem}
+  #cg-status{display:none!important}
   @media (max-width: 640px){
     #cg-status{font-size:12px;padding:8px}
     #cg-status button{margin:6px 0 0 .5rem}
@@ -379,6 +384,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
   <div id="navbar"></div>
   <div class="top-actions no-export" style="display:flex;gap:8px;justify-content:center;margin:8px 0 14px;">
     <button id="fullExportBtn">📄 Export Full Report (PDF)</button>
+    <button id="fullShareBtn">📤 Share Full Report (PDF)</button>
     <button id="fullPrintBtn">🖨️ Print</button>
   </div>
 
@@ -389,6 +395,11 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
     <section class="panel focus-board" id="reportFocusPanel">
       <h2>Weekly Focus</h2>
       <p id="reportFocusSummary" class="muted">Loading weekly focus…</p>
+      <div id="focusPdfSummary" class="focus-pdf-summary pdf-only">
+        <div class="focus-pdf-title" id="focusPdfTitle">Weekly Focus</div>
+        <div class="focus-pdf-body" id="focusPdfBody">—</div>
+        <div class="focus-pdf-stats" id="focusPdfStats">—</div>
+      </div>
       <div id="plannerChartSection" class="planner-chart-panel is-hidden">
         <h3>Weekly Focus</h3>
         <p id="focusPlannerStats" class="muted is-hidden" style="margin:-6px 0 8px"></p>
@@ -1848,6 +1859,40 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       renderPlannerChart(plannerTrackerDays);
     }
 
+    function updateFocusPdfSummary(focus, localFallback){
+      const titleEl = document.getElementById('focusPdfTitle');
+      const bodyEl = document.getElementById('focusPdfBody');
+      const statsEl = document.getElementById('focusPdfStats');
+      if (!titleEl || !bodyEl || !statsEl) return;
+      if (!focus){
+        titleEl.textContent = 'Weekly Focus';
+        bodyEl.textContent = 'No weekly focus set.';
+        statsEl.textContent = '';
+        return;
+      }
+      const start = focus.weekStart ? new Date(focus.weekStart) : null;
+      const end = start ? new Date(start) : null;
+      if (end) end.setDate(end.getDate() + 6);
+      const range = start && end ? `${start.toLocaleDateString()} – ${end.toLocaleDateString()}` : '';
+      const title = focus.customTitle || 'Weekly focus';
+      const area = focus.focusArea ? `(${focus.focusArea})` : '';
+      const offlineTag = localFallback ? ' (Offline copy)' : '';
+      const why = focus.whyMatters ? `${focus.whyMatters}` : '';
+      const next = focus.nextSteps ? `Next: ${focus.nextSteps}` : '';
+      titleEl.textContent = `Weekly Focus ${offlineTag}`.trim();
+      bodyEl.textContent = [title, area, range, why, next].filter(Boolean).join(' • ');
+      if (plannerTrackerStats?.count) {
+        const parts = [
+          `${plannerTrackerStats.count} practice day${plannerTrackerStats.count === 1 ? '' : 's'}`,
+          `Avg prompt level: ${plannerTrackerStats.avgPrompt ?? '—'}`,
+          `Last note: ${plannerTrackerStats.lastNote || '—'}`
+        ];
+        statsEl.textContent = parts.join(' • ');
+      } else {
+        statsEl.textContent = 'No practice data logged.';
+      }
+    }
+
     async function loadFocusPanel(){
       if (!focusUi.summary) return;
       try{
@@ -1871,6 +1916,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
         focusChart = null;
         currentFocusPlan = null;
         renderPlannerStats(null, []);
+        updateFocusPdfSummary(null, false);
         return;
       }
         currentFocusPlan = focus;
@@ -1886,6 +1932,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
         renderPlannerStats(summarizePlannerDays(focus.days), focus.days || []);
         renderFocusGoalList(focus.goals || []);
         renderFocusGoalChart(focus.goals || []);
+        updateFocusPdfSummary(focus, localFallback);
       } catch (error){
         const fallback = readLocalFocusDraft();
         if (fallback) {
@@ -1895,10 +1942,12 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
           renderFocusGoalList(fallback.goals || []);
           renderFocusGoalChart(fallback.goals || []);
           currentFocusPlan = fallback;
+          updateFocusPdfSummary(fallback, true);
         } else {
           focusUi.summary.textContent = 'Unable to load weekly focus.';
           currentFocusPlan = null;
           renderPlannerStats(null, []);
+          updateFocusPdfSummary(null, false);
         }
         console.warn('focus panel load failed', error);
       }
@@ -3523,7 +3572,9 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       formatDateInputValue,
       parseCaregiverDate,
       applyCaregiverFilters,
-      renderMoodSection
+      renderMoodSection,
+      updateFocusPdfSummary,
+      getCurrentFocusPlan: () => currentFocusPlan
     };
 
     await ensureActiveGroupId(USER_ID);
@@ -3543,6 +3594,44 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
     document.querySelectorAll('.no-export').forEach(el => {
       el.style.visibility = hide ? 'hidden' : '';
     });
+  }
+
+  async function buildFullReportPdfBlob(sections){
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ unit:'pt', format:'a4' });
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const margin = 36;
+    const scale = window.innerWidth <= 720 ? 1.6 : 2;
+
+    for (let i = 0; i < sections.length; i++) {
+      const section = sections[i];
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const canvas = await html2canvas(section, {
+        scale,
+        backgroundColor: '#ffffff',
+        width: section.scrollWidth,
+        height: section.scrollHeight,
+        scrollX: 0,
+        scrollY: -window.scrollY
+      });
+      const aspect = canvas.height / canvas.width || 1;
+      let imgW = pageW - margin * 2;
+      let imgH = imgW * aspect;
+      if (imgH > pageH - margin * 2) {
+        imgH = pageH - margin * 2;
+        imgW = imgH / aspect;
+      }
+      if (i > 0) pdf.addPage();
+      const label = section.getAttribute('data-print-section');
+      if (label) {
+        pdf.setFontSize(14);
+        pdf.text(label, margin, margin - 12);
+      }
+      const offsetX = (pageW - imgW) / 2;
+      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', offsetX, margin, imgW, imgH);
+    }
+    return pdf.output('blob');
   }
 
   async function exportFullReportPDF() {
@@ -3566,41 +3655,71 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
     if (cgEnd) cgEnd.value = exportRange.endInput;
     api.applyCaregiverFilters?.();
     await api.renderMoodSection?.();
+    api.updateFocusPdfSummary?.(api.getCurrentFocusPlan?.() || null, false);
     try {
-      const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF({ unit:'pt', format:'a4' });
-      const pageW = pdf.internal.pageSize.getWidth();
-      const pageH = pdf.internal.pageSize.getHeight();
-      const margin = 36;
+      const blob = await buildFullReportPdfBlob(sections);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'Full_Report.pdf';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } finally {
+      document.body.classList.remove('print-export');
+      document.body.classList.remove('export-wide');
+      toggleExportHiders(false);
+      window.setCaregiverNotesExportMode?.(false);
+      window.exportDateRange = null;
+      if (cgStart) cgStart.value = previousRange.start;
+      if (cgEnd) cgEnd.value = previousRange.end;
+      api.applyCaregiverFilters?.();
+      await api.renderMoodSection?.();
+    }
+  }
 
-      for (let i = 0; i < sections.length; i++) {
-        const section = sections[i];
-        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-        const canvas = await html2canvas(section, {
-          scale: 2,
-          backgroundColor: '#ffffff',
-          width: section.scrollWidth,
-          height: section.scrollHeight,
-          scrollX: 0,
-          scrollY: -window.scrollY
-        });
-        const aspect = canvas.height / canvas.width || 1;
-        let imgW = pageW - margin * 2;
-        let imgH = imgW * aspect;
-        if (imgH > pageH - margin * 2) {
-          imgH = pageH - margin * 2;
-          imgW = imgH / aspect;
-        }
-        if (i > 0) pdf.addPage();
-        const label = section.getAttribute('data-print-section');
-        if (label) {
-          pdf.setFontSize(14);
-          pdf.text(label, margin, margin - 12);
-        }
-        const offsetX = (pageW - imgW) / 2;
-        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', offsetX, margin, imgW, imgH);
+  async function shareFullReportPdf() {
+    const sections = [...document.querySelectorAll('[data-print-section]')];
+    if (!sections.length) {
+      alert('No printable sections found.');
+      return;
+    }
+    const exportRange = await getExportRangeSelection();
+    if (!exportRange) return;
+    toggleExportHiders(true);
+    document.body.classList.add('print-export');
+    document.body.classList.add('export-wide');
+    window.setCaregiverNotesExportMode?.(true);
+    const api = window.caregiverReportApi || {};
+    const cgStart = api.cgInputs?.start || document.getElementById('cgStart');
+    const cgEnd = api.cgInputs?.end || document.getElementById('cgEnd');
+    const previousRange = { start: cgStart?.value || '', end: cgEnd?.value || '' };
+    window.exportDateRange = exportRange;
+    if (cgStart) cgStart.value = exportRange.startInput;
+    if (cgEnd) cgEnd.value = exportRange.endInput;
+    api.applyCaregiverFilters?.();
+    await api.renderMoodSection?.();
+    api.updateFocusPdfSummary?.(api.getCurrentFocusPlan?.() || null, false);
+    try {
+      const blob = await buildFullReportPdfBlob(sections);
+      const fileName = 'Full_Report.pdf';
+      const file = new File([blob], fileName, { type: 'application/pdf' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'Full Report' });
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
       }
-      pdf.save('Full_Report.pdf');
+    } catch (error) {
+      console.error('Share full report failed', error);
+      alert('Unable to share the PDF right now.');
     } finally {
       document.body.classList.remove('print-export');
       document.body.classList.remove('export-wide');
@@ -3648,6 +3767,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
   }
 
   document.getElementById('fullExportBtn')?.addEventListener('click', exportFullReportPDF);
+  document.getElementById('fullShareBtn')?.addEventListener('click', shareFullReportPdf);
   document.getElementById('fullPrintBtn')?.addEventListener('click', printFullReport);
 
   function getExportRangeDefaults() {

@@ -1342,6 +1342,47 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
         .map(([word]) => word);
     }
 
+    function buildNoteSynopsis(notes, sentenceCount = 3) {
+      const text = notes.join(' ').replace(/\s+/g, ' ').trim();
+      if (!text) return 'No summary available.';
+      const sentences = text
+        .split(/(?<=[.!?])\s+/)
+        .map(sentence => sentence.trim())
+        .filter(Boolean);
+      if (!sentences.length) return 'No summary available.';
+      const seen = new Set();
+      const uniqueSentences = [];
+      sentences.forEach(sentence => {
+        const key = sentence.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+        if (!key || seen.has(key)) return;
+        seen.add(key);
+        uniqueSentences.push(sentence);
+      });
+
+      const wordCounts = new Map();
+      uniqueSentences.forEach(sentence => {
+        sentence.toLowerCase().split(/[^a-z0-9]+/).forEach(word => {
+          if (!word || word.length < 4) return;
+          if (NOTE_STOPWORDS.has(word)) return;
+          wordCounts.set(word, (wordCounts.get(word) || 0) + 1);
+        });
+      });
+
+      const scored = uniqueSentences.map((sentence, index) => {
+        const score = sentence.toLowerCase().split(/[^a-z0-9]+/)
+          .reduce((sum, word) => sum + (wordCounts.get(word) || 0), 0);
+        return { sentence, index, score };
+      });
+
+      const top = scored
+        .sort((a, b) => b.score - a.score || a.index - b.index)
+        .slice(0, Math.min(sentenceCount, scored.length))
+        .sort((a, b) => a.index - b.index)
+        .map(item => item.sentence);
+
+      return top.join(' ');
+    }
+
     function weekStartDate(date) {
       const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
       const offset = (d.getDay() + 6) % 7; // Monday = 0
@@ -1421,6 +1462,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       const renderCard = (bucket, label) => {
         const pct = (count) => bucket.count ? `${Math.round((count / bucket.count) * 100)}%` : '—';
         const avgPrompt = bucket.promptCount ? (bucket.promptSum / bucket.promptCount).toFixed(1) : '—';
+        const synopsis = buildNoteSynopsis(bucket.notes, 3);
         const themes = extractTopNoteThemes(bucket.notes, 3);
         const themesLabel = themes.length ? themes.join(', ') : 'None';
         const card = document.createElement('div');
@@ -1434,6 +1476,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
           <div class="cg-summary-row"><span class="label">Avg prompt level</span><span>${avgPrompt}</span></div>
           <div class="cg-summary-row"><span class="label">Vocational minutes</span><span>${Math.round(bucket.vocTotal)}</span></div>
           <div class="cg-summary-row"><span class="label">Community minutes</span><span>${Math.round(bucket.comTotal)}</span></div>
+          <div class="cg-summary-row"><span class="label">Note summary</span><span>${synopsis}</span></div>
           <div class="cg-summary-row"><span class="label">Top note themes</span><span>${themesLabel}</span></div>
         `;
         return card;

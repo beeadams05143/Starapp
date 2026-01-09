@@ -116,6 +116,7 @@
       .btns,#navbar{display:none !important;}
     }
     @media (max-width:720px){
+      body{overflow-x:hidden;}
       .wrapper{margin:12px auto;padding:10px;}
       .clipboard{padding:16px;}
       .clip{width:96px;height:28px;top:-14px;}
@@ -127,10 +128,9 @@
       .section-header{flex-direction:column;align-items:flex-start;gap:6px;}
       .btns{flex-direction:column;}
       .btns .btn{width:100%;}
-      .week-grid{display:block;overflow:auto;}
-      .week-grid th,.week-grid td{padding:6px;font-size:12px;white-space:nowrap;}
+      .week-grid{display:block;overflow-x:auto;width:100%;max-width:100%;min-width:0;}
       .week-grid thead, .week-grid tbody{display:table;width:100%;}
-      .week-grid{min-width:520px;}
+      .week-grid th,.week-grid td{padding:6px;font-size:12px;white-space:normal;word-break:break-word;}
       textarea{min-height:120px;}
     }
   </style>

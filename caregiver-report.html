@@ -549,6 +549,9 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
           <label>Entry time
             <input type="time" id="cgEditTime" name="entry_time" step="60">
           </label>
+          <label>Fell asleep at
+            <input type="time" id="cgEditSleepTime" name="sleep_onset_time" step="60">
+          </label>
           <label>Had a BM?
             <select id="cgEditBm" name="had_bm">
               <option value="">Select…</option>
@@ -1056,6 +1059,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       status: document.getElementById('cgEditStatus'),
       date: document.getElementById('cgEditDate'),
       time: document.getElementById('cgEditTime'),
+      sleepTime: document.getElementById('cgEditSleepTime'),
       bm: document.getElementById('cgEditBm'),
       anomaly: document.getElementById('cgEditAnomaly'),
       hygiene: document.getElementById('cgEditHygiene'),
@@ -1955,6 +1959,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
 
     function renderFocusGoalList(goals){
       if (!focusUi.goals) return;
+      const stats = cgState.focusStats || new Map();
       focusUi.goals.innerHTML = '';
       if (!Array.isArray(goals) || !goals.length){
         const li = document.createElement('li');
@@ -2382,6 +2387,15 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       if (editUi.time) {
         editUi.time.value = formatTimeInputValue(timestamp) || '';
       }
+      if (editUi.sleepTime) {
+        const sleepTime =
+          payload.sleep_onset_time ||
+          payload.sleep_time ||
+          payload.fell_asleep_time ||
+          payload.asleep_time ||
+          '';
+        editUi.sleepTime.value = sleepTime || '';
+      }
       if (editUi.bm) {
         const bmVal = parseLooseBoolean(
           checkinData.had_bm ??
@@ -2549,11 +2563,17 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
         if (timestampIso) {
           updates.submitted_at = timestampIso;
         }
+        const sleepTimeValue = editUi.sleepTime?.value || '';
         const payloadClone = { ...(editState.record?.payload || {}) };
         if (dateValue) {
           payloadClone.entry_date = dateValue;
         } else {
           delete payloadClone.entry_date;
+        }
+        if (sleepTimeValue) {
+          payloadClone.sleep_onset_time = sleepTimeValue;
+        } else {
+          delete payloadClone.sleep_onset_time;
         }
         if (hadBmValue === true) {
           payloadClone.had_bm = 'yes';

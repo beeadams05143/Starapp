@@ -29,23 +29,78 @@
     #cgQuickLookToggle,
     #cgPdf,
     #cgCsv{font-size:15px}
+    #cgNotesToggle{font-size:14px}
+
+    .cg-filter-banner{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;margin:6px 0 12px;border:1px solid #fde68a;border-radius:12px;background:#fff7ed;font-weight:600}
+    .cg-filter-banner button{border-color:#f59e0b}
+    .cg-advanced-filters{border:1px solid #e5e7eb;border-radius:12px;padding:8px 12px;background:#fff}
+    .cg-advanced-filters summary{cursor:pointer;font-weight:700}
+    .cg-filter-grid{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin-top:10px}
+    .cg-filter-grid button{min-height:42px}
+    .cg-clear-filters{font-size:13px}
 
     table{width:100%;border-collapse:collapse}
-    th,td{border:1px solid #ddd;padding:8px;vertical-align:top}
+    th,td{border:1px solid #ddd;padding:8px;vertical-align:middle}
     thead th{background:#fafafa;position:sticky;top:0}
+    #cgTable tbody tr{height:64px}
+    #cgTable td{line-height:1.2}
+    .cg-notes-cell{max-width:320px}
+    .cg-note-preview{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:32px;white-space:pre-wrap}
+    .cg-note-btn{margin-top:4px;font-size:12px;border:1px solid #d4d4d8;border-radius:8px;padding:4px 8px;background:#fff;cursor:pointer;font-weight:600}
+    .cg-note-btn:hover{background:#f1f5f9}
+    .cg-note-full{display:none;white-space:pre-wrap}
+    body.cg-notes-expanded #cgTable tbody tr{height:auto}
+    body.cg-notes-expanded .cg-note-preview,
+    body.cg-notes-expanded .cg-note-btn{display:none}
+    body.cg-notes-expanded .cg-note-full{display:block}
+    body.cg-export-notes .cg-note-preview,
+    body.cg-export-notes .cg-note-btn{display:none}
+    body.cg-export-notes .cg-note-full{display:block}
+    body.cg-export-notes #cgTable tbody tr{height:auto}
     .cg-edit-btn{padding:6px 10px;font-size:13px;border-radius:8px;border:1px solid #c4c4c8;background:#f8fafc}
     .cg-edit-btn:hover{background:#eef2ff}
 
     .muted{color:var(--muted);font-size:13px;text-align:center;margin:.35rem 0}
 
     .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:14px 0}
-    .kpi{background:var(--card);border:1px solid var(--border);border-radius:10px;text-align:center;padding:12px}
+    .kpi{background:var(--card);border:1px solid var(--border);border-radius:12px;text-align:center;padding:12px;box-shadow:0 6px 18px rgba(148,163,184,.12)}
     .kpi .label{font-size:12px;color:var(--muted)}
     .kpi .value{margin-top:6px;font-size:20px;font-weight:700}
+
+    .mood-summary-card{display:none;border:1px solid var(--border);border-radius:12px;padding:10px;background:#fff;box-shadow:0 6px 18px rgba(148,163,184,.12);margin-top:10px}
+    .mood-summary-title{font-weight:700;margin-bottom:8px}
+    .mood-summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;font-size:13px}
+    .mood-summary-grid > div{border:1px solid #e5e7eb;border-radius:10px;padding:8px;background:#fff;box-shadow:0 4px 12px rgba(148,163,184,.12)}
+    .mood-summary-grid .label{color:var(--muted);display:block;font-size:12px}
+    .mood-summary-grid .value{font-weight:700}
+
+    .pdf-only{display:none}
+    .cg-summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:8px 0 14px}
+    .cg-summary-card{border:1px solid #e5e7eb;border-radius:12px;padding:10px;background:#fff;box-shadow:0 6px 18px rgba(148,163,184,.12);font-size:12px;line-height:1.35}
+    .cg-summary-card h4{margin:0 0 6px;font-size:13px}
+    .cg-summary-row{display:flex;justify-content:space-between;gap:8px;border-bottom:1px dashed #e5e7eb;padding:4px 0}
+    .cg-summary-row:last-child{border-bottom:0}
+    .cg-summary-row .label{color:var(--muted)}
 
     .chart{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;margin:16px auto;max-width:940px}
     .chart.small{max-width:700px}
     canvas{display:block;max-width:100% !important;height:auto !important}
+    .movement-panel{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin:12px 0}
+    .movement-panel h3{margin:0 0 6px;text-align:left}
+    .movement-sub{margin:0 0 10px;font-size:12px;color:var(--muted)}
+    .movement-summary{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin-bottom:12px}
+    .movement-summary .row{display:flex;justify-content:space-between;gap:8px;font-size:13px;border-bottom:1px solid #f1f5f9;padding:6px 0}
+    .movement-summary .row:last-child{border-bottom:0}
+    .movement-summary .label{color:#4b5563}
+    .movement-summary .value{font-weight:700;color:#111}
+    .movement-grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));}
+    .movement-card{
+      background:#fff;border:1px solid #e5e7eb;border-radius:16px;
+      padding:12px;min-height:180px;
+      box-shadow:0 1px 0 rgba(0,0,0,.02);
+    }
+    .movement-card h4{margin:0 0 8px;font-size:14px;text-align:left}
+    .movement-card canvas{height:140px !important}
 
     /* ===== Health Calendar (scoped) ===== */
     .hc-wrap{max-width:1200px;margin:16px auto}
@@ -90,10 +145,17 @@
     .focus-goal-list{list-style:none;padding:0;margin:0;display:grid;gap:10px}
     .focus-goal-list li{background:#fff;border:1px solid #fcd34d;border-radius:12px;padding:10px;font-size:14px;line-height:1.4}
     .focus-goal-list li strong{display:block;margin-bottom:4px}
-    .planner-chart-panel{max-width:760px;margin:12px auto 22px}
+    .planner-chart-panel{max-width:520px;margin:12px 0 22px}
     .planner-chart-panel.is-hidden{display:none}
     .planner-chart-wrap{margin:0;border:1px solid rgba(250,204,21,.55);border-radius:14px;padding:10px 12px;background:#fffdf4;box-shadow:inset 0 1px 0 rgba(253,224,71,.25)}
     .planner-chart-wrap.is-hidden{display:none}
+    .planner-chart-wrap.compact{max-width:520px;margin:0}
+    .practice-row{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;align-items:center;max-height:80px}
+    .practice-cell{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;color:#6b7280}
+    .practice-dot{width:28px;height:28px;border-radius:999px;display:grid;place-items:center;font-weight:800;font-size:13px}
+    .practice-dot.on{background:#fcd34d;color:#111;border:2px solid #f59e0b}
+    .practice-dot.off{background:#f8fafc;color:#cbd5f5;border:1px dashed #e2e8f0}
+    .practice-dot.off::after{content:"–";font-weight:700}
     .hc-kv span{white-space:nowrap}
     .quick-look-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0 0 8px}
     .quick-look-metric{border:1px solid #e2e8f0;border-radius:8px;padding:6px;background:#f8fafc;display:flex;flex-direction:column;gap:2px}
@@ -156,11 +218,57 @@
     .cg-edit-actions button{padding:8px 14px;border-radius:10px;border:1px solid #d4d4d8;background:#fff;font-weight:600;cursor:pointer}
     .cg-edit-actions .primary{background:#111827;color:#fff;border-color:#111827}
 
+    .cg-note-overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);display:flex;align-items:flex-end;justify-content:center;z-index:10001}
+    .cg-note-overlay.is-hidden{display:none!important}
+    .cg-note-drawer{background:#fff;border-radius:18px 18px 0 0;padding:16px 18px;width:min(520px,95vw);max-height:85vh;overflow:hidden;box-shadow:0 -18px 40px rgba(15,23,42,.35);display:flex;flex-direction:column;gap:12px}
+    .cg-note-header{display:flex;justify-content:space-between;align-items:center}
+    .cg-note-header h3{margin:0;font-size:18px;text-align:left}
+    .cg-note-close{border:1px solid #d4d4d8;background:#fff;border-radius:10px;padding:4px 8px;font-size:14px}
+    .cg-note-meta{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:#6b7280;font-weight:600}
+    .cg-note-body{white-space:pre-wrap;border:1px solid #e5e7eb;border-radius:12px;padding:10px;max-height:45vh;overflow:auto;background:#f8fafc;font-size:14px}
+    .cg-note-file{font-size:13px;color:#2563eb;text-decoration:none;font-weight:600}
+    .cg-note-file.is-hidden{display:none}
+    .cg-note-actions{display:flex;justify-content:flex-end;gap:10px}
+    .cg-note-actions button{padding:8px 14px;border-radius:10px;border:1px solid #d4d4d8;background:#fff;font-weight:600;cursor:pointer}
+    .cg-note-actions button:first-child{background:#111827;color:#fff;border-color:#111827}
+
+    #exportRangeOverlay .cg-note-drawer{width:min(480px,95vw)}
+    #exportRangeOverlay .cg-edit-grid{margin-top:4px}
+
     #chart-stack{display:flex;flex-direction:column;gap:16px}
     body.print-export main.page{max-width:980px}
     body.print-export #chart-stack{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
     body.print-export .chart{margin:0}
     body.print-export .chart canvas{max-height:260px!important}
+    body.print-export #reportFocusPanel{padding:10px;margin:6px 0}
+    body.print-export #reportFocusPanel h2{margin:4px 0 6px;font-size:18px}
+    body.print-export #reportFocusPanel h3{margin:0 0 4px;font-size:15px}
+    body.print-export #reportFocusPanel .focus-goal-list{display:none}
+    body.print-export #reportFocusPanel #focusGoalChart{display:none}
+    body.print-export #reportFocusPanel .planner-chart-panel{margin:6px 0 10px}
+    body.print-export #reportFocusPanel .practice-dot{width:22px;height:22px;font-size:11px}
+    body.print-export #reportFocusPanel .practice-cell{gap:4px;font-size:11px}
+    body.print-export #reportFocusPanel .planner-chart-wrap{padding:8px}
+    body.print-export #cg-panel{padding:10px}
+    body.print-export #cg-panel h2{margin:6px 0}
+    body.print-export #cg-panel .toolbar,
+    body.print-export #cg-panel .cg-advanced-filters,
+    body.print-export #cg-panel #cgFilterBanner{display:none}
+    body.print-export #cg-panel .cg-table-wrap{max-height:none}
+    body.print-export #mood-panel .toolbar,
+    body.print-export #mood-panel .mood-table-wrap{display:none}
+    body.print-export #mood-panel{padding-bottom:8px}
+    body.print-export .mood-summary-card{display:block}
+    body.print-export #kpi-row{margin:8px 0 10px}
+    body.print-export .hc-card{box-shadow:none}
+    body.print-export .hc-grid{grid-template-columns:repeat(7,minmax(90px,1fr))}
+    body.print-export .hc-cell{min-height:100px}
+    body.print-export .pdf-only{display:block}
+
+    @media (max-width:720px){
+      #cgNotesToggle{display:none}
+      .cg-note-drawer{border-radius:18px}
+    }
   </style>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
@@ -252,40 +360,52 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
   <main class="page">
     <h1>Reports</h1>
 
-    <section class="panel focus-board" id="reportFocusPanel" data-print-section="Weekly Focus">
+    <div data-print-section="Caregiver Overview">
+    <section class="panel focus-board" id="reportFocusPanel">
       <h2>Weekly Focus</h2>
       <p id="reportFocusSummary" class="muted">Loading weekly focus…</p>
-      <div id="plannerChartSection" data-print-section="Planner Tracker" class="planner-chart-panel is-hidden">
-        <h3>Practice Tracker (Planner)</h3>
+      <div id="plannerChartSection" class="planner-chart-panel is-hidden">
+        <h3>Weekly Focus</h3>
         <p id="focusPlannerStats" class="muted is-hidden" style="margin:-6px 0 8px"></p>
-        <div id="plannerChartWrap" class="planner-chart-wrap is-hidden">
-          <canvas id="focusPlannerChart" height="140"></canvas>
+        <div id="plannerChartWrap" class="planner-chart-wrap compact is-hidden">
+          <div id="plannerRow" class="practice-row" aria-label="Weekly practice tracker"></div>
         </div>
       </div>
       <ul id="reportFocusGoals" class="focus-goal-list"></ul>
       <canvas id="focusGoalChart" height="220"></canvas>
     </section>
-
-    <div data-print-section="Caregiver Overview">
     <section class="panel" id="cg-panel">
       <h2>Caregiver Check-Ins</h2>
 
       <div class="toolbar">
         <label>From <input type="date" id="cgStart"></label>
         <label>To <input type="date" id="cgEnd"></label>
-        <button id="cgApply" type="button">Apply v2025-11-03b</button>
-        <label>Caregiver
-          <select id="cgCaregiver">
-            <option value="all">All caregivers</option>
-          </select>
-        </label>
+        <button id="cgApply" type="button">Apply</button>
 
         <span style="flex:1"></span>
+        <button id="cgNotesToggle" type="button" class="no-export" aria-pressed="false">Expand notes</button>
         <button id="cgQuickLookToggle" type="button" class="no-export" aria-controls="cgQuickLook" aria-expanded="false">⚡ Quick Look</button>
         <button id="cgPdf"  class="no-export">📄 PDF</button>
         <button id="cgSharePdf" class="no-export">📤 Share PDF</button>
         <button id="cgCsv"  class="no-export">⬇️ CSV</button>
       </div>
+
+      <div id="cgFilterBanner" class="cg-filter-banner is-hidden" role="status" aria-live="polite">
+        <span>Filtered: Caregiver = <strong id="cgFilterLabel">All caregivers</strong></span>
+        <button type="button" class="cg-clear-filters">Clear Filter(s)</button>
+      </div>
+
+      <details class="cg-advanced-filters">
+        <summary>Advanced Filters</summary>
+        <div class="cg-filter-grid">
+          <label>Caregiver
+            <select id="cgCaregiver">
+              <option value="all">All caregivers</option>
+            </select>
+          </label>
+          <button type="button" class="cg-clear-filters">Clear Filter(s)</button>
+        </div>
+      </details>
 
       <div id="cgQuickLook" class="quick-look is-hidden" role="region" aria-live="polite">
         <div class="quick-look-head">
@@ -305,6 +425,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
           <thead>
             <tr>
               <th>Timestamp</th>
+              <th>Caregiver</th>
               <th>Hygiene</th>
               <th>Food</th>
               <th>Clean-up</th>
@@ -315,27 +436,68 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
               <th>Actions</th>
             </tr>
           </thead>
-          <tbody id="cgTbody"><tr><td colspan="9">Loading…</td></tr></tbody>
+          <tbody id="cgTbody"><tr><td colspan="10">Loading…</td></tr></tbody>
         </table>
       </div>
 
       <p class="muted cg-hide-when-quick-look" id="cgCount"></p>
 
-      <div class="chart">
-        <h2>Movement Symptoms — Severity Over Time</h2>
-        <canvas id="movementSeverityChart" height="180"></canvas>
+      <div id="cgPdfSummary" class="pdf-only">
+        <h3>Caregiver Summary (Weekly)</h3>
+        <div id="cgWeeklySummary" class="cg-summary-grid"></div>
+        <h3>Caregiver Summary (Monthly)</h3>
+        <div id="cgMonthlySummary" class="cg-summary-grid"></div>
       </div>
-      <div class="chart">
-        <h2>Movement Symptoms — Main Type Counts</h2>
-        <canvas id="movementMainTypeChart" height="180"></canvas>
+
+      <div id="cgNoteOverlay" class="cg-note-overlay is-hidden" role="dialog" aria-modal="true" aria-labelledby="cgNoteTitle">
+        <div class="cg-note-drawer">
+          <div class="cg-note-header">
+            <h3 id="cgNoteTitle">Caregiver Note</h3>
+            <button type="button" id="cgNoteClose" class="cg-note-close" aria-label="Close note">✕</button>
+          </div>
+          <div class="cg-note-meta">
+            <span id="cgNoteTimestamp">—</span>
+            <span id="cgNoteCaregiver">—</span>
+          </div>
+          <div class="cg-note-body" id="cgNoteBody"></div>
+          <a id="cgNoteFile" class="cg-note-file is-hidden" href="#" target="_blank" rel="noopener">View attached file</a>
+          <div class="cg-note-actions">
+            <button type="button" id="cgNoteEdit">Edit</button>
+            <button type="button" id="cgNoteCloseFooter">Close</button>
+          </div>
+        </div>
       </div>
-      <div class="chart small">
-        <h2 style="margin:0 0 8px;">Movement Symptoms — Body Map (Top 5)</h2>
-        <canvas id="movementBodyMapChart" height="200"></canvas>
-      </div>
-      <div class="chart small">
-        <h2 style="margin:0 0 8px;">Movement Symptoms — Trigger Frequency</h2>
-        <canvas id="movementTriggerChart" height="200"></canvas>
+
+      <div class="movement-panel">
+        <h3>Movement Symptoms</h3>
+        <p class="movement-sub" id="movementRangeLabel">Summary for selected date range</p>
+        <div class="movement-summary" id="movementSummary">
+          <div class="movement-card">
+            <div class="row"><span class="label">Days with symptoms</span><span class="value" id="movementDaysVal">—</span></div>
+            <div class="row"><span class="label">Avg severity</span><span class="value" id="movementAvgVal">—</span></div>
+            <div class="row"><span class="label">Max severity</span><span class="value" id="movementMaxVal">—</span></div>
+            <div class="row"><span class="label">Most common type</span><span class="value" id="movementTypeVal">—</span></div>
+            <div class="row"><span class="label">Most common time</span><span class="value" id="movementTimeVal">—</span></div>
+          </div>
+        </div>
+        <div class="movement-grid">
+          <div class="movement-card">
+            <h4>Movement Severity (sparkline)</h4>
+            <canvas id="movementSeverityChart"></canvas>
+          </div>
+          <div class="movement-card">
+            <h4>Main Type (Top 5)</h4>
+            <canvas id="movementMainTypeChart"></canvas>
+          </div>
+          <div class="movement-card">
+            <h4>Body Map (Top 5)</h4>
+            <canvas id="movementBodyMapChart"></canvas>
+          </div>
+          <div class="movement-card">
+            <h4>Triggers (Top 5)</h4>
+            <canvas id="movementTriggerChart"></canvas>
+          </div>
+        </div>
       </div>
     </section>
     </div>
@@ -428,11 +590,20 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
         <button id="exportMoodBtn">📄 Export Mood Check-Ins to PDF</button>
       </div>
 
-      <div style="max-height:340px;overflow:auto;border-radius:8px">
+      <div class="mood-table-wrap" style="max-height:340px;overflow:auto;border-radius:8px">
         <table id="moodTable">
           <thead><tr><th>Timestamp</th><th>Mood</th><th>Intensity</th><th>Notes</th></tr></thead>
           <tbody><tr><td colspan="4">Loading…</td></tr></tbody>
         </table>
+      </div>
+      <div id="moodSummaryCard" class="mood-summary-card">
+        <div class="mood-summary-title">Mood Summary</div>
+        <div class="mood-summary-grid">
+          <div><span class="label">Total check-ins</span><span class="value" id="moodSummaryTotal">—</span></div>
+          <div><span class="label">Most common mood</span><span class="value" id="moodSummaryCommon">—</span></div>
+          <div><span class="label">Positive</span><span class="value" id="moodSummaryPositive">—</span></div>
+          <div><span class="label">Challenging</span><span class="value" id="moodSummaryChallenging">—</span></div>
+        </div>
       </div>
     </section>
 
@@ -552,6 +723,30 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
         <button type="submit" class="primary">Save</button>
       </div>
     </form>
+  </div>
+
+  <div id="exportRangeOverlay" class="cg-note-overlay is-hidden" role="dialog" aria-modal="true" aria-labelledby="exportRangeTitle">
+    <div class="cg-note-drawer">
+      <div class="cg-note-header">
+        <h3 id="exportRangeTitle">Export Date Range</h3>
+        <button type="button" id="exportRangeClose" class="cg-note-close" aria-label="Close">✕</button>
+      </div>
+      <div class="cg-note-meta">
+        <span>Choose the date window for the full report PDF.</span>
+      </div>
+      <div class="cg-edit-grid">
+        <label>From
+          <input type="date" id="exportRangeStart">
+        </label>
+        <label>To
+          <input type="date" id="exportRangeEnd">
+        </label>
+      </div>
+      <div class="cg-note-actions">
+        <button type="button" id="exportRangeCancel">Cancel</button>
+        <button type="button" id="exportRangeApply" class="primary">Export PDF</button>
+      </div>
+    </div>
   </div>
 
   <!-- Single, clean module script -->
@@ -809,6 +1004,9 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       end: $('#cgEnd'),
       apply: $('#cgApply'),
       caregiver: $('#cgCaregiver'),
+      filterBanner: document.getElementById('cgFilterBanner'),
+      filterLabel: document.getElementById('cgFilterLabel'),
+      notesToggle: document.getElementById('cgNotesToggle'),
       count: $('#cgCount'),
       pdf: $('#cgPdf'),
       sharePdf: $('#cgSharePdf'),
@@ -837,6 +1035,17 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       cancel: document.getElementById('cgEditCancel'),
       save: document.getElementById('cgEditSave')
     };
+    const noteUi = {
+      overlay: document.getElementById('cgNoteOverlay'),
+      title: document.getElementById('cgNoteTitle'),
+      timestamp: document.getElementById('cgNoteTimestamp'),
+      caregiver: document.getElementById('cgNoteCaregiver'),
+      body: document.getElementById('cgNoteBody'),
+      file: document.getElementById('cgNoteFile'),
+      edit: document.getElementById('cgNoteEdit'),
+      close: document.getElementById('cgNoteClose'),
+      closeFooter: document.getElementById('cgNoteCloseFooter')
+    };
     const editState = { currentId: null, record: null };
 
     const quickLookUi = {
@@ -854,7 +1063,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       planner: document.getElementById('focusPlannerStats'),
       plannerPanel: document.getElementById('plannerChartSection'),
       plannerChartWrap: document.getElementById('plannerChartWrap'),
-      plannerChartCanvas: document.getElementById('focusPlannerChart'),
+      plannerRow: document.getElementById('plannerRow'),
       goals: document.getElementById('reportFocusGoals'),
       chartEl: document.getElementById('focusGoalChart')
     };
@@ -873,21 +1082,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       '4': 'Dependent'
     };
 
-    const CAREGIVER_FILTER_KEY = 'caregiverReportCaregiverFilter';
     const CAREGIVER_ID_PREFIX = 'id:';
     const CAREGIVER_NAME_PREFIX = 'name:';
-
-    const readCaregiverFilter = () => {
-      try {
-        const stored = localStorage.getItem(CAREGIVER_FILTER_KEY);
-        return stored === null ? null : stored;
-      } catch {
-        return null;
-      }
-    };
-    const writeCaregiverFilter = (value) => {
-      try { localStorage.setItem(CAREGIVER_FILTER_KEY, value); } catch {}
-    };
 
     const FRIENDLY_CAREGIVER_LABELS = {
       'countrygirlinvt@gmail.com': 'Beth',
@@ -904,7 +1100,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
     const cgState = {
       entries: [],
       filtered: [],
-      caregiverFilter: readCaregiverFilter() || 'all',
+      caregiverFilter: 'all', // Default is always all caregivers on fresh load.
+      entryById: new Map(),
       focusStats: new Map()
     };
 
@@ -1069,6 +1266,164 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       const normalized = String(text).trim();
       if (normalized.length <= max) return normalized;
       return `${normalized.slice(0, max - 1).trim()}…`;
+    }
+
+    function caregiverFilterLabel(value) {
+      if (!value || value === 'all') return 'All caregivers';
+      const option = cgInputs.caregiver?.querySelector(`option[value="${CSS.escape(value)}"]`);
+      if (option?.textContent) return option.textContent;
+      if (value.startsWith(CAREGIVER_ID_PREFIX)) return `Caregiver ${value.slice(CAREGIVER_ID_PREFIX.length, CAREGIVER_ID_PREFIX.length + 6)}…`;
+      if (value.startsWith(CAREGIVER_NAME_PREFIX)) return value.slice(CAREGIVER_NAME_PREFIX.length);
+      return value;
+    }
+
+    function updateCaregiverFilterBanner() {
+      if (!cgInputs.filterBanner || !cgInputs.filterLabel) return;
+      const hasFilter = cgState.caregiverFilter && cgState.caregiverFilter !== 'all';
+      cgInputs.filterLabel.textContent = caregiverFilterLabel(cgState.caregiverFilter);
+      cgInputs.filterBanner.classList.toggle('is-hidden', !hasFilter);
+    }
+
+    function clearCaregiverFilters() {
+      // Reset filters to defaults so nothing is hidden by accident.
+      if (cgInputs.caregiver) cgInputs.caregiver.value = 'all';
+      cgState.caregiverFilter = 'all';
+      updateDateInputs(cgState.entries);
+      updateCaregiverFilterBanner();
+      applyCaregiverFilters();
+    }
+
+    const NOTE_STOPWORDS = new Set([
+      'the','and','for','with','this','that','they','them','was','were','are','been','from','into','over','under',
+      'when','then','than','there','here','just','today','yesterday','tomorrow','about','after','before','again',
+      'because','could','would','should','their','there','some','more','less','very','also','able','still','really',
+      'maybe','while','where','what','which','who','whom','your','yours','our','ours','his','her','hers','him','she',
+      'he','its','had','has','have','did','does','doing','done','not','yes','no','but','out','off','got','get','gets'
+    ]);
+
+    function extractTopNoteThemes(notes, limit = 3) {
+      const counts = new Map();
+      notes.forEach(note => {
+        const text = String(note || '').toLowerCase();
+        text.split(/[^a-z0-9]+/).forEach(word => {
+          if (!word || word.length < 4) return;
+          if (NOTE_STOPWORDS.has(word)) return;
+          counts.set(word, (counts.get(word) || 0) + 1);
+        });
+      });
+      return [...counts.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, limit)
+        .map(([word]) => word);
+    }
+
+    function weekStartDate(date) {
+      const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const offset = (d.getDay() + 6) % 7; // Monday = 0
+      d.setDate(d.getDate() - offset);
+      return d;
+    }
+
+    function monthKey(date) {
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    function formatMonthLabel(key) {
+      const [year, month] = key.split('-').map(Number);
+      const dt = new Date(year, (month || 1) - 1, 1);
+      return dt.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+    }
+
+    function summarizeBuckets(entries, bucketKeyFn) {
+      const buckets = new Map();
+      entries.forEach(entry => {
+        const date = normalizeEntryDate(entry);
+        if (!date) return;
+        const key = bucketKeyFn(date);
+        if (!key) return;
+        if (!buckets.has(key)) {
+          buckets.set(key, {
+            key,
+            count: 0,
+            hygieneYes: 0,
+            foodYes: 0,
+            cleanupYes: 0,
+            promptSum: 0,
+            promptCount: 0,
+            vocTotal: 0,
+            comTotal: 0,
+            notes: []
+          });
+        }
+        const bucket = buckets.get(key);
+        bucket.count += 1;
+        if (isAffirmative(entry.hygiene ?? entry.payload?.hygiene)) bucket.hygieneYes += 1;
+        if (isAffirmative(entry.food_prep ?? entry.payload?.food_prep)) bucket.foodYes += 1;
+        if (isAffirmative(entry.cleanup ?? entry.payload?.cleanup)) bucket.cleanupYes += 1;
+        const promptVal = pickNumber(entry.new_skill_score, entry.prompt_level, entry.payload?.new_skill_score, entry.payload?.prompt_level);
+        if (promptVal !== null) {
+          bucket.promptSum += promptVal;
+          bucket.promptCount += 1;
+        }
+        const voc = pickNumber(entry.vocational_time, entry.vocational_minutes, entry.payload?.vocational_time, entry.payload?.vocational_minutes);
+        if (voc !== null) bucket.vocTotal += voc;
+        const com = pickNumber(entry.community_time, entry.community_minutes, entry.payload?.community_time, entry.payload?.community_minutes);
+        if (com !== null) bucket.comTotal += com;
+        const note = extractEntryNotes(entry);
+        if (note) bucket.notes.push(note);
+      });
+      return [...buckets.values()].sort((a, b) => a.key.localeCompare(b.key));
+    }
+
+    function renderCaregiverPdfSummaries(entries) {
+      const weeklyEl = document.getElementById('cgWeeklySummary');
+      const monthlyEl = document.getElementById('cgMonthlySummary');
+      if (!weeklyEl || !monthlyEl) return;
+      weeklyEl.innerHTML = '';
+      monthlyEl.innerHTML = '';
+      if (!entries.length) {
+        weeklyEl.innerHTML = '<div class="cg-summary-card">No caregiver check-ins in this range.</div>';
+        monthlyEl.innerHTML = '';
+        return;
+      }
+
+      const weekly = summarizeBuckets(entries, (date) => {
+        const start = weekStartDate(date);
+        return `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-${String(start.getDate()).padStart(2, '0')}`;
+      });
+      const monthly = summarizeBuckets(entries, (date) => monthKey(date));
+
+      const renderCard = (bucket, label) => {
+        const pct = (count) => bucket.count ? `${Math.round((count / bucket.count) * 100)}%` : '—';
+        const avgPrompt = bucket.promptCount ? (bucket.promptSum / bucket.promptCount).toFixed(1) : '—';
+        const themes = extractTopNoteThemes(bucket.notes, 3);
+        const themesLabel = themes.length ? themes.join(', ') : 'None';
+        const card = document.createElement('div');
+        card.className = 'cg-summary-card';
+        card.innerHTML = `
+          <h4>${label}</h4>
+          <div class="cg-summary-row"><span class="label">Check-ins</span><span>${bucket.count}</span></div>
+          <div class="cg-summary-row"><span class="label">Hygiene % Yes</span><span>${pct(bucket.hygieneYes)}</span></div>
+          <div class="cg-summary-row"><span class="label">Food % Yes</span><span>${pct(bucket.foodYes)}</span></div>
+          <div class="cg-summary-row"><span class="label">Clean-up % Yes</span><span>${pct(bucket.cleanupYes)}</span></div>
+          <div class="cg-summary-row"><span class="label">Avg prompt level</span><span>${avgPrompt}</span></div>
+          <div class="cg-summary-row"><span class="label">Vocational minutes</span><span>${Math.round(bucket.vocTotal)}</span></div>
+          <div class="cg-summary-row"><span class="label">Community minutes</span><span>${Math.round(bucket.comTotal)}</span></div>
+          <div class="cg-summary-row"><span class="label">Top note themes</span><span>${themesLabel}</span></div>
+        `;
+        return card;
+      };
+
+      weekly.forEach(bucket => {
+        const start = new Date(bucket.key);
+        const end = new Date(start);
+        end.setDate(end.getDate() + 6);
+        const label = `Week of ${start.toLocaleDateString(undefined, { month:'short', day:'numeric' })}–${end.toLocaleDateString(undefined, { month:'short', day:'numeric' })}`;
+        weeklyEl.appendChild(renderCard(bucket, label));
+      });
+      monthly.forEach(bucket => {
+        monthlyEl.appendChild(renderCard(bucket, formatMonthLabel(bucket.key)));
+      });
     }
 
     function collectRecentCaregiverDays(entries, limit = 5) {
@@ -1415,13 +1770,11 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
         renderPlannerChart(plannerTrackerDays);
         return;
       }
-      const pieces = [`${stats.count} practice day${stats.count === 1 ? '' : 's'} recorded in planner`];
-      if (stats.avgPrompt != null) {
-        pieces.push(`avg prompt level ${stats.avgPrompt}`);
-      }
-      if (stats.lastNote) {
-        pieces.push(`last note: ${stats.lastNote}`);
-      }
+      const pieces = [
+        `${stats.count} practice day${stats.count === 1 ? '' : 's'}`,
+        `Avg prompt level: ${stats.avgPrompt ?? '—'}`,
+        `Last note: ${stats.lastNote || '—'}`
+      ];
       focusUi.planner.textContent = pieces.join(' • ');
       focusUi.planner.classList.remove('is-hidden');
       renderPlannerChart(plannerTrackerDays);
@@ -1531,106 +1884,33 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
     }
 
     function renderPlannerChart(days = []){
-      if (!focusUi.plannerChartWrap || !focusUi.plannerChartCanvas) return;
+      if (!focusUi.plannerChartWrap || !focusUi.plannerRow) return;
       const normalized = normalizePlannerDays(days);
       const practicedCount = normalized.filter(day => day.practiced).length;
       if (!practicedCount){
         focusUi.plannerChartWrap.classList.add('is-hidden');
         focusUi.plannerPanel?.classList.add('is-hidden');
-        plannerChart?.destroy();
-        plannerChart = null;
+        focusUi.plannerRow.innerHTML = '';
         return;
       }
       focusUi.plannerPanel?.classList.remove('is-hidden');
       focusUi.plannerChartWrap.classList.remove('is-hidden');
-      plannerChartNotes = normalized.map(day => day.note || '');
-      const labels = normalized.map(day => day.label);
-      const practiceBars = normalized.map(day => (day.practiced ? 1 : 0));
-      const promptLevels = normalized.map(day => (day.practiced ? day.prompt : null));
-
-      plannerChart?.destroy();
-      plannerChart = new Chart(focusUi.plannerChartCanvas, {
-        data: {
-          labels,
-          datasets: [
-            {
-              type: 'bar',
-              label: 'Practiced',
-              data: practiceBars,
-              backgroundColor: '#fde68a',
-              borderColor: '#f59e0b',
-              borderWidth: 1,
-              borderRadius: 6,
-              barThickness: 22,
-              yAxisID: 'practiceAxis',
-            },
-        {
-          type: 'line',
-          label: 'Prompt level',
-          data: promptLevels,
-          borderColor: '#ec4899',
-          backgroundColor: '#ec4899',
-          borderWidth: 3,
-          yAxisID: 'promptAxis',
-          tension: 0.3,
-          spanGaps: true,
-          pointRadius: 5,
-          pointHoverRadius: 6,
-          pointBackgroundColor: '#ec4899',
-          pointBorderColor: '#fff',
-          pointBorderWidth: 2
+      focusUi.plannerRow.innerHTML = '';
+      normalized.forEach(day => {
+        const cell = document.createElement('div');
+        cell.className = 'practice-cell';
+        const label = document.createElement('div');
+        label.textContent = day.label;
+        const dot = document.createElement('div');
+        const practiced = !!day.practiced;
+        dot.className = `practice-dot ${practiced ? 'on' : 'off'}`;
+        if (practiced && day.prompt != null) {
+          dot.textContent = day.prompt;
         }
-      ]
-        },
-        options: {
-          responsive: true,
-          scales: {
-            practiceAxis: {
-              type: 'linear',
-              position: 'left',
-              beginAtZero: true,
-              ticks: {
-                callback: (value) => (value ? 'Yes' : 'No'),
-                stepSize: 1,
-                max: 1
-              },
-              grid: { display: false }
-            },
-            promptAxis: {
-              type: 'linear',
-              position: 'right',
-              min: 0,
-              max: 4,
-              ticks: {
-                stepSize: 1,
-                callback: (value) => {
-                  const label = PROMPT_LABELS[String(value)];
-                  return label ? `${value} – ${label}` : value;
-                }
-              }
-            }
-          },
-          plugins: {
-            tooltip: {
-              callbacks: {
-                label(context){
-                  if (context.dataset.type === 'line') {
-                    const val = context.parsed.y;
-                    if (val == null) return 'Prompt level: —';
-                    const label = PROMPT_LABELS[String(val)];
-                    return label ? `Prompt level: ${label}` : `Prompt level: ${val}`;
-                  }
-                  return context.raw ? 'Practiced' : 'No practice';
-                },
-                afterLabel(context){
-                  if (context.dataset.type !== 'line') return;
-                  const note = plannerChartNotes[context.dataIndex];
-                  return note ? `Note: ${note}` : undefined;
-                }
-              }
-            }
-          }
-        }
+        if (day.note) dot.title = day.note;
+        cell.appendChild(label);
+        cell.appendChild(dot);
+        focusUi.plannerRow.appendChild(cell);
       });
     }
 
@@ -1714,10 +1994,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
     function populateCaregiverOptions(entries){
       const select = cgInputs.caregiver;
       if (!select) return;
-
-      const storedFilter = readCaregiverFilter();
-      const previous = cgState.caregiverFilter || storedFilter || 'all';
-      const hadStoredPreference = storedFilter !== null;
       select.innerHTML = '';
 
       const addOption = (value, label) => {
@@ -1770,17 +2046,10 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
         existingValues.add(value);
       }
 
-      let desired = previous;
-      const available = Array.from(select.options).map(opt => opt.value);
-      if (!available.includes(desired)) {
-        desired = selfId ? CAREGIVER_ID_PREFIX + selfId : 'all';
-      }
-      if (!hadStoredPreference && desired === 'all' && selfId) {
-        desired = CAREGIVER_ID_PREFIX + selfId;
-      }
-      select.value = desired;
-      cgState.caregiverFilter = desired;
-      writeCaregiverFilter(desired);
+      // Filters should never persist silently; default view is always "All caregivers."
+      select.value = 'all';
+      cgState.caregiverFilter = 'all';
+      updateCaregiverFilterBanner();
     }
 
     const fallbackFormat = (e) => {
@@ -1863,16 +2132,18 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       body.innerHTML = '';
 
       if (!entries.length) {
-        body.innerHTML = `<tr><td colspan="9">No caregiver check-ins found for the selected range.</td></tr>`;
+        body.innerHTML = `<tr><td colspan="10">No caregiver check-ins found for the selected range.</td></tr>`;
         return;
       }
 
-      entries.forEach(entry => {
+      entries.forEach((entry, index) => {
         const row = formatEntryForList ? formatEntryForList(entry) : fallbackFormat(entry);
         const tr = document.createElement('tr');
+        const caregiverLabel = caregiverNameFromEntry(entry) || '—';
 
         const cells = [
           row.dateTime || '—',
+          caregiverLabel,
           row.hygiene ?? '—',
           row.food_prep ?? '—',
           row.cleanup ?? '—',
@@ -1888,21 +2159,28 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
         });
 
         const notesTd = document.createElement('td');
-        const notes = (row.notes || '').trim();
+        notesTd.className = 'cg-notes-cell';
+        const notes = (extractEntryNotes(entry) || row.notes || '').trim();
+        const preview = document.createElement('div');
+        preview.className = 'cg-note-preview';
+        preview.textContent = notes ? truncateText(notes, 140) : '—';
+        notesTd.appendChild(preview);
         if (notes) {
-          notesTd.textContent = notes;
-        } else {
-          notesTd.textContent = '—';
+          const viewBtn = document.createElement('button');
+          viewBtn.type = 'button';
+          viewBtn.className = 'cg-note-btn';
+          viewBtn.textContent = 'View full note';
+          if (entry.id || row.id) {
+            viewBtn.dataset.checkinId = entry.id || row.id;
+          } else {
+            viewBtn.dataset.rowIndex = String(index);
+          }
+          notesTd.appendChild(viewBtn);
         }
-        if (row.file_url) {
-          const link = document.createElement('a');
-          link.href = row.file_url;
-          link.textContent = ' View file';
-          link.target = '_blank';
-          link.rel = 'noopener';
-          notesTd.appendChild(document.createElement('br'));
-          notesTd.appendChild(link);
-        }
+        const fullNotes = document.createElement('div');
+        fullNotes.className = 'cg-note-full';
+        fullNotes.textContent = notes || '—';
+        notesTd.appendChild(fullNotes);
         tr.appendChild(notesTd);
         const actionTd = document.createElement('td');
         // Each Edit button carries the Supabase row id so the delegation handler can load it in the modal.
@@ -2042,6 +2320,30 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
         editUi.save.textContent = 'Save Changes';
       }
       editUi.overlay.classList.add('is-hidden');
+    }
+
+    function closeNoteDrawer(){
+      if (!noteUi.overlay) return;
+      noteUi.overlay.classList.add('is-hidden');
+      if (noteUi.edit) noteUi.edit.dataset.checkinId = '';
+    }
+
+    function openNoteDrawer(entry){
+      if (!noteUi.overlay || !entry) return;
+      const ts = parseRecordTimestamp(entry) || parseEntryDate(entry) || new Date();
+      const caregiverLabel = caregiverNameFromEntry(entry) || 'Unknown caregiver';
+      const notes = extractEntryNotes(entry) || '—';
+      // Full notes live in a dedicated drawer so table rows stay compact.
+      if (noteUi.timestamp) noteUi.timestamp.textContent = formatLocalDateTimeLabel(ts);
+      if (noteUi.caregiver) noteUi.caregiver.textContent = caregiverLabel;
+      if (noteUi.body) noteUi.body.textContent = notes;
+      if (noteUi.file) {
+        const fileUrl = entry.file_url || entry?.payload?.file_url || '';
+        noteUi.file.href = fileUrl || '#';
+        noteUi.file.classList.toggle('is-hidden', !fileUrl);
+      }
+      if (noteUi.edit) noteUi.edit.dataset.checkinId = entry.id || '';
+      noteUi.overlay.classList.remove('is-hidden');
     }
 
     // openEditModal fetches a single caregiver_checkins row (select().eq('id').single()) and fills the modal form.
@@ -2223,22 +2525,25 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
 
     function applyCaregiverFilters(){
       const entries = cgState.entries.slice();
+      if (cgInputs.caregiver) {
+        cgState.caregiverFilter = cgInputs.caregiver.value || 'all';
+      }
+      updateCaregiverFilterBanner();
       if (!entries.length) {
         renderCaregiverCheckins([]);
         updateCgSummary([], 0);
         renderQuickLook([]);
         return;
       }
-      if (cgInputs.caregiver) {
-        cgState.caregiverFilter = cgInputs.caregiver.value || 'all';
-        writeCaregiverFilter(cgState.caregiverFilter);
-      }
       const filtered = filterCaregiverEntries(entries);
       cgState.filtered = filtered;
       renderCaregiverCheckins(filtered);
       updateCgSummary(filtered, entries.length);
       renderQuickLook(filtered);
+      renderCaregiverPdfSummaries(filtered);
     }
+
+    window.applyCaregiverFilters = applyCaregiverFilters;
 
     function exportCaregiverCsv(){
       const source = (cgState.filtered && cgState.filtered.length) ? cgState.filtered : cgState.entries;
@@ -2246,21 +2551,27 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
         alert('No caregiver check-ins to export yet.');
         return;
       }
-      const rows = source.map(entry => (formatEntryForList ? formatEntryForList(entry) : fallbackFormat(entry)));
-      const headers = ['Timestamp','Hygiene','Food','Clean-up','Voc (min)','Comm (min)','Prompt','Notes'];
+      const rows = source.map(entry => ({
+        entry,
+        row: formatEntryForList ? formatEntryForList(entry) : fallbackFormat(entry)
+      }));
+      const headers = ['Timestamp','Caregiver','Hygiene','Food','Clean-up','Voc (min)','Comm (min)','Prompt','Notes'];
       const csvLines = [
         headers.join(',')
       ];
-      rows.forEach(row => {
+      rows.forEach(({ entry, row }) => {
+        const caregiverLabel = caregiverNameFromEntry(entry) || '';
+        const notesValue = extractEntryNotes(entry) || row.notes || '';
         const values = [
           row.dateTime || '',
+          caregiverLabel,
           row.hygiene || '',
           row.food_prep || '',
           row.cleanup || '',
           row.vocational_time || '',
           row.community_time || '',
           row.new_skill_score || '',
-          (row.notes || '').replace(/\r?\n|\r/g, ' ')
+          notesValue.replace(/\r?\n|\r/g, ' ')
         ].map(value => {
           const str = String(value ?? '');
           return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
@@ -2278,12 +2589,23 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       URL.revokeObjectURL(url);
     }
 
-    function exportCaregiverPdf(){
+    // PDF exports should include full notes even when the table is compact.
+    function setCaregiverNotesExportMode(enabled){
+      document.body.classList.toggle('cg-export-notes', enabled);
+    }
+    window.setCaregiverNotesExportMode = setCaregiverNotesExportMode;
+
+    async function exportCaregiverPdf(){
       if (!cgState.entries.length) {
         alert('No caregiver data to export yet.');
         return;
       }
-      exportElement('#cg-panel', 'Caregiver_Checkins.pdf');
+      setCaregiverNotesExportMode(true);
+      try {
+        await exportElement('#cg-panel', 'Caregiver_Checkins.pdf');
+      } finally {
+        setCaregiverNotesExportMode(false);
+      }
     }
 
     /* =================== KPIs & caregiver-derived charts =================== */
@@ -2338,6 +2660,11 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       arms_legs: 'Arms / legs',
       other: 'Other'
     };
+    const MOVEMENT_TIME_LABELS = {
+      AM: 'Morning',
+      PM: 'Afternoon / Evening',
+      Overnight: 'Overnight'
+    };
     const MOVEMENT_BODY_LABELS = {
       eyes_blinking: 'Eyes blinking / eye movements',
       face_grimacing: 'Face grimacing',
@@ -2366,6 +2693,11 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       const typeCounts = {};
       const bodyCounts = {};
       const triggerCounts = {};
+      const timeCounts = {};
+      let severityTotal = 0;
+      let severityCount = 0;
+      let maxSeverity = null;
+      const daySet = new Set();
       entries.forEach((entry) => {
         const movement = movementFromEntry(entry);
         if (!movement.present) return;
@@ -2374,6 +2706,14 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
           const bucket = daily.get(dayKey) || { severities: [] };
           if (movement.severity !== null) bucket.severities.push(movement.severity);
           daily.set(dayKey, bucket);
+          daySet.add(dayKey);
+        }
+        if (movement.severity !== null) {
+          severityTotal += movement.severity;
+          severityCount += 1;
+          if (maxSeverity === null || movement.severity > maxSeverity) {
+            maxSeverity = movement.severity;
+          }
         }
         const typeKey = movement.mainType || 'other';
         typeCounts[typeKey] = (typeCounts[typeKey] || 0) + 1;
@@ -2385,6 +2725,11 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
           if (!item) return;
           triggerCounts[item] = (triggerCounts[item] || 0) + 1;
         });
+        const times = parseMovementArray(entry.movement_times ?? entry.payload?.movement_times);
+        times.forEach((item) => {
+          if (!item) return;
+          timeCounts[item] = (timeCounts[item] || 0) + 1;
+        });
       });
       const severitySeries = Array.from(daily.entries())
         .sort(([a],[b]) => a.localeCompare(b))
@@ -2394,7 +2739,24 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
             ? +(bucket.severities.reduce((sum, val) => sum + val, 0) / bucket.severities.length).toFixed(2)
             : null
         }));
-      return { severitySeries, typeCounts, bodyCounts, triggerCounts };
+      const topN = (counts, limit = 5) =>
+        Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,limit)
+          .reduce((acc, [key, val]) => { acc[key] = val; return acc; }, {});
+      const mostCommon = (counts) => {
+        const entries = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+        return entries.length ? entries[0][0] : null;
+      };
+      return {
+        severitySeries,
+        typeCounts: topN(typeCounts),
+        bodyCounts: topN(bodyCounts),
+        triggerCounts: topN(triggerCounts),
+        daysWithSymptoms: daySet.size,
+        avgSeverity: severityCount ? +(severityTotal / severityCount).toFixed(1) : null,
+        maxSeverity,
+        mostCommonType: mostCommon(typeCounts),
+        mostCommonTime: mostCommon(timeCounts)
+      };
     }
 
     function drawMovementSeverityChart(series){
@@ -2403,8 +2765,12 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       const data   = series?.map(p=>p.y ?? null) ?? [];
       charts.movementSeverity = new Chart($('#movementSeverityChart'), {
         type:'line',
-        data:{ labels, datasets:[{ label:'Avg Severity (0–4)', data, tension:.25, pointRadius:3 }]},
-        options:{ responsive:true, scales:{ x:axisTitle('Date'), y:{ min:0,max:4,ticks:{stepSize:1}, ...axisTitle('Severity (0–4)') } } }
+        data:{ labels, datasets:[{ data, tension:.35, pointRadius:0, borderColor:'#1d4ed8', borderWidth:2, fill:false }]},
+        options:{
+          responsive:true,
+          plugins:{ legend:{ display:false }, tooltip:{ enabled:true } },
+          scales:{ x:{ display:false }, y:{ display:false, min:0, max:4 } }
+        }
       });
     }
 
@@ -2414,36 +2780,47 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       const data = Object.keys(counts).map(key => counts[key]);
       charts.movementType = new Chart($('#movementMainTypeChart'), {
         type:'bar',
-        data:{ labels, datasets:[{ label:'Count', data, backgroundColor:'#93c5fd' }]},
-        options:{ responsive:true, scales:{ x:axisTitle('Main Type'), y:{ beginAtZero:true, ticks:{precision:0}, ...axisTitle('Count') } } }
+        data:{ labels, datasets:[{ data, backgroundColor:'#93c5fd', borderRadius:8 }]},
+        options:{
+          responsive:true,
+          indexAxis:'y',
+          plugins:{ legend:{ display:false }, tooltip:{ enabled:true } },
+          scales:{ x:{ display:false, beginAtZero:true }, y:{ display:false } }
+        }
       });
     }
 
     function drawMovementBodyChart(counts = {}){
       destroy('movementBody');
-      const sorted = Object.entries(counts)
-        .sort((a,b)=>b[1]-a[1])
-        .slice(0,5);
+      const sorted = Object.entries(counts);
       const labels = sorted.map(([key]) => MOVEMENT_BODY_LABELS[key] || key);
       const data = sorted.map(([,val]) => val);
       charts.movementBody = new Chart($('#movementBodyMapChart'), {
         type:'bar',
-        data:{ labels, datasets:[{ label:'Count', data, backgroundColor:'#fcd34d' }]},
-        options:{ responsive:true, scales:{ x:axisTitle('Body Map'), y:{ beginAtZero:true, ticks:{precision:0}, ...axisTitle('Count') } } }
+        data:{ labels, datasets:[{ data, backgroundColor:'#fcd34d', borderRadius:8 }]},
+        options:{
+          responsive:true,
+          indexAxis:'y',
+          plugins:{ legend:{ display:false }, tooltip:{ enabled:true } },
+          scales:{ x:{ display:false, beginAtZero:true }, y:{ display:false } }
+        }
       });
     }
 
     function drawMovementTriggerChart(counts = {}){
       destroy('movementTrigger');
-      const sorted = Object.entries(counts)
-        .sort((a,b)=>b[1]-a[1])
-        .slice(0,6);
+      const sorted = Object.entries(counts);
       const labels = sorted.map(([key]) => MOVEMENT_TRIGGER_LABELS[key] || key);
       const data = sorted.map(([,val]) => val);
       charts.movementTrigger = new Chart($('#movementTriggerChart'), {
         type:'bar',
-        data:{ labels, datasets:[{ label:'Count', data, backgroundColor:'#a7f3d0' }]},
-        options:{ responsive:true, scales:{ x:axisTitle('Trigger'), y:{ beginAtZero:true, ticks:{precision:0}, ...axisTitle('Count') } } }
+        data:{ labels, datasets:[{ data, backgroundColor:'#a7f3d0', borderRadius:8 }]},
+        options:{
+          responsive:true,
+          indexAxis:'y',
+          plugins:{ legend:{ display:false }, tooltip:{ enabled:true } },
+          scales:{ x:{ display:false, beginAtZero:true }, y:{ display:false } }
+        }
       });
     }
 
@@ -2488,7 +2865,27 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       drawMovementTypeChart(movementInsights.typeCounts);
       drawMovementBodyChart(movementInsights.bodyCounts);
       drawMovementTriggerChart(movementInsights.triggerCounts);
+      const summaryDays = document.getElementById('movementDaysVal');
+      const summaryAvg = document.getElementById('movementAvgVal');
+      const summaryMax = document.getElementById('movementMaxVal');
+      const summaryType = document.getElementById('movementTypeVal');
+      const summaryTime = document.getElementById('movementTimeVal');
+      if (summaryDays) summaryDays.textContent = movementInsights.daysWithSymptoms ?? 0;
+      if (summaryAvg) summaryAvg.textContent = movementInsights.avgSeverity ?? '—';
+      if (summaryMax) summaryMax.textContent = movementInsights.maxSeverity ?? '—';
+      if (summaryType) {
+        const label = MOVEMENT_TYPE_LABELS[movementInsights.mostCommonType] || movementInsights.mostCommonType || '—';
+        summaryType.textContent = label;
+      }
+      if (summaryTime) {
+        const label = MOVEMENT_TIME_LABELS[movementInsights.mostCommonTime] || movementInsights.mostCommonTime || '—';
+        summaryTime.textContent = label;
+      }
       cgState.entries = entries.slice();
+      cgState.entryById = new Map();
+      entries.forEach(entry => {
+        if (entry?.id) cgState.entryById.set(String(entry.id), entry);
+      });
       cgState.focusStats = buildFocusStats(entries);
       populateCaregiverOptions(cgState.entries);
       updateDateInputs(cgState.entries);
@@ -2905,6 +3302,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
         btn.dataset.original = btn.textContent;
         btn.textContent = 'Preparing…';
       }
+      setCaregiverNotesExportMode(true);
       try {
         const blob = await exportElementToBlob('#cg-panel');
         if (!blob) throw new Error('PDF failed');
@@ -2926,6 +3324,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
         console.error('Share PDF failed', error);
         alert('Unable to create a PDF right now.');
       } finally {
+        setCaregiverNotesExportMode(false);
         if (btn) {
           btn.disabled = false;
           btn.textContent = btn.dataset.original || '📤 Share PDF';
@@ -2936,8 +3335,19 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
     /* =================== Wire & boot =================== */
     $('#moodRange').addEventListener('change', renderMoodSection);
 
-    // Event delegation keeps Edit buttons working as the table refreshes.
+    // Event delegation keeps row actions working as the table refreshes.
     cgInputs.tbody?.addEventListener('click', (event) => {
+      const noteBtn = event.target.closest('.cg-note-btn');
+      if (noteBtn) {
+        const checkinId = noteBtn.dataset.checkinId;
+        let entry = null;
+        if (checkinId) entry = cgState.entryById.get(String(checkinId));
+        if (!entry && noteBtn.dataset.rowIndex) {
+          entry = cgState.filtered[Number(noteBtn.dataset.rowIndex)] || null;
+        }
+        if (entry) openNoteDrawer(entry);
+        return;
+      }
       const btn = event.target.closest('.cg-edit-btn');
       if (!btn) return;
       const checkinId = btn.dataset.checkinId;
@@ -2951,10 +3361,22 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
     editUi.overlay?.addEventListener('click', (event) => {
       if (event.target === editUi.overlay) closeEditModal();
     });
-    document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && !editUi.overlay?.classList.contains('is-hidden')) {
-        closeEditModal();
+    noteUi.overlay?.addEventListener('click', (event) => {
+      if (event.target === noteUi.overlay) closeNoteDrawer();
+    });
+    noteUi.close?.addEventListener('click', () => closeNoteDrawer());
+    noteUi.closeFooter?.addEventListener('click', () => closeNoteDrawer());
+    noteUi.edit?.addEventListener('click', () => {
+      const checkinId = noteUi.edit?.dataset.checkinId;
+      if (checkinId) {
+        closeNoteDrawer();
+        openEditModal(checkinId);
       }
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape') return;
+      if (!editUi.overlay?.classList.contains('is-hidden')) closeEditModal();
+      if (!noteUi.overlay?.classList.contains('is-hidden')) closeNoteDrawer();
     });
 
     cgInputs.apply?.addEventListener('click', (event) => {
@@ -2966,8 +3388,16 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
     cgInputs.end?.addEventListener('change', () => applyCaregiverFilters());
     cgInputs.caregiver?.addEventListener('change', () => {
       cgState.caregiverFilter = cgInputs.caregiver.value || 'all';
-      writeCaregiverFilter(cgState.caregiverFilter);
       applyCaregiverFilters();
+    });
+    cgInputs.notesToggle?.addEventListener('click', () => {
+      const expanded = !document.body.classList.contains('cg-notes-expanded');
+      document.body.classList.toggle('cg-notes-expanded', expanded);
+      cgInputs.notesToggle.setAttribute('aria-pressed', expanded ? 'true' : 'false');
+      cgInputs.notesToggle.textContent = expanded ? 'Compact notes' : 'Expand notes';
+    });
+    document.querySelectorAll('.cg-clear-filters').forEach(btn => {
+      btn.addEventListener('click', () => clearCaregiverFilters());
     });
     cgInputs.csv?.addEventListener('click', exportCaregiverCsv);
     cgInputs.pdf?.addEventListener('click', exportCaregiverPdf);
@@ -2978,9 +3408,15 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
     async function renderMoodSection(){
       const rangeSel = $('#moodRange').value || 'all';
       const full = await fetchMoodEntries(rangeSel);
+      const exportRange = window.exportDateRange || null;
+      const inExportRange = (dateObj) => {
+        if (!exportRange?.start || !exportRange?.end) return true;
+        return dateObj >= exportRange.start && dateObj <= exportRange.end;
+      };
+      const filteredMood = exportRange ? full.filter(entry => inExportRange(entry.dateObj)) : full;
 
       // Limit table to last 7 distinct days if "all"
-      let tableRows = full.slice();
+      let tableRows = filteredMood.slice();
       if (rangeSel==='all'){
         const seen=new Set(); const trimmed=[];
         for(let i=tableRows.length-1;i>=0 && seen.size<7;i--){
@@ -2998,11 +3434,29 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       }
 
       let indiv={}, buckets={"Positive":0,"Low Energy":0,"Challenging":0,"Other":0};
-      for (const e of full){ const m=e.mood||'Unknown'; indiv[m]=(indiv[m]||0)+1; buckets[toBucket(m)]++; }
+      for (const e of filteredMood){ const m=e.mood||'Unknown'; indiv[m]=(indiv[m]||0)+1; buckets[toBucket(m)]++; }
+      const totalMood = filteredMood.length || 0;
+      const commonMoodEntry = Object.entries(indiv).sort((a,b)=>b[1]-a[1])[0];
+      const commonMood = commonMoodEntry ? commonMoodEntry[0] : '—';
+      const pct = (count) => totalMood ? `${Math.round((count / totalMood) * 100)}%` : '—';
+      $('#moodSummaryTotal').textContent = totalMood ? `${totalMood}` : '—';
+      $('#moodSummaryCommon').textContent = commonMood;
+      $('#moodSummaryPositive').textContent = pct(buckets.Positive || 0);
+      $('#moodSummaryChallenging').textContent = pct(buckets.Challenging || 0);
       drawMoodShare(indiv);
-      drawEngagementVsMood(full);
-      drawSleepOverlay(full);
+      drawEngagementVsMood(filteredMood);
+      drawSleepOverlay(filteredMood);
     }
+
+    window.renderMoodSection = renderMoodSection;
+
+    window.caregiverReportApi = {
+      cgInputs,
+      formatDateInputValue,
+      parseCaregiverDate,
+      applyCaregiverFilters,
+      renderMoodSection
+    };
 
     await ensureActiveGroupId(USER_ID);
     await loadCaregiverData();
@@ -3029,8 +3483,20 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       alert('No printable sections found.');
       return;
     }
+    const exportRange = await getExportRangeSelection();
+    if (!exportRange) return;
     toggleExportHiders(true);
     document.body.classList.add('print-export');
+    window.setCaregiverNotesExportMode?.(true);
+    const api = window.caregiverReportApi || {};
+    const cgStart = api.cgInputs?.start || document.getElementById('cgStart');
+    const cgEnd = api.cgInputs?.end || document.getElementById('cgEnd');
+    const previousRange = { start: cgStart?.value || '', end: cgEnd?.value || '' };
+    window.exportDateRange = exportRange;
+    if (cgStart) cgStart.value = exportRange.startInput;
+    if (cgEnd) cgEnd.value = exportRange.endInput;
+    api.applyCaregiverFilters?.();
+    await api.renderMoodSection?.();
     try {
       const { jsPDF } = window.jspdf;
       const pdf = new jsPDF({ unit:'pt', format:'a4' });
@@ -3069,13 +3535,128 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
     } finally {
       document.body.classList.remove('print-export');
       toggleExportHiders(false);
+      window.setCaregiverNotesExportMode?.(false);
+      window.exportDateRange = null;
+      if (cgStart) cgStart.value = previousRange.start;
+      if (cgEnd) cgEnd.value = previousRange.end;
+      api.applyCaregiverFilters?.();
+      await api.renderMoodSection?.();
     }
   }
 
-  function printFullReport() { window.print(); }
+  async function printFullReport() {
+    const exportRange = await getExportRangeSelection();
+    if (!exportRange) return;
+    toggleExportHiders(true);
+    document.body.classList.add('print-export');
+    window.setCaregiverNotesExportMode?.(true);
+    const api = window.caregiverReportApi || {};
+    const cgStart = api.cgInputs?.start || document.getElementById('cgStart');
+    const cgEnd = api.cgInputs?.end || document.getElementById('cgEnd');
+    const previousRange = { start: cgStart?.value || '', end: cgEnd?.value || '' };
+    window.exportDateRange = exportRange;
+    if (cgStart) cgStart.value = exportRange.startInput;
+    if (cgEnd) cgEnd.value = exportRange.endInput;
+    api.applyCaregiverFilters?.();
+    await api.renderMoodSection?.();
+
+    const restore = async () => {
+      document.body.classList.remove('print-export');
+      toggleExportHiders(false);
+      window.setCaregiverNotesExportMode?.(false);
+      window.exportDateRange = null;
+      if (cgStart) cgStart.value = previousRange.start;
+      if (cgEnd) cgEnd.value = previousRange.end;
+      api.applyCaregiverFilters?.();
+      await api.renderMoodSection?.();
+      window.removeEventListener('afterprint', restore);
+    };
+    window.addEventListener('afterprint', restore);
+    window.print();
+  }
 
   document.getElementById('fullExportBtn')?.addEventListener('click', exportFullReportPDF);
   document.getElementById('fullPrintBtn')?.addEventListener('click', printFullReport);
+
+  function getExportRangeDefaults() {
+    const api = window.caregiverReportApi || {};
+    const startVal = api.cgInputs?.start?.value || '';
+    const endVal = api.cgInputs?.end?.value || '';
+    const today = new Date();
+    const fallbackEnd = api.formatDateInputValue ? api.formatDateInputValue(today) : '';
+    return {
+      start: startVal || '',
+      end: endVal || fallbackEnd
+    };
+  }
+
+  function openExportRangeModal() {
+    return new Promise((resolve) => {
+      const overlay = document.getElementById('exportRangeOverlay');
+      const startInput = document.getElementById('exportRangeStart');
+      const endInput = document.getElementById('exportRangeEnd');
+      const closeBtn = document.getElementById('exportRangeClose');
+      const cancelBtn = document.getElementById('exportRangeCancel');
+      const applyBtn = document.getElementById('exportRangeApply');
+      if (!overlay || !startInput || !endInput || !applyBtn) {
+        resolve(null);
+        return;
+      }
+      const defaults = getExportRangeDefaults();
+      startInput.value = defaults.start || '';
+      endInput.value = defaults.end || '';
+
+      const cleanup = () => {
+        overlay.classList.add('is-hidden');
+        closeBtn?.removeEventListener('click', onCancel);
+        cancelBtn?.removeEventListener('click', onCancel);
+        applyBtn.removeEventListener('click', onApply);
+        overlay.removeEventListener('click', onOverlay);
+      };
+
+      const onCancel = () => {
+        cleanup();
+        resolve(null);
+      };
+
+      const onApply = () => {
+        const startVal = startInput.value;
+        const endVal = endInput.value;
+        if (!startVal || !endVal) {
+          alert('Pick a start and end date for the export.');
+          return;
+        }
+        const api = window.caregiverReportApi || {};
+        const start = api.parseCaregiverDate?.(`${startVal}T00:00`);
+        const end = api.parseCaregiverDate?.(`${endVal}T23:59`);
+        if (!start || !end || start > end) {
+          alert('Please choose a valid date range.');
+          return;
+        }
+        cleanup();
+        resolve({
+          start,
+          end,
+          startInput: startVal,
+          endInput: endVal
+        });
+      };
+
+      const onOverlay = (event) => {
+        if (event.target === overlay) onCancel();
+      };
+
+      closeBtn?.addEventListener('click', onCancel);
+      cancelBtn?.addEventListener('click', onCancel);
+      applyBtn.addEventListener('click', onApply);
+      overlay.addEventListener('click', onOverlay);
+      overlay.classList.remove('is-hidden');
+    });
+  }
+
+  async function getExportRangeSelection() {
+    return await openExportRangeModal();
+  }
 </script>
 
 <script>

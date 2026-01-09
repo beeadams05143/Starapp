@@ -7,8 +7,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <!-- Global + page CSS -->
-  <link rel="stylesheet" href="style.css?v=2025.10.16d">
-  <link rel="stylesheet" href="calendar.css?v=2025.10.16d">
+  <link rel="stylesheet" href="style.css?v=2025.01.09C">
+  <link rel="stylesheet" href="calendar.css?v=2025.01.09C">
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
@@ -54,6 +54,8 @@
     .event .title{ font-weight:700; }
     .event .meta{ font-size:12px; color:#6b7280; margin-top:2px; }
     .event .del{ border:0; background:#fff; cursor:pointer; font-size:18px; }
+    .event-date{ font-weight:800; padding:12px 10px 4px; color:#1f2937; }
+    .event-date:first-child{ padding-top:6px; }
 
     .empty{ color:#9aa3b2; font-style:italic; padding:8px; }
     dialog{ border:0; border-radius:16px; width:min(520px, 92vw); padding:0; box-shadow:0 24px 60px rgba(0,0,0,.25); }
@@ -226,7 +228,7 @@
 
   <!-- ===== Supabase Calendar logic ===== -->
   <script type="module">
-  import { rest, getSessionFromStorage } from "./restClient.js?v=2025.10.16d";
+  import { rest, getSessionFromStorage } from "./restClient.js?v=2025.01.09C";
   const printBtn = document.getElementById('calendarPrintBtn');
   const shareBtn = document.getElementById('calendarShareBtn');
 
@@ -416,9 +418,21 @@
     }
     const eventsForDay = (key) => state.cacheByDay.get(key) || [];
 
+    function syncSelectedToMonth() {
+      const isSameMonth =
+        state.selected.getFullYear() === state.year &&
+        state.selected.getMonth() === state.month;
+      if (!isSameMonth) {
+        const maxDay = new Date(state.year, state.month + 1, 0).getDate();
+        const day = Math.min(state.selected.getDate(), maxDay);
+        state.selected = new Date(state.year, state.month, day);
+      }
+    }
+
     async function renderMonth() {
       const first = new Date(state.year, state.month, 1);
       monthLabel.textContent = fmtMonthYear(first);
+      syncSelectedToMonth();
       await loadMonthIntoCache();
 
       const start = new Date(first);
@@ -443,8 +457,8 @@
 
         cell.addEventListener("click", () => {
           state.selected = d;
-          renderSelected();
           renderMonth();
+          renderMonthList();
         });
 
         grid.appendChild(cell);
@@ -461,38 +475,58 @@
       return `${page}?${p.toString()}`;
     }
 
-    function renderSelected() {
-      selectedLabel.textContent = state.selected.toLocaleDateString(undefined, {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-      });
+    function renderMonthList() {
+      const monthDate = new Date(state.year, state.month, 1);
+      selectedLabel.textContent = `${fmtMonthYear(monthDate)} events`;
 
-      const key = dk(state.selected);
-      const items = eventsForDay(key);
+      const keys = Array.from(state.cacheByDay.keys())
+        .filter((key) => {
+          const d = new Date(`${key}T00:00:00`);
+          return d.getFullYear() === state.year && d.getMonth() === state.month;
+        })
+        .sort();
 
-      list.innerHTML = items.length ? "" : `<li class="empty">No events yet.</li>`;
-      items.forEach((e) => {
-        const time = e.all_day ? "All day" : [e.start_time, e.end_time].filter(Boolean).join(" – ");
-        const li = document.createElement("li");
-        li.className = "event";
-        li.innerHTML = `
-          <div class="left">
-            <div class="title"><a href="${linkFor(e)}" style="text-decoration:none; color:inherit">${escapeHtml(e.title)}</a></div>
-            <div class="meta">${escapeHtml(e.type)}${time ? " • " + escapeHtml(time) : ""}${e.location ? " • " + escapeHtml(e.location) : ""}</div>
-          </div>
-          <button class="del" aria-label="Delete">🗑️</button>
-        `;
-        li.querySelector(".del").onclick = async () => {
-          try {
-            await api.deleteEvent(e.id);
-            await renderMonth();
-            renderSelected();
-          } catch (err) {
-            alert("Delete failed: " + err.message);
-          }
-        };
-        list.appendChild(li);
+      list.innerHTML = "";
+      if (!keys.length) {
+        list.innerHTML = `<li class="empty">No events yet for ${fmtMonthYear(monthDate)}.</li>`;
+        return;
+      }
+
+      keys.forEach((key) => {
+        const dayDate = new Date(`${key}T00:00:00`);
+        const dayLabel = dayDate.toLocaleDateString(undefined, {
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+        });
+        const dayLi = document.createElement("li");
+        dayLi.className = "event-date";
+        dayLi.textContent = dayLabel;
+        list.appendChild(dayLi);
+
+        const items = eventsForDay(key);
+        items.forEach((e) => {
+          const time = e.all_day ? "All day" : [e.start_time, e.end_time].filter(Boolean).join(" – ");
+          const li = document.createElement("li");
+          li.className = "event";
+          li.innerHTML = `
+            <div class="left">
+              <div class="title"><a href="${linkFor(e)}" style="text-decoration:none; color:inherit">${escapeHtml(e.title)}</a></div>
+              <div class="meta">${escapeHtml(e.type)}${time ? " • " + escapeHtml(time) : ""}${e.location ? " • " + escapeHtml(e.location) : ""}</div>
+            </div>
+            <button class="del" aria-label="Delete">🗑️</button>
+          `;
+          li.querySelector(".del").onclick = async () => {
+            try {
+              await api.deleteEvent(e.id);
+              await renderMonth();
+              renderMonthList();
+            } catch (err) {
+              alert("Delete failed: " + err.message);
+            }
+          };
+          list.appendChild(li);
+        });
       });
     }
 
@@ -502,8 +536,9 @@
         state.month = 11;
         state.year--;
       }
+      syncSelectedToMonth();
       await renderMonth();
-      renderSelected();
+      renderMonthList();
     };
 
     document.querySelector(".cal-nav.next").onclick = async () => {
@@ -512,8 +547,9 @@
         state.month = 0;
         state.year++;
       }
+      syncSelectedToMonth();
       await renderMonth();
-      renderSelected();
+      renderMonthList();
     };
 
     const resetDialog = () => {
@@ -561,8 +597,8 @@
         state.selected = new Date(saved.start_date + "T00:00:00");
         state.year = state.selected.getFullYear();
         state.month = state.selected.getMonth();
-        renderSelected();
         renderMonth();
+        renderMonthList();
       } catch (err) {
         alert("Save failed: " + err.message);
       }
@@ -571,7 +607,7 @@
     dlg.querySelector(".cancel").onclick = () => dlg.close();
 
     await renderMonth();
-    renderSelected();
+    renderMonthList();
   })();
 </script>
 
@@ -580,12 +616,12 @@
   <div id="tabbar"></div>
 
   <!-- 🔁 Shared nav + UI shell (match home.html paths exactly) -->
-  <script type="module" src="/script.js?v=2025.10.16d"></script>
-  <script defer src="/ui-shell.js?v=2025.10.16d"></script>
-  <script defer src="/scripts/appbar-drawer.js?v=2025.10.16d"></script>
-  <script type="module" src="/avatar-float.js?v=2025.10.16d"></script>
+  <script type="module" src="/script.js?v=2025.01.09C"></script>
+  <script defer src="/ui-shell.js?v=2025.01.09C"></script>
+  <script defer src="/scripts/appbar-drawer.js?v=2025.01.09C"></script>
+  <script type="module" src="/avatar-float.js?v=2025.01.09C"></script>
 
   <!-- ✅ Navbar loader (include once, as a module, absolute path) -->
-  <script type="module" src="/load-navbar.js?v=2025.10.16d"></script>
+  <script type="module" src="/load-navbar.js?v=2025.01.09C"></script>
 </body>
 </html>

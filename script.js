@@ -2,12 +2,12 @@
 import {
   rest,
   getSessionFromStorage,
-} from './restClient.js?v=2025.10.16d';
+} from './restClient.js?v=2025.01.09C';
 import {
   SUPABASE_URL,
   SUPABASE_ANON_KEY,
   clearSavedSession,
-} from './supabaseClient.js?v=2025.10.16d';
+} from './supabaseClient.js?v=2025.01.09C';
 
 const GROUP_KEY = 'currentGroupId';
 

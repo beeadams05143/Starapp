@@ -1,6 +1,6 @@
 // Profile.js — vanilla browser version (no React)
-import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
-import { setupAvatarUpload } from './src/components/AvatarUpload.js?v=2025.10.16d';
+import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09C';
+import { setupAvatarUpload } from './src/components/AvatarUpload.js?v=2025.01.09C';
 
 document.addEventListener('DOMContentLoaded', async () => {
   const session = getSessionFromStorage();

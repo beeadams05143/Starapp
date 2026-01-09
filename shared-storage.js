@@ -1,4 +1,4 @@
-import { SUPABASE_URL, SUPABASE_ANON_KEY, getSessionFromStorage } from './supabaseClient.js?v=2025.10.16d';
+import { SUPABASE_URL, SUPABASE_ANON_KEY, getSessionFromStorage } from './supabaseClient.js?v=2025.01.09C';
 
 function requireSession() {
   const session = getSessionFromStorage();

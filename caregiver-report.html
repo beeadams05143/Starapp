@@ -266,9 +266,34 @@
     body.print-export .pdf-only{display:block}
 
     @media (max-width:720px){
+      main.page{padding:12px}
+      h1{font-size:24px}
+      .panel{padding:12px}
+      .toolbar{flex-direction:column;align-items:stretch}
+      .toolbar label{width:100%}
+      .toolbar button{width:100%}
+      .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .chart{padding:10px}
+      .movement-grid{grid-template-columns:1fr}
+      .movement-summary{grid-template-columns:1fr}
+      .movement-card{min-height:auto}
+      .cg-table-wrap{overflow:auto}
+      #cgTable{min-width:780px;font-size:12px}
+      #cgTable th,#cgTable td{padding:6px}
+      .cg-note-drawer{width:100%;border-radius:18px 18px 0 0}
+      .cg-filter-banner{flex-direction:column;align-items:flex-start}
+      .cg-filter-banner button{width:100%}
+      .hc-head{flex-direction:column;gap:8px;align-items:flex-start}
+      .hc-kvs{flex-direction:column}
+      .hc-grid{grid-template-columns:repeat(7,minmax(80px,1fr))}
+      .hc-cell{min-height:90px}
+      #cg-status{display:none}
       #cgNotesToggle{display:none}
       .cg-note-drawer{border-radius:18px}
     }
+
+    body.export-wide{min-width:1200px}
+    body.export-wide main.page{max-width:1200px;width:1200px}
   </style>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
@@ -3487,6 +3512,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
     if (!exportRange) return;
     toggleExportHiders(true);
     document.body.classList.add('print-export');
+    document.body.classList.add('export-wide');
     window.setCaregiverNotesExportMode?.(true);
     const api = window.caregiverReportApi || {};
     const cgStart = api.cgInputs?.start || document.getElementById('cgStart');
@@ -3534,6 +3560,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
       pdf.save('Full_Report.pdf');
     } finally {
       document.body.classList.remove('print-export');
+      document.body.classList.remove('export-wide');
       toggleExportHiders(false);
       window.setCaregiverNotesExportMode?.(false);
       window.exportDateRange = null;
@@ -3549,6 +3576,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
     if (!exportRange) return;
     toggleExportHiders(true);
     document.body.classList.add('print-export');
+    document.body.classList.add('export-wide');
     window.setCaregiverNotesExportMode?.(true);
     const api = window.caregiverReportApi || {};
     const cgStart = api.cgInputs?.start || document.getElementById('cgStart');
@@ -3562,6 +3590,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.10.16d';
 
     const restore = async () => {
       document.body.classList.remove('print-export');
+      document.body.classList.remove('export-wide');
       toggleExportHiders(false);
       window.setCaregiverNotesExportMode?.(false);
       window.exportDateRange = null;

@@ -73,12 +73,24 @@
     @media (max-width: 680px) {
       .edge-tabs {
         top: auto;
-        bottom: 96px;
+        bottom: 140px;
         right: 10px;
         flex-direction: row;
       }
+      .edge-tabs a{width:36px;height:36px;font-size:16px;border-radius:10px}
     }
     @media print { .edge-tabs { display: none !important; } }
+
+    @media (max-width: 720px) {
+      body{padding:12px}
+      .notebook{grid-template-columns:1fr}
+      .paper{padding:18px 16px 120px 30px}
+      .paper:before{left:8px}
+      .rail{display:none}
+      .grid2{grid-template-columns:1fr}
+      .doc-header{flex-direction:column;align-items:flex-start}
+      .doc-header button{width:100%}
+    }
 
 
     /* Hide Group switcher (navbar) on docs pages */

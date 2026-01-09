@@ -159,11 +159,22 @@
     }
     @media (max-width: 680px) {
       .edge-tabs { 
-        top: auto; bottom: 100px; right: 10px;
+        top: auto; bottom: 140px; right: 10px;
         flex-direction: row;
       }
+      .edge-tabs a{width:36px;height:36px;font-size:16px;border-radius:10px}
     }
     @media print { .edge-tabs, .save-bar { display: none !important; } }
+    @media (max-width: 720px) {
+      body{padding:16px 12px 160px}
+      .notebook{grid-template-columns:1fr}
+      .paper{padding:18px 16px 160px 30px}
+      .paper:before{left:8px}
+      .grid2{grid-template-columns:1fr}
+      .rail{display:none}
+      .save-bar{bottom:96px;padding:10px 12px}
+      .save-bar .btn{width:100%}
+    }
   </style>
 </head>
 <body data-doc-page="minutes">

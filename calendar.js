@@ -1,5 +1,5 @@
 // calendar.js — REST-based version
-import { rest, getSessionFromStorage } from '../restClient.js?v=2025.01.09C';
+import { rest, getSessionFromStorage } from '../restClient.js?v=2025.01.09E';
 
 const calList = document.getElementById('calList');
 const calSelect = document.getElementById('calendarSelect');

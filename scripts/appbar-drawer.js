@@ -103,6 +103,9 @@
       <div class="drawer-item" data-role="individual">
         <a href="/wouldyourather.html">🤔 Would You Rather</a>
       </div>
+      <div class="drawer-item" data-role="individual">
+        <a href="/my-star-voice.html">🗣️ My STAR Voice</a>
+      </div>
       <div class="drawer-item" data-role="caregiver">
         <a href="/caregiver-checkin.html">👥 Caregiver Check-In</a>
       </div>

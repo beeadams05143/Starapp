@@ -1,5 +1,5 @@
 // caregiver-report-supabase.js — PRODUCTION SAFE (client-side filtering)
-import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09C';
+import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
 
 /* ---------- shared helpers ---------- */
 const TRUE_VALUES = new Set(['true', 't', 'yes', 'y', '1', 'on', 'done', 'complete', 'present']);

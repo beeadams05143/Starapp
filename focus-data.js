@@ -1,5 +1,5 @@
-import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09C';
-import { downloadJsonFromBucket, uploadJsonToBucket } from './shared-storage.js?v=2025.01.09C';
+import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
+import { downloadJsonFromBucket, uploadJsonToBucket } from './shared-storage.js?v=2025.01.09E';
 
 const SHARED_BUCKET = 'documents';
 const FOCUS_PREFIX = 'shared/focus';

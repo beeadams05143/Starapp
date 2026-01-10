@@ -1,5 +1,5 @@
-import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09C';
-import { downloadJsonFromBucket } from './shared-storage.js?v=2025.01.09C';
+import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
+import { downloadJsonFromBucket } from './shared-storage.js?v=2025.01.09E';
 
 let host = null;
 

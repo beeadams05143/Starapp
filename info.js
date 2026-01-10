@@ -1,4 +1,4 @@
-import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09C';
+import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
 
 const session = getSessionFromStorage();
 const userId = session?.user?.id || localStorage.getItem('user_id');

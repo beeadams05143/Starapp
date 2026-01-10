@@ -3,7 +3,7 @@ import {
   SUPABASE_ANON_KEY,
   getSessionFromStorage as coreGetSessionFromStorage,
   ensureSession as coreEnsureSession,
-} from './supabaseClient.js?v=2025.01.09C';
+} from './supabaseClient.js?v=2025.01.09E';
 
 export function getSessionFromStorage() {
   return coreGetSessionFromStorage();

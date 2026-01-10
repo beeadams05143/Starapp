@@ -1,7 +1,7 @@
 // documents.js
-import { rest, getSessionFromStorage, requireSession } from "../restClient.js?v=2025.01.09C";
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../supabaseClient.js?v=2025.01.09C";
-import { uploadJsonToBucket, downloadJsonFromBucket } from "../shared-storage.js?v=2025.01.09C";
+import { rest, getSessionFromStorage, requireSession } from "../restClient.js?v=2025.01.09E";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../supabaseClient.js?v=2025.01.09E";
+import { uploadJsonToBucket, downloadJsonFromBucket } from "../shared-storage.js?v=2025.01.09E";
 
 // Inject CSS so visited links aren't purple, without breaking the active (black) tabs
 (() => {

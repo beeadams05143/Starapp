@@ -2910,7 +2910,20 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
         options:{
           responsive:true,
           plugins:{ legend:{ display:false }, tooltip:{ enabled:true } },
-          scales:{ x:{ display:false }, y:{ display:false, min:0, max:4 } }
+          scales:{
+            x:{
+              display:true,
+              title:{ display:true, text:'Date' },
+              ticks:{ maxTicksLimit:4 }
+            },
+            y:{
+              display:true,
+              min:0,
+              max:4,
+              title:{ display:true, text:'Severity (0–4)' },
+              ticks:{ stepSize:1 }
+            }
+          }
         }
       });
     }
@@ -2926,7 +2939,10 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
           responsive:true,
           indexAxis:'y',
           plugins:{ legend:{ display:false }, tooltip:{ enabled:true } },
-          scales:{ x:{ display:false, beginAtZero:true }, y:{ display:false } }
+          scales:{
+            x:{ display:true, beginAtZero:true, title:{ display:true, text:'Count' } },
+            y:{ display:true, title:{ display:true, text:'Type' } }
+          }
         }
       });
     }
@@ -2943,7 +2959,10 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
           responsive:true,
           indexAxis:'y',
           plugins:{ legend:{ display:false }, tooltip:{ enabled:true } },
-          scales:{ x:{ display:false, beginAtZero:true }, y:{ display:false } }
+          scales:{
+            x:{ display:true, beginAtZero:true, title:{ display:true, text:'Count' } },
+            y:{ display:true, title:{ display:true, text:'Body area' } }
+          }
         }
       });
     }
@@ -2960,7 +2979,10 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
           responsive:true,
           indexAxis:'y',
           plugins:{ legend:{ display:false }, tooltip:{ enabled:true } },
-          scales:{ x:{ display:false, beginAtZero:true }, y:{ display:false } }
+          scales:{
+            x:{ display:true, beginAtZero:true, title:{ display:true, text:'Count' } },
+            y:{ display:true, title:{ display:true, text:'Trigger' } }
+          }
         }
       });
     }

@@ -37,3 +37,22 @@ body {
 #bottom-tabs [aria-current="page"], .tabs.tabs--six [aria-current="page"] {
   color: #fff !important; background: #222 !important;
 }
+
+@media (max-width: 640px) {
+  :root { --tabs-h: 60px; }
+  #bottom-tabs,
+  .bottom-tabs,
+  .tabs.tabs--six {
+    border-top: 6px solid #000 !important;
+    padding: 4px env(safe-area-inset-left, 0px)
+             calc(4px + env(safe-area-inset-bottom, 0px))
+             env(safe-area-inset-right, 0px);
+  }
+  #bottom-tabs a, .bottom-tabs a, .tabs.tabs--six a,
+  #bottom-tabs button, .bottom-tabs button, .tabs.tabs--six button {
+    min-width: 56px;
+    padding: 4px 6px;
+  }
+  #bottom-tabs a .icon, .bottom-tabs a .icon, .tabs.tabs--six a .icon { font-size: 18px; }
+  #bottom-tabs a .label, .bottom-tabs a .label, .tabs.tabs--six a .label { font-size: 11px; }
+}

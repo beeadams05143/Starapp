@@ -29,6 +29,16 @@
       text-decoration:none; color:#ddd; font-weight:700; font-size:12px; }
     .tabbar .tab .icon{ font-size:20px; line-height:1; }
     .tabbar .tab:is(:hover,.is-active,[aria-current="page"]){ color:#fff; background:#222; }
+
+    @media (max-width: 640px){
+      :root{ --appbar-h:52px; --tabbar-h:60px; }
+      body{ padding-top:var(--appbar-h); padding-bottom:calc(var(--tabbar-h) + 6px); }
+      .appbar{ padding:8px 12px; }
+      .tabbar{ border-top:6px solid #000; }
+      .tabbar__inner{ padding:0 10px; }
+      .tabbar .tab{ min-width:56px; padding:4px 6px; font-size:11px; }
+      .tabbar .tab .icon{ font-size:18px; }
+    }
   `;
   if (!document.getElementById('ui-shell-css')) {
     const s = document.createElement('style');

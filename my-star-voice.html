@@ -15,8 +15,8 @@
       --chip:#f8fafc;
       --shadow:0 10px 22px rgba(15,23,42,.10);
     }
-    html, body{ height:100%; overflow:hidden; }
-    body{ background:#f4f1ea; color:var(--ink); }
+    html, body{ min-height:100%; }
+    body{ background:#f4f1ea; color:var(--ink); overflow-x:hidden; }
 
     .voice-shell{
       max-width:1100px;
@@ -24,7 +24,7 @@
       padding:16px 16px 24px;
       display:flex;
       flex-direction:column;
-      height:calc(100vh - var(--appbar-h,56px) - var(--tabbar-h,72px) - 12px);
+      min-height:calc(100vh - var(--appbar-h,56px) - var(--tabbar-h,72px) - 12px);
       gap:12px;
     }
 
@@ -271,6 +271,7 @@
       box-shadow:var(--shadow);
       padding:12px;
       overflow:auto;
+      -webkit-overflow-scrolling:touch;
       flex:1 1 auto;
     }
 
@@ -468,13 +469,18 @@
 
     .quick-needs{
       position:fixed;
-      left:0;
-      right:0;
+      left:50%;
+      transform:translateX(-50%);
       bottom:calc(var(--tabbar-h,72px) + 8px);
+      width:min(720px, calc(100% - 24px));
       display:none;
       gap:8px;
       justify-content:center;
-      padding:8px 12px;
+      padding:10px 12px;
+      border-radius:16px;
+      background:var(--paper);
+      border:1px solid var(--line);
+      box-shadow:var(--shadow);
       z-index:940;
     }
     .quick-needs .quick-btn{
@@ -492,6 +498,7 @@
       cursor:pointer;
     }
     @media (max-width:600px){
+      .grid-wrap{ padding-bottom:96px; }
       .quick-needs{ display:flex; }
     }
   </style>
@@ -548,6 +555,12 @@
       <div id="voiceGrid" class="aac-grid"></div>
       <p id="voiceEmpty" class="empty">No cards yet. Turn on Edit Mode to add one.</p>
     </section>
+
+    <div class="quick-needs" id="quickNeeds">
+      <button class="quick-btn" data-quick="bathroom">🚽 Bathroom</button>
+      <button class="quick-btn" data-quick="help">🆘 Help</button>
+      <button class="quick-btn" data-quick="break">⏸ Break</button>
+    </div>
 
     <button class="fab is-hidden" id="addCardBtn" type="button">＋ Add Card</button>
   </main>
@@ -634,12 +647,6 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite">Saved!</div>
   <div id="tabbar"></div>
-  <div class="quick-needs" id="quickNeeds">
-    <button class="quick-btn" data-quick="bathroom">🚽 Bathroom</button>
-    <button class="quick-btn" data-quick="help">🆘 Help</button>
-    <button class="quick-btn" data-quick="break">⏸ Break</button>
-  </div>
-
   <script type="module" src="/my-star-voice.js?v=2025.01.09N"></script>
   <script type="module" src="/script.js?v=2025.01.09N"></script>
   <script defer src="/ui-shell.js?v=2025.01.09N"></script>

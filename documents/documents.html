@@ -39,6 +39,36 @@
     .row{display:flex; gap:8px; align-items:center; justify-content:space-between}
     .doc-header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-top:22px}
     .doc-header h2{margin:0}
+    .doc-attachment-preview{
+      margin-top:10px;
+      border:1px solid #e5e7eb;
+      border-radius:12px;
+      background:#f8fafc;
+      padding:8px;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      cursor:pointer;
+      width:100%;
+      text-align:left;
+    }
+    .doc-attachment-preview img{
+      width:100%;
+      max-height:240px;
+      object-fit:contain;
+      border-radius:10px;
+      background:#fff;
+    }
+    .doc-attachment-preview .preview-label{
+      font-size:12px;
+      font-weight:700;
+      color:#64748b;
+    }
+    .doc-attachment-preview .preview-status{
+      font-size:12px;
+      color:#94a3b8;
+    }
+    .doc-attachment-preview.has-image .preview-status{ display:none; }
 
     /* Right-edge quick nav bubbles */
     .edge-tabs {
@@ -73,7 +103,7 @@
     @media (max-width: 680px) {
       .edge-tabs {
         top: auto;
-        bottom: 140px;
+        bottom: calc(var(--tabbar-h,72px) + 12px);
         right: 10px;
         flex-direction: row;
       }

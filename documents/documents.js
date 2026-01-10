@@ -392,6 +392,46 @@ function detectPreviewType(meta = {}) {
   return null;
 }
 
+async function attachImagePreview(card, doc, docId, previewType, inlineFile) {
+  if (!card || !doc || previewType !== "image") return;
+  const previewBtn = document.createElement("button");
+  previewBtn.type = "button";
+  previewBtn.className = "doc-attachment-preview doc-attachment-action";
+  previewBtn.dataset.docId = docId;
+  previewBtn.dataset.action = "view";
+  previewBtn.dataset.previewType = "image";
+  previewBtn.setAttribute("aria-label", `View attachment for ${doc.title}`);
+  previewBtn.innerHTML = `
+    <span class="preview-label">Attachment preview</span>
+    <span class="preview-status">Loading image…</span>
+  `;
+
+  const img = document.createElement("img");
+  img.alt = `${doc.title} attachment`;
+  img.loading = "lazy";
+  img.decoding = "async";
+  previewBtn.appendChild(img);
+  card.appendChild(previewBtn);
+
+  let url = inlineFile?.data_url || "";
+  if (!url && doc.storage_path) {
+    try {
+      url = await getSignedUrlForDoc(doc);
+    } catch (error) {
+      console.warn("preview url failed", error?.message || error);
+    }
+  }
+  if (!url) {
+    previewBtn.querySelector(".preview-status").textContent = "Preview unavailable. Tap to open.";
+    return;
+  }
+  img.addEventListener("load", () => previewBtn.classList.add("has-image"));
+  img.addEventListener("error", () => {
+    previewBtn.querySelector(".preview-status").textContent = "Preview unavailable. Tap to open.";
+  });
+  img.src = url;
+}
+
 const attachmentViewer = (() => {
   let overlay = null;
   function cleanupPreviewUrl() {
@@ -1055,6 +1095,8 @@ async function renderDocuments(list, docs) {
         note.textContent = "File stored inline until storage bucket is available.";
         linksHolder.appendChild(note);
       }
+
+      await attachImagePreview(card, doc, docId, previewType, inlineFile);
     }
     const editBtn = document.createElement("button");
     editBtn.type = "button";

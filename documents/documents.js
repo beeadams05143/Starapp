@@ -367,6 +367,8 @@ async function fetchDocsFromSupabase() {
 }
 
 const IMAGE_EXT_RE = /\.(png|jpe?g|gif|bmp|webp|svg|heic|heif|tiff)$/i;
+const ALLOWED_DOC_MIME = new Set(["application/pdf", "image/jpeg"]);
+const ALLOWED_DOC_EXT_RE = /\.(pdf|jpe?g)$/i;
 function looksLikeImageMeta(meta = {}) {
   if (!meta) return false;
   const type = meta.type || "";
@@ -386,20 +388,57 @@ function looksLikePdfMeta(meta = {}) {
   return PDF_EXT_RE.test(source);
 }
 
+function isAllowedDocFile(file) {
+  if (!file) return true;
+  if (ALLOWED_DOC_MIME.has(file.type)) return true;
+  const name = file.name || "";
+  return ALLOWED_DOC_EXT_RE.test(name);
+}
+
 function detectPreviewType(meta = {}) {
   if (looksLikeImageMeta(meta)) return "image";
   if (looksLikePdfMeta(meta)) return "pdf";
   return null;
 }
 
+function inferPreviewTypeFromContentType(contentType = "") {
+  const ct = (contentType || "").toLowerCase();
+  if (!ct) return null;
+  if (ct.includes("pdf")) return "pdf";
+  if (ct.startsWith("image/")) return "image";
+  return null;
+}
+
+function inferPreviewTypeFromDataUrl(dataUrl = "") {
+  const match = /^data:([^;]+)/i.exec(dataUrl || "");
+  return match ? inferPreviewTypeFromContentType(match[1]) : null;
+}
+
+async function fetchPrivateBlob(storagePath) {
+  const session = await requireSession();
+  const token = session?.access_token;
+  if (!token) throw new Error("Not logged in.");
+  const safePath = encodeURIComponent(normalizeStoragePath(storagePath)).replace(/%2F/g, "/");
+  const res = await fetch(`${SUPABASE_URL}/storage/v1/object/documents/${safePath}`, {
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!res.ok) throw new Error("Private file fetch failed");
+  const blob = await res.blob();
+  return { blob, type: blob.type || "" };
+}
+
 async function attachImagePreview(card, doc, docId, previewType, inlineFile) {
-  if (!card || !doc || previewType !== "image") return;
+  if (!card || !doc) return;
+  let canPreview = previewType === "image";
   const previewBtn = document.createElement("button");
   previewBtn.type = "button";
   previewBtn.className = "doc-attachment-preview doc-attachment-action";
   previewBtn.dataset.docId = docId;
   previewBtn.dataset.action = "view";
-  previewBtn.dataset.previewType = "image";
+  previewBtn.dataset.previewType = canPreview ? "image" : "";
   previewBtn.setAttribute("aria-label", `View attachment for ${doc.title}`);
   previewBtn.innerHTML = `
     <span class="preview-label">Attachment preview</span>
@@ -414,6 +453,7 @@ async function attachImagePreview(card, doc, docId, previewType, inlineFile) {
   card.appendChild(previewBtn);
 
   let url = inlineFile?.data_url || "";
+  let revokeUrl = "";
   if (!url && doc.storage_path) {
     try {
       url = await getSignedUrlForDoc(doc);
@@ -421,21 +461,49 @@ async function attachImagePreview(card, doc, docId, previewType, inlineFile) {
       console.warn("preview url failed", error?.message || error);
     }
   }
+  if (!url && doc.storage_path) {
+    try {
+      const blob = await fetchPrivateBlob(doc.storage_path);
+      if (blob?.blob) {
+        url = URL.createObjectURL(blob.blob);
+        revokeUrl = url;
+        const inferred = inferPreviewTypeFromContentType(blob.type);
+        if (inferred === "image") {
+          canPreview = true;
+          previewBtn.dataset.previewType = "image";
+        }
+      }
+    } catch (error) {
+      console.warn("preview blob failed", error?.message || error);
+    }
+  }
   if (!url) {
     previewBtn.querySelector(".preview-status").textContent = "Preview unavailable. Tap to open.";
     return;
   }
-  img.addEventListener("load", () => previewBtn.classList.add("has-image"));
+  img.addEventListener("load", () => {
+    if (!canPreview) {
+      previewBtn.querySelector(".preview-status").textContent = "Preview unavailable. Tap to open.";
+    } else {
+      previewBtn.classList.add("has-image");
+    }
+    if (revokeUrl) URL.revokeObjectURL(revokeUrl);
+  });
   img.addEventListener("error", () => {
     previewBtn.querySelector(".preview-status").textContent = "Preview unavailable. Tap to open.";
+    if (revokeUrl) URL.revokeObjectURL(revokeUrl);
   });
   img.src = url;
 }
 
 const attachmentViewer = (() => {
   let overlay = null;
+  let blobUrl = null;
   function cleanupPreviewUrl() {
-    // reserved for future object URLs; no-op now
+    if (blobUrl) {
+      URL.revokeObjectURL(blobUrl);
+      blobUrl = null;
+    }
   }
   function ensure() {
     if (overlay) return overlay;
@@ -460,10 +528,14 @@ const attachmentViewer = (() => {
     overlay.addEventListener("click", (event) => {
       if (event.target === overlay || event.target.closest(".doc-viewer-close")) {
         overlay.classList.remove("open");
+        cleanupPreviewUrl();
       }
     });
     document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") overlay?.classList.remove("open");
+      if (event.key === "Escape") {
+        overlay?.classList.remove("open");
+        cleanupPreviewUrl();
+      }
     });
     return overlay;
   }
@@ -493,12 +565,35 @@ const attachmentViewer = (() => {
     img.src = url;
   }
   function renderPdf(contentEl, { title, url } = {}) {
+    const status = document.createElement("div");
+    status.className = "doc-viewer-status";
+    status.textContent = "Loading preview…";
+    contentEl.innerHTML = "";
+    contentEl.appendChild(status);
+
     const frame = document.createElement("iframe");
     frame.title = title || "Attachment";
-    frame.src = url;
     frame.loading = "lazy";
-    contentEl.innerHTML = "";
-    contentEl.appendChild(frame);
+
+    const setFrameSrc = (src) => {
+      frame.src = src;
+      contentEl.innerHTML = "";
+      contentEl.appendChild(frame);
+    };
+
+    fetch(url, { method: "GET" })
+      .then((res) => {
+        if (!res.ok) throw new Error("PDF fetch failed");
+        return res.blob();
+      })
+      .then((blob) => {
+        cleanupPreviewUrl();
+        blobUrl = URL.createObjectURL(blob);
+        setFrameSrc(blobUrl);
+      })
+      .catch(() => {
+        setFrameSrc(url);
+      });
   }
   function showPreviewFallback(contentEl) {
     const fallback = document.createElement("div");
@@ -519,6 +614,10 @@ const attachmentViewer = (() => {
     const downloadEl = wrap.querySelector(".doc-viewer-download");
     const contentEl = wrap.querySelector(".doc-viewer-content");
     const noteEl = wrap.querySelector(".doc-viewer-note");
+    cleanupPreviewUrl();
+    if (typeof url === "string" && url.startsWith("blob:")) {
+      blobUrl = url;
+    }
     titleEl.textContent = title || "Attachment";
     downloadEl.href = url;
     if (downloadName) downloadEl.download = downloadName;
@@ -780,6 +879,11 @@ if (prettyForm) {
       const desc    = document.getElementById("docDescription").value.trim();
       const tagsStr = document.getElementById("docTags").value.trim();
       const file    = document.getElementById("docFile").files[0] || null;
+      if (file && !isAllowedDocFile(file)) {
+        alert("Please upload a JPG or PDF file.");
+        document.getElementById("docFile").value = "";
+        return;
+      }
 
       if (!title) return alert("Please add a title.");
 
@@ -830,6 +934,10 @@ if (prettyForm) {
       }
       if (inline_file) content_json.inline_file = inline_file;
       else delete content_json.inline_file;
+      if (file) {
+        content_json.file_type = file.type || null;
+        content_json.file_name = file.name || null;
+      }
 
       if (editingDocId && existingDoc) {
         const updatedPayload = {
@@ -1061,8 +1169,14 @@ async function renderDocuments(list, docs) {
     const hasAttachment = Boolean(doc.storage_path || inlineFile?.data_url);
     if (hasAttachment) {
       const previewType = inlineFile
-        ? detectPreviewType({ name: inlineFile.name, type: inlineFile.type })
-        : detectPreviewType({ path: doc.storage_path || "", type: doc.file_type || doc.mime_type });
+        ? (detectPreviewType({ name: inlineFile.name, type: inlineFile.type })
+          || inferPreviewTypeFromDataUrl(inlineFile.data_url)
+          || inferPreviewTypeFromContentType(inlineFile.type))
+        : detectPreviewType({
+          path: doc.storage_path || "",
+          type: doc.file_type || doc.mime_type || doc.content_json?.file_type,
+          name: doc.content_json?.file_name
+        });
 
       const viewBtn = document.createElement("button");
       viewBtn.type = "button";
@@ -1093,6 +1207,15 @@ async function renderDocuments(list, docs) {
         note.style.fontSize = "13px";
         note.style.flexBasis = "100%";
         note.textContent = "File stored inline until storage bucket is available.";
+        linksHolder.appendChild(note);
+      }
+
+      if (!previewType) {
+        const note = document.createElement("div");
+        note.className = "muted";
+        note.style.fontSize = "13px";
+        note.style.flexBasis = "100%";
+        note.textContent = "Preview works for JPG or PDF. Re-upload if needed.";
         linksHolder.appendChild(note);
       }
 
@@ -1140,10 +1263,16 @@ async function handleAttachmentAction(trigger) {
   }
   const action = trigger.dataset.action || "view";
   const inlineFile = doc.content_json?.inline_file || null;
-  const previewType = trigger.dataset.previewType
+  let previewType = trigger.dataset.previewType
     || (inlineFile
-      ? detectPreviewType({ name: inlineFile.name, type: inlineFile.type })
-      : detectPreviewType({ path: doc.storage_path || "", type: doc.file_type || doc.mime_type }));
+      ? (detectPreviewType({ name: inlineFile.name, type: inlineFile.type })
+        || inferPreviewTypeFromDataUrl(inlineFile.data_url)
+        || inferPreviewTypeFromContentType(inlineFile.type))
+      : detectPreviewType({
+        path: doc.storage_path || "",
+        type: doc.file_type || doc.mime_type || doc.content_json?.file_type,
+        name: doc.content_json?.file_name
+      }));
 
   let url = inlineFile?.data_url || "";
   const originalText = trigger.dataset.label || trigger.textContent;
@@ -1169,16 +1298,60 @@ async function handleAttachmentAction(trigger) {
     return;
   }
 
+  if (!previewType && action === "view") {
+    previewType = inlineFile?.data_url
+      ? inferPreviewTypeFromDataUrl(inlineFile.data_url)
+      : inferPreviewTypeFromContentType(inlineFile?.type || "");
+  }
+
+  if (!previewType && action === "view") {
+    try {
+      const headRes = await fetch(url, { method: "HEAD" });
+      const ct = headRes.headers.get("content-type") || "";
+      previewType = inferPreviewTypeFromContentType(ct);
+    } catch (error) {
+      console.warn("preview type lookup failed", error?.message || error);
+    }
+  }
+
+  if (action === "view" && doc.storage_path && !inlineFile?.data_url) {
+    try {
+      const blob = await fetchPrivateBlob(doc.storage_path);
+      if (blob?.blob) {
+        url = URL.createObjectURL(blob.blob);
+        if (!previewType) previewType = inferPreviewTypeFromContentType(blob.type);
+      }
+    } catch (error) {
+      console.warn("private preview fallback failed", error?.message || error);
+    }
+  }
+
   if (action === "download") {
+    const fileName = inlineFile?.name
+      || doc.content_json?.file_name
+      || (doc.storage_path ? (doc.storage_path.split("/").pop() || "document") : "document");
+    if (doc.storage_path) {
+      try {
+        const blob = await fetchPrivateBlob(doc.storage_path);
+        const objUrl = URL.createObjectURL(blob.blob);
+        const a = document.createElement("a");
+        a.href = objUrl;
+        a.download = fileName;
+        a.style.display = "none";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(objUrl), 60000);
+        return;
+      } catch (error) {
+        console.warn("download blob failed", error?.message || error);
+      }
+    }
     const a = document.createElement("a");
     a.href = url;
     a.target = "_blank";
     a.rel = "noopener";
-    if (inlineFile?.name) {
-      a.download = inlineFile.name;
-    } else if (doc.storage_path) {
-      a.download = doc.storage_path.split("/").pop() || "document";
-    }
+    if (fileName) a.download = fileName;
     a.style.display = "none";
     document.body.appendChild(a);
     a.click();
@@ -1760,10 +1933,39 @@ async function preparePrintDocs(docs = []) {
         note: "Embedded from upload",
       };
     } else if (doc.storage_path) {
+      try {
+        const blob = await fetchPrivateBlob(doc.storage_path);
+        if (blob?.blob) {
+          attachment = {
+            url: await new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result);
+              reader.onerror = () => reject(reader.error || new Error("read failed"));
+              reader.readAsDataURL(blob.blob);
+            }),
+            name: meta.file_name || (doc.storage_path || "").split("/").pop() || "attachment",
+            previewType: inferPreviewTypeFromContentType(blob.type)
+              || detectPreviewType({
+                path: doc.storage_path,
+                type: doc.file_type || doc.mime_type || meta.file_type,
+                name: meta.file_name
+              }),
+            note: "Embedded for printing",
+          };
+          prepared.push({ ...doc, _printAttachment: attachment });
+          continue;
+        }
+      } catch (error) {
+        console.warn("print blob fetch failed", error?.message || error);
+      }
       attachment = {
         url: null,
-        name: (doc.storage_path || "").split("/").pop() || "attachment",
-        previewType: detectPreviewType({ path: doc.storage_path, type: doc.file_type || doc.mime_type }),
+        name: meta.file_name || (doc.storage_path || "").split("/").pop() || "attachment",
+        previewType: detectPreviewType({
+          path: doc.storage_path,
+          type: doc.file_type || doc.mime_type || meta.file_type,
+          name: meta.file_name
+        }),
         note: "Attachments stay private. Download from the STAR Docs page to share files.",
       };
       try {

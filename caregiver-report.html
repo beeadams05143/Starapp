@@ -698,8 +698,16 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
 
     <!-- Charts -->
     <section id="chart-stack" data-print-section="Trends & Charts">
-    <div class="chart"><h2>Physical & Daily Living Overview</h2><canvas id="healthChart"></canvas></div>
-      <div class="chart"><h2>Prompt Level Over Time</h2><canvas id="skillChart"></canvas></div>
+    <div class="chart">
+      <h2>Physical & Daily Living Overview (Monthly Totals)</h2>
+      <canvas id="healthChart"></canvas>
+      <p class="muted">Counts of caregiver check-ins where each category was marked “Yes”. Use this to spot over- or under-focused areas.</p>
+    </div>
+      <div class="chart">
+        <h2>Prompt Level Over Time</h2>
+        <canvas id="skillChart"></canvas>
+        <p class="muted">Average prompt level (0–4) per day from caregiver check-ins. Higher = more prompting needed.</p>
+      </div>
       <div class="chart"><h2>Individual Mood Share (Pie)</h2><canvas id="moodPieMain"></canvas></div>
 
       <div class="chart">
@@ -709,9 +717,9 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
       </div>
 
       <div class="chart small">
-        <h2 style="margin:0 0 8px;">Sleep Hours vs Engagement Minutes</h2>
+        <h2 style="margin:0 0 8px;">Sleep Hours vs Engagement (Approx. Hours)</h2>
         <canvas id="sleepOverlay" height="200"></canvas>
-        <p class="muted" id="sleepNote">Correlation preview of sleep hours and engagement minutes.</p>
+        <p class="muted" id="sleepNote">Engagement hours are approximate: &gt;45 mins rounds down; &lt;45 mins rounds up.</p>
       </div>
 
       <div class="chart small">
@@ -916,15 +924,27 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
     };
     const movementFromEntry = (entry) => {
       const payload = entry?.payload || {};
-      const present = parseMovementBool(entry.movement_present ?? payload.movement_present);
+      const presentRaw = parseMovementBool(entry.movement_present ?? payload.movement_present);
       const severityVal = Number(entry.movement_severity ?? payload.movement_severity);
       const severity = Number.isFinite(severityVal) ? severityVal : null;
+      const mainType = entry.movement_main_type ?? payload.movement_main_type ?? null;
+      const bodyMap = parseMovementArray(entry.movement_body_map ?? payload.movement_body_map);
+      const triggers = parseMovementArray(entry.movement_triggers ?? payload.movement_triggers);
+      const times = parseMovementArray(entry.movement_times ?? payload.movement_times);
+      const hasDetails = Boolean(
+        severity !== null ||
+        mainType ||
+        bodyMap.length ||
+        triggers.length ||
+        times.length
+      );
+      const present = presentRaw === null ? hasDetails : (presentRaw || hasDetails);
       return {
         present,
         severity,
-        mainType: entry.movement_main_type ?? payload.movement_main_type ?? null,
-        bodyMap: parseMovementArray(entry.movement_body_map ?? payload.movement_body_map),
-        triggers: parseMovementArray(entry.movement_triggers ?? payload.movement_triggers),
+        mainType,
+        bodyMap,
+        triggers,
       };
     };
     const dayKeyFor = (entry) => {
@@ -1341,20 +1361,37 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
       'he','its','had','has','have','did','does','doing','done','not','yes','no','but','out','off','got','get','gets'
     ]);
 
-    function extractTopNoteThemes(notes, limit = 3) {
-      const counts = new Map();
-      notes.forEach(note => {
-        const text = String(note || '').toLowerCase();
-        text.split(/[^a-z0-9]+/).forEach(word => {
+    function extractTopNoteThemeSentence(notes) {
+      const text = notes.join(' ').replace(/\s+/g, ' ').trim();
+      if (!text) return 'None';
+      const sentences = text
+        .split(/(?<=[.!?])\s+/)
+        .map(sentence => sentence.trim())
+        .filter(Boolean);
+      if (!sentences.length) return 'None';
+      const seen = new Set();
+      const uniqueSentences = [];
+      sentences.forEach(sentence => {
+        const key = sentence.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+        if (!key || seen.has(key)) return;
+        seen.add(key);
+        uniqueSentences.push(sentence);
+      });
+      const wordCounts = new Map();
+      uniqueSentences.forEach(sentence => {
+        sentence.toLowerCase().split(/[^a-z0-9]+/).forEach(word => {
           if (!word || word.length < 4) return;
           if (NOTE_STOPWORDS.has(word)) return;
-          counts.set(word, (counts.get(word) || 0) + 1);
+          wordCounts.set(word, (wordCounts.get(word) || 0) + 1);
         });
       });
-      return [...counts.entries()]
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, limit)
-        .map(([word]) => word);
+      const scored = uniqueSentences.map((sentence, index) => {
+        const score = sentence.toLowerCase().split(/[^a-z0-9]+/)
+          .reduce((sum, word) => sum + (wordCounts.get(word) || 0), 0);
+        return { sentence, index, score };
+      });
+      const top = scored.sort((a, b) => b.score - a.score || a.index - b.index)[0];
+      return top?.sentence || uniqueSentences[0] || 'None';
     }
 
     function buildNoteSynopsis(notes, sentenceCount = 3) {
@@ -1478,8 +1515,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
         const pct = (count) => bucket.count ? `${Math.round((count / bucket.count) * 100)}%` : '—';
         const avgPrompt = bucket.promptCount ? (bucket.promptSum / bucket.promptCount).toFixed(1) : '—';
         const synopsis = buildNoteSynopsis(bucket.notes, 3);
-        const themes = extractTopNoteThemes(bucket.notes, 3);
-        const themesLabel = themes.length ? themes.join(', ') : 'None';
+        const themeSentence = extractTopNoteThemeSentence(bucket.notes);
         const card = document.createElement('div');
         card.className = 'cg-summary-card';
         card.innerHTML = `
@@ -1492,7 +1528,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
           <div class="cg-summary-row"><span class="label">Vocational minutes</span><span>${Math.round(bucket.vocTotal)}</span></div>
           <div class="cg-summary-row"><span class="label">Community minutes</span><span>${Math.round(bucket.comTotal)}</span></div>
           <div class="cg-summary-row"><span class="label">Note summary</span><span>${synopsis}</span></div>
-          <div class="cg-summary-row"><span class="label">Top note themes</span><span>${themesLabel}</span></div>
+          <div class="cg-summary-row"><span class="label">Top note theme</span><span>${themeSentence}</span></div>
         `;
         return card;
       };
@@ -2773,14 +2809,21 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
       destroy('health');
       const labels = series?.map(p=>p.x) ?? [];
       const datasets = [
-        { label:'Hygiene (Yes)', data: series?.map(p=>p.hygiene_yes)||[] },
-        { label:'Food Prepared (Yes)', data: series?.map(p=>p.food_prep_yes)||[] },
-        { label:'Clean-up (Yes)', data: series?.map(p=>p.cleanup_yes)||[] },
+        { label:'Hygiene (Yes)', data: series?.map(p=>p.hygiene_yes)||[], borderRadius:8, backgroundColor:'rgba(59,130,246,.55)' },
+        { label:'Food Prepared (Yes)', data: series?.map(p=>p.food_prep_yes)||[], borderRadius:8, backgroundColor:'rgba(16,185,129,.55)' },
+        { label:'Clean-up (Yes)', data: series?.map(p=>p.cleanup_yes)||[], borderRadius:8, backgroundColor:'rgba(245,158,11,.6)' },
       ];
       charts.health = new Chart($('#healthChart'), {
         type:'bar',
         data:{ labels, datasets },
-        options:{ responsive:true, scales:{ x:axisTitle('Date'), y:{ beginAtZero:true, ticks:{precision:0}, ...axisTitle('Count (Yes)') } } }
+        options:{
+          responsive:true,
+          plugins:{ legend:{ position:'top', labels:{ boxWidth:12, boxHeight:12, font:{ size:12 } } } },
+          scales:{
+            x:axisTitle('Month'),
+            y:{ beginAtZero:true, ticks:{precision:0}, ...axisTitle('Yes count (check-ins)') }
+          }
+        }
       });
     }
 
@@ -2790,8 +2833,15 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
       const data   = series?.map(p=>p.avg_new_skill_score ?? null) ?? [];
       charts.skill = new Chart($('#skillChart'), {
         type:'line',
-        data:{ labels, datasets:[{ label:'Avg Prompt Level', data, tension:.25, pointRadius:3 }]},
-        options:{ responsive:true, scales:{ x:axisTitle('Date'), y:{ min:0,max:4,ticks:{stepSize:1}, ...axisTitle('Prompt (0–4)') } } }
+        data:{ labels, datasets:[{ label:'Avg Prompt Level', data, tension:.15, pointRadius:5, pointHoverRadius:6, borderWidth:3, borderColor:'#ef4444', backgroundColor:'rgba(239,68,68,.2)', datalabels:{ display:false } }]},
+        options:{
+          responsive:true,
+          plugins:{ legend:{ position:'top', labels:{ boxWidth:12, boxHeight:12, font:{ size:12 } } } },
+          scales:{
+            x:axisTitle('Date'),
+            y:{ min:0,max:4,ticks:{stepSize:1}, ...axisTitle('Prompt level (0–4)') }
+          }
+        }
       });
     }
 
@@ -2940,8 +2990,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
           indexAxis:'y',
           plugins:{ legend:{ display:false }, tooltip:{ enabled:true } },
           scales:{
-            x:{ display:true, beginAtZero:true, title:{ display:true, text:'Count' } },
-            y:{ display:true, title:{ display:true, text:'Type' } }
+            x:{ display:true, beginAtZero:true, ...axisTitle('Count') },
+            y:{ display:true, ...axisTitle('Type'), ticks:{ autoSkip:false } }
           }
         }
       });
@@ -2980,8 +3030,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
           indexAxis:'y',
           plugins:{ legend:{ display:false }, tooltip:{ enabled:true } },
           scales:{
-            x:{ display:true, beginAtZero:true, title:{ display:true, text:'Count' } },
-            y:{ display:true, title:{ display:true, text:'Trigger' } }
+            x:{ display:true, beginAtZero:true, ...axisTitle('Count') },
+            y:{ display:true, ...axisTitle('Trigger'), ticks:{ autoSkip:false } }
           }
         }
       });
@@ -3305,17 +3355,35 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
         }
       }
 
+      const roundMinutesToHours = (mins) => {
+        if (mins === null || mins === undefined) return null;
+        const total = Number(mins);
+        if (!Number.isFinite(total)) return null;
+        const whole = Math.floor(total / 60);
+        const remainder = total % 60;
+        if (remainder > 45) return whole;
+        if (remainder < 45) return whole + 1;
+        return whole;
+      };
+
       const allDays=[...new Set([...sleepByDay.keys(),...engByDay.keys()])].sort();
-      let labels=allDays, minutes=allDays.map(d=>engByDay.get(d)||0), hours=allDays.map(d=>sleepByDay.get(d)??null);
-      if (!labels.length){ labels=['Mon','Tue','Wed','Thu','Fri','Sat','Sun']; minutes=[60,90,45,80,70,50,65]; hours=[7,6.5,8,7.5,6,8.2,7.8]; }
+      let labels=allDays,
+        minutes=allDays.map(d=>engByDay.get(d)||0),
+        hours=allDays.map(d=>sleepByDay.get(d)??null);
+      if (!labels.length){
+        labels=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+        minutes=[60,90,45,80,70,50,65];
+        hours=[7,6.5,8,7.5,6,8.2,7.8];
+      }
+      const engagementHours = minutes.map((val) => (val ? roundMinutesToHours(val) : 0));
 
       charts.sleepOverlay && charts.sleepOverlay.destroy();
       charts.sleepOverlay = new Chart($('#sleepOverlay'), {
         data:{
           labels,
           datasets:[
-            { type:'bar',  label:'Engagement Minutes', data:minutes, yAxisID:'y', order:2, datalabels:{anchor:'end',align:'top',formatter:v=>v?String(v):''} },
-            { type:'line', label:'Sleep Hours', data:hours,   yAxisID:'y1', tension:.25, pointRadius:3, datalabels:{align:'top',formatter:v=>v==null?'':`${v}h (${Math.round(v*60)}m)`,font:{size:10}}, order:1 }
+            { type:'bar',  label:'Engagement (Approx. Hours)', data:engagementHours, yAxisID:'y', order:2, datalabels:{anchor:'end',align:'top',formatter:v=>v?`${v}h`:''} },
+            { type:'line', label:'Sleep Hours', data:hours,   yAxisID:'y', tension:.25, pointRadius:4, borderWidth:3, datalabels:{align:'top',formatter:v=>v==null?'':`${v}h`,font:{size:10}}, order:1 }
           ]
         },
         options:{ responsive:true, interaction:{mode:'index',intersect:false},
@@ -3325,19 +3393,24 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
                 label(context){
                   if (context.dataset.label === 'Sleep Hours' && context.parsed.y != null){
                     const hrs = context.parsed.y;
-                    return `Sleep: ${hrs} h (${Math.round(hrs*60)} min)`;
+                    return `Sleep: ${hrs} h`;
+                  }
+                  if (context.dataset.label === 'Engagement (Approx. Hours)') {
+                    return `Engagement: ${context.parsed.y} h (approx.)`;
                   }
                   return `${context.dataset.label}: ${context.parsed.y}`;
                 }
               }
             }
           },
-          scales:{ y:{beginAtZero:true,...axisTitle('Minutes')}, y1:{beginAtZero:true,suggestedMax:12,position:'right',grid:{drawOnChartArea:false},...axisTitle('Hours')} } }
+          scales:{ y:{beginAtZero:true, suggestedMax:12, ...axisTitle('Hours')} } }
       });
 
-      const xs = hours.filter(v=>v!=null), ys = labels.map((_,i)=>hours[i]!=null?minutes[i]:null).filter(v=>v!=null);
+      const xs = hours.filter(v=>v!=null), ys = labels.map((_,i)=>hours[i]!=null?engagementHours[i]:null).filter(v=>v!=null);
       const r=pearson(xs,ys), n=Math.min(xs.length,ys.length);
-      $('#sleepNote').textContent = n ? `Points: ${n}. Pearson r = ${r}.` : 'No overlapping days with sleep + engagement minutes yet (showing placeholder).';
+      $('#sleepNote').textContent = n
+        ? `Points: ${n}. Pearson r = ${r}. Engagement hours are approximate: >45 mins rounds down, <45 mins rounds up.`
+        : 'No overlapping days with sleep + engagement data yet (showing placeholder).';
     }
 
     /* =================== WYR =================== */
@@ -3369,7 +3442,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
         for (const lbl of labels){ totals[lbl]=(totals[lbl]||0)+share; counts[lbl]=(counts[lbl]||0)+1; }
       }
       let labels=Object.keys(totals);
-      if (!labels.length){ labels=["Bowling","Library visit","Lakeside"]; }
+      if (!labels.length){ labels=["Music","Walk","Cooking"]; }
       const minutes = labels.map(l=>+(totals[l]||[62,89,72][labels.indexOf(l)]||30).toFixed(1));
       const picks   = labels.map(l=>counts[l]||[1,2,1][labels.indexOf(l)]||1);
 

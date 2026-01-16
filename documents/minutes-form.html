@@ -281,7 +281,8 @@
         <div class="divider"></div>
 
         <label for="attachment">Upload or Scan (optional)</label>
-        <input id="attachment" type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.heic" />
+        <input id="attachment" type="file" accept=".pdf,.jpg,.jpeg" />
+        <div class="hint">Upload PDF or JPG only.</div>
         <div class="hint">Attach official minutes, photos of notes, or scans. Files stay private; the app uses signed links.</div>
      
      <!-- Buttons INSIDE the form (recommended) -->
@@ -356,6 +357,15 @@
       if (!title) return alert("Please add a title.");
 
       const file = document.getElementById('attachment').files[0];
+      if (file) {
+        const allowedTypes = ['application/pdf', 'image/jpeg'];
+        const allowedExt = /\.(pdf|jpe?g)$/i;
+        if (!allowedTypes.includes(file.type) && !allowedExt.test(file.name || '')) {
+          alert('Please upload a JPG or PDF file.');
+          document.getElementById('attachment').value = '';
+          return;
+        }
+      }
 
       const payload = {
         title,

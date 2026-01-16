@@ -115,8 +115,10 @@
     #openMenu svg { display:block; }
 
     @media print{
+      body.calendar-page *{ visibility:visible !important; }
+      #cgOnePdf, #cgOnePdf *{ visibility:hidden !important; }
       #navbar, .calendar-actions, .rail { display:none !important; }
-      body.calendar-page{ padding-bottom:0; }
+      body.calendar-page{ padding:0 !important; }
       .notebook{ grid-template-columns:1fr; }
     }
   </style>

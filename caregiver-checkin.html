@@ -272,7 +272,7 @@
 
               <div class="movement-actions">
                 <button class="btn" type="button" id="movementSameBtn">Same as last check-in</button>
-                <button class="btn" type="button" id="movementDetailsToggle" aria-expanded="false" aria-controls="movementDetails">Add details (optional)</button>
+                <button class="btn" type="button" id="movementDetailsToggle" aria-expanded="false" aria-controls="movementDetails">Show body map &amp; triggers</button>
               </div>
 
               <div class="movement-details is-hidden" id="movementDetails">
@@ -966,7 +966,11 @@
       clearMovementFields({ keepPresent: true });
       movementEls.detailsPanel?.classList.add('is-hidden');
       movementEls.detailsToggle?.setAttribute('aria-expanded', 'false');
+      if (movementEls.detailsToggle) movementEls.detailsToggle.textContent = 'Show body map & triggers';
     } else {
+      movementEls.detailsPanel?.classList.remove('is-hidden');
+      movementEls.detailsToggle?.setAttribute('aria-expanded', 'true');
+      if (movementEls.detailsToggle) movementEls.detailsToggle.textContent = 'Hide body map & triggers';
       const times = parseJsonArray(movementEls.timesInput?.value);
       if (!times.length) {
         setMovementCheckboxValues('[data-movement-time]', ['AM']);
@@ -1133,6 +1137,9 @@
       const isHidden = movementEls.detailsPanel?.classList.contains('is-hidden');
       movementEls.detailsPanel?.classList.toggle('is-hidden', !isHidden);
       movementEls.detailsToggle.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+      movementEls.detailsToggle.textContent = isHidden
+        ? 'Hide body map & triggers'
+        : 'Show body map & triggers';
     });
     movementEls.sameBtn?.addEventListener('click', () => {
       const raw = localStorage.getItem(MOVEMENT_LAST_KEY);
@@ -1140,8 +1147,9 @@
       try {
         const data = JSON.parse(raw);
         hydrateMovementFromData(data || {});
-        movementEls.detailsPanel?.classList.add('is-hidden');
-        movementEls.detailsToggle?.setAttribute('aria-expanded', 'false');
+        movementEls.detailsPanel?.classList.remove('is-hidden');
+        movementEls.detailsToggle?.setAttribute('aria-expanded', 'true');
+        if (movementEls.detailsToggle) movementEls.detailsToggle.textContent = 'Hide body map & triggers';
         if (movementStepIndex >= 0) save(steps[movementStepIndex], movementStepIndex, true);
       } catch (error) {
         console.warn('movement copy failed', error);

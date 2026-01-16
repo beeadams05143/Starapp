@@ -7,7 +7,7 @@
 
   // ----- styles for bars (thick black, consistent) -----
   const css = `
-    :root{ --appbar-h:56px; --tabbar-h:72px; }
+    :root{ --appbar-h:56px; --tabbar-h:56px; }
     body{ padding-top:var(--appbar-h); padding-bottom:calc(var(--tabbar-h) + 8px); }
 
     /* TOP APP BAR */
@@ -21,23 +21,23 @@
     /* BOTTOM TABS */
     .tabbar{ position:fixed; inset:auto 0 0 0; z-index:999;
       height:var(--tabbar-h); background:#111; color:#fff;
-      border-top:8px solid #000; } /* thick black line */
+      border-top:6px solid #000; } /* thick black line */
     .tabbar__inner{ max-width:980px; height:100%; margin:0 auto; padding:0 16px;
       display:flex; align-items:center; justify-content:space-around; gap:8px; }
     .tabbar .tab{ display:inline-flex; flex-direction:column; align-items:center;
-      gap:4px; min-width:68px; padding:6px 10px; border-radius:12px;
+      gap:4px; min-width:60px; padding:4px 8px; border-radius:10px;
       text-decoration:none; color:#ddd; font-weight:700; font-size:12px; }
-    .tabbar .tab .icon{ font-size:20px; line-height:1; }
+    .tabbar .tab .icon{ font-size:18px; line-height:1; }
     .tabbar .tab:is(:hover,.is-active,[aria-current="page"]){ color:#fff; background:#222; }
 
     @media (max-width: 640px){
-      :root{ --appbar-h:52px; --tabbar-h:60px; }
+      :root{ --appbar-h:52px; --tabbar-h:52px; }
       body{ padding-top:var(--appbar-h); padding-bottom:calc(var(--tabbar-h) + 6px); }
       .appbar{ padding:8px 12px; }
-      .tabbar{ border-top:6px solid #000; }
+      .tabbar{ border-top:5px solid #000; }
       .tabbar__inner{ padding:0 10px; }
-      .tabbar .tab{ min-width:56px; padding:4px 6px; font-size:11px; }
-      .tabbar .tab .icon{ font-size:18px; }
+      .tabbar .tab{ min-width:52px; padding:2px 6px; font-size:10px; }
+      .tabbar .tab .icon{ font-size:16px; }
     }
   `;
   if (!document.getElementById('ui-shell-css')) {

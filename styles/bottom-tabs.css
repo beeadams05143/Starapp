@@ -1,4 +1,4 @@
-:root { --tabs-h: 72px; }
+:root { --tabs-h: 56px; }
 
 /* give every page room for the fixed bottom tabs (with iOS safe-area) */
 body {
@@ -16,7 +16,7 @@ body {
            calc(6px + env(safe-area-inset-bottom, 0px))
            env(safe-area-inset-right, 0px);
   background: #111 !important; color: #fff !important;
-  border-top: 8px solid #000 !important;  /* <-- thicker black line */
+  border-top: 6px solid #000 !important;  /* <-- thinner black line */
   border-radius: 0 !important; box-shadow: none !important;
   backdrop-filter: none !important;
 }
@@ -29,7 +29,7 @@ body {
   min-width: 64px; padding: 6px 10px; border-radius: 10px;
 }
 
-#bottom-tabs a .icon, .bottom-tabs a .icon, .tabs.tabs--six a .icon { font-size: 20px; line-height: 1; }
+#bottom-tabs a .icon, .bottom-tabs a .icon, .tabs.tabs--six a .icon { font-size: 18px; line-height: 1; }
 #bottom-tabs a .label, .bottom-tabs a .label, .tabs.tabs--six a .label { font-size: 12px; }
 
 #bottom-tabs a:hover, .bottom-tabs a:hover, .tabs.tabs--six a:hover,
@@ -39,20 +39,20 @@ body {
 }
 
 @media (max-width: 640px) {
-  :root { --tabs-h: 60px; }
+  :root { --tabs-h: 52px; }
   #bottom-tabs,
   .bottom-tabs,
   .tabs.tabs--six {
-    border-top: 6px solid #000 !important;
+    border-top: 5px solid #000 !important;
     padding: 4px env(safe-area-inset-left, 0px)
              calc(4px + env(safe-area-inset-bottom, 0px))
              env(safe-area-inset-right, 0px);
   }
   #bottom-tabs a, .bottom-tabs a, .tabs.tabs--six a,
   #bottom-tabs button, .bottom-tabs button, .tabs.tabs--six button {
-    min-width: 56px;
-    padding: 4px 6px;
+    min-width: 52px;
+    padding: 2px 6px;
   }
-  #bottom-tabs a .icon, .bottom-tabs a .icon, .tabs.tabs--six a .icon { font-size: 18px; }
-  #bottom-tabs a .label, .bottom-tabs a .label, .tabs.tabs--six a .label { font-size: 11px; }
+  #bottom-tabs a .icon, .bottom-tabs a .icon, .tabs.tabs--six a .icon { font-size: 16px; }
+  #bottom-tabs a .label, .bottom-tabs a .label, .tabs.tabs--six a .label { font-size: 10px; }
 }

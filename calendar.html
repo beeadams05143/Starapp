@@ -79,6 +79,23 @@
       z-index:2100;
     }
     @media (max-width: 720px){ .day{ min-height:64px; } .paper{ padding-left:26px; } .paper:before{ left:6px; } }
+    @media (max-width: 640px){
+      main.cal-wrap{ padding:10px; }
+      .notebook{ grid-template-columns:1fr; }
+      .rail{ display:none; }
+      .paper{ padding:16px 12px 110px 24px; }
+      .paper:before{ left:6px; }
+      .month-title{ font-size:20px; }
+      .weekday-row{ margin:0 6px 4px 6px; font-size:11px; }
+      .month-grid{ gap:6px; padding:0 6px; }
+      .day{ min-height:56px; padding:6px; border-radius:12px; }
+      .day .num{ font-size:12px; }
+      .event-panel{ margin:12px 6px 6px 6px; }
+      .event-header{ flex-direction:column; align-items:flex-start; gap:8px; }
+      .event-header .btn{ width:100%; }
+      .event{ padding:8px; }
+      .calendar-actions{ bottom:64px; padding:10px 12px; }
+    }
 
     /* ===== Calendar hardening overrides ===== */
     .month-grid .day { font: inherit !important; color: var(--ink) !important; line-height: 1.1 !important; position: relative; }
@@ -335,6 +352,20 @@
       (s ?? "")
         .toString()
         .replace(/[&<>\"']/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
+    const linkifyLocation = (value) => {
+      const raw = (value || "").toString().trim();
+      if (!raw) return "";
+      const match = raw.match(/(https?:\/\/[^\s]+|www\.[^\s]+)/i);
+      if (!match) return escapeHtml(raw);
+      let url = match[0];
+      if (!/^https?:\/\//i.test(url)) url = `https://${url}`;
+      const safeUrl = encodeURI(url);
+      const safe = escapeHtml(raw);
+      const safeMatch = escapeHtml(match[0]);
+      const linkText = raw === match[0] ? "Meeting link" : safeMatch;
+      const anchor = `<a href="${safeUrl}" target="_blank" rel="noopener">${linkText}</a>`;
+      return safe.replace(safeMatch, anchor);
+    };
 
     const api = {
       async monthEvents(year, month) {
@@ -511,10 +542,12 @@
           const time = e.all_day ? "All day" : [e.start_time, e.end_time].filter(Boolean).join(" – ");
           const li = document.createElement("li");
           li.className = "event";
+          const locationHtml = e.location ? linkifyLocation(e.location) : "";
+          const locationText = locationHtml ? ` • ${locationHtml}` : "";
           li.innerHTML = `
             <div class="left">
               <div class="title"><a href="${linkFor(e)}" style="text-decoration:none; color:inherit">${escapeHtml(e.title)}</a></div>
-              <div class="meta">${escapeHtml(e.type)}${time ? " • " + escapeHtml(time) : ""}${e.location ? " • " + escapeHtml(e.location) : ""}</div>
+              <div class="meta">${escapeHtml(e.type)}${time ? " • " + escapeHtml(time) : ""}${locationText}</div>
             </div>
             <button class="del" aria-label="Delete">🗑️</button>
           `;

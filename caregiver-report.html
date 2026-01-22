@@ -109,7 +109,7 @@
     .hc-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
     .hc-title{font-weight:900;font-size:18px}
     .hc-btn{appearance:none;border:1px solid #e9e9e9;background:#fff;padding:8px 10px;border-radius:10px;cursor:pointer;font-weight:700}
-    .hc-kvs{display:flex;gap:12px;flex-wrap:wrap}
+    .hc-kvs{display:none}
     .hc-kv{background:#fafafa;border:1px solid #e9e9e9;border-radius:12px;padding:8px 10px;font-weight:700}
     .hc-legend{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding:10px 16px;border-top:1px solid #e9e9e9}
     .hc-emo{font-size:22px}
@@ -125,6 +125,7 @@
     .hc-event-pill span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .hc-legend label{display:flex;align-items:center;gap:4px;font-weight:600}
     .hc-legend select{padding:6px 8px;border-radius:8px;border:1px solid #e5e7eb;background:#fff}
+    .hc-legend-count{font-size:11px;font-weight:800;color:#0f172a;background:#e2e8f0;border-radius:999px;padding:2px 6px}
 
     /* ===== Quick Look summary ===== */
     .is-hidden{display:none !important}
@@ -240,11 +241,36 @@
     #exportRangeOverlay .cg-edit-grid{margin-top:4px}
 
     #chart-stack{display:flex;flex-direction:column;gap:16px}
+    .chart-range-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:10px 12px}
+    .chart-range-controls label{font-weight:700}
+    .chart-range-controls select{padding:6px 10px;border-radius:10px;border:1px solid #d4d4d8;background:#fff;font-weight:600}
+    .chart-range-display{font-size:12px;color:#475569;font-weight:600}
+    .chart-range-label{margin:-4px 0 10px;color:#475569}
+    .mood-summary-inline{margin-top:10px;border:1px solid #e5e7eb;border-radius:14px;padding:12px;background:#f8fafc}
+    .mood-summary-inline h4{margin:0 0 8px;font-size:14px}
+    .mood-summary-inline .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+    .mood-summary-inline .item{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:8px 10px;font-weight:700;color:#0f172a}
+    .kpi-summary-inline{border:1px solid #e5e7eb;border-radius:16px;padding:16px;background:#fff;box-shadow:0 10px 30px rgba(15,23,42,.08)}
+    .kpi-summary-inline h4{margin:0 0 12px;font-size:16px}
+    .kpi-summary-inline .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+    .kpi-summary-inline .item{background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:10px 12px;font-weight:700;color:#0f172a}
     body.print-export main.page{max-width:980px}
     body.print-export #chart-stack{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
     body.print-export .chart{margin:0}
     body.print-export .chart canvas{max-height:260px!important}
     body.print-export #navbar{display:none!important}
+    body.print-export .chart,
+    body.print-export .kpi-summary-inline,
+    body.print-export .mood-summary-inline{break-inside:avoid;page-break-inside:avoid}
+    body.print-export #hc-root{page-break-after:always}
+    body.print-export #chart-stack{page-break-before:always}
+    body.print-export #mood-panel{display:none}
+    body.print-export #kpi-row{display:none}
+    body.print-export #cgPdfSummary{page-break-after:always}
+    body.print-export #cgMonthlySummaryWrap{page-break-before:always}
+    body.print-export #cgWeeklySummaryWrap,
+    body.print-export #cgMonthlySummaryWrap,
+    body.print-export .cg-summary-card{break-inside:avoid;page-break-inside:avoid}
     body.print-export #reportFocusPanel{padding:10px;margin:6px 0}
     body.print-export #reportFocusPanel h2{margin:4px 0 6px;font-size:18px}
     body.print-export #reportFocusPanel h3{margin:0 0 4px;font-size:15px}
@@ -271,12 +297,15 @@
     body.print-export .mood-summary-card{display:block}
     body.print-export #kpi-row{margin:8px 0 10px;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
     body.print-export .kpi{padding:6px 8px;font-size:12px}
+    #kpi-row{display:none}
+    #mood-panel{display:none}
     body.print-export .hc-card{box-shadow:none}
     body.print-export .hc-wrap,
     body.print-export .hc-card{break-inside:avoid;page-break-inside:avoid}
     body.print-export .hc-head{padding:8px 10px;gap:8px}
     body.print-export .hc-title{font-size:16px}
     body.print-export .hc-kv{padding:6px 8px;font-size:11px}
+    body.print-export .hc-kvs{display:none}
     body.print-export .hc-legend{gap:8px;padding:8px 10px;font-size:11px}
     body.print-export .hc-legend input{display:none}
     body.print-export .hc-emo{font-size:16px}
@@ -511,10 +540,14 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
       <p class="muted cg-hide-when-quick-look" id="cgCount"></p>
 
       <div id="cgPdfSummary" class="pdf-only">
-        <h3>Caregiver Summary (Weekly)</h3>
-        <div id="cgWeeklySummary" class="cg-summary-grid"></div>
-        <h3>Caregiver Summary (Monthly)</h3>
-        <div id="cgMonthlySummary" class="cg-summary-grid"></div>
+        <div id="cgWeeklySummaryWrap">
+          <h3>Caregiver Summary (Weekly)</h3>
+          <div id="cgWeeklySummary" class="cg-summary-grid"></div>
+        </div>
+        <div id="cgMonthlySummaryWrap">
+          <h3>Caregiver Summary (Monthly)</h3>
+          <div id="cgMonthlySummary" class="cg-summary-grid"></div>
+        </div>
       </div>
 
       <div id="cgNoteOverlay" class="cg-note-overlay is-hidden" role="dialog" aria-modal="true" aria-labelledby="cgNoteTitle">
@@ -701,6 +734,10 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
             <div class="hc-title" id="hc-monthTitle">Loading…</div>
             <button class="hc-btn" id="hc-next" aria-label="Next month">›</button>
           </div>
+          <div class="hc-row no-export">
+            <button class="hc-btn" id="hcPrintBtn" type="button">🖨️ Print Calendar</button>
+            <button class="hc-btn" id="hcShareBtn" type="button">📤 Share Calendar PDF</button>
+          </div>
           <div class="hc-kvs">
             <div class="hc-kv" id="hc-kv-bm">💩 BM days: 0</div>
             <div class="hc-kv" id="hc-kv-sleep">😴 Sleep ≥ 8h days: 0</div>
@@ -713,14 +750,14 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
         </div>
 
         <div class="hc-legend hc-row" style="border-top:0">
-          <label><input type="checkbox" data-hc-layer="bm" checked/> <span class="hc-emo" aria-hidden="true">💩</span> BM</label>
-          <label><input type="checkbox" data-hc-layer="sleep" checked/> <span class="hc-emo" aria-hidden="true">😴</span> Sleep ≥ 8h</label>
-          <label><input type="checkbox" data-hc-layer="onset" checked/> <span class="hc-emo" aria-hidden="true">🦉</span> Late sleep onset</label>
-          <label><input type="checkbox" data-hc-layer="manic" checked/> <span class="hc-emo" aria-hidden="true">⚡️</span> Manic</label>
-          <label><input type="checkbox" data-hc-layer="sick" checked/> <span class="hc-emo" aria-hidden="true">🤒</span> Sick</label>
-          <label><input type="checkbox" data-hc-layer="appetite" checked/> <span class="hc-emo" aria-hidden="true">🍽️</span> Appetite change</label>
-          <label><input type="checkbox" data-hc-layer="moon" checked/> <span class="hc-emo" aria-hidden="true">🌕</span> Full moon</label>
-          <label><input type="checkbox" data-hc-layer="anomaly" checked/> <span class="hc-emo" aria-hidden="true">🚩</span> Anomaly</label>
+          <label><input type="checkbox" data-hc-layer="bm" checked/> <span class="hc-emo" aria-hidden="true">💩</span> BM <span class="hc-legend-count" data-hc-count="bm">0</span></label>
+          <label><input type="checkbox" data-hc-layer="sleep" checked/> <span class="hc-emo" aria-hidden="true">😴</span> Sleep ≥ 8h <span class="hc-legend-count" data-hc-count="sleep">0</span></label>
+          <label><input type="checkbox" data-hc-layer="onset" checked/> <span class="hc-emo" aria-hidden="true">🦉</span> Late sleep onset <span class="hc-legend-count" data-hc-count="onset">0</span></label>
+          <label><input type="checkbox" data-hc-layer="manic" checked/> <span class="hc-emo" aria-hidden="true">⚡️</span> Manic <span class="hc-legend-count" data-hc-count="manic">0</span></label>
+          <label><input type="checkbox" data-hc-layer="sick" checked/> <span class="hc-emo" aria-hidden="true">🤒</span> Sick <span class="hc-legend-count" data-hc-count="sick">0</span></label>
+          <label><input type="checkbox" data-hc-layer="appetite" checked/> <span class="hc-emo" aria-hidden="true">🍽️</span> Appetite change <span class="hc-legend-count" data-hc-count="appetite">0</span></label>
+          <label><input type="checkbox" data-hc-layer="moon" checked/> <span class="hc-emo" aria-hidden="true">🌕</span> Full moon <span class="hc-legend-count" data-hc-count="moon">0</span></label>
+          <label><input type="checkbox" data-hc-layer="anomaly" checked/> <span class="hc-emo" aria-hidden="true">🚩</span> Anomaly <span class="hc-legend-count" data-hc-count="anomaly">0</span></label>
         </div>
 
         <div class="hc-grid" id="hc-grid" role="grid" aria-label="Health calendar"></div>
@@ -730,20 +767,61 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
 
     <!-- Charts -->
     <section id="chart-stack" data-print-section="Trends & Charts">
+    <div class="chart-range-controls no-export">
+      <label for="chartRangeSelect">Chart range</label>
+      <select id="chartRangeSelect">
+        <option value="day">Day</option>
+        <option value="week">Week</option>
+        <option value="month" selected>Month</option>
+        <option value="year">Year</option>
+        <option value="all">All time</option>
+      </select>
+      <span class="chart-range-display" id="chartRangeDisplay">Showing: Month</span>
+    </div>
+    <div class="chart kpi-summary-inline">
+      <h4>Caregiver Check-In Totals</h4>
+      <div class="grid">
+        <div class="item">Total entries <span id="kpi-entries-inline">—</span></div>
+        <div class="item">Hygiene % Yes <span id="kpi-hygiene-inline">—</span></div>
+        <div class="item">Food % Yes <span id="kpi-food-inline">—</span></div>
+        <div class="item">Clean-up % Yes <span id="kpi-cleanup-inline">—</span></div>
+        <div class="item">Total Vocational (min) <span id="kpi-voc-inline">—</span></div>
+        <div class="item">Total Community (min) <span id="kpi-com-inline">—</span></div>
+        <div class="item">Avg Prompt Level <span id="kpi-prompt-inline">—</span></div>
+        <div class="item">Movement Symptom Days <span id="kpi-move-days-inline">—</span></div>
+        <div class="item">Avg Movement Severity <span id="kpi-move-avg-inline">—</span></div>
+        <div class="item">Max Movement Severity <span id="kpi-move-max-inline">—</span></div>
+      </div>
+    </div>
     <div class="chart">
       <h2>Physical & Daily Living Overview (Monthly Totals)</h2>
+      <p class="muted chart-range-label" id="healthRangeLabel">Range: Month</p>
       <canvas id="healthChart"></canvas>
       <p class="muted">Counts of caregiver check-ins where each category was marked “Yes”. Use this to spot over- or under-focused areas.</p>
     </div>
       <div class="chart">
         <h2>Prompt Level Over Time</h2>
+        <p class="muted chart-range-label" id="promptRangeLabel">Range: Month</p>
         <canvas id="skillChart"></canvas>
-        <p class="muted">Average prompt level (0–4) per day from caregiver check-ins. Higher = more prompting needed.</p>
+        <p class="muted">Average prompt level (0–4) per day from caregiver check-ins, rounded to whole numbers. Higher = more prompting needed.</p>
       </div>
-      <div class="chart"><h2>Individual Mood Share (Pie)</h2><canvas id="moodPieMain"></canvas></div>
+      <div class="chart">
+        <h2>Individual Mood Share (Pie)</h2>
+        <canvas id="moodPieMain"></canvas>
+        <div class="mood-summary-inline">
+          <h4>Daily Mood Summary</h4>
+          <div class="grid">
+            <div class="item">Total check-ins <span id="moodSummaryTotalInline">—</span></div>
+            <div class="item">Most common mood <span id="moodSummaryCommonInline">—</span></div>
+            <div class="item">Positive <span id="moodSummaryPositiveInline">—</span></div>
+            <div class="item">Challenging <span id="moodSummaryChallengingInline">—</span></div>
+          </div>
+        </div>
+      </div>
 
       <div class="chart">
         <h2>Engagement vs Mood — Average Minutes by Activity</h2>
+        <p class="muted chart-range-label" id="engagementRangeLabel">Range: Month</p>
         <canvas id="engagementVsMood"></canvas>
         <p class="muted">X = Mood bucket. Y = Average minutes. Bars = Home / Vocational / Community / Leisure.</p>
       </div>
@@ -857,6 +935,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
     const destroy = key => { charts[key]?.destroy?.(); charts[key]=null; };
     const dayKey = d => new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString().slice(0,10);
     const axisTitle = text => ({ title:{display:true,text} });
+    const RANGE_LIMITS = { day: 1, week: 7, month: 30, year: 365, all: Infinity };
     const CAREGIVER_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
     const parseCaregiverDate = (value) => {
       if (!value && value !== 0) return null;
@@ -1000,7 +1079,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
         .map(e => Number(e.new_skill_score))
         .filter(Number.isFinite);
       const promptAvg = promptVals.length
-        ? +(promptVals.reduce((a, b) => a + b, 0) / promptVals.length).toFixed(2)
+        ? Math.round(promptVals.reduce((a, b) => a + b, 0) / promptVals.length)
         : '—';
       const movementDays = new Set();
       const movementSeverities = [];
@@ -1013,7 +1092,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
         }
       });
       const movementAvg = movementSeverities.length
-        ? +(movementSeverities.reduce((sum, val) => sum + val, 0) / movementSeverities.length).toFixed(2)
+        ? Math.round(movementSeverities.reduce((sum, val) => sum + val, 0) / movementSeverities.length)
         : null;
       const movementMax = movementSeverities.length
         ? Math.max(...movementSeverities)
@@ -1073,7 +1152,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
           food_prep_yes: bucket.f,
           cleanup_yes: bucket.c,
           avg_new_skill_score: bucket.prompts.length
-            ? +(bucket.prompts.reduce((sum,v)=>sum+v,0)/bucket.prompts.length).toFixed(2)
+            ? Math.round(bucket.prompts.reduce((sum,v)=>sum+v,0)/bucket.prompts.length)
             : null,
         }));
 
@@ -1082,11 +1161,126 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
         .map(([day,bucket])=>({
           x: day,
           avg_new_skill_score: bucket.prompts.length
-            ? +(bucket.prompts.reduce((sum,v)=>sum+v,0)/bucket.prompts.length).toFixed(2)
+            ? Math.round(bucket.prompts.reduce((sum,v)=>sum+v,0)/bucket.prompts.length)
             : null,
         }));
 
       return { monthly, promptDaily };
+    }
+
+    const CHART_RANGE_LABELS = {
+      day: 'Day',
+      week: 'Week',
+      month: 'Month',
+      year: 'Year',
+      all: 'All time'
+    };
+
+    function getLatestEntryDate(entries){
+      let latest = null;
+      for (const entry of entries || []) {
+        const dt = parseEntryDate(entry);
+        if (!dt) continue;
+        if (!latest || dt > latest) latest = dt;
+      }
+      return latest || new Date();
+    }
+
+    function getChartRangeWindow(rangeKey, entries){
+      const end = new Date(getLatestEntryDate(entries));
+      end.setHours(23,59,59,999);
+      if (rangeKey === 'all') {
+        return { start: null, end, label: 'All time' };
+      }
+      const start = new Date(end);
+      if (rangeKey === 'day') {
+        start.setHours(0,0,0,0);
+      } else if (rangeKey === 'week') {
+        start.setDate(end.getDate() - 6);
+        start.setHours(0,0,0,0);
+      } else if (rangeKey === 'month') {
+        start.setDate(end.getDate() - 29);
+        start.setHours(0,0,0,0);
+      } else if (rangeKey === 'year') {
+        start.setDate(end.getDate() - 364);
+        start.setHours(0,0,0,0);
+      }
+      const label = `${formatLocalDate(start)}–${formatLocalDate(end)}`;
+      return { start, end, label };
+    }
+
+    function truncateSeries(series, rangeKey){
+      const limit = RANGE_LIMITS[rangeKey] ?? Infinity;
+      if (!series || !series.length || !Number.isFinite(limit) || limit === Infinity) return series;
+      return series.slice(-limit);
+    }
+
+    function filterEntriesByRange(entries, range){
+      if (!range?.start) return entries.slice();
+      return entries.filter(entry => {
+        const dt = parseEntryDate(entry);
+        if (!dt) return false;
+        return dt >= range.start && dt <= range.end;
+      });
+    }
+
+    function filterMoodEntriesByRange(entries, range){
+      if (!range?.start) return entries.slice();
+      return entries.filter(entry => entry.dateObj >= range.start && entry.dateObj <= range.end);
+    }
+
+    function updateChartRangeLabels(range, rangeKey){
+      const label = range?.label || CHART_RANGE_LABELS[rangeKey] || 'All time';
+      const display = rangeKey === 'all' ? 'All time' : `${CHART_RANGE_LABELS[rangeKey]} (${label})`;
+      const displayEl = document.getElementById('chartRangeDisplay');
+      if (displayEl) displayEl.textContent = `Showing: ${display}`;
+      const healthLabel = document.getElementById('healthRangeLabel');
+      if (healthLabel) healthLabel.textContent = `Range: ${display}`;
+      const promptLabel = document.getElementById('promptRangeLabel');
+      if (promptLabel) promptLabel.textContent = `Range: ${display}`;
+      const engagementLabel = document.getElementById('engagementRangeLabel');
+      if (engagementLabel) engagementLabel.textContent = `Range: ${display}`;
+      const movementLabel = document.getElementById('movementRangeLabel');
+      if (movementLabel) movementLabel.textContent = `Summary for ${display.toLowerCase()} range`;
+    }
+
+    function applyChartRange(){
+      const rangeKey = document.getElementById('chartRangeSelect')?.value || 'month';
+      const caregiverSource = (cgState.filtered && cgState.filtered.length) ? cgState.filtered : (cgState.entries || []);
+      const range = getChartRangeWindow(rangeKey, caregiverSource);
+      const filteredCaregiver = filterEntriesByRange(caregiverSource, range);
+      const { monthly, promptDaily } = buildMonthlySeries(filteredCaregiver);
+      drawHealthChart(truncateSeries(monthly, rangeKey));
+      drawSkillChart(truncateSeries(promptDaily, rangeKey));
+
+      const moodSource = window.latestMoodEntries || [];
+      const filteredMood = filterMoodEntriesByRange(moodSource, range);
+      drawEngagementVsMood(filteredMood, filteredCaregiver);
+      drawSleepOverlay(filteredMood, filteredCaregiver, range);
+
+      const movementInsights = buildMovementInsights(filteredCaregiver);
+      drawMovementSeverityChart(movementInsights.severitySeries);
+      drawMovementTypeChart(movementInsights.typeCounts);
+      drawMovementBodyChart(movementInsights.bodyCounts);
+      drawMovementTriggerChart(movementInsights.triggerCounts);
+      const summaryDays = document.getElementById('movementDaysVal');
+      const summaryAvg = document.getElementById('movementAvgVal');
+      const summaryMax = document.getElementById('movementMaxVal');
+      const summaryType = document.getElementById('movementTypeVal');
+      const summaryTime = document.getElementById('movementTimeVal');
+      if (summaryDays) summaryDays.textContent = movementInsights.daysWithSymptoms ?? 0;
+      if (summaryAvg) summaryAvg.textContent = movementInsights.avgSeverity ?? '—';
+      if (summaryMax) summaryMax.textContent = movementInsights.maxSeverity ?? '—';
+      if (summaryType) {
+        const label = MOVEMENT_TYPE_LABELS[movementInsights.mostCommonType] || movementInsights.mostCommonType || '—';
+        summaryType.textContent = label;
+      }
+      if (summaryTime) {
+        const label = MOVEMENT_TIME_LABELS[movementInsights.mostCommonTime] || movementInsights.mostCommonTime || '—';
+        summaryTime.textContent = label;
+      }
+
+      updateChartRangeLabels(range, rangeKey);
     }
 
     /* =================== Caregiver table helpers =================== */
@@ -1545,7 +1739,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
 
       const renderCard = (bucket, label) => {
         const pct = (count) => bucket.count ? `${Math.round((count / bucket.count) * 100)}%` : '—';
-        const avgPrompt = bucket.promptCount ? (bucket.promptSum / bucket.promptCount).toFixed(1) : '—';
+        const avgPrompt = bucket.promptCount ? Math.round(bucket.promptSum / bucket.promptCount) : '—';
         const synopsis = buildNoteSynopsis(bucket.notes, 3);
         const themeSentence = extractTopNoteThemeSentence(bucket.notes);
         const card = document.createElement('div');
@@ -1663,7 +1857,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
           cleanupYes: bucket.cleanupYes,
           vocMinutes: Math.round(bucket.vocMinutes),
           comMinutes: Math.round(bucket.comMinutes),
-          avgPrompt: bucket.promptCount ? (bucket.promptTotal / bucket.promptCount).toFixed(1) : null,
+          avgPrompt: bucket.promptCount ? Math.round(bucket.promptTotal / bucket.promptCount) : null,
           caregivers: Array.from(bucket.caregivers),
           latestNote: bucket.latestNote,
           entries: bucket.entries.sort((a, b) => (a.iso || '').localeCompare(b.iso || ''))
@@ -2750,6 +2944,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
       updateCgSummary(filtered, entries.length);
       renderQuickLook(filtered);
       renderCaregiverPdfSummaries(filtered);
+      applyChartRange();
     }
 
     window.applyCaregiverFilters = applyCaregiverFilters;
@@ -2835,6 +3030,29 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
       if (kpi.moveDays) kpi.moveDays.textContent = summary.movement?.days ?? 0;
       if (kpi.moveAvg) kpi.moveAvg.textContent = summary.averages?.movement_severity ?? '—';
       if (kpi.moveMax) kpi.moveMax.textContent = summary.movement?.max_severity ?? '—';
+
+      const inline = {
+        entries: $('#kpi-entries-inline'),
+        hygiene: $('#kpi-hygiene-inline'),
+        food: $('#kpi-food-inline'),
+        cleanup: $('#kpi-cleanup-inline'),
+        voc: $('#kpi-voc-inline'),
+        com: $('#kpi-com-inline'),
+        prompt: $('#kpi-prompt-inline'),
+        moveDays: $('#kpi-move-days-inline'),
+        moveAvg: $('#kpi-move-avg-inline'),
+        moveMax: $('#kpi-move-max-inline')
+      };
+      if (inline.entries) inline.entries.textContent = summary.counts.entries ?? 0;
+      if (inline.hygiene) inline.hygiene.textContent = (summary.percents.hygiene_yes ?? 0) + '%';
+      if (inline.food) inline.food.textContent = (summary.percents.food_prep_yes ?? 0) + '%';
+      if (inline.cleanup) inline.cleanup.textContent = (summary.percents.cleanup_yes ?? 0) + '%';
+      if (inline.voc) inline.voc.textContent = summary.totals.vocational_minutes ?? 0;
+      if (inline.com) inline.com.textContent = summary.totals.community_minutes ?? 0;
+      if (inline.prompt) inline.prompt.textContent = summary.averages.new_skill_score ?? '—';
+      if (inline.moveDays) inline.moveDays.textContent = summary.movement?.days ?? 0;
+      if (inline.moveAvg) inline.moveAvg.textContent = summary.averages?.movement_severity ?? '—';
+      if (inline.moveMax) inline.moveMax.textContent = summary.movement?.max_severity ?? '—';
     }
 
     function drawHealthChart(series){
@@ -2871,7 +3089,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
           plugins:{ legend:{ position:'top', labels:{ boxWidth:12, boxHeight:12, font:{ size:12 } } } },
           scales:{
             x:axisTitle('Date'),
-            y:{ min:0,max:4,ticks:{stepSize:1}, ...axisTitle('Prompt level (0–4)') }
+            y:{ min:0,max:4,ticks:{stepSize:1, precision:0}, ...axisTitle('Prompt level (0–4)') }
           }
         }
       });
@@ -2959,7 +3177,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
         .map(([day, bucket]) => ({
           x: day,
           y: bucket.severities.length
-            ? +(bucket.severities.reduce((sum, val) => sum + val, 0) / bucket.severities.length).toFixed(2)
+            ? Math.round(bucket.severities.reduce((sum, val) => sum + val, 0) / bucket.severities.length)
             : null
         }));
       const topN = (counts, limit = 5) =>
@@ -2975,7 +3193,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
         bodyCounts: topN(bodyCounts),
         triggerCounts: topN(triggerCounts),
         daysWithSymptoms: daySet.size,
-        avgSeverity: severityCount ? +(severityTotal / severityCount).toFixed(1) : null,
+        avgSeverity: severityCount ? Math.round(severityTotal / severityCount) : null,
         maxSeverity,
         mostCommonType: mostCommon(typeCounts),
         mostCommonTime: mostCommon(timeCounts)
@@ -3104,8 +3322,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
 
       window.latestCaregiverEntries = entries.slice();
       renderKPIs(summary);
-      drawHealthChart(monthly);
-      drawSkillChart(promptDaily);
+      drawHealthChart(truncateSeries(monthly, document.getElementById('chartRangeSelect')?.value || 'month'));
+      drawSkillChart(truncateSeries(promptDaily, document.getElementById('chartRangeSelect')?.value || 'month'));
       drawMovementSeverityChart(movementInsights.severitySeries);
       drawMovementTypeChart(movementInsights.typeCounts);
       drawMovementBodyChart(movementInsights.bodyCounts);
@@ -3280,8 +3498,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
       pieMain = new Chart($('#moodPieMain'), { type:'pie', data:{labels, datasets:[{data, backgroundColor:colors}]} });
     }
 
-    function drawEngagementVsMood(moodEntries){
-      const caregiver=(window.latestCaregiverEntries||[]).slice();
+    function drawEngagementVsMood(moodEntries, caregiverEntries){
+      const caregiver=(caregiverEntries || window.latestCaregiverEntries || []).slice();
       const buckets=['Positive','Low Energy','Challenging','Other'];
       const countsByDay=new Map();
       for (const e of moodEntries){
@@ -3364,10 +3582,19 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
       return null;
     }
 
-    function drawSleepOverlay(allMoodEntries){
-      const end=new Date(); const start=new Date(end); start.setDate(end.getDate()-6); start.setHours(0,0,0,0);
-      const moods=allMoodEntries.filter(e=>e.dateObj>=start&&e.dateObj<=end);
-      const caregiver=(window.latestCaregiverEntries||[]).filter(e=>{const d=new Date(e.timestamp||e.created_at||Date.now());return d>=start&&d<=end;});
+    function drawSleepOverlay(allMoodEntries, caregiverEntries, range){
+      const end = range?.end ? new Date(range.end) : new Date();
+      const start = range?.start ? new Date(range.start) : (() => {
+        const fallback = new Date(end);
+        fallback.setDate(end.getDate() - 6);
+        fallback.setHours(0,0,0,0);
+        return fallback;
+      })();
+      const moods = allMoodEntries.filter(e => e.dateObj >= start && e.dateObj <= end);
+      const caregiver = (caregiverEntries || window.latestCaregiverEntries || []).filter(e => {
+        const d = new Date(e.timestamp || e.created_at || Date.now());
+        return d >= start && d <= end;
+      });
 
       const dk=d=>new Date(d.getFullYear(),d.getMonth(),d.getDate()).toISOString().slice(0,10);
       const sleepByDay=new Map(), engByDay=new Map();
@@ -3440,9 +3667,10 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
 
       const xs = hours.filter(v=>v!=null), ys = labels.map((_,i)=>hours[i]!=null?engagementHours[i]:null).filter(v=>v!=null);
       const r=pearson(xs,ys), n=Math.min(xs.length,ys.length);
+      const rangeLabel = range?.label ? ` Range: ${range.label}.` : '';
       $('#sleepNote').textContent = n
-        ? `Points: ${n}. Pearson r = ${r}. Engagement hours are approximate: >45 mins rounds down, <45 mins rounds up.`
-        : 'No overlapping days with sleep + engagement data yet (showing placeholder).';
+        ? `Points: ${n}. Pearson r = ${r}. Engagement hours are approximate: >45 mins rounds down, <45 mins rounds up.${rangeLabel}`
+        : `No overlapping days with sleep + engagement data yet (showing placeholder).${rangeLabel}`;
     }
 
     /* =================== WYR =================== */
@@ -3602,6 +3830,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
 
     /* =================== Wire & boot =================== */
     $('#moodRange').addEventListener('change', renderMoodSection);
+    document.getElementById('chartRangeSelect')?.addEventListener('change', applyChartRange);
 
     // Event delegation keeps row actions working as the table refreshes.
     cgInputs.tbody?.addEventListener('click', (event) => {
@@ -3711,9 +3940,13 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
       $('#moodSummaryCommon').textContent = commonMood;
       $('#moodSummaryPositive').textContent = pct(buckets.Positive || 0);
       $('#moodSummaryChallenging').textContent = pct(buckets.Challenging || 0);
+      $('#moodSummaryTotalInline').textContent = totalMood ? `${totalMood}` : '—';
+      $('#moodSummaryCommonInline').textContent = commonMood;
+      $('#moodSummaryPositiveInline').textContent = pct(buckets.Positive || 0);
+      $('#moodSummaryChallengingInline').textContent = pct(buckets.Challenging || 0);
       drawMoodShare(indiv);
-      drawEngagementVsMood(filteredMood);
-      drawSleepOverlay(filteredMood);
+      window.latestMoodEntries = filteredMood.slice();
+      applyChartRange();
     }
 
     window.renderMoodSection = renderMoodSection;
@@ -3732,6 +3965,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
     await loadCaregiverData();
     await loadFocusPanel();
     await renderMoodSection();
+    applyChartRange();
     await renderWyr();
 </script>
 
@@ -3931,10 +4165,56 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
     window.print();
   }
 
+  async function exportCalendarPdf(share = false) {
+    const target = document.getElementById('hc-root');
+    if (!target) return;
+    toggleExportHiders(true);
+    document.body.classList.add('print-export');
+    document.body.classList.add('calendar-print-only');
+    try {
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const canvas = await html2canvas(target, { scale: 2, backgroundColor: '#ffffff' });
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({ unit: 'pt', format: 'a4' });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const margin = 28;
+      const imgW = pageW - margin * 2;
+      const imgH = canvas.height * (imgW / canvas.width);
+      const finalH = Math.min(imgH, pageH - margin * 2);
+      const finalW = imgH > finalH ? finalH * (canvas.width / canvas.height) : imgW;
+      const x = (pageW - finalW) / 2;
+      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', x, margin, finalW, finalH);
+      const blob = pdf.output('blob');
+      const fileName = 'Calendar.pdf';
+      if (share && navigator.canShare) {
+        const file = new File([blob], fileName, { type: 'application/pdf' });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: 'Calendar' });
+          return;
+        }
+      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } finally {
+      document.body.classList.remove('print-export');
+      document.body.classList.remove('calendar-print-only');
+      toggleExportHiders(false);
+    }
+  }
+
   document.getElementById('fullExportBtn')?.addEventListener('click', exportFullReportPDF);
   document.getElementById('fullShareBtn')?.addEventListener('click', shareFullReportPdf);
   document.getElementById('fullPrintBtn')?.addEventListener('click', printFullReport);
   document.getElementById('calendarPrintBtn')?.addEventListener('click', printCalendarOnly);
+  document.getElementById('hcPrintBtn')?.addEventListener('click', printCalendarOnly);
+  document.getElementById('hcShareBtn')?.addEventListener('click', () => exportCalendarPdf(true));
 
   function getExportRangeDefaults() {
     const api = window.caregiverReportApi || {};
@@ -4303,6 +4583,23 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
     kvApp && (kvApp.textContent = '🍽️ Appetite change days: ' + appetiteDays);
     kvMoon&& (kvMoon.textContent= '🌕 Full moon days: ' + moonDays);
     kvAno && (kvAno.textContent = '🚩 Anomaly days: ' + anomalyDays);
+
+    const legendCounts = {
+      bm: bmDays,
+      sleep: sleepDays,
+      onset: onsetDays,
+      manic: manicDays,
+      sick: sickDays,
+      appetite: appetiteDays,
+      moon: moonDays,
+      anomaly: anomalyDays
+    };
+    document.querySelectorAll('.hc-legend-count[data-hc-count]').forEach((el) => {
+      const key = el.getAttribute('data-hc-count');
+      if (!key) return;
+      const val = legendCounts[key] ?? 0;
+      el.textContent = String(val);
+    });
   }
 
   async function loadCaregiverFlags(start, end){

@@ -119,6 +119,77 @@ import { uploadJsonToBucket, downloadJsonFromBucket } from "../shared-storage.js
       border-radius: 12px;
       box-shadow: 0 18px 38px rgba(0,0,0,.18);
     }
+    .doc-notes-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.66);
+      z-index: 4100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+    }
+    .doc-notes-overlay.open { display: flex; }
+    .doc-notes-viewer {
+      background: #fff;
+      border-radius: 16px;
+      width: min(720px, 96vw);
+      max-height: 92vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 30px 80px rgba(0,0,0,.45);
+    }
+    .doc-notes-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.4);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .doc-notes-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin: 0;
+    }
+    .doc-notes-meta {
+      font-size: 12px;
+      color: #64748b;
+    }
+    .doc-notes-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .doc-notes-close {
+      border: none;
+      background: #0f172a;
+      color: #fff;
+      border-radius: 999px;
+      width: 34px;
+      height: 34px;
+      font-size: 20px;
+      cursor: pointer;
+    }
+    .doc-notes-body {
+      padding: 18px;
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .doc-notes-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 12px;
+      background: #f8fafc;
+    }
+    .doc-notes-card h4 {
+      margin: 0 0 6px;
+      font-size: 14px;
+    }
     .doc-viewer-note {
       font-size: 13px;
       color: #475569;
@@ -650,6 +721,229 @@ const attachmentViewer = (() => {
   });
   return { open, close };
 })();
+
+const notesViewer = (() => {
+  let overlay = null;
+  let activeDocs = [];
+  let activeTitle = "Notes";
+  function ensure() {
+    if (overlay) return overlay;
+    overlay = document.createElement("div");
+    overlay.className = "doc-notes-overlay";
+    overlay.innerHTML = `
+      <div class="doc-notes-viewer" role="dialog" aria-modal="true" aria-label="Notes viewer">
+        <div class="doc-notes-header">
+          <div>
+            <p class="doc-notes-title">Notes</p>
+            <div class="doc-notes-meta"></div>
+          </div>
+          <div class="doc-notes-actions">
+            <button type="button" class="btn secondary doc-notes-print">Print</button>
+            <button type="button" class="btn secondary doc-notes-share">Share PDF</button>
+            <button type="button" class="doc-notes-close" aria-label="Close notes viewer">&times;</button>
+          </div>
+        </div>
+        <div class="doc-notes-body"></div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.addEventListener("click", (event) => {
+      if (event.target === overlay || event.target.closest(".doc-notes-close")) {
+        overlay.classList.remove("open");
+      }
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") overlay?.classList.remove("open");
+    });
+    overlay.querySelector(".doc-notes-print")?.addEventListener("click", () => {
+      openNotesPrintWindow(activeDocs, activeTitle);
+    });
+    overlay.querySelector(".doc-notes-share")?.addEventListener("click", () => {
+      openNotesPrintWindow(activeDocs, activeTitle);
+    });
+    return overlay;
+  }
+  function open({ title, meta, cardsHtml, docs }) {
+    const wrap = ensure();
+    wrap.classList.add("open");
+    activeDocs = docs || [];
+    activeTitle = title || "Notes";
+    wrap.querySelector(".doc-notes-title").textContent = title || "Notes";
+    const metaEl = wrap.querySelector(".doc-notes-meta");
+    metaEl.textContent = meta || "";
+    const body = wrap.querySelector(".doc-notes-body");
+    body.innerHTML = cardsHtml || "<div class=\"doc-notes-card\">No notes yet.</div>";
+  }
+  return { open };
+})();
+
+function getDocNotesPayload(doc = {}) {
+  const meta = doc.content_json || {};
+  const sections = [];
+  const summary = [];
+  if (meta.medical_next_datetime) {
+    summary.push(`<div><strong>Next Appt:</strong> ${formatPrintableDate(meta.medical_next_datetime)}</div>`);
+  }
+  if (meta.medical_next_link) {
+    summary.push(`<div><strong>Link:</strong> ${formatLink(meta.medical_next_link)}</div>`);
+  }
+  if (summary.length) {
+    sections.push({ title: "Appointment", html: summary.join("") });
+  }
+  if (doc.content) {
+    sections.push({ title: "Notes", html: formatParagraphs(doc.content) });
+  }
+  if (meta.medical_notes) {
+    sections.push({ title: "Instructions", html: formatParagraphs(meta.medical_notes) });
+  }
+  return {
+    title: doc.title || "Document",
+    type: doc.doc_type || "",
+    date: doc.content_json?.document_date || doc.created_at || "",
+    sections,
+  };
+}
+
+function hasDocNotes(doc = {}) {
+  const meta = doc.content_json || {};
+  return Boolean((doc.content || "").trim() || (meta.medical_notes || "").trim() || meta.medical_next_datetime || meta.medical_next_link);
+}
+
+function buildNotesCards(docs = []) {
+  const cards = docs.map((doc) => {
+    const payload = getDocNotesPayload(doc);
+    if (!payload.sections.length) return "";
+    const metaLine = [
+      payload.type ? escapeHtml(payload.type) : "",
+      payload.date ? escapeHtml(formatPrintableDate(payload.date)) : "",
+    ].filter(Boolean).join(" • ");
+    const sectionsHtml = payload.sections.map((section) => `
+      <div class="doc-notes-card">
+        <h4>${escapeHtml(section.title)}</h4>
+        ${section.html}
+      </div>
+    `).join("");
+    return `
+      <div class="doc-notes-card">
+        <h4>${escapeHtml(payload.title)}</h4>
+        ${metaLine ? `<div class="doc-notes-meta">${metaLine}</div>` : ""}
+      </div>
+      ${sectionsHtml}
+    `;
+  }).filter(Boolean);
+  return cards.length ? cards.join("") : `<div class="doc-notes-card">No notes saved for this view.</div>`;
+}
+
+function openNotesPrintWindow(docs = [], categoryLabel = "Notes") {
+  const printableStyles = getPrintableStyles() + `
+    .print-card{page-break-after:always;}
+    .print-card:last-child{page-break-after:auto;}
+  `;
+  const safeCategory = escapeHtml(categoryLabel || "Notes");
+  const generatedAt = escapeHtml(new Date().toLocaleString());
+  const cards = docs.map((doc) => {
+    const payload = getDocNotesPayload(doc);
+    if (!payload.sections.length) return "";
+    const meta = [
+      payload.type ? escapeHtml(payload.type) : "",
+      payload.date ? escapeHtml(formatPrintableDate(payload.date)) : "",
+    ].filter(Boolean).join(" • ");
+    const sectionsHtml = payload.sections.map((section) => `
+      <section><h3>${escapeHtml(section.title)}</h3>${section.html}</section>
+    `).join("");
+    return `
+      <article class="print-card">
+        <header>
+          <p class="print-label">${escapeHtml(payload.type || "Note")}</p>
+          <h2>${escapeHtml(payload.title)}</h2>
+        </header>
+        ${meta ? `<div class="print-meta">${meta}</div>` : ""}
+        <div class="print-body">${sectionsHtml}</div>
+      </article>
+    `;
+  }).filter(Boolean).join("");
+
+  const bodyContent = cards || `<p class="print-empty">No notes saved yet for ${safeCategory}.</p>`;
+  const html = `<!DOCTYPE html>
+  <html>
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <title>${safeCategory} — Notes</title>
+      <style>${printableStyles}</style>
+      <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    </head>
+    <body>
+      <header class="print-top">
+        <div>
+          <h1>${safeCategory} Notes</h1>
+          <p class="print-generated">Generated ${generatedAt}</p>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="print-action" onclick="window.print()">Print</button>
+          <button class="print-action secondary" id="sharePdfBtn" type="button">Share PDF</button>
+        </div>
+      </header>
+      ${bodyContent}
+      <script>
+        async function sharePdf(){
+          const btn = document.getElementById('sharePdfBtn');
+          if (!btn) return;
+          const jsPDF = window.jspdf && window.jspdf.jsPDF;
+          if (!window.html2canvas || !jsPDF) {
+            alert('PDF tools are still loading. Please try again in a moment.');
+            return;
+          }
+          btn.disabled = true;
+          const original = btn.textContent;
+          btn.textContent = 'Preparing…';
+          try{
+            const canvas = await window.html2canvas(document.body, { scale: 2, backgroundColor: '#ffffff' });
+            const pdf = new jsPDF({ unit: 'pt', format: 'a4' });
+            const pageW = pdf.internal.pageSize.getWidth();
+            const pageH = pdf.internal.pageSize.getHeight();
+            const imgData = canvas.toDataURL('image/png');
+            const imgW = pageW;
+            const imgH = canvas.height * (imgW / canvas.width);
+            let heightLeft = imgH;
+            let y = 0;
+            pdf.addImage(imgData, 'PNG', 0, 0, imgW, imgH);
+            heightLeft -= pageH;
+            while (heightLeft > 0) {
+              pdf.addPage();
+              y = heightLeft - imgH;
+              pdf.addImage(imgData, 'PNG', 0, y, imgW, imgH);
+              heightLeft -= pageH;
+            }
+            const blob = pdf.output('blob');
+            const file = new File([blob], '${safeCategory.replace(/\\s+/g,'_')}_Notes.pdf', { type: 'application/pdf' });
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+              await navigator.share({ files: [file], title: '${safeCategory} Notes' });
+            } else {
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = file.name;
+              document.body.appendChild(a);
+              a.click();
+              a.remove();
+              setTimeout(() => URL.revokeObjectURL(url), 60000);
+            }
+          } catch (err){
+            console.error('PDF share failed', err);
+            alert('Unable to create a PDF right now.');
+          } finally {
+            btn.disabled = false;
+            btn.textContent = original;
+          }
+        }
+        document.getElementById('sharePdfBtn')?.addEventListener('click', sharePdf);
+      </script>
+    </body>
+  </html>`;
+  openPrintHtml(html);
+}
 
 
 /* ------------ helpers ------------ */
@@ -1229,6 +1523,16 @@ async function renderDocuments(list, docs) {
     editBtn.setAttribute("aria-label", `Edit ${doc.title}`);
     linksHolder.appendChild(editBtn);
 
+    if (hasDocNotes(doc)) {
+      const notesBtn = document.createElement("button");
+      notesBtn.type = "button";
+      notesBtn.className = "btn secondary doc-notes-action";
+      notesBtn.dataset.docId = docId;
+      notesBtn.textContent = "View Notes";
+      notesBtn.setAttribute("aria-label", `View notes for ${doc.title}`);
+      linksHolder.appendChild(notesBtn);
+    }
+
     const exportBtn = document.createElement("button");
     exportBtn.type = "button";
     exportBtn.className = "btn doc-export-action";
@@ -1251,6 +1555,25 @@ loadDocuments();
 const docsPrintBtn = document.getElementById("docsPrintBtn");
 if (docsPrintBtn) {
   docsPrintBtn.addEventListener("click", () => handleDocsPrintClick(docsPrintBtn));
+}
+const docsNotesBtn = document.getElementById("docsNotesBtn");
+if (docsNotesBtn) {
+  docsNotesBtn.addEventListener("click", async () => {
+    const store = await ensureDocsStore();
+    const docs = filterDocsByCategory(store.documents || []);
+    const notesDocs = docs.filter((doc) => hasDocNotes(doc));
+    if (!notesDocs.length) {
+      alert("No notes saved in this category yet.");
+      return;
+    }
+    const metaLine = `${notesDocs.length} note${notesDocs.length === 1 ? "" : "s"}`;
+    notesViewer.open({
+      title: `${activeCategory} Notes`,
+      meta: metaLine,
+      cardsHtml: buildNotesCards(notesDocs),
+      docs: notesDocs,
+    });
+  });
 }
 
 async function handleAttachmentAction(trigger) {
@@ -1458,6 +1781,32 @@ document.addEventListener("click", (event) => {
     event.preventDefault();
     handleDocExport(trigger);
   }
+});
+
+document.addEventListener("click", (event) => {
+  const trigger = event.target.closest(".doc-notes-action");
+  if (!trigger) return;
+  event.preventDefault();
+  const docId = trigger.dataset.docId;
+  const doc = (docsStore.documents || []).find((d) => d.id === docId);
+  if (!doc) {
+    alert("Unable to locate this document.");
+    return;
+  }
+  const payload = getDocNotesPayload(doc);
+  if (!payload.sections.length) {
+    alert("No notes saved for this document yet.");
+    return;
+  }
+  const metaLine = [payload.type || "Notes", payload.date ? formatPrintableDate(payload.date) : ""]
+    .filter(Boolean)
+    .join(" • ");
+  notesViewer.open({
+    title: payload.title,
+    meta: metaLine,
+    cardsHtml: buildNotesCards([doc]),
+    docs: [doc],
+  });
 });
 
 async function handleDocsPrintClick(button) {

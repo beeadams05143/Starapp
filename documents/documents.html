@@ -121,6 +121,7 @@
       .doc-header{flex-direction:column;align-items:flex-start}
       .doc-header button{width:100%}
       textarea{min-height:120px;line-height:24px}
+      .edge-tabs{display:none}
     }
 
 
@@ -238,7 +239,10 @@
 
       <div class="doc-header">
         <h2><span id="catListLabel">Finance</span> Documents</h2>
-        <button class="btn secondary" type="button" id="docsPrintBtn">View / Print</button>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn secondary" type="button" id="docsNotesBtn">View Notes</button>
+          <button class="btn secondary" type="button" id="docsPrintBtn">View / Print</button>
+        </div>
       </div>
       <div id="docs-list"></div>
     </div>

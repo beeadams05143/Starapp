@@ -172,50 +172,6 @@
             <label>PRN sleep aid given:<input type="text" name="prn_name" placeholder="Name of PRN"/></label>
             <label>Time PRN was given:<input type="time" name="prn_time"/></label>
           </div>
-          <label>Caregiver notes:<textarea name="physical_notes" placeholder="Optional notes..."></textarea></label>
-          <div class="controls">
-            <div class="left-actions"><button class="btn" type="button" data-save>Save</button><span class="savedAt" data-savedat></span></div>
-            <div><button class="btn primary" type="button" data-next>Save &amp; Next →</button></div>
-          </div>
-        </fieldset>
-      </div>
-
-      <!-- STEP 2: Behavior -->
-      <div class="step" data-step="1">
-        <fieldset class="panel">
-          <div class="section-title">Behavioral Observations</div>
-          <div class="row cols-3 compact">
-            <label>Did the individual display any aggression?
-              <select name="aggression_flag" id="aggression_flag" class="yn"><option value="">Select</option><option>No</option><option>Yes</option></select>
-            </label>
-            <div id="aggressionDetails" class="row cols-3 compact" style="margin:0">
-              <label>Aggression type:
-                <select name="aggression_type" id="aggression_type" disabled>
-                  <option value="">Select type</option>
-                  <option>Posturing</option><option>Physical</option><option>Verbal</option><option>Self-harm</option>
-                </select>
-              </label>
-              <label>Intensity (0–5):
-                <input type="range" min="0" max="5" step="1" value="0" name="aggression_intensity" id="aggression_intensity" disabled/>
-                <div class="savedAt"><span id="intensityVal">0</span></div>
-              </label>
-            </div>
-          </div>
-          <label id="aggressionNotesWrap">Aggression notes:
-            <textarea name="aggression_notes" placeholder="What happened, what helped"></textarea>
-          </label>
-          <hr class="soft"/>
-          <div class="subcap">Anomalies</div>
-          <div class="row cols-2">
-            <label>Noticed anything unusual?
-              <select name="behavior_anomaly_flag" id="behavior_anomaly_flag" class="yn"><option value="">Select</option><option>No</option><option>Yes</option></select>
-            </label>
-            <label id="anomalyTriggerWrap" style="display:none">Trigger or context:
-              <input type="text" name="behavior_anomaly_trigger" placeholder="e.g., loud noise, new staff, schedule change"/>
-            </label>
-          </div>
-          <label id="anomalyNotesWrap" style="display:none">Anomaly details:<textarea name="behavior_anomaly_notes" placeholder="Describe what felt off, how long it lasted, what helped"></textarea></label>
-
           <div class="movement-panel" id="movementSymptomsPanel">
             <div class="movement-head">
               <div>
@@ -440,6 +396,49 @@
               <input type="text" name="temp_notes" id="temp_notes" placeholder="Short note, e.g. warm at 7am"/>
             </div>
           </div>
+          <label>Caregiver notes:<textarea name="physical_notes" placeholder="Optional notes..."></textarea></label>
+          <div class="controls">
+            <div class="left-actions"><button class="btn" type="button" data-save>Save</button><span class="savedAt" data-savedat></span></div>
+            <div><button class="btn primary" type="button" data-next>Save &amp; Next →</button></div>
+          </div>
+        </fieldset>
+      </div>
+
+      <!-- STEP 2: Behavior -->
+      <div class="step" data-step="1">
+        <fieldset class="panel">
+          <div class="section-title">Behavioral Observations</div>
+          <div class="row cols-3 compact">
+            <label>Did the individual display any aggression?
+              <select name="aggression_flag" id="aggression_flag" class="yn"><option value="">Select</option><option>No</option><option>Yes</option></select>
+            </label>
+            <div id="aggressionDetails" class="row cols-3 compact" style="margin:0">
+              <label>Aggression type:
+                <select name="aggression_type" id="aggression_type" disabled>
+                  <option value="">Select type</option>
+                  <option>Posturing</option><option>Physical</option><option>Verbal</option><option>Self-harm</option>
+                </select>
+              </label>
+              <label>Intensity (0–5):
+                <input type="range" min="0" max="5" step="1" value="0" name="aggression_intensity" id="aggression_intensity" disabled/>
+                <div class="savedAt"><span id="intensityVal">0</span></div>
+              </label>
+            </div>
+          </div>
+          <label id="aggressionNotesWrap">Aggression notes:
+            <textarea name="aggression_notes" placeholder="What happened, what helped"></textarea>
+          </label>
+          <hr class="soft"/>
+          <div class="subcap">Anomalies</div>
+          <div class="row cols-2">
+            <label>Noticed anything unusual?
+              <select name="behavior_anomaly_flag" id="behavior_anomaly_flag" class="yn"><option value="">Select</option><option>No</option><option>Yes</option></select>
+            </label>
+            <label id="anomalyTriggerWrap" style="display:none">Trigger or context:
+              <input type="text" name="behavior_anomaly_trigger" placeholder="e.g., loud noise, new staff, schedule change"/>
+            </label>
+          </div>
+          <label id="anomalyNotesWrap" style="display:none">Anomaly details:<textarea name="behavior_anomaly_notes" placeholder="Describe what felt off, how long it lasted, what helped"></textarea></label>
 
           <label>Behavior notes:<textarea name="behavior_notes" placeholder="What happened, what helped"></textarea></label>
           <div class="controls">
@@ -672,8 +671,8 @@
   const focusPlannerStatsEl = document.getElementById('focusPlannerStats');
   let focusGoalMeta = [];
   let plannerTrackerStats = null;
-  let adlStepIndex = -1;
-  let movementStepIndex = -1;
+      let adlStepIndex = -1;
+      let movementStepIndex = -1;
   let adlCategory, adlActivity, adlNoteInput, adlPromptingSelect, adlEntryListEl, addAdlEntryBtn, adlEntriesField;
   let adlEntries = [];
   let adlHandlersBound = false;
@@ -1208,8 +1207,8 @@
     formEl        = document.getElementById('cg-form');
     submitBtn     = document.getElementById('submitAll');
     steps         = Array.from(document.querySelectorAll('.step'));
-    adlStepIndex  = steps.findIndex((step) => step.id === 'daily-living-step');
-    movementStepIndex = steps.findIndex((step) => step.dataset.step === '1');
+      adlStepIndex  = steps.findIndex((step) => step.id === 'daily-living-step');
+      movementStepIndex = steps.findIndex((step) => step.dataset.step === '0');
     entryDateInput = document.getElementById('entryDateInput');
     toggleAllBtn  = document.getElementById('toggleAll');
     resumeDraftBtn = document.getElementById('resumeDraftBtn');

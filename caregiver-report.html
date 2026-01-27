@@ -246,6 +246,10 @@
     .chart-range-controls select{padding:6px 10px;border-radius:10px;border:1px solid #d4d4d8;background:#fff;font-weight:600}
     .chart-range-display{font-size:12px;color:#475569;font-weight:600}
     .chart-range-label{margin:-4px 0 10px;color:#475569}
+    .movement-range-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:6px 0 12px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:8px 10px}
+    .movement-range-controls label{font-weight:700}
+    .movement-range-controls select{padding:6px 10px;border-radius:10px;border:1px solid #d4d4d8;background:#fff;font-weight:600}
+    .movement-range-display{font-size:12px;color:#475569;font-weight:600}
     .mood-summary-inline{margin-top:10px;border:1px solid #e5e7eb;border-radius:14px;padding:12px;background:#f8fafc}
     .mood-summary-inline h4{margin:0 0 8px;font-size:14px}
     .mood-summary-inline .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
@@ -255,10 +259,17 @@
     .kpi-summary-inline .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
     .kpi-summary-inline .item{background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:10px 12px;font-weight:700;color:#0f172a}
     body.print-export main.page{max-width:980px}
-    body.print-export #chart-stack{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
-    body.print-export .chart{margin:0}
-    body.print-export .chart canvas{max-height:260px!important}
+    body.print-export #chart-stack{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start;grid-auto-rows:minmax(260px,auto)}
+    body.print-export .chart{margin:0;max-width:none;min-height:260px}
+    body.print-export .chart canvas{max-height:220px!important}
     body.print-export #navbar{display:none!important}
+    body.print-export #bottom-tabs,
+    body.print-export .bottom-tabs,
+    body.print-export .tabs.tabs--six,
+    body.print-export #tabbar-host,
+    body.print-export .tabbar,
+    body.print-export .tabbar-host{display:none!important}
+    body.print-export{padding-bottom:0!important}
     body.print-export .chart,
     body.print-export .kpi-summary-inline,
     body.print-export .mood-summary-inline{break-inside:avoid;page-break-inside:avoid}
@@ -288,9 +299,9 @@
     body.print-export #cg-panel .cg-table-wrap{display:none}
     body.print-export .movement-panel{break-inside:avoid}
     body.print-export .movement-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-    body.print-export .movement-card{padding:10px}
+    body.print-export .movement-card{padding:10px;min-height:220px}
     body.print-export .movement-card h4{margin:0 0 6px;font-size:14px}
-    body.print-export .movement-card canvas{max-height:180px!important}
+    body.print-export .movement-card canvas{max-height:160px!important}
     body.print-export #mood-panel .toolbar,
     body.print-export #mood-panel .mood-table-wrap{display:none}
     body.print-export #mood-panel{padding-bottom:8px}
@@ -326,6 +337,12 @@
       #navbar{display:none!important}
       .top-actions{display:none!important}
       .no-export{display:none!important}
+      #bottom-tabs,
+      .bottom-tabs,
+      .tabs.tabs--six,
+      #tabbar-host,
+      .tabbar,
+      .tabbar-host{display:none!important}
       body.print-export main.page{max-width:980px!important;width:980px!important}
     }
 
@@ -572,6 +589,17 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
       <div class="movement-panel">
         <h3>Movement Symptoms</h3>
         <p class="movement-sub" id="movementRangeLabel">Summary for selected date range</p>
+        <div class="movement-range-controls no-export">
+          <label for="movementRangeSelect">Movement range</label>
+          <select id="movementRangeSelect">
+            <option value="day">Day</option>
+            <option value="week">Week</option>
+            <option value="month" selected>Month</option>
+            <option value="year">Year</option>
+            <option value="all">All time</option>
+          </select>
+          <span class="movement-range-display" id="movementRangeDisplay">Showing: Month</span>
+        </div>
         <div class="movement-summary" id="movementSummary">
           <div class="movement-card">
             <div class="row"><span class="label">Days with symptoms</span><span class="value" id="movementDaysVal">—</span></div>
@@ -1036,8 +1064,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
     const movementFromEntry = (entry) => {
       const payload = entry?.payload || {};
       const presentRaw = parseMovementBool(entry.movement_present ?? payload.movement_present);
-      const severityVal = Number(entry.movement_severity ?? payload.movement_severity);
-      const severity = Number.isFinite(severityVal) ? severityVal : null;
+      const severity = pickNumber(entry.movement_severity, payload.movement_severity);
       const mainType = entry.movement_main_type ?? payload.movement_main_type ?? null;
       const bodyMap = parseMovementArray(entry.movement_body_map ?? payload.movement_body_map);
       const triggers = parseMovementArray(entry.movement_triggers ?? payload.movement_triggers);
@@ -1076,8 +1103,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
       };
       const sum = key => entries.reduce((acc, cur) => acc + (Number(cur[key] || 0)), 0);
       const promptVals = entries
-        .map(e => Number(e.new_skill_score))
-        .filter(Number.isFinite);
+        .map((entry) => getPromptValue(entry))
+        .filter((val) => Number.isFinite(val));
       const promptAvg = promptVals.length
         ? Math.round(promptVals.reduce((a, b) => a + b, 0) / promptVals.length)
         : '—';
@@ -1132,7 +1159,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
         if (entry.hygiene === true) bucket.h += 1;
         if (entry.food_prep === true) bucket.f += 1;
         if (entry.cleanup === true) bucket.c += 1;
-        const prompt = Number(entry.new_skill_score);
+        const prompt = getPromptValue(entry);
         if (Number.isFinite(prompt)) bucket.prompts.push(prompt);
         byMonth.set(monthKey, bucket);
 
@@ -1240,8 +1267,15 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
       if (promptLabel) promptLabel.textContent = `Range: ${display}`;
       const engagementLabel = document.getElementById('engagementRangeLabel');
       if (engagementLabel) engagementLabel.textContent = `Range: ${display}`;
+    }
+
+    function updateMovementRangeLabel(range, rangeKey){
+      const label = range?.label || CHART_RANGE_LABELS[rangeKey] || 'All time';
+      const display = rangeKey === 'all' ? 'All time' : `${CHART_RANGE_LABELS[rangeKey]} (${label})`;
       const movementLabel = document.getElementById('movementRangeLabel');
       if (movementLabel) movementLabel.textContent = `Summary for ${display.toLowerCase()} range`;
+      const movementDisplay = document.getElementById('movementRangeDisplay');
+      if (movementDisplay) movementDisplay.textContent = `Showing: ${display}`;
     }
 
     function applyChartRange(){
@@ -1258,6 +1292,18 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
       drawEngagementVsMood(filteredMood, filteredCaregiver);
       drawSleepOverlay(filteredMood, filteredCaregiver, range);
 
+      const movementSelect = document.getElementById('movementRangeSelect');
+      if (movementSelect) movementSelect.value = rangeKey;
+      applyMovementRange(rangeKey, caregiverSource);
+
+      updateChartRangeLabels(range, rangeKey);
+    }
+
+    function applyMovementRange(rangeKey, caregiverSource = null){
+      const source = caregiverSource
+        || ((cgState.filtered && cgState.filtered.length) ? cgState.filtered : (cgState.entries || []));
+      const range = getChartRangeWindow(rangeKey, source);
+      const filteredCaregiver = filterEntriesByRange(source, range);
       const movementInsights = buildMovementInsights(filteredCaregiver);
       drawMovementSeverityChart(movementInsights.severitySeries);
       drawMovementTypeChart(movementInsights.typeCounts);
@@ -1279,8 +1325,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
         const label = MOVEMENT_TIME_LABELS[movementInsights.mostCommonTime] || movementInsights.mostCommonTime || '—';
         summaryTime.textContent = label;
       }
-
-      updateChartRangeLabels(range, rangeKey);
+      updateMovementRangeLabel(range, rangeKey);
     }
 
     /* =================== Caregiver table helpers =================== */
@@ -1524,6 +1569,18 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
       return null;
     }
 
+    function getPromptValue(entry = {}) {
+      const payload = entry.payload || {};
+      return pickNumber(
+        entry.new_skill_score,
+        entry.prompt_level,
+        entry.prompting_level,
+        payload.new_skill_score,
+        payload.prompt_level,
+        payload.prompting_level
+      );
+    }
+
     function isAffirmative(value) {
       if (value === true) return true;
       if (value === false) return false;
@@ -1704,7 +1761,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
         if (isAffirmative(entry.hygiene ?? entry.payload?.hygiene)) bucket.hygieneYes += 1;
         if (isAffirmative(entry.food_prep ?? entry.payload?.food_prep)) bucket.foodYes += 1;
         if (isAffirmative(entry.cleanup ?? entry.payload?.cleanup)) bucket.cleanupYes += 1;
-        const promptVal = pickNumber(entry.new_skill_score, entry.prompt_level, entry.payload?.new_skill_score, entry.payload?.prompt_level);
+        const promptVal = getPromptValue(entry);
         if (promptVal !== null) {
           bucket.promptSum += promptVal;
           bucket.promptCount += 1;
@@ -1810,7 +1867,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
         const com = pickNumber(entry.community_time, entry.community_minutes, payload.community_time, payload.community_minutes);
         if (com !== null) bucket.comMinutes += com;
 
-        const promptVal = pickNumber(entry.new_skill_score, entry.prompt_level, payload.new_skill_score, payload.prompt_level);
+        const promptVal = getPromptValue(entry);
         if (promptVal !== null) {
           bucket.promptTotal += promptVal;
           bucket.promptCount += 1;
@@ -1839,7 +1896,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
           caregiver: caregiverNameFromEntry(entry) || 'Unknown caregiver',
           notes: note || '',
           rawNotes: note || '',
-          prompt: pickNumber(entry.new_skill_score, entry.prompt_level, payload.new_skill_score, payload.prompt_level),
+          prompt: getPromptValue(entry),
           hygiene: entry.hygiene ?? payload.hygiene,
           food: entry.food_prep ?? payload.food_prep,
           cleanup: entry.cleanup ?? payload.cleanup
@@ -3831,6 +3888,10 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
     /* =================== Wire & boot =================== */
     $('#moodRange').addEventListener('change', renderMoodSection);
     document.getElementById('chartRangeSelect')?.addEventListener('change', applyChartRange);
+    document.getElementById('movementRangeSelect')?.addEventListener('change', (event) => {
+      const rangeKey = event.target.value || 'month';
+      applyMovementRange(rangeKey);
+    });
 
     // Event delegation keeps row actions working as the table refreshes.
     cgInputs.tbody?.addEventListener('click', (event) => {

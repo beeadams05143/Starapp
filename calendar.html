@@ -54,6 +54,23 @@
     .event .title{ font-weight:700; }
     .event .meta{ font-size:12px; color:#6b7280; margin-top:2px; }
     .event .del{ border:0; background:#fff; cursor:pointer; font-size:18px; }
+    .day .event-title{
+      display:block;
+      margin-top:6px;
+      font-size:11px;
+      font-weight:700;
+      color:#1f2937;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .day .event-more{
+      display:block;
+      margin-top:2px;
+      font-size:10px;
+      color:#64748b;
+      font-weight:600;
+    }
     .event-date{ font-weight:800; padding:12px 10px 4px; color:#1f2937; }
     .event-date:first-child{ padding-top:6px; }
 
@@ -245,6 +262,28 @@
     </form>
   </dialog>
 
+  <!-- Event Details dialog -->
+  <dialog id="eventDetailsDialog">
+    <div class="dlg-wrap">
+      <div class="dlg-head">
+        <h3 id="eventDetailsTitle">Event details</h3>
+        <div class="row" style="gap:8px;flex-wrap:wrap">
+          <button class="btn secondary" type="button" id="eventDetailsEdit">Edit</button>
+          <button class="btn secondary" type="button" id="eventDetailsClose">Close</button>
+        </div>
+      </div>
+      <div class="card" style="border:1px solid #e5e7eb;background:#f8fafc">
+        <div class="row" style="justify-content:flex-start;gap:10px;flex-wrap:wrap">
+          <strong id="eventDetailsType">—</strong>
+          <span class="muted" id="eventDetailsDate">—</span>
+        </div>
+        <div class="muted" id="eventDetailsTime" style="margin-top:6px">—</div>
+        <div class="muted" id="eventDetailsLocation" style="margin-top:6px"></div>
+        <div class="muted" id="eventDetailsNotes" style="margin-top:10px;white-space:pre-wrap"></div>
+      </div>
+    </div>
+  </dialog>
+
   <!-- ===== Supabase Calendar logic ===== -->
   <script type="module">
   import { rest, getSessionFromStorage } from "./restClient.js?v=2025.01.09E";
@@ -324,12 +363,12 @@
   (async () => {
     // routes for the event-type links
     const TYPE_TO_ROUTE = {
-      doctor: "medical-notes.html",
-      medical: "medical-notes.html",
-      isa: "isa-notes.html",
-      shopping: "finance.html",
-      finance: "finance.html",
-      other: "notes.html",
+      doctor: "/documents/documents.html?cat=Medical",
+      medical: "/documents/documents.html?cat=Medical",
+      isa: "/documents/documents.html?cat=ISA",
+      shopping: "/documents/documents.html?cat=Finance",
+      finance: "/documents/documents.html?cat=Finance",
+      other: "/documents/documents.html",
     };
 
     const GROUP_ID = null;
@@ -340,6 +379,8 @@
       month: new Date().getMonth(),
       selected: new Date(),
       cacheByDay: new Map(),
+      editingEventId: null,
+      editingEventDate: null,
     };
 
     const dk = (d) =>
@@ -352,6 +393,23 @@
       (s ?? "")
         .toString()
         .replace(/[&<>\"']/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
+    const formatTime12 = (value) => {
+      if (!value) return "";
+      const [hStr, mStr] = String(value).split(":");
+      const h = Number(hStr);
+      if (!Number.isFinite(h)) return value;
+      const m = Number(mStr || 0);
+      const period = h >= 12 ? "PM" : "AM";
+      const hour12 = ((h + 11) % 12) + 1;
+      return `${hour12}:${String(m).padStart(2, "0")} ${period}`;
+    };
+    const formatTimeRange = (start, end, allDay) => {
+      if (allDay) return "All day";
+      const startLabel = formatTime12(start);
+      const endLabel = formatTime12(end);
+      if (startLabel && endLabel) return `${startLabel} – ${endLabel}`;
+      return startLabel || endLabel || "";
+    };
     const linkifyLocation = (value) => {
       const raw = (value || "").toString().trim();
       if (!raw) return "";
@@ -426,6 +484,29 @@
           throw error;
         }
       },
+
+      async updateEvent(id, evt) {
+        const payload = {
+          title: evt.title,
+          type: evt.type,
+          start_date: evt.date,
+          start_time: evt.start || null,
+          end_time: evt.end || null,
+          location: evt.location || null,
+          notes: evt.notes || null,
+          all_day: !!evt.allDay,
+        };
+        try {
+          const rows = await rest(`calendar_events?id=eq.${encodeURIComponent(id)}`, {
+            method: "PATCH",
+            headers: { Prefer: "return=representation" },
+            body: JSON.stringify(payload),
+          });
+          return Array.isArray(rows) ? rows[0] : rows;
+        } catch (error) {
+          throw error;
+        }
+      },
     };
 
     // Elements
@@ -436,6 +517,8 @@
     const addBtn = document.getElementById("addBtn");
     const dlg = document.getElementById("eventDialog");
     const form = document.getElementById("eventForm");
+    const dlgTitle = dlg.querySelector(".dlg-head h3");
+    const dlgSubmit = dlg.querySelector('button[type="submit"]');
     const dlgDateText = document.getElementById("dlgDateText");
     const evDate = document.getElementById("evDate");
     const evAllDay = document.getElementById("evAllDay");
@@ -484,9 +567,13 @@
         if (dk(d) === dk(state.selected)) cell.classList.add("selected");
 
         const items = eventsForDay(key);
+        const firstTitle = items[0]?.title ? escapeHtml(items[0].title) : "";
+        const moreLabel = items.length > 1 ? `+${items.length - 1} more` : "";
         cell.innerHTML =
           `<span class="num">${d.getDate()}</span>` +
-          (items.length ? `<span class="dots" title="${items.length} event(s)"></span>` : "");
+          (items.length ? `<span class="dots" title="${items.length} event(s)"></span>` : "") +
+          (firstTitle ? `<span class="event-title">${firstTitle}</span>` : "") +
+          (moreLabel ? `<span class="event-more">${moreLabel}</span>` : "");
 
         cell.addEventListener("click", () => {
           state.selected = d;
@@ -508,16 +595,62 @@
       return `${page}?${p.toString()}`;
     }
 
+    function openEventDetails(evt) {
+      const dlg = document.getElementById("eventDetailsDialog");
+      if (!dlg) return;
+      const title = document.getElementById("eventDetailsTitle");
+      const type = document.getElementById("eventDetailsType");
+      const date = document.getElementById("eventDetailsDate");
+      const time = document.getElementById("eventDetailsTime");
+      const location = document.getElementById("eventDetailsLocation");
+      const notes = document.getElementById("eventDetailsNotes");
+      const closeBtn = document.getElementById("eventDetailsClose");
+      const editBtn = document.getElementById("eventDetailsEdit");
+
+      if (title) title.textContent = evt.title || "Event";
+      if (type) type.textContent = evt.type ? evt.type : "Event";
+      if (date) {
+        const dt = evt.start_date ? new Date(`${evt.start_date}T00:00:00`) : null;
+        date.textContent = dt ? dt.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" }) : "";
+      }
+      if (time) {
+        const timeLabel = formatTimeRange(evt.start_time, evt.end_time, evt.all_day);
+        time.textContent = timeLabel ? `Time: ${timeLabel}` : "";
+      }
+      if (location) {
+        const locationHtml = evt.location ? linkifyLocation(evt.location) : "";
+        location.innerHTML = locationHtml ? `Link: ${locationHtml}` : "";
+      }
+      if (notes) {
+        notes.textContent = evt.notes ? `Notes: ${evt.notes}` : "";
+      }
+      if (editBtn) {
+        editBtn.onclick = () => {
+          dlg.close();
+          openEditDialog(evt);
+        };
+      }
+      closeBtn?.addEventListener("click", () => dlg.close(), { once: true });
+      dlg.showModal();
+    }
+
     function renderMonthList() {
       const monthDate = new Date(state.year, state.month, 1);
       selectedLabel.textContent = `${fmtMonthYear(monthDate)} events`;
 
-      const keys = Array.from(state.cacheByDay.keys())
-        .filter((key) => {
-          const d = new Date(`${key}T00:00:00`);
-          return d.getFullYear() === state.year && d.getMonth() === state.month;
-        })
-        .sort();
+      const allEvents = Array.from(state.cacheByDay.values()).flat();
+      const monthEvents = allEvents.filter((evt) => {
+        if (!evt?.start_date) return false;
+        const d = new Date(`${evt.start_date}T00:00:00`);
+        return d.getFullYear() === state.year && d.getMonth() === state.month;
+      });
+      const grouped = new Map();
+      monthEvents.forEach((evt) => {
+        const key = evt.start_date;
+        if (!grouped.has(key)) grouped.set(key, []);
+        grouped.get(key).push(evt);
+      });
+      const keys = Array.from(grouped.keys()).sort();
 
       list.innerHTML = "";
       if (!keys.length) {
@@ -537,9 +670,9 @@
         dayLi.textContent = dayLabel;
         list.appendChild(dayLi);
 
-        const items = eventsForDay(key);
+        const items = grouped.get(key) || [];
         items.forEach((e) => {
-          const time = e.all_day ? "All day" : [e.start_time, e.end_time].filter(Boolean).join(" – ");
+          const time = formatTimeRange(e.start_time, e.end_time, e.all_day);
           const li = document.createElement("li");
           li.className = "event";
           const locationHtml = e.location ? linkifyLocation(e.location) : "";
@@ -551,6 +684,10 @@
             </div>
             <button class="del" aria-label="Delete">🗑️</button>
           `;
+          li.addEventListener("click", (event) => {
+            if (event.target.closest(".del")) return;
+            openEventDetails(e);
+          });
           li.querySelector(".del").onclick = async () => {
             try {
               await api.deleteEvent(e.id);
@@ -590,6 +727,10 @@
     const resetDialog = () => {
       form.reset();
       evAllDay.checked = false;
+      state.editingEventId = null;
+      state.editingEventDate = null;
+      if (dlgTitle) dlgTitle.textContent = "New Event";
+      if (dlgSubmit) dlgSubmit.textContent = "Save";
     };
 
     addBtn.onclick = () => {
@@ -602,6 +743,30 @@
       });
       resetDialog();
       evDate.value = key;
+      dlg.showModal();
+    };
+
+    const openEditDialog = (evt) => {
+      resetDialog();
+      state.editingEventId = evt.id;
+      state.editingEventDate = evt.start_date || "";
+      if (dlgTitle) dlgTitle.textContent = "Edit Event";
+      if (dlgSubmit) dlgSubmit.textContent = "Update";
+      document.getElementById("evTitle").value = evt.title || "";
+      document.getElementById("evType").value = evt.type || "other";
+      evDate.value = evt.start_date || "";
+      evAllDay.checked = !!evt.all_day;
+      document.getElementById("evStart").value = evt.start_time || "";
+      document.getElementById("evEnd").value = evt.end_time || "";
+      document.getElementById("evLocation").value = evt.location || "";
+      document.getElementById("evNotes").value = evt.notes || "";
+      dlgDateText.textContent = evDate.value
+        ? new Date(`${evDate.value}T00:00:00`).toLocaleDateString(undefined, {
+            weekday: "short",
+            month: "short",
+            day: "numeric",
+          })
+        : "—";
       dlg.showModal();
     };
 
@@ -623,7 +788,19 @@
       };
 
       try {
-        const saved = await api.addEvent(evt);
+        let saved = null;
+        if (state.editingEventId) {
+          saved = await api.updateEvent(state.editingEventId, evt);
+          if (state.editingEventDate && state.cacheByDay.has(state.editingEventDate)) {
+            const existing = state.cacheByDay.get(state.editingEventDate) || [];
+            state.cacheByDay.set(
+              state.editingEventDate,
+              existing.filter((item) => item.id !== state.editingEventId)
+            );
+          }
+        } else {
+          saved = await api.addEvent(evt);
+        }
         const key = saved.start_date;
         if (!state.cacheByDay.has(key)) state.cacheByDay.set(key, []);
         state.cacheByDay.get(key).push(saved);

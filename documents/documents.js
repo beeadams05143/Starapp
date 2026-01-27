@@ -218,6 +218,54 @@ if (!currentUser?.id) {
 }
 const USER_ID = currentUser.id;
 const USER_NAME = currentUser.user_metadata?.full_name || currentUser.email || "Caregiver";
+
+const SHARE_PIN_KEY = "star_docs_share_pin";
+const SHARE_BASE_KEY = "star_docs_share_base";
+const SHARE_EXPIRY_HOURS = 24;
+
+function getStoredSharePin() {
+  return (localStorage.getItem(SHARE_PIN_KEY) || "").trim();
+}
+
+function setStoredSharePin(pin) {
+  localStorage.setItem(SHARE_PIN_KEY, pin.trim());
+}
+
+function getStoredShareBase() {
+  return (localStorage.getItem(SHARE_BASE_KEY) || "").trim();
+}
+
+function setStoredShareBase(url) {
+  localStorage.setItem(SHARE_BASE_KEY, url.trim());
+}
+
+async function hashPin(pin) {
+  const data = new TextEncoder().encode(pin.trim());
+  const digest = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+async function ensureSharePin() {
+  let pin = getStoredSharePin();
+  if (!pin) {
+    pin = (prompt("Set a share PIN (you can reuse this for your team):") || "").trim();
+    if (!pin) throw new Error("Share PIN is required.");
+    setStoredSharePin(pin);
+  }
+  const hash = await hashPin(pin);
+  return { pin, hash };
+}
+
+async function copyToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
+}
 const GROUP_KEY = "currentGroupId";
 const SHARED_DOC_BUCKET = "documents";
 const DOCS_PREFIX = "shared/docs";
@@ -785,7 +833,7 @@ function getDocNotesPayload(doc = {}) {
     summary.push(`<div><strong>Next Appt:</strong> ${formatPrintableDate(meta.medical_next_datetime)}</div>`);
   }
   if (meta.medical_next_link) {
-    summary.push(`<div><strong>Link:</strong> ${formatLink(meta.medical_next_link)}</div>`);
+    summary.push(`<div><strong>Meeting Link:</strong> ${formatLink(meta.medical_next_link)}</div>`);
   }
   if (summary.length) {
     sections.push({ title: "Appointment", html: summary.join("") });
@@ -891,9 +939,20 @@ function openNotesPrintWindow(docs = [], categoryLabel = "Notes") {
           const btn = document.getElementById('sharePdfBtn');
           if (!btn) return;
           const jsPDF = window.jspdf && window.jspdf.jsPDF;
+          async function waitForPdfTools(){
+            const start = Date.now();
+            while (Date.now() - start < 4000) {
+              if (window.html2canvas && (window.jspdf && window.jspdf.jsPDF)) return true;
+              await new Promise((r) => setTimeout(r, 150));
+            }
+            return false;
+          }
           if (!window.html2canvas || !jsPDF) {
-            alert('PDF tools are still loading. Please try again in a moment.');
-            return;
+            const ready = await waitForPdfTools();
+            if (!ready) {
+              alert('PDF tools are still loading. Please try again in a moment.');
+              return;
+            }
           }
           btn.disabled = true;
           const original = btn.textContent;
@@ -1042,6 +1101,61 @@ function normalizeStoragePath(path) {
     /* ignore decode errors and keep the raw string */
   }
   return cleaned;
+}
+
+function resolveShareBase() {
+  const host = window.location.hostname;
+  const isLocal = host === "localhost" || host === "127.0.0.1";
+  if (!isLocal) return window.location.origin;
+  const stored = getStoredShareBase();
+  if (stored) return stored;
+  const input = (prompt("Enter your live site URL for share links (e.g., https://mynorthstar.netlify.app):") || "").trim();
+  if (input) {
+    setStoredShareBase(input);
+    return input;
+  }
+  return window.location.origin;
+}
+
+function buildShareUrl(token) {
+  const base = resolveShareBase().replace(/\/+$/, "");
+  return `${base}/documents/share.html?token=${encodeURIComponent(token)}`;
+}
+
+async function createShareLink(doc) {
+  if (!doc?.id) throw new Error("Missing document ID.");
+  const { hash } = await ensureSharePin();
+  const now = new Date();
+  const expires = new Date(now.getTime() + SHARE_EXPIRY_HOURS * 60 * 60 * 1000);
+  const shareToken = crypto.randomUUID();
+  const content = { ...(doc.content_json || {}) };
+
+  content.share_token = shareToken;
+  content.share_pin_hash = hash;
+  content.share_expires_at = expires.toISOString();
+  content.share_used_at = null;
+  content.share_created_at = now.toISOString();
+  content.share_created_by = USER_ID;
+
+  await rest(`documents?id=eq.${encodeURIComponent(doc.id)}`, {
+    method: "PATCH",
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ content_json: content }),
+  });
+
+  doc.content_json = content;
+  await persistDocsStore(content.share_created_at);
+
+  const url = buildShareUrl(shareToken);
+  const copied = await copyToClipboard(url);
+  if (!copied) {
+    prompt("Copy this one-time link:", url);
+  } else {
+    const host = window.location.hostname;
+    const isLocal = host === "localhost" || host === "127.0.0.1";
+    alert(`One-time link copied. It expires in ${SHARE_EXPIRY_HOURS} hours.${isLocal ? " This link uses your live site URL if configured." : ""}`);
+  }
+  return url;
 }
 
 /* ------------ category tabs + deep link ------------ */
@@ -1432,16 +1546,16 @@ async function renderDocuments(list, docs) {
     const desc = doc.content
       ? `<div class="muted" style="margin-top:6px; white-space:pre-wrap">${(doc.content || "").slice(0,240)}${(doc.content || "").length>240?"…":""}</div>`
       : "";
-    const dateStr = doc.content_json?.document_date
-      ? new Date(doc.content_json.document_date).toLocaleString()
-      : new Date(doc.created_at).toLocaleString();
+  const dateStr = doc.content_json?.document_date
+      ? new Date(doc.content_json.document_date).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" })
+      : new Date(doc.created_at).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" });
 
     let medicalBlock = "";
     if (activeCategory === "Medical" && doc.content_json) {
       const nx = doc.content_json.medical_next_datetime;
       const lk = doc.content_json.medical_next_link;
       const nt = doc.content_json.medical_notes;
-      const nxStr = nx ? new Date(nx).toLocaleString() : "";
+      const nxStr = nx ? new Date(nx).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" }) : "";
       const rows = [];
       if (nxStr) rows.push(`<div><strong>Next Appt:</strong> ${nxStr}</div>`);
       if (lk)    rows.push(`<div><strong>Link:</strong> <a href="${lk}" target="_blank" rel="noopener">${lk}</a></div>`);
@@ -1466,11 +1580,11 @@ async function renderDocuments(list, docs) {
         ? (detectPreviewType({ name: inlineFile.name, type: inlineFile.type })
           || inferPreviewTypeFromDataUrl(inlineFile.data_url)
           || inferPreviewTypeFromContentType(inlineFile.type))
-        : detectPreviewType({
-          path: doc.storage_path || "",
-          type: doc.file_type || doc.mime_type || doc.content_json?.file_type,
-          name: doc.content_json?.file_name
-        });
+      : detectPreviewType({
+        path: doc.storage_path || "",
+        type: doc.file_type || doc.mime_type || doc.content_json?.file_type,
+        name: doc.content_json?.file_name || (doc.storage_path || "").split("_").slice(1).join("_")
+      });
 
       const viewBtn = document.createElement("button");
       viewBtn.type = "button";
@@ -1541,6 +1655,14 @@ async function renderDocuments(list, docs) {
     exportBtn.setAttribute("aria-label", `Export ${doc.title} as PDF`);
     linksHolder.appendChild(exportBtn);
 
+    const shareBtn = document.createElement("button");
+    shareBtn.type = "button";
+    shareBtn.className = "btn secondary doc-share-action";
+    shareBtn.dataset.docId = docId;
+    shareBtn.textContent = "Share Link";
+    shareBtn.setAttribute("aria-label", `Create a one-time share link for ${doc.title}`);
+    linksHolder.appendChild(shareBtn);
+
     list.appendChild(card);
   }
 
@@ -1575,6 +1697,15 @@ if (docsNotesBtn) {
     });
   });
 }
+const docsSharePinBtn = document.getElementById("docsSharePinBtn");
+if (docsSharePinBtn) {
+  docsSharePinBtn.addEventListener("click", () => {
+    const pin = (prompt("Set or update the share PIN for secure links:") || "").trim();
+    if (!pin) return;
+    setStoredSharePin(pin);
+    alert("Share PIN updated on this device.");
+  });
+}
 
 async function handleAttachmentAction(trigger) {
   const docId = trigger.dataset.docId;
@@ -1586,6 +1717,10 @@ async function handleAttachmentAction(trigger) {
   }
   const action = trigger.dataset.action || "view";
   const inlineFile = doc.content_json?.inline_file || null;
+  const fileName =
+    inlineFile?.name ||
+    doc.content_json?.file_name ||
+    (doc.storage_path ? (doc.storage_path.split("/").pop() || "") : "");
   let previewType = trigger.dataset.previewType
     || (inlineFile
       ? (detectPreviewType({ name: inlineFile.name, type: inlineFile.type })
@@ -1594,12 +1729,32 @@ async function handleAttachmentAction(trigger) {
       : detectPreviewType({
         path: doc.storage_path || "",
         type: doc.file_type || doc.mime_type || doc.content_json?.file_type,
-        name: doc.content_json?.file_name
+        name: fileName || (doc.storage_path || "").split("_").slice(1).join("_")
       }));
 
   let url = inlineFile?.data_url || "";
   const originalText = trigger.dataset.label || trigger.textContent;
   if (!trigger.dataset.label) trigger.dataset.label = trigger.textContent;
+
+  if (!url && action === "view" && doc.storage_path && !inlineFile?.data_url) {
+    try {
+      trigger.disabled = true;
+      trigger.textContent = "Opening…";
+      const blob = await fetchPrivateBlob(doc.storage_path);
+      if (blob?.blob) {
+        url = URL.createObjectURL(blob.blob);
+        if (!previewType) {
+          previewType = inferPreviewTypeFromContentType(blob.type)
+            || detectPreviewType({ name: fileName, path: doc.storage_path });
+        }
+      }
+    } catch (error) {
+      console.warn("private preview fallback failed", error?.message || error);
+    } finally {
+      trigger.disabled = false;
+      trigger.textContent = originalText;
+    }
+  }
 
   if (!url && doc.storage_path) {
     try {
@@ -1627,6 +1782,10 @@ async function handleAttachmentAction(trigger) {
       : inferPreviewTypeFromContentType(inlineFile?.type || "");
   }
 
+  if (!previewType && action === "view" && url) {
+    previewType = detectPreviewType({ url });
+  }
+
   if (!previewType && action === "view") {
     try {
       const headRes = await fetch(url, { method: "HEAD" });
@@ -1637,16 +1796,8 @@ async function handleAttachmentAction(trigger) {
     }
   }
 
-  if (action === "view" && doc.storage_path && !inlineFile?.data_url) {
-    try {
-      const blob = await fetchPrivateBlob(doc.storage_path);
-      if (blob?.blob) {
-        url = URL.createObjectURL(blob.blob);
-        if (!previewType) previewType = inferPreviewTypeFromContentType(blob.type);
-      }
-    } catch (error) {
-      console.warn("private preview fallback failed", error?.message || error);
-    }
+  if (!previewType && action === "view" && fileName) {
+    previewType = detectPreviewType({ name: fileName, path: doc.storage_path || "" });
   }
 
   if (action === "download") {
@@ -1759,6 +1910,28 @@ async function handleDocExport(trigger) {
   }
 }
 
+async function handleDocShare(trigger) {
+  const docId = trigger.dataset.docId;
+  if (!docId) return;
+  const doc = (docsStore.documents || []).find((d) => d.id === docId);
+  if (!doc) {
+    alert("Unable to locate this document.");
+    return;
+  }
+  const initialLabel = trigger.textContent;
+  try {
+    trigger.disabled = true;
+    trigger.textContent = "Sharing…";
+    await createShareLink(doc);
+  } catch (error) {
+    console.error("Share link failed", error);
+    alert(error?.message || "Unable to create a share link right now.");
+  } finally {
+    trigger.disabled = false;
+    trigger.textContent = initialLabel;
+  }
+}
+
 document.addEventListener("click", (event) => {
   const trigger = event.target.closest(".doc-attachment-action");
   if (trigger) {
@@ -1780,6 +1953,14 @@ document.addEventListener("click", (event) => {
   if (trigger) {
     event.preventDefault();
     handleDocExport(trigger);
+  }
+});
+
+document.addEventListener("click", (event) => {
+  const trigger = event.target.closest(".doc-share-action");
+  if (trigger) {
+    event.preventDefault();
+    handleDocShare(trigger);
   }
 });
 
@@ -1911,9 +2092,20 @@ function openPrintableDocsWindow(docs = [], categoryLabel = "Documents", targetW
           const btn = document.getElementById('sharePdfBtn');
           if (!btn) return;
           const jsPDF = window.jspdf && window.jspdf.jsPDF;
+          async function waitForPdfTools(){
+            const start = Date.now();
+            while (Date.now() - start < 4000) {
+              if (window.html2canvas && (window.jspdf && window.jspdf.jsPDF)) return true;
+              await new Promise((r) => setTimeout(r, 150));
+            }
+            return false;
+          }
           if (!window.html2canvas || !jsPDF) {
-            alert('PDF tools are still loading. Please try again in a moment.');
-            return;
+            const ready = await waitForPdfTools();
+            if (!ready) {
+              alert('PDF tools are still loading. Please try again in a moment.');
+              return;
+            }
           }
           btn.disabled = true;
           const original = btn.textContent;
@@ -2002,9 +2194,20 @@ function openSingleDocPrintWindow(doc = {}, categoryLabel = "Documents", attachm
           const btn = document.getElementById('sharePdfBtn');
           if (!btn) return;
           const jsPDF = window.jspdf && window.jspdf.jsPDF;
+          async function waitForPdfTools(){
+            const start = Date.now();
+            while (Date.now() - start < 4000) {
+              if (window.html2canvas && (window.jspdf && window.jspdf.jsPDF)) return true;
+              await new Promise((r) => setTimeout(r, 150));
+            }
+            return false;
+          }
           if (!window.html2canvas || !jsPDF) {
-            alert('PDF tools are still loading. Please try again in a moment.');
-            return;
+            const ready = await waitForPdfTools();
+            if (!ready) {
+              alert('PDF tools are still loading. Please try again in a moment.');
+              return;
+            }
           }
           btn.disabled = true;
           const original = btn.textContent;
@@ -2247,7 +2450,7 @@ function formatPrintableDate(value) {
   try {
     const date = value instanceof Date ? value : new Date(value);
     if (Number.isNaN(date.getTime())) return escapeHtml(String(value));
-    return date.toLocaleString();
+    return date.toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" });
   } catch {
     return escapeHtml(String(value));
   }

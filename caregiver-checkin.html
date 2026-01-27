@@ -76,28 +76,28 @@
     .entry-date-row label{margin:0;font-weight:800}
     .entry-date-row input[type="date"]{padding:8px 10px;border:1px solid #d1d5db;border-radius:10px;font-size:15px}
     .entry-date-row .muted{font-size:13px}
-    .movement-panel{background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:12px;margin-top:12px}
-    .movement-head{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
-    .movement-title{font-weight:900}
-    .movement-desc{margin:4px 0 0;color:#64748b;font-size:13px}
-    .movement-yn{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:8px 0}
-    .movement-pill{display:inline-flex;align-items:center;gap:6px;border:1px solid #d1d5db;border-radius:999px;padding:6px 10px;background:#fff;font-weight:700}
-    .movement-pill input{width:auto}
-    .movement-body.is-collapsed{display:none}
-    .movement-row{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));align-items:end}
-    .movement-label{font-weight:800;color:#1f2937;margin-bottom:6px}
-    .movement-chips{display:flex;flex-wrap:wrap;gap:8px}
-    .movement-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid #cbd5f5;border-radius:10px;padding:6px 10px;background:#fff;font-weight:700;font-size:14px}
-    .movement-chip input{width:auto}
+    .movement-panel,.temp-panel{background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:12px;margin-top:12px}
+    .movement-head,.temp-head{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+    .movement-title,.temp-title{font-weight:900}
+    .movement-desc,.temp-desc{margin:4px 0 0;color:#64748b;font-size:13px}
+    .movement-yn,.temp-yn{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:8px 0}
+    .movement-pill,.temp-pill{display:inline-flex;align-items:center;gap:6px;border:1px solid #d1d5db;border-radius:999px;padding:6px 10px;background:#fff;font-weight:700}
+    .movement-pill input,.temp-pill input{width:auto}
+    .movement-body.is-collapsed,.temp-body.is-collapsed{display:none}
+    .movement-row,.temp-row{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));align-items:end}
+    .movement-label,.temp-label{font-weight:800;color:#1f2937;margin-bottom:6px}
+    .movement-chips,.temp-chips{display:flex;flex-wrap:wrap;gap:8px}
+    .movement-chip,.temp-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid #cbd5f5;border-radius:10px;padding:6px 10px;background:#fff;font-weight:700;font-size:14px}
+    .movement-chip input,.temp-chip input{width:auto}
     .movement-severity{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
     .movement-sev-btn{border:1px solid #cbd5f5;background:#fff;color:#1e3a8a;border-radius:10px;padding:6px 10px;font-weight:800;cursor:pointer;min-width:36px}
     .movement-sev-btn.active{background:#1d4ed8;color:#fff;border-color:#1d4ed8}
     .movement-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
     .movement-details{margin-top:12px;border-top:1px dashed #e2e8f0;padding-top:12px}
     .movement-details.is-hidden{display:none}
-    .movement-grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
-    .movement-inline-input{display:flex;gap:8px;align-items:center}
-    .movement-inline-input input[type="text"]{flex:1}
+    .movement-grid,.temp-grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+    .movement-inline-input,.temp-inline-input{display:flex;gap:8px;align-items:center}
+    .movement-inline-input input[type="text"],.temp-inline-input input[type="text"]{flex:1}
   </style>
 </head>
 <body>
@@ -355,6 +355,89 @@
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+
+          <div class="temp-panel" id="tempPanel">
+            <div class="temp-head">
+              <div>
+                <div class="temp-title">Temperature</div>
+                <p class="temp-desc">Track low-grade temperature and related symptoms prior to tests.</p>
+              </div>
+            </div>
+
+            <div class="temp-yn" role="group" aria-label="Temperature today">
+              <strong>Temperature today?</strong>
+              <label class="temp-pill"><input type="radio" name="temp_present" value="no" checked> No</label>
+              <label class="temp-pill"><input type="radio" name="temp_present" value="yes"> Yes</label>
+            </div>
+
+            <div class="temp-body is-collapsed" data-temp-body-wrap>
+              <div class="temp-row">
+                <div>
+                  <label class="temp-label" for="temp_value">Temperature</label>
+                  <select name="temp_value" id="temp_value">
+                    <option value="">Select temp</option>
+                    <option value="96.0">96.0°F</option>
+                    <option value="96.5">96.5°F</option>
+                    <option value="97.0">97.0°F</option>
+                    <option value="97.5">97.5°F</option>
+                    <option value="98.0">98.0°F</option>
+                    <option value="98.6">98.6°F</option>
+                    <option value="99.0">99.0°F</option>
+                    <option value="99.5">99.5°F</option>
+                    <option value="100.0">100.0°F</option>
+                    <option value="100.4">100.4°F</option>
+                    <option value="101.0">101.0°F</option>
+                    <option value="101.5">101.5°F</option>
+                    <option value="102.0">102.0°F</option>
+                    <option value="102.5">102.5°F</option>
+                    <option value="103.0">103.0°F</option>
+                    <option value="104.0">104.0°F</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="temp-label" for="temp_method">How measured</label>
+                  <select name="temp_method" id="temp_method">
+                    <option value="">Select method</option>
+                    <option value="oral">Oral</option>
+                    <option value="ear">Ear</option>
+                    <option value="forehead">Forehead</option>
+                    <option value="axillary">Underarm</option>
+                    <option value="temporal">Temporal</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="temp-inline-input" style="margin-top:8px">
+                <input type="text" name="temp_other_value" id="temp_other_value" placeholder="Other temperature or method (optional)"/>
+              </div>
+
+              <div class="temp-label" style="margin-top:12px">Symptoms</div>
+              <div class="temp-grid">
+                <label class="temp-chip"><input type="checkbox" data-temp-symptom value="runny_nose">Runny nose</label>
+                <label class="temp-chip"><input type="checkbox" data-temp-symptom value="cough">Cough</label>
+                <label class="temp-chip"><input type="checkbox" data-temp-symptom value="congestion">Congestion</label>
+                <label class="temp-chip"><input type="checkbox" data-temp-symptom value="sore_throat">Sore throat</label>
+                <label class="temp-chip"><input type="checkbox" data-temp-symptom value="chills">Chills</label>
+                <label class="temp-chip"><input type="checkbox" data-temp-symptom value="headache">Headache</label>
+                <label class="temp-chip"><input type="checkbox" data-temp-symptom value="fatigue">Fatigue</label>
+                <label class="temp-chip"><input type="checkbox" data-temp-symptom value="body_aches">Body aches</label>
+                <label class="temp-chip"><input type="checkbox" data-temp-symptom value="nausea">Nausea</label>
+                <label class="temp-chip"><input type="checkbox" data-temp-symptom value="vomiting">Vomiting</label>
+                <label class="temp-chip"><input type="checkbox" data-temp-symptom value="diarrhea">Diarrhea</label>
+                <label class="temp-chip"><input type="checkbox" data-temp-symptom value="rash">Rash</label>
+                <label class="temp-chip"><input type="checkbox" data-temp-symptom value="other">Other</label>
+              </div>
+              <div class="temp-inline-input" style="margin-top:8px">
+                <input type="text" name="temp_symptom_other" id="temp_symptom_other" placeholder="Other symptom (optional)"/>
+              </div>
+              <input type="hidden" name="temp_symptoms" id="temp_symptoms" value=""/>
+
+              <label class="temp-label" for="temp_notes" style="margin-top:10px">Notes (optional)</label>
+              <input type="text" name="temp_notes" id="temp_notes" placeholder="Short note, e.g. warm at 7am"/>
             </div>
           </div>
 
@@ -921,6 +1004,7 @@
   }
 
   let movementEls = {};
+  let tempEls = {};
   const getMovementCheckboxValues = (selector) =>
     Array.from(document.querySelectorAll(selector))
       .filter((el) => el.checked)
@@ -959,6 +1043,29 @@
     syncMovementHiddenField(movementEls.triggersInput, triggers);
   };
 
+  const getTempCheckboxValues = (selector) =>
+    Array.from(document.querySelectorAll(selector))
+      .filter((el) => el.checked)
+      .map((el) => el.value);
+
+  const setTempCheckboxValues = (selector, values = []) => {
+    const set = new Set(values || []);
+    document.querySelectorAll(selector).forEach((el) => {
+      el.checked = set.has(el.value);
+    });
+  };
+
+  const syncTempHiddenField = (hiddenEl, values) => {
+    if (!hiddenEl) return;
+    hiddenEl.value = values.length ? JSON.stringify(values) : '';
+    hiddenEl.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+
+  const syncTempArrays = () => {
+    const symptoms = getTempCheckboxValues('[data-temp-symptom]');
+    syncTempHiddenField(tempEls.symptomsInput, symptoms);
+  };
+
   const setMovementPresent = (present) => {
     if (!movementEls.bodyWrap) return;
     movementEls.bodyWrap.classList.toggle('is-collapsed', !present);
@@ -976,6 +1083,14 @@
         setMovementCheckboxValues('[data-movement-time]', ['AM']);
         syncMovementArrays();
       }
+    }
+  };
+
+  const setTempPresent = (present) => {
+    if (!tempEls.bodyWrap) return;
+    tempEls.bodyWrap.classList.toggle('is-collapsed', !present);
+    if (!present) {
+      clearTempFields({ keepPresent: true });
     }
   };
 
@@ -1000,6 +1115,21 @@
         document.querySelectorAll(`input[name="${name}"]`).forEach((el) => (el.checked = false));
       });
     syncMovementArrays();
+  };
+
+  const clearTempFields = ({ keepPresent = false } = {}) => {
+    if (!keepPresent) {
+      document.querySelectorAll('input[name="temp_present"]').forEach((el) => {
+        el.checked = el.value === 'no';
+      });
+    }
+    ['temp_value', 'temp_method', 'temp_other_value', 'temp_symptom_other', 'temp_notes']
+      .forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+    setTempCheckboxValues('[data-temp-symptom]', []);
+    syncTempArrays();
   };
 
   const hydrateMovementFromData = (data = {}) => {
@@ -1047,6 +1177,32 @@
     syncMovementArrays();
   };
 
+  const hydrateTempFromData = (data = {}) => {
+    const present = String(data.temp_present || '').toLowerCase() === 'yes'
+      || data.temp_present === true;
+    document.querySelectorAll('input[name="temp_present"]').forEach((el) => {
+      el.checked = present ? el.value === 'yes' : el.value === 'no';
+    });
+    setTempPresent(present);
+    if (!present) return;
+
+    const fields = [
+      ['temp_value', data.temp_value],
+      ['temp_method', data.temp_method],
+      ['temp_other_value', data.temp_other_value],
+      ['temp_symptom_other', data.temp_symptom_other],
+      ['temp_notes', data.temp_notes],
+    ];
+    fields.forEach(([id, value]) => {
+      const el = document.getElementById(id);
+      if (el && value != null) el.value = value;
+    });
+    const symptoms = parseJsonArray(data.temp_symptoms);
+    setTempCheckboxValues('[data-temp-symptom]', symptoms);
+    if (tempEls.symptomsInput) tempEls.symptomsInput.value = symptoms.length ? JSON.stringify(symptoms) : '';
+    syncTempArrays();
+  };
+
   // 4) Start logic once DOM is ready
   document.addEventListener('DOMContentLoaded', () => {
     formEl        = document.getElementById('cg-form');
@@ -1080,6 +1236,10 @@
       detailsPanel: document.getElementById('movementDetails'),
       sameBtn: document.getElementById('movementSameBtn')
     };
+    tempEls = {
+      bodyWrap: document.querySelector('[data-temp-body-wrap]'),
+      symptomsInput: document.getElementById('temp_symptoms')
+    };
     if (entryDateInput && !entryDateInput.value) {
       entryDateInput.value = todayISO();
     }
@@ -1090,6 +1250,7 @@
     syncAggressionControls();
     loadFocusSummary();
     syncMovementArrays();
+    syncTempArrays();
     const movementCached = localStorage.getItem(MOVEMENT_LAST_KEY);
     if (movementEls.sameBtn) {
       movementEls.sameBtn.disabled = !movementCached;
@@ -1125,12 +1286,22 @@
         save(steps[movementStepIndex], movementStepIndex, true);
       });
     });
+    document.querySelectorAll('input[name="temp_present"]').forEach((el) => {
+      el.addEventListener('change', () => {
+        const present = el.value === 'yes';
+        setTempPresent(present);
+        save(steps[movementStepIndex], movementStepIndex, true);
+      });
+    });
     movementEls.severityButtons?.forEach((btn) => {
       btn.addEventListener('click', () => setMovementSeverity(btn.dataset.sev));
     });
     document.addEventListener('change', (event) => {
       if (event.target?.matches('[data-movement-time],[data-movement-body],[data-movement-trigger]')) {
         syncMovementArrays();
+      }
+      if (event.target?.matches('[data-temp-symptom]')) {
+        syncTempArrays();
       }
     });
     movementEls.detailsToggle?.addEventListener('click', () => {
@@ -1177,6 +1348,7 @@
       hydratePromptingSelects();
       syncAggressionControls();
       hydrateMovementFromData(draft.data[movementStepIndex] || {});
+      hydrateTempFromData(draft.data[movementStepIndex] || {});
       applyConditionalSections();
       toast('Draft restored');
     });
@@ -1452,6 +1624,7 @@
       }
       if (idx === movementStepIndex) {
         hydrateMovementFromData(draft.data[idx] || {});
+        hydrateTempFromData(draft.data[idx] || {});
       }
     }
     function loadDraft(){ try{ const raw=localStorage.getItem(DRAFT_KEY); return raw?JSON.parse(raw):null; }catch{ return null; } }
@@ -1494,6 +1667,8 @@
       clearMovementFields();
       movementEls.detailsPanel?.classList.add('is-hidden');
       movementEls.detailsToggle?.setAttribute('aria-expanded', 'false');
+      clearTempFields();
+      tempEls.bodyWrap?.classList.add('is-collapsed');
     }
     function clearDraftUI(){
       draft={ data:{}, savedAt:{} };
@@ -1502,6 +1677,7 @@
       updateSavedButtons();
       resetAdlEntries();
       clearMovementFields();
+      clearTempFields();
     }
     function toast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.style.opacity='1'; clearTimeout(el._t); el._t=setTimeout(()=>el.style.opacity='0',1400); }
 
@@ -1560,6 +1736,29 @@
           return cleaned;
         };
         const movementData = normalizeMovement();
+        const normalizeTemp = () => {
+          const presentRaw = String(payload.temp_present || '').toLowerCase();
+          const tempPresent = presentRaw === 'yes' || presentRaw === 'true';
+          const symptoms = parseJsonArray(payload.temp_symptoms);
+          const cleaned = {
+            temp_present: tempPresent,
+            temp_value: trimOrNull(payload.temp_value),
+            temp_method: trimOrNull(payload.temp_method),
+            temp_other_value: trimOrNull(payload.temp_other_value),
+            temp_symptoms: symptoms,
+            temp_symptom_other: trimOrNull(payload.temp_symptom_other),
+            temp_notes: trimOrNull(payload.temp_notes),
+          };
+          if (!tempPresent) {
+            Object.keys(cleaned).forEach((key) => {
+              if (key === 'temp_present') return;
+              cleaned[key] = Array.isArray(cleaned[key]) ? [] : null;
+            });
+          }
+          Object.assign(payload, cleaned);
+          return cleaned;
+        };
+        normalizeTemp();
         const adlEntriesFromPayload = parseAdlEntries(payload.adl_entries);
         payload.adl_entries = adlEntriesFromPayload;
         const had_bm =

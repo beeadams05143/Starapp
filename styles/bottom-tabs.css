@@ -56,3 +56,15 @@ body {
   #bottom-tabs a .icon, .bottom-tabs a .icon, .tabs.tabs--six a .icon { font-size: 16px; }
   #bottom-tabs a .label, .bottom-tabs a .label, .tabs.tabs--six a .label { font-size: 10px; }
 }
+
+@media print {
+  body { padding-bottom: 0 !important; }
+  #bottom-tabs,
+  .bottom-tabs,
+  .tabs.tabs--six,
+  #tabbar-host,
+  .tabbar,
+  .tabbar-host {
+    display: none !important;
+  }
+}

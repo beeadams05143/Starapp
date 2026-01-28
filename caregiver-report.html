@@ -1546,19 +1546,33 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
         payload.note
       ];
       const parts = [];
+      const seen = new Set();
+      const normalize = (value) => String(value).replace(/\s+/g, ' ').trim();
+      const pushBlock = (block) => {
+        const trimmed = String(block || '').trim();
+        if (!trimmed) return;
+        const key = normalize(trimmed);
+        if (!key || seen.has(key)) return;
+        seen.add(key);
+        parts.push(trimmed);
+      };
+      const splitBlocks = (text) =>
+        String(text)
+          .split(/\n\s*\n/g)
+          .map((chunk) => chunk.trim())
+          .filter(Boolean);
+
       for (const candidate of candidates) {
         if (Array.isArray(candidate)) {
           candidate.forEach(item => {
             if (typeof item === 'string') {
-              const trimmed = item.trim();
-              if (trimmed && !parts.includes(trimmed)) parts.push(trimmed);
+              splitBlocks(item).forEach(pushBlock);
             }
           });
           continue;
         }
         if (typeof candidate === 'string') {
-          const trimmed = candidate.trim();
-          if (trimmed && !parts.includes(trimmed)) parts.push(trimmed);
+          splitBlocks(candidate).forEach(pushBlock);
         }
       }
       return parts.join('\n\n');

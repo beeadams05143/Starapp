@@ -98,6 +98,9 @@
     .movement-grid,.temp-grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
     .movement-inline-input,.temp-inline-input{display:flex;gap:8px;align-items:center}
     .movement-inline-input input[type="text"],.temp-inline-input input[type="text"]{flex:1}
+    .yn-pill-group{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+    .yn-pill{display:inline-flex;align-items:center;gap:6px;border:1px solid #d1d5db;border-radius:999px;padding:6px 10px;background:#fff;font-weight:700}
+    .yn-pill input{width:auto}
   </style>
 </head>
 <body>
@@ -144,10 +147,16 @@
           <div class="section-title">Physical Factors</div>
           <div class="row cols-3 compact">
             <label>Appears in good health?
-              <select name="appears_good_health" class="yn"><option value="">Select</option><option>Yes</option><option>No</option></select>
+              <div class="yn-pill-group" role="group" aria-label="Appears in good health">
+                <label class="yn-pill"><input type="radio" name="appears_good_health" value="Yes"> Yes</label>
+                <label class="yn-pill"><input type="radio" name="appears_good_health" value="No"> No</label>
+              </div>
             </label>
             <label>Appears tired?
-              <select name="appears_tired" class="yn"><option value="">Select</option><option>Yes</option><option>No</option></select>
+              <div class="yn-pill-group" role="group" aria-label="Appears tired">
+                <label class="yn-pill"><input type="radio" name="appears_tired" value="Yes"> Yes</label>
+                <label class="yn-pill"><input type="radio" name="appears_tired" value="No"> No</label>
+              </div>
             </label>
             <label>Hours of sleep:
               <select name="hours_sleep" class="yn"><option value="">Select</option><option>4</option><option>6</option><option>8</option><option>10+</option></select>
@@ -156,20 +165,41 @@
               <input type="checkbox" name="sleep_onset_difficulty" style="width:auto"/>
               <span>Difficulty falling asleep (took ~2+ hours)</span>
             </label>
+            <label>Woke up during the night?
+              <div class="yn-pill-group" role="group" aria-label="Woke up during the night">
+                <label class="yn-pill"><input type="radio" name="night_wake_flag" id="night_wake_flag_yes" value="Yes"> Yes</label>
+                <label class="yn-pill"><input type="radio" name="night_wake_flag" id="night_wake_flag_no" value="No"> No</label>
+              </div>
+            </label>
+            <label id="nightWakeCountWrap" style="display:none">How many times?
+              <select name="night_wake_count" id="night_wake_count" class="yn">
+                <option value="">Select</option>
+                <option>1</option>
+                <option>2</option>
+                <option>3</option>
+                <option>4+</option>
+              </select>
+            </label>
           </div>
           <div class="row cols-3 compact">
-           <label for="had_bm">Had a BM today?</label>
-<select id="had_bm" name="had_bm" class="yn" required>
-  <option value="">Select...</option>
-  <option value="yes">Yes</option>
-  <option value="no">No</option>
-</select>
-<div class="row cols-3 compact">
-  <label for="caregiver_name">Caregiver Name:</label>
-  <input id="caregiver_name" name="caregiver_name" type="text" placeholder="Enter your name" required />
-</div>
-
-            <label>PRN sleep aid given:<input type="text" name="prn_name" placeholder="Name of PRN"/></label>
+            <label>Had a BM today?
+              <div class="yn-pill-group" role="group" aria-label="Had a BM today">
+                <label class="yn-pill"><input type="radio" name="had_bm" id="had_bm_yes" value="yes"> Yes</label>
+                <label class="yn-pill"><input type="radio" name="had_bm" id="had_bm_no" value="no"> No</label>
+              </div>
+            </label>
+            <label for="caregiver_name">Caregiver Name:
+              <input id="caregiver_name" name="caregiver_name" type="text" placeholder="Enter your name" required />
+            </label>
+            <label>PRN sleep aid given?
+              <div class="yn-pill-group" role="group" aria-label="PRN sleep aid given">
+                <label class="yn-pill"><input type="radio" name="prn_given" id="prn_given_yes" value="yes"> Yes</label>
+                <label class="yn-pill"><input type="radio" name="prn_given" id="prn_given_no" value="no"> No</label>
+              </div>
+            </label>
+            <label id="prnNameWrap" style="display:none">PRN sleep aid name:
+              <input type="text" name="prn_name" placeholder="Name of PRN"/>
+            </label>
             <label>Time PRN was given:<input type="time" name="prn_time"/></label>
           </div>
           <div class="movement-panel" id="movementSymptomsPanel">
@@ -428,7 +458,66 @@
           <label id="aggressionNotesWrap">Aggression notes:
             <textarea name="aggression_notes" placeholder="What happened, what helped"></textarea>
           </label>
+          <div class="row cols-3 compact" id="aggressionPrnRow" style="margin-top:6px;display:none">
+            <label>PRN given for aggression?
+              <div class="yn-pill-group" role="group" aria-label="PRN given for aggression">
+                <label class="yn-pill"><input type="radio" name="prn_aggression_given" id="prn_aggression_given_yes" value="yes"> Yes</label>
+                <label class="yn-pill"><input type="radio" name="prn_aggression_given" id="prn_aggression_given_no" value="no"> No</label>
+              </div>
+            </label>
+            <label id="prnAggressionNameWrap" style="display:none">PRN name (aggression):
+              <input type="text" name="prn_aggression_name" placeholder="Name of PRN"/>
+            </label>
+            <label id="prnAggressionTimeWrap" style="display:none">Time PRN was given:
+              <input type="time" name="prn_aggression_time"/>
+            </label>
+          </div>
           <hr class="soft"/>
+          <div class="subcap">Mania, focus, appetite</div>
+          <div class="row cols-3 compact">
+            <label>Did Ben seem manic?
+              <select name="manic_flag" id="manic_flag" class="yn">
+                <option value="">Select</option>
+                <option>No</option>
+                <option>Yes</option>
+              </select>
+            </label>
+            <label>Mania intensity (0–5):
+              <input type="range" min="0" max="5" step="1" value="0" name="manic_intensity" id="manic_intensity" disabled/>
+              <div class="savedAt"><span id="manicIntensityVal">0</span></div>
+            </label>
+            <label>Trouble focusing?
+              <select name="focus_trouble_flag" id="focus_trouble_flag" class="yn">
+                <option value="">Select</option>
+                <option>No</option>
+                <option>Yes</option>
+              </select>
+            </label>
+            <label>Change in appetite?
+              <select name="appetite_change_flag" id="appetite_change_flag" class="yn">
+                <option value="">Select</option>
+                <option>No</option>
+                <option>Yes</option>
+              </select>
+            </label>
+            <label id="appetiteNotesWrap" style="display:none">Appetite notes:
+              <input type="text" name="appetite_notes" placeholder="e.g., ate much less than usual"/>
+            </label>
+          </div>
+          <div class="row cols-3 compact" id="maniaPrnRow" style="margin-top:6px">
+            <label>PRN given for mania?
+              <div class="yn-pill-group" role="group" aria-label="PRN given for mania">
+                <label class="yn-pill"><input type="radio" name="prn_mania_given" id="prn_mania_given_yes" value="yes"> Yes</label>
+                <label class="yn-pill"><input type="radio" name="prn_mania_given" id="prn_mania_given_no" value="no"> No</label>
+              </div>
+            </label>
+            <label id="prnManiaNameWrap" style="display:none">PRN name (mania):
+              <input type="text" name="prn_mania_name" placeholder="Name of PRN"/>
+            </label>
+            <label id="prnManiaTimeWrap" style="display:none">Time PRN was given:
+              <input type="time" name="prn_mania_time"/>
+            </label>
+          </div>
           <div class="subcap">Anomalies <span class="muted">(unexpected behaviors, mood shifts, or unusual reactions)</span></div>
           <div class="row cols-2">
             <label>Noticed anything unusual?
@@ -1273,6 +1362,10 @@
           const el = document.getElementById('intensityVal');
           if (el) el.textContent = e.target.value;
         }
+        if (e.target?.name === 'manic_intensity') {
+          const el = document.getElementById('manicIntensityVal');
+          if (el) el.textContent = e.target.value;
+        }
         clearTimeout(t);
         t = setTimeout(() => save(step, idx, true), 450);
       });
@@ -1367,6 +1460,11 @@
           applyConditionalSections();
         });
       });
+    document.addEventListener('change', (event) => {
+      if (event.target?.matches('input[name="prn_given"],input[name="prn_aggression_given"],input[name="prn_mania_given"],input[name="night_wake_flag"]')) {
+        applyConditionalSections();
+      }
+    });
   }); // <-- end DOMContentLoaded
 
   // Helper: normalize truthy/falsey
@@ -1405,8 +1503,42 @@
       if(!yes){ if(aType) aType.value=''; if(aInt){ aInt.value=0; const iv=document.getElementById('intensityVal'); if(iv) iv.textContent='0'; } }
       if (aggressionDetails) aggressionDetails.style.display = yes ? '' : 'none';
       if (aggressionNotesWrap) aggressionNotesWrap.style.display = yes ? '' : 'none';
+      const prnRow = document.getElementById('aggressionPrnRow');
+      if (prnRow) prnRow.style.display = yes ? '' : 'none';
+      if (!yes) {
+        document.querySelectorAll('input[name="prn_aggression_given"]').forEach((el) => (el.checked = false));
+        const name = document.querySelector('input[name="prn_aggression_name"]');
+        const time = document.querySelector('input[name="prn_aggression_time"]');
+        if (name) name.value = '';
+        if (time) time.value = '';
+      }
     }
     flag?.addEventListener('change', syncAggressionControls);
+
+    // Mania enable/disable
+    const manicFlag = document.getElementById('manic_flag');
+    const manicInt  = document.getElementById('manic_intensity');
+    const appetiteFlag = document.getElementById('appetite_change_flag');
+    const appetiteNotesWrap = document.getElementById('appetiteNotesWrap');
+    function syncManiaControls(){
+      const yes = manicFlag?.value === 'Yes';
+      if (manicInt) manicInt.disabled = !yes;
+      if (!yes && manicInt) {
+        manicInt.value = 0;
+        const iv = document.getElementById('manicIntensityVal');
+        if (iv) iv.textContent = '0';
+      }
+    }
+    function syncAppetiteControls(){
+      const yes = appetiteFlag?.value === 'Yes';
+      if (appetiteNotesWrap) appetiteNotesWrap.style.display = yes ? '' : 'none';
+      if (!yes) {
+        const input = appetiteNotesWrap?.querySelector('input');
+        if (input) input.value = '';
+      }
+    }
+    manicFlag?.addEventListener('change', syncManiaControls);
+    appetiteFlag?.addEventListener('change', syncAppetiteControls);
 
     const toggleFieldGroup = (selectId, { showWhen = 'Yes', targets = [] } = {}) => {
       const sel = document.getElementById(selectId);
@@ -1421,6 +1553,10 @@
       toggleFieldGroup('behavior_anomaly_flag', {
         showWhen: 'Yes',
         targets: ['anomalyTriggerWrap', 'anomalyNotesWrap']
+      });
+      toggleFieldGroup('appetite_change_flag', {
+        showWhen: 'Yes',
+        targets: ['appetiteNotesWrap']
       });
       toggleFieldGroup('vocational_participation', {
         showWhen: 'Yes',
@@ -1442,6 +1578,47 @@
       const interactionYes = document.getElementById('community_interaction_ok')?.value === 'Yes';
       const communityNotesWrap = document.getElementById('communityNotesWrap');
       if (communityNotesWrap) communityNotesWrap.style.display = (publicYes || interactionYes) ? '' : 'none';
+      syncManiaControls();
+      syncAppetiteControls();
+      const nightWakeFlagYes = document.getElementById('night_wake_flag_yes');
+      const nightWrap = document.getElementById('nightWakeCountWrap');
+      const nightCount = document.getElementById('night_wake_count');
+      const nightChecked = !!nightWakeFlagYes?.checked;
+      if (nightWrap) nightWrap.style.display = nightChecked ? '' : 'none';
+      if (!nightChecked && nightCount) nightCount.value = '';
+
+      const prnYes = document.getElementById('prn_given_yes');
+      const prnWrap = document.getElementById('prnNameWrap');
+      const prnInput = prnWrap?.querySelector('input');
+      const prnChecked = !!prnYes?.checked;
+      if (prnWrap) prnWrap.style.display = prnChecked ? '' : 'none';
+      if (!prnChecked && prnInput) prnInput.value = '';
+
+      const prnAggYes = document.getElementById('prn_aggression_given_yes');
+      const prnAggNameWrap = document.getElementById('prnAggressionNameWrap');
+      const prnAggTimeWrap = document.getElementById('prnAggressionTimeWrap');
+      const prnAggChecked = !!prnAggYes?.checked;
+      if (prnAggNameWrap) prnAggNameWrap.style.display = prnAggChecked ? '' : 'none';
+      if (prnAggTimeWrap) prnAggTimeWrap.style.display = prnAggChecked ? '' : 'none';
+      if (!prnAggChecked) {
+        const n = prnAggNameWrap?.querySelector('input');
+        const t = prnAggTimeWrap?.querySelector('input');
+        if (n) n.value = '';
+        if (t) t.value = '';
+      }
+
+      const prnManiaYes = document.getElementById('prn_mania_given_yes');
+      const prnManiaNameWrap = document.getElementById('prnManiaNameWrap');
+      const prnManiaTimeWrap = document.getElementById('prnManiaTimeWrap');
+      const prnManiaChecked = !!prnManiaYes?.checked;
+      if (prnManiaNameWrap) prnManiaNameWrap.style.display = prnManiaChecked ? '' : 'none';
+      if (prnManiaTimeWrap) prnManiaTimeWrap.style.display = prnManiaChecked ? '' : 'none';
+      if (!prnManiaChecked) {
+        const n = prnManiaNameWrap?.querySelector('input');
+        const t = prnManiaTimeWrap?.querySelector('input');
+        if (n) n.value = '';
+        if (t) t.value = '';
+      }
     };
 
     // ADL activity options

@@ -768,8 +768,13 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
           </div>
           <div class="hc-kvs">
             <div class="hc-kv" id="hc-kv-bm">💩 BM days: 0</div>
-            <div class="hc-kv" id="hc-kv-sleep">😴 Sleep ≥ 8h days: 0</div>
+            <div class="hc-kv" id="hc-kv-sleep">😴 GOOD SLEEP (MORE, 8+ hours) days: 0</div>
+            <div class="hc-kv" id="hc-kv-sleep-low">😪 Poor sleep (MINUS 8 hours) days: 0</div>
             <div class="hc-kv" id="hc-kv-onset">🦉 Late sleep onset days: 0</div>
+            <div class="hc-kv" id="hc-kv-night">🌙 Night waking days: 0</div>
+            <div class="hc-kv" id="hc-kv-prn-sleep">💊S PRN sleep days: 0</div>
+            <div class="hc-kv" id="hc-kv-prn-mania">💊M PRN mania days: 0</div>
+            <div class="hc-kv" id="hc-kv-prn-aggr">💊A PRN aggression days: 0</div>
             <div class="hc-kv" id="hc-kv-manic">⚡️ Manic days: 0</div>
             <div class="hc-kv" id="hc-kv-sick">🤒 Sick days: 0</div>
             <div class="hc-kv" id="hc-kv-temp">🌡️ Temperature days: 0</div>
@@ -780,8 +785,13 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
 
         <div class="hc-legend hc-row" style="border-top:0">
           <label><input type="checkbox" data-hc-layer="bm" checked/> <span class="hc-emo" aria-hidden="true">💩</span> BM <span class="hc-legend-count" data-hc-count="bm">0</span></label>
-          <label><input type="checkbox" data-hc-layer="sleep" checked/> <span class="hc-emo" aria-hidden="true">😴</span> Sleep ≥ 8h <span class="hc-legend-count" data-hc-count="sleep">0</span></label>
+          <label><input type="checkbox" data-hc-layer="sleep" checked/> <span class="hc-emo" aria-hidden="true">😴</span> GOOD SLEEP (MORE, 8+ hours) <span class="hc-legend-count" data-hc-count="sleep">0</span></label>
+          <label><input type="checkbox" data-hc-layer="sleep_low" checked/> <span class="hc-emo" aria-hidden="true">😪</span> Poor sleep (MINUS 8 hours) <span class="hc-legend-count" data-hc-count="sleep_low">0</span></label>
           <label><input type="checkbox" data-hc-layer="onset" checked/> <span class="hc-emo" aria-hidden="true">🦉</span> Late sleep onset <span class="hc-legend-count" data-hc-count="onset">0</span></label>
+          <label><input type="checkbox" data-hc-layer="night" checked/> <span class="hc-emo" aria-hidden="true">🌙</span> Night waking <span class="hc-legend-count" data-hc-count="night">0</span></label>
+          <label><input type="checkbox" data-hc-layer="prn_sleep" checked/> <span class="hc-emo" aria-hidden="true">💊S</span> PRN sleep <span class="hc-legend-count" data-hc-count="prn_sleep">0</span></label>
+          <label><input type="checkbox" data-hc-layer="prn_mania" checked/> <span class="hc-emo" aria-hidden="true">💊M</span> PRN mania <span class="hc-legend-count" data-hc-count="prn_mania">0</span></label>
+          <label><input type="checkbox" data-hc-layer="prn_aggr" checked/> <span class="hc-emo" aria-hidden="true">💊A</span> PRN aggression <span class="hc-legend-count" data-hc-count="prn_aggr">0</span></label>
           <label><input type="checkbox" data-hc-layer="manic" checked/> <span class="hc-emo" aria-hidden="true">⚡️</span> Manic <span class="hc-legend-count" data-hc-count="manic">0</span></label>
           <label><input type="checkbox" data-hc-layer="sick" checked/> <span class="hc-emo" aria-hidden="true">🤒</span> Sick <span class="hc-legend-count" data-hc-count="sick">0</span></label>
           <label><input type="checkbox" data-hc-layer="temp" checked/> <span class="hc-emo" aria-hidden="true">🌡️</span> Temperature <span class="hc-legend-count" data-hc-count="temp">0</span></label>
@@ -878,8 +888,13 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
         <select id="hcEditorQuickTag">
           <option value="">Choose…</option>
           <option value="bm">BM</option>
-          <option value="sleep">Sleep ≥ 8h</option>
+          <option value="sleep">Good sleep (more, 8+ hours)</option>
+          <option value="sleep_low">Poor sleep (minus 8 hours)</option>
           <option value="onset">Late sleep onset</option>
+          <option value="night">Night waking</option>
+          <option value="prn_sleep">PRN sleep (S)</option>
+          <option value="prn_mania">PRN mania (M)</option>
+          <option value="prn_aggr">PRN aggression (A)</option>
           <option value="manic">Manic</option>
           <option value="sick">Sick</option>
           <option value="temp">Temperature</option>
@@ -890,8 +905,13 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
       </label>
       <fieldset>
         <label><input type="checkbox" name="bm"> 💩 BM</label>
-        <label><input type="checkbox" name="sleep"> 😴 Sleep ≥ 8h</label>
+        <label><input type="checkbox" name="sleep"> 😴 Good sleep (more, 8+ hours)</label>
+        <label><input type="checkbox" name="sleep_low"> 😪 Poor sleep (minus 8 hours)</label>
         <label><input type="checkbox" name="onset"> 🦉 Late sleep onset</label>
+        <label><input type="checkbox" name="night"> 🌙 Night waking</label>
+        <label><input type="checkbox" name="prn_sleep"> 💊S PRN sleep</label>
+        <label><input type="checkbox" name="prn_mania"> 💊M PRN mania</label>
+        <label><input type="checkbox" name="prn_aggr"> 💊A PRN aggression</label>
         <label><input type="checkbox" name="manic"> ⚡️ Manic</label>
         <label><input type="checkbox" name="sick"> 🤒 Sick</label>
         <label><input type="checkbox" name="temp"> 🌡️ Temperature</label>
@@ -4423,7 +4443,12 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
 
   const kvBm   = document.getElementById('hc-kv-bm');
   const kvSlp  = document.getElementById('hc-kv-sleep');
+  const kvSlpLow = document.getElementById('hc-kv-sleep-low');
   const kvOnst = document.getElementById('hc-kv-onset');
+  const kvNight = document.getElementById('hc-kv-night');
+  const kvPrnSleep = document.getElementById('hc-kv-prn-sleep');
+  const kvPrnMania = document.getElementById('hc-kv-prn-mania');
+  const kvPrnAggr = document.getElementById('hc-kv-prn-aggr');
   const kvMan  = document.getElementById('hc-kv-manic');
   const kvSick = document.getElementById('hc-kv-sick');
   const kvTemp = document.getElementById('hc-kv-temp');
@@ -4514,6 +4539,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
   function hasAppetiteChange(source){
     if (!source) return false;
     const candidates = [
+      source.appetite_change_flag,
+      source.appetite_change,
       source.appetite,
       source.appetite_change,
       source.change_in_appetite,
@@ -4535,7 +4562,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
     }
     return false;
   }
-  const EMO = { bm:'💩', sleep:'😴', onset:'🦉', manic:'⚡️', sick:'🤒', temp:'🌡️', appetite:'🍽️', moon:'🌕', anomaly:'🚩' };
+  const EMO = { bm:'💩', sleep:'😴', sleep_low:'😪', onset:'🦉', night:'🌙', prn_sleep:'💊S', prn_mania:'💊M', prn_aggr:'💊A', manic:'⚡️', sick:'🤒', temp:'🌡️', appetite:'🍽️', moon:'🌕', anomaly:'🚩' };
 
   function saveLocalHealth(){
     try { localStorage.setItem(LOCAL_HEALTH_KEY, JSON.stringify(LOCAL_HEALTH)); } catch {}
@@ -4547,12 +4574,18 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
   }
 
   function applyHealthFlagToMap(key, data = {}){
-    const base = MAP[key] || { bm:false, sleep:null, onset:false, manic:false, sick:false, temp:false, appetite:false, moon:false, anomaly:false };
+    const base = MAP[key] || { bm:false, sleep:null, sleep_low:false, onset:false, night:false, prn_sleep:false, prn_mania:false, prn_aggr:false, manic:false, sick:false, temp:false, appetite:false, moon:false, anomaly:false };
     const hours = data.sleepHours != null ? Number(data.sleepHours) : (data.sleep ? 8 : null);
+    const sleepLowFromHours = Number.isFinite(hours) ? hours < 8 : null;
     MAP[key] = {
       bm: base.bm || !!data.bm,
       sleep: hours != null ? Math.max(base.sleep ?? 0, hours) : base.sleep,
+      sleep_low: base.sleep_low || (sleepLowFromHours === true) || !!data.sleep_low,
       onset: base.onset || !!data.onset,
+      night: base.night || !!data.night,
+      prn_sleep: base.prn_sleep || !!data.prn_sleep,
+      prn_mania: base.prn_mania || !!data.prn_mania,
+      prn_aggr: base.prn_aggr || !!data.prn_aggr,
       manic: base.manic || !!data.manic,
       sick: base.sick || !!data.sick,
       temp: base.temp || !!data.temp,
@@ -4567,7 +4600,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
   let MAP = {};
   let EVENT_MAP = {};              // meetings/appointments
   let HEALTH_FLAGS = {};           // persisted manual flags
-  const layers = { bm:true, sleep:true, onset:true, manic:true, sick:true, temp:true, appetite:true, moon:true, anomaly:true };
+  const layers = { bm:true, sleep:true, sleep_low:true, onset:true, night:true, prn_sleep:true, prn_mania:true, prn_aggr:true, manic:true, sick:true, temp:true, appetite:true, moon:true, anomaly:true };
   const SYNODIC_MONTH = 29.530588853; // days
   const BASE_FULL_MOON = Date.UTC(2024, 8, 17, 18, 34); // Sep 17 2024 full moon reference
 
@@ -4604,12 +4637,12 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
     const startPad = first.getDay();
     for(let i=0;i<startPad;i++){ const b=document.createElement('div'); b.className='hc-cell'; grid.appendChild(b); }
 
-  let bmDays=0, sleepDays=0, onsetDays=0, manicDays=0, sickDays=0, tempDays=0, appetiteDays=0, moonDays=0, anomalyDays=0;
+  let bmDays=0, sleepDays=0, sleepLowDays=0, onsetDays=0, nightDays=0, prnSleepDays=0, prnManiaDays=0, prnAggrDays=0, manicDays=0, sickDays=0, tempDays=0, appetiteDays=0, moonDays=0, anomalyDays=0;
 
     for(let day=1; day<=last.getDate(); day++){
       const cell = document.createElement('div'); cell.className='hc-cell'; cell.setAttribute('role','gridcell');
       const key = Y + '-' + pad(M+1) + '-' + pad(day);
-      const rec = MAP[key] || { bm:false, sleep:null, onset:false, manic:false, sick:false, temp:false, appetite:false, moon:false, anomaly:false };
+      const rec = MAP[key] || { bm:false, sleep:null, sleep_low:false, onset:false, night:false, prn_sleep:false, prn_mania:false, prn_aggr:false, manic:false, sick:false, temp:false, appetite:false, moon:false, anomaly:false };
       const moonToday = isFullMoonKey(key);
       if (!rec.moon && moonToday) {
         rec.moon = true;
@@ -4621,8 +4654,13 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
 
       const icons = document.createElement('div'); icons.className='hc-icons';
       if (rec.bm    && layers.bm   ){ const s=document.createElement('span'); s.textContent=EMO.bm;    s.setAttribute('aria-label','BM'); icons.appendChild(s); bmDays++; }
-      if (rec.sleep!=null && rec.sleep>=8 && layers.sleep){ const s=document.createElement('span'); s.textContent=EMO.sleep; s.setAttribute('aria-label','Sleep ≥ 8h'); icons.appendChild(s); sleepDays++; }
+      if (rec.sleep!=null && rec.sleep>=8 && layers.sleep){ const s=document.createElement('span'); s.textContent=EMO.sleep; s.setAttribute('aria-label','Good sleep (8+ hours)'); icons.appendChild(s); sleepDays++; }
+      if ((rec.sleep!=null && rec.sleep<8 || rec.sleep_low) && layers.sleep_low){ const s=document.createElement('span'); s.textContent=EMO.sleep_low; s.setAttribute('aria-label','Poor sleep (< 8 hours)'); icons.appendChild(s); sleepLowDays++; }
       if (rec.onset && layers.onset){ const s=document.createElement('span'); s.textContent=EMO.onset; s.setAttribute('aria-label','Late sleep onset'); icons.appendChild(s); onsetDays++; }
+      if (rec.night && layers.night){ const s=document.createElement('span'); s.textContent=EMO.night; s.setAttribute('aria-label','Night waking'); icons.appendChild(s); nightDays++; }
+      if (rec.prn_sleep && layers.prn_sleep){ const s=document.createElement('span'); s.textContent=EMO.prn_sleep; s.setAttribute('aria-label','PRN sleep'); icons.appendChild(s); prnSleepDays++; }
+      if (rec.prn_mania && layers.prn_mania){ const s=document.createElement('span'); s.textContent=EMO.prn_mania; s.setAttribute('aria-label','PRN mania'); icons.appendChild(s); prnManiaDays++; }
+      if (rec.prn_aggr && layers.prn_aggr){ const s=document.createElement('span'); s.textContent=EMO.prn_aggr; s.setAttribute('aria-label','PRN aggression'); icons.appendChild(s); prnAggrDays++; }
       if (rec.manic && layers.manic){ const s=document.createElement('span'); s.textContent=EMO.manic; s.setAttribute('aria-label','Manic'); icons.appendChild(s); manicDays++; }
       if (rec.sick  && layers.sick ){ const s=document.createElement('span'); s.textContent=EMO.sick;  s.setAttribute('aria-label','Sick'); icons.appendChild(s); sickDays++; }
       if (rec.temp  && layers.temp ){ const s=document.createElement('span'); s.textContent=EMO.temp;  s.setAttribute('aria-label','Temperature'); icons.appendChild(s); tempDays++; }
@@ -4658,8 +4696,13 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
     }
 
     kvBm  && (kvBm.textContent  = '💩 BM days: ' + bmDays);
-    kvSlp && (kvSlp.textContent = '😴 Sleep ≥ 8h days: ' + sleepDays);
+    kvSlp && (kvSlp.textContent = '😴 GOOD SLEEP (MORE, 8+ hours) days: ' + sleepDays);
+    kvSlpLow && (kvSlpLow.textContent = '😪 Poor sleep (MINUS 8 hours) days: ' + sleepLowDays);
     kvOnst && (kvOnst.textContent = '🦉 Late sleep onset days: ' + onsetDays);
+    kvNight && (kvNight.textContent = '🌙 Night waking days: ' + nightDays);
+    kvPrnSleep && (kvPrnSleep.textContent = '💊S PRN sleep days: ' + prnSleepDays);
+    kvPrnMania && (kvPrnMania.textContent = '💊M PRN mania days: ' + prnManiaDays);
+    kvPrnAggr && (kvPrnAggr.textContent = '💊A PRN aggression days: ' + prnAggrDays);
     kvMan && (kvMan.textContent = '⚡️ Manic days: ' + manicDays);
     kvSick&& (kvSick.textContent= '🤒 Sick days: ' + sickDays);
     kvTemp && (kvTemp.textContent= '🌡️ Temperature days: ' + tempDays);
@@ -4670,7 +4713,12 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
     const legendCounts = {
       bm: bmDays,
       sleep: sleepDays,
+      sleep_low: sleepLowDays,
       onset: onsetDays,
+      night: nightDays,
+      prn_sleep: prnSleepDays,
+      prn_mania: prnManiaDays,
+      prn_aggr: prnAggrDays,
       manic: manicDays,
       sick: sickDays,
       temp: tempDays,
@@ -4708,20 +4756,35 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
             if (hrsRaw.includes('10')) sleep = 10;
             else { const n = parseFloat(hrsRaw); if (isFinite(n)) sleep = n; }
           } else if (typeof hrsRaw === 'number') { sleep = hrsRaw; }
+          const sleepLow = (sleep != null && sleep < 8);
           const onsetLate = hasLateSleepOnset(p) || hasLateSleepOnset(row);
-          const manic = (/yes/i.test(String(p.aggression_flag || ''))) || ((+p.aggression_intensity || 0) > 0);
-          const sick  = /no/i.test(String(p.appears_good_health || ''));
+          const nightWake = /yes|true/i.test(String(p.night_wake_flag || p.night_waking || '')) ||
+            Number(p.night_wake_count) > 0 ||
+            /woke|wake|waking/i.test(String(p.night_wake_notes || ''));
+          const prnSleep = /yes|true/i.test(String(p.prn_given || '')) ||
+            !!p.prn_name || !!p.prn_time;
+          const prnMania = /yes|true/i.test(String(p.prn_mania_given || '')) ||
+            !!p.prn_mania_name || !!p.prn_mania_time;
+          const prnAggr = /yes|true/i.test(String(p.prn_aggression_given || '')) ||
+            !!p.prn_aggression_name || !!p.prn_aggression_time;
+          const manic = /yes|true/i.test(String(p.manic_flag || p.mania_flag || '')) || ((+p.manic_intensity || 0) > 0);
+          const sick  = (p.appears_good_health === false) || /no/i.test(String(p.appears_good_health || ''));
           const temp = p.temp_present === true
             || /yes|true/i.test(String(p.temp_present || ''))
             || !!p.temp_value;
           const appetite = hasAppetiteChange(p) || hasAppetiteChange(row);
           const anomaly = p.anomaly_flag === true || /yes/i.test(String(p.anomaly || ''));
 
-          const cur = MAP[key] || { bm:false, sleep:null, onset:false, manic:false, sick:false, temp:false, appetite:false, moon:false, anomaly:false };
+          const cur = MAP[key] || { bm:false, sleep:null, sleep_low:false, onset:false, night:false, prn_sleep:false, prn_mania:false, prn_aggr:false, manic:false, sick:false, temp:false, appetite:false, moon:false, anomaly:false };
           MAP[key] = {
             bm:    cur.bm    || bm,
             sleep: (sleep!=null && (cur.sleep==null || sleep>cur.sleep)) ? sleep : cur.sleep,
+            sleep_low: cur.sleep_low || sleepLow,
             onset: cur.onset || onsetLate,
+            night: cur.night || nightWake,
+            prn_sleep: cur.prn_sleep || prnSleep,
+            prn_mania: cur.prn_mania || prnMania,
+            prn_aggr: cur.prn_aggr || prnAggr,
             manic: cur.manic || manic,
             sick:  cur.sick  || sick,
             temp:  cur.temp  || temp,
@@ -4744,19 +4807,34 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
           const key = dt.getFullYear() + '-' + pad(dt.getMonth()+1) + '-' + pad(dt.getDate());
           const bm    = (e.had_bm === true) || (/yes/i.test(String(e.had_bm || e.bm_today || '')));
           const sleep = (typeof e.hours_sleep === 'number') ? e.hours_sleep : null;
+          const sleepLow = (sleep != null && sleep < 8);
           const onsetLate = hasLateSleepOnset(e);
-          const manic = (/yes/i.test(String(e.aggression_flag || ''))) || ((+e.aggression_intensity || 0) > 0);
-          const sick  = /no/i.test(String(e.appears_good_health || ''));
+          const nightWake = /yes|true/i.test(String(e.night_wake_flag || e.night_waking || '')) ||
+            Number(e.night_wake_count) > 0 ||
+            /woke|wake|waking/i.test(String(e.night_wake_notes || ''));
+          const prnSleep = /yes|true/i.test(String(e.prn_given || '')) ||
+            !!e.prn_name || !!e.prn_time;
+          const prnMania = /yes|true/i.test(String(e.prn_mania_given || '')) ||
+            !!e.prn_mania_name || !!e.prn_mania_time;
+          const prnAggr = /yes|true/i.test(String(e.prn_aggression_given || '')) ||
+            !!e.prn_aggression_name || !!e.prn_aggression_time;
+          const manic = /yes|true/i.test(String(e.manic_flag || e.mania_flag || '')) || ((+e.manic_intensity || 0) > 0);
+          const sick  = (e.appears_good_health === false) || /no/i.test(String(e.appears_good_health || ''));
           const temp = e.temp_present === true
             || /yes|true/i.test(String(e.temp_present || ''))
             || !!e.temp_value;
           const appetite = hasAppetiteChange(e);
           const anomaly = e.anomaly_flag === true || /yes/i.test(String(e.anomaly || ''));
-          const cur = MAP[key] || { bm:false, sleep:null, onset:false, manic:false, sick:false, temp:false, appetite:false, anomaly:false };
+          const cur = MAP[key] || { bm:false, sleep:null, sleep_low:false, onset:false, night:false, prn_sleep:false, prn_mania:false, prn_aggr:false, manic:false, sick:false, temp:false, appetite:false, anomaly:false };
           MAP[key] = {
             bm:    cur.bm    || bm,
             sleep: (sleep!=null && (cur.sleep==null || sleep>cur.sleep)) ? sleep : cur.sleep,
+            sleep_low: cur.sleep_low || sleepLow,
             onset: cur.onset || onsetLate,
+            night: cur.night || nightWake,
+            prn_sleep: cur.prn_sleep || prnSleep,
+            prn_mania: cur.prn_mania || prnMania,
+            prn_aggr: cur.prn_aggr || prnAggr,
             manic: cur.manic || manic,
             sick:  cur.sick  || sick,
             temp:  cur.temp  || temp,
@@ -4842,7 +4920,12 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
     };
     setBox('bm', existing.bm ?? rec.bm);
     setBox('sleep', existing.sleep ?? (rec.sleep != null && rec.sleep >= 8));
+    setBox('sleep_low', existing.sleep_low ?? (rec.sleep != null && rec.sleep < 8));
     setBox('onset', existing.onset ?? rec.onset);
+    setBox('night', existing.night ?? rec.night);
+    setBox('prn_sleep', existing.prn_sleep ?? rec.prn_sleep);
+    setBox('prn_mania', existing.prn_mania ?? rec.prn_mania);
+    setBox('prn_aggr', existing.prn_aggr ?? rec.prn_aggr);
     setBox('manic', existing.manic ?? rec.manic);
     setBox('sick', existing.sick ?? rec.sick);
     setBox('temp', existing.temp ?? rec.temp);
@@ -4865,8 +4948,13 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
       const normalized = {
         bm: !!payload.bm,
         sleep: !!payload.sleep,
+        sleep_low: !!payload.sleep_low,
         sleepHours: Number.isFinite(Number(payload.sleepHours)) ? Number(payload.sleepHours) : null,
         onset: !!payload.onset,
+        night: !!payload.night,
+        prn_sleep: !!payload.prn_sleep,
+        prn_mania: !!payload.prn_mania,
+        prn_aggr: !!payload.prn_aggr,
         manic: !!payload.manic,
         sick: !!payload.sick,
         temp: !!payload.temp,
@@ -4888,8 +4976,13 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
 
       const summaryBits = [];
       if (normalized.bm) summaryBits.push('BM');
-      if (normalized.sleep || (normalized.sleepHours ?? 0) >= 8) summaryBits.push('Sleep');
+      if (normalized.sleep || (normalized.sleepHours ?? 0) >= 8) summaryBits.push('Good sleep');
+      if (normalized.sleep_low) summaryBits.push('Poor sleep');
       if (normalized.onset) summaryBits.push('Late sleep');
+      if (normalized.night) summaryBits.push('Night waking');
+      if (normalized.prn_sleep) summaryBits.push('PRN sleep');
+      if (normalized.prn_mania) summaryBits.push('PRN mania');
+      if (normalized.prn_aggr) summaryBits.push('PRN aggression');
       if (normalized.manic) summaryBits.push('Manic');
       if (normalized.sick) summaryBits.push('Sick');
       if (normalized.temp) summaryBits.push('Temp');
@@ -4959,7 +5052,12 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
     await saveHealthFlagEntry(editorDateKey, {
       bm: editorForm.elements.bm?.checked,
       sleep: editorForm.elements.sleep?.checked,
+      sleep_low: editorForm.elements.sleep_low?.checked,
       onset: editorForm.elements.onset?.checked,
+      night: editorForm.elements.night?.checked,
+      prn_sleep: editorForm.elements.prn_sleep?.checked,
+      prn_mania: editorForm.elements.prn_mania?.checked,
+      prn_aggr: editorForm.elements.prn_aggr?.checked,
       manic: editorForm.elements.manic?.checked,
       sick: editorForm.elements.sick?.checked,
       temp: editorForm.elements.temp?.checked,

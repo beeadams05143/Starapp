@@ -4752,18 +4752,26 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
 
   async function loadCaregiverFlags(start, end){
     try{
+      const startDate = start.slice(0,10);
+      const endDate = end.slice(0,10);
       const params = [
-        'caregiver_checkins?select=id,user_id,created_at,submitted_at,had_bm,payload',
-        `created_at=gte.${encodeURIComponent(start)}`,
-        `created_at=lt.${encodeURIComponent(end)}`,
-        'order=created_at.asc'
+        'caregiver_checkins?select=id,user_id,created_at,submitted_at,date,had_bm,payload',
+        `date=gte.${encodeURIComponent(startDate)}`,
+        `date=lt.${encodeURIComponent(endDate)}`,
+        'order=date.asc'
       ];
       const data = await rest(params.join('&'));
       if (Array.isArray(data)) {
         for (const row of data){
-          const dt  = new Date(row.submitted_at || row.created_at);
-          if (Number.isNaN(dt.getTime())) continue;
-          const key = dt.getFullYear() + '-' + pad(dt.getMonth()+1) + '-' + pad(dt.getDate());
+          const dateKey = row.date || '';
+          const key = dateKey && /^\d{4}-\d{2}-\d{2}$/.test(dateKey)
+            ? dateKey
+            : (() => {
+                const dt = new Date(row.submitted_at || row.created_at);
+                if (Number.isNaN(dt.getTime())) return null;
+                return dt.getFullYear() + '-' + pad(dt.getMonth()+1) + '-' + pad(dt.getDate());
+              })();
+          if (!key) continue;
           const p   = row.payload || {};
           const bm    = (row.had_bm === true) || (/yes/i.test(String(p.bm_today || p.had_bm || '')));
           let   sleep = null;
@@ -4820,9 +4828,15 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
       try{
         const ls = JSON.parse(localStorage.getItem('caregiverEntries') || '[]');
         for (const e of ls){
-          const dt = new Date(e.timestamp || e.created_at || Date.now());
-          if (dt < new Date(start) || dt >= new Date(end)) continue;
-          const key = dt.getFullYear() + '-' + pad(dt.getMonth()+1) + '-' + pad(dt.getDate());
+          const dateKey = e.date || e.entry_date || '';
+          let key = null;
+          if (dateKey && /^\d{4}-\d{2}-\d{2}$/.test(dateKey)) {
+            key = dateKey;
+          } else {
+            const dt = new Date(e.timestamp || e.created_at || Date.now());
+            if (dt < new Date(start) || dt >= new Date(end)) continue;
+            key = dt.getFullYear() + '-' + pad(dt.getMonth()+1) + '-' + pad(dt.getDate());
+          }
           const bm    = (e.had_bm === true) || (/yes/i.test(String(e.had_bm || e.bm_today || '')));
           const sleep = (typeof e.hours_sleep === 'number') ? e.hours_sleep : null;
           const sleepLow = (sleep != null && sleep < 8);
@@ -4830,13 +4844,13 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
           const nightWake = /yes|true/i.test(String(e.night_wake_flag || e.night_waking || '')) ||
             Number(e.night_wake_count) > 0 ||
             /woke|wake|waking/i.test(String(e.night_wake_notes || ''));
+          const tired = /yes|true/i.test(String(e.appears_tired || ''));
           const prnSleep = /yes|true/i.test(String(e.prn_given || '')) ||
             !!e.prn_name || !!e.prn_time;
           const prnMania = /yes|true/i.test(String(e.prn_mania_given || '')) ||
             !!e.prn_mania_name || !!e.prn_mania_time;
           const prnAggr = /yes|true/i.test(String(e.prn_aggression_given || '')) ||
             !!e.prn_aggression_name || !!e.prn_aggression_time;
-          const tired = /yes|true/i.test(String(e.appears_tired || ''));
           const manic = /yes|true/i.test(String(e.manic_flag || e.mania_flag || '')) || ((+e.manic_intensity || 0) > 0);
           const sick  = (e.appears_good_health === false) || /no/i.test(String(e.appears_good_health || ''));
           const temp = e.temp_present === true

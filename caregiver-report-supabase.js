@@ -174,6 +174,28 @@ const buildNotes = (row, payload) => {
     const trimmed = candidate.trim();
     if (trimmed && !parts.includes(trimmed)) parts.push(trimmed);
   }
+  const petFlag =
+    row?.pet_interaction_flag ??
+    payload?.pet_interaction_flag ??
+    null;
+  const petType =
+    row?.pet_activity_type ??
+    payload?.pet_activity_type ??
+    null;
+  const petNote =
+    row?.pet_activity_note ??
+    payload?.pet_activity_note ??
+    null;
+  const petNotes =
+    row?.pet_activity_notes ??
+    payload?.pet_activity_notes ??
+    null;
+  const petLines = [];
+  if (petFlag) petLines.push(`Pet interaction: ${petFlag}`);
+  if (petType) petLines.push(`Pet activity: ${petType}`);
+  if (petNote) petLines.push(`Pet note: ${petNote}`);
+  if (petNotes) petLines.push(`Pet notes: ${petNotes}`);
+  if (petLines.length) parts.push(petLines.join('\n'));
   return parts.length ? parts.join('\n\n') : null;
 };
 
@@ -321,6 +343,14 @@ const normalizeSupabaseEntry = (row = {}) => {
     movement_awareness: row.movement_awareness ?? payload.movement_awareness ?? null,
     movement_safety_risk: row.movement_safety_risk ?? payload.movement_safety_risk ?? null,
     movement_safety_notes: row.movement_safety_notes ?? payload.movement_safety_notes ?? null,
+    pet_interaction_flag:
+      row.pet_interaction_flag ?? payload.pet_interaction_flag ?? null,
+    pet_activity_type:
+      row.pet_activity_type ?? payload.pet_activity_type ?? null,
+    pet_activity_note:
+      row.pet_activity_note ?? payload.pet_activity_note ?? null,
+    pet_activity_notes:
+      row.pet_activity_notes ?? payload.pet_activity_notes ?? null,
   };
 };
 
@@ -356,6 +386,7 @@ const summarize = (entries) => {
       hygiene_yes: yesNo('hygiene'),
       food_prep_yes: yesNo('food_prep'),
       cleanup_yes: yesNo('cleanup'),
+      pet_care_yes: yesNo('pet_interaction_flag'),
     },
     totals: {
       vocational_minutes: sum('vocational_time'),
@@ -373,10 +404,11 @@ const buildSeries = (entries) => {
     if (Number.isNaN(ts.getTime())) continue;
     const key = toLocalMonthKey(ts);
     if (!key) continue;
-    const agg = byMonth.get(key) || { h: 0, f: 0, c: 0, prompts: [] };
+    const agg = byMonth.get(key) || { h: 0, f: 0, c: 0, p: 0, prompts: [] };
     if (parseBoolean(entry.hygiene) === true) agg.h += 1;
     if (parseBoolean(entry.food_prep) === true) agg.f += 1;
     if (parseBoolean(entry.cleanup) === true) agg.c += 1;
+    if (parseBoolean(entry.pet_interaction_flag) === true) agg.p += 1;
     const prompt = numberOrNull(entry.new_skill_score);
     if (prompt !== null) agg.prompts.push(prompt);
     byMonth.set(key, agg);
@@ -389,6 +421,7 @@ const buildSeries = (entries) => {
       hygiene_yes: agg.h,
       food_prep_yes: agg.f,
       cleanup_yes: agg.c,
+      pet_care_yes: agg.p,
       avg_new_skill_score: agg.prompts.length
         ? +(
             agg.prompts.reduce((sum, val) => sum + val, 0) / agg.prompts.length

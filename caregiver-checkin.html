@@ -40,6 +40,9 @@
     .soft{border:0;height:1px;background:#eceff3;margin:10px 0}
     .step{display:none}
     .step.active{display:block}
+    .is-dad-hidden{display:none!important}
+    .is-dad-only{display:none}
+    .is-dad-only.is-dad-active{display:grid}
     #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:88px;background:#111;color:#fff;padding:10px 14px;border-radius:10px;font-weight:800;z-index:9999;opacity:0;transition:opacity .2s}
     .focus-panel{background:#fffdf5;border:1px dashed #fcd34d;margin-bottom:18px;padding:14px;border-radius:14px}
     .focus-header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:4px}
@@ -589,17 +592,41 @@
             <label>Home activity type:
               <select name="home_activity_type">
                 <option value="">Select type</option>
-                <option>Meal with immediate family</option>
-                <option>Meal with extended family</option>
+                <option>Listen to music with family</option>
+                <option>Movie in living room</option>
+                <option>Played a game</option>
                 <option>Family celebration</option>
-                <option>Visited neighbor</option>
-                <option>Hosted guest</option>
-                <option>Family game/movie night</option>
-                <option>Walk / neighborhood stroll</option>
+                <option>Meal in the common area</option>
+                <option>Meal at the table with family</option>
                 <option>Other</option>
               </select>
             </label>
             <label>Home activity note:<input type="text" name="home_activity_note" placeholder="e.g., hosted grandma for dinner"/></label>
+          </div>
+          <div class="row cols-2 is-dad-only" id="dadPetsSection">
+            <label>Pet interaction?
+              <select name="pet_interaction_flag" class="yn">
+                <option value="">Select</option>
+                <option>Yes</option>
+                <option>No</option>
+              </select>
+            </label>
+            <label>Pet activity type:
+              <select name="pet_activity_type">
+                <option value="">Select type</option>
+                <option>Fed cat(s)</option>
+                <option>Fed dog</option>
+                <option>Refilled water bowls</option>
+                <option>Grooming / brushing</option>
+                <option>Played with pet(s)</option>
+                <option>Walked dog</option>
+                <option>Cleaned litter box</option>
+                <option>Training / commands</option>
+                <option>Other</option>
+              </select>
+            </label>
+            <label>Pet activity note:<input type="text" name="pet_activity_note" placeholder="e.g., brushed the dog for 10 minutes"/></label>
+            <label>Pet interaction notes:<textarea name="pet_activity_notes" placeholder="Care or interaction details."></textarea></label>
           </div>
           <label id="homeNotesWrap" style="display:none">Home / family notes:<textarea name="home_notes" placeholder="Interactions, meals, visitors, or notable moments at home."></textarea></label>
           <div class="controls">
@@ -1419,14 +1446,19 @@
       }
     });
 
+    clearDadOnlySections();
+    applyDadSectionVisibility();
+
     // Progress nav + show all
     progItems.forEach((pi) => pi.addEventListener('click', () => go(Number(pi.dataset.step))));
     toggleAllBtn?.addEventListener('click', () => {
       showAll = !showAll;
       if (showAll) {
         steps.forEach((s) => s.classList.add('active'));
+        setDadHidden(false);
         toggleAllBtn.textContent = 'Collapse to wizard';
       } else {
+        setDadHidden(true);
         steps.forEach((s, i) => s.classList.toggle('active', i === current));
         toggleAllBtn.textContent = 'Show all sections';
         steps[current].scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1763,6 +1795,51 @@
   let showAll = false;
   let current = 0;
   let draft = loadDraft() || { data: {}, savedAt: {} };
+  const MODE_KEY = 'star_menu_mode';
+  const dadHiddenStepIndexes = new Set([2,4,5]);
+  let dadModeActive = false;
+
+    function getMenuMode(){
+      try { return localStorage.getItem(MODE_KEY) || 'caregiver'; } catch { return 'caregiver'; }
+    }
+    function setDadHidden(shouldHide){
+      if (!dadModeActive) return;
+      dadHiddenStepIndexes.forEach((idx) => {
+        const step = steps[idx];
+        const prog = progItems[idx];
+        step?.classList.toggle('is-dad-hidden', shouldHide);
+        prog?.classList.toggle('is-dad-hidden', shouldHide);
+      });
+    }
+    function applyDadSectionVisibility(){
+      dadModeActive = getMenuMode() === 'dad';
+      if (!dadModeActive) return;
+      showAll = false;
+      setDadHidden(true);
+      document.querySelectorAll('.is-dad-only').forEach((el) => {
+        el.classList.add('is-dad-active');
+      });
+    }
+    function clearDadOnlySections(){
+      document.querySelectorAll('.is-dad-only').forEach((el) => {
+        el.classList.remove('is-dad-active');
+      });
+    }
+    function isHiddenForDad(idx){
+      return dadModeActive && !showAll && steps[idx]?.classList.contains('is-dad-hidden');
+    }
+    function normalizeStepIndex(target){
+      const clamped = Math.max(0, Math.min(target, steps.length - 1));
+      if (!isHiddenForDad(clamped)) return clamped;
+      const dir = clamped > current ? 1 : -1;
+      let i = clamped;
+      while (i >= 0 && i < steps.length && isHiddenForDad(i)) i += dir;
+      if (i < 0 || i >= steps.length) {
+        const fallback = steps.findIndex((_, idx) => !isHiddenForDad(idx));
+        return fallback === -1 ? 0 : fallback;
+      }
+      return i;
+    }
 
     // ---------- helpers ----------
     function serialize(step){
@@ -1820,7 +1897,7 @@
       });
     }
     function go(i){
-      current = Math.max(0, Math.min(i, steps.length-1));
+      current = normalizeStepIndex(i);
       if(!showAll){ steps.forEach((s,idx)=>s.classList.toggle('active', idx===current)); steps[current].scrollIntoView({behavior:'smooth',block:'start'}); }
       updateProgress();
     }
@@ -2002,6 +2079,10 @@
           payload,
           adl_entries: adlEntriesFromPayload,
           submitted_at: new Date().toISOString(),
+          pet_interaction_flag: payload.pet_interaction_flag || null,
+          pet_activity_type: payload.pet_activity_type || null,
+          pet_activity_note: payload.pet_activity_note || null,
+          pet_activity_notes: payload.pet_activity_notes || null,
           movement_present: movementData.movement_present,
           movement_main_type: movementData.movement_main_type,
           movement_severity: movementData.movement_severity,
@@ -2045,6 +2126,10 @@
               movement_awareness,
               movement_safety_risk,
               movement_safety_notes,
+              pet_interaction_flag,
+              pet_activity_type,
+              pet_activity_note,
+              pet_activity_notes,
               ...fallbackRow
             } = row;
             inserted = await rest('caregiver_checkins', {

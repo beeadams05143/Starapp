@@ -1864,7 +1864,11 @@
     function save(step,idx,silent){
       draft.data[idx]=serialize(step);
       draft.savedAt[idx]=new Date().toISOString();
-      localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+      } catch (err) {
+        console.warn('[Caregiver Check-In] Draft save failed', err);
+      }
       updateSavedAt(step,idx);
       updateSavedButtons();
       if(!silent) toast('Saved');
@@ -1886,7 +1890,8 @@
       if(el) el.textContent = ts ? `Last saved: ${new Date(ts).toLocaleString()}` : '';
     }
     function updateSavedButtons(){
-      const hasDraft = !!localStorage.getItem(DRAFT_KEY);
+      let hasDraft = false;
+      try { hasDraft = !!localStorage.getItem(DRAFT_KEY); } catch {}
       if (resumeDraftBtn){ resumeDraftBtn.style.display = hasDraft ? '' : 'none'; resumeDraftBtn.disabled = !hasDraft; }
     }
     function updateProgress(){

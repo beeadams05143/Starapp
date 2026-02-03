@@ -176,7 +176,12 @@
   try { storedMode = localStorage.getItem(MODE_KEY) || storedMode; } catch {}
   applyMenuMode(storedMode);
   overlay.querySelectorAll('[data-role-btn]').forEach(btn => {
-    btn.addEventListener('click', () => applyMenuMode(btn.dataset.roleBtn));
+    btn.addEventListener('click', () => {
+      applyMenuMode(btn.dataset.roleBtn);
+      if (!location.pathname.endsWith('/dashboard.html')) {
+        location.href = '/dashboard.html';
+      }
+    });
   });
 
   // --- open / close helpers ---

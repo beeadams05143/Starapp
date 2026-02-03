@@ -420,7 +420,7 @@
 </div>
 
 <script type="module">
-import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
+import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.03A';
 
 (function(){
   const Status = document.getElementById('cg-status');
@@ -467,8 +467,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
 </script>
 
 <!-- Shared navigation shell -->
-<script defer src="./ui-shell.js?v=2025.01.09E"></script>
-<script defer src="./scripts/appbar-drawer.js?v=2025.01.09E"></script>
+<script defer src="./ui-shell.js?v=2026.02.03A"></script>
+<script defer src="./scripts/appbar-drawer.js?v=2026.02.03A"></script>
 
 <body>
   <div id="navbar"></div>
@@ -1004,15 +1004,15 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
 
   <!-- Single, clean module script -->
   <script type="module">
-    import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
-    import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabaseClient.js?v=2025.01.09E';
-    import { loadFocusForCurrentUser, readLocalFocusDraft } from './focus-data.js?v=2025.01.09E';
+    import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.03A';
+    import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabaseClient.js?v=2026.02.03A';
+    import { loadFocusForCurrentUser, readLocalFocusDraft } from './focus-data.js?v=2026.02.03A';
 
     /* =============== Optional live data =============== */
     let loadFromSupabase = null;
     let formatEntryForList = null;
     try {
-      const mod = await import('./caregiver-report-supabase.js?v=2025.01.09E');
+      const mod = await import('./caregiver-report-supabase.js?v=2026.02.03A');
       loadFromSupabase = mod.loadCaregiverCheckins;
       formatEntryForList = mod.formatEntryForList;
     } catch (err) {
@@ -4349,7 +4349,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
 
 <script>
   (function(){
-    const version = window.STAR_BUILD_VERSION || '2025.01.09E';
+    const version = window.STAR_BUILD_VERSION || '2026.02.03A';
     if (!window.STAR_BUILD_VERSION) window.STAR_BUILD_VERSION = version;
     const ensureBadge = () => {
       if (document.getElementById('star-build-version')) return;
@@ -4383,7 +4383,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
 </script>
 
 <script type="module">
-import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
+import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.03A';
 
 (() => {
   // Bail out quietly if the calendar HTML isn't present

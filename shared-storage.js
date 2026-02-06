@@ -8,7 +8,7 @@ async function requireSession() {
   return session;
 }
 
-async function requestStorage(path, { method = 'GET', headers = {}, body } = {}) {
+async function requestStorage(path, { method = 'GET', headers = {}, body } = {}, { retry = true } = {}) {
   const session = await requireSession();
   const mergedHeaders = {
     apikey: SUPABASE_ANON_KEY,
@@ -20,6 +20,10 @@ async function requestStorage(path, { method = 'GET', headers = {}, body } = {})
     headers: mergedHeaders,
     body,
   });
+  if (retry && (res.status === 401 || res.status === 403)) {
+    await ensureSession();
+    return requestStorage(path, { method, headers, body }, { retry: false });
+  }
   return res;
 }
 

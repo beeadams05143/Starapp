@@ -84,25 +84,34 @@
     .movement-title,.temp-title{font-weight:900}
     .movement-desc,.temp-desc{margin:4px 0 0;color:#64748b;font-size:13px}
     .movement-yn,.temp-yn{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:8px 0}
-    .movement-pill,.temp-pill{display:inline-flex;align-items:center;gap:6px;border:1px solid #d1d5db;border-radius:999px;padding:6px 10px;background:#fff;font-weight:700}
+    .movement-pill,.temp-pill{display:inline-flex;align-items:center;gap:6px;border:1px solid #d1d5db;border-radius:999px;padding:4px 8px;background:#fff;font-weight:700;font-size:12.5px}
     .movement-pill input,.temp-pill input{width:auto}
     .movement-body.is-collapsed,.temp-body.is-collapsed{display:none}
-    .movement-row,.temp-row{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));align-items:end}
+    .movement-row,.temp-row{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));align-items:end}
     .movement-label,.temp-label{font-weight:800;color:#1f2937;margin-bottom:6px}
-    .movement-chips,.temp-chips{display:flex;flex-wrap:wrap;gap:8px}
-    .movement-chip,.temp-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid #cbd5f5;border-radius:10px;padding:6px 10px;background:#fff;font-weight:700;font-size:14px}
+    .movement-chips,.temp-chips{display:flex;flex-wrap:wrap;gap:6px}
+    .movement-chip,.temp-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid #cbd5f5;border-radius:8px;padding:4px 8px;background:#fff;font-weight:700;font-size:12.5px;line-height:1.2}
     .movement-chip input,.temp-chip input{width:auto}
     .movement-severity{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
-    .movement-sev-btn{border:1px solid #cbd5f5;background:#fff;color:#1e3a8a;border-radius:10px;padding:6px 10px;font-weight:800;cursor:pointer;min-width:36px}
+    .movement-sev-btn{border:1px solid #cbd5f5;background:#fff;color:#1e3a8a;border-radius:8px;padding:4px 8px;font-weight:800;cursor:pointer;min-width:30px;font-size:12px}
     .movement-sev-btn.active{background:#1d4ed8;color:#fff;border-color:#1d4ed8}
     .movement-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
     .movement-details{margin-top:12px;border-top:1px dashed #e2e8f0;padding-top:12px}
     .movement-details.is-hidden{display:none}
-    .movement-grid,.temp-grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+    .movement-collapse{margin-top:10px}
+    .movement-collapse-toggle{border:1px dashed #cbd5f5;background:#fff;color:#1e3a8a;border-radius:8px;padding:4px 8px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-size:12.5px}
+    .movement-collapse-toggle .movement-toggle-hint{font-weight:700;font-size:12px;color:#64748b}
+    .movement-collapse-body{margin-top:8px}
+    .movement-collapse-body.is-hidden{display:none}
+    .movement-chip.is-toggle{cursor:pointer;border-style:dashed}
+    .movement-chip.active{background:#1d4ed8;color:#fff;border-color:#1d4ed8}
+    .adl-activity-list{display:grid;gap:8px}
+    .adl-activity-group{border:1px dashed #e2e8f0;border-radius:10px;padding:8px;background:#fff}
+    .movement-grid,.temp-grid{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
     .movement-inline-input,.temp-inline-input{display:flex;gap:8px;align-items:center}
     .movement-inline-input input[type="text"],.temp-inline-input input[type="text"]{flex:1}
     .yn-pill-group{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
-    .yn-pill{display:inline-flex;align-items:center;gap:6px;border:1px solid #d1d5db;border-radius:999px;padding:6px 10px;background:#fff;font-weight:700}
+    .yn-pill{display:inline-flex;align-items:center;gap:6px;border:1px solid #d1d5db;border-radius:999px;padding:4px 8px;background:#fff;font-weight:700;font-size:12.5px}
     .yn-pill input{width:auto}
   </style>
 </head>
@@ -152,13 +161,13 @@
             <label>Appears in good health?
               <div class="yn-pill-group" role="group" aria-label="Appears in good health">
                 <label class="yn-pill"><input type="radio" name="appears_good_health" value="Yes"> Yes</label>
-                <label class="yn-pill"><input type="radio" name="appears_good_health" value="No"> No</label>
+                <label class="yn-pill"><input type="radio" name="appears_good_health" value="No" checked> No</label>
               </div>
             </label>
             <label>Appears tired?
               <div class="yn-pill-group" role="group" aria-label="Appears tired">
                 <label class="yn-pill"><input type="radio" name="appears_tired" value="Yes"> Yes</label>
-                <label class="yn-pill"><input type="radio" name="appears_tired" value="No"> No</label>
+                <label class="yn-pill"><input type="radio" name="appears_tired" value="No" checked> No</label>
               </div>
             </label>
             <label>Hours of sleep:
@@ -171,7 +180,7 @@
             <label>Woke up during the night?
               <div class="yn-pill-group" role="group" aria-label="Woke up during the night">
                 <label class="yn-pill"><input type="radio" name="night_wake_flag" id="night_wake_flag_yes" value="Yes"> Yes</label>
-                <label class="yn-pill"><input type="radio" name="night_wake_flag" id="night_wake_flag_no" value="No"> No</label>
+                <label class="yn-pill"><input type="radio" name="night_wake_flag" id="night_wake_flag_no" value="No" checked> No</label>
               </div>
             </label>
             <label id="nightWakeCountWrap" style="display:none">How many times?
@@ -188,7 +197,7 @@
             <label>Had a BM today?
               <div class="yn-pill-group" role="group" aria-label="Had a BM today">
                 <label class="yn-pill"><input type="radio" name="had_bm" id="had_bm_yes" value="yes"> Yes</label>
-                <label class="yn-pill"><input type="radio" name="had_bm" id="had_bm_no" value="no"> No</label>
+                <label class="yn-pill"><input type="radio" name="had_bm" id="had_bm_no" value="no" checked> No</label>
               </div>
             </label>
             <label for="caregiver_name">Caregiver Name:
@@ -197,7 +206,7 @@
             <label>PRN sleep aid given?
               <div class="yn-pill-group" role="group" aria-label="PRN sleep aid given">
                 <label class="yn-pill"><input type="radio" name="prn_given" id="prn_given_yes" value="yes"> Yes</label>
-                <label class="yn-pill"><input type="radio" name="prn_given" id="prn_given_no" value="no"> No</label>
+                <label class="yn-pill"><input type="radio" name="prn_given" id="prn_given_no" value="no" checked> No</label>
               </div>
             </label>
             <label id="prnNameWrap" style="display:none">PRN sleep aid name:
@@ -208,8 +217,8 @@
           <div class="movement-panel" id="movementSymptomsPanel">
             <div class="movement-head">
               <div>
-                <div class="movement-title">Movement Symptoms <span class="muted">(Tremor / Dyskinesia)</span></div>
-                <p class="movement-desc">Track unusual movements, shaking, grimacing, or repetitive motions.</p>
+                <div class="movement-title">Movement / Tics / Vocalizations <span class="muted">(Tremor / Dyskinesia)</span></div>
+                <p class="movement-desc">Track unusual movements, shaking, vocalizations, grimacing, or repetitive motions.</p>
               </div>
             </div>
 
@@ -227,6 +236,7 @@
                     <label class="movement-chip"><input type="radio" name="movement_main_type" value="hands_shaking">Hands shaking</label>
                     <label class="movement-chip"><input type="radio" name="movement_main_type" value="face_mouth">Face / mouth</label>
                     <label class="movement-chip"><input type="radio" name="movement_main_type" value="arms_legs">Arms / legs</label>
+                    <label class="movement-chip"><input type="radio" name="movement_main_type" value="vocalizations">Vocalizations</label>
                     <label class="movement-chip"><input type="radio" name="movement_main_type" value="other">Other</label>
                   </div>
                 </div>
@@ -249,7 +259,6 @@
                   <div class="movement-chips">
                     <label class="movement-chip"><input type="checkbox" data-movement-time value="AM">AM</label>
                     <label class="movement-chip"><input type="checkbox" data-movement-time value="PM">PM</label>
-                    <label class="movement-chip"><input type="checkbox" data-movement-time value="Overnight">Overnight</label>
                   </div>
                   <input type="hidden" name="movement_times" id="movement_times" value=""/>
                 </div>
@@ -276,6 +285,7 @@
                   <label class="movement-chip"><input type="checkbox" data-movement-body value="arms_jerks">Arms jerks / “air punching”</label>
                   <label class="movement-chip"><input type="checkbox" data-movement-body value="legs_feet">Legs / feet tapping / kicking</label>
                   <label class="movement-chip"><input type="checkbox" data-movement-body value="neck_trunk">Neck / trunk movements</label>
+                  <label class="movement-chip"><input type="checkbox" data-movement-body value="vocalizations">Vocalizations / humming / tics</label>
                   <label class="movement-chip"><input type="checkbox" data-movement-body value="other_movement">Other movement</label>
                 </div>
                 <div class="movement-inline-input" style="margin-top:8px">
@@ -295,21 +305,29 @@
 
                 <div class="soft" style="margin:12px 0"></div>
 
-                <div class="movement-label">Triggers</div>
-                <div class="movement-grid">
-                  <label class="movement-chip"><input type="checkbox" data-movement-trigger value="stress">Stress / anxiety</label>
-                  <label class="movement-chip"><input type="checkbox" data-movement-trigger value="around_meds">Around meds</label>
-                  <label class="movement-chip"><input type="checkbox" data-movement-trigger value="tired_sleep">Tired / poor sleep</label>
-                  <label class="movement-chip"><input type="checkbox" data-movement-trigger value="before_eating">Before eating</label>
-                  <label class="movement-chip"><input type="checkbox" data-movement-trigger value="after_eating">After eating</label>
-                  <label class="movement-chip"><input type="checkbox" data-movement-trigger value="excitement">Excited / overstimulated</label>
-                  <label class="movement-chip"><input type="checkbox" data-movement-trigger value="unknown">Unknown</label>
-                  <label class="movement-chip"><input type="checkbox" data-movement-trigger value="other">Other</label>
+                <div class="movement-label">Known triggers?</div>
+                <div class="movement-chips" data-known-triggers>
+                  <button class="movement-chip is-toggle active" type="button" data-known-trigger="no" aria-pressed="true">No</button>
+                  <button class="movement-chip is-toggle" type="button" data-known-trigger="yes" aria-pressed="false">Yes</button>
                 </div>
-                <div class="movement-inline-input" style="margin-top:8px">
-                  <input type="text" name="movement_trigger_other" id="movement_trigger_other" placeholder="Other trigger (optional)"/>
+
+                <div class="movement-collapse-body is-hidden" id="movementTriggersBody">
+                  <div class="movement-label" style="margin-top:10px">Triggers</div>
+                  <div class="movement-grid">
+                    <label class="movement-chip"><input type="checkbox" data-movement-trigger value="stress">Stress / anxiety</label>
+                    <label class="movement-chip"><input type="checkbox" data-movement-trigger value="around_meds">Around meds</label>
+                    <label class="movement-chip"><input type="checkbox" data-movement-trigger value="tired_sleep">Tired / poor sleep</label>
+                    <label class="movement-chip"><input type="checkbox" data-movement-trigger value="before_eating">Before eating</label>
+                    <label class="movement-chip"><input type="checkbox" data-movement-trigger value="after_eating">After eating</label>
+                    <label class="movement-chip"><input type="checkbox" data-movement-trigger value="excitement">Excited / overstimulated</label>
+                    <label class="movement-chip"><input type="checkbox" data-movement-trigger value="unknown">Unknown</label>
+                    <label class="movement-chip"><input type="checkbox" data-movement-trigger value="other">Other</label>
+                  </div>
+                  <div class="movement-inline-input" style="margin-top:8px">
+                    <input type="text" name="movement_trigger_other" id="movement_trigger_other" placeholder="Other trigger (optional)"/>
+                  </div>
+                  <input type="hidden" name="movement_triggers" id="movement_triggers" value=""/>
                 </div>
-                <input type="hidden" name="movement_triggers" id="movement_triggers" value=""/>
 
                 <div class="soft" style="margin:12px 0"></div>
 
@@ -322,9 +340,15 @@
                     </div>
                     <input type="text" name="movement_interfered_notes" placeholder="Notes (optional)" />
                   </div>
-                  <div>
-                    <div class="movement-label">Awareness</div>
-                    <div class="movement-chips">
+                </div>
+
+                <div class="movement-collapse" style="margin-top:10px">
+                  <button class="movement-collapse-toggle" type="button" id="movementAwarenessToggle" aria-expanded="false" aria-controls="movementAwarenessBody">
+                    Awareness (optional)
+                    <span class="movement-toggle-hint">Show</span>
+                  </button>
+                  <div class="movement-collapse-body is-hidden" id="movementAwarenessBody">
+                    <div class="movement-chips" style="margin-top:8px">
                       <label class="movement-chip"><input type="radio" name="movement_awareness" value="unaware">Unaware</label>
                       <label class="movement-chip"><input type="radio" name="movement_awareness" value="aware_not_bothered">Aware not bothered</label>
                       <label class="movement-chip"><input type="radio" name="movement_awareness" value="aware_bothered">Aware bothered</label>
@@ -443,7 +467,10 @@
           <div class="section-title">Behavioral Observations</div>
           <div class="row cols-3 compact">
             <label>Did the individual display any aggression?
-              <select name="aggression_flag" id="aggression_flag" class="yn"><option value="">Select</option><option>No</option><option>Yes</option></select>
+              <div class="yn-pill-group" role="group" aria-label="Aggression observed">
+                <label class="yn-pill"><input type="radio" name="aggression_flag" value="Yes"> Yes</label>
+                <label class="yn-pill"><input type="radio" name="aggression_flag" value="No" checked> No</label>
+              </div>
             </label>
             <div id="aggressionDetails" class="row cols-3 compact" style="margin:0">
               <label>Aggression type:
@@ -465,7 +492,7 @@
             <label>PRN given for aggression?
               <div class="yn-pill-group" role="group" aria-label="PRN given for aggression">
                 <label class="yn-pill"><input type="radio" name="prn_aggression_given" id="prn_aggression_given_yes" value="yes"> Yes</label>
-                <label class="yn-pill"><input type="radio" name="prn_aggression_given" id="prn_aggression_given_no" value="no"> No</label>
+                <label class="yn-pill"><input type="radio" name="prn_aggression_given" id="prn_aggression_given_no" value="no" checked> No</label>
               </div>
             </label>
             <label id="prnAggressionNameWrap" style="display:none">PRN name (aggression):
@@ -479,29 +506,26 @@
           <div class="subcap">Mania, focus, appetite</div>
           <div class="row cols-3 compact">
             <label>Did Ben seem manic?
-              <select name="manic_flag" id="manic_flag" class="yn">
-                <option value="">Select</option>
-                <option>No</option>
-                <option>Yes</option>
-              </select>
+              <div class="yn-pill-group" role="group" aria-label="Seemed manic">
+                <label class="yn-pill"><input type="radio" name="manic_flag" value="Yes"> Yes</label>
+                <label class="yn-pill"><input type="radio" name="manic_flag" value="No" checked> No</label>
+              </div>
             </label>
-            <label>Mania intensity (0–5):
+            <label id="maniaIntensityWrap">Mania intensity (0–5):
               <input type="range" min="0" max="5" step="1" value="0" name="manic_intensity" id="manic_intensity" disabled/>
               <div class="savedAt"><span id="manicIntensityVal">0</span></div>
             </label>
             <label>Trouble focusing?
-              <select name="focus_trouble_flag" id="focus_trouble_flag" class="yn">
-                <option value="">Select</option>
-                <option>No</option>
-                <option>Yes</option>
-              </select>
+              <div class="yn-pill-group" role="group" aria-label="Trouble focusing">
+                <label class="yn-pill"><input type="radio" name="focus_trouble_flag" value="Yes"> Yes</label>
+                <label class="yn-pill"><input type="radio" name="focus_trouble_flag" value="No" checked> No</label>
+              </div>
             </label>
             <label>Change in appetite?
-              <select name="appetite_change_flag" id="appetite_change_flag" class="yn">
-                <option value="">Select</option>
-                <option>No</option>
-                <option>Yes</option>
-              </select>
+              <div class="yn-pill-group" role="group" aria-label="Change in appetite">
+                <label class="yn-pill"><input type="radio" name="appetite_change_flag" value="Yes"> Yes</label>
+                <label class="yn-pill"><input type="radio" name="appetite_change_flag" value="No" checked> No</label>
+              </div>
             </label>
             <label id="appetiteNotesWrap" style="display:none">Appetite notes:
               <input type="text" name="appetite_notes" placeholder="e.g., ate much less than usual"/>
@@ -511,7 +535,7 @@
             <label>PRN given for mania?
               <div class="yn-pill-group" role="group" aria-label="PRN given for mania">
                 <label class="yn-pill"><input type="radio" name="prn_mania_given" id="prn_mania_given_yes" value="yes"> Yes</label>
-                <label class="yn-pill"><input type="radio" name="prn_mania_given" id="prn_mania_given_no" value="no"> No</label>
+                <label class="yn-pill"><input type="radio" name="prn_mania_given" id="prn_mania_given_no" value="no" checked> No</label>
               </div>
             </label>
             <label id="prnManiaNameWrap" style="display:none">PRN name (mania):
@@ -524,7 +548,10 @@
           <div class="subcap">Anomalies <span class="muted">(unexpected behaviors, mood shifts, or unusual reactions)</span></div>
           <div class="row cols-2">
             <label>Noticed anything unusual?
-              <select name="behavior_anomaly_flag" id="behavior_anomaly_flag" class="yn"><option value="">Select</option><option>No</option><option>Yes</option></select>
+              <div class="yn-pill-group" role="group" aria-label="Noticed anything unusual">
+                <label class="yn-pill"><input type="radio" name="behavior_anomaly_flag" value="Yes"> Yes</label>
+                <label class="yn-pill"><input type="radio" name="behavior_anomaly_flag" value="No" checked> No</label>
+              </div>
             </label>
             <label id="anomalyTriggerWrap" style="display:none">Trigger or context:
               <input type="text" name="behavior_anomaly_trigger" placeholder="e.g., loud noise, new staff, schedule change"/>
@@ -549,7 +576,10 @@
           <div class="section-title">Vocational Participation</div>
           <div class="row cols-3 compact">
             <label>Participated in vocational activity?
-              <select name="vocational_participation" id="vocational_participation" class="yn"><option value="">Select</option><option>Yes</option><option>No</option></select>
+              <div class="yn-pill-group" role="group" aria-label="Vocational participation">
+                <label class="yn-pill"><input type="radio" name="vocational_participation" value="Yes"> Yes</label>
+                <label class="yn-pill"><input type="radio" name="vocational_participation" value="No" checked> No</label>
+              </div>
             </label>
             <div id="vocationalDetails" class="row cols-3 compact" style="margin:0;display:none">
               <label>Time in vocational activity:
@@ -577,7 +607,10 @@
           <div class="section-title">Home / Family Community</div>
           <div class="row cols-3 compact">
             <label>Engaged in a home/community activity?
-              <select name="home_activity_flag" id="home_activity_flag" class="yn"><option value="">Select</option><option>Yes</option><option>No</option></select>
+              <div class="yn-pill-group" role="group" aria-label="Home activity">
+                <label class="yn-pill"><input type="radio" name="home_activity_flag" value="Yes"> Yes</label>
+                <label class="yn-pill"><input type="radio" name="home_activity_flag" value="No" checked> No</label>
+              </div>
             </label>
           </div>
           <div id="homeDetails" class="row cols-3 compact" style="display:none">
@@ -592,44 +625,46 @@
             </label>
           </div>
           <div id="homeDetailsNotes" class="row cols-2" style="display:none">
-            <label>Home activity type:
-              <select name="home_activity_type">
-                <option value="">Select type</option>
-                <option>Listen to music with family</option>
-                <option>Movie in living room</option>
-                <option>Played a game</option>
-                <option>Family celebration</option>
-                <option>Meal in the common area</option>
-                <option>Meal at the table with family</option>
-                <option>Other</option>
-              </select>
-            </label>
+            <div>
+              <div class="movement-label">Home activity type</div>
+              <div class="movement-grid">
+                <label class="movement-chip"><input type="checkbox" data-home-type value="Listen to music with family">Listen to music with family</label>
+                <label class="movement-chip"><input type="checkbox" data-home-type value="Movie in living room">Movie in living room</label>
+                <label class="movement-chip"><input type="checkbox" data-home-type value="Played a game">Played a game</label>
+                <label class="movement-chip"><input type="checkbox" data-home-type value="Family celebration">Family celebration</label>
+                <label class="movement-chip"><input type="checkbox" data-home-type value="Meal in the common area">Meal in the common area</label>
+                <label class="movement-chip"><input type="checkbox" data-home-type value="Meal at the table with family">Meal at the table with family</label>
+                <label class="movement-chip"><input type="checkbox" data-home-type value="Other">Other</label>
+              </div>
+              <input type="hidden" name="home_activity_type" id="home_activity_type" value=""/>
+            </div>
             <label>Home activity note:<input type="text" name="home_activity_note" placeholder="e.g., hosted grandma for dinner"/></label>
           </div>
           <div class="row cols-2 is-dad-only" id="dadPetsSection">
             <label>Pet interaction?
-              <select name="pet_interaction_flag" class="yn">
-                <option value="">Select</option>
-                <option>Yes</option>
-                <option>No</option>
-              </select>
+              <div class="yn-pill-group" role="group" aria-label="Pet interaction">
+                <label class="yn-pill"><input type="radio" name="pet_interaction_flag" value="Yes"> Yes</label>
+                <label class="yn-pill"><input type="radio" name="pet_interaction_flag" value="No" checked> No</label>
+              </div>
             </label>
-            <label>Pet activity type:
-              <select name="pet_activity_type">
-                <option value="">Select type</option>
-                <option>Fed cat(s)</option>
-                <option>Fed dog</option>
-                <option>Refilled water bowls</option>
-                <option>Grooming / brushing</option>
-                <option>Played with pet(s)</option>
-                <option>Walked dog</option>
-                <option>Cleaned litter box</option>
-                <option>Training / commands</option>
-                <option>Other</option>
-              </select>
-            </label>
-            <label>Pet activity note:<input type="text" name="pet_activity_note" placeholder="e.g., brushed the dog for 10 minutes"/></label>
-            <label>Pet interaction notes:<textarea name="pet_activity_notes" placeholder="Care or interaction details."></textarea></label>
+            <div id="petDetails" class="row cols-2" style="margin:0;display:none">
+              <label>Pet activity type:
+                <select name="pet_activity_type">
+                  <option value="">Select type</option>
+                  <option>Fed cat(s)</option>
+                  <option>Fed dog</option>
+                  <option>Refilled water bowls</option>
+                  <option>Grooming / brushing</option>
+                  <option>Played with pet(s)</option>
+                  <option>Walked dog</option>
+                  <option>Cleaned litter box</option>
+                  <option>Training / commands</option>
+                  <option>Other</option>
+                </select>
+              </label>
+              <label>Pet activity note:<input type="text" name="pet_activity_note" placeholder="e.g., brushed the dog for 10 minutes"/></label>
+              <label>Pet interaction notes:<textarea name="pet_activity_notes" placeholder="Care or interaction details."></textarea></label>
+            </div>
           </div>
           <label id="homeNotesWrap" style="display:none">Home / family notes:<textarea name="home_notes" placeholder="Interactions, meals, visitors, or notable moments at home."></textarea></label>
           <div class="controls">
@@ -650,7 +685,10 @@
           <div class="subcap">Community at large</div>
           <div class="row cols-3 compact">
             <label>Engaged in a community-at-large activity?
-              <select name="public_activity_flag" id="public_activity_flag" class="yn"><option value="">Select</option><option>Yes</option><option>No</option></select>
+              <div class="yn-pill-group" role="group" aria-label="Community activity">
+                <label class="yn-pill"><input type="radio" name="public_activity_flag" value="Yes"> Yes</label>
+                <label class="yn-pill"><input type="radio" name="public_activity_flag" value="No" checked> No</label>
+              </div>
             </label>
           </div>
           <div id="publicDetails" class="row cols-3 compact" style="display:none">
@@ -665,44 +703,57 @@
             </label>
           </div>
           <div id="publicDetailsNotes" class="row cols-2" style="display:none">
-            <label>Community activity type:
-              <select name="public_activity_type">
-                <option value="">Select type</option>
-                <option>Shopping – grocery/retail</option>
-                <option>Library</option>
-                <option>Museum</option>
-                <option>Park/Playground</option>
-                <option>Restaurant/Café</option>
-                <option>Public transit practice</option>
-                <option>Recreation center / gym</option>
-                <option>Sports event</option>
-                <option>Volunteer shift</option>
-                <option>Class / lesson</option>
-                <option>Walk / Stroll</option>
-                <option>Went to store</option>
-                <option>Went to recycling</option>
-                <option>Other</option>
-              </select>
-            </label>
+            <div>
+              <div class="movement-label">Community activity type</div>
+              <div class="movement-grid">
+                <label class="movement-chip"><input type="checkbox" data-public-type value="Shopping – grocery/retail">Shopping – grocery/retail</label>
+                <label class="movement-chip"><input type="checkbox" data-public-type value="Library">Library</label>
+                <label class="movement-chip"><input type="checkbox" data-public-type value="Museum">Museum</label>
+                <label class="movement-chip"><input type="checkbox" data-public-type value="Park/Playground">Park/Playground</label>
+                <label class="movement-chip"><input type="checkbox" data-public-type value="Restaurant/Café">Restaurant/Café</label>
+                <label class="movement-chip"><input type="checkbox" data-public-type value="Public transit practice">Public transit practice</label>
+                <label class="movement-chip"><input type="checkbox" data-public-type value="Recreation center / gym">Recreation center / gym</label>
+                <label class="movement-chip"><input type="checkbox" data-public-type value="Sports event">Sports event</label>
+                <label class="movement-chip"><input type="checkbox" data-public-type value="Volunteer shift">Volunteer shift</label>
+                <label class="movement-chip"><input type="checkbox" data-public-type value="Class / lesson">Class / lesson</label>
+                <label class="movement-chip"><input type="checkbox" data-public-type value="Walk / Stroll">Walk / Stroll</label>
+                <label class="movement-chip"><input type="checkbox" data-public-type value="Went to store">Went to store</label>
+                <label class="movement-chip"><input type="checkbox" data-public-type value="Went to recycling">Went to recycling</label>
+                <label class="movement-chip"><input type="checkbox" data-public-type value="Other">Other</label>
+              </div>
+              <input type="hidden" name="public_activity_type" id="public_activity_type" value=""/>
+            </div>
             <label>Community activity note:<input type="text" name="public_activity_note" placeholder="e.g., went to library, checked out 2 books"/></label>
           </div>
           <hr class="soft"/>
           <div class="subcap">Interactions</div>
           <div class="row cols-3 compact">
             <label>Engaged with a community member appropriately?
-              <select name="community_interaction_ok" id="community_interaction_ok" class="yn"><option value="">Select</option><option>Yes</option><option>No</option></select>
+              <div class="yn-pill-group" role="group" aria-label="Community interaction ok">
+                <label class="yn-pill"><input type="radio" name="community_interaction_ok" value="Yes"> Yes</label>
+                <label class="yn-pill"><input type="radio" name="community_interaction_ok" value="No" checked> No</label>
+              </div>
             </label>
           </div>
           <div id="interactionDetails" class="row cols-3 compact" style="display:none">
-            <label>Interaction type:
-              <select name="interaction_type">
-                <option value="">Select type</option>
-                <option>Greeting</option><option>Compliment</option>
-                <option>Introduced self/family</option><option>Asked a question</option><option>Shared space respectfully</option>
-                <option>Small talk</option><option>Requested help</option><option>Offered help</option>
-                <option>Conflict resolution</option><option>Used AAC appropriately</option><option>Maintained eye contact</option><option>Other</option>
-              </select>
-            </label>
+            <div>
+              <div class="movement-label">Interaction type</div>
+              <div class="movement-grid">
+                <label class="movement-chip"><input type="checkbox" data-interaction-type value="Greeting">Greeting</label>
+                <label class="movement-chip"><input type="checkbox" data-interaction-type value="Compliment">Compliment</label>
+                <label class="movement-chip"><input type="checkbox" data-interaction-type value="Introduced self/family">Introduced self/family</label>
+                <label class="movement-chip"><input type="checkbox" data-interaction-type value="Asked a question">Asked a question</label>
+                <label class="movement-chip"><input type="checkbox" data-interaction-type value="Shared space respectfully">Shared space respectfully</label>
+                <label class="movement-chip"><input type="checkbox" data-interaction-type value="Small talk">Small talk</label>
+                <label class="movement-chip"><input type="checkbox" data-interaction-type value="Requested help">Requested help</label>
+                <label class="movement-chip"><input type="checkbox" data-interaction-type value="Offered help">Offered help</label>
+                <label class="movement-chip"><input type="checkbox" data-interaction-type value="Conflict resolution">Conflict resolution</label>
+                <label class="movement-chip"><input type="checkbox" data-interaction-type value="Used AAC appropriately">Used AAC appropriately</label>
+                <label class="movement-chip"><input type="checkbox" data-interaction-type value="Maintained eye contact">Maintained eye contact</label>
+                <label class="movement-chip"><input type="checkbox" data-interaction-type value="Other">Other</label>
+              </div>
+              <input type="hidden" name="interaction_type" id="interaction_type" value=""/>
+            </div>
             <label>Prompting (interaction):
               <select name="interaction_prompting" data-scale="prompting"></select>
             </label>
@@ -723,19 +774,16 @@
         <fieldset class="panel">
           <div class="section-title">Daily Living Activities</div>
           <div class="row cols-2">
-            <label>ADL category:
-              <select name="adl_category" id="adl_category">
-                <option value="">Select category</option>
-                <option>Hygiene / Toileting</option>
-                <option>Dressing / Grooming</option>
-                <option>Cleaning / Household</option>
-                <option>Cooking / Food</option>
-                <option>Community / Errands</option>
-              </select>
-            </label>
-            <label>ADL activity:
-              <select name="adl_activity" id="adl_activity"><option value="">Select activity</option></select>
-            </label>
+            <div>
+              <div class="movement-label">ADL categories</div>
+              <div class="movement-chips" id="adlCategoryChips"></div>
+              <input type="hidden" name="adl_category" id="adl_category" value=""/>
+            </div>
+            <div>
+              <div class="movement-label">ADL activities</div>
+              <div class="adl-activity-list" id="adlActivityChips"></div>
+              <input type="hidden" name="adl_activity" id="adl_activity" value=""/>
+            </div>
           </div>
           <div class="row cols-2">
             <label>ADL note:<input type="text" name="adl_note" id="adl_note" placeholder="e.g., wiped table and brought dishes to sink"/></label>
@@ -796,7 +844,9 @@
   let plannerTrackerStats = null;
       let adlStepIndex = -1;
       let movementStepIndex = -1;
-  let adlCategory, adlActivity, adlNoteInput, adlPromptingSelect, adlEntryListEl, addAdlEntryBtn, adlEntriesField;
+  let adlCategoryWrap, adlActivityWrap, adlCategoryInput, adlActivityInput;
+  let adlNoteInput, adlPromptingSelect, adlEntryListEl, addAdlEntryBtn, adlEntriesField;
+  let homeActivityTypeInput, publicActivityTypeInput, interactionTypeInput;
   let adlEntries = [];
   let adlHandlersBound = false;
   const todayISO = () => new Date().toISOString().slice(0,10);
@@ -904,6 +954,19 @@
     } catch {
       return [];
     }
+  };
+  const parseMultiValue = (value) => {
+    if (!value) return [];
+    if (Array.isArray(value)) return value.filter(Boolean);
+    if (typeof value === 'string') {
+      try {
+        const parsed = JSON.parse(value);
+        if (Array.isArray(parsed)) return parsed.filter(Boolean);
+      } catch {}
+      const trimmed = value.trim();
+      return trimmed ? [trimmed] : [];
+    }
+    return [];
   };
 
   function summarizePlannerDays(days = []){
@@ -1156,6 +1219,31 @@
     movementEls.severityInput.dispatchEvent(new Event('input', { bubbles: true }));
   };
 
+  const setKnownTriggers = (known) => {
+    movementEls.knownTriggerButtons?.forEach((btn) => {
+      const isYes = btn.dataset.knownTrigger === 'yes';
+      const active = known ? isYes : !isYes;
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+    movementEls.triggersBody?.classList.toggle('is-hidden', !known);
+    if (!known) {
+      setMovementCheckboxValues('[data-movement-trigger]', []);
+      if (movementEls.triggersInput) movementEls.triggersInput.value = '';
+      const other = document.getElementById('movement_trigger_other');
+      if (other) other.value = '';
+      syncMovementArrays();
+    }
+  };
+
+  const setAwarenessExpanded = (expanded) => {
+    if (!movementEls.awarenessBody || !movementEls.awarenessToggle) return;
+    movementEls.awarenessBody.classList.toggle('is-hidden', !expanded);
+    movementEls.awarenessToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    const hint = movementEls.awarenessToggle.querySelector('.movement-toggle-hint');
+    if (hint) hint.textContent = expanded ? 'Hide' : 'Show';
+  };
+
   const syncMovementArrays = () => {
     const times = getMovementCheckboxValues('[data-movement-time]');
     const bodyMap = getMovementCheckboxValues('[data-movement-body]');
@@ -1163,6 +1251,24 @@
     syncMovementHiddenField(movementEls.timesInput, times);
     syncMovementHiddenField(movementEls.bodyMapInput, bodyMap);
     syncMovementHiddenField(movementEls.triggersInput, triggers);
+  };
+
+  const getMultiCheckboxValues = (selector) =>
+    Array.from(document.querySelectorAll(selector))
+      .filter((el) => el.checked)
+      .map((el) => el.value);
+
+  const setMultiCheckboxValues = (selector, values = []) => {
+    const set = new Set(values || []);
+    document.querySelectorAll(selector).forEach((el) => {
+      el.checked = set.has(el.value);
+    });
+  };
+
+  const syncMultiHiddenField = (hiddenEl, values) => {
+    if (!hiddenEl) return;
+    hiddenEl.value = values.length ? JSON.stringify(values) : '';
+    hiddenEl.dispatchEvent(new Event('input', { bubbles: true }));
   };
 
   const getTempCheckboxValues = (selector) =>
@@ -1236,6 +1342,8 @@
       .forEach((name) => {
         document.querySelectorAll(`input[name="${name}"]`).forEach((el) => (el.checked = false));
       });
+    setKnownTriggers(false);
+    setAwarenessExpanded(false);
     syncMovementArrays();
   };
 
@@ -1276,6 +1384,8 @@
     if (movementEls.timesInput) movementEls.timesInput.value = times.length ? JSON.stringify(times) : '';
     if (movementEls.bodyMapInput) movementEls.bodyMapInput.value = bodyMap.length ? JSON.stringify(bodyMap) : '';
     if (movementEls.triggersInput) movementEls.triggersInput.value = triggers.length ? JSON.stringify(triggers) : '';
+    const hasKnownTriggers = triggers.length > 0 || !!data.movement_trigger_other;
+    setKnownTriggers(hasKnownTriggers);
 
     const simpleFields = [
       ['movement_notes', data.movement_notes],
@@ -1296,6 +1406,7 @@
           el.checked = el.value === val;
         });
       });
+    setAwarenessExpanded(!!data.movement_awareness);
     syncMovementArrays();
   };
 
@@ -1323,6 +1434,31 @@
     setTempCheckboxValues('[data-temp-symptom]', symptoms);
     if (tempEls.symptomsInput) tempEls.symptomsInput.value = symptoms.length ? JSON.stringify(symptoms) : '';
     syncTempArrays();
+  };
+
+  const hydrateHomeCommunityFromData = (data = {}) => {
+    const homeTypes = parseMultiValue(data.home_activity_type);
+    const publicTypes = parseMultiValue(data.public_activity_type);
+    const interactionTypes = parseMultiValue(data.interaction_type);
+    setMultiCheckboxValues('[data-home-type]', homeTypes);
+    setMultiCheckboxValues('[data-public-type]', publicTypes);
+    setMultiCheckboxValues('[data-interaction-type]', interactionTypes);
+    syncMultiHiddenField(homeActivityTypeInput, homeTypes);
+    syncMultiHiddenField(publicActivityTypeInput, publicTypes);
+    syncMultiHiddenField(interactionTypeInput, interactionTypes);
+  };
+
+  const clearHomeCommunityAdlFields = () => {
+    setMultiCheckboxValues('[data-home-type]', []);
+    setMultiCheckboxValues('[data-public-type]', []);
+    setMultiCheckboxValues('[data-interaction-type]', []);
+    setMultiCheckboxValues('[data-adl-category]', []);
+    setMultiCheckboxValues('[data-adl-activity]', []);
+    syncMultiHiddenField(homeActivityTypeInput, []);
+    syncMultiHiddenField(publicActivityTypeInput, []);
+    syncMultiHiddenField(interactionTypeInput, []);
+    if (adlCategoryInput) adlCategoryInput.value = '';
+    if (adlActivityInput) adlActivityInput.value = '';
   };
 
   // 4) Start logic once DOM is ready
@@ -1354,6 +1490,10 @@
       timesInput: document.getElementById('movement_times'),
       bodyMapInput: document.getElementById('movement_body_map'),
       triggersInput: document.getElementById('movement_triggers'),
+      triggersBody: document.getElementById('movementTriggersBody'),
+      knownTriggerButtons: Array.from(document.querySelectorAll('[data-known-trigger]')),
+      awarenessToggle: document.getElementById('movementAwarenessToggle'),
+      awarenessBody: document.getElementById('movementAwarenessBody'),
       detailsToggle: document.getElementById('movementDetailsToggle'),
       detailsPanel: document.getElementById('movementDetails'),
       sameBtn: document.getElementById('movementSameBtn')
@@ -1362,6 +1502,9 @@
       bodyWrap: document.querySelector('[data-temp-body-wrap]'),
       symptomsInput: document.getElementById('temp_symptoms')
     };
+    homeActivityTypeInput = document.getElementById('home_activity_type');
+    publicActivityTypeInput = document.getElementById('public_activity_type');
+    interactionTypeInput = document.getElementById('interaction_type');
     if (entryDateInput && !entryDateInput.value) {
       entryDateInput.value = todayISO();
     }
@@ -1373,6 +1516,10 @@
     loadFocusSummary();
     syncMovementArrays();
     syncTempArrays();
+    syncHomeActivityTypes();
+    syncPublicActivityTypes();
+    syncInteractionTypes();
+    syncAdlMultiFields({ silent: true });
     const movementCached = localStorage.getItem(MOVEMENT_LAST_KEY);
     if (movementEls.sameBtn) {
       movementEls.sameBtn.disabled = !movementCached;
@@ -1422,9 +1569,28 @@
     movementEls.severityButtons?.forEach((btn) => {
       btn.addEventListener('click', () => setMovementSeverity(btn.dataset.sev));
     });
+    movementEls.knownTriggerButtons?.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        setKnownTriggers(btn.dataset.knownTrigger === 'yes');
+        save(steps[movementStepIndex], movementStepIndex, true);
+      });
+    });
+    movementEls.awarenessToggle?.addEventListener('click', () => {
+      const isHidden = movementEls.awarenessBody?.classList.contains('is-hidden');
+      setAwarenessExpanded(isHidden);
+    });
     document.addEventListener('change', (event) => {
       if (event.target?.matches('[data-movement-time],[data-movement-body],[data-movement-trigger]')) {
         syncMovementArrays();
+      }
+      if (event.target?.matches('[data-home-type]')) {
+        syncHomeActivityTypes();
+      }
+      if (event.target?.matches('[data-public-type]')) {
+        syncPublicActivityTypes();
+      }
+      if (event.target?.matches('[data-interaction-type]')) {
+        syncInteractionTypes();
       }
       if (event.target?.matches('[data-temp-symptom]')) {
         syncTempArrays();
@@ -1492,15 +1658,24 @@
     go(0);
     applyConditionalSections();
 
-    ['behavior_anomaly_flag','vocational_participation','home_activity_flag','public_activity_flag','community_interaction_ok']
-      .forEach((id) => {
-        const sel = document.getElementById(id);
-        sel?.addEventListener('change', () => {
-          applyConditionalSections();
-        });
-      });
+    const ynFields = [
+      'behavior_anomaly_flag',
+      'vocational_participation',
+      'home_activity_flag',
+      'public_activity_flag',
+      'community_interaction_ok',
+      'aggression_flag',
+      'manic_flag',
+      'focus_trouble_flag',
+      'appetite_change_flag',
+      'pet_interaction_flag'
+    ];
     document.addEventListener('change', (event) => {
       if (event.target?.matches('input[name="prn_given"],input[name="prn_aggression_given"],input[name="prn_mania_given"],input[name="night_wake_flag"]')) {
+        applyConditionalSections();
+        return;
+      }
+      if (event.target?.matches(ynFields.map((name) => `input[name="${name}"]`).join(','))) {
         applyConditionalSections();
       }
     });
@@ -1517,6 +1692,13 @@
       : null;
   };
 
+  const getYnValue = (field) => {
+    const sel = document.getElementById(field);
+    if (sel && sel.tagName === 'SELECT') return sel.value;
+    const checked = document.querySelector(`input[name="${field}"]:checked`);
+    return checked ? checked.value : '';
+  };
+
 
 
  
@@ -1531,13 +1713,12 @@
     }
 
     // Aggression enable/disable
-    const flag = document.getElementById('aggression_flag');
     const aType = document.getElementById('aggression_type');
     const aInt  = document.getElementById('aggression_intensity');
     const aggressionDetails = document.getElementById('aggressionDetails');
     const aggressionNotesWrap = document.getElementById('aggressionNotesWrap');
     function syncAggressionControls(){
-      const yes = flag?.value === 'Yes';
+      const yes = getYnValue('aggression_flag') === 'Yes';
       [aType,aInt].forEach(el=>el && (el.disabled=!yes));
       if(!yes){ if(aType) aType.value=''; if(aInt){ aInt.value=0; const iv=document.getElementById('intensityVal'); if(iv) iv.textContent='0'; } }
       if (aggressionDetails) aggressionDetails.style.display = yes ? '' : 'none';
@@ -1552,37 +1733,40 @@
         if (time) time.value = '';
       }
     }
-    flag?.addEventListener('change', syncAggressionControls);
-
     // Mania enable/disable
-    const manicFlag = document.getElementById('manic_flag');
     const manicInt  = document.getElementById('manic_intensity');
-    const appetiteFlag = document.getElementById('appetite_change_flag');
     const appetiteNotesWrap = document.getElementById('appetiteNotesWrap');
+    const maniaIntensityWrap = document.getElementById('maniaIntensityWrap');
     function syncManiaControls(){
-      const yes = manicFlag?.value === 'Yes';
+      const yes = getYnValue('manic_flag') === 'Yes';
       if (manicInt) manicInt.disabled = !yes;
+      if (maniaIntensityWrap) maniaIntensityWrap.style.display = yes ? '' : 'none';
       if (!yes && manicInt) {
         manicInt.value = 0;
         const iv = document.getElementById('manicIntensityVal');
         if (iv) iv.textContent = '0';
       }
+      const maniaPrnRow = document.getElementById('maniaPrnRow');
+      if (maniaPrnRow) maniaPrnRow.style.display = yes ? '' : 'none';
+      if (!yes) {
+        document.querySelectorAll('input[name="prn_mania_given"]').forEach((el) => (el.checked = false));
+        const name = document.querySelector('input[name="prn_mania_name"]');
+        const time = document.querySelector('input[name="prn_mania_time"]');
+        if (name) name.value = '';
+        if (time) time.value = '';
+      }
     }
     function syncAppetiteControls(){
-      const yes = appetiteFlag?.value === 'Yes';
+      const yes = getYnValue('appetite_change_flag') === 'Yes';
       if (appetiteNotesWrap) appetiteNotesWrap.style.display = yes ? '' : 'none';
       if (!yes) {
         const input = appetiteNotesWrap?.querySelector('input');
         if (input) input.value = '';
       }
     }
-    manicFlag?.addEventListener('change', syncManiaControls);
-    appetiteFlag?.addEventListener('change', syncAppetiteControls);
 
     const toggleFieldGroup = (selectId, { showWhen = 'Yes', targets = [] } = {}) => {
-      const sel = document.getElementById(selectId);
-      if (!sel) return;
-      const isMatch = sel.value === showWhen;
+      const isMatch = getYnValue(selectId) === showWhen;
       targets.forEach((id) => {
         const el = document.getElementById(id);
         if (el) el.style.display = isMatch ? '' : 'none';
@@ -1613,10 +1797,24 @@
         showWhen: 'Yes',
         targets: ['interactionDetails', 'interactionDetailsNotes']
       });
-      const publicYes = document.getElementById('public_activity_flag')?.value === 'Yes';
-      const interactionYes = document.getElementById('community_interaction_ok')?.value === 'Yes';
+      const publicYes = getYnValue('public_activity_flag') === 'Yes';
+      const interactionYes = getYnValue('community_interaction_ok') === 'Yes';
       const communityNotesWrap = document.getElementById('communityNotesWrap');
       if (communityNotesWrap) communityNotesWrap.style.display = (publicYes || interactionYes) ? '' : 'none';
+      syncAggressionControls();
+      toggleFieldGroup('pet_interaction_flag', {
+        showWhen: 'Yes',
+        targets: ['petDetails']
+      });
+      const petYes = getYnValue('pet_interaction_flag') === 'Yes';
+      if (!petYes) {
+        const petType = document.querySelector('select[name="pet_activity_type"]');
+        const petNote = document.querySelector('input[name="pet_activity_note"]');
+        const petNotes = document.querySelector('textarea[name="pet_activity_notes"]');
+        if (petType) petType.value = '';
+        if (petNote) petNote.value = '';
+        if (petNotes) petNotes.value = '';
+      }
       syncManiaControls();
       syncAppetiteControls();
       const nightWakeFlagYes = document.getElementById('night_wake_flag_yes');
@@ -1668,10 +1866,87 @@
       'Cooking / Food': ['Prepared snack','Prepared drink','Made sandwich','Helped cook','Used microwave','Helped bake'],
       'Community / Errands': ['Brought trash out','Sorted recycling','Carried grocery bag']
     };
-    function setAdlActivities(cat){
-      if (!adlActivity) return;
-      const list = ADL_OPTIONS[cat] || [];
-      adlActivity.innerHTML = '<option value="">Select activity</option>' + list.map(x=>`<option>${x}</option>`).join('');
+    const ADL_ACTIVITY_MAP = Object.entries(ADL_OPTIONS).reduce((acc, [cat, items]) => {
+      items.forEach((item) => { acc[item] = cat; });
+      return acc;
+    }, {});
+
+    function syncHomeActivityTypes(){
+      const values = getMultiCheckboxValues('[data-home-type]');
+      syncMultiHiddenField(homeActivityTypeInput, values);
+    }
+
+    function syncPublicActivityTypes(){
+      const values = getMultiCheckboxValues('[data-public-type]');
+      syncMultiHiddenField(publicActivityTypeInput, values);
+    }
+
+    function syncInteractionTypes(){
+      const values = getMultiCheckboxValues('[data-interaction-type]');
+      syncMultiHiddenField(interactionTypeInput, values);
+    }
+
+    function syncAdlMultiFields({ silent } = {}){
+      const categories = getMultiCheckboxValues('[data-adl-category]');
+      const activities = getMultiCheckboxValues('[data-adl-activity]');
+      if (adlCategoryInput) {
+        adlCategoryInput.value = categories.length ? JSON.stringify(categories) : '';
+        if (!silent) adlCategoryInput.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      if (adlActivityInput) {
+        adlActivityInput.value = activities.length ? JSON.stringify(activities) : '';
+        if (!silent) adlActivityInput.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    }
+
+    function renderAdlCategoryChips(){
+      if (!adlCategoryWrap) return;
+      adlCategoryWrap.innerHTML = '';
+      Object.keys(ADL_OPTIONS).forEach((cat) => {
+        const label = document.createElement('label');
+        label.className = 'movement-chip';
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.value = cat;
+        input.setAttribute('data-adl-category', 'true');
+        label.appendChild(input);
+        label.appendChild(document.createTextNode(cat));
+        adlCategoryWrap.appendChild(label);
+      });
+    }
+
+    function renderAdlActivityChips(){
+      if (!adlActivityWrap) return;
+      const selectedActivities = getMultiCheckboxValues('[data-adl-activity]');
+      const selectedCategories = getMultiCheckboxValues('[data-adl-category]');
+      const filterByCategory = selectedCategories.length > 0;
+      adlActivityWrap.innerHTML = '';
+
+      Object.entries(ADL_OPTIONS).forEach(([cat, items]) => {
+        if (filterByCategory && !selectedCategories.includes(cat)) return;
+        const group = document.createElement('div');
+        group.className = 'adl-activity-group';
+        const heading = document.createElement('div');
+        heading.className = 'movement-label';
+        heading.textContent = cat;
+        group.appendChild(heading);
+        const chips = document.createElement('div');
+        chips.className = 'movement-chips';
+        items.forEach((item) => {
+          const label = document.createElement('label');
+          label.className = 'movement-chip';
+          const input = document.createElement('input');
+          input.type = 'checkbox';
+          input.value = item;
+          input.setAttribute('data-adl-activity', 'true');
+          if (selectedActivities.includes(item)) input.checked = true;
+          label.appendChild(input);
+          label.appendChild(document.createTextNode(item));
+          chips.appendChild(label);
+        });
+        group.appendChild(chips);
+        adlActivityWrap.appendChild(group);
+      });
     }
 
     function renderAdlEntries(){
@@ -1739,34 +2014,37 @@
     }
 
     function hydrateAdlFieldsFromData(stepData, { silent } = {}){
-      if (stepData?.adl_category){
-        setAdlActivities(stepData.adl_category);
-        if (adlActivity) adlActivity.value = stepData.adl_activity || '';
-      } else {
-        setAdlActivities('');
-        if (adlActivity) adlActivity.value = '';
-      }
+      const categories = parseMultiValue(stepData?.adl_category);
+      const activities = parseMultiValue(stepData?.adl_activity);
+      setMultiCheckboxValues('[data-adl-category]', categories);
+      renderAdlActivityChips();
+      setMultiCheckboxValues('[data-adl-activity]', activities);
+      syncAdlMultiFields({ silent: true });
       adlEntries = parseAdlEntries(stepData?.adl_entries);
       syncAdlEntriesField({ silent: true });
     }
 
     function addAdlEntry(){
-      const category = adlCategory?.value || '';
-      const activity = adlActivity?.value || '';
+      const categories = getMultiCheckboxValues('[data-adl-category]');
+      const activities = getMultiCheckboxValues('[data-adl-activity]');
       const note = (adlNoteInput?.value || '').trim();
       const prompting = adlPromptingSelect?.value || '';
-      if (!category){
-        alert('Select an ADL category before adding an entry.');
+      if (!activities.length){
+        alert('Select at least one ADL activity before adding an entry.');
         return;
       }
-      adlEntries.push({
-        category,
-        activity,
-        note,
-        prompting
+      activities.forEach((activity) => {
+        const category = ADL_ACTIVITY_MAP[activity] || (categories.length === 1 ? categories[0] : '');
+        adlEntries.push({
+          category,
+          activity,
+          note,
+          prompting
+        });
       });
       syncAdlEntriesField();
-      if (adlActivity) adlActivity.value = '';
+      setMultiCheckboxValues('[data-adl-activity]', []);
+      syncAdlMultiFields();
       if (adlNoteInput) adlNoteInput.value = '';
     }
 
@@ -1780,20 +2058,27 @@
     }
 
     function initAdlControls(){
-      adlCategory = document.getElementById('adl_category');
-      adlActivity = document.getElementById('adl_activity');
+      adlCategoryWrap = document.getElementById('adlCategoryChips');
+      adlActivityWrap = document.getElementById('adlActivityChips');
+      adlCategoryInput = document.getElementById('adl_category');
+      adlActivityInput = document.getElementById('adl_activity');
       adlNoteInput = document.getElementById('adl_note');
       adlPromptingSelect = document.getElementById('prompting_level');
       adlEntryListEl = document.getElementById('adlEntryList');
       addAdlEntryBtn = document.getElementById('addAdlEntry');
       adlEntriesField = document.getElementById('adl_entries');
       if (!adlHandlersBound){
-        adlCategory?.addEventListener('change', e=> setAdlActivities(e.target.value));
+        renderAdlCategoryChips();
+        renderAdlActivityChips();
+        adlCategoryWrap?.addEventListener('change', () => {
+          renderAdlActivityChips();
+          syncAdlMultiFields();
+        });
+        adlActivityWrap?.addEventListener('change', () => syncAdlMultiFields());
         addAdlEntryBtn?.addEventListener('click', addAdlEntry);
         adlEntryListEl?.addEventListener('click', handleAdlRemoval);
         adlHandlersBound = true;
       }
-      setAdlActivities(adlCategory?.value || '');
       if (!adlEntries.length) resetAdlEntries();
       else renderAdlEntries();
     }
@@ -1890,6 +2175,9 @@
         hydrateMovementFromData(draft.data[idx] || {});
         hydrateTempFromData(draft.data[idx] || {});
       }
+      if (step.querySelector('[data-home-type]') || step.querySelector('[data-public-type]')) {
+        hydrateHomeCommunityFromData(draft.data[idx] || {});
+      }
     }
     function loadDraft(){ try{ const raw=localStorage.getItem(DRAFT_KEY); return raw?JSON.parse(raw):null; }catch{ return null; } }
     function updateSavedAt(step,idx){
@@ -1926,7 +2214,6 @@
       const iv=document.getElementById('intensityVal');
       if(iv) iv.textContent='0';
       resetAdlEntries();
-      setAdlActivities('');
       hydratePromptingSelects();
       clearFocusTrackingFields();
       clearMovementFields();
@@ -1934,6 +2221,8 @@
       movementEls.detailsToggle?.setAttribute('aria-expanded', 'false');
       clearTempFields();
       tempEls.bodyWrap?.classList.add('is-collapsed');
+      clearHomeCommunityAdlFields();
+      renderAdlActivityChips();
     }
     function clearDraftUI(){
       draft={ data:{}, savedAt:{} };
@@ -1943,6 +2232,8 @@
       resetAdlEntries();
       clearMovementFields();
       clearTempFields();
+      clearHomeCommunityAdlFields();
+      renderAdlActivityChips();
     }
     function toast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.style.opacity='1'; clearTimeout(el._t); el._t=setTimeout(()=>el.style.opacity='0',1400); }
 
@@ -2039,7 +2330,7 @@
           if (entry?.category) adlCategorySet.add(entry.category);
         });
         if (!adlCategorySet.size && payload.adl_category) {
-          adlCategorySet.add(payload.adl_category);
+          parseMultiValue(payload.adl_category).forEach((cat) => adlCategorySet.add(cat));
         }
         const hygiene = adlCategorySet.has('Hygiene / Toileting');
         const foodPrep = adlCategorySet.has('Cooking / Food');

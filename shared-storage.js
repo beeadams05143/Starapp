@@ -1,7 +1,7 @@
-import { SUPABASE_URL, SUPABASE_ANON_KEY, getSessionFromStorage } from './supabaseClient.js?v=2025.01.09E';
+import { SUPABASE_URL, SUPABASE_ANON_KEY, ensureSession } from './supabaseClient.js?v=2025.01.09E';
 
-function requireSession() {
-  const session = getSessionFromStorage();
+async function requireSession() {
+  const session = await ensureSession();
   if (!session?.access_token || !session?.user?.id) {
     throw new Error('Supabase session required');
   }
@@ -9,7 +9,7 @@ function requireSession() {
 }
 
 async function requestStorage(path, { method = 'GET', headers = {}, body } = {}) {
-  const session = requireSession();
+  const session = await requireSession();
   const mergedHeaders = {
     apikey: SUPABASE_ANON_KEY,
     Authorization: `Bearer ${session.access_token}`,

@@ -266,9 +266,13 @@
     const saveStatus = document.getElementById('saveStatus');
 
     const GROUP_KEY = 'currentGroupId';
+    const OWNER_USER_ID = '87a1e858-0887-48b7-959b-bd272521150a';
+    const OWNER_EMAIL = 'countrygirlinvt@gmail.com';
     const session = getSessionFromStorage();
     const currentUserId = session?.user?.id || null;
-    const currentUserName = () => session?.user?.user_metadata?.full_name || session?.user?.email || 'Caregiver';
+    const currentUserEmail = session?.user?.email || '';
+    const currentUserName = () => session?.user?.user_metadata?.full_name || currentUserEmail || 'Caregiver';
+    const isOwner = () => currentUserId === OWNER_USER_ID || currentUserEmail.toLowerCase() === OWNER_EMAIL;
 
     let pendingFile = null;
     let activeGroupId = null;
@@ -474,10 +478,25 @@
 
       // medications
       const medList = $('medList'); medList.innerHTML = '';
-      medications.forEach((m, i) => {
+      const medDisplay = medications
+        .map((m, i) => ({ ...m, _idx: i }))
+        .sort((a, b) => {
+          const rank = (item) => {
+            const freq = String(item.frequency || '').toLowerCase();
+            const hasAM = /(^|\\b)(am|morning)(\\b|$)/.test(freq);
+            const hasPM = /(^|\\b)(pm|evening|night)(\\b|$)/.test(freq);
+            if (hasAM && !hasPM) return 0;
+            if (hasPM && !hasAM) return 2;
+            return 1;
+          };
+          const r = rank(a) - rank(b);
+          if (r !== 0) return r;
+          return String(a.name || '').localeCompare(String(b.name || ''));
+        });
+      medDisplay.forEach((m) => {
         const el = document.createElement('div'); el.className = 'list-item';
         el.innerHTML = `<div>${m.name || ''}${m.dosage ? ' — '+m.dosage : ''}${m.frequency ? ' — '+m.frequency : ''}</div>
-                        ${canEdit ? `<button class="btn secondary" data-remove-med="${i}" type="button">Remove</button>` : ''}`;
+                        ${canEdit ? `<button class="btn secondary" data-remove-med="${m._idx}" type="button">Remove</button>` : ''}`;
         medList.appendChild(el);
       });
       medList.querySelectorAll('[data-remove-med]').forEach(btn => {
@@ -630,7 +649,7 @@
         } else {
           document.getElementById('cloudStatus').textContent = 'No shared record yet';
         }
-        applyEditMode(true);
+        applyEditMode(isOwner());
         if (canEdit) loadDraft();
       }catch(err){
         console.error(err);

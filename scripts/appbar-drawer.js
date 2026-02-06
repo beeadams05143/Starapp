@@ -175,18 +175,17 @@
   let storedMode = 'caregiver';
   try { storedMode = localStorage.getItem(MODE_KEY) || storedMode; } catch {}
   applyMenuMode(storedMode);
-  overlay.querySelectorAll('[data-role-btn]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      applyMenuMode(btn.dataset.roleBtn);
-      if (!location.pathname.endsWith('/dashboard.html')) {
-        location.href = '/dashboard.html';
-      }
-    });
-  });
-
   // --- open / close helpers ---
   const open  = () => { overlay.setAttribute('aria-hidden','false'); document.body.style.overflow='hidden'; };
   const close = () => { overlay.setAttribute('aria-hidden','true');  document.body.style.overflow=''; };
+
+  overlay.querySelectorAll('[data-role-btn]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      applyMenuMode(btn.dataset.roleBtn);
+      close();
+      location.href = '/dashboard.html';
+    });
+  });
 
   // bind to the button created by your top appbar (#openMenu)
   function bindOpen(){

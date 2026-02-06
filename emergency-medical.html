@@ -107,71 +107,77 @@
 
       <div class="row">
         <label for="indivName">Name</label>
-        <input type="text" id="indivName" placeholder="Full Name">
+        <input type="text" id="indivName" placeholder="Full Name" data-individual-field>
       </div>
 
       <div class="row cols-3">
         <div>
           <label for="indivAddress">Address</label>
-          <input type="text" id="indivAddress" placeholder="Street, City, State">
+          <input type="text" id="indivAddress" placeholder="Street, City, State" data-individual-field>
         </div>
         <div>
           <label for="indivPhone">Phone</label>
-          <input type="tel" id="indivPhone" placeholder="Phone Number">
+          <input type="tel" id="indivPhone" placeholder="Phone Number" data-individual-field>
         </div>
         <div>
           <label for="indivEmail">Email</label>
-          <input type="email" id="indivEmail" placeholder="name@email.com">
+          <input type="email" id="indivEmail" placeholder="name@email.com" data-individual-field>
         </div>
       </div>
 
       <div class="row cols-2">
         <div>
           <label for="indivAllergies">Allergies</label>
-          <textarea id="indivAllergies" placeholder="e.g., Peanuts, Penicillin"></textarea>
+          <textarea id="indivAllergies" placeholder="e.g., Peanuts, Penicillin" data-individual-field></textarea>
         </div>
         <div>
           <label for="indivConditions">Other Medical Info</label>
-          <textarea id="indivConditions" placeholder="Diagnoses, mobility, seizure protocol, etc."></textarea>
+          <textarea id="indivConditions" placeholder="Diagnoses, mobility, seizure protocol, etc." data-individual-field></textarea>
         </div>
       </div>
 
       <div class="row cols-2">
         <div>
           <label for="preferredHospital">Preferred Hospital/Physician</label>
-          <input id="preferredHospital" type="text" placeholder="Hospital or doctor name">
+          <input id="preferredHospital" type="text" placeholder="Hospital or doctor name" data-individual-field>
           <div class="helper">Include practice phone if helpful.</div>
         </div>
         <div>
           <label for="insuranceInfo">Insurance Carrier & Policy #</label>
-          <input id="insuranceInfo" type="text" placeholder="Carrier – Policy Number">
+          <input id="insuranceInfo" type="text" placeholder="Carrier – Policy Number" data-individual-field>
         </div>
       </div>
 
       <div class="row cols-2">
         <div>
           <label for="primaryLanguage">Primary Language</label>
-          <input id="primaryLanguage" type="text" placeholder="e.g., English">
+          <input id="primaryLanguage" type="text" placeholder="e.g., English" data-individual-field>
         </div>
         <div>
           <label for="communicationNeeds">Communication/Support Needs</label>
-          <input id="communicationNeeds" type="text" placeholder="Plain language, visual schedule, AAC, etc.">
+          <input id="communicationNeeds" type="text" placeholder="Plain language, visual schedule, AAC, etc." data-individual-field>
         </div>
       </div>
 
       <div class="row">
         <div>
           <label for="emergencyNotes">Emergency Instructions (if any)</label>
-          <textarea id="emergencyNotes" placeholder="Who to call first, transportation notes, door codes, pets at home, etc."></textarea>
+          <textarea id="emergencyNotes" placeholder="Who to call first, transportation notes, door codes, pets at home, etc." data-individual-field></textarea>
         </div>
       </div>
 
       <div class="row">
         <div>
           <label for="interactionTips">Communication & Interaction Tips</label>
-          <textarea id="interactionTips" placeholder="Use short sentences. Avoid describing procedures. Dislikes loud noises. Gets anxious at blood draws. Loves music and dogs — singing helps."></textarea>
+          <textarea id="interactionTips" placeholder="Use short sentences. Avoid describing procedures. Dislikes loud noises. Gets anxious at blood draws. Loves music and dogs — singing helps." data-individual-field></textarea>
           <div class="helper">Anything that helps a stranger interact safely and kindly during emergencies.</div>
         </div>
+      </div>
+
+      <div class="actions-inline">
+        <button class="btn" id="editIndividualBtn" type="button">Edit Individual Info</button>
+        <button class="btn secondary" id="cancelIndividualEdit" type="button" style="display:none">Cancel Edit</button>
+        <small class="helper" id="individualEditHint" style="display:none"></small>
       </div>
     </fieldset>
 
@@ -203,6 +209,9 @@
 
       <div class="actions-inline">
         <button class="btn" id="addEmergency" type="button">Add Emergency Contact</button>
+        <button class="btn secondary" id="cancelEmergencyEdit" type="button" style="display:none">Cancel Edit</button>
+        <button class="btn secondary" id="removeEmergencyContact" type="button" style="display:none">Remove Contact</button>
+        <small class="helper" id="ecEditHint" style="display:none"></small>
         <small class="helper">Added contacts appear below. You can remove any before saving.</small>
       </div>
       <div id="ecList" class="list" aria-live="polite"></div>
@@ -227,6 +236,9 @@
       </div>
       <div class="actions-inline">
         <button class="btn" id="addMedication" type="button">Add Medication</button>
+        <button class="btn secondary" id="cancelMedEdit" type="button" style="display:none">Cancel Edit</button>
+        <button class="btn secondary" id="removeMedication" type="button" style="display:none">Remove Medication</button>
+        <small class="helper" id="medEditHint" style="display:none"></small>
         <small class="helper">Added medications appear below. You can remove any before saving.</small>
       </div>
       <div id="medList" class="list" aria-live="polite"></div>
@@ -342,8 +354,14 @@
       toggleBtn(chooseBtn, true);
       toggleBtn(saveBtn, true);
       toggleBtn(removeBtn, true);
+      toggleBtn(document.getElementById('editIndividualBtn'), true);
+      toggleBtn(document.getElementById('cancelIndividualEdit'), true);
       toggleBtn(document.getElementById('addEmergency'), true);
+      toggleBtn(document.getElementById('cancelEmergencyEdit'), true);
+      toggleBtn(document.getElementById('removeEmergencyContact'), true);
       toggleBtn(document.getElementById('addMedication'), true);
+      toggleBtn(document.getElementById('cancelMedEdit'), true);
+      toggleBtn(document.getElementById('removeMedication'), true);
       toggleBtn(document.getElementById('saveDraftBtn'), true);
       toggleBtn(document.getElementById('saveCloudBtn'), true);
 
@@ -361,7 +379,10 @@
         }
       });
 
-      renderLists(); // refresh remove buttons visibility
+      setContactEditState(null);
+      setMedEditState(null);
+      setIndividualEditState(false, { silent: true });
+      renderLists();
     }
 
     async function initExistingPhoto() {
@@ -461,6 +482,10 @@
     // Lists in memory
     let contacts = [];
     let medications = [];
+    let editMedIndex = null;
+    let editContactIndex = null;
+    let individualEditMode = false;
+    let individualSnapshot = null;
 
     // Add/remove list items
     function renderLists(){
@@ -469,11 +494,20 @@
         contacts.forEach((c, i) => {
           const el = document.createElement('div'); el.className = 'list-item';
         el.innerHTML = `<div>${c.name || ''} ${c.relationship ? '('+c.relationship+')' : ''} — ${[c.phone,c.email].filter(Boolean).join(' • ')}</div>
-                        ${canEdit ? `<button class="btn secondary" data-remove-contact="${i}" type="button">Remove</button>` : ''}`;
+                        ${canEdit ? `<button class="btn secondary" data-edit-contact="${i}" type="button">Edit</button>` : ''}`;
         ecList.appendChild(el);
       });
-      ecList.querySelectorAll('[data-remove-contact]').forEach(btn => {
-        btn.addEventListener('click', e => { const idx = +e.currentTarget.getAttribute('data-remove-contact'); contacts.splice(idx,1); renderLists(); saveDraft(); });
+      ecList.querySelectorAll('[data-edit-contact]').forEach(btn => {
+        btn.addEventListener('click', e => {
+          const idx = +e.currentTarget.getAttribute('data-edit-contact');
+          const contact = contacts[idx];
+          if (!contact) return;
+          $('ecName').value = contact.name || '';
+          $('ecRel').value = contact.relationship || '';
+          $('ecPhone').value = contact.phone || '';
+          $('ecEmail').value = contact.email || '';
+          setContactEditState(idx);
+        });
       });
 
       // medications
@@ -496,30 +530,162 @@
       medDisplay.forEach((m) => {
         const el = document.createElement('div'); el.className = 'list-item';
         el.innerHTML = `<div>${m.name || ''}${m.dosage ? ' — '+m.dosage : ''}${m.frequency ? ' — '+m.frequency : ''}</div>
-                        ${canEdit ? `<button class="btn secondary" data-remove-med="${m._idx}" type="button">Remove</button>` : ''}`;
+                        ${canEdit ? `<button class="btn secondary" data-edit-med="${m._idx}" type="button">Edit</button>` : ''}`;
         medList.appendChild(el);
       });
-      medList.querySelectorAll('[data-remove-med]').forEach(btn => {
-        btn.addEventListener('click', e => { const idx = +e.currentTarget.getAttribute('data-remove-med'); medications.splice(idx,1); renderLists(); saveDraft(); });
+      medList.querySelectorAll('[data-edit-med]').forEach(btn => {
+        btn.addEventListener('click', e => {
+          const idx = +e.currentTarget.getAttribute('data-edit-med');
+          const med = medications[idx];
+          if (!med) return;
+          $('medName').value = med.name || '';
+          $('medDose').value = med.dosage || '';
+          $('medFreq').value = med.frequency || '';
+          setMedEditState(idx);
+        });
       });
     }
 
-    $('addEmergency').addEventListener('click', () => {
+    const addEmergencyBtn = $('addEmergency');
+    const cancelEmergencyEditBtn = $('cancelEmergencyEdit');
+    const removeEmergencyContactBtn = $('removeEmergencyContact');
+    const ecEditHint = $('ecEditHint');
+
+    function setContactEditState(idx){
+      editContactIndex = Number.isFinite(idx) ? idx : null;
+      const editing = editContactIndex !== null;
+      if (addEmergencyBtn) addEmergencyBtn.textContent = editing ? 'Save Changes' : 'Add Emergency Contact';
+      if (cancelEmergencyEditBtn) cancelEmergencyEditBtn.style.display = editing ? '' : 'none';
+      if (removeEmergencyContactBtn) removeEmergencyContactBtn.style.display = editing && canEdit ? '' : 'none';
+      if (ecEditHint) {
+        if (editing) {
+          const contact = contacts[editContactIndex];
+          ecEditHint.textContent = contact?.name ? `Editing: ${contact.name}` : 'Editing contact';
+          ecEditHint.style.display = '';
+        } else {
+          ecEditHint.textContent = '';
+          ecEditHint.style.display = 'none';
+        }
+      }
+    }
+
+    const editIndividualBtn = $('editIndividualBtn');
+    const cancelIndividualEditBtn = $('cancelIndividualEdit');
+    const individualEditHint = $('individualEditHint');
+
+    function setIndividualEditState(editing, { silent } = {}){
+      individualEditMode = !!editing;
+      const canModify = canEdit && individualEditMode;
+      document.querySelectorAll('[data-individual-field]').forEach((input) => {
+        input.readOnly = !canModify;
+        if (!canModify) input.classList.add('read-only');
+        else input.classList.remove('read-only');
+      });
+      if (editIndividualBtn) editIndividualBtn.style.display = canEdit && !individualEditMode ? '' : 'none';
+      if (cancelIndividualEditBtn) cancelIndividualEditBtn.style.display = individualEditMode && canEdit ? '' : 'none';
+      if (individualEditHint) {
+        individualEditHint.textContent = individualEditMode ? 'Editing individual info. Use Save to Cloud when done.' : '';
+        individualEditHint.style.display = individualEditMode ? '' : 'none';
+      }
+      if (!silent && !individualEditMode) {
+        individualSnapshot = null;
+      }
+    }
+
+    editIndividualBtn?.addEventListener('click', () => {
+      if (!canEdit) return;
+      individualSnapshot = getIndividualPayload();
+      setIndividualEditState(true);
+    });
+
+    cancelIndividualEditBtn?.addEventListener('click', () => {
+      if (individualSnapshot) hydrateIndividual(individualSnapshot);
+      setIndividualEditState(false);
+    });
+
+    addEmergencyBtn.addEventListener('click', () => {
       if (!canEdit) return;
       const c = { name: $('ecName').value.trim(), relationship: $('ecRel').value.trim(), phone: $('ecPhone').value.trim(), email: $('ecEmail').value.trim() };
       if(!c.name){ alert('Add a contact name first.'); return; }
-      contacts.push(c);
+      if (editContactIndex !== null) {
+        contacts[editContactIndex] = c;
+      } else {
+        contacts.push(c);
+      }
       ['ecName','ecRel','ecPhone','ecEmail'].forEach(id => $(id).value='');
+      setContactEditState(null);
       renderLists(); saveDraft();
     });
 
-    $('addMedication').addEventListener('click', () => {
+    cancelEmergencyEditBtn?.addEventListener('click', () => {
+      ['ecName','ecRel','ecPhone','ecEmail'].forEach(id => $(id).value='');
+      setContactEditState(null);
+    });
+
+    removeEmergencyContactBtn?.addEventListener('click', () => {
+      if (!canEdit || editContactIndex === null) return;
+      const contact = contacts[editContactIndex];
+      const label = contact?.name ? `Remove ${contact.name}?` : 'Remove this contact?';
+      if (!confirm(label)) return;
+      contacts.splice(editContactIndex, 1);
+      ['ecName','ecRel','ecPhone','ecEmail'].forEach(id => $(id).value='');
+      setContactEditState(null);
+      renderLists();
+      saveDraft();
+    });
+
+    const addMedicationBtn = $('addMedication');
+    const cancelMedEditBtn = $('cancelMedEdit');
+    const removeMedicationBtn = $('removeMedication');
+    const medEditHint = $('medEditHint');
+
+    function setMedEditState(idx){
+      editMedIndex = Number.isFinite(idx) ? idx : null;
+      const editing = editMedIndex !== null;
+      if (addMedicationBtn) addMedicationBtn.textContent = editing ? 'Save Changes' : 'Add Medication';
+      if (cancelMedEditBtn) cancelMedEditBtn.style.display = editing ? '' : 'none';
+      if (removeMedicationBtn) removeMedicationBtn.style.display = editing && canEdit ? '' : 'none';
+      if (medEditHint) {
+        if (editing) {
+          const med = medications[editMedIndex];
+          medEditHint.textContent = med?.name ? `Editing: ${med.name}` : 'Editing medication';
+          medEditHint.style.display = '';
+        } else {
+          medEditHint.textContent = '';
+          medEditHint.style.display = 'none';
+        }
+      }
+    }
+
+    addMedicationBtn.addEventListener('click', () => {
       if (!canEdit) return;
       const m = { name: $('medName').value.trim(), dosage: $('medDose').value.trim(), frequency: $('medFreq').value.trim() };
       if(!m.name){ alert('Add a medication name first.'); return; }
-      medications.push(m);
+      if (editMedIndex !== null) {
+        medications[editMedIndex] = m;
+      } else {
+        medications.push(m);
+      }
       ['medName','medDose','medFreq'].forEach(id => $(id).value='');
+      setMedEditState(null);
       renderLists(); saveDraft();
+    });
+
+    cancelMedEditBtn?.addEventListener('click', () => {
+      ['medName','medDose','medFreq'].forEach(id => $(id).value='');
+      setMedEditState(null);
+    });
+
+    removeMedicationBtn?.addEventListener('click', () => {
+      if (!canEdit || editMedIndex === null) return;
+      const med = medications[editMedIndex];
+      const label = med?.name ? `Remove ${med.name}?` : 'Remove this medication?';
+      if (!confirm(label)) return;
+      medications.splice(editMedIndex, 1);
+      ['medName','medDose','medFreq'].forEach(id => $(id).value='');
+      setMedEditState(null);
+      renderLists();
+      saveDraft();
     });
 
     // Build/restore payload
@@ -542,8 +708,25 @@
         medications
       };
     }
-    function hydrateForm(data){
-      if(!data) return;
+
+    function getIndividualPayload(){
+      return {
+        name: $('indivName').value.trim(),
+        address: $('indivAddress').value.trim(),
+        phone: $('indivPhone').value.trim(),
+        email: $('indivEmail').value.trim(),
+        allergies: $('indivAllergies').value.trim(),
+        other_medical_info: $('indivConditions').value.trim(),
+        preferred_hospital: $('preferredHospital').value.trim(),
+        insurance_info: $('insuranceInfo').value.trim(),
+        primary_language: $('primaryLanguage').value.trim(),
+        communication_needs: $('communicationNeeds').value.trim(),
+        emergency_instructions: $('emergencyNotes').value.trim(),
+        interaction_tips: $('interactionTips').value.trim()
+      };
+    }
+
+    function hydrateIndividual(data){
       $('indivName').value = data.name || '';
       $('indivAddress').value = data.address || '';
       $('indivPhone').value = data.phone || '';
@@ -556,9 +739,16 @@
       $('communicationNeeds').value = data.communication_needs || '';
       $('emergencyNotes').value = data.emergency_instructions || '';
       $('interactionTips').value = data.interaction_tips || '';
+    }
+    function hydrateForm(data){
+      if(!data) return;
+      hydrateIndividual(data);
       if(data.avatar_url){ setPreview(data.avatar_url); }
       contacts = Array.isArray(data.contacts) ? data.contacts : [];
       medications = Array.isArray(data.medications) ? data.medications : [];
+      setContactEditState(null);
+      setMedEditState(null);
+      setIndividualEditState(false, { silent: true });
       renderLists();
     }
 

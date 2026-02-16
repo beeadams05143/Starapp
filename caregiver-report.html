@@ -25,19 +25,10 @@
     button:hover{background:#f5f5f5}
     button:active{background:#f0f0f0}
     button:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
-    #cgCaregiver{min-width:230px;font-weight:700}
     #cgQuickLookToggle,
     #cgPdf,
     #cgCsv{font-size:15px}
     #cgNotesToggle{font-size:14px}
-
-    .cg-filter-banner{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;margin:6px 0 12px;border:1px solid #fde68a;border-radius:12px;background:#fff7ed;font-weight:600}
-    .cg-filter-banner button{border-color:#f59e0b}
-    .cg-advanced-filters{border:1px solid #e5e7eb;border-radius:12px;padding:8px 12px;background:#fff}
-    .cg-advanced-filters summary{cursor:pointer;font-weight:700}
-    .cg-filter-grid{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin-top:10px}
-    .cg-filter-grid button{min-height:42px}
-    .cg-clear-filters{font-size:13px}
 
     table{width:100%;border-collapse:collapse}
     th,td{border:1px solid #ddd;padding:8px;vertical-align:middle}
@@ -116,6 +107,7 @@
     .hc-grid{display:grid;grid-template-columns:repeat(7,minmax(110px,1fr));border-top:1px solid #e9e9e9}
     .hc-dow{padding:10px 8px;text-align:center;font-weight:800;color:#6b7280;background:#fafafa;border-bottom:1px solid #e9e9e9}
     .hc-cell{min-height:120px;padding:8px;border-bottom:1px solid #e9e9e9;border-right:1px solid #e9e9e9;position:relative;background:#fff;cursor:pointer}
+    .hc-note{margin-top:6px;font-size:11px;color:#374151;background:#f8fafc;border:1px dashed #e5e7eb;border-radius:8px;padding:6px;white-space:pre-wrap}
     .hc-cell:nth-child(7n){border-right:0}
     .hc-date{font-weight:900;font-size:13px;color:#111}
     .hc-icons{display:flex;gap:6px;margin-top:6px;font-size:24px;line-height:1;flex-wrap:wrap}
@@ -258,6 +250,11 @@
     .calendar-quicklook .item{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:8px 10px;font-weight:700;color:#0f172a;display:flex;justify-content:space-between;align-items:center}
     .calendar-quicklook .label{display:flex;align-items:center;gap:6px;font-size:12px;color:#64748b;font-weight:700}
     .calendar-quicklook .count{font-weight:900;color:#0f172a}
+    .activity-quicklook{display:grid;gap:12px}
+    .activity-block{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:10px}
+    .activity-title{font-weight:800;margin-bottom:8px;color:#0f172a}
+    .activity-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px}
+    .activity-item{background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:6px 8px;font-weight:700;color:#0f172a;display:flex;justify-content:space-between;align-items:center;font-size:12px}
     .month-shifts{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
     .month-shift-card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:10px 12px}
     .month-shift-card h5{margin:0 0 6px;font-size:13px;color:#0f172a}
@@ -420,7 +417,7 @@
 </div>
 
 <script type="module">
-import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.03A';
+import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.16A';
 
 (function(){
   const Status = document.getElementById('cg-status');
@@ -467,8 +464,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.03A';
 </script>
 
 <!-- Shared navigation shell -->
-<script defer src="./ui-shell.js?v=2026.02.03A"></script>
-<script defer src="./scripts/appbar-drawer.js?v=2026.02.03A"></script>
+<script defer src="./ui-shell.js?v=2026.02.16A"></script>
+<script defer src="./scripts/appbar-drawer.js?v=2026.02.16A"></script>
 
 <body>
   <div id="navbar"></div>
@@ -517,28 +514,11 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.03A';
         <button id="cgCsv"  class="no-export">⬇️ CSV</button>
       </div>
 
-      <div id="cgFilterBanner" class="cg-filter-banner is-hidden" role="status" aria-live="polite">
-        <span>Filtered: Caregiver = <strong id="cgFilterLabel">All caregivers</strong></span>
-        <button type="button" class="cg-clear-filters">Clear Filter(s)</button>
-      </div>
-
-      <details class="cg-advanced-filters">
-        <summary>Advanced Filters</summary>
-        <div class="cg-filter-grid">
-          <label>Caregiver
-            <select id="cgCaregiver">
-              <option value="all">All caregivers</option>
-            </select>
-          </label>
-          <button type="button" class="cg-clear-filters">Clear Filter(s)</button>
-        </div>
-      </details>
-
       <div id="cgQuickLook" class="quick-look is-hidden" role="region" aria-live="polite">
         <div class="quick-look-head">
           <div>
             <div class="quick-look-label">Quick Look</div>
-            <div class="quick-look-subtitle">Last five caregiver days (respects filters)</div>
+            <div class="quick-look-subtitle">Last five caregiver days</div>
           </div>
           <button id="cgQuickLookClose" type="button" aria-label="Exit Quick Look" class="no-export">Exit</button>
         </div>
@@ -758,8 +738,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.03A';
       <div class="kpi"><div class="label">Hygiene % Yes</div><div class="value" id="kpi-hygiene">—</div></div>
       <div class="kpi"><div class="label">Food % Yes</div><div class="value" id="kpi-food">—</div></div>
       <div class="kpi"><div class="label">Clean-up % Yes</div><div class="value" id="kpi-cleanup">—</div></div>
-      <div class="kpi"><div class="label">Total Vocational (min)</div><div class="value" id="kpi-voc">—</div></div>
-      <div class="kpi"><div class="label">Total Community (min)</div><div class="value" id="kpi-com">—</div></div>
+      <div class="kpi"><div class="label">Total Vocational (hrs)</div><div class="value" id="kpi-voc">—</div></div>
+      <div class="kpi"><div class="label">Total Community (hrs)</div><div class="value" id="kpi-com">—</div></div>
       <div class="kpi"><div class="label">Avg Prompt Level</div><div class="value" id="kpi-prompt">—</div></div>
       <div class="kpi"><div class="label">Movement Symptom Days</div><div class="value" id="kpi-move-days">—</div></div>
       <div class="kpi"><div class="label">Avg Movement Severity</div><div class="value" id="kpi-move-avg">—</div></div>
@@ -811,6 +791,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.03A';
           <label><input type="checkbox" data-hc-layer="sick" checked/> <span class="hc-emo" aria-hidden="true">🤒</span> Sick</label>
           <label><input type="checkbox" data-hc-layer="temp" checked/> <span class="hc-emo" aria-hidden="true">🌡️</span> Temperature</label>
           <label><input type="checkbox" data-hc-layer="appetite" checked/> <span class="hc-emo" aria-hidden="true">🍽️</span> Appetite change</label>
+          <label><input type="checkbox" data-hc-layer="med_change" checked/> <span class="hc-emo" aria-hidden="true">🗒️</span> Med change note</label>
           <label><input type="checkbox" data-hc-layer="moon" checked/> <span class="hc-emo" aria-hidden="true">🌕</span> Full moon</label>
           <label><input type="checkbox" data-hc-layer="anomaly" checked/> <span class="hc-emo" aria-hidden="true">🚩</span> Anomaly</label>
         </div>
@@ -840,8 +821,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.03A';
         <div class="item">Hygiene % Yes <span id="kpi-hygiene-inline">—</span></div>
         <div class="item">Food % Yes <span id="kpi-food-inline">—</span></div>
         <div class="item">Clean-up % Yes <span id="kpi-cleanup-inline">—</span></div>
-        <div class="item">Total Vocational (min) <span id="kpi-voc-inline">—</span></div>
-        <div class="item">Total Community (min) <span id="kpi-com-inline">—</span></div>
+        <div class="item">Total Vocational (hrs) <span id="kpi-voc-inline">—</span></div>
+        <div class="item">Total Community (hrs) <span id="kpi-com-inline">—</span></div>
         <div class="item">Avg Prompt Level <span id="kpi-prompt-inline">—</span></div>
         <div class="item">Movement Symptom Days <span id="kpi-move-days-inline">—</span></div>
         <div class="item">Avg Movement Severity <span id="kpi-move-avg-inline">—</span></div>
@@ -858,6 +839,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.03A';
     <div class="chart kpi-summary-inline" id="calendarMonthShift">
       <h4>Monthly Shifts</h4>
       <p class="muted" id="calendarShiftRange">Comparisons for current month</p>
+      <p class="muted" id="calendarShiftExplain" style="margin-top:-4px">Counts show how many days increased or decreased vs the prior period.</p>
       <div class="month-shifts">
         <div class="month-shift-card">
           <h5 id="shiftPrevPrevTitle">Month Before vs Last</h5>
@@ -892,6 +874,31 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.03A';
         <p class="muted chart-range-label" id="promptRangeLabel">Range: Month</p>
         <canvas id="skillChart"></canvas>
         <p class="muted">Average prompt level (0–4) per day from caregiver check-ins, rounded to whole numbers. Higher = more prompting needed.</p>
+        <p class="muted" style="margin-top:6px">Prompt scale: 0 – Independent · 1 – 1–2 prompts · 2 – Periodic prompts · 3 – Frequent prompts · 4 – Dependent</p>
+      </div>
+      <div class="chart">
+        <h2>Community Interaction Types</h2>
+        <p class="muted chart-range-label" id="interactionRangeLabel">Range: Month</p>
+        <canvas id="interactionTypeChart"></canvas>
+        <p class="muted">Counts of interaction types when he engaged with community members.</p>
+      </div>
+      <div class="chart kpi-summary-inline" id="activityTypeSummary">
+        <h4>Activity Types (Top 6)</h4>
+        <p class="muted chart-range-label" id="activityRangeLabel">Range: Month</p>
+        <div class="activity-quicklook">
+          <div class="activity-block">
+            <div class="activity-title">Home / Community</div>
+            <div class="activity-grid" id="activityHomeList">
+              <div class="activity-item"><span>Loading…</span><span>—</span></div>
+            </div>
+          </div>
+          <div class="activity-block">
+            <div class="activity-title">Community-at-large</div>
+            <div class="activity-grid" id="activityCommunityList">
+              <div class="activity-item"><span>Loading…</span><span>—</span></div>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="chart">
         <h2>Individual Mood Share (Pie)</h2>
@@ -1004,15 +1011,15 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.03A';
 
   <!-- Single, clean module script -->
   <script type="module">
-    import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.03A';
-    import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabaseClient.js?v=2026.02.03A';
-    import { loadFocusForCurrentUser, readLocalFocusDraft } from './focus-data.js?v=2026.02.03A';
+    import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.16A';
+    import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabaseClient.js?v=2026.02.16A';
+    import { loadFocusForCurrentUser, readLocalFocusDraft } from './focus-data.js?v=2026.02.16A';
 
     /* =============== Optional live data =============== */
     let loadFromSupabase = null;
     let formatEntryForList = null;
     try {
-      const mod = await import('./caregiver-report-supabase.js?v=2026.02.03A');
+      const mod = await import('./caregiver-report-supabase.js?v=2026.02.16A');
       loadFromSupabase = mod.loadCaregiverCheckins;
       formatEntryForList = mod.formatEntryForList;
     } catch (err) {
@@ -1324,9 +1331,19 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.03A';
       return entries.filter(entry => entry.dateObj >= range.start && entry.dateObj <= range.end);
     }
 
+    function formatRangeDisplay(rangeKey, rangeLabel){
+      const label = rangeLabel || CHART_RANGE_LABELS[rangeKey] || 'All time';
+      if (rangeKey === 'day') return `This day (${label})`;
+      if (rangeKey === 'week') return `This week (${label})`;
+      if (rangeKey === 'month') return `This month (${label})`;
+      if (rangeKey === 'year') return `This year (${label})`;
+      if (rangeKey === 'all') return 'All time';
+      return `${CHART_RANGE_LABELS[rangeKey] || 'Range'} (${label})`;
+    }
+
     function updateChartRangeLabels(range, rangeKey){
       const label = range?.label || CHART_RANGE_LABELS[rangeKey] || 'All time';
-      const display = rangeKey === 'all' ? 'All time' : `${CHART_RANGE_LABELS[rangeKey]} (${label})`;
+      const display = formatRangeDisplay(rangeKey, label);
       const displayEl = document.getElementById('chartRangeDisplay');
       if (displayEl) displayEl.textContent = `Showing: ${display}`;
       const healthLabel = document.getElementById('healthRangeLabel');
@@ -1335,11 +1352,15 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.03A';
       if (promptLabel) promptLabel.textContent = `Range: ${display}`;
       const engagementLabel = document.getElementById('engagementRangeLabel');
       if (engagementLabel) engagementLabel.textContent = `Range: ${display}`;
+      const interactionLabel = document.getElementById('interactionRangeLabel');
+      if (interactionLabel) interactionLabel.textContent = `Range: ${display}`;
+      const activityLabel = document.getElementById('activityRangeLabel');
+      if (activityLabel) activityLabel.textContent = `Range: ${display}`;
     }
 
     function updateMovementRangeLabel(range, rangeKey){
       const label = range?.label || CHART_RANGE_LABELS[rangeKey] || 'All time';
-      const display = rangeKey === 'all' ? 'All time' : `${CHART_RANGE_LABELS[rangeKey]} (${label})`;
+      const display = formatRangeDisplay(rangeKey, label);
       const movementLabel = document.getElementById('movementRangeLabel');
       if (movementLabel) movementLabel.textContent = `Summary for ${display.toLowerCase()} range`;
       const movementDisplay = document.getElementById('movementRangeDisplay');
@@ -1350,20 +1371,33 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.03A';
       const rangeKey = document.getElementById('chartRangeSelect')?.value || 'month';
       const caregiverSource = (cgState.filtered && cgState.filtered.length) ? cgState.filtered : (cgState.entries || []);
       const range = getChartRangeWindow(rangeKey, caregiverSource);
-      const filteredCaregiver = filterEntriesByRange(caregiverSource, range);
-      const { monthly, promptDaily } = buildMonthlySeries(filteredCaregiver);
-      drawHealthChart(truncateSeries(monthly, rangeKey));
-      drawSkillChart(truncateSeries(promptDaily, rangeKey));
 
-      const moodSource = window.latestMoodEntries || [];
-      const filteredMood = filterMoodEntriesByRange(moodSource, range);
-      drawEngagementVsMood(filteredMood, filteredCaregiver);
-
-      const movementSelect = document.getElementById('movementRangeSelect');
-      if (movementSelect) movementSelect.value = rangeKey;
-      applyMovementRange(rangeKey, caregiverSource);
-
+      // Update labels first so UI reflects the selection even if a chart fails.
       updateChartRangeLabels(range, rangeKey);
+
+      try {
+        const filteredCaregiver = filterEntriesByRange(caregiverSource, range);
+        renderKPIs(summarizeEntries(filteredCaregiver));
+        const { monthly, promptDaily } = buildMonthlySeries(filteredCaregiver);
+        drawHealthChart(truncateSeries(monthly, rangeKey));
+        drawSkillChart({ rangeKey, monthly, promptDaily });
+
+        const moodSource = window.latestMoodEntries || [];
+        const filteredMood = filterMoodEntriesByRange(moodSource, range);
+        drawEngagementVsMood(filteredMood, filteredCaregiver);
+        drawInteractionTypeChart(filteredCaregiver);
+        renderActivityTypeSummary(filteredCaregiver);
+
+        const movementSelect = document.getElementById('movementRangeSelect');
+        if (movementSelect) movementSelect.value = rangeKey;
+        applyMovementRange(rangeKey, caregiverSource);
+
+        const quickLookLabel = formatRangeDisplay(rangeKey, range?.label || '');
+        const quickLookCounts = buildCalendarRangeCounts(filteredCaregiver);
+        window.setCalendarQuickLookOverride?.(`Range: ${quickLookLabel}`, quickLookCounts);
+      } catch (err) {
+        console.warn('[report] applyChartRange failed', err);
+      }
     }
 
     function applyMovementRange(rangeKey, caregiverSource = null){
@@ -1393,6 +1427,56 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.03A';
         summaryTime.textContent = label;
       }
       updateMovementRangeLabel(range, rangeKey);
+    }
+
+    function buildCalendarRangeCounts(entries = []){
+      const counts = {};
+      QUICK_LOOK_ITEMS.forEach(item => { counts[item.key] = 0; });
+      entries.forEach(entry => {
+        const p = entry.payload || {};
+        const bm = (entry.had_bm === true) || (/yes/i.test(String(p.bm_today || p.had_bm || '')));
+        let sleep = null;
+        const hrsRaw = p.hours_sleep;
+        if (typeof hrsRaw === 'string'){
+          if (hrsRaw.includes('10')) sleep = 10;
+          else { const n = parseFloat(hrsRaw); if (isFinite(n)) sleep = n; }
+        } else if (typeof hrsRaw === 'number') { sleep = hrsRaw; }
+        const sleepLow = (sleep != null && sleep < 8);
+        const onsetLate = hasLateSleepOnset(p) || hasLateSleepOnset(entry);
+        const nightWake = /yes|true/i.test(String(p.night_wake_flag || p.night_waking || '')) ||
+          Number(p.night_wake_count) > 0 ||
+          /woke|wake|waking/i.test(String(p.night_wake_notes || ''));
+        const prnSleep = /yes|true/i.test(String(p.prn_given || '')) ||
+          !!p.prn_name || !!p.prn_time;
+        const prnMania = /yes|true/i.test(String(p.prn_mania_given || '')) ||
+          !!p.prn_mania_name || !!p.prn_mania_time;
+        const prnAggr = /yes|true/i.test(String(p.prn_aggression_given || '')) ||
+          !!p.prn_aggression_name || !!p.prn_aggression_time;
+        const tired = /yes|true/i.test(String(p.appears_tired || ''));
+        const manic = /yes|true/i.test(String(p.manic_flag || p.mania_flag || '')) || ((+p.manic_intensity || 0) > 0);
+        const sick  = (p.appears_good_health === false) || /no/i.test(String(p.appears_good_health || ''));
+        const temp = p.temp_present === true
+          || /yes|true/i.test(String(p.temp_present || ''))
+          || !!p.temp_value;
+        const appetite = hasAppetiteChange(p) || hasAppetiteChange(entry);
+        const anomaly = p.anomaly_flag === true || /yes/i.test(String(p.anomaly || ''));
+
+        if (bm) counts.bm += 1;
+        if (sleep != null && sleep >= 8) counts.sleep += 1;
+        if (sleep != null && sleep < 8) counts.sleep_low += 1;
+        if (onsetLate) counts.onset += 1;
+        if (nightWake) counts.night += 1;
+        if (prnSleep) counts.prn_sleep += 1;
+        if (prnMania) counts.prn_mania += 1;
+        if (prnAggr) counts.prn_aggr += 1;
+        if (tired) counts.tired += 1;
+        if (manic) counts.manic += 1;
+        if (sick) counts.sick += 1;
+        if (temp) counts.temp += 1;
+        if (appetite) counts.appetite += 1;
+        if (anomaly) counts.anomaly += 1;
+      });
+      return counts;
     }
 
     /* =================== Caregiver table helpers =================== */
@@ -1694,6 +1778,20 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.03A';
         return ['yes','y','true','1','done','complete','completed'].includes(normalized);
       }
       return false;
+    }
+
+    function parseMultiValue(value) {
+      if (!value) return [];
+      if (Array.isArray(value)) return value.filter(Boolean);
+      if (typeof value === 'string') {
+        try {
+          const parsed = JSON.parse(value);
+          if (Array.isArray(parsed)) return parsed.filter(Boolean);
+        } catch {}
+        const trimmed = value.trim();
+        return trimmed ? [trimmed] : [];
+      }
+      return [];
     }
 
     const isCalendarOnlyEntry = (entry = {}) =>
@@ -3182,20 +3280,28 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.03A';
     }
 
     /* =================== KPIs & caregiver-derived charts =================== */
-    const kpi = {
-      entries: $('#kpi-entries'), hygiene: $('#kpi-hygiene'), food: $('#kpi-food'),
-      cleanup: $('#kpi-cleanup'), voc: $('#kpi-voc'), com: $('#kpi-com'), prompt: $('#kpi-prompt'),
-      moveDays: $('#kpi-move-days'), moveAvg: $('#kpi-move-avg'), moveMax: $('#kpi-move-max')
-    };
+  const kpi = {
+    entries: $('#kpi-entries'), hygiene: $('#kpi-hygiene'), food: $('#kpi-food'),
+    cleanup: $('#kpi-cleanup'), voc: $('#kpi-voc'), com: $('#kpi-com'), prompt: $('#kpi-prompt'),
+    moveDays: $('#kpi-move-days'), moveAvg: $('#kpi-move-avg'), moveMax: $('#kpi-move-max')
+  };
 
-    function renderKPIs(summary){
-      kpi.entries.textContent = summary.counts.entries ?? 0;
-      kpi.hygiene.textContent = (summary.percents.hygiene_yes ?? 0) + '%';
-      kpi.food.textContent    = (summary.percents.food_prep_yes ?? 0) + '%';
-      kpi.cleanup.textContent = (summary.percents.cleanup_yes ?? 0) + '%';
-      kpi.voc.textContent     = summary.totals.vocational_minutes ?? 0;
-      kpi.com.textContent     = summary.totals.community_minutes ?? 0;
-      kpi.prompt.textContent  = summary.averages.new_skill_score ?? '—';
+  const minutesToHoursLabel = (minutes) => {
+    const total = Number(minutes);
+    if (!Number.isFinite(total) || total <= 0) return '0';
+    const hours = total / 60;
+    const rounded = Math.round(hours * 10) / 10;
+    return String(rounded).replace(/\.0$/, '');
+  };
+
+  function renderKPIs(summary){
+    kpi.entries.textContent = summary.counts.entries ?? 0;
+    kpi.hygiene.textContent = (summary.percents.hygiene_yes ?? 0) + '%';
+    kpi.food.textContent    = (summary.percents.food_prep_yes ?? 0) + '%';
+    kpi.cleanup.textContent = (summary.percents.cleanup_yes ?? 0) + '%';
+    kpi.voc.textContent     = minutesToHoursLabel(summary.totals.vocational_minutes);
+    kpi.com.textContent     = minutesToHoursLabel(summary.totals.community_minutes);
+    kpi.prompt.textContent  = summary.averages.new_skill_score ?? '—';
       if (kpi.moveDays) kpi.moveDays.textContent = summary.movement?.days ?? 0;
       if (kpi.moveAvg) kpi.moveAvg.textContent = summary.averages?.movement_severity ?? '—';
       if (kpi.moveMax) kpi.moveMax.textContent = summary.movement?.max_severity ?? '—';
@@ -3216,8 +3322,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.03A';
       if (inline.hygiene) inline.hygiene.textContent = (summary.percents.hygiene_yes ?? 0) + '%';
       if (inline.food) inline.food.textContent = (summary.percents.food_prep_yes ?? 0) + '%';
       if (inline.cleanup) inline.cleanup.textContent = (summary.percents.cleanup_yes ?? 0) + '%';
-      if (inline.voc) inline.voc.textContent = summary.totals.vocational_minutes ?? 0;
-      if (inline.com) inline.com.textContent = summary.totals.community_minutes ?? 0;
+      if (inline.voc) inline.voc.textContent = minutesToHoursLabel(summary.totals.vocational_minutes);
+      if (inline.com) inline.com.textContent = minutesToHoursLabel(summary.totals.community_minutes);
       if (inline.prompt) inline.prompt.textContent = summary.averages.new_skill_score ?? '—';
       if (inline.moveDays) inline.moveDays.textContent = summary.movement?.days ?? 0;
       if (inline.moveAvg) inline.moveAvg.textContent = summary.averages?.movement_severity ?? '—';
@@ -3247,18 +3353,76 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.03A';
       });
     }
 
-    function drawSkillChart(series){
+    function drawSkillChart({ rangeKey, monthly, promptDaily }){
       destroy('skill');
-      const labels = series?.map(p=>p.x) ?? [];
-      const data   = series?.map(p=>p.avg_new_skill_score ?? null) ?? [];
+
+      const toDate = (key) => new Date(`${key}T00:00:00`);
+      const formatShort = (key) => {
+        const dt = toDate(key);
+        if (Number.isNaN(dt.getTime())) return key;
+        return dt.toLocaleDateString(undefined, { month:'2-digit', day:'2-digit', year:'2-digit' });
+      };
+      const formatMonth = (key) => {
+        const parts = String(key || '').split('-');
+        if (parts.length !== 2) return key;
+        const dt = new Date(Number(parts[0]), Number(parts[1]) - 1, 1);
+        if (Number.isNaN(dt.getTime())) return key;
+        return dt.toLocaleDateString(undefined, { month:'short', year:'numeric' });
+      };
+      const startOfWeek = (dt) => {
+        const d = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+        d.setDate(d.getDate() - d.getDay());
+        return d;
+      };
+
+      let labels = [];
+      let data = [];
+      let xLabel = 'Date';
+
+      if (rangeKey === 'year' || rangeKey === 'all') {
+        const rows = (monthly || []).filter(row => row.avg_new_skill_score != null);
+        labels = rows.map(row => formatMonth(row.x));
+        data = rows.map(row => row.avg_new_skill_score);
+        xLabel = 'Month';
+      } else if (rangeKey === 'month') {
+        const buckets = new Map();
+        (promptDaily || []).forEach(row => {
+          if (row.avg_new_skill_score == null) return;
+          const dt = toDate(row.x);
+          if (Number.isNaN(dt.getTime())) return;
+          const weekStart = startOfWeek(dt);
+          const key = weekStart.toISOString().slice(0,10);
+          const bucket = buckets.get(key) || { total:0, count:0 };
+          bucket.total += row.avg_new_skill_score;
+          bucket.count += 1;
+          buckets.set(key, bucket);
+        });
+        const rows = Array.from(buckets.entries())
+          .sort(([a],[b]) => a.localeCompare(b))
+          .map(([key, bucket]) => ({ key, avg: +(bucket.total / bucket.count).toFixed(1) }));
+        labels = rows.map(row => `Week of ${formatShort(row.key)}`);
+        data = rows.map(row => row.avg);
+        xLabel = 'Week';
+      } else {
+        const rows = (promptDaily || []).filter(row => row.avg_new_skill_score != null);
+        labels = rows.map(row => formatShort(row.x));
+        data = rows.map(row => row.avg_new_skill_score);
+        xLabel = 'Date';
+      }
+
+      if (!labels.length) {
+        labels = ['No data'];
+        data = [0];
+      }
+
       charts.skill = new Chart($('#skillChart'), {
-        type:'line',
-        data:{ labels, datasets:[{ label:'Avg Prompt Level', data, tension:.15, pointRadius:5, pointHoverRadius:6, borderWidth:3, borderColor:'#ef4444', backgroundColor:'rgba(239,68,68,.2)', datalabels:{ display:false } }]},
+        type:'bar',
+        data:{ labels, datasets:[{ label:'Avg Prompt Level', data, borderRadius:8, backgroundColor:'rgba(239,68,68,.55)' }]},
         options:{
           responsive:true,
           plugins:{ legend:{ position:'top', labels:{ boxWidth:12, boxHeight:12, font:{ size:12 } } } },
           scales:{
-            x:axisTitle('Date'),
+            x:axisTitle(xLabel),
             y:{ min:0,max:4,ticks:{stepSize:1, precision:0}, ...axisTitle('Prompt level (0–4)') }
           }
         }
@@ -3486,34 +3650,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.03A';
       }
 
       let entries = (res.entries || []).filter(entry => !isCalendarOnlyEntry(entry));
-      const summary = summarizeEntries(entries);
-      const { monthly, promptDaily } = buildMonthlySeries(entries);
-      const movementInsights = buildMovementInsights(entries);
-
       window.latestCaregiverEntries = entries.slice();
-      renderKPIs(summary);
-      drawHealthChart(truncateSeries(monthly, document.getElementById('chartRangeSelect')?.value || 'month'));
-      drawSkillChart(truncateSeries(promptDaily, document.getElementById('chartRangeSelect')?.value || 'month'));
-      drawMovementSeverityChart(movementInsights.severitySeries);
-      drawMovementTypeChart(movementInsights.typeCounts);
-      drawMovementBodyChart(movementInsights.bodyCounts);
-      drawMovementTriggerChart(movementInsights.triggerCounts);
-      const summaryDays = document.getElementById('movementDaysVal');
-      const summaryAvg = document.getElementById('movementAvgVal');
-      const summaryMax = document.getElementById('movementMaxVal');
-      const summaryType = document.getElementById('movementTypeVal');
-      const summaryTime = document.getElementById('movementTimeVal');
-      if (summaryDays) summaryDays.textContent = movementInsights.daysWithSymptoms ?? 0;
-      if (summaryAvg) summaryAvg.textContent = movementInsights.avgSeverity ?? '—';
-      if (summaryMax) summaryMax.textContent = movementInsights.maxSeverity ?? '—';
-      if (summaryType) {
-        const label = MOVEMENT_TYPE_LABELS[movementInsights.mostCommonType] || movementInsights.mostCommonType || '—';
-        summaryType.textContent = label;
-      }
-      if (summaryTime) {
-        const label = MOVEMENT_TIME_LABELS[movementInsights.mostCommonTime] || movementInsights.mostCommonTime || '—';
-        summaryTime.textContent = label;
-      }
       cgState.entries = entries.slice();
       cgState.entryById = new Map();
       entries.forEach(entry => {
@@ -3669,6 +3806,10 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.03A';
     }
 
     function drawEngagementVsMood(moodEntries, caregiverEntries){
+      if (charts.engagementVsMood) {
+        charts.engagementVsMood.destroy();
+        charts.engagementVsMood = null;
+      }
       const caregiver=(caregiverEntries || window.latestCaregiverEntries || []).slice();
       const buckets=['Positive','Low Energy','Challenging','Other'];
       const countsByDay=new Map();
@@ -3705,11 +3846,112 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.03A';
           {label:'Leisure', data:[36,60,45,48]}
         ];
       }
-      new Chart($('#engagementVsMood'), {
+      charts.engagementVsMood = new Chart($('#engagementVsMood'), {
         type:'bar',
         data:{ labels:buckets, datasets },
         options:{ responsive:true, scales:{ x:axisTitle('Mood Bucket'), y:{ beginAtZero:true, ...axisTitle('Average Minutes') } } }
       });
+    }
+
+    function buildInteractionTypeCounts(entries = []) {
+      const counts = new Map();
+      entries.forEach(entry => {
+        const payload = entry.payload || {};
+        const ok = isAffirmative(payload.community_interaction_ok ?? entry.community_interaction_ok);
+        if (!ok) return;
+        const types = parseMultiValue(payload.interaction_type ?? entry.interaction_type);
+        if (!types.length) {
+          counts.set('Unspecified', (counts.get('Unspecified') || 0) + 1);
+          return;
+        }
+        types.forEach(type => {
+          const label = String(type).trim();
+          if (!label) return;
+          counts.set(label, (counts.get(label) || 0) + 1);
+        });
+      });
+      return Array.from(counts.entries())
+        .map(([label, count]) => ({ label, count }))
+        .sort((a,b) => b.count - a.count);
+    }
+
+    function normalizeActivityLabel(label) {
+      const trimmed = String(label || '').trim();
+      if (!trimmed) return '';
+      const lower = trimmed.toLowerCase();
+      if (lower === 'went to store') return 'Shopping – grocery/retail';
+      return trimmed;
+    }
+
+    function buildActivityTypeCounts(entries = [], key) {
+      const counts = new Map();
+      entries.forEach(entry => {
+        const payload = entry.payload || {};
+        const raw = payload[key] ?? entry[key];
+        const types = parseMultiValue(raw);
+        types.forEach(type => {
+          const label = normalizeActivityLabel(type);
+          if (!label) return;
+          counts.set(label, (counts.get(label) || 0) + 1);
+        });
+      });
+      return Array.from(counts.entries())
+        .map(([label, count]) => ({ label, count }))
+        .sort((a,b) => b.count - a.count);
+    }
+
+    function drawInteractionTypeChart(entries = []) {
+      const rows = buildInteractionTypeCounts(entries);
+      const labels = rows.map(r => r.label);
+      const data = rows.map(r => r.count);
+      if (charts.interactionType) {
+        charts.interactionType.destroy();
+        charts.interactionType = null;
+      }
+      const ctx = document.getElementById('interactionTypeChart');
+      if (!ctx) return;
+      if (!labels.length) {
+        charts.interactionType = new Chart(ctx, {
+          type:'bar',
+          data:{ labels:['No data'], datasets:[{ label:'Interactions', data:[0], backgroundColor:'#e2e8f0' }] },
+          options:{ responsive:true, scales:{ y:{ beginAtZero:true } } }
+        });
+        return;
+      }
+      charts.interactionType = new Chart(ctx, {
+        type:'bar',
+        data:{
+          labels,
+          datasets:[{
+            label:'Interactions',
+            data,
+            backgroundColor:'#60a5fa',
+            borderColor:'#2563eb'
+          }]
+        },
+        options:{
+          responsive:true,
+          scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } }
+        }
+      });
+    }
+
+    function renderTopActivityList(listEl, rows) {
+      if (!listEl) return;
+      if (!rows.length) {
+        listEl.innerHTML = `<div class="activity-item"><span>No activity recorded</span><span>—</span></div>`;
+        return;
+      }
+      listEl.innerHTML = rows.slice(0,6)
+        .map(row => `<div class="activity-item"><span>${row.label}</span><span>${row.count}</span></div>`)
+        .join('');
+    }
+
+    function renderActivityTypeSummary(entries = []) {
+      const home = buildActivityTypeCounts(entries, 'home_activity_type');
+      const community = buildActivityTypeCounts(entries, 'public_activity_type');
+      renderTopActivityList(document.getElementById('activityHomeList'), home);
+      renderTopActivityList(document.getElementById('activityCommunityList'), community);
     }
 
     function pearson(xs,ys){
@@ -4349,7 +4591,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.03A';
 
 <script>
   (function(){
-    const version = window.STAR_BUILD_VERSION || '2026.02.03A';
+    const version = window.STAR_BUILD_VERSION || '2026.02.16A';
     if (!window.STAR_BUILD_VERSION) window.STAR_BUILD_VERSION = version;
     const ensureBadge = () => {
       if (document.getElementById('star-build-version')) return;
@@ -4383,7 +4625,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.03A';
 </script>
 
 <script type="module">
-import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.03A';
+import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.16A';
 
 (() => {
   // Bail out quietly if the calendar HTML isn't present
@@ -4552,9 +4794,14 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.03A';
   }
 
   function applyHealthFlagToMap(key, data = {}){
-    const base = MAP[key] || { bm:false, sleep:null, sleep_low:false, onset:false, night:false, prn_sleep:false, prn_mania:false, prn_aggr:false, tired:false, manic:false, sick:false, temp:false, appetite:false, moon:false, anomaly:false };
+    const base = MAP[key] || { bm:false, sleep:null, sleep_low:false, onset:false, night:false, prn_sleep:false, prn_mania:false, prn_aggr:false, tired:false, manic:false, sick:false, temp:false, appetite:false, moon:false, anomaly:false, med_change_notes:[] };
     const hours = data.sleepHours != null ? Number(data.sleepHours) : (data.sleep ? 8 : null);
     const sleepLowFromHours = Number.isFinite(hours) ? hours < 8 : null;
+    const incomingNotes = Array.isArray(data.med_change_notes) ? data.med_change_notes.filter(Boolean) : [];
+    const mergedNotes = base.med_change_notes?.length ? base.med_change_notes.slice() : [];
+    incomingNotes.forEach(note => {
+      if (!mergedNotes.includes(note)) mergedNotes.push(note);
+    });
     MAP[key] = {
       bm: base.bm || !!data.bm,
       sleep: hours != null ? Math.max(base.sleep ?? 0, hours) : base.sleep,
@@ -4574,7 +4821,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.03A';
       temp: base.temp || !!data.temp,
       appetite: base.appetite || !!data.appetite,
       moon: base.moon || !!data.moon,
-      anomaly: base.anomaly || !!data.anomaly
+      anomaly: base.anomaly || !!data.anomaly,
+      med_change_notes: mergedNotes
     };
   }
 
@@ -4583,7 +4831,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.03A';
   let MAP = {};
   let EVENT_MAP = {};              // meetings/appointments
   let HEALTH_FLAGS = {};           // persisted manual flags
-  const layers = { bm:true, sleep:true, sleep_low:true, onset:true, night:true, prn_sleep:true, prn_mania:true, prn_aggr:true, tired:true, manic:true, sick:true, temp:true, appetite:true, moon:true, anomaly:true };
+  const layers = { bm:true, sleep:true, sleep_low:true, onset:true, night:true, prn_sleep:true, prn_mania:true, prn_aggr:true, tired:true, manic:true, sick:true, temp:true, appetite:true, med_change:true, moon:true, anomaly:true };
   const SYNODIC_MONTH = 29.530588853; // days
   const BASE_FULL_MOON = Date.UTC(2024, 8, 17, 18, 34); // Sep 17 2024 full moon reference
 
@@ -4625,7 +4873,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.03A';
     for(let day=1; day<=last.getDate(); day++){
       const cell = document.createElement('div'); cell.className='hc-cell'; cell.setAttribute('role','gridcell');
       const key = Y + '-' + pad(M+1) + '-' + pad(day);
-      const rec = MAP[key] || { bm:false, sleep:null, sleep_low:false, onset:false, night:false, prn_sleep:false, prn_mania:false, prn_aggr:false, tired:false, manic:false, sick:false, temp:false, appetite:false, moon:false, anomaly:false };
+      const rec = MAP[key] || { bm:false, sleep:null, sleep_low:false, onset:false, night:false, prn_sleep:false, prn_mania:false, prn_aggr:false, tired:false, manic:false, sick:false, temp:false, appetite:false, moon:false, anomaly:false, med_change_notes:[] };
       const moonToday = isFullMoonKey(key);
       if (!rec.moon && moonToday) {
         rec.moon = true;
@@ -4678,6 +4926,13 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.03A';
         cell.appendChild(list);
       }
 
+      if (layers.med_change && rec.med_change_notes && rec.med_change_notes.length) {
+        const noteBlock = document.createElement('div');
+        noteBlock.className = 'hc-note';
+        noteBlock.textContent = rec.med_change_notes.join('\n');
+        cell.appendChild(noteBlock);
+      }
+
       cell.addEventListener('click', () => openEditor(key));
       grid.appendChild(cell);
     }
@@ -4718,12 +4973,22 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.03A';
     updateCalendarQuickLook(legendCounts);
   }
 
-  function updateCalendarQuickLook(legendCounts = {}){
+  let quickLookOverride = null;
+
+  window.setCalendarQuickLookOverride = (label, counts) => {
+    quickLookOverride = label ? { label, counts } : null;
+    updateCalendarQuickLook(counts || {}, label || null);
+  };
+
+  function updateCalendarQuickLook(legendCounts = {}, labelOverride = null){
     if (!quickLookList) return;
-    if (quickLookRange && title) quickLookRange.textContent = `Month: ${title.textContent}`;
+    const override = quickLookOverride || (labelOverride ? { label: labelOverride, counts: legendCounts } : null);
+    if (quickLookRange && title) {
+      quickLookRange.textContent = override?.label || labelOverride || `Month: ${title.textContent}`;
+    }
     const items = QUICK_LOOK_ITEMS.map(item => ({
       ...item,
-      count: legendCounts[item.key] ?? 0
+      count: (override?.counts ?? legendCounts)[item.key] ?? 0
     }));
     let display = items.filter(item => item.count > 0);
     if (!display.length) display = items;
@@ -4739,9 +5004,14 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.03A';
   }
 
   function applyHealthFlagToMapLocal(key, data = {}, targetMap){
-    const base = targetMap[key] || { bm:false, sleep:null, sleep_low:false, onset:false, night:false, prn_sleep:false, prn_mania:false, prn_aggr:false, tired:false, manic:false, sick:false, temp:false, appetite:false, moon:false, anomaly:false };
+    const base = targetMap[key] || { bm:false, sleep:null, sleep_low:false, onset:false, night:false, prn_sleep:false, prn_mania:false, prn_aggr:false, tired:false, manic:false, sick:false, temp:false, appetite:false, moon:false, anomaly:false, med_change_notes:[] };
     const hours = data.sleepHours != null ? Number(data.sleepHours) : (data.sleep ? 8 : null);
     const sleepLowFromHours = Number.isFinite(hours) ? hours < 8 : null;
+    const incomingNotes = Array.isArray(data.med_change_notes) ? data.med_change_notes.filter(Boolean) : [];
+    const mergedNotes = base.med_change_notes?.length ? base.med_change_notes.slice() : [];
+    incomingNotes.forEach(note => {
+      if (!mergedNotes.includes(note)) mergedNotes.push(note);
+    });
     targetMap[key] = {
       bm: base.bm || !!data.bm,
       sleep: hours != null ? Math.max(base.sleep ?? 0, hours) : base.sleep,
@@ -4761,7 +5031,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.03A';
       temp: base.temp || !!data.temp,
       appetite: base.appetite || !!data.appetite,
       moon: base.moon || !!data.moon,
-      anomaly: base.anomaly || !!data.anomaly
+      anomaly: base.anomaly || !!data.anomaly,
+      med_change_notes: mergedNotes
     };
   }
 
@@ -4827,7 +5098,15 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.03A';
             || !!p.temp_value;
           const appetite = hasAppetiteChange(p) || hasAppetiteChange(row);
           const anomaly = p.anomaly_flag === true || /yes/i.test(String(p.anomaly || ''));
-          const cur = map[key] || { bm:false, sleep:null, sleep_low:false, onset:false, night:false, prn_sleep:false, prn_mania:false, prn_aggr:false, tired:false, manic:false, sick:false, temp:false, appetite:false, moon:false, anomaly:false };
+          const cur = map[key] || { bm:false, sleep:null, sleep_low:false, onset:false, night:false, prn_sleep:false, prn_mania:false, prn_aggr:false, tired:false, manic:false, sick:false, temp:false, appetite:false, moon:false, anomaly:false, med_change_notes:[] };
+          const medChangeFlag = /yes|true/i.test(String(p.med_change_flag || ''));
+          const medChangeNote = String(p.med_change_note || '').trim();
+          const caregiverLabel = String(p.caregiver_name || '').trim();
+          const medChangeLine = (medChangeFlag || medChangeNote)
+            ? `Med change${caregiverLabel ? ` (${caregiverLabel})` : ''}: ${medChangeNote || 'Yes'}`
+            : '';
+          const medNotes = cur.med_change_notes ? cur.med_change_notes.slice() : [];
+          if (medChangeLine && !medNotes.includes(medChangeLine)) medNotes.push(medChangeLine);
           map[key] = {
             bm:    cur.bm    || bm,
             sleep: (sleep!=null && (cur.sleep==null || sleep>cur.sleep)) ? sleep : cur.sleep,
@@ -4843,7 +5122,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.03A';
             temp:  cur.temp  || temp,
             appetite: cur.appetite || appetite,
             moon: cur.moon || isFullMoonKey(key),
-            anomaly: cur.anomaly || anomaly
+            anomaly: cur.anomaly || anomaly,
+            med_change_notes: medNotes
           };
         }
       }
@@ -4972,6 +5252,10 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.03A';
     const prevLabel = fmtMonth(prev.getFullYear(), prev.getMonth());
     const prevPrevLabel = fmtMonth(prevPrev.getFullYear(), prevPrev.getMonth());
     if (shiftRange) shiftRange.textContent = `Full months: ${prevPrevLabel} → ${prevLabel} → ${curLabel}`;
+    const shiftExplain = document.getElementById('calendarShiftExplain');
+    if (shiftExplain) {
+      shiftExplain.textContent = 'Numbers show how many more (green) or fewer (red) days this month compared with the prior month.';
+    }
 
     const [prevMap, prevPrevMap, currentMap] = await Promise.all([
       loadMonthFlagMap(prev.getFullYear(), prev.getMonth()),
@@ -5051,7 +5335,15 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.03A';
           const appetite = hasAppetiteChange(p) || hasAppetiteChange(row);
           const anomaly = p.anomaly_flag === true || /yes/i.test(String(p.anomaly || ''));
 
-          const cur = MAP[key] || { bm:false, sleep:null, sleep_low:false, onset:false, night:false, prn_sleep:false, prn_mania:false, prn_aggr:false, tired:false, manic:false, sick:false, temp:false, appetite:false, moon:false, anomaly:false };
+          const cur = MAP[key] || { bm:false, sleep:null, sleep_low:false, onset:false, night:false, prn_sleep:false, prn_mania:false, prn_aggr:false, tired:false, manic:false, sick:false, temp:false, appetite:false, moon:false, anomaly:false, med_change_notes:[] };
+          const medChangeFlag = /yes|true/i.test(String(p.med_change_flag || ''));
+          const medChangeNote = String(p.med_change_note || '').trim();
+          const caregiverLabel = String(p.caregiver_name || '').trim();
+          const medChangeLine = (medChangeFlag || medChangeNote)
+            ? `Med change${caregiverLabel ? ` (${caregiverLabel})` : ''}: ${medChangeNote || 'Yes'}`
+            : '';
+          const medNotes = cur.med_change_notes ? cur.med_change_notes.slice() : [];
+          if (medChangeLine && !medNotes.includes(medChangeLine)) medNotes.push(medChangeLine);
           MAP[key] = {
             bm:    cur.bm    || bm,
             sleep: (sleep!=null && (cur.sleep==null || sleep>cur.sleep)) ? sleep : cur.sleep,
@@ -5067,7 +5359,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.03A';
             temp:  cur.temp  || temp,
             appetite: cur.appetite || appetite,
             moon: cur.moon || isFullMoonKey(key),
-            anomaly: cur.anomaly || anomaly
+            anomaly: cur.anomaly || anomaly,
+            med_change_notes: medNotes
           };
         }
       }

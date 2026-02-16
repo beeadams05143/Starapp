@@ -72,8 +72,8 @@
       saveSession,
       clearSavedSession,
       getSessionFromStorage,
-    } from './supabaseClient.js?v=2026.02.03A';
-    import { rest } from './restClient.js?v=2026.02.03A';
+    } from './supabaseClient.js?v=2026.02.16A';
+    import { rest } from './restClient.js?v=2026.02.16A';
 
     const params   = new URLSearchParams(location.search);
     const normalizeRedirect = (value) => {
@@ -358,7 +358,7 @@
 
   <script>
     (function(){
-      const version = window.STAR_BUILD_VERSION || '2026.02.03A';
+      const version = window.STAR_BUILD_VERSION || '2026.02.16A';
       if (!window.STAR_BUILD_VERSION) window.STAR_BUILD_VERSION = version;
       const ensureBadge = () => {
         if (document.getElementById('star-build-version')) return;

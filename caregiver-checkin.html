@@ -79,16 +79,16 @@
     .entry-date-row label{margin:0;font-weight:800}
     .entry-date-row input[type="date"]{padding:8px 10px;border:1px solid #d1d5db;border-radius:10px;font-size:15px}
     .entry-date-row .muted{font-size:13px}
-    .movement-panel,.temp-panel{background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:12px;margin-top:12px}
-    .movement-head,.temp-head{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
-    .movement-title,.temp-title{font-weight:900}
-    .movement-desc,.temp-desc{margin:4px 0 0;color:#64748b;font-size:13px}
-    .movement-yn,.temp-yn{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:8px 0}
-    .movement-pill,.temp-pill{display:inline-flex;align-items:center;gap:6px;border:1px solid #d1d5db;border-radius:999px;padding:4px 8px;background:#fff;font-weight:700;font-size:12.5px}
-    .movement-pill input,.temp-pill input{width:auto}
-    .movement-body.is-collapsed,.temp-body.is-collapsed{display:none}
+    .movement-panel,.temp-panel,.med-panel{background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:12px;margin-top:12px}
+    .movement-head,.temp-head,.med-head{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+    .movement-title,.temp-title,.med-title{font-weight:900}
+    .movement-desc,.temp-desc,.med-desc{margin:4px 0 0;color:#64748b;font-size:13px}
+    .movement-yn,.temp-yn,.med-yn{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:8px 0}
+    .movement-pill,.temp-pill,.med-pill{display:inline-flex;align-items:center;gap:6px;border:1px solid #d1d5db;border-radius:999px;padding:4px 8px;background:#fff;font-weight:700;font-size:12.5px}
+    .movement-pill input,.temp-pill input,.med-pill input{width:auto}
+    .movement-body.is-collapsed,.temp-body.is-collapsed,.med-body.is-collapsed{display:none}
     .movement-row,.temp-row{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));align-items:end}
-    .movement-label,.temp-label{font-weight:800;color:#1f2937;margin-bottom:6px}
+    .movement-label,.temp-label,.med-label{font-weight:800;color:#1f2937;margin-bottom:6px}
     .movement-chips,.temp-chips{display:flex;flex-wrap:wrap;gap:6px}
     .movement-chip,.temp-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid #cbd5f5;border-radius:8px;padding:4px 8px;background:#fff;font-weight:700;font-size:12.5px;line-height:1.2}
     .movement-chip input,.temp-chip input{width:auto}
@@ -173,6 +173,9 @@
             <label>Hours of sleep:
               <select name="hours_sleep" class="yn"><option value="">Select</option><option>4</option><option>6</option><option>8</option><option>10+</option></select>
             </label>
+            <label>Time fell asleep:
+              <input type="time" name="sleep_fell_asleep_time"/>
+            </label>
             <label style="display:flex;align-items:center;gap:8px;margin-top:28px">
               <input type="checkbox" name="sleep_onset_difficulty" style="width:auto"/>
               <span>Difficulty falling asleep (took ~2+ hours)</span>
@@ -193,6 +196,7 @@
               </select>
             </label>
           </div>
+          <div class="muted" style="margin:-4px 0 8px">Record hours of sleep or time fell asleep — either one is fine, or both.</div>
           <div class="row cols-3 compact">
             <label>Had a BM today?
               <div class="yn-pill-group" role="group" aria-label="Had a BM today">
@@ -214,6 +218,23 @@
             </label>
             <label>Time PRN was given:<input type="time" name="prn_time"/></label>
           </div>
+          <div class="med-panel" id="medChangePanel">
+            <div class="med-head">
+              <div>
+                <div class="med-title">Medication change</div>
+                <div class="med-desc">Track any changes in dose, timing, new meds, or stopping meds.</div>
+              </div>
+            </div>
+            <div class="med-yn" role="group" aria-label="Medication change today">
+              <label class="med-pill"><input type="radio" name="med_change_flag" value="no" checked> No</label>
+              <label class="med-pill"><input type="radio" name="med_change_flag" value="yes"> Yes</label>
+            </div>
+            <div class="med-body is-collapsed" data-med-body-wrap>
+              <label class="med-label" for="med_change_note">What changed?</label>
+              <textarea name="med_change_note" id="med_change_note" placeholder="e.g., Increased Zoloft to 50mg; moved 7pm dose to 8pm."></textarea>
+            </div>
+          </div>
+
           <div class="movement-panel" id="movementSymptomsPanel">
             <div class="movement-head">
               <div>
@@ -632,6 +653,7 @@
                 <label class="movement-chip"><input type="checkbox" data-home-type value="Movie in living room">Movie in living room</label>
                 <label class="movement-chip"><input type="checkbox" data-home-type value="Played a game">Played a game</label>
                 <label class="movement-chip"><input type="checkbox" data-home-type value="Family celebration">Family celebration</label>
+                <label class="movement-chip"><input type="checkbox" data-home-type value="Art / craft project">Art / craft project</label>
                 <label class="movement-chip"><input type="checkbox" data-home-type value="Meal in the common area">Meal in the common area</label>
                 <label class="movement-chip"><input type="checkbox" data-home-type value="Meal at the table with family">Meal at the table with family</label>
                 <label class="movement-chip"><input type="checkbox" data-home-type value="Other">Other</label>
@@ -716,6 +738,8 @@
                 <label class="movement-chip"><input type="checkbox" data-public-type value="Sports event">Sports event</label>
                 <label class="movement-chip"><input type="checkbox" data-public-type value="Volunteer shift">Volunteer shift</label>
                 <label class="movement-chip"><input type="checkbox" data-public-type value="Class / lesson">Class / lesson</label>
+                <label class="movement-chip"><input type="checkbox" data-public-type value="Camping">Camping</label>
+                <label class="movement-chip"><input type="checkbox" data-public-type value="Concert">Concert</label>
                 <label class="movement-chip"><input type="checkbox" data-public-type value="Walk / Stroll">Walk / Stroll</label>
                 <label class="movement-chip"><input type="checkbox" data-public-type value="Went to store">Went to store</label>
                 <label class="movement-chip"><input type="checkbox" data-public-type value="Went to recycling">Went to recycling</label>
@@ -1190,6 +1214,7 @@
 
   let movementEls = {};
   let tempEls = {};
+  let medEls = {};
   const getMovementCheckboxValues = (selector) =>
     Array.from(document.querySelectorAll(selector))
       .filter((el) => el.checked)
@@ -1319,6 +1344,15 @@
     tempEls.bodyWrap.classList.toggle('is-collapsed', !present);
     if (!present) {
       clearTempFields({ keepPresent: true });
+    }
+  };
+
+  const setMedChangePresent = (present) => {
+    if (!medEls.bodyWrap) return;
+    medEls.bodyWrap.classList.toggle('is-collapsed', !present);
+    if (!present) {
+      const note = document.getElementById('med_change_note');
+      if (note) note.value = '';
     }
   };
 
@@ -1502,6 +1536,10 @@
       bodyWrap: document.querySelector('[data-temp-body-wrap]'),
       symptomsInput: document.getElementById('temp_symptoms')
     };
+    medEls = {
+      bodyWrap: document.querySelector('[data-med-body-wrap]'),
+      noteInput: document.getElementById('med_change_note')
+    };
     homeActivityTypeInput = document.getElementById('home_activity_type');
     publicActivityTypeInput = document.getElementById('public_activity_type');
     interactionTypeInput = document.getElementById('interaction_type');
@@ -1566,6 +1604,13 @@
         save(steps[movementStepIndex], movementStepIndex, true);
       });
     });
+    document.querySelectorAll('input[name="med_change_flag"]').forEach((el) => {
+      el.addEventListener('change', () => {
+        const present = el.value === 'yes';
+        setMedChangePresent(present);
+        save(steps[movementStepIndex], movementStepIndex, true);
+      });
+    });
     movementEls.severityButtons?.forEach((btn) => {
       btn.addEventListener('click', () => setMovementSeverity(btn.dataset.sev));
     });
@@ -1618,6 +1663,9 @@
         console.warn('movement copy failed', error);
       }
     });
+
+    const medFlagChecked = document.querySelector('input[name="med_change_flag"]:checked');
+    setMedChangePresent(medFlagChecked?.value === 'yes');
 
     clearDadOnlySections();
     applyDadSectionVisibility();
@@ -2221,6 +2269,7 @@
       movementEls.detailsToggle?.setAttribute('aria-expanded', 'false');
       clearTempFields();
       tempEls.bodyWrap?.classList.add('is-collapsed');
+      setMedChangePresent(false);
       clearHomeCommunityAdlFields();
       renderAdlActivityChips();
     }
@@ -2232,6 +2281,7 @@
       resetAdlEntries();
       clearMovementFields();
       clearTempFields();
+      setMedChangePresent(false);
       clearHomeCommunityAdlFields();
       renderAdlActivityChips();
     }
@@ -2463,7 +2513,7 @@
 </script>
 <script>
   (function(){
-    const version = window.STAR_BUILD_VERSION || '2026.02.03A';
+    const version = window.STAR_BUILD_VERSION || '2026.02.16A';
     if (!window.STAR_BUILD_VERSION) window.STAR_BUILD_VERSION = version;
     const ensureBadge = () => {
       if (document.getElementById('star-build-version')) return;

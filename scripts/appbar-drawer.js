@@ -123,7 +123,7 @@
         <a href="/focus-week.html">⭐ Focus of the Week</a>
       </div>
       <div class="drawer-item" data-role="caregiver dad">
-        <a href="/documents/documents.html">📂 Documents</a>
+        <a href="/documents/index.html">📂 Documents</a>
       </div>
       <div class="drawer-item" data-role="shared">
         <a href="/emergency-medical.html">🚨 Emergency</a>

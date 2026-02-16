@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Documents</title>
+  <style>
+    :root{ --ink:#1f2937; --muted:#6b7280; --bg:#fafaf9; --card:#ffffff; --border:#e5e7eb; --accent:#111; }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      padding:24px;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      background:var(--bg);
+      color:var(--ink);
+    }
+    .page{ max-width:1100px; margin:0 auto; }
+    h1{ margin:0 0 8px; letter-spacing:.2px; }
+    p.lead{ margin:0 0 18px; color:var(--muted); }
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap:14px;
+    }
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:16px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      box-shadow:0 6px 18px rgba(15,23,42,.06);
+    }
+    .card .top{
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .icon{
+      width:40px;
+      height:40px;
+      border-radius:12px;
+      display:grid;
+      place-items:center;
+      background:#111;
+      color:#fff;
+      font-size:20px;
+    }
+    .card h3{ margin:0; font-size:18px; }
+    .card p{ margin:0; color:var(--muted); line-height:1.35; }
+    .card a{
+      margin-top:auto;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      text-decoration:none;
+      color:#fff;
+      background:var(--accent);
+      padding:10px 14px;
+      border-radius:12px;
+      font-weight:700;
+      width:fit-content;
+    }
+    @media (max-width: 720px){
+      body{ padding:14px; }
+      .grid{ grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body data-doc-page="docs-home">
+  <div id="navbar"></div>
+
+  <div class="page">
+    <h1>Documents</h1>
+    <p class="lead">Choose a document category to add or view items.</p>
+
+    <div class="grid">
+      <div class="card">
+        <div class="top">
+          <div class="icon">💵</div>
+          <h3>Finance</h3>
+        </div>
+        <p>Invoices, receipts, budgets, shopping records, and expense notes.</p>
+        <a href="/documents/documents.html?cat=Finance">Open Finance</a>
+      </div>
+
+      <div class="card">
+        <div class="top">
+          <div class="icon">🩺</div>
+          <h3>Medical</h3>
+        </div>
+        <p>Appointments, medication notes, lab results, and provider instructions.</p>
+        <a href="/documents/documents.html?cat=Medical">Open Medical</a>
+      </div>
+
+      <div class="card">
+        <div class="top">
+          <div class="icon">🏢</div>
+          <h3>HR</h3>
+        </div>
+        <p>Staffing documents, policies, payroll notes, and onboarding items.</p>
+        <a href="/documents/documents.html?cat=HR">Open HR</a>
+      </div>
+
+      <div class="card">
+        <div class="top">
+          <div class="icon">🧩</div>
+          <h3>Caregiving</h3>
+        </div>
+        <p>Care plans, routines, behavior notes, and support documentation.</p>
+        <a href="/documents/documents.html?cat=Caregiving">Open Caregiving</a>
+      </div>
+
+      <div class="card">
+        <div class="top">
+          <div class="icon">📚</div>
+          <h3>ISA / IEP</h3>
+        </div>
+        <p>School plans, evaluations, meeting notes, and educational records.</p>
+        <a href="/documents/documents.html?cat=ISA">Open ISA / IEP</a>
+      </div>
+
+      <div class="card">
+        <div class="top">
+          <div class="icon">📦</div>
+          <h3>Year End Paperwork</h3>
+        </div>
+        <p>Annual forms, checklists, and end‑of‑year documentation.</p>
+        <a href="/documents/documents.html?cat=Year%20End%20Paperwork">Open Year End</a>
+      </div>
+
+      <div class="card">
+        <div class="top">
+          <div class="icon">🛡️</div>
+          <h3>Guardianship</h3>
+        </div>
+        <p>Legal documents, court paperwork, and guardian‑related records.</p>
+        <a href="/documents/documents.html?cat=Guardianship">Open Guardianship</a>
+      </div>
+
+      <div class="card">
+        <div class="top">
+          <div class="icon">📝</div>
+          <h3>Meeting Minutes</h3>
+        </div>
+        <p>Team meetings, med checks, and decision notes with follow‑ups.</p>
+        <a href="/documents/minutes-form.html">Open Minutes</a>
+      </div>
+    </div>
+  </div>
+
+  <script defer src="/ui-shell.js?v=2026.02.16D"></script>
+  <script defer src="/scripts/appbar-drawer.js?v=2026.02.16D"></script>
+  <script type="module" src="/avatar-float.js?v=2026.02.16D"></script>
+</body>
+</html>

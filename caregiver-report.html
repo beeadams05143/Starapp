@@ -4118,7 +4118,15 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.16A';
 
     /* =================== Wire & boot =================== */
     $('#moodRange').addEventListener('change', renderMoodSection);
-    document.getElementById('chartRangeSelect')?.addEventListener('change', applyChartRange);
+    const chartRangeSelect = document.getElementById('chartRangeSelect');
+    if (chartRangeSelect) {
+      window.applyChartRange = applyChartRange;
+      chartRangeSelect.addEventListener('change', applyChartRange);
+      chartRangeSelect.addEventListener('input', applyChartRange);
+      setTimeout(() => {
+        try { applyChartRange(); } catch (err) { console.warn('[report] applyChartRange init failed', err); }
+      }, 0);
+    }
     document.getElementById('movementRangeSelect')?.addEventListener('change', (event) => {
       const rangeKey = event.target.value || 'month';
       applyMovementRange(rangeKey);

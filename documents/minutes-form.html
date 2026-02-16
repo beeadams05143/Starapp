@@ -118,6 +118,50 @@
     .hint{ color:#6b7280; font-size:13px; margin-top:6px; }
     .divider{ height:1px; background:#f1f5f9; margin:16px 0; }
 
+    .dictation-toolbar{
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+      align-items:center;
+      margin:6px 0 8px;
+    }
+    .dictation-toolbar .label{
+      font-size:12px;
+      color:#6b7280;
+      margin-right:4px;
+      font-weight:600;
+    }
+    .dictation-toolbar .chip-btn,
+    .dictation-toolbar .mic-btn{
+      appearance:none;
+      border:1px solid #e5e7eb;
+      background:#fff;
+      color:#111;
+      padding:6px 10px;
+      border-radius:999px;
+      cursor:pointer;
+      font-weight:600;
+      font-size:13px;
+    }
+    .dictation-toolbar .mic-btn{
+      background:#111;
+      color:#fff;
+      border-color:#111;
+    }
+    .dictation-toolbar .mic-btn.is-active{
+      background:#ef4444;
+      border-color:#ef4444;
+    }
+    .dictation-toolbar .status{
+      font-size:12px;
+      color:#6b7280;
+      margin-left:6px;
+    }
+    .dictation-toolbar .status.error{
+      color:#b91c1c;
+      font-weight:600;
+    }
+
     /* Fixed bottom action bar above tabbar */
     .save-bar{
       position:fixed;
@@ -252,6 +296,7 @@
         <textarea id="agenda" placeholder="1) Welcome&#10;2) Review goals&#10;3) Next steps"></textarea>
 
         <label for="notes" style="margin-top:10px">Discussion Notes</label>
+        <div class="dictation-toolbar" data-dictation-for="notes"></div>
         <textarea id="notes" placeholder="Type the discussion here…"></textarea>
 
         <div class="grid2" style="margin-top:8px">
@@ -465,16 +510,16 @@
   </script>
 
   <!-- Page-specific logic (keep if you use it) -->
-  <script type="module" src="/script.js?v=2025.01.09E"></script>
+  <script type="module" src="/script.js?v=2026.02.16B"></script>
 
   <!-- Top app bar + bottom tabs (creates #openMenu) -->
-  <script defer src="/ui-shell.js?v=2025.01.09E"></script>
+  <script defer src="/ui-shell.js?v=2026.02.16B"></script>
 
   <!-- Hamburger drawer (depends on #openMenu created by ui-shell) -->
-  <script defer src="/scripts/appbar-drawer.js?v=2025.01.09E"></script>
+  <script defer src="/scripts/appbar-drawer.js?v=2026.02.16B"></script>
 
   <!-- Floating avatar (top-right across pages) -->
-  <script type="module" src="/avatar-float.js?v=2025.01.09E"></script>
+  <script type="module" src="/avatar-float.js?v=2026.02.16B"></script>
   <script>
     (function(){
       const cat = (document.body.dataset.docCat || '').toLowerCase();
@@ -486,6 +531,167 @@
           link.setAttribute('aria-current', 'page');
         }
       });
+    })();
+  </script>
+  <script>
+    (function(){
+      const RecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const supportsSpeech = !!RecognitionCtor;
+      const speakerLabels = ['Doctor', 'Mom', 'Dad', 'Caregiver', 'Case Manager', 'Other'];
+      let activeSession = null;
+
+      const insertAtCursor = (el, text) => {
+        const start = el.selectionStart ?? el.value.length;
+        const end = el.selectionEnd ?? el.value.length;
+        const before = el.value.slice(0, start);
+        const after = el.value.slice(end);
+        el.value = `${before}${text}${after}`;
+        const nextPos = start + text.length;
+        el.selectionStart = el.selectionEnd = nextPos;
+        el.focus();
+      };
+
+      const addSpeakerLabel = (el, label) => {
+        const prefix = el.value && !el.value.endsWith('\n') ? '\n' : '';
+        insertAtCursor(el, `${prefix}${label}: `);
+      };
+
+      const stopActive = () => {
+        if (!activeSession) return;
+        activeSession.isRunning = false;
+        if (activeSession.recognition) {
+          try { activeSession.recognition.stop(); } catch (err) {}
+        }
+        if (activeSession.micBtn) {
+          activeSession.micBtn.classList.remove('is-active');
+          activeSession.micBtn.textContent = 'Start dictation';
+        }
+        if (activeSession.statusEl) {
+          activeSession.statusEl.textContent = '';
+        }
+        activeSession = null;
+      };
+
+      const startDictation = (el, micBtn, statusEl) => {
+        if (!supportsSpeech) {
+          statusEl.textContent = 'Dictation not supported in this browser.';
+          statusEl.classList.add('error');
+          return;
+        }
+
+        if (activeSession && activeSession.target !== el) {
+          stopActive();
+        }
+
+        const recognition = new RecognitionCtor();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+
+        const session = { recognition, target: el, micBtn, statusEl, isRunning: true };
+        activeSession = session;
+
+        micBtn.classList.add('is-active');
+        micBtn.textContent = 'Stop dictation';
+        statusEl.textContent = 'Listening…';
+        statusEl.classList.remove('error');
+
+        recognition.onresult = (event) => {
+          let transcript = '';
+          for (let i = event.resultIndex; i < event.results.length; i += 1) {
+            const result = event.results[i];
+            if (result.isFinal) {
+              transcript += result[0].transcript;
+            }
+          }
+          if (transcript.trim()) {
+            const spacer = el.value && !el.value.endsWith(' ') ? ' ' : '';
+            insertAtCursor(el, `${spacer}${transcript.trim()}`);
+          }
+        };
+
+        recognition.onerror = () => {
+          statusEl.textContent = 'Dictation stopped. Tap to try again.';
+          statusEl.classList.add('error');
+          micBtn.classList.remove('is-active');
+          micBtn.textContent = 'Start dictation';
+          session.isRunning = false;
+        };
+
+        recognition.onend = () => {
+          if (session.isRunning) {
+            try { recognition.start(); } catch (err) {}
+          } else {
+            statusEl.textContent = '';
+          }
+        };
+
+        try {
+          recognition.start();
+        } catch (err) {
+          statusEl.textContent = 'Dictation not available. Tap to retry.';
+          statusEl.classList.add('error');
+          micBtn.classList.remove('is-active');
+          micBtn.textContent = 'Start dictation';
+          session.isRunning = false;
+        }
+      };
+
+      document.querySelectorAll('.dictation-toolbar[data-dictation-for]').forEach((toolbar) => {
+        const targetId = toolbar.dataset.dictationFor;
+        const target = document.getElementById(targetId);
+        if (!target) return;
+
+        toolbar.innerHTML = '';
+        const label = document.createElement('span');
+        label.className = 'label';
+        label.textContent = 'Talk to text:';
+        toolbar.appendChild(label);
+
+        const micBtn = document.createElement('button');
+        micBtn.type = 'button';
+        micBtn.className = 'mic-btn';
+        micBtn.textContent = 'Start dictation';
+        toolbar.appendChild(micBtn);
+
+        const status = document.createElement('span');
+        status.className = 'status';
+        toolbar.appendChild(status);
+
+        speakerLabels.forEach((labelText) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'chip-btn';
+          btn.textContent = labelText;
+          btn.addEventListener('click', () => {
+            if (labelText === 'Other') {
+              const name = window.prompt('Speaker name?');
+              if (name && name.trim()) {
+                addSpeakerLabel(target, name.trim());
+              }
+              return;
+            }
+            addSpeakerLabel(target, labelText);
+          });
+          toolbar.appendChild(btn);
+        });
+
+        if (!supportsSpeech) {
+          micBtn.disabled = true;
+          status.textContent = 'Dictation not supported on this browser (iOS Safari often blocks it).';
+          status.classList.add('error');
+        }
+
+        micBtn.addEventListener('click', () => {
+          if (activeSession && activeSession.target === target) {
+            stopActive();
+            return;
+          }
+          startDictation(target, micBtn, status);
+        });
+      });
+
+      window.addEventListener('beforeunload', stopActive);
     })();
   </script>
 

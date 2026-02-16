@@ -120,6 +120,7 @@
     .hc-legend label{display:flex;align-items:center;gap:4px;font-weight:600}
     .hc-legend select{padding:6px 8px;border-radius:8px;border:1px solid #e5e7eb;background:#fff}
     .hc-legend-count{font-size:11px;font-weight:800;color:#0f172a;background:#e2e8f0;border-radius:999px;padding:2px 6px}
+    .hc-legend label{font-size:12px}
 
     /* ===== Quick Look summary ===== */
     .is-hidden{display:none !important}
@@ -243,8 +244,9 @@
       .hc-title{font-size:15px}
       .hc-btn{padding:6px 8px;font-size:12px}
       .hc-legend{gap:8px;padding:8px 12px}
-      .hc-legend label{font-size:12px}
-      .hc-legend-count{font-size:10px;padding:2px 5px}
+      .hc-legend label{font-size:10px}
+      .hc-legend-count{font-size:9px;padding:1px 4px}
+      .hc-emo{font-size:14px}
       .hc-dow{padding:8px 4px;font-size:11px}
       .hc-grid{grid-template-columns:repeat(7,minmax(40px,1fr))}
       .hc-cell{min-height:56px;padding:4px}
@@ -495,7 +497,7 @@
 </div>
 
 <script type="module">
-import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.16C';
+import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.16D';
 
 (function(){
   const Status = document.getElementById('cg-status');
@@ -1089,15 +1091,15 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.16C';
 
   <!-- Single, clean module script -->
   <script type="module">
-    import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.16C';
-    import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabaseClient.js?v=2026.02.16C';
-    import { loadFocusForCurrentUser, readLocalFocusDraft } from './focus-data.js?v=2026.02.16C';
+    import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.16D';
+    import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabaseClient.js?v=2026.02.16D';
+    import { loadFocusForCurrentUser, readLocalFocusDraft } from './focus-data.js?v=2026.02.16D';
 
     /* =============== Optional live data =============== */
     let loadFromSupabase = null;
     let formatEntryForList = null;
     try {
-      const mod = await import('./caregiver-report-supabase.js?v=2026.02.16C');
+      const mod = await import('./caregiver-report-supabase.js?v=2026.02.16D');
       loadFromSupabase = mod.loadCaregiverCheckins;
       formatEntryForList = mod.formatEntryForList;
     } catch (err) {
@@ -4677,7 +4679,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.16C';
 
 <script>
   (function(){
-    const version = window.STAR_BUILD_VERSION || '2026.02.16C';
+    const version = window.STAR_BUILD_VERSION || '2026.02.16D';
     if (!window.STAR_BUILD_VERSION) window.STAR_BUILD_VERSION = version;
     const ensureBadge = () => {
       if (document.getElementById('star-build-version')) return;
@@ -4711,7 +4713,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.16C';
 </script>
 
 <script type="module">
-import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.16C';
+import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.16D';
 
 (() => {
   // Bail out quietly if the calendar HTML isn't present

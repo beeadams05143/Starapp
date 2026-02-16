@@ -39,6 +39,19 @@
     .row{display:flex; gap:8px; align-items:center; justify-content:space-between}
     .doc-header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-top:22px}
     .doc-header h2{margin:0}
+    .doc-category-switcher{
+      margin:10px 0 14px;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    .doc-category-switcher .switcher-row{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .doc-category-switcher select{flex:1 1 220px;}
     .doc-attachment-preview{
       margin-top:10px;
       border:1px solid #e5e7eb;
@@ -199,6 +212,22 @@
             Editing this document. Uploading a new file will replace the current attachment.
           </p>
 
+          <div class="doc-category-switcher">
+            <label for="docCategorySelect">Document category</label>
+            <div class="switcher-row">
+              <select id="docCategorySelect" aria-label="Select document category">
+                <option value="Finance">Finance</option>
+                <option value="Medical">Medical</option>
+                <option value="HR">HR</option>
+                <option value="Caregiving">Caregiving</option>
+                <option value="ISA">ISA / IEP</option>
+                <option value="Year End Paperwork">Year End Paperwork</option>
+                <option value="Guardianship">Guardianship</option>
+              </select>
+              <button class="btn secondary" type="button" id="docCategoryGo">Go</button>
+            </div>
+          </div>
+
           <form id="doc-form-pretty">
             <input type="hidden" id="docCategory" value="Finance" />
 
@@ -297,12 +326,12 @@
   </div>
 
  <!-- documents page logic (module) -->
-<script type="module" src="/documents/documents.js?v=2026.02.16B"></script>
+<script type="module" src="/documents/documents.js?v=2026.02.16C"></script>
 
 <!-- site shell: drawer + bars + floating avatar  -->
-<script defer src="/scripts/appbar-drawer.js?v=2026.02.16B"></script>
-<script defer src="/ui-shell.js?v=2026.02.16B"></script>
-<script type="module" src="/avatar-float.js?v=2026.02.16B"></script>
+<script defer src="/scripts/appbar-drawer.js?v=2026.02.16C"></script>
+<script defer src="/ui-shell.js?v=2026.02.16C"></script>
+<script type="module" src="/avatar-float.js?v=2026.02.16C"></script>
 <script>
   (function(){
     const cat = (document.body.dataset.docCat || '').toLowerCase();
@@ -314,6 +343,30 @@
         link.setAttribute('aria-current', 'page');
       }
     });
+  })();
+</script>
+<script>
+  (function(){
+    const select = document.getElementById('docCategorySelect');
+    const goBtn = document.getElementById('docCategoryGo');
+    if (!select) return;
+
+    const urlParams = new URLSearchParams(location.search);
+    const activeCat = urlParams.get('cat') || 'Finance';
+    select.value = activeCat;
+
+    const navigateToCategory = () => {
+      const nextCat = select.value || 'Finance';
+      const p = new URLSearchParams(location.search);
+      p.set('cat', nextCat);
+      const nextUrl = `${location.pathname}?${p.toString()}`;
+      if (nextUrl !== location.pathname + location.search) {
+        location.href = nextUrl;
+      }
+    };
+
+    goBtn?.addEventListener('click', navigateToCategory);
+    select.addEventListener('change', navigateToCategory);
   })();
 </script>
 <script>

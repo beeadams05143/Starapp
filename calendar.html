@@ -60,7 +60,6 @@
       font-size:11px;
       font-weight:700;
       color:#1f2937;
-      white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
     }
@@ -111,6 +110,10 @@
         margin-top:4px;
         font-size:9px;
         line-height:1.1;
+        display:-webkit-box;
+        -webkit-line-clamp:3;
+        -webkit-box-orient:vertical;
+        white-space:normal;
       }
       .day .event-more{
         margin-top:1px;

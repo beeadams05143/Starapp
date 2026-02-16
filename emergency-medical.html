@@ -386,6 +386,7 @@
     }
 
     async function initExistingPhoto() {
+      if (!isOwner()) return;
       try {
         const uid = session?.user?.id;
         if (uid) {
@@ -836,6 +837,16 @@
           sharedEnvelope = envelope;
           hydrateForm(envelope.data);
           document.getElementById('cloudStatus').textContent = 'Loaded shared record ✓';
+          const hasSharedPhoto = !!envelope.data.avatar_url;
+          const hasLocalPhoto = drop.classList.contains('has-image') && !!preview?.src;
+          if (!hasSharedPhoto && isOwner() && hasLocalPhoto) {
+            try {
+              await saveSharedEnvelope(buildPayload());
+              document.getElementById('cloudStatus').textContent = 'Synced photo to group ✓';
+            } catch (syncErr) {
+              console.warn('photo sync failed', syncErr?.message || syncErr);
+            }
+          }
         } else {
           document.getElementById('cloudStatus').textContent = 'No shared record yet';
         }
@@ -892,8 +903,8 @@
 <script type="module" src="./avatar-float.js?v=2025.01.09E"></script>
 
 <!-- ✅ Restore original hamburger menu + bottom tabbar -->
-<script defer src="./ui-shell.js?v=2026.02.16D"></script>
-<script defer src="./scripts/appbar-drawer.js?v=2026.02.16D"></script>
+<script defer src="./ui-shell.js?v=2026.02.16F"></script>
+<script defer src="./scripts/appbar-drawer.js?v=2026.02.16F"></script>
 </body>
 </html>
 

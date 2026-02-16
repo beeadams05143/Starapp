@@ -87,6 +87,17 @@
     .movement-pill,.temp-pill,.med-pill{display:inline-flex;align-items:center;gap:6px;border:1px solid #d1d5db;border-radius:999px;padding:4px 8px;background:#fff;font-weight:700;font-size:12.5px}
     .movement-pill input,.temp-pill input,.med-pill input{width:auto}
     .movement-body.is-collapsed,.temp-body.is-collapsed,.med-body.is-collapsed{display:none}
+    .med-body{margin-top:10px;display:grid;gap:10px}
+    .med-type-grid{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+    .med-type-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid #cbd5f5;border-radius:10px;padding:6px 8px;background:#fff;font-weight:700;font-size:12.5px}
+    .med-type-chip input{width:auto}
+    .med-row{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+    .med-input-note{font-size:12px;color:#6b7280;margin-top:-4px}
+    .med-body label{font-weight:700;color:#1f2937;font-size:13px}
+    .med-body input[type="text"],
+    .med-body textarea,
+    .med-body select{width:100%}
+    .med-body textarea{min-height:72px}
     .movement-row,.temp-row{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));align-items:end}
     .movement-label,.temp-label,.med-label{font-weight:800;color:#1f2937;margin-bottom:6px}
     .movement-chips,.temp-chips{display:flex;flex-wrap:wrap;gap:6px}
@@ -222,7 +233,7 @@
             <div class="med-head">
               <div>
                 <div class="med-title">Medication change</div>
-                <div class="med-desc">Track any changes in dose, timing, new meds, or stopping meds.</div>
+                <div class="med-desc">Note any new meds, dose changes, PRNs, or stops.</div>
               </div>
             </div>
             <div class="med-yn" role="group" aria-label="Medication change today">
@@ -230,8 +241,47 @@
               <label class="med-pill"><input type="radio" name="med_change_flag" value="yes"> Yes</label>
             </div>
             <div class="med-body is-collapsed" data-med-body-wrap>
-              <label class="med-label" for="med_change_note">What changed?</label>
-              <textarea name="med_change_note" id="med_change_note" placeholder="e.g., Increased Zoloft to 50mg; moved 7pm dose to 8pm."></textarea>
+              <div>
+                <div class="med-label">Change type</div>
+                <div class="med-type-grid" role="group" aria-label="Change type">
+                  <label class="med-type-chip"><input type="checkbox" name="med_change_type_new" /> New medication</label>
+                  <label class="med-type-chip"><input type="checkbox" name="med_change_type_dose" /> Dose change</label>
+                  <label class="med-type-chip"><input type="checkbox" name="med_change_type_stopped" /> Stopped medication</label>
+                  <label class="med-type-chip"><input type="checkbox" name="med_change_type_prn" /> PRN given</label>
+                  <label class="med-type-chip"><input type="checkbox" name="med_change_type_other" /> Other</label>
+                </div>
+              </div>
+              <div class="med-row">
+                <label>Time / window
+                  <select name="med_change_time_window" id="med_change_time_window">
+                    <option value="">Select</option>
+                    <option>Morning</option>
+                    <option>Late morning</option>
+                    <option>Afternoon</option>
+                    <option>Evening</option>
+                    <option>Night</option>
+                    <option>Overnight</option>
+                    <option>Other</option>
+                  </select>
+                </label>
+                <label id="medChangeTimeOtherWrap" style="display:none">Time detail (optional)
+                  <input type="text" name="med_change_time_other" id="med_change_time_other" placeholder="e.g., 8:30am, after lunch" />
+                </label>
+              </div>
+              <div class="med-row">
+                <label>Medication name(s) (optional)
+                  <input type="text" name="med_change_name" id="med_change_name" placeholder="e.g., Zoloft, Melatonin" />
+                </label>
+                <label>Dose / change details (optional)
+                  <input type="text" name="med_change_dose" id="med_change_dose" placeholder="e.g., 25mg → 50mg" />
+                </label>
+              </div>
+              <label>Notes (optional)
+                <textarea name="med_change_note" id="med_change_note" placeholder="Short note about the change or reason."></textarea>
+              </label>
+              <label>Caregiver notes (optional)
+                <textarea name="med_change_caregiver_notes" id="med_change_caregiver_notes" placeholder="Optional notes…"></textarea>
+              </label>
             </div>
           </div>
 
@@ -1351,9 +1401,45 @@
     if (!medEls.bodyWrap) return;
     medEls.bodyWrap.classList.toggle('is-collapsed', !present);
     if (!present) {
-      const note = document.getElementById('med_change_note');
-      if (note) note.value = '';
+      clearMedFields({ keepPresent: true });
     }
+  };
+
+  const syncMedTimeWindow = () => {
+    const wrap = document.getElementById('medChangeTimeOtherWrap');
+    const select = document.getElementById('med_change_time_window');
+    if (!wrap || !select) return;
+    const show = select.value === 'Other';
+    wrap.style.display = show ? '' : 'none';
+    if (!show) {
+      const input = document.getElementById('med_change_time_other');
+      if (input) input.value = '';
+    }
+  };
+
+  const clearMedFields = ({ keepPresent = false } = {}) => {
+    if (!keepPresent) {
+      document.querySelectorAll('input[name="med_change_flag"]').forEach((el) => {
+        el.checked = el.value === 'no';
+      });
+    }
+    const checkboxNames = [
+      'med_change_type_new',
+      'med_change_type_dose',
+      'med_change_type_stopped',
+      'med_change_type_prn',
+      'med_change_type_other'
+    ];
+    checkboxNames.forEach((name) => {
+      const el = document.querySelector(`input[name="${name}"]`);
+      if (el) el.checked = false;
+    });
+    ['med_change_time_window','med_change_time_other','med_change_name','med_change_dose','med_change_note','med_change_caregiver_notes']
+      .forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+    syncMedTimeWindow();
   };
 
   const clearMovementFields = ({ keepPresent = false } = {}) => {
@@ -1538,7 +1624,8 @@
     };
     medEls = {
       bodyWrap: document.querySelector('[data-med-body-wrap]'),
-      noteInput: document.getElementById('med_change_note')
+      noteInput: document.getElementById('med_change_note'),
+      timeWindow: document.getElementById('med_change_time_window')
     };
     homeActivityTypeInput = document.getElementById('home_activity_type');
     publicActivityTypeInput = document.getElementById('public_activity_type');
@@ -1611,6 +1698,10 @@
         save(steps[movementStepIndex], movementStepIndex, true);
       });
     });
+    medEls.timeWindow?.addEventListener('change', () => {
+      syncMedTimeWindow();
+      save(steps[movementStepIndex], movementStepIndex, true);
+    });
     movementEls.severityButtons?.forEach((btn) => {
       btn.addEventListener('click', () => setMovementSeverity(btn.dataset.sev));
     });
@@ -1666,6 +1757,7 @@
 
     const medFlagChecked = document.querySelector('input[name="med_change_flag"]:checked');
     setMedChangePresent(medFlagChecked?.value === 'yes');
+    syncMedTimeWindow();
 
     clearDadOnlySections();
     applyDadSectionVisibility();
@@ -2222,6 +2314,7 @@
       if (idx === movementStepIndex) {
         hydrateMovementFromData(draft.data[idx] || {});
         hydrateTempFromData(draft.data[idx] || {});
+        syncMedTimeWindow();
       }
       if (step.querySelector('[data-home-type]') || step.querySelector('[data-public-type]')) {
         hydrateHomeCommunityFromData(draft.data[idx] || {});
@@ -2268,6 +2361,7 @@
       movementEls.detailsPanel?.classList.add('is-hidden');
       movementEls.detailsToggle?.setAttribute('aria-expanded', 'false');
       clearTempFields();
+      clearMedFields();
       tempEls.bodyWrap?.classList.add('is-collapsed');
       setMedChangePresent(false);
       clearHomeCommunityAdlFields();

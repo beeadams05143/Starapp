@@ -111,6 +111,8 @@
     .hc-cell:nth-child(7n){border-right:0}
     .hc-date{font-weight:900;font-size:13px;color:#111}
     .hc-icons{display:flex;gap:6px;margin-top:6px;font-size:24px;line-height:1;flex-wrap:wrap}
+    .hc-icon{font-size:.95em;line-height:1}
+    .hc-icon-prn{font-size:.95em;line-height:1;letter-spacing:0}
     .hc-empty{color:#6b7280;position:absolute;left:8px;bottom:8px;font-size:12px}
     .hc-events{margin-top:6px;display:flex;flex-direction:column;gap:4px}
     .hc-event-pill{display:inline-flex;align-items:center;gap:6px;padding:3px 6px;border-radius:8px;background:#eef2ff;font-size:11px;font-weight:600;color:#1d4ed8;max-width:100%}
@@ -244,10 +246,12 @@
       .hc-legend label{font-size:12px}
       .hc-legend-count{font-size:10px;padding:2px 5px}
       .hc-dow{padding:8px 4px;font-size:11px}
-      .hc-grid{grid-template-columns:repeat(7,minmax(44px,1fr))}
-      .hc-cell{min-height:62px;padding:5px}
+      .hc-grid{grid-template-columns:repeat(7,minmax(40px,1fr))}
+      .hc-cell{min-height:56px;padding:4px}
       .hc-date{font-size:10px}
-      .hc-icons{font-size:14px;gap:3px;margin-top:3px}
+      .hc-icons{font-size:12px;gap:2px;margin-top:2px}
+      .hc-icon{font-size:.9em}
+      .hc-icon-prn{font-size:.9em;letter-spacing:0}
       .hc-events{gap:2px;margin-top:3px}
       .hc-event-pill{font-size:8px;padding:2px 4px}
       .hc-note{font-size:8px;padding:3px}
@@ -4966,24 +4970,24 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.16C';
       const head = document.createElement('div'); head.className='hc-date'; head.textContent = day; cell.appendChild(head);
 
       const icons = document.createElement('div'); icons.className='hc-icons';
-      if (rec.bm    && layers.bm   ){ const s=document.createElement('span'); s.textContent=EMO.bm;    s.setAttribute('aria-label','BM'); icons.appendChild(s); bmDays++; }
+      if (rec.bm    && layers.bm   ){ const s=document.createElement('span'); s.className='hc-icon'; s.textContent=EMO.bm;    s.setAttribute('aria-label','BM'); icons.appendChild(s); bmDays++; }
       const hasSleepHours = rec.sleep != null;
       const goodSleep = hasSleepHours ? rec.sleep >= 8 : false;
       const poorSleep = hasSleepHours ? rec.sleep < 8 : !!rec.sleep_low;
-      if (goodSleep && layers.sleep){ const s=document.createElement('span'); s.textContent=EMO.sleep; s.setAttribute('aria-label','Good sleep (8+ hours)'); icons.appendChild(s); sleepDays++; }
-      if (poorSleep && layers.sleep_low){ const s=document.createElement('span'); s.textContent=EMO.sleep_low; s.setAttribute('aria-label','Poor sleep (< 8 hours)'); icons.appendChild(s); sleepLowDays++; }
-      if (rec.onset && layers.onset){ const s=document.createElement('span'); s.textContent=EMO.onset; s.setAttribute('aria-label','Late sleep onset'); icons.appendChild(s); onsetDays++; }
-      if (rec.night && layers.night){ const s=document.createElement('span'); s.textContent=EMO.night; s.setAttribute('aria-label','Night waking'); icons.appendChild(s); nightDays++; }
-      if (rec.prn_sleep && layers.prn_sleep){ const s=document.createElement('span'); s.textContent=EMO.prn_sleep; s.setAttribute('aria-label','PRN sleep'); icons.appendChild(s); prnSleepDays++; }
-      if (rec.prn_mania && layers.prn_mania){ const s=document.createElement('span'); s.textContent=EMO.prn_mania; s.setAttribute('aria-label','PRN mania'); icons.appendChild(s); prnManiaDays++; }
-      if (rec.prn_aggr && layers.prn_aggr){ const s=document.createElement('span'); s.textContent=EMO.prn_aggr; s.setAttribute('aria-label','PRN aggression'); icons.appendChild(s); prnAggrDays++; }
-      if (rec.tired && layers.tired){ const s=document.createElement('span'); s.textContent=EMO.tired; s.setAttribute('aria-label','Appears tired'); icons.appendChild(s); tiredDays++; }
-      if (rec.manic && layers.manic){ const s=document.createElement('span'); s.textContent=EMO.manic; s.setAttribute('aria-label','Manic'); icons.appendChild(s); manicDays++; }
-      if (rec.sick  && layers.sick ){ const s=document.createElement('span'); s.textContent=EMO.sick;  s.setAttribute('aria-label','Sick'); icons.appendChild(s); sickDays++; }
-      if (rec.temp  && layers.temp ){ const s=document.createElement('span'); s.textContent=EMO.temp;  s.setAttribute('aria-label','Temperature'); icons.appendChild(s); tempDays++; }
-      if (rec.appetite && layers.appetite){ const s=document.createElement('span'); s.textContent=EMO.appetite; s.setAttribute('aria-label','Change in appetite'); icons.appendChild(s); appetiteDays++; }
-      if (rec.moon && layers.moon){ const s=document.createElement('span'); s.textContent=EMO.moon; s.setAttribute('aria-label','Full moon'); icons.appendChild(s); moonDays++; }
-      if (rec.anomaly && layers.anomaly){ const s=document.createElement('span'); s.textContent=EMO.anomaly; s.setAttribute('aria-label','Anomaly'); icons.appendChild(s); anomalyDays++; }
+      if (goodSleep && layers.sleep){ const s=document.createElement('span'); s.className='hc-icon'; s.textContent=EMO.sleep; s.setAttribute('aria-label','Good sleep (8+ hours)'); icons.appendChild(s); sleepDays++; }
+      if (poorSleep && layers.sleep_low){ const s=document.createElement('span'); s.className='hc-icon'; s.textContent=EMO.sleep_low; s.setAttribute('aria-label','Poor sleep (< 8 hours)'); icons.appendChild(s); sleepLowDays++; }
+      if (rec.onset && layers.onset){ const s=document.createElement('span'); s.className='hc-icon'; s.textContent=EMO.onset; s.setAttribute('aria-label','Late sleep onset'); icons.appendChild(s); onsetDays++; }
+      if (rec.night && layers.night){ const s=document.createElement('span'); s.className='hc-icon'; s.textContent=EMO.night; s.setAttribute('aria-label','Night waking'); icons.appendChild(s); nightDays++; }
+      if (rec.prn_sleep && layers.prn_sleep){ const s=document.createElement('span'); s.className='hc-icon hc-icon-prn'; s.textContent=EMO.prn_sleep; s.setAttribute('aria-label','PRN sleep'); icons.appendChild(s); prnSleepDays++; }
+      if (rec.prn_mania && layers.prn_mania){ const s=document.createElement('span'); s.className='hc-icon hc-icon-prn'; s.textContent=EMO.prn_mania; s.setAttribute('aria-label','PRN mania'); icons.appendChild(s); prnManiaDays++; }
+      if (rec.prn_aggr && layers.prn_aggr){ const s=document.createElement('span'); s.className='hc-icon hc-icon-prn'; s.textContent=EMO.prn_aggr; s.setAttribute('aria-label','PRN aggression'); icons.appendChild(s); prnAggrDays++; }
+      if (rec.tired && layers.tired){ const s=document.createElement('span'); s.className='hc-icon'; s.textContent=EMO.tired; s.setAttribute('aria-label','Appears tired'); icons.appendChild(s); tiredDays++; }
+      if (rec.manic && layers.manic){ const s=document.createElement('span'); s.className='hc-icon'; s.textContent=EMO.manic; s.setAttribute('aria-label','Manic'); icons.appendChild(s); manicDays++; }
+      if (rec.sick  && layers.sick ){ const s=document.createElement('span'); s.className='hc-icon'; s.textContent=EMO.sick;  s.setAttribute('aria-label','Sick'); icons.appendChild(s); sickDays++; }
+      if (rec.temp  && layers.temp ){ const s=document.createElement('span'); s.className='hc-icon'; s.textContent=EMO.temp;  s.setAttribute('aria-label','Temperature'); icons.appendChild(s); tempDays++; }
+      if (rec.appetite && layers.appetite){ const s=document.createElement('span'); s.className='hc-icon'; s.textContent=EMO.appetite; s.setAttribute('aria-label','Change in appetite'); icons.appendChild(s); appetiteDays++; }
+      if (rec.moon && layers.moon){ const s=document.createElement('span'); s.className='hc-icon'; s.textContent=EMO.moon; s.setAttribute('aria-label','Full moon'); icons.appendChild(s); moonDays++; }
+      if (rec.anomaly && layers.anomaly){ const s=document.createElement('span'); s.className='hc-icon'; s.textContent=EMO.anomaly; s.setAttribute('aria-label','Anomaly'); icons.appendChild(s); anomalyDays++; }
 
       if (icons.children.length) cell.appendChild(icons);
       else { const e=document.createElement('div'); e.className='hc-empty'; e.textContent='—'; cell.appendChild(e); }

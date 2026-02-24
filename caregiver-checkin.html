@@ -588,6 +588,9 @@
                   <option>Posturing</option><option>Physical</option><option>Verbal</option><option>Self-harm</option>
                 </select>
               </label>
+              <label>Aggression instances from tally sheet <span class="muted">(optional)</span>:
+                <input type="number" min="0" step="1" name="aggression_instances_today" id="aggression_instances_today" disabled placeholder="e.g., 3"/>
+              </label>
               <label>Intensity (0–5):
                 <input type="range" min="0" max="5" step="1" value="0" name="aggression_intensity" id="aggression_intensity" disabled/>
                 <div class="savedAt"><span id="intensityVal">0</span></div>
@@ -623,6 +626,9 @@
             <label id="maniaIntensityWrap">Mania intensity (0–5):
               <input type="range" min="0" max="5" step="1" value="0" name="manic_intensity" id="manic_intensity" disabled/>
               <div class="savedAt"><span id="manicIntensityVal">0</span></div>
+            </label>
+            <label id="maniaInstancesWrap">Mania instances today <span class="muted">(optional)</span>:
+              <input type="number" min="0" step="1" name="mania_instances_today" id="mania_instances_today" disabled placeholder="e.g., 2"/>
             </label>
             <label>Trouble focusing?
               <div class="yn-pill-group" role="group" aria-label="Trouble focusing">
@@ -1890,12 +1896,17 @@
     // Aggression enable/disable
     const aType = document.getElementById('aggression_type');
     const aInt  = document.getElementById('aggression_intensity');
+    const aInstances = document.getElementById('aggression_instances_today');
     const aggressionDetails = document.getElementById('aggressionDetails');
     const aggressionNotesWrap = document.getElementById('aggressionNotesWrap');
     function syncAggressionControls(){
       const yes = getYnValue('aggression_flag') === 'Yes';
-      [aType,aInt].forEach(el=>el && (el.disabled=!yes));
-      if(!yes){ if(aType) aType.value=''; if(aInt){ aInt.value=0; const iv=document.getElementById('intensityVal'); if(iv) iv.textContent='0'; } }
+      [aType,aInt,aInstances].forEach(el=>el && (el.disabled=!yes));
+      if(!yes){
+        if(aType) aType.value='';
+        if(aInstances) aInstances.value = '';
+        if(aInt){ aInt.value=0; const iv=document.getElementById('intensityVal'); if(iv) iv.textContent='0'; }
+      }
       if (aggressionDetails) aggressionDetails.style.display = yes ? '' : 'none';
       if (aggressionNotesWrap) aggressionNotesWrap.style.display = yes ? '' : 'none';
       const prnRow = document.getElementById('aggressionPrnRow');
@@ -1910,16 +1921,23 @@
     }
     // Mania enable/disable
     const manicInt  = document.getElementById('manic_intensity');
+    const maniaInstances = document.getElementById('mania_instances_today');
     const appetiteNotesWrap = document.getElementById('appetiteNotesWrap');
     const maniaIntensityWrap = document.getElementById('maniaIntensityWrap');
+    const maniaInstancesWrap = document.getElementById('maniaInstancesWrap');
     function syncManiaControls(){
       const yes = getYnValue('manic_flag') === 'Yes';
       if (manicInt) manicInt.disabled = !yes;
+      if (maniaInstances) maniaInstances.disabled = !yes;
       if (maniaIntensityWrap) maniaIntensityWrap.style.display = yes ? '' : 'none';
+      if (maniaInstancesWrap) maniaInstancesWrap.style.display = yes ? '' : 'none';
       if (!yes && manicInt) {
         manicInt.value = 0;
         const iv = document.getElementById('manicIntensityVal');
         if (iv) iv.textContent = '0';
+      }
+      if (!yes && maniaInstances) {
+        maniaInstances.value = '';
       }
       const maniaPrnRow = document.getElementById('maniaPrnRow');
       if (maniaPrnRow) maniaPrnRow.style.display = yes ? '' : 'none';

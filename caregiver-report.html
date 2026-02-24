@@ -348,6 +348,10 @@
     .kpi-summary-inline h4{margin:0 0 12px;font-size:16px}
     .kpi-summary-inline .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
     .kpi-summary-inline .item{background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:10px 12px;font-weight:700;color:#0f172a}
+    .report-summary-inline{border:1px solid #e5e7eb;border-radius:16px;padding:16px;background:#fff;box-shadow:0 10px 30px rgba(15,23,42,.08)}
+    .report-summary-inline h4{margin:0 0 8px;font-size:16px}
+    .report-summary-inline ul{margin:8px 0 0 18px;padding:0;display:grid;gap:6px}
+    .report-summary-inline li{font-size:14px;line-height:1.45;color:#0f172a}
     body.print-export main.page{max-width:980px}
     body.print-export #chart-stack{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start;grid-auto-rows:minmax(260px,auto)}
     body.print-export .chart{margin:0;max-width:none;min-height:260px}
@@ -814,12 +818,9 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.16D';
 
     <!-- KPIs (percentages + totals) -->
     <div class="kpis" id="kpi-row">
-      <div class="kpi"><div class="label">Total Entries</div><div class="value" id="kpi-entries">—</div></div>
       <div class="kpi"><div class="label">Hygiene % Yes</div><div class="value" id="kpi-hygiene">—</div></div>
       <div class="kpi"><div class="label">Food % Yes</div><div class="value" id="kpi-food">—</div></div>
       <div class="kpi"><div class="label">Clean-up % Yes</div><div class="value" id="kpi-cleanup">—</div></div>
-      <div class="kpi"><div class="label">Total Vocational (hrs)</div><div class="value" id="kpi-voc">—</div></div>
-      <div class="kpi"><div class="label">Total Community (hrs)</div><div class="value" id="kpi-com">—</div></div>
       <div class="kpi"><div class="label">Avg Prompt Level</div><div class="value" id="kpi-prompt">—</div></div>
       <div class="kpi"><div class="label">Movement Symptom Days</div><div class="value" id="kpi-move-days">—</div></div>
       <div class="kpi"><div class="label">Avg Movement Severity</div><div class="value" id="kpi-move-avg">—</div></div>
@@ -894,20 +895,11 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.16D';
       </select>
       <span class="chart-range-display" id="chartRangeDisplay">Showing: Month</span>
     </div>
-    <div class="chart kpi-summary-inline">
-      <h4>Caregiver Check-In Totals</h4>
-      <div class="grid">
-        <div class="item">Total entries <span id="kpi-entries-inline">—</span></div>
-        <div class="item">Hygiene % Yes <span id="kpi-hygiene-inline">—</span></div>
-        <div class="item">Food % Yes <span id="kpi-food-inline">—</span></div>
-        <div class="item">Clean-up % Yes <span id="kpi-cleanup-inline">—</span></div>
-        <div class="item">Total Vocational (hrs) <span id="kpi-voc-inline">—</span></div>
-        <div class="item">Total Community (hrs) <span id="kpi-com-inline">—</span></div>
-        <div class="item">Avg Prompt Level <span id="kpi-prompt-inline">—</span></div>
-        <div class="item">Movement Symptom Days <span id="kpi-move-days-inline">—</span></div>
-        <div class="item">Avg Movement Severity <span id="kpi-move-avg-inline">—</span></div>
-        <div class="item">Max Movement Severity <span id="kpi-move-max-inline">—</span></div>
-      </div>
+    <div class="chart report-summary-inline" id="reportSummaryCard">
+      <h4>Report Summary (Plain Language)</h4>
+      <p class="muted chart-range-label" id="reportSummaryRange">Range: Month</p>
+      <p class="muted" id="reportSummaryEmpty">Summary will appear after data loads.</p>
+      <ul id="reportSummaryList" aria-live="polite"></ul>
     </div>
     <div class="chart kpi-summary-inline" id="calendarQuickLook">
       <h4>Calendar Quick Look</h4>
@@ -994,17 +986,16 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.16D';
         </div>
       </div>
 
-      <div class="chart">
-        <h2>Engagement vs Mood — Average Minutes by Activity</h2>
-        <p class="muted chart-range-label" id="engagementRangeLabel">Range: Month</p>
-        <canvas id="engagementVsMood"></canvas>
-        <p class="muted">X = Mood bucket. Y = Average minutes. Bars = Home / Vocational / Community / Leisure / Pet Care (Yes count).</p>
-      </div>
-
       <div class="chart small">
         <h2 style="margin:0 0 8px;">Leisure (Would-You-Rather) — Minutes & Picks</h2>
         <canvas id="wyrBar" height="220"></canvas>
         <p class="muted" id="wyrNote">Bars = total leisure minutes credited to each choice; line = number of picks.</p>
+      </div>
+      <div class="chart small">
+        <h2 style="margin:0 0 8px;">Behavior Tally Instances (Optional)</h2>
+        <p class="muted chart-range-label" id="behaviorTallyRangeLabel">Range: Month</p>
+        <canvas id="behaviorTallyChart" height="220"></canvas>
+        <p class="muted">Daily totals from optional tally-sheet entries for mania and aggression.</p>
       </div>
     </section>
   </main>
@@ -1279,6 +1270,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.16D';
       const movementMax = movementSeverities.length
         ? Math.max(...movementSeverities)
         : null;
+      const behavior = buildBehaviorInsights(entries);
 
       return {
         counts: { entries: entries.length },
@@ -1298,7 +1290,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.16D';
         movement: {
           days: movementDays.size,
           max_severity: movementMax,
-        }
+        },
+        behavior
       };
     }
 
@@ -1421,6 +1414,15 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.16D';
       return `${CHART_RANGE_LABELS[rangeKey] || 'Range'} (${label})`;
     }
 
+    function getPreviousRangeWindow(range){
+      if (!range?.start || !range?.end) return null;
+      const duration = range.end.getTime() - range.start.getTime();
+      if (!Number.isFinite(duration) || duration < 0) return null;
+      const end = new Date(range.start.getTime() - 1);
+      const start = new Date(end.getTime() - duration);
+      return { start, end };
+    }
+
     function updateChartRangeLabels(range, rangeKey){
       const label = range?.label || CHART_RANGE_LABELS[rangeKey] || 'All time';
       const display = formatRangeDisplay(rangeKey, label);
@@ -1430,12 +1432,12 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.16D';
       if (healthLabel) healthLabel.textContent = `Range: ${display}`;
       const promptLabel = document.getElementById('promptRangeLabel');
       if (promptLabel) promptLabel.textContent = `Range: ${display}`;
-      const engagementLabel = document.getElementById('engagementRangeLabel');
-      if (engagementLabel) engagementLabel.textContent = `Range: ${display}`;
       const interactionLabel = document.getElementById('interactionRangeLabel');
       if (interactionLabel) interactionLabel.textContent = `Range: ${display}`;
       const activityLabel = document.getElementById('activityRangeLabel');
       if (activityLabel) activityLabel.textContent = `Range: ${display}`;
+      const behaviorTallyLabel = document.getElementById('behaviorTallyRangeLabel');
+      if (behaviorTallyLabel) behaviorTallyLabel.textContent = `Range: ${display}`;
     }
 
     function updateMovementRangeLabel(range, rangeKey){
@@ -1445,6 +1447,139 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.16D';
       if (movementLabel) movementLabel.textContent = `Summary for ${display.toLowerCase()} range`;
       const movementDisplay = document.getElementById('movementRangeDisplay');
       if (movementDisplay) movementDisplay.textContent = `Showing: ${display}`;
+    }
+
+    function pctLabel(value, total){
+      if (!total) return '0%';
+      return `${Math.round((Number(value || 0) / total) * 100)}%`;
+    }
+
+    function avgLabel(value){
+      if (!Number.isFinite(value)) return '—';
+      return `${Math.round(value * 10) / 10}`;
+    }
+
+    function buildMoodBucketCounts(entries = []){
+      const buckets = { Positive: 0, 'Low Energy': 0, Challenging: 0, Other: 0 };
+      entries.forEach((entry) => {
+        const mood = String(entry?.mood || '');
+        const bucket = toBucket(mood);
+        buckets[bucket] = (buckets[bucket] || 0) + 1;
+      });
+      return buckets;
+    }
+
+    function renderReportSummary({
+      rangeKey,
+      range,
+      caregiverEntries = [],
+      moodEntries = [],
+      monthlySeries = [],
+      movementInsights = null,
+      behaviorComparison = null
+    } = {}){
+      const listEl = document.getElementById('reportSummaryList');
+      const emptyEl = document.getElementById('reportSummaryEmpty');
+      const rangeEl = document.getElementById('reportSummaryRange');
+      if (!listEl || !emptyEl || !rangeEl) return;
+
+      const label = range?.label || CHART_RANGE_LABELS[rangeKey] || 'All time';
+      const display = formatRangeDisplay(rangeKey, label);
+      rangeEl.textContent = `Range: ${display}`;
+
+      if (!caregiverEntries.length && !moodEntries.length) {
+        listEl.innerHTML = '';
+        emptyEl.textContent = 'No entries in this date range yet.';
+        return;
+      }
+
+      const summary = summarizeEntries(caregiverEntries);
+      const lines = [];
+      lines.push(`Daily living completion rates were Hygiene ${summary.percents?.hygiene_yes ?? 0}%, Food ${summary.percents?.food_prep_yes ?? 0}%, and Clean-up ${summary.percents?.cleanup_yes ?? 0}%.`);
+
+      const avgPrompt = summary.averages?.new_skill_score;
+      const promptText = Number.isFinite(avgPrompt)
+        ? `${avgPrompt} (${PROMPT_LABELS[String(Math.round(avgPrompt))] || 'see chart scale'})`
+        : '—';
+      lines.push(`Average prompt level was ${promptText}.`);
+
+      const mania = summary.behavior?.mania || {};
+      const aggression = summary.behavior?.aggression || {};
+      const formatDelta = (value, noun) => {
+        if (!Number.isFinite(value)) return `insufficient data for ${noun} trend`;
+        if (value === 0) return `no change in ${noun}`;
+        const dir = value > 0 ? 'increase' : 'decrease';
+        return `${dir} of ${Math.abs(value)} ${noun}`;
+      };
+      const maniaTrend = behaviorComparison?.mania
+        ? `${formatDelta(behaviorComparison.mania.days_delta, 'day(s)')} and ${formatDelta(behaviorComparison.mania.avg_intensity_delta, 'avg intensity point(s)')}`
+        : 'trend unavailable for this range';
+      const aggressionTrend = behaviorComparison?.aggression
+        ? `${formatDelta(behaviorComparison.aggression.days_delta, 'day(s)')} and ${formatDelta(behaviorComparison.aggression.avg_intensity_delta, 'avg intensity point(s)')}`
+        : 'trend unavailable for this range';
+      const maniaInstancesText = Number(mania.instances_total || 0) > 0
+        ? `${mania.instances_total} optional instance(s) logged (avg ${avgLabel(mania.avg_instances_per_day)} per mania day)`
+        : 'no optional mania instance counts logged';
+      const aggressionInstancesText = Number(aggression.instances_total || 0) > 0
+        ? `${aggression.instances_total} optional instance(s) logged (avg ${avgLabel(aggression.avg_instances_per_day)} per aggression day)`
+        : 'no optional aggression instance counts logged';
+      const maniaInstanceTrend = behaviorComparison?.mania
+        ? formatDelta(behaviorComparison.mania.instances_delta, 'optional instance(s)')
+        : 'trend unavailable for optional instances';
+      const aggressionInstanceTrend = behaviorComparison?.aggression
+        ? formatDelta(behaviorComparison.aggression.instances_delta, 'optional instance(s)')
+        : 'trend unavailable for optional instances';
+      lines.push(`Mania occurred on ${mania.days ?? 0} day(s), ${maniaInstancesText}, average intensity ${avgLabel(mania.avg_intensity)}, peak intensity ${mania.max_intensity ?? '—'}; ${maniaTrend}, and ${maniaInstanceTrend} versus the prior comparable period.`);
+      lines.push(`Aggression occurred on ${aggression.days ?? 0} day(s), ${aggressionInstancesText}, average intensity ${avgLabel(aggression.avg_intensity)}, peak intensity ${aggression.max_intensity ?? '—'}; ${aggressionTrend}, and ${aggressionInstanceTrend} versus the prior comparable period.`);
+
+      if (moodEntries.length) {
+        const moodCounts = {};
+        moodEntries.forEach((entry) => {
+          const mood = String(entry?.mood || 'Unknown');
+          moodCounts[mood] = (moodCounts[mood] || 0) + 1;
+        });
+        const topMood = Object.entries(moodCounts).sort((a,b) => b[1] - a[1])[0];
+        const buckets = buildMoodBucketCounts(moodEntries);
+        const totalMoods = moodEntries.length;
+        lines.push(`Most common mood was ${topMood ? topMood[0] : '—'} (${topMood ? topMood[1] : 0} entries). Positive moods were ${pctLabel(buckets.Positive, totalMoods)} and challenging moods were ${pctLabel(buckets.Challenging, totalMoods)}.`);
+      }
+
+      if (movementInsights && caregiverEntries.length) {
+        const topTypeLabel = MOVEMENT_TYPE_LABELS[movementInsights.mostCommonType] || movementInsights.mostCommonType || '—';
+        lines.push(`Movement symptoms were logged on ${movementInsights.daysWithSymptoms ?? 0} day(s), average severity ${avgLabel(movementInsights.avgSeverity)}, max severity ${movementInsights.maxSeverity ?? '—'}, and most common type was ${topTypeLabel}.`);
+      }
+
+      const interactionRows = buildInteractionTypeCounts(caregiverEntries);
+      if (interactionRows.length) {
+        lines.push(`Most common community interaction type was ${interactionRows[0].label} (${interactionRows[0].count} time(s)).`);
+      }
+
+      const homeRows = buildActivityTypeCounts(caregiverEntries, 'home_activity_type');
+      if (homeRows.length) {
+        lines.push(`Top home/community activity was ${homeRows[0].label} (${homeRows[0].count} entries).`);
+      }
+      const communityRows = buildActivityTypeCounts(caregiverEntries, 'public_activity_type');
+      if (communityRows.length) {
+        lines.push(`Top community-at-large activity was ${communityRows[0].label} (${communityRows[0].count} entries).`);
+      }
+
+      if (monthlySeries.length >= 2) {
+        const previous = monthlySeries[monthlySeries.length - 2];
+        const latest = monthlySeries[monthlySeries.length - 1];
+        const metricDelta = (key) => Number(latest?.[key] || 0) - Number(previous?.[key] || 0);
+        const hDelta = metricDelta('hygiene_yes');
+        const fDelta = metricDelta('food_prep_yes');
+        const cDelta = metricDelta('cleanup_yes');
+        lines.push(`Compared with the prior period, hygiene changed by ${hDelta >= 0 ? '+' : ''}${hDelta}, food by ${fDelta >= 0 ? '+' : ''}${fDelta}, and clean-up by ${cDelta >= 0 ? '+' : ''}${cDelta}.`);
+      }
+
+      listEl.innerHTML = '';
+      lines.forEach((line) => {
+        const li = document.createElement('li');
+        li.textContent = line;
+        listEl.appendChild(li);
+      });
+      emptyEl.textContent = '';
     }
 
     function applyChartRange(){
@@ -1457,16 +1592,55 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.16D';
 
       try {
         const filteredCaregiver = filterEntriesByRange(caregiverSource, range);
-        renderKPIs(summarizeEntries(filteredCaregiver));
+        const summary = summarizeEntries(filteredCaregiver);
+        renderKPIs(summary);
         const { monthly, promptDaily } = buildMonthlySeries(filteredCaregiver);
-        drawHealthChart(truncateSeries(monthly, rangeKey));
+        const monthlySeries = truncateSeries(monthly, rangeKey);
+        drawHealthChart(monthlySeries);
         drawSkillChart({ rangeKey, monthly, promptDaily });
 
         const moodSource = window.latestMoodEntries || [];
         const filteredMood = filterMoodEntriesByRange(moodSource, range);
-        drawEngagementVsMood(filteredMood, filteredCaregiver);
         drawInteractionTypeChart(filteredCaregiver);
         renderActivityTypeSummary(filteredCaregiver);
+        drawBehaviorTallyChart(filteredCaregiver);
+        const movementInsights = buildMovementInsights(filteredCaregiver);
+        let behaviorComparison = null;
+        const prevRange = rangeKey === 'all' ? null : getPreviousRangeWindow(range);
+        if (prevRange) {
+          const prevCaregiver = filterEntriesByRange(caregiverSource, prevRange);
+          const prevBehavior = buildBehaviorInsights(prevCaregiver);
+          const curBehavior = summary.behavior || {};
+          const maniaCurAvg = Number(curBehavior.mania?.avg_intensity);
+          const maniaPrevAvg = Number(prevBehavior.mania?.avg_intensity);
+          const aggressionCurAvg = Number(curBehavior.aggression?.avg_intensity);
+          const aggressionPrevAvg = Number(prevBehavior.aggression?.avg_intensity);
+          behaviorComparison = {
+            mania: {
+              days_delta: (curBehavior.mania?.days ?? 0) - (prevBehavior.mania?.days ?? 0),
+              instances_delta: (curBehavior.mania?.instances_total ?? 0) - (prevBehavior.mania?.instances_total ?? 0),
+              avg_intensity_delta: Number.isFinite(maniaCurAvg) && Number.isFinite(maniaPrevAvg)
+                ? +(maniaCurAvg - maniaPrevAvg).toFixed(1)
+                : 0
+            },
+            aggression: {
+              days_delta: (curBehavior.aggression?.days ?? 0) - (prevBehavior.aggression?.days ?? 0),
+              instances_delta: (curBehavior.aggression?.instances_total ?? 0) - (prevBehavior.aggression?.instances_total ?? 0),
+              avg_intensity_delta: Number.isFinite(aggressionCurAvg) && Number.isFinite(aggressionPrevAvg)
+                ? +(aggressionCurAvg - aggressionPrevAvg).toFixed(1)
+                : 0
+            }
+          };
+        }
+        renderReportSummary({
+          rangeKey,
+          range,
+          caregiverEntries: filteredCaregiver,
+          moodEntries: filteredMood,
+          monthlySeries,
+          movementInsights,
+          behaviorComparison
+        });
 
         const movementSelect = document.getElementById('movementRangeSelect');
         if (movementSelect) movementSelect.value = rangeKey;
@@ -1848,6 +2022,104 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.16D';
       );
     }
 
+    function buildBehaviorInsights(entries = []) {
+      const maniaDays = new Set();
+      const aggressionDays = new Set();
+      let maniaEpisodes = 0;
+      let aggressionEpisodes = 0;
+      let maniaInstancesTotal = 0;
+      let aggressionInstancesTotal = 0;
+      let maniaIntensityTotal = 0;
+      let maniaIntensityCount = 0;
+      let aggressionIntensityTotal = 0;
+      let aggressionIntensityCount = 0;
+      let maniaMax = null;
+      let aggressionMax = null;
+
+      entries.forEach((entry) => {
+        const payload = entry?.payload || {};
+        const maniaIntensity = pickNumber(
+          entry.manic_intensity,
+          entry.mania_intensity,
+          payload.manic_intensity,
+          payload.mania_intensity
+        );
+        const aggressionIntensity = pickNumber(
+          entry.aggression_intensity,
+          payload.aggression_intensity
+        );
+        const maniaInstances = pickNumber(
+          entry.mania_instances_today,
+          entry.manic_instances_today,
+          payload.mania_instances_today,
+          payload.manic_instances_today
+        );
+        const aggressionInstances = pickNumber(
+          entry.aggression_instances_today,
+          payload.aggression_instances_today
+        );
+
+        const maniaFlag = isAffirmative(
+          entry.manic_flag ?? entry.mania_flag ?? payload.manic_flag ?? payload.mania_flag
+        ) || (Number.isFinite(maniaIntensity) && maniaIntensity > 0);
+        const aggressionFlag = isAffirmative(
+          entry.aggression_flag ?? payload.aggression_flag
+        ) || (Number.isFinite(aggressionIntensity) && aggressionIntensity > 0);
+
+        const date = parseEntryDate(entry);
+        const day = date ? dayKey(date) : null;
+
+        if (maniaFlag) {
+          maniaEpisodes += 1;
+          if (day) maniaDays.add(day);
+          if (Number.isFinite(maniaInstances) && maniaInstances >= 0) {
+            maniaInstancesTotal += maniaInstances;
+          }
+        }
+        if (Number.isFinite(maniaIntensity) && maniaFlag) {
+          maniaIntensityTotal += maniaIntensity;
+          maniaIntensityCount += 1;
+          maniaMax = maniaMax === null ? maniaIntensity : Math.max(maniaMax, maniaIntensity);
+        }
+
+        if (aggressionFlag) {
+          aggressionEpisodes += 1;
+          if (day) aggressionDays.add(day);
+          if (Number.isFinite(aggressionInstances) && aggressionInstances >= 0) {
+            aggressionInstancesTotal += aggressionInstances;
+          }
+        }
+        if (Number.isFinite(aggressionIntensity) && aggressionFlag) {
+          aggressionIntensityTotal += aggressionIntensity;
+          aggressionIntensityCount += 1;
+          aggressionMax = aggressionMax === null ? aggressionIntensity : Math.max(aggressionMax, aggressionIntensity);
+        }
+      });
+
+      return {
+        mania: {
+          episodes: maniaEpisodes,
+          days: maniaDays.size,
+          instances_total: maniaInstancesTotal,
+          avg_instances_per_day: maniaDays.size
+            ? +(maniaInstancesTotal / maniaDays.size).toFixed(1)
+            : null,
+          avg_intensity: maniaIntensityCount ? +(maniaIntensityTotal / maniaIntensityCount).toFixed(1) : null,
+          max_intensity: maniaMax
+        },
+        aggression: {
+          episodes: aggressionEpisodes,
+          days: aggressionDays.size,
+          instances_total: aggressionInstancesTotal,
+          avg_instances_per_day: aggressionDays.size
+            ? +(aggressionInstancesTotal / aggressionDays.size).toFixed(1)
+            : null,
+          avg_intensity: aggressionIntensityCount ? +(aggressionIntensityTotal / aggressionIntensityCount).toFixed(1) : null,
+          max_intensity: aggressionMax
+        }
+      };
+    }
+
     function isAffirmative(value) {
       if (value === true) return true;
       if (value === false) return false;
@@ -2021,6 +2293,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.16D';
       entries.forEach(entry => {
         const date = normalizeEntryDate(entry);
         if (!date) return;
+        const entryDayKey = formatDateInputValue(date);
         const key = bucketKeyFn(date);
         if (!key) return;
         if (!buckets.has(key)) {
@@ -2034,6 +2307,18 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.16D';
             promptCount: 0,
             vocTotal: 0,
             comTotal: 0,
+            maniaCount: 0,
+            maniaDaySet: new Set(),
+            maniaInstancesTotal: 0,
+            maniaIntensitySum: 0,
+            maniaIntensityCount: 0,
+            maniaIntensityMax: null,
+            aggressionCount: 0,
+            aggressionDaySet: new Set(),
+            aggressionInstancesTotal: 0,
+            aggressionIntensitySum: 0,
+            aggressionIntensityCount: 0,
+            aggressionIntensityMax: null,
             notes: []
           });
         }
@@ -2051,6 +2336,39 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.16D';
         if (voc !== null) bucket.vocTotal += voc;
         const com = pickNumber(entry.community_time, entry.community_minutes, entry.payload?.community_time, entry.payload?.community_minutes);
         if (com !== null) bucket.comTotal += com;
+        const payload = entry.payload || {};
+        const maniaIntensity = pickNumber(entry.manic_intensity, entry.mania_intensity, payload.manic_intensity, payload.mania_intensity);
+        const maniaInstances = pickNumber(entry.mania_instances_today, entry.manic_instances_today, payload.mania_instances_today, payload.manic_instances_today);
+        const maniaFlag = isAffirmative(entry.manic_flag ?? entry.mania_flag ?? payload.manic_flag ?? payload.mania_flag)
+          || (Number.isFinite(maniaIntensity) && maniaIntensity > 0);
+        if (maniaFlag) bucket.maniaCount += 1;
+        if (maniaFlag && entryDayKey) bucket.maniaDaySet.add(entryDayKey);
+        if (maniaFlag && Number.isFinite(maniaInstances) && maniaInstances >= 0) {
+          bucket.maniaInstancesTotal += maniaInstances;
+        }
+        if (Number.isFinite(maniaIntensity) && maniaFlag) {
+          bucket.maniaIntensitySum += maniaIntensity;
+          bucket.maniaIntensityCount += 1;
+          bucket.maniaIntensityMax = bucket.maniaIntensityMax === null
+            ? maniaIntensity
+            : Math.max(bucket.maniaIntensityMax, maniaIntensity);
+        }
+        const aggressionIntensity = pickNumber(entry.aggression_intensity, payload.aggression_intensity);
+        const aggressionInstances = pickNumber(entry.aggression_instances_today, payload.aggression_instances_today);
+        const aggressionFlag = isAffirmative(entry.aggression_flag ?? payload.aggression_flag)
+          || (Number.isFinite(aggressionIntensity) && aggressionIntensity > 0);
+        if (aggressionFlag) bucket.aggressionCount += 1;
+        if (aggressionFlag && entryDayKey) bucket.aggressionDaySet.add(entryDayKey);
+        if (aggressionFlag && Number.isFinite(aggressionInstances) && aggressionInstances >= 0) {
+          bucket.aggressionInstancesTotal += aggressionInstances;
+        }
+        if (Number.isFinite(aggressionIntensity) && aggressionFlag) {
+          bucket.aggressionIntensitySum += aggressionIntensity;
+          bucket.aggressionIntensityCount += 1;
+          bucket.aggressionIntensityMax = bucket.aggressionIntensityMax === null
+            ? aggressionIntensity
+            : Math.max(bucket.aggressionIntensityMax, aggressionIntensity);
+        }
         const note = extractEntryNotes(entry);
         if (note) bucket.notes.push(note);
       });
@@ -2078,19 +2396,28 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.16D';
       const renderCard = (bucket, label) => {
         const pct = (count) => bucket.count ? `${Math.round((count / bucket.count) * 100)}%` : '—';
         const avgPrompt = bucket.promptCount ? Math.round(bucket.promptSum / bucket.promptCount) : '—';
+        const maniaAvgIntensity = bucket.maniaIntensityCount
+          ? +(bucket.maniaIntensitySum / bucket.maniaIntensityCount).toFixed(1)
+          : '—';
+        const aggressionAvgIntensity = bucket.aggressionIntensityCount
+          ? +(bucket.aggressionIntensitySum / bucket.aggressionIntensityCount).toFixed(1)
+          : '—';
         const synopsis = buildNoteSynopsis(bucket.notes, 3);
         const themeSentence = extractTopNoteThemeSentence(bucket.notes);
         const card = document.createElement('div');
         card.className = 'cg-summary-card';
         card.innerHTML = `
           <h4>${label}</h4>
-          <div class="cg-summary-row"><span class="label">Check-ins</span><span>${bucket.count}</span></div>
           <div class="cg-summary-row"><span class="label">Hygiene % Yes</span><span>${pct(bucket.hygieneYes)}</span></div>
           <div class="cg-summary-row"><span class="label">Food % Yes</span><span>${pct(bucket.foodYes)}</span></div>
           <div class="cg-summary-row"><span class="label">Clean-up % Yes</span><span>${pct(bucket.cleanupYes)}</span></div>
           <div class="cg-summary-row"><span class="label">Avg prompt level</span><span>${avgPrompt}</span></div>
-          <div class="cg-summary-row"><span class="label">Vocational minutes</span><span>${Math.round(bucket.vocTotal)}</span></div>
-          <div class="cg-summary-row"><span class="label">Community minutes</span><span>${Math.round(bucket.comTotal)}</span></div>
+          <div class="cg-summary-row"><span class="label">Mania days</span><span>${bucket.maniaDaySet?.size ?? 0}</span></div>
+          <div class="cg-summary-row"><span class="label">Mania optional instances</span><span>${bucket.maniaInstancesTotal ?? 0}</span></div>
+          <div class="cg-summary-row"><span class="label">Mania avg / peak intensity</span><span>${maniaAvgIntensity} / ${bucket.maniaIntensityMax ?? '—'}</span></div>
+          <div class="cg-summary-row"><span class="label">Aggression days</span><span>${bucket.aggressionDaySet?.size ?? 0}</span></div>
+          <div class="cg-summary-row"><span class="label">Aggression optional instances</span><span>${bucket.aggressionInstancesTotal ?? 0}</span></div>
+          <div class="cg-summary-row"><span class="label">Aggression avg / peak intensity</span><span>${aggressionAvgIntensity} / ${bucket.aggressionIntensityMax ?? '—'}</span></div>
           <div class="cg-summary-row"><span class="label">Note summary</span><span>${synopsis}</span></div>
           <div class="cg-summary-row"><span class="label">Top note theme</span><span>${themeSentence}</span></div>
         `;
@@ -3235,19 +3562,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.16D';
 
     function updateCgSummary(filtered, total){
       if (!cgInputs.count) return;
-      if (!total) {
-        cgInputs.count.textContent = 'No caregiver check-ins yet.';
-        return;
-      }
-      if (!filtered.length) {
-        cgInputs.count.textContent = 'No caregiver check-ins match this range.';
-        return;
-      }
-      const plural = filtered.length === 1 ? 'check-in' : 'check-ins';
-      const base = `${filtered.length} ${plural}`;
-      cgInputs.count.textContent = (filtered.length === total)
-        ? base
-        : `${base} (of ${total} total)`;
+      cgInputs.count.textContent = '';
     }
 
     function filterCaregiverEntries(entries){
@@ -3361,53 +3676,49 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.16D';
 
     /* =================== KPIs & caregiver-derived charts =================== */
   const kpi = {
-    entries: $('#kpi-entries'), hygiene: $('#kpi-hygiene'), food: $('#kpi-food'),
-    cleanup: $('#kpi-cleanup'), voc: $('#kpi-voc'), com: $('#kpi-com'), prompt: $('#kpi-prompt'),
+    hygiene: $('#kpi-hygiene'), food: $('#kpi-food'),
+    cleanup: $('#kpi-cleanup'), prompt: $('#kpi-prompt'),
     moveDays: $('#kpi-move-days'), moveAvg: $('#kpi-move-avg'), moveMax: $('#kpi-move-max')
   };
 
-  const minutesToHoursLabel = (minutes) => {
-    const total = Number(minutes);
-    if (!Number.isFinite(total) || total <= 0) return '0';
-    const hours = total / 60;
-    const rounded = Math.round(hours * 10) / 10;
-    return String(rounded).replace(/\.0$/, '');
-  };
-
   function renderKPIs(summary){
-    kpi.entries.textContent = summary.counts.entries ?? 0;
-    kpi.hygiene.textContent = (summary.percents.hygiene_yes ?? 0) + '%';
-    kpi.food.textContent    = (summary.percents.food_prep_yes ?? 0) + '%';
-    kpi.cleanup.textContent = (summary.percents.cleanup_yes ?? 0) + '%';
-    kpi.voc.textContent     = minutesToHoursLabel(summary.totals.vocational_minutes);
-    kpi.com.textContent     = minutesToHoursLabel(summary.totals.community_minutes);
-    kpi.prompt.textContent  = summary.averages.new_skill_score ?? '—';
-      if (kpi.moveDays) kpi.moveDays.textContent = summary.movement?.days ?? 0;
-      if (kpi.moveAvg) kpi.moveAvg.textContent = summary.averages?.movement_severity ?? '—';
-      if (kpi.moveMax) kpi.moveMax.textContent = summary.movement?.max_severity ?? '—';
+    const setText = (el, value) => { if (el) el.textContent = value; };
+    setText(kpi.hygiene, (summary.percents.hygiene_yes ?? 0) + '%');
+    setText(kpi.food, (summary.percents.food_prep_yes ?? 0) + '%');
+    setText(kpi.cleanup, (summary.percents.cleanup_yes ?? 0) + '%');
+    setText(kpi.prompt, summary.averages.new_skill_score ?? '—');
+    setText(kpi.moveDays, summary.movement?.days ?? 0);
+    setText(kpi.moveAvg, summary.averages?.movement_severity ?? '—');
+    setText(kpi.moveMax, summary.movement?.max_severity ?? '—');
 
       const inline = {
-        entries: $('#kpi-entries-inline'),
         hygiene: $('#kpi-hygiene-inline'),
         food: $('#kpi-food-inline'),
         cleanup: $('#kpi-cleanup-inline'),
-        voc: $('#kpi-voc-inline'),
-        com: $('#kpi-com-inline'),
         prompt: $('#kpi-prompt-inline'),
         moveDays: $('#kpi-move-days-inline'),
         moveAvg: $('#kpi-move-avg-inline'),
-        moveMax: $('#kpi-move-max-inline')
+        moveMax: $('#kpi-move-max-inline'),
+        maniaFreq: $('#kpi-mania-freq-inline'),
+        maniaInt: $('#kpi-mania-int-inline'),
+        maniaPeak: $('#kpi-mania-peak-inline'),
+        aggrFreq: $('#kpi-aggr-freq-inline'),
+        aggrInt: $('#kpi-aggr-int-inline'),
+        aggrPeak: $('#kpi-aggr-peak-inline')
       };
-      if (inline.entries) inline.entries.textContent = summary.counts.entries ?? 0;
       if (inline.hygiene) inline.hygiene.textContent = (summary.percents.hygiene_yes ?? 0) + '%';
       if (inline.food) inline.food.textContent = (summary.percents.food_prep_yes ?? 0) + '%';
       if (inline.cleanup) inline.cleanup.textContent = (summary.percents.cleanup_yes ?? 0) + '%';
-      if (inline.voc) inline.voc.textContent = minutesToHoursLabel(summary.totals.vocational_minutes);
-      if (inline.com) inline.com.textContent = minutesToHoursLabel(summary.totals.community_minutes);
       if (inline.prompt) inline.prompt.textContent = summary.averages.new_skill_score ?? '—';
       if (inline.moveDays) inline.moveDays.textContent = summary.movement?.days ?? 0;
       if (inline.moveAvg) inline.moveAvg.textContent = summary.averages?.movement_severity ?? '—';
       if (inline.moveMax) inline.moveMax.textContent = summary.movement?.max_severity ?? '—';
+      if (inline.maniaFreq) inline.maniaFreq.textContent = summary.behavior?.mania?.days ?? 0;
+      if (inline.maniaInt) inline.maniaInt.textContent = summary.behavior?.mania?.avg_intensity ?? '—';
+      if (inline.maniaPeak) inline.maniaPeak.textContent = summary.behavior?.mania?.max_intensity ?? '—';
+      if (inline.aggrFreq) inline.aggrFreq.textContent = summary.behavior?.aggression?.days ?? 0;
+      if (inline.aggrInt) inline.aggrInt.textContent = summary.behavior?.aggression?.avg_intensity ?? '—';
+      if (inline.aggrPeak) inline.aggrPeak.textContent = summary.behavior?.aggression?.max_intensity ?? '—';
     }
 
     function drawHealthChart(series){
@@ -3885,54 +4196,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.16D';
       pieMain = new Chart($('#moodPieMain'), { type:'pie', data:{labels, datasets:[{data, backgroundColor:colors}]} });
     }
 
-    function drawEngagementVsMood(moodEntries, caregiverEntries){
-      if (charts.engagementVsMood) {
-        charts.engagementVsMood.destroy();
-        charts.engagementVsMood = null;
-      }
-      const caregiver=(caregiverEntries || window.latestCaregiverEntries || []).slice();
-      const buckets=['Positive','Low Energy','Challenging','Other'];
-      const countsByDay=new Map();
-      for (const e of moodEntries){
-        const key = dayKey(e.dateObj);
-        const obj=countsByDay.get(key)||{Positive:0,"Low Energy":0,Challenging:0,Other:0};
-        obj[toBucket(e.mood)]++; countsByDay.set(key,obj);
-      }
-      const domBucketByDay=new Map([...countsByDay.entries()].map(([k,v])=>[k, Object.entries(v).sort((a,b)=>b[1]-a[1])[0][0]]));
-      const keys=['home_time','vocational_time','community_time','leisure_time','pet_care_yes'];
-      const sums={Positive:{}, "Low Energy":{}, Challenging:{}, Other:{}}, counts={Positive:0,"Low Energy":0,Challenging:0,Other:0};
-      for(const e of caregiver){
-        const key=dayKey(new Date(e.timestamp||e.created_at||Date.now()));
-        const b=domBucketByDay.get(key)||'Other'; counts[b]+=1;
-        for(const k of keys){
-          let val = e[k];
-          if (k === 'pet_care_yes') {
-            const payload = e.payload || {};
-            val = isAffirmative(e.pet_interaction_flag ?? payload.pet_interaction_flag) ? 1 : 0;
-          }
-          if (val != null) sums[b][k]=(sums[b][k]||0)+(+val||0);
-        }
-      }
-      const present = keys.filter(k=>Object.values(sums).some(o=>o[k]!=null));
-      let datasets = present.map(k=>({
-        label:({home_time:'Home',vocational_time:'Vocational',community_time:'Community',leisure_time:'Leisure',pet_care_yes:'Pet Care (Yes)'})[k],
-        data: ['Positive','Low Energy','Challenging','Other'].map(b=> counts[b] ? +( (sums[b][k]||0) / counts[b]).toFixed(1) : 0 )
-      }));
-      if (!datasets.length || datasets.every(ds => ds.data.reduce((a,b)=>a+b,0)===0)){
-        datasets = [
-          {label:'Home', data:[50,88,120,72]},
-          {label:'Vocational', data:[90,55,40,65]},
-          {label:'Community', data:[88,38,36,52]},
-          {label:'Leisure', data:[36,60,45,48]}
-        ];
-      }
-      charts.engagementVsMood = new Chart($('#engagementVsMood'), {
-        type:'bar',
-        data:{ labels:buckets, datasets },
-        options:{ responsive:true, scales:{ x:axisTitle('Mood Bucket'), y:{ beginAtZero:true, ...axisTitle('Average Minutes') } } }
-      });
-    }
-
     function buildInteractionTypeCounts(entries = []) {
       const counts = new Map();
       entries.forEach(entry => {
@@ -4032,6 +4295,101 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.16D';
       const community = buildActivityTypeCounts(entries, 'public_activity_type');
       renderTopActivityList(document.getElementById('activityHomeList'), home);
       renderTopActivityList(document.getElementById('activityCommunityList'), community);
+    }
+
+    function buildBehaviorTallySeries(entries = []) {
+      const byDay = new Map();
+      entries.forEach((entry) => {
+        const dt = parseEntryDate(entry);
+        if (!dt) return;
+        const key = formatDateInputValue(dt);
+        if (!key) return;
+        const payload = entry?.payload || {};
+        const maniaInstances = pickNumber(
+          entry.mania_instances_today,
+          entry.manic_instances_today,
+          payload.mania_instances_today,
+          payload.manic_instances_today
+        );
+        const aggressionInstances = pickNumber(
+          entry.aggression_instances_today,
+          payload.aggression_instances_today
+        );
+        const bucket = byDay.get(key) || { mania: 0, aggression: 0 };
+        if (Number.isFinite(maniaInstances) && maniaInstances >= 0) {
+          bucket.mania += maniaInstances;
+        }
+        if (Number.isFinite(aggressionInstances) && aggressionInstances >= 0) {
+          bucket.aggression += aggressionInstances;
+        }
+        byDay.set(key, bucket);
+      });
+      return Array.from(byDay.entries())
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([day, values]) => ({ day, ...values }));
+    }
+
+    function drawBehaviorTallyChart(entries = []) {
+      destroy('behaviorTally');
+      const ctx = document.getElementById('behaviorTallyChart');
+      if (!ctx) return;
+      const rows = buildBehaviorTallySeries(entries);
+      const labels = rows.map((row) => row.day);
+      const mania = rows.map((row) => row.mania);
+      const aggression = rows.map((row) => row.aggression);
+      const hasData = rows.some((row) => (row.mania || 0) > 0 || (row.aggression || 0) > 0);
+
+      if (!hasData) {
+        charts.behaviorTally = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: ['No tally data'],
+            datasets: [
+              { label: 'Mania instances', data: [0], backgroundColor: '#cbd5e1' },
+              { label: 'Aggression instances', data: [0], backgroundColor: '#e2e8f0' }
+            ]
+          },
+          options: {
+            responsive: true,
+            plugins: { legend: { position: 'top' } },
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+          }
+        });
+        return;
+      }
+
+      charts.behaviorTally = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Mania instances',
+              data: mania,
+              backgroundColor: 'rgba(245, 158, 11, 0.65)',
+              borderColor: 'rgba(217, 119, 6, 0.95)',
+              borderWidth: 1,
+              borderRadius: 8
+            },
+            {
+              label: 'Aggression instances',
+              data: aggression,
+              backgroundColor: 'rgba(239, 68, 68, 0.6)',
+              borderColor: 'rgba(185, 28, 28, 0.95)',
+              borderWidth: 1,
+              borderRadius: 8
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { position: 'top' } },
+          scales: {
+            x: axisTitle('Date'),
+            y: { beginAtZero: true, ticks: { precision: 0 }, ...axisTitle('Instances') }
+          }
+        }
+      });
     }
 
     function pearson(xs,ys){

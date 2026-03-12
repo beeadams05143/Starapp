@@ -266,7 +266,6 @@
       saveFocusForGroup,
       ensureGroupId,
       withGoalIds,
-      readLocalFocusDraft,
       writeLocalFocusDraft,
       clearLocalFocusDraft
     } from './focus-data.js?v=2025.01.09E';
@@ -499,19 +498,11 @@
 
     async function load(){
       const sharedLoaded = await loadSharedFocus();
-      let localSnapshot = null;
       if (!sharedLoaded) {
-        localSnapshot = hydrateFromLocal();
+        init(true);
       }
       focusDataReady = true;
       wireDayInputs();
-      if (!sharedLoaded && localSnapshot) {
-        try {
-          await persistShared(localSnapshot);
-        } catch (error) {
-          console.warn('focus sync (local→shared) failed', error);
-        }
-      }
     }
 
     async function loadSharedFocus(){
@@ -528,19 +519,6 @@
         console.warn('focus shared load failed', error);
       }
       return false;
-    }
-
-    function hydrateFromLocal(){
-      try{
-        const data = readLocalFocusDraft();
-        if (!data){ init(true); return null; }
-        applyFocusData(data);
-        return data;
-      }catch(e){
-        console.error('Load failed', e);
-        init(true);
-        return null;
-      }
     }
 
     function clearAll(){

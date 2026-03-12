@@ -51,7 +51,7 @@ function normalizeFocus(data) {
   if (!data) return null;
   return {
     weekStart: data.weekStart || data.week_start || null,
-    weekFrequency: data.weekFrequency || data.week_frequency || null,
+    weekFrequency: data.weekFrequency || null,
     focusArea: data.focusArea || data.focus_area || null,
     customTitle: data.customTitle || data.custom_title || '',
     whyMatters: data.whyMatters || data.why_matters || '',
@@ -110,7 +110,6 @@ export async function saveFocusForGroup(groupId, payload) {
     group_id: groupId,
     user_id: userId,
     week_start: normalized.weekStart || null,
-    week_frequency: normalized.weekFrequency || null,
     focus_area: normalized.focusArea || null,
     custom_title: normalized.customTitle || null,
     why_matters: normalized.whyMatters || null,

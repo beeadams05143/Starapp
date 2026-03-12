@@ -6,13 +6,7 @@ import {
   rest,
   getSessionFromStorage,
 } from '../restClient.js?v=2025.01.09E';
-import {
-  SUPABASE_URL,
-  SUPABASE_ANON_KEY,
-} from '../supabaseClient.js?v=2025.01.09E';
 import { ensureActiveGroupId } from '../active-group.js?v=2026.03.12A';
-
-const BUCKET = 'weekly-plan-attachments';
 
 // ---------- helpers ----------
 function isoDateOnly(d = new Date()) {
@@ -30,7 +24,7 @@ function mondayFromISO(iso) {
   return isoDateOnly(d);
 }
 function getWeekStartISO() {
-  const el = document.getElementById('weekStart');
+  const el = document.getElementById('weekStartPicker');
   const chosen = el?.value || isoDateOnly();
   return mondayFromISO(chosen); // table has a CHECK that week_start is Monday
 }
@@ -69,8 +63,6 @@ async function upsertWeeklyPlan(payload, attachmentPaths = []) {
     user_id: user.id,
     group_id: groupId,
     week_start: getWeekStartISO(),
-    person_name: payload.personName || null,
-    goal_type: payload.goalType || null,
     focus_area: payload.focusArea || null,
     custom_title: payload.customTitle || null,
     why_matters: payload.whyMatters || null,
@@ -78,8 +70,6 @@ async function upsertWeeklyPlan(payload, attachmentPaths = []) {
     days_json: payload.days || [],
     reflection: payload.reflection || null,
     next_steps: payload.nextSteps || null,
-    signature: payload.signature || null,
-    attachments_urls: attachmentPaths.length ? attachmentPaths : (payload.attachments_urls || []),
     created_at: nowIso,
     updated_at: nowIso
   };
@@ -126,99 +116,9 @@ async function loadWeeklyPlan() {
   }
 }
 
-// ---------- Storage ----------
-async function uploadAttachments(files, userId, weekISO) {
-  if (!files || !files.length) return [];
-  const session = getSessionFromStorage();
-  const token = session?.access_token;
-  if (!token) return [];
-  const uploaded = [];
-  for (const file of files) {
-    const safeName = `${Date.now()}_${file.name}`.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const path = `${userId}/${weekISO}/${safeName}`;
-    try {
-      const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`, {
-        method: 'POST',
-        headers: {
-          apikey: SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${token}`,
-          'Content-Type': file.type || 'application/octet-stream',
-          'cache-control': '3600',
-          'x-upsert': 'false',
-        },
-        body: file,
-      });
-      if (!res.ok) {
-        console.error('Upload error:', await res.text(), file.name);
-        continue;
-      }
-    } catch (error) {
-      console.error('Upload error:', error, file.name);
-      continue;
-    }
-    uploaded.push(path);
-  }
-  return uploaded;
-}
-async function getSignedUrls(paths) {
-  if (!paths?.length) return [];
-  const session = getSessionFromStorage();
-  const token = session?.access_token;
-  if (!token) return [];
-  const out = [];
-  for (const p of paths) {
-    try {
-      const res = await fetch(`${SUPABASE_URL}/storage/v1/object/sign/${BUCKET}/${p}`, {
-        method: 'POST',
-        headers: {
-          apikey: SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ expiresIn: 60 * 60 * 24 * 7 }),
-      });
-      const text = await res.text();
-      if (!res.ok) {
-        console.error('Signed URL error:', text);
-        continue;
-      }
-      const data = text ? JSON.parse(text) : null;
-      const signed = data?.signedUrl || data?.signedURL;
-      if (signed) out.push({ path: p, url: signed });
-    } catch (error) {
-      console.error('Signed URL error:', error);
-    }
-  }
-  return out;
-}
-function renderAttachmentLinks(list) {
-  const id = 'attachmentsList';
-  let container = document.getElementById(id);
-  if (!container) {
-    container = document.createElement('div');
-    container.id = id;
-    const input = document.getElementById('attachments');
-    input?.parentElement?.appendChild(container);
-  }
-  container.innerHTML = '';
-  if (!list?.length) return;
-  const ul = document.createElement('ul');
-  ul.style.marginTop = '8px';
-  for (const { path, url } of list) {
-    const li = document.createElement('li');
-    const a = document.createElement('a');
-    a.href = url; a.target = '_blank'; a.rel = 'noopener';
-    a.textContent = path.split('/').slice(-1)[0];
-    li.appendChild(a);
-    ul.appendChild(li);
-  }
-  container.appendChild(ul);
-}
-
 // ---------- Wire into page ----------
 window.addEventListener('DOMContentLoaded', async () => {
-  const weekStartEl = document.getElementById('weekStart');
-  const attachmentsEl = document.getElementById('attachments');
+  const weekStartEl = document.getElementById('weekStartPicker');
 
   // Patch page save() to also sync with Supabase + upload files
   const originalSave = window.save;
@@ -229,17 +129,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     const session = getSessionFromStorage();
     const user = session?.user;
     if (!user || !payload) return;
-
-    let newPaths = [];
-    if (attachmentsEl?.files?.length) {
-      newPaths = await uploadAttachments(attachmentsEl.files, user.id, getWeekStartISO());
-    }
-    const mergedPaths = [...(payload.attachments_urls || []), ...newPaths];
-
-    await upsertWeeklyPlan({ ...payload, attachments_urls: mergedPaths }, mergedPaths);
-
-    const links = await getSignedUrls(mergedPaths);
-    renderAttachmentLinks(links);
+    await upsertWeeklyPlan(payload);
   };
 
   // Hydrate from Supabase when week changes or on first load
@@ -247,8 +137,6 @@ window.addEventListener('DOMContentLoaded', async () => {
     const row = await loadWeeklyPlan();
     if (row) {
       const merged = {
-        personName: row.person_name,
-        goalType: row.goal_type,
         focusArea: row.focus_area,
         customTitle: row.custom_title,
         whyMatters: row.why_matters,
@@ -257,17 +145,11 @@ window.addEventListener('DOMContentLoaded', async () => {
         days: row.days_json,
         reflection: row.reflection,
         nextSteps: row.next_steps,
-        signature: row.signature,
-        attachments_urls: row.attachments_urls || [],
         savedAt: new Date().toISOString()
       };
       const key = getLocalPayloadKey();
       if (key) localStorage.setItem(key, JSON.stringify(merged));
       if (typeof window.load === 'function') window.load();
-      const links = await getSignedUrls(merged.attachments_urls);
-      renderAttachmentLinks(links);
-    } else {
-      renderAttachmentLinks([]);
     }
   }
 

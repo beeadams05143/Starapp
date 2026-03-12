@@ -20,7 +20,7 @@
 </head>
 <body>
   <div id="navbar-container"></div>
-  <script type="module" src="./load-navbar.js?v=2026.02.16D"></script>
+  <script type="module" src="./load-navbar.js?v=2026.03.12D"></script>
 
   <h1>Group Settings</h1>
 
@@ -50,7 +50,7 @@
   </div>
 
   <script type="module">
-    import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.16D';
+    import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.12D';
     import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
 
     const GROUP_KEY = 'currentGroupId';
@@ -148,7 +148,7 @@
   </script>
   <script>
     (function(){
-      const version = window.STAR_BUILD_VERSION || '2026.02.16D';
+      const version = window.STAR_BUILD_VERSION || '2026.03.12D';
       if (!window.STAR_BUILD_VERSION) window.STAR_BUILD_VERSION = version;
       const ensureBadge = () => {
         if (document.getElementById('star-build-version')) return;

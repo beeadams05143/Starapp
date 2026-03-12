@@ -1,6 +1,6 @@
 // ui-shell.js  — injects top app bar + bottom tab bar (with Emergency)
 (() => {
-  const BUILD_VERSION = (typeof window !== 'undefined' && window.STAR_BUILD_VERSION) || '2026.02.16F';
+  const BUILD_VERSION = (typeof window !== 'undefined' && window.STAR_BUILD_VERSION) || '2026.03.12D';
   if (typeof window !== 'undefined' && !window.STAR_BUILD_VERSION) {
     window.STAR_BUILD_VERSION = BUILD_VERSION;
   }

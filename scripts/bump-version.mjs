@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * bumps the STAR build version and updates all ?v= query strings
+ * bumps the STAR build version and updates all version literals/query strings
  * usage: node scripts/bump-version.mjs
  */
 
@@ -13,7 +13,7 @@ const __dirname = path.dirname(__filename);
 const ROOT = path.resolve(__dirname, '..');
 const SUPABASE_CLIENT = path.join(ROOT, 'supabaseClient.js');
 
-const targetExts = new Set(['.html', '.js']);
+const targetExts = new Set(['.html', '.js', '.css', '.mjs', '.json', '.toml']);
 
 const pad2 = (n) => n.toString().padStart(2, '0');
 
@@ -32,26 +32,26 @@ const extractCurrentVersion = async () => {
 };
 
 const incrementSuffix = (suffix) => {
-  if (!suffix) return 'a';
+  if (!suffix) return 'A';
   const chars = suffix.split('');
   let i = chars.length - 1;
   while (i >= 0) {
     const code = chars[i].charCodeAt(0);
-    if (code >= 97 && code < 122) {
+    if (code >= 65 && code < 90) {
       chars[i] = String.fromCharCode(code + 1);
       return chars.join('');
     }
-    chars[i] = 'a';
+    chars[i] = 'A';
     i -= 1;
   }
-  chars.unshift('a');
+  chars.unshift('A');
   return chars.join('');
 };
 
 const computeNextVersion = (current) => {
   const base = todayBaseVersion();
   if (!current.startsWith(base)) {
-    return `${base}a`;
+    return `${base}A`;
   }
   const suffix = current.slice(base.length).replace(/^\./, '');
   const nextSuffix = incrementSuffix(suffix);
@@ -76,11 +76,13 @@ const listFiles = async (dir) => {
   return files;
 };
 
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 const updateFileVersion = async (filePath, current, next) => {
   const content = await fs.readFile(filePath, 'utf8');
   if (!content.includes(current)) return false;
-  let updated = content.split(`?v=${current}`).join(`?v=${next}`);
-  updated = updated.split(`|| '${current}'`).join(`|| '${next}'`);
+  const pattern = new RegExp(escapeRegExp(current), 'g');
+  const updated = content.replace(pattern, next);
   if (updated !== content) {
     await fs.writeFile(filePath, updated, 'utf8');
     return true;
@@ -106,7 +108,7 @@ const main = async () => {
   let touched = 0;
   await Promise.all(
     files.map(async (file) => {
-      const ok = await updateFileVersion(file, `?v=${currentVersion}`, `?v=${nextVersion}`);
+      const ok = await updateFileVersion(file, currentVersion, nextVersion);
       if (ok) touched += 1;
     })
   );

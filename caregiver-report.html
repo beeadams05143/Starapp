@@ -501,7 +501,7 @@
 </div>
 
 <script type="module">
-import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.16D';
+import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.12D';
 import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
 
 (function(){
@@ -549,8 +549,8 @@ import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
 </script>
 
 <!-- Shared navigation shell -->
-<script defer src="./ui-shell.js?v=2026.02.16D"></script>
-<script defer src="./scripts/appbar-drawer.js?v=2026.02.16D"></script>
+<script defer src="./ui-shell.js?v=2026.03.12D"></script>
+<script defer src="./scripts/appbar-drawer.js?v=2026.03.12D"></script>
 
 <body>
   <div id="navbar"></div>
@@ -1083,16 +1083,16 @@ import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
 
   <!-- Single, clean module script -->
   <script type="module">
-    import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.16D';
-    import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabaseClient.js?v=2026.02.16D';
-    import { loadFocusForCurrentUser, readLocalFocusDraft } from './focus-data.js?v=2026.02.16D';
+    import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.12D';
+    import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabaseClient.js?v=2026.03.12D';
+    import { loadFocusForCurrentUser, readLocalFocusDraft } from './focus-data.js?v=2026.03.12D';
     import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
 
     /* =============== Optional live data =============== */
     let loadFromSupabase = null;
     let formatEntryForList = null;
     try {
-      const mod = await import('./caregiver-report-supabase.js?v=2026.02.16D');
+      const mod = await import('./caregiver-report-supabase.js?v=2026.03.12D');
       loadFromSupabase = mod.loadCaregiverCheckins;
       formatEntryForList = mod.formatEntryForList;
     } catch (err) {
@@ -5015,7 +5015,7 @@ import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
 
 <script>
   (function(){
-    const version = window.STAR_BUILD_VERSION || '2026.02.16D';
+    const version = window.STAR_BUILD_VERSION || '2026.03.12D';
     if (!window.STAR_BUILD_VERSION) window.STAR_BUILD_VERSION = version;
     const ensureBadge = () => {
       if (document.getElementById('star-build-version')) return;
@@ -5049,7 +5049,7 @@ import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
 </script>
 
 <script type="module">
-import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.16D';
+import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.12D';
 
 (() => {
   // Bail out quietly if the calendar HTML isn't present

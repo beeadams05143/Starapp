@@ -57,9 +57,10 @@ function normalizeFocus(data) {
     whyMatters: data.whyMatters || data.why_matters || '',
     reflection: data.reflection || '',
     nextSteps: data.nextSteps || data.next_steps || '',
-    goals: normalizeGoals(data.goals || []),
-    days: Array.isArray(data.days) ? data.days : null,
+    goals: normalizeGoals(data.goals || data.goals_json || []),
+    days: Array.isArray(data.days) ? data.days : (Array.isArray(data.days_json) ? data.days_json : null),
     updated_at: data.updated_at || data.savedAt || data.saved_at || null,
+    created_at: data.created_at || null,
   };
 }
 
@@ -78,7 +79,8 @@ export async function fetchFocusByGroup(groupId) {
     const rows = await rest([
       'weekly_plans?select=*',
       `group_id=eq.${encodeURIComponent(groupId)}`,
-      'order=created_at.desc',
+      'order=updated_at.desc.nullslast',
+      'order=created_at.desc.nullslast',
       'limit=1'
     ].join('&'));
     return normalizeFocus(rows?.[0] || null);
@@ -92,14 +94,16 @@ export async function saveFocusForGroup(groupId, payload) {
   if (!groupId) throw new Error('Missing group id');
   const session = getSessionFromStorage();
   const userId = session?.user?.id || null;
+  const nowIso = new Date().toISOString();
   const normalized = normalizeFocus({
     ...payload,
-    updated_at: new Date().toISOString(),
+    updated_at: nowIso,
   });
   const latest = await rest([
     'weekly_plans?select=id',
     `group_id=eq.${encodeURIComponent(groupId)}`,
-    'order=created_at.desc',
+    'order=updated_at.desc.nullslast',
+    'order=created_at.desc.nullslast',
     'limit=1'
   ].join('&'));
   const record = {
@@ -113,7 +117,7 @@ export async function saveFocusForGroup(groupId, payload) {
     reflection: normalized.reflection || null,
     next_steps: normalized.nextSteps || null,
     goals_json: normalized.goals || [],
-    days: normalized.days || [],
+    days_json: normalized.days || [],
     updated_at: normalized.updated_at,
   };
   const existingId = latest?.[0]?.id || null;
@@ -127,7 +131,7 @@ export async function saveFocusForGroup(groupId, payload) {
     await rest('weekly_plans', {
       method: 'POST',
       headers: { Prefer: 'return=minimal' },
-      body: JSON.stringify([record]),
+      body: JSON.stringify([{ ...record, created_at: nowIso }]),
     });
   }
   return normalized;

@@ -55,6 +55,15 @@ async function upsertWeeklyPlan(payload, attachmentPaths = []) {
   if (!user) return;
   const groupId = await ensureActiveGroupId(user.id);
   if (!groupId) return;
+  const nowIso = new Date().toISOString();
+
+  const latest = await rest([
+    'weekly_plans?select=id',
+    `group_id=eq.${encodeURIComponent(groupId)}`,
+    'order=updated_at.desc.nullslast',
+    'order=created_at.desc.nullslast',
+    'limit=1'
+  ].join('&'));
 
   const record = {
     user_id: user.id,
@@ -71,16 +80,25 @@ async function upsertWeeklyPlan(payload, attachmentPaths = []) {
     next_steps: payload.nextSteps || null,
     signature: payload.signature || null,
     attachments_urls: attachmentPaths.length ? attachmentPaths : (payload.attachments_urls || []),
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
+    created_at: nowIso,
+    updated_at: nowIso
   };
 
   try {
-    await rest('weekly_plans', {
-      method: 'POST',
-      headers: { Prefer: 'return=minimal' },
-      body: JSON.stringify([record]),
-    });
+    const existingId = latest?.[0]?.id || null;
+    if (existingId) {
+      await rest(`weekly_plans?id=eq.${encodeURIComponent(existingId)}`, {
+        method: 'PATCH',
+        headers: { Prefer: 'return=minimal' },
+        body: JSON.stringify({ ...record, created_at: undefined }),
+      });
+    } else {
+      await rest('weekly_plans', {
+        method: 'POST',
+        headers: { Prefer: 'return=minimal' },
+        body: JSON.stringify([record]),
+      });
+    }
   } catch (error) {
     console.error('Supabase upsert error:', error);
   }
@@ -97,7 +115,8 @@ async function loadWeeklyPlan() {
     const rows = await rest([
       'weekly_plans?select=*',
       `group_id=eq.${encodeURIComponent(groupId)}`,
-      'order=created_at.desc',
+      'order=updated_at.desc.nullslast',
+      'order=created_at.desc.nullslast',
       'limit=1'
     ].join('&'));
     return rows?.[0] || null;

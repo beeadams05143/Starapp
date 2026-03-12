@@ -6,6 +6,7 @@ import {
   clearSavedSession,
   getSessionFromStorage,
 } from './supabaseClient.js?v=2025.01.09E';
+import { resolvePostAuthDestination } from './onboarding-flow.js?v=2026.03.12D';
 
 function normalizeSession(payload) {
   if (!payload || typeof payload !== 'object') return null;
@@ -72,7 +73,8 @@ async function signUp() {
       try { localStorage.setItem('user_id', user.id); } catch {}
     }
     if (session?.access_token) {
-      window.location.assign(DASHBOARD_URL);
+      const destination = await resolvePostAuthDestination({ userId: user?.id || null });
+      window.location.assign(destination);
     } else if (msg) {
       msg.textContent = 'Check your email to confirm!';
     }
@@ -102,7 +104,8 @@ async function logIn() {
     const user = session?.user;
     if (user?.id) {
       try { localStorage.setItem('user_id', user.id); } catch {}
-      window.location.assign(DASHBOARD_URL);
+      const destination = await resolvePostAuthDestination({ userId: user.id });
+      window.location.assign(destination);
     } else if (msg) {
       msg.textContent = 'Signed in, but no user session returned. Try again.';
       return;
@@ -145,7 +148,7 @@ async function logOut() {
 }
 
 /* --------- ROUTE / SESSION GUARDS --------- */
-const sessionGuard = () => {
+const sessionGuard = async () => {
   const session = getSessionFromStorage();
   const path = window.location.pathname.toLowerCase();
 
@@ -161,7 +164,8 @@ const sessionGuard = () => {
 
   // If already authenticated and on login/signup → go to dashboard
   if (session && (onLogin || onSignup)) {
-    window.location.href = 'dashboard.html';
+    const destination = await resolvePostAuthDestination({ userId: session.user?.id || null });
+    window.location.href = destination;
     return;
   }
 
@@ -173,4 +177,6 @@ const sessionGuard = () => {
 };
 
 sessionGuard();
-window.addEventListener('storage', sessionGuard);
+window.addEventListener('storage', () => {
+  sessionGuard().catch((error) => console.warn('[AUTH] sessionGuard failed', error));
+});

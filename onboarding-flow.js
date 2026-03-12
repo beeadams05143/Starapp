@@ -103,26 +103,13 @@ async function insertMembership(userId, groupId, membershipRole) {
     'limit=1',
   ].join('&'));
   if (existing?.length) return existing[0];
-
-  const attempts = [
-    { user_id: userId, group_id: groupId, role: membershipRole },
-    { user_id: userId, group_id: groupId, membership_role: membershipRole },
-  ];
-
-  let lastError = null;
-  for (const payload of attempts) {
-    try {
-      const rows = await rest('group_members', {
-        method: 'POST',
-        headers: { Prefer: 'return=representation' },
-        body: JSON.stringify([payload]),
-      });
-      return rows?.[0] || payload;
-    } catch (error) {
-      lastError = error;
-    }
-  }
-  throw lastError || new Error('Could not save group membership.');
+  const payload = { user_id: userId, group_id: groupId, role: membershipRole };
+  const rows = await rest('group_members', {
+    method: 'POST',
+    headers: { Prefer: 'return=representation' },
+    body: JSON.stringify([payload]),
+  });
+  return rows?.[0] || payload;
 }
 
 export async function createGroupForUser(userId, groupName) {

@@ -154,6 +154,7 @@ const sessionGuard = async () => {
 
   const onLogin  = path.endsWith('/login.html');
   const onSignup = path.endsWith('/signup.html');
+  const onOnboarding = path.endsWith('/onboarding.html');
   const onDash   = path.endsWith('/dashboard.html');
 
   // If on dashboard but not authenticated → go to login
@@ -163,7 +164,7 @@ const sessionGuard = async () => {
   }
 
   // If already authenticated and on login/signup → go to dashboard
-  if (session && (onLogin || onSignup)) {
+  if (session && (onLogin || onSignup) && !onOnboarding) {
     const destination = await resolvePostAuthDestination({ userId: session.user?.id || null });
     window.location.href = destination;
     return;

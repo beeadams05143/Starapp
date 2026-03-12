@@ -10,8 +10,8 @@ import {
   SUPABASE_URL,
   SUPABASE_ANON_KEY,
 } from '../supabaseClient.js?v=2025.01.09E';
+import { ensureActiveGroupId } from '../active-group.js?v=2026.03.12A';
 
-const LS_KEY = 'focusOfWeek_v1';
 const BUCKET = 'weekly-plan-attachments';
 
 // ---------- helpers ----------
@@ -34,8 +34,17 @@ function getWeekStartISO() {
   const chosen = el?.value || isoDateOnly();
   return mondayFromISO(chosen); // table has a CHECK that week_start is Monday
 }
+function getLocalPayloadKey() {
+  const session = getSessionFromStorage();
+  const userId = session?.user?.id || null;
+  const groupId = localStorage.getItem('currentGroupId') || null;
+  if (!userId || !groupId) return null;
+  return `focusOfWeek_v1:${userId}:${groupId}`;
+}
 function readLocalPayload() {
-  const raw = localStorage.getItem(LS_KEY);
+  const key = getLocalPayloadKey();
+  if (!key) return null;
+  const raw = localStorage.getItem(key);
   return raw ? JSON.parse(raw) : null;
 }
 
@@ -44,9 +53,12 @@ async function upsertWeeklyPlan(payload, attachmentPaths = []) {
   const session = getSessionFromStorage();
   const user = session?.user;
   if (!user) return;
+  const groupId = await ensureActiveGroupId(user.id);
+  if (!groupId) return;
 
-  const upsert = {
+  const record = {
     user_id: user.id,
+    group_id: groupId,
     week_start: getWeekStartISO(),
     person_name: payload.personName || null,
     goal_type: payload.goalType || null,
@@ -59,30 +71,33 @@ async function upsertWeeklyPlan(payload, attachmentPaths = []) {
     next_steps: payload.nextSteps || null,
     signature: payload.signature || null,
     attachments_urls: attachmentPaths.length ? attachmentPaths : (payload.attachments_urls || []),
+    created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
   };
 
   try {
-    await rest('weekly_plans?on_conflict=user_id,week_start', {
+    await rest('weekly_plans', {
       method: 'POST',
-      headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
-      body: JSON.stringify([upsert]),
+      headers: { Prefer: 'return=minimal' },
+      body: JSON.stringify([record]),
     });
   } catch (error) {
     console.error('Supabase upsert error:', error);
   }
 }
 
-async function loadWeeklyPlan(weekStartISO) {
+async function loadWeeklyPlan() {
   const session = getSessionFromStorage();
   const user = session?.user;
   if (!user) return null;
+  const groupId = await ensureActiveGroupId(user.id);
+  if (!groupId) return null;
 
   try {
     const rows = await rest([
       'weekly_plans?select=*',
-      `user_id=eq.${encodeURIComponent(user.id)}`,
-      `week_start=eq.${encodeURIComponent(weekStartISO)}`,
+      `group_id=eq.${encodeURIComponent(groupId)}`,
+      'order=created_at.desc',
       'limit=1'
     ].join('&'));
     return rows?.[0] || null;
@@ -210,7 +225,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   // Hydrate from Supabase when week changes or on first load
   async function hydrate() {
-    const row = await loadWeeklyPlan(getWeekStartISO());
+    const row = await loadWeeklyPlan();
     if (row) {
       const merged = {
         personName: row.person_name,
@@ -227,7 +242,8 @@ window.addEventListener('DOMContentLoaded', async () => {
         attachments_urls: row.attachments_urls || [],
         savedAt: new Date().toISOString()
       };
-      localStorage.setItem(LS_KEY, JSON.stringify(merged));
+      const key = getLocalPayloadKey();
+      if (key) localStorage.setItem(key, JSON.stringify(merged));
       if (typeof window.load === 'function') window.load();
       const links = await getSignedUrls(merged.attachments_urls);
       renderAttachmentLinks(links);

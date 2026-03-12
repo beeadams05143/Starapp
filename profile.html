@@ -79,9 +79,7 @@
 
     <div>
       <label for="profile-group-select">Default Group</label>
-      <select id="profile-group-select">
-        <option value="3159dde9-8cf3-4a29-af72-01da907f241b">Family</option>
-      </select>
+      <select id="profile-group-select"></select>
       <small>This selection is saved to your profile and auto-used across the app.</small>
     </div>
   </div>
@@ -107,10 +105,6 @@
   const STORAGE_BUCKET    = 'avatars';
   const GROUP_KEY_ID      = 'currentGroupId';
   const GROUP_KEY_NAME    = 'currentGroupName';
-  const DEFAULT_GROUP     = {
-    id: '3159dde9-8cf3-4a29-af72-01da907f241b',
-    name: 'Family'
-  };
 
   const SESSION_REDIRECT_DELAY = 1500;
 
@@ -140,7 +134,7 @@
       const opt = groupSelectEl.options?.[groupSelectEl.selectedIndex] || null;
       if (!opt) return;
       localStorage.setItem(GROUP_KEY_ID, opt.value || '');
-      localStorage.setItem(GROUP_KEY_NAME, opt.textContent || DEFAULT_GROUP.name);
+      localStorage.setItem(GROUP_KEY_NAME, opt.textContent || '');
     } catch (err) {
       console.warn('[PROFILE] cacheSelectedGroup failed', err);
     }
@@ -150,7 +144,7 @@
     if (!groupSelectEl || !id) return;
     const exists = Array.from(groupSelectEl.options || []).some(opt => opt.value === id);
     if (!exists) {
-      groupSelectEl.add(new Option(label || DEFAULT_GROUP.name, id));
+      groupSelectEl.add(new Option(label || 'Group', id));
     }
   }
 
@@ -175,7 +169,7 @@
 
   async function loadGroups() {
     groupSelectEl.disabled = true;
-    groupSelectEl.innerHTML = `<option value="${DEFAULT_GROUP.id}">${DEFAULT_GROUP.name}</option>`;
+    groupSelectEl.innerHTML = '<option value="">Loading…</option>';
 
     let groups = [];
     try {
@@ -189,11 +183,13 @@
         .map(row => row.groups)
         .filter(g => g?.id && !g?.archived);
     } catch (err) {
-      console.warn('[PROFILE] groups fetch failed; using default', err);
+      console.warn('[PROFILE] groups fetch failed', err);
     }
 
     if (!groups.length) {
-      groups = [DEFAULT_GROUP];
+      groupSelectEl.innerHTML = '<option value="">(no groups yet)</option>';
+      groupSelectEl.disabled = true;
+      return;
     }
 
     groupSelectEl.innerHTML = groups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
@@ -228,7 +224,7 @@
           currentAvatarUrl = profile.avatar_url;
         }
         if (profile.group_id) {
-          ensureGroupOption(profile.group_id, groupSelectEl?.selectedOptions?.[0]?.textContent || DEFAULT_GROUP.name);
+          ensureGroupOption(profile.group_id, groupSelectEl?.selectedOptions?.[0]?.textContent || 'Group');
           groupSelectEl.value = profile.group_id;
           cacheSelectedGroup();
         }
@@ -276,7 +272,7 @@
     }
 
     const displayName = (displayNameEl.value || '').trim() || currentUser.email;
-    const selectedGroupId = groupSelectEl.value || DEFAULT_GROUP.id;
+    const selectedGroupId = groupSelectEl.value || null;
 
     showMessage('Saving…', true);
     saveBtn.disabled = true;

@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const saveBtn       = document.getElementById('saveProfileBtn');
   const profileMsg    = document.getElementById('profileMsg');
 
-  // Load profile row (create one if missing)
+  // Load profile row if it already exists
   try {
     const rows = await rest(
       `profiles?id=eq.${encodeURIComponent(user.id)}&select=full_name,public_name,display_name,avatar_url,updated_at`
@@ -65,19 +65,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       user.email;
 
     if (!row) {
-      const payload = {
-        id: user.id,
-        full_name: metaName,
-        public_name: metaName,
-        display_name: metaName,
-        updated_at: new Date().toISOString(),
-      };
-      await rest('profiles', {
-        method: 'POST',
-        headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
-        body: JSON.stringify([payload]),
-      });
-      displayNameEl.value = payload.display_name;
+      displayNameEl.value = metaName;
     } else {
       displayNameEl.value = row.public_name || row.display_name || row.full_name || metaName;
       if (row.avatar_url) {

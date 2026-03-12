@@ -1,7 +1,6 @@
 // documents.js
 import { rest, getSessionFromStorage, requireSession } from "../restClient.js?v=2025.01.09E";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../supabaseClient.js?v=2025.01.09E";
-import { uploadJsonToBucket, downloadJsonFromBucket } from "../shared-storage.js?v=2025.01.09E";
 import { ensureActiveGroupId } from "../active-group.js?v=2026.03.12A";
 
 // Inject CSS so visited links aren't purple, without breaking the active (black) tabs
@@ -268,14 +267,10 @@ async function copyToClipboard(text) {
   }
 }
 const GROUP_KEY = "currentGroupId";
-const SHARED_DOC_BUCKET = "documents";
-const DOCS_PREFIX = "shared/docs";
-const docsPathForGroup = (groupId) => `${DOCS_PREFIX}/${groupId}.json`;
 let GROUP_ID = null;
 let docsStore = { documents: [] };
 let docsStoreLoaded = false;
 let docsStorePromise = null;
-const BUCKET_NOT_FOUND_RE = /bucket not found/i;
 
 function readStoredGroupId() {
   try {
@@ -289,12 +284,6 @@ function writeStoredGroupId(value) {
   try {
     if (value) localStorage.setItem(GROUP_KEY, value);
   } catch { /* ignore */ }
-}
-
-function isBucketMissing(error) {
-  if (!error) return false;
-  if (typeof error === "string") return BUCKET_NOT_FOUND_RE.test(error);
-  return BUCKET_NOT_FOUND_RE.test(error?.message || "");
 }
 
 function ensureAbsoluteUrl(url = "") {
@@ -396,61 +385,22 @@ function mergeDocRecords(base = {}, incoming = {}) {
   return merged;
 }
 
-function mergeDocLists(primary = [], secondary = []) {
-  const map = new Map();
-  const keyFor = (doc = {}) => doc.id || doc.storage_path || `${doc.title || "doc"}-${doc.created_at || ""}`;
-  const add = (doc) => {
-    const key = keyFor(doc);
-    if (!key) return;
-    const existing = map.get(key);
-    map.set(key, existing ? mergeDocRecords(existing, doc) : doc);
-  };
-  primary.forEach(add);
-  secondary.forEach(add);
-  return Array.from(map.values()).sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
-}
-
 async function ensureDocsStore(forceReload = false) {
   if (docsStoreLoaded && !forceReload) return docsStore;
   if (docsStorePromise && !forceReload) return docsStorePromise;
   docsStorePromise = (async () => {
     GROUP_ID = GROUP_ID || await ensureGroupId(USER_ID);
     if (!GROUP_ID) throw new Error("Join a group to share documents.");
-    const [bucketData, supabaseDocs] = await Promise.all([
-      downloadJsonFromBucket(SHARED_DOC_BUCKET, docsPathForGroup(GROUP_ID)),
-      fetchDocsFromSupabase(),
-    ]);
-    const bucketDocs = normalizeDocList(bucketData?.documents || []);
-    const mergedDocs = mergeDocLists(bucketDocs, supabaseDocs);
     docsStore = {
-      documents: mergedDocs,
-      updated_at: bucketData?.updated_at || new Date().toISOString(),
+      documents: await fetchDocsFromSupabase(),
     };
     docsStoreLoaded = true;
-    const shouldPersist = !bucketData || (mergedDocs.length && mergedDocs.length !== bucketDocs.length);
-    if (shouldPersist) {
-      await persistDocsStore(docsStore.updated_at);
-    }
     return docsStore;
   })();
   try {
     return await docsStorePromise;
   } finally {
     docsStorePromise = null;
-  }
-}
-
-async function persistDocsStore(updatedAt = null) {
-  if (!GROUP_ID) return;
-  const payload = {
-    group_id: GROUP_ID,
-    updated_at: updatedAt || new Date().toISOString(),
-    documents: docsStore.documents
-  };
-  try {
-    await uploadJsonToBucket(SHARED_DOC_BUCKET, docsPathForGroup(GROUP_ID), payload);
-  } catch (error) {
-    console.warn("docs persist skipped", error?.message || error);
   }
 }
 
@@ -991,7 +941,7 @@ function openNotesPrintWindow(docs = [], categoryLabel = "Notes") {
 
 
 /* ------------ helpers ------------ */
-export async function uploadFileToBucket({ file, bucket = SHARED_DOC_BUCKET } = {}) {
+export async function uploadFileToBucket({ file, bucket = "documents" } = {}) {
   if (!file) return { storagePath: null, inlineFile: null };
   const session = getSessionFromStorage();
   const userId = session?.user?.id;
@@ -1024,10 +974,6 @@ export async function uploadFileToBucket({ file, bucket = SHARED_DOC_BUCKET } = 
       throw new Error((await uploadRes.text()) || "Upload failed");
     }
   } catch (error) {
-    if (isBucketMissing(error)) {
-      const inlineData = await readFileAsDataURL(file);
-      return { storagePath: null, inlineFile: buildInlineFileMeta(file, inlineData) };
-    }
     throw error;
   }
   return { storagePath: path, inlineFile: null };
@@ -1129,7 +1075,6 @@ async function createShareLink(doc) {
   });
 
   doc.content_json = content;
-  await persistDocsStore(content.share_created_at);
 
   const url = buildShareUrl(shareToken);
   const copied = await copyToClipboard(url);
@@ -1379,7 +1324,6 @@ if (prettyForm) {
         docsStore.documents = (docsStore.documents || []).map((doc) =>
           doc.id === editingDocId ? normalized : doc
         );
-        await persistDocsStore(normalized.updated_at || new Date().toISOString());
         alert("Updated!");
         exitEditMode();
         await loadDocuments();
@@ -1410,7 +1354,6 @@ if (prettyForm) {
         created_at: insertedRow?.created_at || new Date().toISOString(),
       });
       docsStore.documents = [newEntry, ...(docsStore.documents || [])].slice(0, 200);
-      await persistDocsStore(newEntry.created_at);
 
       alert("Saved!");
       prettyForm.reset();
@@ -1499,7 +1442,6 @@ export async function saveMinutesRich(payload = {}, attachment = {}) {
   };
   const normalized = normalizeDoc(newEntry);
   docsStore.documents = [normalized, ...(docsStore.documents || [])].slice(0, 200);
-  await persistDocsStore(normalized.created_at);
   return normalized;
 }
 

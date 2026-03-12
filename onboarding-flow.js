@@ -25,7 +25,7 @@ export async function fetchCurrentMemberships(userId = null) {
   const resolvedUserId = userId || session?.user?.id || null;
   if (!resolvedUserId) return [];
   const rows = await rest([
-    'group_members?select=group_id,role,membership_role,groups!inner(id,name,archived)',
+    'group_members?select=group_id,role,groups!inner(id,name,archived)',
     `user_id=eq.${encodeURIComponent(resolvedUserId)}`,
     'order=joined_at.asc',
   ].join('&'));

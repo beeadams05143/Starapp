@@ -38,11 +38,9 @@ function toUTC(dateStr, timeStr) {
 }
 
 async function loadMyAdminGroups() {
-  // Your column may be enum "membership_role" stored in 'role'.
-  // Select both names to be safe; use whichever exists in the row.
   try {
     const params = [
-      'group_members?select=group_id,role,membership_role,groups!inner(id,name)',
+      'group_members?select=group_id,role,groups!inner(id,name)',
       'role=in.(owner,admin)'
     ];
     const data = await rest(params.join('&'));

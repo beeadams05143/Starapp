@@ -38,7 +38,10 @@ export function profileNeedsOnboarding(profile) {
 
 export async function resolvePostAuthDestination({ userId = null, redirect = 'dashboard.html' } = {}) {
   const profile = await fetchCurrentProfile(userId);
-  return profileNeedsOnboarding(profile) ? 'onboarding.html' : normalizeRedirect(redirect);
+  if (!profile) {
+    return 'onboarding.html';
+  }
+  return 'dashboard.html';
 }
 
 export function cacheActiveGroup(groupId, groupName = '') {

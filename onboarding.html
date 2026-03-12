@@ -217,7 +217,7 @@
           '';
       }
 
-      if (!profileNeedsOnboarding(profile)) {
+      if (profile && memberships && memberships.length > 0) {
         window.location.replace('dashboard.html');
       }
     }

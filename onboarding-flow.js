@@ -38,7 +38,11 @@ export function profileNeedsOnboarding(profile) {
 
 export async function resolvePostAuthDestination({ userId = null, redirect = 'dashboard.html' } = {}) {
   const profile = await fetchCurrentProfile(userId);
+  const memberships = await fetchCurrentMemberships(userId);
   if (!profile) {
+    return 'onboarding.html';
+  }
+  if (!memberships || memberships.length === 0) {
     return 'onboarding.html';
   }
   return 'dashboard.html';

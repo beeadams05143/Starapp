@@ -1784,7 +1784,6 @@
     syncMedTimeWindow();
 
     clearDadOnlySections();
-    applyDadSectionVisibility();
 
     // Progress nav + show all
     progItems.forEach((pi) => pi.addEventListener('click', () => go(Number(pi.dataset.step))));
@@ -1792,10 +1791,8 @@
       showAll = !showAll;
       if (showAll) {
         steps.forEach((s) => s.classList.add('active'));
-        setDadHidden(false);
         toggleAllBtn.textContent = 'Collapse to wizard';
       } else {
-        setDadHidden(true);
         steps.forEach((s, i) => s.classList.toggle('active', i === current));
         toggleAllBtn.textContent = 'Show all sections';
         steps[current].scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -2263,50 +2260,13 @@
   let showAll = false;
   let current = 0;
   let draft = loadDraft() || { data: {}, savedAt: {} };
-  const MODE_KEY = 'star_menu_mode';
-  const dadHiddenStepIndexes = new Set([2,4,5]);
-  let dadModeActive = false;
-
-    function getMenuMode(){
-      try { return localStorage.getItem(MODE_KEY) || 'caregiver'; } catch { return 'caregiver'; }
-    }
-    function setDadHidden(shouldHide){
-      if (!dadModeActive) return;
-      dadHiddenStepIndexes.forEach((idx) => {
-        const step = steps[idx];
-        const prog = progItems[idx];
-        step?.classList.toggle('is-dad-hidden', shouldHide);
-        prog?.classList.toggle('is-dad-hidden', shouldHide);
-      });
-    }
-    function applyDadSectionVisibility(){
-      dadModeActive = getMenuMode() === 'dad';
-      if (!dadModeActive) return;
-      showAll = false;
-      setDadHidden(true);
-      document.querySelectorAll('.is-dad-only').forEach((el) => {
-        el.classList.add('is-dad-active');
-      });
-    }
     function clearDadOnlySections(){
       document.querySelectorAll('.is-dad-only').forEach((el) => {
         el.classList.remove('is-dad-active');
       });
     }
-    function isHiddenForDad(idx){
-      return dadModeActive && !showAll && steps[idx]?.classList.contains('is-dad-hidden');
-    }
     function normalizeStepIndex(target){
-      const clamped = Math.max(0, Math.min(target, steps.length - 1));
-      if (!isHiddenForDad(clamped)) return clamped;
-      const dir = clamped > current ? 1 : -1;
-      let i = clamped;
-      while (i >= 0 && i < steps.length && isHiddenForDad(i)) i += dir;
-      if (i < 0 || i >= steps.length) {
-        const fallback = steps.findIndex((_, idx) => !isHiddenForDad(idx));
-        return fallback === -1 ? 0 : fallback;
-      }
-      return i;
+      return Math.max(0, Math.min(target, steps.length - 1));
     }
 
     // ---------- helpers ----------

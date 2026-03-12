@@ -84,9 +84,8 @@
     <nav class="drawer" id="appDrawer" aria-label="Main">
       <header>Menu</header>
       <div class="mode-toggle" role="group" aria-label="Menu mode">
-        <button type="button" class="mode-btn" data-role-btn="individual">Individual</button>
+        <button type="button" class="mode-btn" data-role-btn="individual">Individual (Me)</button>
         <button type="button" class="mode-btn" data-role-btn="caregiver">Caregiver</button>
-        <button type="button" class="mode-btn" data-role-btn="dad">Dad</button>
       </div>
 
       <div class="drawer-item" data-role="shared">
@@ -107,10 +106,10 @@
       <div class="drawer-item" data-role="individual">
         <a href="/my-star-voice.html">🗣️ My STAR Voice</a>
       </div>
-      <div class="drawer-item" data-role="caregiver dad">
+      <div class="drawer-item" data-role="caregiver">
         <a href="/caregiver-checkin.html">👥 Caregiver Check-In</a>
       </div>
-      <div class="drawer-item" data-role="caregiver dad">
+      <div class="drawer-item" data-role="caregiver">
         <a href="/caregiver-report.html">📊 Caregiver Report</a>
       </div>
       <div class="drawer-item" data-role="shared">
@@ -122,7 +121,7 @@
       <div class="drawer-item" data-role="caregiver">
         <a href="/focus-week.html">⭐ Focus of the Week</a>
       </div>
-      <div class="drawer-item" data-role="caregiver dad">
+      <div class="drawer-item" data-role="caregiver">
         <a href="/documents/index.html">📂 Documents</a>
       </div>
       <div class="drawer-item" data-role="shared">
@@ -162,7 +161,7 @@
 
   const MODE_KEY = 'star_menu_mode';
   function applyMenuMode(mode){
-    const role = mode === 'caregiver' ? 'caregiver' : (mode === 'dad' ? 'dad' : 'individual');
+    const role = mode === 'caregiver' ? 'caregiver' : 'individual';
     try { localStorage.setItem(MODE_KEY, role); } catch {}
     overlay.querySelectorAll('[data-role-btn]').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.roleBtn === role);
@@ -174,6 +173,7 @@
   }
   let storedMode = 'caregiver';
   try { storedMode = localStorage.getItem(MODE_KEY) || storedMode; } catch {}
+  if (storedMode !== 'caregiver' && storedMode !== 'individual') storedMode = 'caregiver';
   applyMenuMode(storedMode);
   // --- open / close helpers ---
   const open  = () => { overlay.setAttribute('aria-hidden','false'); document.body.style.overflow='hidden'; };

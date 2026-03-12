@@ -265,8 +265,6 @@
   <script type="module">
     import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
     import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabaseClient.js?v=2025.01.09E';
-    import { uploadJsonToBucket, downloadJsonFromBucket } from './shared-storage.js?v=2025.01.09E';
-    import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
 
     // ---------- PHOTO ----------
     const drop    = document.getElementById('photoDrop');
@@ -278,52 +276,14 @@
     const removeBtn = document.getElementById('removeBtn');
     const saveStatus = document.getElementById('saveStatus');
 
-    const GROUP_KEY = 'currentGroupId';
     const STORAGE_NS = 'starapp:emergency:v2';
     const PHOTO_KEY = `${STORAGE_NS}:photo`;
     const LEGACY_PHOTO_KEY = 'emergencyProfilePhotoURL';
-    const OWNER_USER_ID = '87a1e858-0887-48b7-959b-bd272521150a';
-    const OWNER_EMAIL = 'countrygirlinvt@gmail.com';
     const session = getSessionFromStorage();
     const currentUserId = session?.user?.id || null;
-    const currentUserEmail = session?.user?.email || '';
-    const currentUserName = () => session?.user?.user_metadata?.full_name || currentUserEmail || 'Caregiver';
-    const isOwner = () => currentUserId === OWNER_USER_ID || currentUserEmail.toLowerCase() === OWNER_EMAIL;
 
     let pendingFile = null;
-    let activeGroupId = null;
     let canEdit = true;
-    let sharedEnvelope = null;
-    const SHARED_BUCKET = 'documents';
-    const SHARED_PREFIX = 'shared/emergency';
-    const sharedPathForGroup = (groupId) => `${SHARED_PREFIX}/${groupId}.json`;
-
-    async function getActiveGroupId(){
-      if (activeGroupId) return activeGroupId;
-      activeGroupId = await ensureActiveGroupId(currentUserId);
-      return activeGroupId;
-    }
-
-    async function loadSharedEnvelope(){
-      const gid = await getActiveGroupId();
-      if (!gid) return null;
-      return await downloadJsonFromBucket(SHARED_BUCKET, sharedPathForGroup(gid));
-    }
-
-    async function saveSharedEnvelope(payload){
-      const gid = await getActiveGroupId();
-      if (!gid) throw new Error('Join a group to share this info.');
-      const envelope = {
-        updated_at: new Date().toISOString(),
-        updated_by: currentUserId,
-        updated_by_name: currentUserName(),
-        group_id: gid,
-        data: payload
-      };
-      await uploadJsonToBucket(SHARED_BUCKET, sharedPathForGroup(gid), envelope);
-      sharedEnvelope = envelope;
-      return envelope;
-    }
 
     function applyEditMode(editable){
       canEdit = !!editable;
@@ -406,7 +366,7 @@
     }
 
     async function initExistingPhoto() {
-      if (!isOwner()) return;
+      if (!currentUserId) return;
       try {
         const uid = session?.user?.id;
         if (uid) {
@@ -504,7 +464,7 @@
     initExistingPhoto();
 
     // ---------- FORM (draft + Supabase) ----------
-    const getDraftKey = () => `${STORAGE_NS}:draft:${activeGroupId || currentUserId || 'anonymous'}`;
+    const getDraftKey = () => `${STORAGE_NS}:draft:${currentUserId || 'anonymous'}`;
 
     // Inputs
     const $ = id => document.getElementById(id);
@@ -782,6 +742,30 @@
       renderLists();
     }
 
+    function clearForm({ preservePhoto = true } = {}) {
+      hydrateIndividual({
+        name: '',
+        address: '',
+        phone: '',
+        email: '',
+        allergies: '',
+        other_medical_info: '',
+        preferred_hospital: '',
+        insurance_info: '',
+        primary_language: '',
+        communication_needs: '',
+        emergency_instructions: '',
+        interaction_tips: '',
+      });
+      contacts = [];
+      medications = [];
+      setContactEditState(null);
+      setMedEditState(null);
+      setIndividualEditState(false, { silent: true });
+      renderLists();
+      if (!preservePhoto) clearPreview();
+    }
+
     const textOrEmpty = (value) => (typeof value === 'string' ? value : (value ?? ''));
     const arrayOrEmpty = (value) => (Array.isArray(value) ? value : []);
 
@@ -829,21 +813,13 @@
         const uid = session?.user?.id;
         if(!uid) throw new Error('Not signed in');
         const payload = buildPayload();
-        await saveSharedEnvelope(payload);
-        document.getElementById('cloudStatus').textContent = 'Saved for group ✓';
-        try {
-          const gid = await getActiveGroupId();
-          if (gid) {
-            const row = { id: uid, group_id: gid, ...payload, updated_at: new Date().toISOString() };
-            await rest('emergency_medical?on_conflict=id', {
-              method: 'POST',
-              headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
-              body: JSON.stringify([row]),
-            });
-          }
-        } catch (syncErr) {
-          console.warn('legacy emergency_medical sync failed', syncErr?.message || syncErr);
-        }
+        const row = { id: uid, ...payload, updated_at: new Date().toISOString() };
+        await rest('emergency_medical?on_conflict=id', {
+          method: 'POST',
+          headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+          body: JSON.stringify([row]),
+        });
+        document.getElementById('cloudStatus').textContent = 'Saved to your account ✓';
       }catch(err){
         console.error(err);
         document.getElementById('cloudStatus').textContent = 'Cloud save failed';
@@ -856,62 +832,21 @@
       try{
         const uid = session?.user?.id;
         if(!uid) throw new Error('Not signed in');
-        const gid = await getActiveGroupId();
-        if (!gid) throw new Error('Join a group to share this record.');
-        let envelope = await loadSharedEnvelope();
-        if (!envelope || !envelope.data) {
-          envelope = await seedFromLegacy(uid, gid);
-        }
-        if (envelope?.data) {
-          sharedEnvelope = envelope;
-          hydrateForm(envelope.data);
-          document.getElementById('cloudStatus').textContent = 'Loaded shared record ✓';
-          const hasSharedPhoto = !!envelope.data.avatar_url;
-          const hasLocalPhoto = drop.classList.contains('has-image') && !!preview?.src;
-          if (!hasSharedPhoto && isOwner() && hasLocalPhoto) {
-            try {
-              await saveSharedEnvelope(buildPayload());
-              document.getElementById('cloudStatus').textContent = 'Synced photo to group ✓';
-            } catch (syncErr) {
-              console.warn('photo sync failed', syncErr?.message || syncErr);
-            }
-          }
+        const rows = await rest(`emergency_medical?id=eq.${encodeURIComponent(uid)}&select=*&limit=1`);
+        const record = rows?.[0] || null;
+        if (record) {
+          hydrateForm(payloadFromRow(record));
+          document.getElementById('cloudStatus').textContent = 'Loaded your emergency info ✓';
         } else {
-          document.getElementById('cloudStatus').textContent = 'No shared record yet';
+          clearForm();
+          document.getElementById('cloudStatus').textContent = 'No emergency information available for this account.';
         }
-        applyEditMode(isOwner());
+        applyEditMode(true);
         if (canEdit) loadDraft();
       }catch(err){
         console.error(err);
         document.getElementById('cloudStatus').textContent = 'Cloud load failed';
         alert(err.message || 'Loading from cloud failed.');
-      }
-    }
-
-    async function seedFromLegacy(uid, gid){
-      try{
-        const rows = await rest([
-          'emergency_medical?select=*',
-          `group_id=eq.${encodeURIComponent(gid)}`,
-          'order=updated_at.desc.nullslast',
-          'limit=1'
-        ].join('&'));
-        const data = rows?.[0] || null;
-        if (!data) return null;
-        const payload = payloadFromRow(data);
-        if (!payload) return null;
-        const envelope = {
-          updated_at: data.updated_at || new Date().toISOString(),
-          updated_by: data.id || uid,
-          updated_by_name: data.updated_by_name || currentUserName(),
-          group_id: gid,
-          data: payload
-        };
-        await uploadJsonToBucket(SHARED_BUCKET, sharedPathForGroup(gid), envelope);
-        return envelope;
-      } catch (error) {
-        console.warn('legacy emergency load failed', error?.message || error);
-        return null;
       }
     }
 
@@ -924,9 +859,11 @@
 
     // Init
     if (!currentUserId) {
+      clearForm({ preservePhoto: false });
       applyEditMode(false);
+      document.getElementById('cloudStatus').textContent = 'No emergency information available for this account.';
     } else {
-      await loadFromCloud(); // load shared record first
+      await loadFromCloud();
     }
 
     function debounce(fn, ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }

@@ -1,9 +1,6 @@
-import { getSessionFromStorage } from './restClient.js?v=2025.01.09E';
-import { downloadJsonFromBucket, uploadJsonToBucket } from './shared-storage.js?v=2025.01.09E';
+import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
 import { ensureActiveGroupId, getCachedActiveGroupId } from './active-group.js?v=2026.03.12A';
 
-const SHARED_BUCKET = 'documents';
-const FOCUS_PREFIX = 'shared/focus';
 const GROUP_KEY = 'currentGroupId';
 export const LOCAL_FOCUS_KEY = 'focusOfWeek_v3';
 
@@ -66,10 +63,6 @@ function normalizeFocus(data) {
   };
 }
 
-function focusPath(groupId) {
-  return `${FOCUS_PREFIX}/${groupId}.json`;
-}
-
 export async function loadFocusForCurrentUser() {
   const session = getSessionFromStorage();
   const userId = session?.user?.id || null;
@@ -82,8 +75,13 @@ export async function loadFocusForCurrentUser() {
 export async function fetchFocusByGroup(groupId) {
   if (!groupId) return null;
   try {
-    const data = await downloadJsonFromBucket(SHARED_BUCKET, focusPath(groupId));
-    return normalizeFocus(data);
+    const rows = await rest([
+      'weekly_plans?select=*',
+      `group_id=eq.${encodeURIComponent(groupId)}`,
+      'order=created_at.desc',
+      'limit=1'
+    ].join('&'));
+    return normalizeFocus(rows?.[0] || null);
   } catch (error) {
     console.warn('[focus-data] fetchFocusByGroup failed', error);
     return null;
@@ -92,11 +90,46 @@ export async function fetchFocusByGroup(groupId) {
 
 export async function saveFocusForGroup(groupId, payload) {
   if (!groupId) throw new Error('Missing group id');
+  const session = getSessionFromStorage();
+  const userId = session?.user?.id || null;
   const normalized = normalizeFocus({
     ...payload,
     updated_at: new Date().toISOString(),
   });
-  await uploadJsonToBucket(SHARED_BUCKET, focusPath(groupId), normalized);
+  const latest = await rest([
+    'weekly_plans?select=id',
+    `group_id=eq.${encodeURIComponent(groupId)}`,
+    'order=created_at.desc',
+    'limit=1'
+  ].join('&'));
+  const record = {
+    group_id: groupId,
+    user_id: userId,
+    week_start: normalized.weekStart || null,
+    week_frequency: normalized.weekFrequency || null,
+    focus_area: normalized.focusArea || null,
+    custom_title: normalized.customTitle || null,
+    why_matters: normalized.whyMatters || null,
+    reflection: normalized.reflection || null,
+    next_steps: normalized.nextSteps || null,
+    goals_json: normalized.goals || [],
+    days: normalized.days || [],
+    updated_at: normalized.updated_at,
+  };
+  const existingId = latest?.[0]?.id || null;
+  if (existingId) {
+    await rest(`weekly_plans?id=eq.${encodeURIComponent(existingId)}`, {
+      method: 'PATCH',
+      headers: { Prefer: 'return=minimal' },
+      body: JSON.stringify(record),
+    });
+  } else {
+    await rest('weekly_plans', {
+      method: 'POST',
+      headers: { Prefer: 'return=minimal' },
+      body: JSON.stringify([record]),
+    });
+  }
   return normalized;
 }
 

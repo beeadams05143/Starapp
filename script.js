@@ -8,6 +8,7 @@ import {
   SUPABASE_ANON_KEY,
   clearSavedSession,
 } from './supabaseClient.js?v=2025.01.09E';
+import { resolveActiveGroup } from './active-group.js?v=2026.03.12A';
 
 const GROUP_KEY = 'currentGroupId';
 
@@ -103,32 +104,6 @@ async function updateAuthLink() {
 /* =========================
    Group switcher (navbar)
    ========================= */
-async function ensureDefaultGroup() {
-  const session = getSessionFromStorage();
-  const userId = session?.user?.id;
-  if (!userId) return null;
-
-  try {
-    const groupsNow = await rest('groups?select=id,name&limit=1');
-    if (groupsNow?.length) return groupsNow[0];
-  } catch (error) {
-    console.warn('ensureDefaultGroup fetch error', error);
-  }
-
-  try {
-    const rows = await rest('groups', {
-      method: 'POST',
-      headers: { Prefer: 'return=representation' },
-      body: JSON.stringify([{ name: 'Family' }]),
-    });
-    const data = Array.isArray(rows) ? rows[0] : rows;
-    return data || null;
-  } catch (error) {
-    console.warn('Could not auto-create default group:', error);
-    return null;
-  }
-}
-
 async function loadGroupsIntoSwitcher() {
   // The navbar should render a <select id="groupSelect">
   const sel =
@@ -142,15 +117,19 @@ async function loadGroupsIntoSwitcher() {
 
   let list = [];
   try {
-    const groups = await rest('groups?select=id,name&archived=eq.false&order=name.asc');
-    list = groups || [];
+    const session = getSessionFromStorage();
+    const userId = session?.user?.id;
+    if (!userId) throw new Error('No authenticated user');
+    const memberships = await rest([
+      'group_members?select=group_id,groups!inner(id,name,archived)',
+      `user_id=eq.${encodeURIComponent(userId)}`,
+      'order=joined_at.asc'
+    ].join('&'));
+    list = (memberships || [])
+      .map((row) => row.groups)
+      .filter((group) => group?.id && !group?.archived);
   } catch (error) {
     console.error('loadGroupsIntoSwitcher error', error);
-  }
-
-  if (list.length === 0) {
-    const created = await ensureDefaultGroup();
-    if (created) list = [created];
   }
 
   sel.innerHTML = '';
@@ -167,9 +146,8 @@ async function loadGroupsIntoSwitcher() {
     sel.appendChild(opt);
   }
 
-  const saved = localStorage.getItem(GROUP_KEY);
-  const exists = list.some(g => g.id === saved);
-  const useId = exists ? saved : list[0].id;
+  const resolved = await resolveActiveGroup();
+  const useId = list.some(g => g.id === resolved.groupId) ? resolved.groupId : list[0].id;
 
   sel.value = useId;
   localStorage.setItem(GROUP_KEY, useId);

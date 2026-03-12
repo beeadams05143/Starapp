@@ -1,5 +1,6 @@
-import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
+import { getSessionFromStorage } from './restClient.js?v=2025.01.09E';
 import { downloadJsonFromBucket, uploadJsonToBucket } from './shared-storage.js?v=2025.01.09E';
+import { ensureActiveGroupId, getCachedActiveGroupId } from './active-group.js?v=2026.03.12A';
 
 const SHARED_BUCKET = 'documents';
 const FOCUS_PREFIX = 'shared/focus';
@@ -21,26 +22,9 @@ function setStoredGroupId(value) {
 }
 
 export async function ensureGroupId(userId) {
-  let groupId = getStoredGroupId();
-  if (groupId) return groupId;
-  if (!userId) return null;
-  try {
-    const rows = await rest([
-      'group_members?select=group_id',
-      `user_id=eq.${encodeURIComponent(userId)}`,
-      'order=joined_at.asc',
-      'limit=1',
-    ].join('&'));
-    groupId = rows?.[0]?.group_id || null;
-    if (groupId) setStoredGroupId(groupId);
-  } catch (error) {
-    console.warn('[focus-data] ensureGroupId failed', error);
-  }
-  if (!groupId && userId) {
-    groupId = `solo-${userId}`;
-    setStoredGroupId(groupId);
-  }
-  return groupId;
+  const groupId = await ensureActiveGroupId(userId);
+  if (groupId) setStoredGroupId(groupId);
+  return groupId || null;
 }
 
 function normalizeGoals(goals = []) {
@@ -114,7 +98,8 @@ export function withGoalIds(goals = []) {
 
 export function readLocalFocusDraft() {
   try {
-    const raw = localStorage.getItem(LOCAL_FOCUS_KEY);
+    const groupId = getCachedActiveGroupId() || getStoredGroupId();
+    const raw = localStorage.getItem(groupId ? `${LOCAL_FOCUS_KEY}:${groupId}` : LOCAL_FOCUS_KEY);
     if (!raw) return null;
     return normalizeFocus(JSON.parse(raw));
   } catch {
@@ -124,7 +109,9 @@ export function readLocalFocusDraft() {
 
 export function writeLocalFocusDraft(payload) {
   try {
-    localStorage.setItem(LOCAL_FOCUS_KEY, JSON.stringify(payload || {}));
+    const groupId = getCachedActiveGroupId() || getStoredGroupId();
+    const key = groupId ? `${LOCAL_FOCUS_KEY}:${groupId}` : LOCAL_FOCUS_KEY;
+    localStorage.setItem(key, JSON.stringify(payload || {}));
   } catch (error) {
     console.warn('[focus-data] unable to cache local focus draft', error);
   }
@@ -132,6 +119,8 @@ export function writeLocalFocusDraft(payload) {
 
 export function clearLocalFocusDraft() {
   try {
-    localStorage.removeItem(LOCAL_FOCUS_KEY);
+    const groupId = getCachedActiveGroupId() || getStoredGroupId();
+    const key = groupId ? `${LOCAL_FOCUS_KEY}:${groupId}` : LOCAL_FOCUS_KEY;
+    localStorage.removeItem(key);
   } catch {}
 }

@@ -937,6 +937,7 @@
 <script type="module">
   // 1) Imports MUST be first in the module
   import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
+  import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
   import { loadFocusForCurrentUser, readLocalFocusDraft } from './focus-data.js?v=2025.01.09E';
 
   // 2) Optional: expose for console debugging
@@ -990,29 +991,11 @@
   const MOVEMENT_LAST_KEY = 'cg-movement-last-v1';
 
   async function ensureGroupId(userId){
-    let groupId = null;
-    try {
-      groupId = typeof getCurrentGroupId === 'function' ? getCurrentGroupId() : null;
-    } catch { groupId = null; }
-
-    if (groupId) return groupId;
-    if (!userId) return null;
-
-    try {
-      const rows = await rest([
-        'group_members?select=group_id',
-        `user_id=eq.${encodeURIComponent(userId)}`,
-        'order=joined_at.asc',
-        'limit=1'
-      ].join('&'));
-      groupId = rows?.[0]?.group_id || null;
-      if (groupId) {
-        try { localStorage.setItem(GROUP_KEY, groupId); } catch {}
-      }
-    } catch (error) {
-      console.warn('ensureGroupId lookup failed', error);
+    const groupId = await ensureActiveGroupId(userId);
+    if (groupId) {
+      try { localStorage.setItem(GROUP_KEY, groupId); } catch {}
     }
-    return groupId;
+    return groupId || null;
   }
 
   const durationToMinutes = (value) => {

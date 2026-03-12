@@ -299,6 +299,7 @@
   <!-- ===== Supabase Calendar logic ===== -->
   <script type="module">
   import { rest, getSessionFromStorage } from "./restClient.js?v=2025.01.09E";
+  import { ensureActiveGroupId } from "./active-group.js?v=2026.03.12A";
   const printBtn = document.getElementById('calendarPrintBtn');
   const shareBtn = document.getElementById('calendarShareBtn');
 
@@ -383,7 +384,7 @@
       other: "/documents/documents.html",
     };
 
-    const GROUP_ID = null;
+    let GROUP_ID = null;
 
     const state = {
       today: new Date(),
@@ -488,7 +489,7 @@
 
       async deleteEvent(id) {
         try {
-          await rest(`calendar_events?id=eq.${encodeURIComponent(id)}`, {
+          await rest(`calendar_events?id=eq.${encodeURIComponent(id)}&group_id=eq.${encodeURIComponent(GROUP_ID)}`, {
             method: "DELETE",
             headers: { Prefer: "return=minimal" },
           });
@@ -509,7 +510,7 @@
           all_day: !!evt.allDay,
         };
         try {
-          const rows = await rest(`calendar_events?id=eq.${encodeURIComponent(id)}`, {
+          const rows = await rest(`calendar_events?id=eq.${encodeURIComponent(id)}&group_id=eq.${encodeURIComponent(GROUP_ID)}`, {
             method: "PATCH",
             headers: { Prefer: "return=representation" },
             body: JSON.stringify(payload),
@@ -829,6 +830,12 @@
     });
 
     dlg.querySelector(".cancel").onclick = () => dlg.close();
+
+    GROUP_ID = await ensureActiveGroupId(currentUserId);
+    if (!GROUP_ID) {
+      list.innerHTML = `<li class="empty">No active group is available for this account.</li>`;
+      return;
+    }
 
     await renderMonth();
     renderMonthList();

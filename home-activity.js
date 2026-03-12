@@ -1,5 +1,6 @@
 import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
 import { downloadJsonFromBucket } from './shared-storage.js?v=2025.01.09E';
+import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
 
 let host = null;
 
@@ -71,14 +72,20 @@ function boot(){
       label: 'Mood check-in',
       query: (gid) => gid
         ? `mood_entries?select=updated_at,created_at,mood&group_id=eq.${encodeURIComponent(gid)}&order=updated_at.desc.nullslast&order=created_at.desc.nullslast&limit=1`
-        : 'mood_entries?select=updated_at,created_at,mood&order=updated_at.desc.nullslast&limit=1',
+        : null,
       fields: ['updated_at', 'created_at'],
       detail: (row) => row?.mood || null,
     },
     {
       key: 'documentsDb',
       label: 'Document saved',
-      query: () => 'documents?select=updated_at,created_at,title&order=updated_at.desc.nullslast&limit=1',
+      query: (gid) => gid ? [
+        'documents?select=updated_at,created_at,title',
+        `group_id=eq.${encodeURIComponent(gid)}`,
+        'order=updated_at.desc.nullslast',
+        'order=created_at.desc.nullslast',
+        'limit=1',
+      ].join('&') : null,
       fields: ['updated_at', 'created_at'],
       detail: (row) => row?.title || null,
     },
@@ -87,7 +94,7 @@ function boot(){
       label: 'Emergency info update',
       query: (gid) => gid
         ? `emergency_medical?select=updated_at,id&group_id=eq.${encodeURIComponent(gid)}&order=updated_at.desc&limit=1`
-        : 'emergency_medical?select=updated_at,id&order=updated_at.desc&limit=1',
+        : null,
       fields: ['updated_at'],
       detail: () => null,
     },
@@ -255,26 +262,11 @@ function boot(){
   }
 
   async function ensureGroupId(userId, storageKey) {
-    if (!userId) return null;
-    let cached = null;
-    try { cached = localStorage.getItem(storageKey); } catch { cached = null; }
-    if (cached) return cached;
-    try {
-      const rows = await rest([
-        'group_members?select=group_id',
-        `user_id=eq.${encodeURIComponent(userId)}`,
-        'order=joined_at.asc',
-        'limit=1',
-      ].join('&'));
-      const gid = rows?.[0]?.group_id || null;
-      if (gid) {
-        try { localStorage.setItem(storageKey, gid); } catch {}
-      }
-      return gid;
-    } catch (error) {
-      console.warn('home activity group lookup failed', error?.message || error);
-      return null;
+    const gid = await ensureActiveGroupId(userId);
+    if (gid) {
+      try { localStorage.setItem(storageKey, gid); } catch {}
     }
+    return gid || null;
   }
 
   function readSeenMap() {

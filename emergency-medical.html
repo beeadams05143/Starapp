@@ -266,6 +266,7 @@
     import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
     import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabaseClient.js?v=2025.01.09E';
     import { uploadJsonToBucket, downloadJsonFromBucket } from './shared-storage.js?v=2025.01.09E';
+    import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
 
     // ---------- PHOTO ----------
     const drop    = document.getElementById('photoDrop');
@@ -278,6 +279,9 @@
     const saveStatus = document.getElementById('saveStatus');
 
     const GROUP_KEY = 'currentGroupId';
+    const STORAGE_NS = 'starapp:emergency:v2';
+    const PHOTO_KEY = `${STORAGE_NS}:photo`;
+    const LEGACY_PHOTO_KEY = 'emergencyProfilePhotoURL';
     const OWNER_USER_ID = '87a1e858-0887-48b7-959b-bd272521150a';
     const OWNER_EMAIL = 'countrygirlinvt@gmail.com';
     const session = getSessionFromStorage();
@@ -294,29 +298,9 @@
     const SHARED_PREFIX = 'shared/emergency';
     const sharedPathForGroup = (groupId) => `${SHARED_PREFIX}/${groupId}.json`;
 
-    async function ensureGroupId(userId){
-      if (!userId) return null;
-      let gid = null;
-      try { gid = localStorage.getItem(GROUP_KEY) || null; } catch { gid = null; }
-      if (gid) return gid;
-      try{
-        const rows = await rest([
-          'group_members?select=group_id',
-          `user_id=eq.${encodeURIComponent(userId)}`,
-          'order=joined_at.asc',
-          'limit=1'
-        ].join('&'));
-        gid = rows?.[0]?.group_id || null;
-        if (gid) try { localStorage.setItem(GROUP_KEY, gid); } catch {}
-      }catch(err){
-        console.warn('ensureGroupId error', err);
-      }
-      return gid;
-    }
-
     async function getActiveGroupId(){
       if (activeGroupId) return activeGroupId;
-      activeGroupId = await ensureGroupId(currentUserId);
+      activeGroupId = await ensureActiveGroupId(currentUserId);
       return activeGroupId;
     }
 
@@ -385,6 +369,42 @@
       renderLists();
     }
 
+    function readLocalPhotoFallback() {
+      try {
+        const scoped = localStorage.getItem(PHOTO_KEY);
+        if (scoped && scoped.startsWith('data:image/')) return scoped;
+        const legacy = localStorage.getItem(LEGACY_PHOTO_KEY);
+        if (legacy && legacy.startsWith('data:image/')) {
+          localStorage.setItem(PHOTO_KEY, legacy);
+          return legacy;
+        }
+      } catch (error) {
+        console.warn('readLocalPhotoFallback error', error);
+      }
+      return null;
+    }
+
+    function writeLocalPhotoFallback(value) {
+      try {
+        if (value && value.startsWith('data:image/')) {
+          localStorage.setItem(PHOTO_KEY, value);
+        } else {
+          localStorage.removeItem(PHOTO_KEY);
+        }
+      } catch (error) {
+        console.warn('writeLocalPhotoFallback error', error);
+      }
+    }
+
+    function clearLocalPhotoFallback() {
+      try {
+        localStorage.removeItem(PHOTO_KEY);
+        localStorage.removeItem(LEGACY_PHOTO_KEY);
+      } catch (error) {
+        console.warn('clearLocalPhotoFallback error', error);
+      }
+    }
+
     async function initExistingPhoto() {
       if (!isOwner()) return;
       try {
@@ -397,7 +417,7 @@
       } catch (error) {
         console.warn('initExistingPhoto error', error);
       }
-      const localUrl = localStorage.getItem('emergencyProfilePhotoURL');
+      const localUrl = readLocalPhotoFallback();
       if (localUrl) setPreview(localUrl);
     }
     function setPreview(src) {
@@ -424,7 +444,7 @@
     function handleChosenFile(file) { pendingFile = file; const url = URL.createObjectURL(file); setPreview(url); saveStatus.textContent = 'Ready to save…'; }
     removeBtn.addEventListener('click', () => {
       if (!canEdit) return;
-      localStorage.removeItem('emergencyProfilePhotoURL');
+      clearLocalPhotoFallback();
       clearPreview();
       saveStatus.textContent = 'Photo removed (not yet saved to cloud).';
     });
@@ -432,7 +452,16 @@
     saveBtn.addEventListener('click', async () => {
       if (!canEdit) { alert('View-only mode: only the owner can update this record.'); return; }
       saveBtn.disabled = true; saveStatus.textContent = 'Saving photo…';
-      if (!pendingFile && preview.src) { localStorage.setItem('emergencyProfilePhotoURL', preview.src); saveStatus.textContent = 'Saved locally.'; saveBtn.disabled = false; return; }
+      if (!pendingFile && preview.src) {
+        if (preview.src.startsWith('data:image/')) {
+          writeLocalPhotoFallback(preview.src);
+          saveStatus.textContent = 'Saved locally.';
+        } else {
+          saveStatus.textContent = 'Photo already synced.';
+        }
+        saveBtn.disabled = false;
+        return;
+      }
       try {
         const uid = session?.user?.id;
         if (!uid) throw new Error('Not signed in');
@@ -459,13 +488,13 @@
           headers: { Prefer: 'return=minimal' },
           body: JSON.stringify({ avatar_url: publicUrl }),
         });
-        localStorage.setItem('emergencyProfilePhotoURL', publicUrl);
+        clearLocalPhotoFallback();
         setPreview(publicUrl); pendingFile = null; saveStatus.textContent = 'Photo saved!';
         const navAvatar = document.getElementById('navAvatar'); if (navAvatar) navAvatar.src = publicUrl;
       } catch (e) {
         try {
           const b64 = await fileToBase64(pendingFile);
-          localStorage.setItem('emergencyProfilePhotoURL', b64);
+          writeLocalPhotoFallback(b64);
           setPreview(b64);
           saveStatus.textContent = 'Saved locally (offline fallback).'; pendingFile = null;
         } catch (e2) { console.error(e2); saveStatus.textContent = 'Save failed. Please try again.'; }
@@ -475,7 +504,7 @@
     initExistingPhoto();
 
     // ---------- FORM (draft + Supabase) ----------
-    const DRAFT_KEY = 'emergencyMedicalDraft:v1';
+    const getDraftKey = () => `${STORAGE_NS}:draft:${activeGroupId || currentUserId || 'anonymous'}`;
 
     // Inputs
     const $ = id => document.getElementById(id);
@@ -781,13 +810,13 @@
     function saveDraft(){
       if (!canEdit) return;
       const payload = buildPayload();
-      localStorage.setItem(DRAFT_KEY, JSON.stringify(payload));
+      localStorage.setItem(getDraftKey(), JSON.stringify(payload));
       const ts = new Date().toLocaleString();
       document.getElementById('lastSaved').textContent = `Draft saved: ${ts}`;
     }
     function loadDraft(){
       try{
-        const raw = localStorage.getItem(DRAFT_KEY);
+        const raw = localStorage.getItem(getDraftKey());
         if(raw){ hydrateForm(JSON.parse(raw)); document.getElementById('lastSaved').textContent = 'Draft loaded from this device.'; }
       }catch{}
     }
@@ -861,7 +890,12 @@
 
     async function seedFromLegacy(uid, gid){
       try{
-        const rows = await rest('emergency_medical?select=*&limit=1');
+        const rows = await rest([
+          'emergency_medical?select=*',
+          `group_id=eq.${encodeURIComponent(gid)}`,
+          'order=updated_at.desc.nullslast',
+          'limit=1'
+        ].join('&'));
         const data = rows?.[0] || null;
         if (!data) return null;
         const payload = payloadFromRow(data);

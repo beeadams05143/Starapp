@@ -51,6 +51,7 @@
 
   <script type="module">
     import { rest, getSessionFromStorage } from './restClient.js?v=2026.02.16D';
+    import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
 
     const GROUP_KEY = 'currentGroupId';
     const inviteCodeEl = document.getElementById('inviteCode');
@@ -67,8 +68,17 @@
       return session;
     }
 
+    async function syncActiveGroupId() {
+      const session = await requireSession();
+      const gid = await ensureActiveGroupId(session.user.id);
+      if (gid) {
+        try { localStorage.setItem(GROUP_KEY, gid); } catch {}
+      }
+      return gid || null;
+    }
+
     async function loadInviteCode(){
-      const gid = getActiveGroupId();
+      const gid = getActiveGroupId() || await syncActiveGroupId();
       if (!gid) { inviteCodeEl.value = 'no active group'; return; }
       try {
         const rows = await rest(`groups?id=eq.${encodeURIComponent(gid)}&select=join_code`);
@@ -132,7 +142,7 @@
     });
 
     (async () => {
-      await requireSession();
+      await syncActiveGroupId();
       await loadInviteCode();
     })();
   </script>

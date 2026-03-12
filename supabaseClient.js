@@ -7,15 +7,54 @@ export const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 
 const AUTH_STORAGE_PREFIX = 'supabase.auth.token';
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
+const APP_ID = 'starapp';
+
+function extractProjectRef(url) {
+  try {
+    return new URL(url).hostname.split('.')[0] || 'unknown';
+  } catch {
+    return 'unknown';
+  }
+}
+
+function decodeJwtPayload(token) {
+  try {
+    const parts = String(token || '').split('.');
+    if (parts.length < 2) return null;
+    const normalized = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const padded = normalized + '='.repeat((4 - (normalized.length % 4)) % 4);
+    return JSON.parse(atob(padded));
+  } catch {
+    return null;
+  }
+}
+
+const PROJECT_REF = extractProjectRef(SUPABASE_URL);
+const STORAGE_SCOPE = `${AUTH_STORAGE_PREFIX}:${APP_ID}:${PROJECT_REF}`;
+const LEGACY_STORAGE_KEY = `${AUTH_STORAGE_PREFIX}-${btoa(SUPABASE_URL).slice(0, 12)}`;
+
+function validateSupabaseConfig() {
+  const payload = decodeJwtPayload(SUPABASE_ANON_KEY);
+  const keyRef = payload?.ref || null;
+  if (keyRef && PROJECT_REF !== 'unknown' && keyRef !== PROJECT_REF) {
+    throw new Error(`[supabase] configuration mismatch: URL project "${PROJECT_REF}" does not match anon key ref "${keyRef}"`);
+  }
+}
+
+validateSupabaseConfig();
 
 function getStorageKey() {
+  return STORAGE_SCOPE;
+}
+
+function readSessionAtKey(key) {
   try {
-    return (
-      Object.keys(localStorage).find((key) => key.startsWith(AUTH_STORAGE_PREFIX)) ||
-      `${AUTH_STORAGE_PREFIX}-${btoa(SUPABASE_URL).slice(0, 12)}`
-    );
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed.currentSession || parsed.session || null;
   } catch {
-    return `${AUTH_STORAGE_PREFIX}-${btoa(SUPABASE_URL).slice(0, 12)}`;
+    return null;
   }
 }
 
@@ -30,6 +69,7 @@ export function saveSession(session) {
         Math.floor(Date.now() / 1000) + (session?.expires_in || 3600),
     };
     localStorage.setItem(key, JSON.stringify(payload));
+    if (key !== LEGACY_STORAGE_KEY) localStorage.removeItem(LEGACY_STORAGE_KEY);
   } catch (err) {
     console.warn('[supabase] unable to persist session', err);
   }
@@ -39,6 +79,7 @@ export function clearSavedSession() {
   try {
     const key = getStorageKey();
     localStorage.removeItem(key);
+    localStorage.removeItem(LEGACY_STORAGE_KEY);
   } catch (err) {
     console.warn('[supabase] unable to clear session', err);
   }
@@ -47,10 +88,14 @@ export function clearSavedSession() {
 export function getSessionFromStorage() {
   try {
     const key = getStorageKey();
-    const raw = localStorage.getItem(key);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    return parsed.currentSession || parsed.session || null;
+    const current = readSessionAtKey(key);
+    if (current) return current;
+    const legacy = readSessionAtKey(LEGACY_STORAGE_KEY);
+    if (legacy) {
+      saveSession(legacy);
+      return legacy;
+    }
+    return null;
   } catch (err) {
     console.warn('[supabase] unable to read session', err);
     return null;

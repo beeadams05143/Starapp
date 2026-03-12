@@ -92,6 +92,7 @@
 <script type="module">
   import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabaseClient.js?v=2025.01.09E';
   import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
+  import { resolveActiveGroup } from './active-group.js?v=2026.03.12A';
 
   const defaultAvatar     = 'IMG/default-avatar.png';
   const avatarPreview     = document.getElementById('avatarPreview');
@@ -179,8 +180,14 @@
     let groups = [];
     try {
       ensureSession();
-      const rows = await rest('groups?select=id,name,archived&order=name.asc');
-      groups = (rows || []).filter(g => !g?.archived);
+      const rows = await rest([
+        'group_members?select=group_id,groups!inner(id,name,archived)',
+        `user_id=eq.${encodeURIComponent(currentUser.id)}`,
+        'order=joined_at.asc'
+      ].join('&'));
+      groups = (rows || [])
+        .map(row => row.groups)
+        .filter(g => g?.id && !g?.archived);
     } catch (err) {
       console.warn('[PROFILE] groups fetch failed; using default', err);
     }
@@ -190,8 +197,8 @@
     }
 
     groupSelectEl.innerHTML = groups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
-    const cachedId = localStorage.getItem(GROUP_KEY_ID);
-    const match = groups.find(g => g.id === cachedId);
+    const resolved = await resolveActiveGroup(currentUser.id);
+    const match = groups.find(g => g.id === resolved.groupId || g.id === localStorage.getItem(GROUP_KEY_ID));
     groupSelectEl.value = match ? match.id : groups[0].id;
     groupSelectEl.disabled = false;
     cacheSelectedGroup();

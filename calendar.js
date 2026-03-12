@@ -1,5 +1,6 @@
 // calendar.js — REST-based version
 import { rest, getSessionFromStorage } from '../restClient.js?v=2025.01.09E';
+import { ensureActiveGroupId } from '../active-group.js?v=2026.03.12A';
 
 const calList = document.getElementById('calList');
 const calSelect = document.getElementById('calendarSelect');
@@ -18,6 +19,7 @@ const allDayEl = document.getElementById('all_day');
 const eventList = document.getElementById('eventList');
 
 let me = null;
+let activeGroupId = null;
 async function requireUser() {
   const session = getSessionFromStorage();
   if (!session?.user?.id) {
@@ -25,6 +27,7 @@ async function requireUser() {
     throw new Error('No user');
   }
   me = session.user;
+  activeGroupId = await ensureActiveGroupId(me.id);
 }
 
 function toUTC(dateStr, timeStr) {
@@ -60,7 +63,12 @@ async function loadCalendars() {
   // Thanks to RLS, this will return calendars visible via group membership OR calendar_members.
   let data = [];
   try {
-    data = await rest('calendars?select=id,name,group_id&order=created_at.asc');
+    if (!activeGroupId) return;
+    data = await rest([
+      'calendars?select=id,name,group_id',
+      `group_id=eq.${encodeURIComponent(activeGroupId)}`,
+      'order=created_at.asc'
+    ].join('&'));
   } catch (error) {
     console.error('loadCalendars error', error);
     return;

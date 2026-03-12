@@ -2,6 +2,7 @@
 import { rest, getSessionFromStorage, requireSession } from "../restClient.js?v=2025.01.09E";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../supabaseClient.js?v=2025.01.09E";
 import { uploadJsonToBucket, downloadJsonFromBucket } from "../shared-storage.js?v=2025.01.09E";
+import { ensureActiveGroupId } from "../active-group.js?v=2026.03.12A";
 
 // Inject CSS so visited links aren't purple, without breaking the active (black) tabs
 (() => {
@@ -290,10 +291,6 @@ function writeStoredGroupId(value) {
   } catch { /* ignore */ }
 }
 
-function fallbackGroupId(userId) {
-  return userId ? `solo-${userId}` : null;
-}
-
 function isBucketMissing(error) {
   if (!error) return false;
   if (typeof error === "string") return BUCKET_NOT_FOUND_RE.test(error);
@@ -337,27 +334,9 @@ function readFileAsDataURL(file) {
 }
 
 async function ensureGroupId(userId) {
-  if (!userId) return null;
-  let cached = readStoredGroupId();
-  if (cached) return cached;
-  try {
-    const rows = await rest([
-      "group_members?select=group_id",
-      `user_id=eq.${encodeURIComponent(userId)}`,
-      "order=joined_at.asc",
-      "limit=1"
-    ].join("&"));
-    const gid = rows?.[0]?.group_id || null;
-    if (gid) {
-      writeStoredGroupId(gid);
-      return gid;
-    }
-  } catch (error) {
-    console.warn("group lookup failed", error?.message || error);
-  }
-  const fallback = fallbackGroupId(userId);
-  if (fallback) writeStoredGroupId(fallback);
-  return fallback;
+  const gid = await ensureActiveGroupId(userId);
+  if (gid) writeStoredGroupId(gid);
+  return gid || null;
 }
 
 const normalizeTags = (tags) => Array.isArray(tags) ? tags : (typeof tags === "string" ? tags.split(",").map(s => s.trim()).filter(Boolean) : []);
@@ -477,7 +456,13 @@ async function persistDocsStore(updatedAt = null) {
 
 async function fetchDocsFromSupabase() {
   try {
-    const rows = await rest("documents?select=*&order=created_at.desc&limit=500");
+    if (!GROUP_ID) return [];
+    const rows = await rest([
+      "documents?select=*",
+      `group_id=eq.${encodeURIComponent(GROUP_ID)}`,
+      "order=created_at.desc",
+      "limit=500"
+    ].join("&"));
     return normalizeDocList(rows || []);
   } catch (error) {
     console.warn("docs table load failed", error?.message || error);
@@ -1355,6 +1340,7 @@ if (prettyForm) {
           content_json,
           tags,
           storage_path,
+          group_id: GROUP_ID,
           updated_at: new Date().toISOString(),
         };
         let updatedRows = [];
@@ -1371,6 +1357,7 @@ if (prettyForm) {
           try {
             updatedRows = await rest([
               "documents",
+              `group_id=eq.${encodeURIComponent(GROUP_ID)}`,
               `storage_path=eq.${encodeURIComponent(existingDoc.storage_path)}`,
               `created_by=eq.${encodeURIComponent(existingDoc.created_by || user.id)}`,
             ].join("&"), {
@@ -1406,6 +1393,7 @@ if (prettyForm) {
         content_json,
         tags,
         storage_path,
+        group_id: GROUP_ID,
         created_by: user.id,
       };
       const inserted = await rest("documents", {
@@ -1494,6 +1482,7 @@ export async function saveMinutesRich(payload = {}, attachment = {}) {
     content_json,
     tags,
     storage_path: storagePath,
+    group_id: GROUP_ID,
     created_by: user.id,
   };
 

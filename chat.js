@@ -1,11 +1,9 @@
-// chat.js — hard-wired to Family group, REST version (polling-based)
+// chat.js — group-scoped REST version (polling-based)
 // Requires: restClient.js exporting { rest, getSessionFromStorage }
 // and <script type="module" src="chat.js"></script> in chat.html
 
 import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
-
-// ---------- CONFIG ----------
-const GROUP_ID = '3159dde9-8cf3-4a29-af72-01da907f241b'; // Family
+import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
 
 // ---------- Require login ----------
 const session = getSessionFromStorage();
@@ -15,6 +13,11 @@ if (!session?.user?.id || !session?.access_token) {
   throw new Error('No session');
 }
 const currentUserId = session.user.id;
+const GROUP_ID = await ensureActiveGroupId(currentUserId);
+if (!GROUP_ID) {
+  alert('No active group is available for this account.');
+  throw new Error('No active group');
+}
 
 // ---------- DOM refs ----------
 const chatBox = document.getElementById('chatBox');

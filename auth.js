@@ -126,15 +126,20 @@ function setAuthBusy(on) {
 }
 
 /* ------------- LOG OUT -------------- */
+function clearLocalIdentityState() {
+  const keys = ['user_id', 'currentGroupId', 'currentGroupName'];
+  for (const key of keys) {
+    try { localStorage.removeItem(key); } catch {}
+  }
+}
+
 async function logOut() {
   try {
     await postAuth('/auth/v1/logout', { scope: 'global' }, { withToken: true });
   } catch (err) {
     console.warn('[AUTH] signOut error', err);
   }
-  try {
-    localStorage.clear();
-  } catch {}
+  clearLocalIdentityState();
   clearSavedSession();
   window.location.assign(LOGIN_URL);
 }

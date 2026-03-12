@@ -97,6 +97,13 @@
     clearSavedSession,
   } from './supabaseClient.js?v=2025.01.09E';
 
+  const clearLocalIdentityState = () => {
+    const keys = ['user_id', 'currentGroupId', 'currentGroupName'];
+    for (const key of keys) {
+      try { localStorage.removeItem(key); } catch {}
+    }
+  };
+
   const logoutBtn = document.getElementById('logoutBtn');
   if (logoutBtn) {
     logoutBtn.addEventListener('click', async (event) => {
@@ -118,9 +125,7 @@
         }
       }
       clearSavedSession();
-      try {
-        localStorage.clear();
-      } catch {}
+      clearLocalIdentityState();
       window.location.href = 'login.html';
     });
   }

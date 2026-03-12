@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Onboarding - STAR</title>
+  <style>
+    :root { color-scheme: light; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      background: linear-gradient(180deg, #f6f7fb 0%, #eef2ff 100%);
+      color: #111827;
+      display: grid;
+      place-items: center;
+      padding: 24px 16px;
+      box-sizing: border-box;
+    }
+    .shell {
+      width: min(760px, 100%);
+      background: rgba(255, 255, 255, 0.96);
+      border-radius: 18px;
+      box-shadow: 0 20px 50px rgba(15, 23, 42, 0.12);
+      padding: 28px 22px;
+    }
+    h1 { margin: 0 0 8px; font-size: 30px; }
+    .sub { margin: 0 0 22px; color: #4b5563; }
+    .card {
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 18px;
+      margin-top: 16px;
+      background: #fff;
+    }
+    .card h2 { margin: 0 0 12px; font-size: 20px; }
+    label { display: block; font-size: 14px; font-weight: 600; margin: 12px 0 6px; }
+    input, select, button {
+      width: 100%;
+      box-sizing: border-box;
+      border-radius: 10px;
+      font-size: 15px;
+    }
+    input, select {
+      border: 1px solid #d1d5db;
+      padding: 11px 12px;
+      background: #fff;
+    }
+    button {
+      border: 0;
+      background: #111827;
+      color: #fff;
+      font-weight: 700;
+      padding: 12px 14px;
+      cursor: pointer;
+      margin-top: 14px;
+    }
+    button.secondary {
+      background: #fff;
+      color: #111827;
+      border: 1px solid #d1d5db;
+    }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    .grid {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .message {
+      min-height: 20px;
+      margin-top: 10px;
+      font-size: 14px;
+      color: #b91c1c;
+    }
+    .message.ok { color: #0f766e; }
+    .muted { color: #6b7280; font-size: 13px; }
+    .step-note {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #4338ca;
+      margin-bottom: 8px;
+    }
+    @media (max-width: 720px) {
+      .grid { grid-template-columns: 1fr; }
+      .shell { padding: 22px 16px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <h1>Finish Setting Up STAR</h1>
+    <p class="sub">Create your profile, then create or join the group you want to use in the app.</p>
+
+    <section class="card">
+      <div class="step-note">Step 1</div>
+      <h2>Profile</h2>
+      <form id="profileForm" novalidate>
+        <label for="displayName">Name</label>
+        <input id="displayName" type="text" autocomplete="name" placeholder="Your name" required />
+
+        <label for="roleSelect">Role</label>
+        <select id="roleSelect" required>
+          <option value="individual">Individual</option>
+          <option value="caregiver">Caregiver</option>
+        </select>
+
+        <button id="saveProfileBtn" type="submit">Save Profile</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <div class="step-note">Step 2</div>
+      <h2>Group</h2>
+      <div class="grid">
+        <form id="createGroupForm" novalidate>
+          <label for="groupName">Create Group</label>
+          <input id="groupName" type="text" placeholder="Family group name" />
+          <p class="muted">You will be added as the owner.</p>
+          <button id="createGroupBtn" type="submit">Create Group</button>
+        </form>
+
+        <form id="joinGroupForm" novalidate>
+          <label for="joinCode">Join Group</label>
+          <input id="joinCode" type="text" placeholder="Invite code" autocapitalize="characters" />
+          <p class="muted">You will be added as a caregiver.</p>
+          <button id="joinGroupBtn" type="submit" class="secondary">Join Group</button>
+        </form>
+      </div>
+    </section>
+
+    <div id="status" class="message" role="status" aria-live="polite"></div>
+  </main>
+
+  <script type="module">
+    import { getSessionFromStorage } from './supabaseClient.js?v=2026.03.12D';
+    import {
+      fetchCurrentMemberships,
+      fetchCurrentProfile,
+      profileNeedsOnboarding,
+      saveProfileBasics,
+      createGroupForUser,
+      joinGroupForUser,
+      saveProfileDefaultGroup,
+    } from './onboarding-flow.js?v=2026.03.12D';
+
+    const profileForm = document.getElementById('profileForm');
+    const createGroupForm = document.getElementById('createGroupForm');
+    const joinGroupForm = document.getElementById('joinGroupForm');
+    const displayNameEl = document.getElementById('displayName');
+    const roleSelectEl = document.getElementById('roleSelect');
+    const groupNameEl = document.getElementById('groupName');
+    const joinCodeEl = document.getElementById('joinCode');
+    const saveProfileBtn = document.getElementById('saveProfileBtn');
+    const createGroupBtn = document.getElementById('createGroupBtn');
+    const joinGroupBtn = document.getElementById('joinGroupBtn');
+    const statusEl = document.getElementById('status');
+
+    let currentUser = null;
+    let savedProfile = null;
+
+    const setStatus = (text, ok = false) => {
+      statusEl.textContent = text || '';
+      statusEl.classList.toggle('ok', !!ok);
+    };
+
+    const setBusy = (on) => {
+      [saveProfileBtn, createGroupBtn, joinGroupBtn].forEach((btn) => {
+        if (btn) btn.disabled = on;
+      });
+    };
+
+    function profilePayload() {
+      return {
+        name: (displayNameEl.value || '').trim(),
+        role: roleSelectEl.value || 'individual',
+      };
+    }
+
+    function ensureProfileSaved() {
+      if (!savedProfile?.id) throw new Error('Save your profile first.');
+    }
+
+    async function finishWithGroup(group) {
+      await saveProfileDefaultGroup(currentUser.id, group.id);
+      window.location.replace('dashboard.html');
+    }
+
+    async function hydrate() {
+      const session = getSessionFromStorage();
+      currentUser = session?.user || null;
+      if (!currentUser?.id) {
+        window.location.replace('login.html?redirect=onboarding.html');
+        return;
+      }
+
+      const profile = await fetchCurrentProfile(currentUser.id);
+      const memberships = await fetchCurrentMemberships(currentUser.id);
+
+      if (profile) {
+        displayNameEl.value =
+          profile.display_name ||
+          profile.public_name ||
+          profile.full_name ||
+          currentUser.user_metadata?.full_name ||
+          currentUser.email ||
+          '';
+        if (profile.role) roleSelectEl.value = profile.role;
+        savedProfile = profile;
+      } else {
+        displayNameEl.value =
+          currentUser.user_metadata?.full_name ||
+          currentUser.user_metadata?.name ||
+          currentUser.email ||
+          '';
+      }
+
+      if (!profileNeedsOnboarding(profile) && memberships.some((row) => row.group_id === profile.group_id)) {
+        window.location.replace('dashboard.html');
+      }
+    }
+
+    profileForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      setStatus('');
+      setBusy(true);
+      try {
+        const payload = profilePayload();
+        if (!payload.name) throw new Error('Enter your name.');
+        savedProfile = await saveProfileBasics(currentUser.id, payload);
+        setStatus('Profile saved. Create or join a group to continue.', true);
+      } catch (error) {
+        setStatus(error?.message || 'Could not save profile.');
+      } finally {
+        setBusy(false);
+      }
+    });
+
+    createGroupForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      setStatus('');
+      setBusy(true);
+      try {
+        ensureProfileSaved();
+        const group = await createGroupForUser(currentUser.id, groupNameEl.value);
+        await finishWithGroup(group);
+      } catch (error) {
+        setStatus(error?.message || 'Could not create group.');
+      } finally {
+        setBusy(false);
+      }
+    });
+
+    joinGroupForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      setStatus('');
+      setBusy(true);
+      try {
+        ensureProfileSaved();
+        const group = await joinGroupForUser(currentUser.id, joinCodeEl.value);
+        await finishWithGroup(group);
+      } catch (error) {
+        setStatus(error?.message || 'Could not join group.');
+      } finally {
+        setBusy(false);
+      }
+    });
+
+    hydrate().catch((error) => {
+      console.error('[ONBOARDING] boot failed', error);
+      setStatus(error?.message || 'Could not load onboarding.');
+    });
+  </script>
+</body>
+</html>

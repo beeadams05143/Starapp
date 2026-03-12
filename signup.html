@@ -68,6 +68,13 @@
       gap: .75rem;
     }
 
+    .row {
+      display: flex;
+      gap: .75rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
     input, button {
       padding: .65rem;
       font-size: 1rem;
@@ -84,6 +91,22 @@
 
     button:hover {
       background-color: #3a5984;
+    }
+
+    .ghost {
+      background: #fff;
+      color: #2a2a2a;
+    }
+
+    #message {
+      min-height: 1.2rem;
+      margin-top: 0.8rem;
+      font-size: 0.95rem;
+      color: #b91c1c;
+    }
+
+    #message.ok {
+      color: #0f766e;
     }
   </style>
 </head>
@@ -119,12 +142,113 @@
     <form id="signup-form">
       <input type="email" id="email" placeholder="Email" required />
       <input type="password" id="password" placeholder="Password" required />
-      <button type="submit">Sign Up</button>
+      <div class="row">
+        <button id="signupBtn" type="submit">Sign Up</button>
+        <button id="loginBtn" type="button" class="ghost">Log In</button>
+      </div>
     </form>
+    <div id="message" role="status" aria-live="polite"></div>
   </div>
 
   <!-- Navbar loader -->
   <script type="module" src="load-navbar.js?v=2026.03.12D"></script>
+  <script type="module">
+    import {
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY,
+      saveSession,
+      getSessionFromStorage,
+    } from './supabaseClient.js?v=2026.03.12D';
+    import { resolvePostAuthDestination, normalizeRedirect } from './onboarding-flow.js?v=2026.03.12D';
+
+    const params = new URLSearchParams(location.search);
+    const redirect = normalizeRedirect(params.get('redirect'));
+    const form = document.getElementById('signup-form');
+    const emailEl = document.getElementById('email');
+    const passwordEl = document.getElementById('password');
+    const signupBtn = document.getElementById('signupBtn');
+    const loginBtn = document.getElementById('loginBtn');
+    const messageEl = document.getElementById('message');
+
+    const setMessage = (text, ok = false) => {
+      messageEl.textContent = text || '';
+      messageEl.classList.toggle('ok', !!ok);
+    };
+
+    const setBusy = (on) => {
+      [signupBtn, loginBtn].forEach((btn) => {
+        if (btn) btn.disabled = on;
+      });
+    };
+
+    function normalizeSession(payload) {
+      if (!payload || typeof payload !== 'object') return null;
+      if (payload.session) return payload.session;
+      if (!payload.access_token) return null;
+      return {
+        access_token: payload.access_token,
+        refresh_token: payload.refresh_token || null,
+        expires_in: payload.expires_in ?? null,
+        expires_at:
+          payload.expires_at ??
+          (payload.expires_in ? Math.floor(Date.now() / 1000) + Number(payload.expires_in || 0) : null),
+        token_type: payload.token_type || 'bearer',
+        user: payload.user ?? null,
+      };
+    }
+
+    async function signUp(email, password) {
+      const response = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+      const text = await response.text();
+      const payload = text ? JSON.parse(text) : null;
+      if (!response.ok) {
+        throw new Error(payload?.error_description || payload?.error || payload?.message || text || 'Signup failed');
+      }
+      const session = normalizeSession(payload);
+      if (session) saveSession(session);
+      return payload;
+    }
+
+    form?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      setMessage('');
+      setBusy(true);
+      try {
+        const email = (emailEl.value || '').trim();
+        const password = passwordEl.value || '';
+        if (!email || !password) throw new Error('Enter email and password.');
+
+        await signUp(email, password);
+        const session = getSessionFromStorage();
+        if (session?.user?.id) {
+          try { localStorage.setItem('user_id', session.user.id); } catch {}
+          const destination = await resolvePostAuthDestination({
+            userId: session.user.id,
+            redirect,
+          });
+          location.replace(destination);
+          return;
+        }
+        setMessage('Check your email to confirm your account, then log in.', true);
+      } catch (error) {
+        setMessage(error?.message || 'Signup failed.');
+      } finally {
+        setBusy(false);
+      }
+    });
+
+    loginBtn?.addEventListener('click', () => {
+      const next = `login.html${redirect ? `?redirect=${encodeURIComponent(redirect)}` : ''}`;
+      location.assign(next);
+    });
+  </script>
   <script>
     (function(){
       const version = window.STAR_BUILD_VERSION || '2026.03.12D';

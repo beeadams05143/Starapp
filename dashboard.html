@@ -96,6 +96,7 @@
     getSessionFromStorage,
     clearSavedSession,
   } from './supabaseClient.js?v=2025.01.09E';
+  import { fetchCurrentProfile, profileNeedsOnboarding } from './onboarding-flow.js?v=2026.03.12D';
 
   const clearLocalIdentityState = () => {
     const keys = ['user_id', 'currentGroupId', 'currentGroupName'];
@@ -105,6 +106,20 @@
   };
 
   const logoutBtn = document.getElementById('logoutBtn');
+
+  (async () => {
+    const session = getSessionFromStorage();
+    if (!session?.user?.id) return;
+    try {
+      const profile = await fetchCurrentProfile(session.user.id);
+      if (profileNeedsOnboarding(profile)) {
+        window.location.replace('onboarding.html');
+      }
+    } catch (error) {
+      console.warn('[DASHBOARD] onboarding check failed', error);
+    }
+  })();
+
   if (logoutBtn) {
     logoutBtn.addEventListener('click', async (event) => {
       event.preventDefault();

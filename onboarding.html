@@ -192,7 +192,7 @@
       const session = getSessionFromStorage();
       currentUser = session?.user || null;
       if (!currentUser?.id) {
-        window.location.replace('login.html?redirect=onboarding.html');
+        window.location.replace('login.html');
         return;
       }
 
@@ -217,7 +217,7 @@
           '';
       }
 
-      if (!profileNeedsOnboarding(profile) && memberships.some((row) => row.group_id === profile.group_id)) {
+      if (!profileNeedsOnboarding(profile)) {
         window.location.replace('dashboard.html');
       }
     }

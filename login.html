@@ -226,6 +226,15 @@
 
       try {
         showMsg('');
+        const session = currentSession();
+        if (session?.user?.id) {
+          const destination = await resolvePostAuthDestination({
+            userId: session.user.id,
+            redirect,
+          });
+          window.location.replace(destination);
+          return;
+        }
         render();
 
         form.addEventListener('submit', async (e) => {

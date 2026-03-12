@@ -33,7 +33,7 @@ export async function fetchCurrentMemberships(userId = null) {
 }
 
 export function profileNeedsOnboarding(profile) {
-  return !profile?.id || !profile?.group_id;
+  return !profile?.id;
 }
 
 export async function resolvePostAuthDestination({ userId = null, redirect = 'dashboard.html' } = {}) {

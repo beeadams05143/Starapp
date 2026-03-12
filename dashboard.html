@@ -109,7 +109,10 @@
 
   (async () => {
     const session = getSessionFromStorage();
-    if (!session?.user?.id) return;
+    if (!session?.user?.id) {
+      window.location.replace('login.html');
+      return;
+    }
     try {
       const profile = await fetchCurrentProfile(session.user.id);
       if (profileNeedsOnboarding(profile)) {

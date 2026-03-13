@@ -71,6 +71,7 @@
       margin-top: 10px;
       font-size: 14px;
       color: #b91c1c;
+      white-space: pre-line;
     }
     .message.ok { color: #0f766e; }
     .muted { color: #6b7280; font-size: 13px; }
@@ -242,14 +243,27 @@
       event.preventDefault();
       setStatus('');
       setBusy(true);
+      let redirectPending = false;
       try {
         ensureProfileSaved();
         const group = await createGroupForUser(currentUser.id, groupNameEl.value);
-        await finishWithGroup(group);
+        await saveProfileDefaultGroup(currentUser.id, group.id);
+        redirectPending = true;
+        setStatus(
+          `Group Created!\n\nInvite Code: ${group.invite_code}\n\nShare this code with caregivers so they can join your group.`,
+          true
+        );
+        setTimeout(() => {
+          window.location.replace('dashboard.html');
+        }, 2500);
       } catch (error) {
         setStatus(error?.message || 'Could not create group.');
       } finally {
-        setBusy(false);
+        if (redirectPending) {
+          setTimeout(() => setBusy(false), 2500);
+        } else {
+          setBusy(false);
+        }
       }
     });
 

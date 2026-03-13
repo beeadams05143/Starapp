@@ -93,10 +93,19 @@ export async function saveProfileBasics(userId, options = {}) {
   }
 }
 
-async function ensureUniqueJoinCode(length = 6) {
+function generateInviteCode(length = 6) {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let index = 0; index < length; index += 1) {
+    code += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return code;
+}
+
+async function ensureUniqueInviteCode(length = 6) {
   for (let attempt = 0; attempt < 8; attempt += 1) {
-    const code = Array.from({ length }, () => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random() * 32)]).join('');
-    const rows = await rest(`groups?join_code=eq.${encodeURIComponent(code)}&select=id&limit=1`);
+    const code = generateInviteCode(length);
+    const rows = await rest(`groups?invite_code=eq.${encodeURIComponent(code)}&select=id&limit=1`);
     if (!rows?.length) return code;
   }
   throw new Error('Could not generate a unique invite code. Please try again.');
@@ -127,11 +136,11 @@ export async function createGroupForUser(userId, groupName) {
   if ((existingGroups || []).some((group) => String(group?.name || '').trim().toLocaleLowerCase() === normalizedName)) {
     throw new Error('This group name is already in use. Please choose another name.');
   }
-  const joinCode = await ensureUniqueJoinCode();
+  const inviteCode = await ensureUniqueInviteCode();
   const rows = await rest('groups', {
     method: 'POST',
     headers: { Prefer: 'return=representation' },
-    body: JSON.stringify([{ name, join_code: joinCode, archived: false }]),
+    body: JSON.stringify([{ name, invite_code: inviteCode, archived: false }]),
   });
   const group = rows?.[0];
   if (!group?.id) throw new Error('Could not create group.');
@@ -143,9 +152,9 @@ export async function createGroupForUser(userId, groupName) {
 export async function joinGroupForUser(userId, joinCode) {
   const code = (joinCode || '').trim().toUpperCase();
   if (!code) throw new Error('Enter an invite code.');
-  const rows = await rest(`groups?join_code=eq.${encodeURIComponent(code)}&select=id,name,join_code&limit=1`);
+  const rows = await rest(`groups?invite_code=eq.${encodeURIComponent(code)}&select=id,name,invite_code&limit=1`);
   const group = rows?.[0] || null;
-  if (!group?.id) throw new Error('Invite code not found.');
+  if (!group?.id) throw new Error('Invalid invite code.');
   await insertMembership(userId, group.id, 'caregiver');
   cacheActiveGroup(group.id, group.name || '');
   return group;

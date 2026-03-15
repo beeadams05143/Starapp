@@ -99,6 +99,8 @@
     .hc-head{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid #e9e9e9}
     .hc-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
     .hc-title{font-weight:900;font-size:18px}
+    .hc-status-message{margin:6px 0 0;font-size:12px;color:#64748b;font-weight:600}
+    .hc-status-message.is-error{color:#b91c1c}
     .hc-btn{appearance:none;border:1px solid #e9e9e9;background:#fff;padding:8px 10px;border-radius:10px;cursor:pointer;font-weight:700}
     .hc-kvs{display:none}
     .hc-kv{background:#fafafa;border:1px solid #e9e9e9;border-radius:12px;padding:8px 10px;font-weight:700}
@@ -344,6 +346,29 @@
     .month-shift-item .delta{font-weight:900}
     .month-shift-item .delta.up{color:#16a34a}
     .month-shift-item .delta.down{color:#dc2626}
+    .mania-streak-hero{display:flex;align-items:flex-end;gap:10px;margin:6px 0 10px}
+    .mania-streak-value{font-size:56px;line-height:.9;font-weight:900;color:#0f172a}
+    .mania-streak-copy{font-size:20px;font-weight:700;color:#334155;padding-bottom:6px}
+    .mania-streak-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin:0 0 12px}
+    .mania-streak-meta .item{background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:8px 10px;font-weight:700;color:#0f172a}
+    .mania-streak-legend{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;margin:0 0 12px;padding:10px 12px;background:#fffaf0;border:1px solid #fde68a;border-radius:12px}
+    .mania-streak-legend-item{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:700;color:#475569}
+    .mania-streak-legend-dot{width:14px;height:14px;border-radius:999px;border:2px solid #cbd5e1;background:#e5e7eb;flex:0 0 auto}
+    .mania-streak-legend-dot.mild{background:#fde68a;border-color:#c2410c}
+    .mania-streak-legend-dot.moderate{background:#fb923c;border-color:#c2410c}
+    .mania-streak-legend-dot.severe{background:#dc2626;border-color:#991b1b}
+    .mania-streak-legend-dot.bridge{background:#fff7ed;border-color:#fb923c;border-style:dashed}
+    .mania-streak-line{display:grid;grid-template-columns:repeat(14,minmax(0,1fr));gap:8px}
+    .mania-streak-day{display:flex;flex-direction:column;align-items:center;gap:6px}
+    .mania-streak-dot{width:20px;height:20px;border-radius:999px;background:#e5e7eb;border:2px solid #cbd5e1}
+    .mania-streak-dot.active{border-color:#c2410c}
+    .mania-streak-dot.bridge{background:#fff7ed;border-color:#fb923c;border-style:dashed;opacity:.9}
+    .mania-streak-dot.sev-1{background:#fde68a}
+    .mania-streak-dot.sev-2{background:#fdba74}
+    .mania-streak-dot.sev-3{background:#fb923c}
+    .mania-streak-dot.sev-4{background:#f97316}
+    .mania-streak-dot.sev-5{background:#dc2626}
+    .mania-streak-day-label{font-size:11px;font-weight:700;color:#64748b}
     .kpi-summary-inline{border:1px solid #e5e7eb;border-radius:16px;padding:16px;background:#fff;box-shadow:0 10px 30px rgba(15,23,42,.08)}
     .kpi-summary-inline h4{margin:0 0 12px;font-size:16px}
     .kpi-summary-inline .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
@@ -502,7 +527,6 @@
 
 <script type="module">
 import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.12D';
-import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
 
 (function(){
   const Status = document.getElementById('cg-status');
@@ -834,7 +858,10 @@ import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
         <div class="hc-head">
           <div class="hc-row">
             <button class="hc-btn" id="hc-prev" aria-label="Previous month">‹</button>
-            <div class="hc-title" id="hc-monthTitle">Loading…</div>
+            <div>
+              <div class="hc-title" id="hc-monthTitle">Loading…</div>
+              <p id="hc-statusMessage" class="hc-status-message" aria-live="polite"></p>
+            </div>
             <button class="hc-btn" id="hc-next" aria-label="Next month">›</button>
           </div>
           <div class="hc-row no-export">
@@ -936,6 +963,27 @@ import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
         </div>
       </div>
     </div>
+    <div class="chart kpi-summary-inline" id="maniaStreakCard">
+      <h4>Mania Streak</h4>
+      <p class="muted chart-range-label" id="maniaStreakRangeLabel">Range: Month</p>
+      <div class="mania-streak-hero">
+        <div class="mania-streak-value" id="maniaCurrentStreakVal">0</div>
+        <div class="mania-streak-copy">day streak</div>
+      </div>
+      <div class="mania-streak-meta">
+        <div class="item">Longest streak <span id="maniaLongestStreakVal">—</span></div>
+        <div class="item">Severe days <span id="maniaSevereDaysVal">—</span></div>
+        <div class="item">PRN mania days <span id="maniaPrnDaysVal">—</span></div>
+      </div>
+      <div class="mania-streak-legend" aria-label="Mania streak key">
+        <div class="mania-streak-legend-item"><span class="mania-streak-legend-dot mild" aria-hidden="true"></span><span>Yellow = milder signal</span></div>
+        <div class="mania-streak-legend-item"><span class="mania-streak-legend-dot moderate" aria-hidden="true"></span><span>Orange = moderate signal</span></div>
+        <div class="mania-streak-legend-item"><span class="mania-streak-legend-dot severe" aria-hidden="true"></span><span>Red = severe signal</span></div>
+        <div class="mania-streak-legend-item"><span class="mania-streak-legend-dot bridge" aria-hidden="true"></span><span>Dotted = inferred cycle day</span></div>
+      </div>
+      <div class="mania-streak-line" id="maniaStreakLine"></div>
+      <p class="muted" id="maniaStreakCaption">Recent days in range, newest on the right.</p>
+    </div>
     <div class="chart">
       <h2>Physical & Daily Living Overview (Monthly Totals)</h2>
       <p class="muted chart-range-label" id="healthRangeLabel">Range: Month</p>
@@ -991,12 +1039,6 @@ import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
         <h2 style="margin:0 0 8px;">Leisure (Would-You-Rather) — Minutes & Picks</h2>
         <canvas id="wyrBar" height="220"></canvas>
         <p class="muted" id="wyrNote">Bars = total leisure minutes credited to each choice; line = number of picks.</p>
-      </div>
-      <div class="chart small">
-        <h2 style="margin:0 0 8px;">Behavior Tally Instances (Optional)</h2>
-        <p class="muted chart-range-label" id="behaviorTallyRangeLabel">Range: Month</p>
-        <canvas id="behaviorTallyChart" height="220"></canvas>
-        <p class="muted">Daily totals from optional tally-sheet entries for mania and aggression.</p>
       </div>
     </section>
   </main>
@@ -1087,6 +1129,7 @@ import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
     import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabaseClient.js?v=2026.03.12D';
     import { loadFocusForCurrentUser, readLocalFocusDraft } from './focus-data.js?v=2026.03.12D';
     import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
+    import { CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-shared.js?v=2026.03.13A';
 
     /* =============== Optional live data =============== */
     let loadFromSupabase = null;
@@ -1104,6 +1147,15 @@ import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
     if (!session?.user?.id) { window.location.href = 'login.html'; throw new Error('No session'); }
     const USER_ID = session.user.id;
     window.rest = rest;
+
+    async function ensureReportGroupContext() {
+      try {
+        return await ensureActiveGroupId(USER_ID);
+      } catch (error) {
+        console.error('[REPORT] active group resolution failed', error);
+        return null;
+      }
+    }
 
     /* =================== Utilities =================== */
     const $ = sel => document.querySelector(sel);
@@ -1414,8 +1466,8 @@ import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
       if (interactionLabel) interactionLabel.textContent = `Range: ${display}`;
       const activityLabel = document.getElementById('activityRangeLabel');
       if (activityLabel) activityLabel.textContent = `Range: ${display}`;
-      const behaviorTallyLabel = document.getElementById('behaviorTallyRangeLabel');
-      if (behaviorTallyLabel) behaviorTallyLabel.textContent = `Range: ${display}`;
+      const maniaStreakLabel = document.getElementById('maniaStreakRangeLabel');
+      if (maniaStreakLabel) maniaStreakLabel.textContent = `Range: ${display}`;
     }
 
     function updateMovementRangeLabel(range, rangeKey){
@@ -1454,7 +1506,8 @@ import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
       moodEntries = [],
       monthlySeries = [],
       movementInsights = null,
-      behaviorComparison = null
+      behaviorComparison = null,
+      summaryData = null
     } = {}){
       const listEl = document.getElementById('reportSummaryList');
       const emptyEl = document.getElementById('reportSummaryEmpty');
@@ -1471,7 +1524,7 @@ import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
         return;
       }
 
-      const summary = summarizeEntries(caregiverEntries);
+      const summary = summaryData || summarizeEntries(caregiverEntries);
       const lines = [];
       lines.push(`Daily living completion rates were Hygiene ${summary.percents?.hygiene_yes ?? 0}%, Food ${summary.percents?.food_prep_yes ?? 0}%, and Clean-up ${summary.percents?.cleanup_yes ?? 0}%.`);
 
@@ -1507,7 +1560,16 @@ import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
       const aggressionInstanceTrend = behaviorComparison?.aggression
         ? formatDelta(behaviorComparison.aggression.instances_delta, 'optional instance(s)')
         : 'trend unavailable for optional instances';
-      lines.push(`Mania occurred on ${mania.days ?? 0} day(s), ${maniaInstancesText}, average intensity ${avgLabel(mania.avg_intensity)}, peak intensity ${mania.max_intensity ?? '—'}; ${maniaTrend}, and ${maniaInstanceTrend} versus the prior comparable period.`);
+      lines.push(`Mania signal was present on ${mania.days ?? 0} day(s), ${maniaInstancesText}, average intensity ${avgLabel(mania.avg_intensity)}, peak intensity ${mania.max_intensity ?? '—'}; ${maniaTrend}, and ${maniaInstanceTrend} versus the prior comparable period.`);
+      const statusParts = [];
+      if ((mania.status_counts?.active ?? 0) > 0) statusParts.push(`${mania.status_counts.active} active`);
+      if ((mania.status_counts?.suspected ?? 0) > 0) statusParts.push(`${mania.status_counts.suspected} suspected`);
+      if ((mania.status_counts?.improving ?? 0) > 0) statusParts.push(`${mania.status_counts.improving} improving`);
+      const statusText = statusParts.length ? statusParts.join(', ') : 'no episode-status entries yet';
+      const cycleRange = mania.current_cycle_start
+        ? `possible onset ${humanDate(mania.current_cycle_start)} through ${humanDate(mania.current_cycle_end || mania.current_cycle_start)}`
+        : 'cycle onset not clear yet';
+      lines.push(`Mania pattern: current cycle ${mania.current_streak ?? 0} day(s), longest cycle ${mania.longest_streak ?? 0} day(s), severe days ${mania.severe_days ?? 0}, PRN mania days ${mania.prn_days ?? 0}, late sleep onset days ${mania.late_sleep_onset_days ?? 0}, sleep-disruption days ${mania.sleep_disruption_days ?? 0}, appetite-change days ${mania.appetite_days ?? 0}, fixation days ${mania.fixation_days ?? 0}, repetitive-behavior days ${mania.repetitive_days ?? 0}, pressured-speech days ${mania.pressured_speech_days ?? 0}, grandiosity days ${mania.grandiosity_days ?? 0}; ${cycleRange}; status mix: ${statusText}.`);
       lines.push(`Aggression occurred on ${aggression.days ?? 0} day(s), ${aggressionInstancesText}, average intensity ${avgLabel(aggression.avg_intensity)}, peak intensity ${aggression.max_intensity ?? '—'}; ${aggressionTrend}, and ${aggressionInstanceTrend} versus the prior comparable period.`);
 
       if (moodEntries.length) {
@@ -1570,7 +1632,21 @@ import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
 
       try {
         const filteredCaregiver = filterEntriesByRange(caregiverSource, range);
+        const historyForCycle = caregiverSource.filter((entry) => {
+          const dt = parseEntryDate(entry);
+          return !!dt && dt <= range.end;
+        });
         const summary = summarizeEntries(filteredCaregiver);
+        const fullHistoryBehavior = buildBehaviorInsights(historyForCycle);
+        if (summary.behavior?.mania && fullHistoryBehavior?.mania) {
+          summary.behavior.mania = {
+            ...summary.behavior.mania,
+            current_streak: fullHistoryBehavior.mania.current_streak,
+            longest_streak: fullHistoryBehavior.mania.longest_streak,
+            current_cycle_start: fullHistoryBehavior.mania.current_cycle_start,
+            current_cycle_end: fullHistoryBehavior.mania.current_cycle_end
+          };
+        }
         renderKPIs(summary);
         const { monthly, promptDaily } = buildMonthlySeries(filteredCaregiver);
         const monthlySeries = truncateSeries(monthly, rangeKey);
@@ -1581,7 +1657,7 @@ import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
         const filteredMood = filterMoodEntriesByRange(moodSource, range);
         drawInteractionTypeChart(filteredCaregiver);
         renderActivityTypeSummary(filteredCaregiver);
-        drawBehaviorTallyChart(filteredCaregiver);
+        renderManiaStreak(historyForCycle, summary.behavior?.mania || {}, range);
         const movementInsights = buildMovementInsights(filteredCaregiver);
         let behaviorComparison = null;
         const prevRange = rangeKey === 'all' ? null : getPreviousRangeWindow(range);
@@ -1617,7 +1693,8 @@ import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
           moodEntries: filteredMood,
           monthlySeries,
           movementInsights,
-          behaviorComparison
+          behaviorComparison,
+          summaryData: summary
         });
 
         const movementSelect = document.getElementById('movementRangeSelect');
@@ -1663,7 +1740,7 @@ import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
 
     function buildCalendarRangeCounts(entries = []){
       const counts = {};
-      QUICK_LOOK_ITEMS.forEach(item => { counts[item.key] = 0; });
+      CALENDAR_QUICK_LOOK_ITEMS.forEach(item => { counts[item.key] = 0; });
       entries.forEach(entry => {
         const p = entry.payload || {};
         const bm = (entry.had_bm === true) || (/yes/i.test(String(p.bm_today || p.had_bm || '')));
@@ -2000,9 +2077,178 @@ import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
       );
     }
 
+    function hasAppetiteChange(source) {
+      if (!source) return false;
+      const candidates = [
+        source.appetite_change_flag,
+        source.appetite_change,
+        source.appetite,
+        source.change_in_appetite,
+        source.appetite_flag,
+        source.behavior_appetite,
+        source.appetite_notes,
+        source.appetite_change_direction
+      ];
+      for (const value of candidates) {
+        if (typeof value === 'boolean') return value;
+        if (typeof value === 'number') return value !== 0;
+        if (typeof value === 'string') {
+          const norm = value.trim().toLowerCase();
+          if (!norm) continue;
+          if (['yes','y','true','1','less','more','low','high','off','reduced','increase','decrease','unclear','mixed'].some(token => norm.includes(token))) {
+            if (norm.includes('no change') || norm === 'normal' || norm === 'none') continue;
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    function parseSleepOnset(value){
+      if (value == null || value === '') return null;
+      if (typeof value === 'boolean') return value ? 180 : 0;
+      if (typeof value === 'number' && Number.isFinite(value)) return value;
+      const str = String(value).toLowerCase();
+      if (!str) return null;
+      if (/under\s*30|<\s*30/.test(str)) return 20;
+      if (/30(?:\s*[-–]\s*60)?/.test(str)) return 45;
+      if (/60(?:\s*[-–]\s*120)?|1-2|one to two/.test(str)) return 90;
+      if (/120(?:\s*[-–]\s*180)?|2-3|two to three/.test(str)) return 150;
+      if (/180|3\+|over 3|three plus/.test(str)) return 210;
+      const hours = str.match(/(\d+(?:\.\d+)?)\s*(?:h|hour)/);
+      if (hours) return Math.round(parseFloat(hours[1]) * 60);
+      const minutes = str.match(/(\d+(?:\.\d+)?)\s*(?:m|min)/);
+      if (minutes) return Math.round(parseFloat(minutes[1]));
+      return null;
+    }
+
+    function hasLateSleepOnset(source) {
+      if (!source) return false;
+      const direct = source.sleep_onset_difficulty ?? source.difficulty_sleep_onset ?? null;
+      if (typeof direct === 'boolean') return direct;
+      if (typeof direct === 'string') {
+        const norm = direct.trim().toLowerCase();
+        if (['yes','true','y','1','late','on'].includes(norm)) return true;
+        if (['no','false','n','0','off'].includes(norm)) return false;
+      }
+      const mins = parseSleepOnset(
+        source.sleep_onset_duration ??
+        source.sleep_onset_minutes ??
+        source.sleep_onset ??
+        source.sleep_latency ??
+        source.sleep_latency_minutes
+      );
+      return mins != null && mins >= 120;
+    }
+
+    function readEpisodeStatus(entry = {}) {
+      const payload = entry.payload || {};
+      const raw = entry.mania_episode_status ?? payload.mania_episode_status ?? '';
+      return String(raw || '').trim().toLowerCase();
+    }
+
+    function inferManiaCycles(dayKeys = [], referenceEnd = null, maxGapDays = 3) {
+      const unique = [...new Set((dayKeys || []).filter(Boolean))].sort();
+      if (!unique.length) {
+        return { current: 0, longest: 0, current_cycle_start: null, current_cycle_end: null, cycles: [] };
+      }
+      const cycles = [];
+      let start = unique[0];
+      let prevKey = unique[0];
+      for (let i = 1; i < unique.length; i += 1) {
+        const prev = new Date(`${prevKey}T00:00:00`);
+        const next = new Date(`${unique[i]}T00:00:00`);
+        const diffDays = Math.round((next - prev) / 86400000);
+        if (diffDays > maxGapDays) {
+          cycles.push({ start, end: prevKey });
+          start = unique[i];
+        }
+        prevKey = unique[i];
+      }
+      cycles.push({ start, end: prevKey });
+
+      const withLengths = cycles.map((cycle) => {
+        const startDate = new Date(`${cycle.start}T00:00:00`);
+        const endDate = new Date(`${cycle.end}T00:00:00`);
+        const days = Math.round((endDate - startDate) / 86400000) + 1;
+        return { ...cycle, days };
+      });
+      const longest = withLengths.reduce((max, cycle) => Math.max(max, cycle.days), 0);
+      const latest = withLengths[withLengths.length - 1];
+      const refEnd = referenceEnd ? new Date(referenceEnd) : new Date(`${latest.end}T00:00:00`);
+      refEnd.setHours(0, 0, 0, 0);
+      const latestEnd = new Date(`${latest.end}T00:00:00`);
+      const gapFromEnd = Math.round((refEnd - latestEnd) / 86400000);
+      const current = gapFromEnd <= maxGapDays
+        ? Math.round((refEnd - new Date(`${latest.start}T00:00:00`)) / 86400000) + 1
+        : latest.days;
+      return {
+        current,
+        longest,
+        current_cycle_start: latest.start,
+        current_cycle_end: latest.end,
+        cycles: withLengths
+      };
+    }
+
+    function getManiaSignalDetails(entry = {}) {
+      const payload = entry?.payload || {};
+      const intensity = pickNumber(
+        entry.manic_intensity,
+        entry.mania_intensity,
+        payload.manic_intensity,
+        payload.mania_intensity
+      );
+      const maniaFlag = isAffirmative(
+        entry.manic_flag ?? entry.mania_flag ?? payload.manic_flag ?? payload.mania_flag
+      ) || (Number.isFinite(intensity) && intensity > 0);
+      const prnMania = isAffirmative(entry.prn_mania_given ?? payload.prn_mania_given)
+        || !!(entry.prn_mania_name ?? payload.prn_mania_name)
+        || !!(entry.prn_mania_time ?? payload.prn_mania_time);
+      const appetite = hasAppetiteChange(entry) || hasAppetiteChange(payload);
+      const sleepHours = pickNumber(entry.hours_sleep, payload.hours_sleep);
+      const lateSleepOnset = hasLateSleepOnset(entry) || hasLateSleepOnset(payload);
+      const sleepDisruption = (Number.isFinite(sleepHours) && sleepHours < 8)
+        || isAffirmative(entry.night_wake_flag ?? payload.night_wake_flag)
+        || !!(pickNumber(entry.night_wake_count, payload.night_wake_count) > 0)
+        || Boolean(entry.sleep_onset_difficulty ?? payload.sleep_onset_difficulty);
+      const fixation = isAffirmative(entry.fixation_present ?? payload.fixation_present);
+      const repetitive = isAffirmative(entry.repetitive_behavior_present ?? payload.repetitive_behavior_present);
+      const pressuredSpeech = isAffirmative(entry.pressured_speech_present ?? payload.pressured_speech_present);
+      const grandiosity = isAffirmative(entry.grandiosity_present ?? payload.grandiosity_present);
+      const focusTrouble = isAffirmative(entry.focus_trouble_flag ?? payload.focus_trouble_flag);
+      const episodeStatus = readEpisodeStatus(entry);
+      const maniaSignal = maniaFlag
+        || ['suspected', 'active', 'improving'].includes(episodeStatus)
+        || prnMania
+        || fixation
+        || repetitive
+        || pressuredSpeech
+        || grandiosity
+        || lateSleepOnset
+        || sleepDisruption
+        || appetite
+        || focusTrouble;
+      return {
+        maniaSignal,
+        intensity: Number.isFinite(intensity) ? intensity : 0,
+        prnMania,
+        appetite,
+        lateSleepOnset,
+        sleepDisruption,
+        fixation,
+        repetitive,
+        pressuredSpeech,
+        grandiosity,
+        focusTrouble,
+        episodeStatus
+      };
+    }
+
     function buildBehaviorInsights(entries = []) {
       const maniaDays = new Set();
       const aggressionDays = new Set();
+      const maniaDayList = [];
       let maniaEpisodes = 0;
       let aggressionEpisodes = 0;
       let maniaInstancesTotal = 0;
@@ -2013,15 +2259,22 @@ import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
       let aggressionIntensityCount = 0;
       let maniaMax = null;
       let aggressionMax = null;
+      const maniaPrnDaySet = new Set();
+      const maniaSleepDisruptionDaySet = new Set();
+      const maniaLateOnsetDaySet = new Set();
+      const maniaAppetiteDaySet = new Set();
+      const fixationDaySet = new Set();
+      const repetitiveDaySet = new Set();
+      const pressuredSpeechDaySet = new Set();
+      const grandiosityDaySet = new Set();
+      let severeDays = 0;
+      const maniaStatusCounts = { suspected: 0, active: 0, improving: 0 };
+      const latestEntryDate = getLatestEntryDate(entries);
 
       entries.forEach((entry) => {
         const payload = entry?.payload || {};
-        const maniaIntensity = pickNumber(
-          entry.manic_intensity,
-          entry.mania_intensity,
-          payload.manic_intensity,
-          payload.mania_intensity
-        );
+        const maniaDetails = getManiaSignalDetails(entry);
+        const maniaIntensity = maniaDetails.intensity;
         const aggressionIntensity = pickNumber(
           entry.aggression_intensity,
           payload.aggression_intensity
@@ -2037,9 +2290,6 @@ import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
           payload.aggression_instances_today
         );
 
-        const maniaFlag = isAffirmative(
-          entry.manic_flag ?? entry.mania_flag ?? payload.manic_flag ?? payload.mania_flag
-        ) || (Number.isFinite(maniaIntensity) && maniaIntensity > 0);
         const aggressionFlag = isAffirmative(
           entry.aggression_flag ?? payload.aggression_flag
         ) || (Number.isFinite(aggressionIntensity) && aggressionIntensity > 0);
@@ -2047,17 +2297,30 @@ import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
         const date = parseEntryDate(entry);
         const day = date ? dayKey(date) : null;
 
-        if (maniaFlag) {
+        if (maniaDetails.maniaSignal) {
           maniaEpisodes += 1;
-          if (day) maniaDays.add(day);
+          if (day) {
+            maniaDays.add(day);
+            maniaDayList.push(day);
+          }
           if (Number.isFinite(maniaInstances) && maniaInstances >= 0) {
             maniaInstancesTotal += maniaInstances;
           }
+          if (maniaDetails.prnMania && day) maniaPrnDaySet.add(day);
+          if (maniaDetails.sleepDisruption && day) maniaSleepDisruptionDaySet.add(day);
+          if (maniaDetails.lateSleepOnset && day) maniaLateOnsetDaySet.add(day);
+          if (maniaDetails.appetite && day) maniaAppetiteDaySet.add(day);
+          if (maniaDetails.fixation && day) fixationDaySet.add(day);
+          if (maniaDetails.repetitive && day) repetitiveDaySet.add(day);
+          if (maniaDetails.pressuredSpeech && day) pressuredSpeechDaySet.add(day);
+          if (maniaDetails.grandiosity && day) grandiosityDaySet.add(day);
+          if (maniaDetails.episodeStatus && maniaStatusCounts[maniaDetails.episodeStatus] != null) maniaStatusCounts[maniaDetails.episodeStatus] += 1;
         }
-        if (Number.isFinite(maniaIntensity) && maniaFlag) {
+        if (Number.isFinite(maniaIntensity) && maniaDetails.maniaSignal) {
           maniaIntensityTotal += maniaIntensity;
           maniaIntensityCount += 1;
           maniaMax = maniaMax === null ? maniaIntensity : Math.max(maniaMax, maniaIntensity);
+          if (maniaIntensity >= 4) severeDays += 1;
         }
 
         if (aggressionFlag) {
@@ -2074,6 +2337,8 @@ import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
         }
       });
 
+      const maniaStreaks = inferManiaCycles(maniaDayList, latestEntryDate);
+
       return {
         mania: {
           episodes: maniaEpisodes,
@@ -2083,7 +2348,21 @@ import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
             ? +(maniaInstancesTotal / maniaDays.size).toFixed(1)
             : null,
           avg_intensity: maniaIntensityCount ? +(maniaIntensityTotal / maniaIntensityCount).toFixed(1) : null,
-          max_intensity: maniaMax
+          max_intensity: maniaMax,
+          current_streak: maniaStreaks.current,
+          longest_streak: maniaStreaks.longest,
+          severe_days: severeDays,
+          prn_days: maniaPrnDaySet.size,
+          sleep_disruption_days: maniaSleepDisruptionDaySet.size,
+          late_sleep_onset_days: maniaLateOnsetDaySet.size,
+          appetite_days: maniaAppetiteDaySet.size,
+          fixation_days: fixationDaySet.size,
+          repetitive_days: repetitiveDaySet.size,
+          pressured_speech_days: pressuredSpeechDaySet.size,
+          grandiosity_days: grandiosityDaySet.size,
+          status_counts: maniaStatusCounts,
+          current_cycle_start: maniaStreaks.current_cycle_start,
+          current_cycle_end: maniaStreaks.current_cycle_end
         },
         aggression: {
           episodes: aggressionEpisodes,
@@ -3992,7 +4271,7 @@ import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
 
     async function loadCaregiverData(){
       let res = null;
-      await ensureActiveGroupId(USER_ID);
+      await ensureReportGroupContext();
 
       if (loadFromSupabase){
         try {
@@ -4275,99 +4554,150 @@ import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
       renderTopActivityList(document.getElementById('activityCommunityList'), community);
     }
 
-    function buildBehaviorTallySeries(entries = []) {
+    function getManiaEntrySignals(entry = {}) {
+      const details = getManiaSignalDetails(entry);
+      return {
+        maniaFlag: details.maniaSignal,
+        intensity: details.intensity,
+        prnMania: details.prnMania,
+        lateSleepOnset: details.lateSleepOnset,
+        sleepDisruption: details.sleepDisruption,
+        appetite: details.appetite,
+        fixation: details.fixation,
+        repetitive: details.repetitive,
+        pressuredSpeech: details.pressuredSpeech,
+        grandiosity: details.grandiosity,
+        episodeStatus: details.episodeStatus
+      };
+    }
+
+    function renderManiaStreak(entries = [], maniaSummary = {}, range = null) {
+      const currentEl = document.getElementById('maniaCurrentStreakVal');
+      const longestEl = document.getElementById('maniaLongestStreakVal');
+      const severeEl = document.getElementById('maniaSevereDaysVal');
+      const prnEl = document.getElementById('maniaPrnDaysVal');
+      const lineEl = document.getElementById('maniaStreakLine');
+      const captionEl = document.getElementById('maniaStreakCaption');
+      if (!currentEl || !longestEl || !severeEl || !prnEl || !lineEl) return;
+
+      currentEl.textContent = maniaSummary.current_streak ?? 0;
+      longestEl.textContent = maniaSummary.longest_streak ?? 0;
+      severeEl.textContent = maniaSummary.severe_days ?? 0;
+      prnEl.textContent = maniaSummary.prn_days ?? 0;
+
       const byDay = new Map();
       entries.forEach((entry) => {
         const dt = parseEntryDate(entry);
         if (!dt) return;
-        const key = formatDateInputValue(dt);
-        if (!key) return;
-        const payload = entry?.payload || {};
-        const maniaInstances = pickNumber(
-          entry.mania_instances_today,
-          entry.manic_instances_today,
-          payload.mania_instances_today,
-          payload.manic_instances_today
-        );
-        const aggressionInstances = pickNumber(
-          entry.aggression_instances_today,
-          payload.aggression_instances_today
-        );
-        const bucket = byDay.get(key) || { mania: 0, aggression: 0 };
-        if (Number.isFinite(maniaInstances) && maniaInstances >= 0) {
-          bucket.mania += maniaInstances;
-        }
-        if (Number.isFinite(aggressionInstances) && aggressionInstances >= 0) {
-          bucket.aggression += aggressionInstances;
-        }
-        byDay.set(key, bucket);
-      });
-      return Array.from(byDay.entries())
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([day, values]) => ({ day, ...values }));
-    }
-
-    function drawBehaviorTallyChart(entries = []) {
-      destroy('behaviorTally');
-      const ctx = document.getElementById('behaviorTallyChart');
-      if (!ctx) return;
-      const rows = buildBehaviorTallySeries(entries);
-      const labels = rows.map((row) => row.day);
-      const mania = rows.map((row) => row.mania);
-      const aggression = rows.map((row) => row.aggression);
-      const hasData = rows.some((row) => (row.mania || 0) > 0 || (row.aggression || 0) > 0);
-
-      if (!hasData) {
-        charts.behaviorTally = new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: ['No tally data'],
-            datasets: [
-              { label: 'Mania instances', data: [0], backgroundColor: '#cbd5e1' },
-              { label: 'Aggression instances', data: [0], backgroundColor: '#e2e8f0' }
-            ]
-          },
-          options: {
-            responsive: true,
-            plugins: { legend: { position: 'top' } },
-            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
-          }
+        const day = formatDateInputValue(dt);
+        if (!day) return;
+        const signals = getManiaEntrySignals(entry);
+        const existing = byDay.get(day) || {
+          mania: false,
+          intensity: 0,
+          prn: false,
+          lateSleepOnset: false,
+          sleepDisruption: false,
+          appetite: false,
+          fixation: false,
+          repetitive: false,
+          pressuredSpeech: false,
+          grandiosity: false,
+          episodeStatus: ''
+        };
+        byDay.set(day, {
+          mania: existing.mania || signals.maniaFlag,
+          intensity: Math.max(existing.intensity || 0, signals.intensity || 0),
+          prn: existing.prn || signals.prnMania,
+          lateSleepOnset: existing.lateSleepOnset || signals.lateSleepOnset,
+          sleepDisruption: existing.sleepDisruption || signals.sleepDisruption,
+          appetite: existing.appetite || signals.appetite,
+          fixation: existing.fixation || signals.fixation,
+          repetitive: existing.repetitive || signals.repetitive,
+          pressuredSpeech: existing.pressuredSpeech || signals.pressuredSpeech,
+          grandiosity: existing.grandiosity || signals.grandiosity,
+          episodeStatus: existing.episodeStatus || signals.episodeStatus
         });
-        return;
-      }
-
-      charts.behaviorTally = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels,
-          datasets: [
-            {
-              label: 'Mania instances',
-              data: mania,
-              backgroundColor: 'rgba(245, 158, 11, 0.65)',
-              borderColor: 'rgba(217, 119, 6, 0.95)',
-              borderWidth: 1,
-              borderRadius: 8
-            },
-            {
-              label: 'Aggression instances',
-              data: aggression,
-              backgroundColor: 'rgba(239, 68, 68, 0.6)',
-              borderColor: 'rgba(185, 28, 28, 0.95)',
-              borderWidth: 1,
-              borderRadius: 8
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { position: 'top' } },
-          scales: {
-            x: axisTitle('Date'),
-            y: { beginAtZero: true, ticks: { precision: 0 }, ...axisTitle('Instances') }
-          }
-        }
       });
+
+      const end = range?.end ? new Date(range.end) : getLatestEntryDate(entries);
+      end.setHours(0, 0, 0, 0);
+      const rangeStart = range?.start ? new Date(range.start) : null;
+      if (rangeStart) rangeStart.setHours(0, 0, 0, 0);
+      const defaultVisibleDays = 21;
+      const visibleDays = rangeStart
+        ? Math.max(1, Math.round((end - rangeStart) / 86400000) + 1)
+        : defaultVisibleDays;
+      const cycleStart = maniaSummary.current_cycle_start ? new Date(`${maniaSummary.current_cycle_start}T00:00:00`) : null;
+      const earliestVisible = new Date(end);
+      earliestVisible.setDate(end.getDate() - (visibleDays - 1));
+      const timelineStart = cycleStart && cycleStart > earliestVisible ? cycleStart : earliestVisible;
+      const currentCycleEnd = maniaSummary.current_cycle_end || null;
+      const days = [];
+      for (let dt = new Date(timelineStart); dt <= end; dt.setDate(dt.getDate() + 1)) {
+        const dayDate = new Date(dt);
+        dayDate.setHours(0, 0, 0, 0);
+        const key = formatDateInputValue(dayDate);
+        const info = byDay.get(key) || {
+          mania: false,
+          intensity: 0,
+          prn: false,
+          lateSleepOnset: false,
+          sleepDisruption: false,
+          appetite: false,
+          fixation: false,
+          repetitive: false,
+          pressuredSpeech: false,
+          grandiosity: false,
+          episodeStatus: ''
+        };
+        const inCurrentCycle = !!(maniaSummary.current_cycle_start && key >= maniaSummary.current_cycle_start && key <= formatDateInputValue(end));
+        const bridged = inCurrentCycle && !info.mania;
+        const tags = [];
+        if (info.episodeStatus) tags.push(info.episodeStatus);
+        if (info.lateSleepOnset) tags.push('late onset');
+        if (info.sleepDisruption) tags.push('sleep disruption');
+        if (info.appetite) tags.push('appetite');
+        if (info.fixation) tags.push('fixation');
+        if (info.repetitive) tags.push('repetitive');
+        if (info.pressuredSpeech) tags.push('rapid speech');
+        if (info.grandiosity) tags.push('grandiosity');
+        if (info.prn) tags.push('PRN mania');
+        days.push({
+          key,
+          label: dayDate.toLocaleDateString(undefined, { weekday: 'short' }).slice(0, 2),
+          mania: info.mania,
+          intensity: info.intensity,
+          prn: info.prn,
+          bridged,
+          title: `${key}${tags.length ? ` • ${tags.join(', ')}` : ''}`
+        });
+      }
+      lineEl.style.gridTemplateColumns = `repeat(${Math.max(days.length, 1)}, minmax(0, 1fr))`;
+
+      lineEl.innerHTML = days.map((day) => {
+        const sevClass = day.mania ? ` sev-${Math.max(1, Math.min(5, day.intensity || 1))}` : '';
+        const activeClass = day.mania ? ' active' : '';
+        const bridgeClass = day.bridged ? ' bridge' : '';
+        const prnMark = day.prn ? ' *' : '';
+        return `
+          <div class="mania-streak-day" title="${day.title}${prnMark}">
+            <div class="mania-streak-dot${activeClass}${sevClass}${bridgeClass}"></div>
+            <div class="mania-streak-day-label">${day.label}</div>
+          </div>
+        `;
+      }).join('');
+
+      if (captionEl) {
+        const startText = maniaSummary.current_cycle_start ? humanDate(maniaSummary.current_cycle_start) : 'not clear yet';
+        const endText = currentCycleEnd ? humanDate(currentCycleEnd) : humanDate(formatDateInputValue(end));
+        const leadingText = rangeStart
+          ? `Timeline across the full selected range (${visibleDays} day${visibleDays === 1 ? '' : 's'}). `
+          : cycleStart && cycleStart < earliestVisible
+            ? `Showing the latest ${visibleDays} days of the current cycle. `
+            : 'Timeline of the current cycle. ';
+        captionEl.textContent = `${leadingText}Possible onset ${startText}; latest structured signal ${endText}. Filled dots = symptom signal days, outlined dots = inferred bridge days, * = PRN mania day.`;
+      }
     }
 
     function pearson(xs,ys){
@@ -4677,7 +5007,7 @@ import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
       getCurrentFocusPlan: () => currentFocusPlan
     };
 
-    await ensureActiveGroupId(USER_ID);
+    await ensureReportGroupContext();
     await loadCaregiverData();
     await loadFocusPanel();
     await renderMoodSection();
@@ -5050,6 +5380,8 @@ import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
 
 <script type="module">
 import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.12D';
+import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
+import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-shared.js?v=2026.03.13A';
 
 (() => {
   // Bail out quietly if the calendar HTML isn't present
@@ -5075,6 +5407,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.12D';
   const kvAno  = document.getElementById('hc-kv-anomaly');
   const quickLookRange = document.getElementById('calendarQuickLookRange');
   const quickLookList = document.getElementById('calendarQuickLookList');
+  const statusMessage = document.getElementById('hc-statusMessage');
   const shiftRange = document.getElementById('calendarShiftRange');
   const shiftPrevTitle = document.getElementById('shiftPrevTitle');
   const shiftPrevList = document.getElementById('shiftPrevList');
@@ -5123,12 +5456,40 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.12D';
     return null;
   }
 
-  async function ensureGroupId(){
-    const gid = await ensureActiveGroupId(CURRENT_USER_ID);
-    if (gid) {
-      try { localStorage.setItem(GROUP_STORAGE_KEY, gid); } catch {}
+  function setCalendarStatus(message = '', kind = 'info'){
+    if (!statusMessage) return;
+    statusMessage.textContent = message;
+    statusMessage.classList.toggle('is-error', kind === 'error');
+  }
+
+  function renderCalendarNotice(message){
+    if (grid) {
+      grid.innerHTML = `<div class="hc-cell" style="grid-column:1/-1;min-height:auto;cursor:default"><div class="hc-empty" style="position:static">${message}</div></div>`;
     }
-    return gid || null;
+    if (quickLookRange) quickLookRange.textContent = 'Month: unavailable';
+    if (quickLookList) {
+      quickLookList.innerHTML = `<div class="item"><span class="label">${message}</span><span class="count">—</span></div>`;
+    }
+  }
+
+  async function ensureGroupId(){
+    try {
+      const gid = await ensureActiveGroupId(CURRENT_USER_ID);
+      if (gid) {
+        try { localStorage.setItem(GROUP_STORAGE_KEY, gid); } catch {}
+        return gid;
+      }
+    } catch (error) {
+      console.error('[caregiver-report] active group resolution failed', error);
+    }
+    try {
+      const cachedGroupId = localStorage.getItem(GROUP_STORAGE_KEY) || null;
+      if (cachedGroupId) {
+        console.warn('[caregiver-report] using cached group id fallback for calendar');
+        return cachedGroupId;
+      }
+    } catch {}
+    return null;
   }
 
   function hasLateSleepOnset(source){
@@ -5175,24 +5536,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.12D';
     }
     return false;
   }
-  const EMO = { bm:'💩', sleep:'😴', sleep_low:'😪', onset:'🦉', night:'🌙', prn_sleep:'💊S', prn_mania:'💊M', prn_aggr:'💊A', tired:'🥱', manic:'⚡️', sick:'🤒', temp:'🌡️', appetite:'🍽️', moon:'🌕', anomaly:'🚩' };
-  const QUICK_LOOK_ITEMS = [
-    { key:'bm', label:'BM', emoji:'💩' },
-    { key:'sleep', label:'Good sleep', emoji:'😴' },
-    { key:'sleep_low', label:'Poor sleep', emoji:'😪' },
-    { key:'onset', label:'Late onset', emoji:'🦉' },
-    { key:'night', label:'Night waking', emoji:'🌙' },
-    { key:'prn_sleep', label:'PRN sleep', emoji:'💊S' },
-    { key:'prn_mania', label:'PRN mania', emoji:'💊M' },
-    { key:'prn_aggr', label:'PRN aggression', emoji:'💊A' },
-    { key:'tired', label:'Appears tired', emoji:'🥱' },
-    { key:'manic', label:'Manic', emoji:'⚡️' },
-    { key:'sick', label:'Sick', emoji:'🤒' },
-    { key:'temp', label:'Temp', emoji:'🌡️' },
-    { key:'appetite', label:'Appetite change', emoji:'🍽️' },
-    { key:'moon', label:'Full moon', emoji:'🌕' },
-    { key:'anomaly', label:'Anomaly', emoji:'🚩' }
-  ];
+  const EMO = CALENDAR_EMOJI;
+  const QUICK_LOOK_ITEMS = CALENDAR_QUICK_LOOK_ITEMS;
 
   function saveLocalHealth(){
     try { localStorage.setItem(LOCAL_HEALTH_KEY, JSON.stringify(LOCAL_HEALTH)); } catch {}
@@ -5852,9 +6197,11 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.12D';
     EVENT_MAP = {};
     const groupId = await ensureGroupId();
     if (!groupId) {
+      setCalendarStatus('No active group is selected, so shared calendar items cannot load yet.', 'error');
       applyLocalAnnotations(start, end);
       return;
     }
+    setCalendarStatus('');
     const startDate = start.slice(0,10);
     const endDate = end.slice(0,10);
     try{
@@ -5890,10 +6237,16 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.12D';
     EVENT_MAP = {};
     HEALTH_FLAGS = {};
     const { start, end } = monthBoundsUTC(Y, M);
-    await loadCaregiverFlags(start, end);
-    await loadCalendarEventsInRange(start, end);
-    render();
-    updateMonthShiftCards();
+    try {
+      await loadCaregiverFlags(start, end);
+      await loadCalendarEventsInRange(start, end);
+      render();
+      updateMonthShiftCards();
+    } catch (error) {
+      console.error('[caregiver-report] calendar month load failed', error);
+      setCalendarStatus('Calendar data could not be loaded right now. Please refresh or reselect your group.', 'error');
+      renderCalendarNotice('Calendar unavailable');
+    }
   }
 
   function openEditor(dateKey){

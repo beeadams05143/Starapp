@@ -256,16 +256,30 @@
             <label for="caregiver_name">Caregiver Name:
               <input id="caregiver_name" name="caregiver_name" type="text" placeholder="Enter your name" required />
             </label>
-            <label>PRN sleep aid given?
-              <div class="yn-pill-group" role="group" aria-label="PRN sleep aid given">
-                <label class="yn-pill"><input type="radio" name="prn_given" id="prn_given_yes" value="yes"> Yes</label>
-                <label class="yn-pill"><input type="radio" name="prn_given" id="prn_given_no" value="no" checked> No</label>
+            <label>PRN administered?
+              <div class="yn-pill-group" role="group" aria-label="PRN administered">
+                <label class="yn-pill"><input type="radio" name="prn_administered" id="prn_administered_yes" value="yes"> Yes</label>
+                <label class="yn-pill"><input type="radio" name="prn_administered" id="prn_administered_no" value="no" checked> No</label>
               </div>
             </label>
-            <label id="prnNameWrap" style="display:none">PRN sleep aid name:
+            <label id="prnNameWrap" style="display:none">PRN name:
               <input type="text" name="prn_name" placeholder="Name of PRN"/>
             </label>
-            <label>Time PRN was given:<input type="time" name="prn_time"/></label>
+            <label id="prnTimeWrap" style="display:none">Time PRN was given:<input type="time" name="prn_time"/></label>
+            <div class="row cols-3 compact" id="prnReasonWrap" style="display:none">
+              <label style="display:flex;align-items:center;gap:8px;margin-top:28px">
+                <input type="checkbox" name="prn_reason_sleep" id="prn_reason_sleep" style="width:auto"/>
+                <span>Sleep</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;margin-top:28px">
+                <input type="checkbox" name="prn_reason_aggression" id="prn_reason_aggression" style="width:auto"/>
+                <span>Aggression</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;margin-top:28px">
+                <input type="checkbox" name="prn_reason_mania" id="prn_reason_mania" style="width:auto"/>
+                <span>Mania</span>
+              </label>
+            </div>
           </div>
           <div class="med-panel" id="medChangePanel">
             <div class="med-head">
@@ -600,20 +614,6 @@
           <label id="aggressionNotesWrap">Aggression notes:
             <textarea name="aggression_notes" placeholder="What happened, what helped"></textarea>
           </label>
-          <div class="row cols-3 compact" id="aggressionPrnRow" style="margin-top:6px;display:none">
-            <label>PRN given for aggression?
-              <div class="yn-pill-group" role="group" aria-label="PRN given for aggression">
-                <label class="yn-pill"><input type="radio" name="prn_aggression_given" id="prn_aggression_given_yes" value="yes"> Yes</label>
-                <label class="yn-pill"><input type="radio" name="prn_aggression_given" id="prn_aggression_given_no" value="no" checked> No</label>
-              </div>
-            </label>
-            <label id="prnAggressionNameWrap" style="display:none">PRN name (aggression):
-              <input type="text" name="prn_aggression_name" placeholder="Name of PRN"/>
-            </label>
-            <label id="prnAggressionTimeWrap" style="display:none">Time PRN was given:
-              <input type="time" name="prn_aggression_time"/>
-            </label>
-          </div>
           <hr class="soft"/>
           <div class="subcap">Mania, focus, appetite</div>
           <div class="row cols-3 compact">
@@ -636,28 +636,57 @@
                 <label class="yn-pill"><input type="radio" name="focus_trouble_flag" value="No" checked> No</label>
               </div>
             </label>
+            <label id="maniaEpisodeStatusWrap" style="display:none">Episode status:
+              <select name="mania_episode_status" id="mania_episode_status">
+                <option value="">Select</option>
+                <option value="suspected">Suspected</option>
+                <option value="active">Active</option>
+                <option value="improving">Improving</option>
+              </select>
+            </label>
             <label>Change in appetite?
               <div class="yn-pill-group" role="group" aria-label="Change in appetite">
                 <label class="yn-pill"><input type="radio" name="appetite_change_flag" value="Yes"> Yes</label>
                 <label class="yn-pill"><input type="radio" name="appetite_change_flag" value="No" checked> No</label>
               </div>
             </label>
-            <label id="appetiteNotesWrap" style="display:none">Appetite notes:
-              <input type="text" name="appetite_notes" placeholder="e.g., ate much less than usual"/>
+            <label id="appetiteDirectionWrap" style="display:none">Appetite shift:
+              <select name="appetite_change_direction" id="appetite_change_direction">
+                <option value="">Select</option>
+                <option value="less">Eating less</option>
+                <option value="more">Eating more</option>
+                <option value="unclear">Unclear / mixed</option>
+              </select>
             </label>
           </div>
-          <div class="row cols-3 compact" id="maniaPrnRow" style="margin-top:6px">
-            <label>PRN given for mania?
-              <div class="yn-pill-group" role="group" aria-label="PRN given for mania">
-                <label class="yn-pill"><input type="radio" name="prn_mania_given" id="prn_mania_given_yes" value="yes"> Yes</label>
-                <label class="yn-pill"><input type="radio" name="prn_mania_given" id="prn_mania_given_no" value="no" checked> No</label>
-              </div>
+          <div class="row cols-3 compact" id="maniaSymptomsWrap" style="display:none;margin-top:6px">
+            <label style="display:flex;align-items:center;gap:8px;margin-top:28px">
+              <input type="checkbox" name="fixation_present" id="fixation_present" style="width:auto"/>
+              <span>Fixation / perseveration</span>
             </label>
-            <label id="prnManiaNameWrap" style="display:none">PRN name (mania):
-              <input type="text" name="prn_mania_name" placeholder="Name of PRN"/>
+            <label id="fixationCategoryWrap" style="display:none">Fixation category:
+              <select name="fixation_category" id="fixation_category">
+                <option value="">Select</option>
+                <option value="person">Person</option>
+                <option value="topic">Topic</option>
+                <option value="object">Object / item</option>
+                <option value="routine">Routine / schedule</option>
+                <option value="food">Food</option>
+                <option value="activity">Activity / goal</option>
+                <option value="other">Other</option>
+              </select>
             </label>
-            <label id="prnManiaTimeWrap" style="display:none">Time PRN was given:
-              <input type="time" name="prn_mania_time"/>
+            <label style="display:flex;align-items:center;gap:8px;margin-top:28px">
+              <input type="checkbox" name="repetitive_behavior_present" id="repetitive_behavior_present" style="width:auto"/>
+              <span>Repetitive behavior</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;margin-top:28px">
+              <input type="checkbox" name="pressured_speech_present" id="pressured_speech_present" style="width:auto"/>
+              <span>Pressured / rapid speech</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;margin-top:28px">
+              <input type="checkbox" name="grandiosity_present" id="grandiosity_present" style="width:auto"/>
+              <span>Grandiosity</span>
             </label>
           </div>
           <div class="subcap">Anomalies <span class="muted">(unexpected behaviors, mood shifts, or unusual reactions)</span></div>
@@ -1662,6 +1691,9 @@
     updateSavedButtons();
     updateProgress();
     syncAggressionControls();
+    syncManiaControls();
+    syncAppetiteControls();
+    syncFixationControls();
     loadFocusSummary();
     syncMovementArrays();
     syncTempArrays();
@@ -1755,6 +1787,9 @@
       if (event.target?.matches('[data-temp-symptom]')) {
         syncTempArrays();
       }
+      if (event.target?.matches('#fixation_present')) {
+        syncFixationControls();
+      }
     });
     movementEls.detailsToggle?.addEventListener('click', () => {
       const isHidden = movementEls.detailsPanel?.classList.contains('is-hidden');
@@ -1805,6 +1840,9 @@
       steps.forEach((s, i) => restore(s, i));
       hydratePromptingSelects();
       syncAggressionControls();
+      syncManiaControls();
+      syncAppetiteControls();
+      syncFixationControls();
       hydrateMovementFromData(draft.data[movementStepIndex] || {});
       hydrateTempFromData(draft.data[movementStepIndex] || {});
       applyConditionalSections();
@@ -1832,7 +1870,7 @@
       'pet_interaction_flag'
     ];
     document.addEventListener('change', (event) => {
-      if (event.target?.matches('input[name="prn_given"],input[name="prn_aggression_given"],input[name="prn_mania_given"],input[name="night_wake_flag"]')) {
+      if (event.target?.matches('input[name="prn_administered"],input[name="night_wake_flag"]')) {
         applyConditionalSections();
         return;
       }
@@ -1889,28 +1927,32 @@
       }
       if (aggressionDetails) aggressionDetails.style.display = yes ? '' : 'none';
       if (aggressionNotesWrap) aggressionNotesWrap.style.display = yes ? '' : 'none';
-      const prnRow = document.getElementById('aggressionPrnRow');
-      if (prnRow) prnRow.style.display = yes ? '' : 'none';
-      if (!yes) {
-        document.querySelectorAll('input[name="prn_aggression_given"]').forEach((el) => (el.checked = false));
-        const name = document.querySelector('input[name="prn_aggression_name"]');
-        const time = document.querySelector('input[name="prn_aggression_time"]');
-        if (name) name.value = '';
-        if (time) time.value = '';
-      }
     }
     // Mania enable/disable
     const manicInt  = document.getElementById('manic_intensity');
     const maniaInstances = document.getElementById('mania_instances_today');
-    const appetiteNotesWrap = document.getElementById('appetiteNotesWrap');
+    const appetiteDirectionWrap = document.getElementById('appetiteDirectionWrap');
     const maniaIntensityWrap = document.getElementById('maniaIntensityWrap');
     const maniaInstancesWrap = document.getElementById('maniaInstancesWrap');
+    const maniaEpisodeStatusWrap = document.getElementById('maniaEpisodeStatusWrap');
+    const maniaSymptomsWrap = document.getElementById('maniaSymptomsWrap');
+    const fixationCategoryWrap = document.getElementById('fixationCategoryWrap');
+    function syncFixationControls(){
+      const yes = !!document.getElementById('fixation_present')?.checked;
+      if (fixationCategoryWrap) fixationCategoryWrap.style.display = yes ? '' : 'none';
+      if (!yes) {
+        const select = document.getElementById('fixation_category');
+        if (select) select.value = '';
+      }
+    }
     function syncManiaControls(){
       const yes = getYnValue('manic_flag') === 'Yes';
       if (manicInt) manicInt.disabled = !yes;
       if (maniaInstances) maniaInstances.disabled = !yes;
       if (maniaIntensityWrap) maniaIntensityWrap.style.display = yes ? '' : 'none';
       if (maniaInstancesWrap) maniaInstancesWrap.style.display = yes ? '' : 'none';
+      if (maniaEpisodeStatusWrap) maniaEpisodeStatusWrap.style.display = yes ? '' : 'none';
+      if (maniaSymptomsWrap) maniaSymptomsWrap.style.display = yes ? '' : 'none';
       if (!yes && manicInt) {
         manicInt.value = 0;
         const iv = document.getElementById('manicIntensityVal');
@@ -1919,21 +1961,23 @@
       if (!yes && maniaInstances) {
         maniaInstances.value = '';
       }
-      const maniaPrnRow = document.getElementById('maniaPrnRow');
-      if (maniaPrnRow) maniaPrnRow.style.display = yes ? '' : 'none';
       if (!yes) {
-        document.querySelectorAll('input[name="prn_mania_given"]').forEach((el) => (el.checked = false));
-        const name = document.querySelector('input[name="prn_mania_name"]');
-        const time = document.querySelector('input[name="prn_mania_time"]');
-        if (name) name.value = '';
-        if (time) time.value = '';
+        const status = document.getElementById('mania_episode_status');
+        if (status) status.value = '';
+        ['fixation_present','repetitive_behavior_present','pressured_speech_present','grandiosity_present'].forEach((id) => {
+          const input = document.getElementById(id);
+          if (input) input.checked = false;
+        });
+        const fixationCategory = document.getElementById('fixation_category');
+        if (fixationCategory) fixationCategory.value = '';
       }
+      syncFixationControls();
     }
     function syncAppetiteControls(){
       const yes = getYnValue('appetite_change_flag') === 'Yes';
-      if (appetiteNotesWrap) appetiteNotesWrap.style.display = yes ? '' : 'none';
+      if (appetiteDirectionWrap) appetiteDirectionWrap.style.display = yes ? '' : 'none';
       if (!yes) {
-        const input = appetiteNotesWrap?.querySelector('input');
+        const input = document.getElementById('appetite_change_direction');
         if (input) input.value = '';
       }
     }
@@ -1952,7 +1996,7 @@
       });
       toggleFieldGroup('appetite_change_flag', {
         showWhen: 'Yes',
-        targets: ['appetiteNotesWrap']
+        targets: ['appetiteDirectionWrap']
       });
       toggleFieldGroup('vocational_participation', {
         showWhen: 'Yes',
@@ -1997,37 +2041,23 @@
       if (nightWrap) nightWrap.style.display = nightChecked ? '' : 'none';
       if (!nightChecked && nightCount) nightCount.value = '';
 
-      const prnYes = document.getElementById('prn_given_yes');
+      const prnYes = document.getElementById('prn_administered_yes');
       const prnWrap = document.getElementById('prnNameWrap');
+      const prnTimeWrap = document.getElementById('prnTimeWrap');
+      const prnReasonWrap = document.getElementById('prnReasonWrap');
       const prnInput = prnWrap?.querySelector('input');
+      const prnTimeInput = prnTimeWrap?.querySelector('input');
       const prnChecked = !!prnYes?.checked;
       if (prnWrap) prnWrap.style.display = prnChecked ? '' : 'none';
+      if (prnTimeWrap) prnTimeWrap.style.display = prnChecked ? '' : 'none';
+      if (prnReasonWrap) prnReasonWrap.style.display = prnChecked ? '' : 'none';
       if (!prnChecked && prnInput) prnInput.value = '';
-
-      const prnAggYes = document.getElementById('prn_aggression_given_yes');
-      const prnAggNameWrap = document.getElementById('prnAggressionNameWrap');
-      const prnAggTimeWrap = document.getElementById('prnAggressionTimeWrap');
-      const prnAggChecked = !!prnAggYes?.checked;
-      if (prnAggNameWrap) prnAggNameWrap.style.display = prnAggChecked ? '' : 'none';
-      if (prnAggTimeWrap) prnAggTimeWrap.style.display = prnAggChecked ? '' : 'none';
-      if (!prnAggChecked) {
-        const n = prnAggNameWrap?.querySelector('input');
-        const t = prnAggTimeWrap?.querySelector('input');
-        if (n) n.value = '';
-        if (t) t.value = '';
-      }
-
-      const prnManiaYes = document.getElementById('prn_mania_given_yes');
-      const prnManiaNameWrap = document.getElementById('prnManiaNameWrap');
-      const prnManiaTimeWrap = document.getElementById('prnManiaTimeWrap');
-      const prnManiaChecked = !!prnManiaYes?.checked;
-      if (prnManiaNameWrap) prnManiaNameWrap.style.display = prnManiaChecked ? '' : 'none';
-      if (prnManiaTimeWrap) prnManiaTimeWrap.style.display = prnManiaChecked ? '' : 'none';
-      if (!prnManiaChecked) {
-        const n = prnManiaNameWrap?.querySelector('input');
-        const t = prnManiaTimeWrap?.querySelector('input');
-        if (n) n.value = '';
-        if (t) t.value = '';
+      if (!prnChecked && prnTimeInput) prnTimeInput.value = '';
+      if (!prnChecked) {
+        ['prn_reason_sleep', 'prn_reason_aggression', 'prn_reason_mania'].forEach((id) => {
+          const input = document.getElementById(id);
+          if (input) input.checked = false;
+        });
       }
     };
 
@@ -2362,6 +2392,9 @@
       setMedChangePresent(false);
       clearHomeCommunityAdlFields();
       renderAdlActivityChips();
+      syncManiaControls();
+      syncAppetiteControls();
+      syncFixationControls();
     }
     function clearDraftUI(){
       draft={ data:{}, savedAt:{} };
@@ -2374,6 +2407,9 @@
       setMedChangePresent(false);
       clearHomeCommunityAdlFields();
       renderAdlActivityChips();
+      syncManiaControls();
+      syncAppetiteControls();
+      syncFixationControls();
     }
     function toast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.style.opacity='1'; clearTimeout(el._t); el._t=setTimeout(()=>el.style.opacity='0',1400); }
 
@@ -2455,6 +2491,59 @@
           return cleaned;
         };
         normalizeTemp();
+        const normalizeMania = () => {
+          const manic = String(payload.manic_flag || '').toLowerCase() === 'yes';
+          const intensity = Number(payload.manic_intensity);
+          const instances = Number(payload.mania_instances_today);
+          const fixation = !!payload.fixation_present;
+          const repetitive = !!payload.repetitive_behavior_present;
+          const pressuredSpeech = !!payload.pressured_speech_present;
+          const grandiosity = !!payload.grandiosity_present;
+          const cleaned = {
+            manic_flag: manic ? 'Yes' : 'No',
+            manic_intensity: manic && Number.isFinite(intensity) ? intensity : 0,
+            mania_instances_today: manic && Number.isFinite(instances) && instances >= 0 ? instances : null,
+            mania_episode_status: manic ? trimOrNull(payload.mania_episode_status) : null,
+            fixation_present: manic ? fixation : false,
+            fixation_category: manic && fixation ? trimOrNull(payload.fixation_category) : null,
+            repetitive_behavior_present: manic ? repetitive : false,
+            pressured_speech_present: manic ? pressuredSpeech : false,
+            grandiosity_present: manic ? grandiosity : false,
+            appetite_change_flag: isAffirmative(payload.appetite_change_flag) ? 'Yes' : 'No',
+            appetite_change_direction: isAffirmative(payload.appetite_change_flag)
+              ? trimOrNull(payload.appetite_change_direction)
+              : null
+          };
+          Object.assign(payload, cleaned);
+          return cleaned;
+        };
+        normalizeMania();
+        const normalizePrn = () => {
+          const administered = String(payload.prn_administered || '').toLowerCase() === 'yes';
+          const reasonSleep = administered && !!payload.prn_reason_sleep;
+          const reasonAggression = administered && !!payload.prn_reason_aggression;
+          const reasonMania = administered && !!payload.prn_reason_mania;
+          const prnName = administered ? trimOrNull(payload.prn_name) : null;
+          const prnTime = administered ? trimOrNull(payload.prn_time) : null;
+          const cleaned = {
+            prn_administered: administered ? 'yes' : 'no',
+            prn_name: prnName,
+            prn_time: prnTime,
+            prn_reason_sleep: reasonSleep,
+            prn_reason_aggression: reasonAggression,
+            prn_reason_mania: reasonMania,
+            prn_given: reasonSleep ? 'yes' : 'no',
+            prn_mania_given: reasonMania ? 'yes' : 'no',
+            prn_aggression_given: reasonAggression ? 'yes' : 'no',
+            prn_mania_name: reasonMania ? prnName : null,
+            prn_mania_time: reasonMania ? prnTime : null,
+            prn_aggression_name: reasonAggression ? prnName : null,
+            prn_aggression_time: reasonAggression ? prnTime : null
+          };
+          Object.assign(payload, cleaned);
+          return cleaned;
+        };
+        normalizePrn();
         const adlEntriesFromPayload = parseAdlEntries(payload.adl_entries);
         payload.adl_entries = adlEntriesFromPayload;
         const had_bm =

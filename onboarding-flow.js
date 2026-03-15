@@ -122,6 +122,7 @@ async function insertMembership(userId, groupId, membershipRole) {
 export async function createGroupForUser(userId, groupName) {
   const name = (groupName || '').trim();
   if (!name) throw new Error('Enter a group name.');
+  if (!userId) throw new Error('You must be signed in to create a group.');
   const existingGroups = await rest('groups?select=id,name&limit=1000');
   const normalizedName = name.toLocaleLowerCase();
   if ((existingGroups || []).some((group) => String(group?.name || '').trim().toLocaleLowerCase() === normalizedName)) {
@@ -131,7 +132,7 @@ export async function createGroupForUser(userId, groupName) {
   const rows = await rest('groups', {
     method: 'POST',
     headers: { Prefer: 'return=representation' },
-    body: JSON.stringify([{ name, invite_code: inviteCode, archived: false }]),
+    body: JSON.stringify([{ name, created_by: userId, invite_code: inviteCode, archived: false }]),
   });
   const group = rows?.[0];
   if (!group?.id) throw new Error('Could not create group.');

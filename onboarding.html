@@ -102,12 +102,6 @@
         <label for="displayName">Name</label>
         <input id="displayName" type="text" autocomplete="name" placeholder="Your name" required />
 
-        <label for="roleSelect">Role</label>
-        <select id="roleSelect" required>
-          <option value="individual">Individual</option>
-          <option value="caregiver">Caregiver</option>
-        </select>
-
         <button id="saveProfileBtn" type="submit">Save Profile</button>
       </form>
     </section>
@@ -151,7 +145,6 @@
     const createGroupForm = document.getElementById('createGroupForm');
     const joinGroupForm = document.getElementById('joinGroupForm');
     const displayNameEl = document.getElementById('displayName');
-    const roleSelectEl = document.getElementById('roleSelect');
     const groupNameEl = document.getElementById('groupName');
     const joinCodeEl = document.getElementById('joinCode');
     const saveProfileBtn = document.getElementById('saveProfileBtn');
@@ -176,7 +169,6 @@
     function profilePayload() {
       return {
         name: (displayNameEl.value || '').trim(),
-        role: roleSelectEl.value || 'individual',
       };
     }
 
@@ -208,7 +200,6 @@
           currentUser.user_metadata?.full_name ||
           currentUser.email ||
           '';
-        if (profile.role) roleSelectEl.value = profile.role;
         savedProfile = profile;
       } else {
         displayNameEl.value =

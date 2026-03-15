@@ -16,7 +16,11 @@ export async function fetchCurrentProfile(userId = null) {
   const session = getSessionFromStorage();
   const resolvedUserId = userId || session?.user?.id || null;
   if (!resolvedUserId) return null;
-  const rows = await rest(`profiles?id=eq.${encodeURIComponent(resolvedUserId)}&select=*&limit=1`);
+  const rows = await rest(
+    `profiles?id=eq.${encodeURIComponent(
+      resolvedUserId
+    )}&select=id,full_name,public_name,display_name,group_id,updated_at&limit=1`
+  );
   return rows?.[0] || null;
 }
 
@@ -57,7 +61,7 @@ export function cacheActiveGroup(groupId, groupName = '') {
   }
 }
 
-function buildProfilePayload(userId, profile, { name, role, groupId = null } = {}) {
+function buildProfilePayload(userId, profile, { name, groupId = null } = {}) {
   const displayName = (name || '').trim();
   return {
     id: userId,
@@ -65,7 +69,6 @@ function buildProfilePayload(userId, profile, { name, role, groupId = null } = {
     public_name: displayName || profile?.public_name || profile?.display_name || profile?.full_name || '',
     display_name: displayName || profile?.display_name || profile?.public_name || profile?.full_name || '',
     group_id: groupId ?? profile?.group_id ?? null,
-    role: role || profile?.role || null,
     updated_at: new Date().toISOString(),
   };
 }
@@ -73,24 +76,12 @@ function buildProfilePayload(userId, profile, { name, role, groupId = null } = {
 export async function saveProfileBasics(userId, options = {}) {
   const current = await fetchCurrentProfile(userId);
   const payload = buildProfilePayload(userId, current, options);
-  try {
-    const rows = await rest('profiles', {
-      method: 'POST',
-      headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
-      body: JSON.stringify([payload]),
-    });
-    return rows?.[0] || payload;
-  } catch (error) {
-    const message = error?.message || String(error || '');
-    if (!/column .*role/i.test(message)) throw error;
-    const { role: _ignoredRole, ...fallbackPayload } = payload;
-    const rows = await rest('profiles', {
-      method: 'POST',
-      headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
-      body: JSON.stringify([fallbackPayload]),
-    });
-    return rows?.[0] || fallbackPayload;
-  }
+  const rows = await rest('profiles', {
+    method: 'POST',
+    headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
+    body: JSON.stringify([payload]),
+  });
+  return rows?.[0] || payload;
 }
 
 function generateInviteCode(length = 6) {

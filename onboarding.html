@@ -75,6 +75,50 @@
     }
     .message.ok { color: #0f766e; }
     .muted { color: #6b7280; font-size: 13px; }
+    .success-box {
+      margin-top: 16px;
+      padding: 16px;
+      border-radius: 14px;
+      border: 1px solid #a7f3d0;
+      background: #ecfdf5;
+      color: #065f46;
+      display: none;
+    }
+    .success-box.visible { display: block; }
+    .success-box h3 {
+      margin: 0 0 8px;
+      font-size: 18px;
+    }
+    .invite-code-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin: 12px 0;
+    }
+    .invite-code-pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+      padding: 0 14px;
+      border-radius: 999px;
+      background: #d1fae5;
+      border: 1px solid #6ee7b7;
+      color: #065f46;
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+    }
+    .success-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+    .success-actions button {
+      width: auto;
+      margin-top: 0;
+    }
     .step-note {
       display: inline-block;
       font-size: 12px;
@@ -127,6 +171,18 @@
     </section>
 
     <div id="status" class="message" role="status" aria-live="polite"></div>
+    <section id="groupSuccessBox" class="success-box" aria-live="polite">
+      <h3>Group created</h3>
+      <p>Your group is ready. Here is your invite code:</p>
+      <div class="invite-code-row">
+        <div id="inviteCodeValue" class="invite-code-pill"></div>
+        <button id="copyInviteCodeBtn" type="button" class="secondary">Copy Code</button>
+      </div>
+      <p>Save this code somewhere safe. You'll share it with other members so they can join your group.</p>
+      <div class="success-actions">
+        <button id="continueToDashboardBtn" type="button">Continue to Dashboard</button>
+      </div>
+    </section>
   </main>
 
   <script type="module">
@@ -151,6 +207,10 @@
     const createGroupBtn = document.getElementById('createGroupBtn');
     const joinGroupBtn = document.getElementById('joinGroupBtn');
     const statusEl = document.getElementById('status');
+    const groupSuccessBox = document.getElementById('groupSuccessBox');
+    const inviteCodeValueEl = document.getElementById('inviteCodeValue');
+    const copyInviteCodeBtn = document.getElementById('copyInviteCodeBtn');
+    const continueToDashboardBtn = document.getElementById('continueToDashboardBtn');
 
     let currentUser = null;
     let savedProfile = null;
@@ -158,6 +218,16 @@
     const setStatus = (text, ok = false) => {
       statusEl.textContent = text || '';
       statusEl.classList.toggle('ok', !!ok);
+    };
+
+    const hideGroupSuccess = () => {
+      groupSuccessBox.classList.remove('visible');
+      inviteCodeValueEl.textContent = '';
+    };
+
+    const showGroupSuccess = (inviteCode) => {
+      inviteCodeValueEl.textContent = inviteCode || '';
+      groupSuccessBox.classList.add('visible');
     };
 
     const setBusy = (on) => {
@@ -233,34 +303,25 @@
     createGroupForm.addEventListener('submit', async (event) => {
       event.preventDefault();
       setStatus('');
+      hideGroupSuccess();
       setBusy(true);
-      let redirectPending = false;
       try {
         ensureProfileSaved();
         const group = await createGroupForUser(currentUser.id, groupNameEl.value);
         await saveProfileDefaultGroup(currentUser.id, group.id);
-        redirectPending = true;
-        setStatus(
-          `Group Created!\n\nInvite Code: ${group.invite_code}\n\nShare this code with caregivers so they can join your group.`,
-          true
-        );
-        setTimeout(() => {
-          window.location.replace('dashboard.html');
-        }, 2500);
+        setStatus('Group created successfully.', true);
+        showGroupSuccess(group.invite_code);
       } catch (error) {
         setStatus(error?.message || 'Could not create group.');
       } finally {
-        if (redirectPending) {
-          setTimeout(() => setBusy(false), 2500);
-        } else {
-          setBusy(false);
-        }
+        setBusy(false);
       }
     });
 
     joinGroupForm.addEventListener('submit', async (event) => {
       event.preventDefault();
       setStatus('');
+      hideGroupSuccess();
       setBusy(true);
       try {
         ensureProfileSaved();
@@ -271,6 +332,21 @@
       } finally {
         setBusy(false);
       }
+    });
+
+    copyInviteCodeBtn.addEventListener('click', async () => {
+      const inviteCode = inviteCodeValueEl.textContent || '';
+      if (!inviteCode) return;
+      try {
+        await navigator.clipboard.writeText(inviteCode);
+        setStatus('Invite code copied to clipboard.', true);
+      } catch (error) {
+        setStatus('Could not copy the invite code automatically. Please copy it manually.');
+      }
+    });
+
+    continueToDashboardBtn.addEventListener('click', () => {
+      window.location.replace('dashboard.html');
     });
 
     hydrate().catch((error) => {

@@ -136,7 +136,7 @@ export async function createGroupForUser(userId, groupName) {
   });
   const group = rows?.[0];
   if (!group?.id) throw new Error('Could not create group.');
-  await insertMembership(userId, group.id, 'owner');
+  await insertMembership(userId, group.id, 'admin');
   cacheActiveGroup(group.id, group.name || name);
   return group;
 }
@@ -147,7 +147,7 @@ export async function joinGroupForUser(userId, joinCode) {
   const rows = await rest(`groups?invite_code=eq.${encodeURIComponent(code)}&select=id,name,invite_code&limit=1`);
   const group = rows?.[0] || null;
   if (!group?.id) throw new Error('Invalid invite code.');
-  await insertMembership(userId, group.id, 'caregiver');
+  await insertMembership(userId, group.id, 'member');
   cacheActiveGroup(group.id, group.name || '');
   return group;
 }

@@ -369,6 +369,8 @@
     .mania-streak-dot.sev-4{background:#f97316}
     .mania-streak-dot.sev-5{background:#dc2626}
     .mania-streak-day-label{font-size:11px;font-weight:700;color:#64748b}
+    .movement-card{position:relative}
+    .movement-empty-note{margin-top:10px;font-size:13px;color:#64748b;font-weight:600;text-align:center}
     .kpi-summary-inline{border:1px solid #e5e7eb;border-radius:16px;padding:16px;background:#fff;box-shadow:0 10px 30px rgba(15,23,42,.08)}
     .kpi-summary-inline h4{margin:0 0 12px;font-size:16px}
     .kpi-summary-inline .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
@@ -966,6 +968,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.12D';
     <div class="chart kpi-summary-inline" id="maniaStreakCard">
       <h4>Mania Streak</h4>
       <p class="muted chart-range-label" id="maniaStreakRangeLabel">Range: Month</p>
+      <p class="muted">Tip: turn the phone to landscape for a wider timeline view.</p>
       <div class="mania-streak-hero">
         <div class="mania-streak-value" id="maniaCurrentStreakVal">0</div>
         <div class="mania-streak-copy">day streak</div>
@@ -987,6 +990,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.12D';
     <div class="chart">
       <h2>Physical & Daily Living Overview (Monthly Totals)</h2>
       <p class="muted chart-range-label" id="healthRangeLabel">Range: Month</p>
+      <p class="muted">Tip: turn the phone to landscape for a wider chart view.</p>
       <canvas id="healthChart"></canvas>
       <p class="muted">Counts of caregiver check-ins where each category was marked “Yes”. Use this to spot over- or under-focused areas.</p>
     </div>
@@ -1207,6 +1211,10 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.12D';
       const m = String(dt.getMonth() + 1).padStart(2, '0');
       const d = String(dt.getDate()).padStart(2, '0');
       return `${y}-${m}-${d}`;
+    };
+    const humanDate = (value) => {
+      const dt = parseCaregiverDate(value);
+      return dt ? formatLocalDate(dt) : '—';
     };
     const formatTimeInputValue = (date) => {
       const dt = parseCaregiverDate(date);
@@ -4184,6 +4192,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.12D';
 
     function drawMovementSeverityChart(series){
       destroy('movementSeverity');
+      setMovementChartEmptyState('movementSeverityChart', !!(series?.length));
+      if (!series?.length) return;
       const labels = series?.map(p=>p.x) ?? [];
       const data   = series?.map(p=>p.y ?? null) ?? [];
       charts.movementSeverity = new Chart($('#movementSeverityChart'), {
@@ -4212,6 +4222,9 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.12D';
 
     function drawMovementTypeChart(counts = {}){
       destroy('movementType');
+      const entries = Object.entries(counts);
+      setMovementChartEmptyState('movementMainTypeChart', entries.length > 0);
+      if (!entries.length) return;
       const labels = Object.keys(counts).map(key => MOVEMENT_TYPE_LABELS[key] || key);
       const data = Object.keys(counts).map(key => counts[key]);
       charts.movementType = new Chart($('#movementMainTypeChart'), {
@@ -4232,6 +4245,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.12D';
     function drawMovementBodyChart(counts = {}){
       destroy('movementBody');
       const sorted = Object.entries(counts);
+      setMovementChartEmptyState('movementBodyMapChart', sorted.length > 0);
+      if (!sorted.length) return;
       const labels = sorted.map(([key]) => MOVEMENT_BODY_LABELS[key] || key);
       const data = sorted.map(([,val]) => val);
       charts.movementBody = new Chart($('#movementBodyMapChart'), {
@@ -4252,6 +4267,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.12D';
     function drawMovementTriggerChart(counts = {}){
       destroy('movementTrigger');
       const sorted = Object.entries(counts);
+      setMovementChartEmptyState('movementTriggerChart', sorted.length > 0);
+      if (!sorted.length) return;
       const labels = sorted.map(([key]) => MOVEMENT_TRIGGER_LABELS[key] || key);
       const data = sorted.map(([,val]) => val);
       charts.movementTrigger = new Chart($('#movementTriggerChart'), {
@@ -4267,6 +4284,24 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.12D';
           }
         }
       });
+    }
+
+    function setMovementChartEmptyState(canvasId, hasData){
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      const card = canvas.closest('.movement-card');
+      if (!card) return;
+      let note = card.querySelector('.movement-empty-note');
+      if (!hasData) {
+        if (!note) {
+          note = document.createElement('p');
+          note.className = 'movement-empty-note';
+          note.textContent = 'None recorded for this time period.';
+          card.appendChild(note);
+        }
+      } else if (note) {
+        note.remove();
+      }
     }
 
     async function loadCaregiverData(){

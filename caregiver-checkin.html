@@ -1047,6 +1047,18 @@
     return trimmed ? trimmed : null;
   };
 
+  const isAffirmative = (value) => {
+    if (value === true) return true;
+    if (value === false) return false;
+    if (typeof value === 'number') return value > 0;
+    if (typeof value === 'string') {
+      const normalized = value.trim().toLowerCase();
+      if (!normalized) return false;
+      return ['yes', 'y', 'true', '1', 'done', 'complete', 'completed'].includes(normalized);
+    }
+    return false;
+  };
+
   const parseAdlEntries = (value) => {
     if (!value) return [];
     if (Array.isArray(value)) return value.filter(Boolean);

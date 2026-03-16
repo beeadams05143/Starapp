@@ -293,9 +293,10 @@
     .cg-edit-form textarea{min-height:90px;resize:vertical}
     .cg-edit-status{font-size:13px;color:var(--muted);margin:0}
     .cg-edit-file-note{font-size:13px;color:#2563eb;margin:4px 0 0}
-    .cg-edit-actions{display:flex;justify-content:flex-end;gap:10px}
+    .cg-edit-actions{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
     .cg-edit-actions button{padding:8px 14px;border-radius:10px;border:1px solid #d4d4d8;background:#fff;font-weight:600;cursor:pointer}
     .cg-edit-actions .primary{background:#111827;color:#fff;border-color:#111827}
+    .cg-edit-actions .danger{background:#fff1f2;color:#b91c1c;border-color:#fecdd3}
 
     .cg-note-overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);display:flex;align-items:flex-end;justify-content:center;z-index:10001}
     .cg-note-overlay.is-hidden{display:none!important}
@@ -803,6 +804,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.12D';
         </label>
         <input type="hidden" id="cgEditId" name="checkin_id">
         <div class="cg-edit-actions">
+          <button type="button" class="danger" id="cgEditDelete">Delete Entry</button>
           <button type="button" id="cgEditCancel">Cancel</button>
           <button type="submit" class="primary" id="cgEditSave">Save Changes</button>
         </div>
@@ -1831,6 +1833,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.12D';
       file: document.getElementById('cgEditFile'),
       fileNote: document.getElementById('cgEditFileNote'),
       idInput: document.getElementById('cgEditId'),
+      deleteBtn: document.getElementById('cgEditDelete'),
       cancel: document.getElementById('cgEditCancel'),
       save: document.getElementById('cgEditSave')
     };
@@ -3642,6 +3645,10 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.12D';
       editUi.form?.reset();
       if (editUi.fileNote) editUi.fileNote.textContent = 'No file uploaded for this entry.';
       setEditStatus('Select a row to load its Supabase data.');
+      if (editUi.deleteBtn) {
+        editUi.deleteBtn.disabled = false;
+        editUi.deleteBtn.textContent = 'Delete Entry';
+      }
       if (editUi.save) {
         editUi.save.disabled = false;
         editUi.save.textContent = 'Save Changes';
@@ -3678,6 +3685,10 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.12D';
       if (!editUi.overlay) return;
       editState.currentId = checkinId;
       editState.record = null;
+      if (editUi.deleteBtn) {
+        editUi.deleteBtn.disabled = true;
+        editUi.deleteBtn.textContent = 'Delete Entry';
+      }
       if (editUi.save) {
         editUi.save.disabled = true;
         editUi.save.textContent = 'Save Changes';
@@ -3690,6 +3701,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.12D';
         populateEditForm(record);
         const when = record.created_at || record.submitted_at || record.timestamp;
         setEditStatus(`Editing entry from ${formatLocalDateTimeLabel(when || new Date())}`);
+        if (editUi.deleteBtn) editUi.deleteBtn.disabled = false;
         if (editUi.save) editUi.save.disabled = false;
       } catch (error) {
         console.error('Edit load failed', error);
@@ -3821,6 +3833,40 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.12D';
         if (editUi.save) {
           editUi.save.disabled = false;
           editUi.save.textContent = originalLabel;
+        }
+      }
+    }
+
+    async function handleDeleteCheckin(){
+      if (!editState.currentId) return;
+      const confirmed = window.confirm('Delete this caregiver check-in? This cannot be undone.');
+      if (!confirmed) return;
+
+      const originalDeleteLabel = editUi.deleteBtn ? editUi.deleteBtn.textContent : 'Delete Entry';
+      const originalSaveLabel = editUi.save ? editUi.save.textContent : 'Save Changes';
+      if (editUi.deleteBtn) {
+        editUi.deleteBtn.disabled = true;
+        editUi.deleteBtn.textContent = 'Deleting…';
+      }
+      if (editUi.save) editUi.save.disabled = true;
+      setEditStatus('Deleting entry…');
+
+      try {
+        const path = `caregiver_checkins?id=eq.${encodeURIComponent(editState.currentId)}`;
+        await rest(path, { method: 'DELETE' });
+        await loadCaregiverData();
+        closeEditModal();
+      } catch (error) {
+        console.error('Caregiver delete failed', error);
+        alert(error?.message || 'Could not delete this check-in.');
+        setEditStatus('Delete failed. Please try again.');
+        if (editUi.deleteBtn) {
+          editUi.deleteBtn.disabled = false;
+          editUi.deleteBtn.textContent = originalDeleteLabel;
+        }
+        if (editUi.save) {
+          editUi.save.disabled = false;
+          editUi.save.textContent = originalSaveLabel;
         }
       }
     }
@@ -4935,6 +4981,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.12D';
     });
 
     editUi.cancel?.addEventListener('click', () => closeEditModal());
+    editUi.deleteBtn?.addEventListener('click', () => handleDeleteCheckin());
     editUi.form?.addEventListener('submit', handleUpdateCheckin);
     editUi.overlay?.addEventListener('click', (event) => {
       if (event.target === editUi.overlay) closeEditModal();

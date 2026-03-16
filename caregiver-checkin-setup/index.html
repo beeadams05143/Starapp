@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Caregiver Check-In Setup - STAR</title>
+  <style>
+    :root{
+      --ink:#172033;
+      --muted:#5c667a;
+      --line:#d8e0ef;
+      --panel:rgba(255,255,255,0.96);
+      --accent:#0f172a;
+      --soft:#fff8e6;
+      --soft-line:#f2d58b;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      color:var(--ink);
+      background:
+        radial-gradient(circle at top right, rgba(254,240,138,0.5), transparent 28%),
+        linear-gradient(180deg, #f8fafc 0%, #eef3fb 100%);
+      min-height:100vh;
+    }
+    #navbar{position:sticky;top:0;z-index:20}
+    main{
+      max-width:920px;
+      margin:0 auto;
+      padding:32px 18px 80px;
+    }
+    .panel{
+      background:var(--panel);
+      border:1px solid rgba(216,224,239,0.95);
+      border-radius:24px;
+      padding:26px 22px;
+      box-shadow:0 18px 38px rgba(15,23,42,0.10);
+      margin-bottom:18px;
+    }
+    .pill{
+      display:inline-flex;
+      padding:8px 12px;
+      border-radius:999px;
+      background:#e0ecff;
+      color:#1d4ed8;
+      font-size:12px;
+      font-weight:800;
+      letter-spacing:.05em;
+      text-transform:uppercase;
+    }
+    h1{
+      margin:14px 0 8px;
+      font-size:clamp(2rem,4vw,2.8rem);
+    }
+    p{
+      margin:0;
+      color:var(--muted);
+      line-height:1.6;
+    }
+    .note{
+      margin-top:18px;
+      padding:16px;
+      border-radius:18px;
+      border:1px solid var(--soft-line);
+      background:var(--soft);
+    }
+    .note strong{
+      display:block;
+      margin-bottom:6px;
+      color:#7c4a03;
+    }
+    .actions{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-top:22px;
+    }
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:48px;
+      padding:0 18px;
+      border-radius:14px;
+      border:1px solid var(--accent);
+      background:var(--accent);
+      color:#fff;
+      text-decoration:none;
+      font-weight:800;
+    }
+    .btn.secondary{
+      background:#fff;
+      color:var(--accent);
+      border-color:#cbd5e1;
+    }
+    @media (max-width:640px){
+      .panel{padding:20px 16px;border-radius:20px}
+      .actions{flex-direction:column}
+      .btn{width:100%}
+    }
+  </style>
+</head>
+<body>
+
+  <main>
+    <section class="panel">
+      <div class="pill">Coming Next</div>
+      <h1>Caregiver Check-In Setup</h1>
+      <p>
+        This page will be used to choose which caregiver check-in categories and tracking items
+        are active for an individual. The setup interface will be added in the next step.
+      </p>
+      <div class="note">
+        <strong>Current status</strong>
+        The route is live and ready. No existing caregiver check-in form, submissions, tables, or reports
+        have been changed by this page.
+      </div>
+      <div class="actions">
+        <a class="btn secondary" href="/customize-your-app">Back to Customize Your App</a>
+        <a class="btn" href="/dashboard.html">Go to Dashboard</a>
+      </div>
+    </section>
+  </main>
+
+  <script defer src="/scripts/appbar-drawer.js?v=2026.03.16B"></script>
+  <script defer src="/ui-shell.js?v=2026.03.16B"></script>
+</body>
+</html>

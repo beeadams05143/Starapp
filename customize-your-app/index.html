@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Customize Your App - STAR</title>
+  <style>
+    :root{
+      --ink:#172033;
+      --muted:#5c667a;
+      --line:#d8e0ef;
+      --panel:rgba(255,255,255,0.96);
+      --accent:#0f172a;
+      --accent-soft:#eef4ff;
+      --glow:0 18px 38px rgba(15,23,42,0.10);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      color:var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(191,219,254,0.8), transparent 34%),
+        linear-gradient(180deg, #f6f8fc 0%, #eef3fb 100%);
+      min-height:100vh;
+    }
+    #navbar{position:sticky;top:0;z-index:20}
+    main{
+      max-width:980px;
+      margin:0 auto;
+      padding:32px 18px 80px;
+    }
+    .hero{
+      background:var(--panel);
+      border:1px solid rgba(216,224,239,0.9);
+      border-radius:28px;
+      padding:30px 24px;
+      box-shadow:var(--glow);
+      margin-bottom:20px;
+    }
+    .eyebrow{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 12px;
+      border-radius:999px;
+      background:#e0ecff;
+      color:#1d4ed8;
+      font-size:12px;
+      font-weight:800;
+      letter-spacing:.05em;
+      text-transform:uppercase;
+    }
+    h1{
+      margin:14px 0 10px;
+      font-size:clamp(2rem,4vw,3rem);
+      line-height:1.05;
+    }
+    .sub{
+      max-width:720px;
+      margin:0;
+      color:var(--muted);
+      font-size:1rem;
+      line-height:1.6;
+    }
+    .card{
+      background:var(--panel);
+      border:1px solid rgba(216,224,239,0.95);
+      border-radius:24px;
+      padding:24px;
+      box-shadow:var(--glow);
+    }
+    .card h2{
+      margin:0 0 10px;
+      font-size:1.5rem;
+    }
+    .card p{
+      margin:0;
+      color:var(--muted);
+      line-height:1.6;
+      max-width:700px;
+    }
+    .actions{
+      margin-top:20px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+    }
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:48px;
+      padding:0 18px;
+      border-radius:14px;
+      border:1px solid var(--accent);
+      background:var(--accent);
+      color:#fff;
+      text-decoration:none;
+      font-weight:800;
+      box-shadow:0 10px 24px rgba(15,23,42,0.16);
+    }
+    .btn.secondary{
+      background:#fff;
+      color:var(--accent);
+      border-color:#cbd5e1;
+      box-shadow:none;
+    }
+    @media (max-width:640px){
+      .hero,.card{padding:20px 16px;border-radius:20px}
+      .actions{flex-direction:column}
+      .btn{width:100%}
+    }
+  </style>
+</head>
+<body>
+
+  <main>
+    <section class="hero">
+      <div class="eyebrow">Admin Settings</div>
+      <h1>Customize Your App</h1>
+      <p class="sub">
+        Adjust how STAR works for your group over time. These setup tools let you fine-tune
+        what people track and see without changing the existing caregiver check-in data or reports.
+      </p>
+    </section>
+
+    <section class="card" aria-labelledby="cg-setup-title">
+      <h2 id="cg-setup-title">Caregiver Check-In Setup</h2>
+      <p>
+        Choose what categories and items caregivers will track during daily check-ins.
+        You can update this anytime.
+      </p>
+      <div class="actions">
+        <a class="btn" href="/caregiver-checkin-setup">Customize Caregiver Check-In</a>
+        <a class="btn secondary" href="/dashboard.html">Back to Dashboard</a>
+      </div>
+    </section>
+  </main>
+
+  <script defer src="/scripts/appbar-drawer.js?v=2026.03.16B"></script>
+  <script defer src="/ui-shell.js?v=2026.03.16B"></script>
+</body>
+</html>

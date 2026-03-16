@@ -21,9 +21,6 @@
   </style>
 </head>
 <body>
-  <div id="navbar-container"></div>
-  <script type="module" src="./load-navbar.js?v=2026.03.12D"></script>
-
   <h1>Group Settings</h1>
 
   <div class="card">
@@ -54,7 +51,7 @@
   </div>
 
   <script type="module">
-    import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.12D';
+    import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.16B';
     import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
     import {
       fetchCurrentProfile,
@@ -229,6 +226,8 @@
       }
     })();
   </script>
+  <script defer src="./scripts/appbar-drawer.js?v=2026.03.16B"></script>
+  <script defer src="./ui-shell.js?v=2026.03.16B"></script>
   <script>
     (function(){
       const version = window.STAR_BUILD_VERSION || '2026.03.16B';

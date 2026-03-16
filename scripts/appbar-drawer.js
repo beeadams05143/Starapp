@@ -91,6 +91,12 @@
       <div class="drawer-item" data-role="shared">
         <a href="/profile.html">👤 Profile</a>
       </div>
+      <details data-role="shared">
+        <summary>⚙️ Settings & Admin</summary>
+        <div class="sub">
+          <a href="/group-settings.html">Group Settings</a>
+        </div>
+      </details>
       <div class="drawer-item" data-role="shared">
         <a href="/dashboard.html">🏠 Dashboard</a>
       </div>
@@ -111,6 +117,9 @@
       </div>
       <div class="drawer-item" data-role="caregiver">
         <a href="/caregiver-report.html">📊 Caregiver Report</a>
+      </div>
+      <div class="drawer-item" data-role="caregiver">
+        <a href="/customize-your-app">🛠 Customize Your App</a>
       </div>
       <div class="drawer-item" data-role="shared">
         <a href="/chat.html">💬 Group Chat</a>

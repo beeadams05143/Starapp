@@ -109,6 +109,47 @@
       font-weight: 800;
       letter-spacing: 0.08em;
     }
+    .invite-preview-label {
+      margin: 10px 0 6px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #065f46;
+    }
+    .invite-preview {
+      margin: 0 0 8px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid #a7f3d0;
+      background: rgba(255,255,255,0.75);
+      color: #065f46;
+      font-size: 14px;
+      line-height: 1.45;
+      white-space: pre-wrap;
+    }
+    .welcome-grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin-top: 14px;
+    }
+    .welcome-card {
+      padding: 14px;
+      border-radius: 14px;
+      border: 1px solid #a7f3d0;
+      background: rgba(255,255,255,0.82);
+      color: #065f46;
+      box-shadow: 0 10px 22px rgba(16, 185, 129, 0.08);
+    }
+    .welcome-card h4 {
+      margin: 0 0 8px;
+      font-size: 16px;
+      color: #064e3b;
+    }
+    .welcome-card p {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.45;
+    }
     .success-actions {
       display: flex;
       gap: 10px;
@@ -130,6 +171,7 @@
     }
     @media (max-width: 720px) {
       .grid { grid-template-columns: 1fr; }
+      .welcome-grid { grid-template-columns: 1fr; }
       .shell { padding: 22px 16px; }
     }
   </style>
@@ -172,15 +214,32 @@
 
     <div id="status" class="message" role="status" aria-live="polite"></div>
     <section id="groupSuccessBox" class="success-box" aria-live="polite">
-      <h3>Group created</h3>
-      <p>Your group is ready. Here is your invite code:</p>
-      <div class="invite-code-row">
+      <h3 id="groupSuccessTitle">Group created</h3>
+      <p id="groupSuccessIntro">Your group is ready. Here is your invite code:</p>
+      <div id="inviteTools" class="invite-code-row">
         <div id="inviteCodeValue" class="invite-code-pill"></div>
+        <button id="copyInviteMessageBtn" type="button" class="secondary">Copy Invite Message and Code</button>
         <button id="copyInviteCodeBtn" type="button" class="secondary">Copy Code</button>
       </div>
-      <p>Save this code somewhere safe. You'll share it with other members so they can join your group.</p>
+      <p id="invitePreviewLabel" class="invite-preview-label">This is what your invite message will say:</p>
+      <div id="inviteMessagePreview" class="invite-preview"></div>
+      <p id="inviteHelpText">Copy Invite Message and Code copies the full message above. Copy Code copies only the code.</p>
+      <div class="welcome-grid">
+        <article class="welcome-card">
+          <h4 id="aboutCardTitle">About STAR</h4>
+          <p id="aboutCardBody">STAR helps your group keep important supports, routines, notes, reports, and daily tracking in one place so everyone stays on the same page.</p>
+        </article>
+        <article class="welcome-card">
+          <h4 id="profileCardTitle">Finish Your Profile</h4>
+          <p id="profileCardBody">Please go to the Profile page next and set up your profile details, photo, and any personal info you want your group to recognize easily.</p>
+        </article>
+        <article class="welcome-card">
+          <h4 id="howToCardTitle">How To Use The App</h4>
+          <p id="howToCardBody">Start by checking your profile, then explore Home, Calendar, Reports, Docs, and Emergency so you know where to log updates and find what your group needs.</p>
+        </article>
+      </div>
       <div class="success-actions">
-        <button id="continueToDashboardBtn" type="button">Continue to Dashboard</button>
+        <button id="continueToDashboardBtn" type="button">Go to Dashboard</button>
       </div>
     </section>
   </main>
@@ -195,7 +254,10 @@
       createGroupForUser,
       joinGroupForUser,
       saveProfileDefaultGroup,
-    } from './onboarding-flow.js?v=2026.03.12D';
+      buildInviteMessage,
+      deriveInviterContact,
+      resolveInviteCodeValue,
+    } from './onboarding-flow.js?v=2026.03.16B';
 
     const profileForm = document.getElementById('profileForm');
     const createGroupForm = document.getElementById('createGroupForm');
@@ -208,12 +270,27 @@
     const joinGroupBtn = document.getElementById('joinGroupBtn');
     const statusEl = document.getElementById('status');
     const groupSuccessBox = document.getElementById('groupSuccessBox');
+    const groupSuccessTitleEl = document.getElementById('groupSuccessTitle');
+    const groupSuccessIntroEl = document.getElementById('groupSuccessIntro');
+    const inviteToolsEl = document.getElementById('inviteTools');
     const inviteCodeValueEl = document.getElementById('inviteCodeValue');
+    const invitePreviewLabelEl = document.getElementById('invitePreviewLabel');
+    const inviteMessagePreviewEl = document.getElementById('inviteMessagePreview');
+    const inviteHelpTextEl = document.getElementById('inviteHelpText');
+    const copyInviteMessageBtn = document.getElementById('copyInviteMessageBtn');
     const copyInviteCodeBtn = document.getElementById('copyInviteCodeBtn');
+    const aboutCardTitleEl = document.getElementById('aboutCardTitle');
+    const aboutCardBodyEl = document.getElementById('aboutCardBody');
+    const profileCardTitleEl = document.getElementById('profileCardTitle');
+    const profileCardBodyEl = document.getElementById('profileCardBody');
+    const howToCardTitleEl = document.getElementById('howToCardTitle');
+    const howToCardBodyEl = document.getElementById('howToCardBody');
     const continueToDashboardBtn = document.getElementById('continueToDashboardBtn');
 
     let currentUser = null;
     let savedProfile = null;
+    let lastCreatedGroup = null;
+    let successMode = 'create';
 
     const setStatus = (text, ok = false) => {
       statusEl.textContent = text || '';
@@ -223,10 +300,62 @@
     const hideGroupSuccess = () => {
       groupSuccessBox.classList.remove('visible');
       inviteCodeValueEl.textContent = '';
+      if (inviteMessagePreviewEl) inviteMessagePreviewEl.textContent = '';
+      lastCreatedGroup = null;
+      successMode = 'create';
     };
 
-    const showGroupSuccess = (inviteCode) => {
-      inviteCodeValueEl.textContent = inviteCode || '';
+    function configureSuccessContent(mode, group) {
+      const groupName = group?.name || 'your group';
+      const isJoin = mode === 'join';
+      if (groupSuccessTitleEl) {
+        groupSuccessTitleEl.textContent = isJoin ? 'Group joined' : 'Group created';
+      }
+      if (groupSuccessIntroEl) {
+        groupSuccessIntroEl.textContent = isJoin
+          ? `You joined ${groupName}. Here is what to do next so your account is ready to use.`
+          : 'Your group is ready. Here is your invite code:';
+      }
+      if (inviteToolsEl) inviteToolsEl.style.display = isJoin ? 'none' : '';
+      if (invitePreviewLabelEl) invitePreviewLabelEl.style.display = isJoin ? 'none' : '';
+      if (inviteMessagePreviewEl) inviteMessagePreviewEl.style.display = isJoin ? 'none' : '';
+      if (inviteHelpTextEl) {
+        inviteHelpTextEl.textContent = isJoin
+          ? 'You are connected to the group now. Finish your setup below, then head to the dashboard to get started.'
+          : 'Copy Invite Message and Code copies the full message above. Copy Code copies only the code.';
+      }
+      if (aboutCardTitleEl) aboutCardTitleEl.textContent = isJoin ? 'You Are Connected' : 'About STAR';
+      if (aboutCardBodyEl) {
+        aboutCardBodyEl.textContent = isJoin
+          ? `You're now part of ${groupName}. STAR keeps routines, notes, reports, and support tools together so the whole group can stay organized.`
+          : 'STAR helps your group keep important supports, routines, notes, reports, and daily tracking in one place so everyone stays on the same page.';
+      }
+      if (profileCardTitleEl) profileCardTitleEl.textContent = 'Finish Your Profile';
+      if (profileCardBodyEl) {
+        profileCardBodyEl.textContent = isJoin
+          ? 'Please go to the Profile page next and add your photo, name details, and anything that helps the group recognize and support you correctly.'
+          : 'Please go to the Profile page next and set up your profile details, photo, and any personal info you want your group to recognize easily.';
+      }
+      if (howToCardTitleEl) howToCardTitleEl.textContent = 'How To Use The App';
+      if (howToCardBodyEl) {
+        howToCardBodyEl.textContent = isJoin
+          ? 'Start with Home and Calendar, then check Reports, Docs, and Emergency so you know where to log updates, review information, and find support tools.'
+          : 'Start by checking your profile, then explore Home, Calendar, Reports, Docs, and Emergency so you know where to log updates and find what your group needs.';
+      }
+    }
+
+    const showGroupSuccess = (group, mode = 'create') => {
+      successMode = mode;
+      lastCreatedGroup = group || null;
+      inviteCodeValueEl.textContent = resolveInviteCodeValue(group) || '';
+      configureSuccessContent(mode, group || null);
+      if (inviteMessagePreviewEl && mode === 'create') {
+        try {
+          inviteMessagePreviewEl.textContent = buildCurrentInviteMessage();
+        } catch {
+          inviteMessagePreviewEl.textContent = '';
+        }
+      }
       groupSuccessBox.classList.add('visible');
     };
 
@@ -246,9 +375,33 @@
       if (!savedProfile?.id) throw new Error('Save your profile first.');
     }
 
-    async function finishWithGroup(group) {
+    function getJoinLink() {
+      return new URL('signup.html', window.location.href).toString();
+    }
+
+    function getInviterContact() {
+      return deriveInviterContact({ user: currentUser, profile: savedProfile });
+    }
+
+    function buildCurrentInviteMessage(roleHint = 'general') {
+      const inviteCode = resolveInviteCodeValue(lastCreatedGroup);
+      if (!inviteCode) throw new Error('Create a group first to generate an invite.');
+      const { inviterName, inviterEmail } = getInviterContact();
+      return buildInviteMessage({
+        appName: 'STAR App',
+        joinLink: getJoinLink(),
+        inviteCode,
+        groupName: lastCreatedGroup?.name || '',
+        inviterName,
+        inviterEmail,
+        roleHint,
+      });
+    }
+
+    async function finishWithGroup(group, mode = 'create') {
       await saveProfileDefaultGroup(currentUser.id, group.id);
-      window.location.replace('dashboard.html');
+      setStatus(mode === 'join' ? 'Group joined successfully.' : 'Group created successfully.', true);
+      showGroupSuccess(group, mode);
     }
 
     async function hydrate() {
@@ -308,9 +461,7 @@
       try {
         ensureProfileSaved();
         const group = await createGroupForUser(currentUser.id, groupNameEl.value);
-        await saveProfileDefaultGroup(currentUser.id, group.id);
-        setStatus('Group created successfully.', true);
-        showGroupSuccess(group.invite_code);
+        await finishWithGroup(group, 'create');
       } catch (error) {
         setStatus(error?.message || 'Could not create group.');
       } finally {
@@ -321,12 +472,12 @@
     joinGroupForm.addEventListener('submit', async (event) => {
       event.preventDefault();
       setStatus('');
-      hideGroupSuccess();
-      setBusy(true);
+        hideGroupSuccess();
+        setBusy(true);
       try {
         ensureProfileSaved();
         const group = await joinGroupForUser(currentUser.id, joinCodeEl.value);
-        await finishWithGroup(group);
+        await finishWithGroup(group, 'join');
       } catch (error) {
         setStatus(error?.message || 'Could not join group.');
       } finally {
@@ -334,8 +485,18 @@
       }
     });
 
+    copyInviteMessageBtn.addEventListener('click', async () => {
+      try {
+        const inviteMessage = buildCurrentInviteMessage();
+        await navigator.clipboard.writeText(inviteMessage);
+        setStatus('Invite message copied.', true);
+      } catch (error) {
+        setStatus(error?.message || 'Could not copy the invite message automatically. Please copy it manually.');
+      }
+    });
+
     copyInviteCodeBtn.addEventListener('click', async () => {
-      const inviteCode = inviteCodeValueEl.textContent || '';
+      const inviteCode = resolveInviteCodeValue(lastCreatedGroup) || inviteCodeValueEl.textContent || '';
       if (!inviteCode) return;
       try {
         await navigator.clipboard.writeText(inviteCode);

@@ -2,6 +2,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.12D';
 
 const GROUP_KEY_ID = 'currentGroupId';
 const GROUP_KEY_NAME = 'currentGroupName';
+const DEFAULT_APP_NAME = 'STAR App';
 
 export function normalizeRedirect(value, fallback = 'dashboard.html') {
   if (!value) return fallback;
@@ -59,6 +60,101 @@ export function cacheActiveGroup(groupId, groupName = '') {
   } catch {
     // ignore storage failures
   }
+}
+
+export function resolveInviteCodeValue(group = {}) {
+  return (
+    group?.invite_code ||
+    group?.join_code ||
+    ''
+  );
+}
+
+export function deriveInviterContact({ user = null, profile = null } = {}) {
+  const inviterName = (
+    profile?.display_name ||
+    profile?.public_name ||
+    profile?.full_name ||
+    user?.user_metadata?.full_name ||
+    user?.user_metadata?.name ||
+    user?.email ||
+    ''
+  ).trim();
+  const inviterEmail = (user?.email || '').trim();
+  return {
+    inviterName: inviterName || '',
+    inviterEmail: inviterEmail || '',
+  };
+}
+
+function buildHelpLine(inviterName, inviterEmail) {
+  if (inviterName && inviterEmail) {
+    return `If you need help, contact ${inviterName} at ${inviterEmail}.`;
+  }
+  if (inviterName) {
+    return `If you need help, contact ${inviterName}.`;
+  }
+  if (inviterEmail) {
+    return `If you need help, contact ${inviterEmail}.`;
+  }
+  return 'If you need help, please contact the person who shared this invite with you.';
+}
+
+function buildGroupStep(groupName, roleHint) {
+  const groupLabel = groupName ? ` (${groupName})` : '';
+  if (roleHint === 'caregiver') {
+    return `5. Follow onboarding to join the correct group${groupLabel} as a caregiver/support person`;
+  }
+  return `5. Follow the onboarding steps to join the correct group${groupLabel}`;
+}
+
+function buildRoleIntro(appName, roleHint) {
+  if (roleHint === 'caregiver') {
+    return `Hi! You've been invited to join ${appName} as a caregiver/support person.`;
+  }
+  return `Hi! You've been invited to join ${appName}.`;
+}
+
+function buildRoleOutro(roleHint) {
+  if (roleHint === 'caregiver') {
+    return "Once you're in, you'll be able to access caregiver features based on your permissions.";
+  }
+  if (roleHint === 'individual') {
+    return "Once you're in, you can begin using your STAR tools and supports.";
+  }
+  return "Once you're in, you can begin using the app features available to your role.";
+}
+
+export function buildInviteMessage({
+  appName = DEFAULT_APP_NAME,
+  joinLink = '',
+  inviteCode = '',
+  groupName = '',
+  inviterName = '',
+  inviterEmail = '',
+  roleHint = 'general',
+} = {}) {
+  const resolvedJoinLink = String(joinLink || '').trim();
+  const resolvedInviteCode = String(inviteCode || '').trim();
+  if (!resolvedJoinLink) throw new Error('Missing join link for invite message.');
+  if (!resolvedInviteCode) throw new Error('Missing invite code for invite message.');
+
+  const normalizedRole = ['caregiver', 'individual'].includes(roleHint) ? roleHint : 'general';
+
+  return [
+    buildRoleIntro(appName || DEFAULT_APP_NAME, normalizedRole),
+    '',
+    'To get started:',
+    `1. Open this link: ${resolvedJoinLink}`,
+    '2. Create your account using your email and password',
+    '3. Complete your profile',
+    `4. Enter this invite code when prompted: ${resolvedInviteCode}`,
+    buildGroupStep(groupName, normalizedRole),
+    '',
+    buildRoleOutro(normalizedRole),
+    '',
+    buildHelpLine(inviterName, inviterEmail),
+  ].join('\n');
 }
 
 function buildProfilePayload(userId, profile, { name, groupId = null } = {}) {

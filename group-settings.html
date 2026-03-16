@@ -8,12 +8,14 @@
     body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;margin:16px}
     h1{margin:8px 0 16px}
     .card{max-width:560px;border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin:12px 0}
-    .row{display:flex;gap:8px;align-items:center;margin:8px 0}
+    .row{display:flex;gap:8px;align-items:center;margin:8px 0;flex-wrap:wrap}
     input[type="text"]{flex:1;padding:10px;border:1px solid #ccc;border-radius:8px}
     button{padding:10px 14px;border:0;border-radius:8px;cursor:pointer}
     .primary{background:#2563eb;color:#fff}
     .danger{background:#ef4444;color:#fff}
     .muted{background:#f3f4f6}
+    .status{min-height:18px;margin-top:8px;color:#2563eb;font-size:14px}
+    .status.error{color:#b91c1c}
     small{opacity:.7}
     .mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
   </style>
@@ -29,8 +31,10 @@
     <div class="row">
       <label class="mono">Invite code:</label>
       <input id="inviteCode" type="text" readonly value="loading..."/>
-      <button id="copyBtn" class="muted">Copy</button>
+      <button id="copyMessageBtn" class="primary">Copy Invite Message</button>
+      <button id="copyBtn" class="muted">Copy Code</button>
     </div>
+    <div id="inviteStatus" class="status" role="status" aria-live="polite"></div>
     <small>Share this code with family. They can join from the form below.</small>
   </div>
 
@@ -52,15 +56,30 @@
   <script type="module">
     import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.12D';
     import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
+    import {
+      fetchCurrentProfile,
+      buildInviteMessage,
+      deriveInviterContact,
+      resolveInviteCodeValue,
+    } from './onboarding-flow.js?v=2026.03.16B';
 
     const GROUP_KEY = 'currentGroupId';
     const inviteCodeEl = document.getElementById('inviteCode');
+    const copyMessageBtn = document.getElementById('copyMessageBtn');
     const copyBtn      = document.getElementById('copyBtn');
     const joinCodeEl   = document.getElementById('joinCode');
     const joinBtn      = document.getElementById('joinBtn');
     const leaveBtn     = document.getElementById('leaveBtn');
+    const inviteStatusEl = document.getElementById('inviteStatus');
+
+    let currentInviteGroup = null;
+    let currentProfile = null;
 
     const getActiveGroupId = () => localStorage.getItem(GROUP_KEY) || null;
+    const setInviteStatus = (text, isError = false) => {
+      inviteStatusEl.textContent = text || '';
+      inviteStatusEl.classList.toggle('error', !!isError);
+    };
 
     async function requireSession(){
       const session = getSessionFromStorage();
@@ -79,21 +98,77 @@
 
     async function loadInviteCode(){
       const gid = getActiveGroupId() || await syncActiveGroupId();
-      if (!gid) { inviteCodeEl.value = 'no active group'; return; }
+      if (!gid) {
+        currentInviteGroup = null;
+        inviteCodeEl.value = 'no active group';
+        return;
+      }
       try {
-        const rows = await rest(`groups?id=eq.${encodeURIComponent(gid)}&select=join_code`);
-        inviteCodeEl.value = rows?.[0]?.join_code || '(none)';
+        const rows = await rest(`groups?id=eq.${encodeURIComponent(gid)}&select=id,name,invite_code,join_code`);
+        currentInviteGroup = rows?.[0] || null;
+        inviteCodeEl.value = resolveInviteCodeValue(currentInviteGroup) || '(none)';
       } catch (error){
         console.error(error);
+        currentInviteGroup = null;
         inviteCodeEl.value='(error)';
       }
     }
 
+    function getInviteJoinLink() {
+      return new URL('signup.html', window.location.href).toString();
+    }
+
+    async function copyToClipboard(text) {
+      await navigator.clipboard.writeText(text);
+    }
+
+    function buildCurrentInviteMessage(roleHint = 'general') {
+      const session = getSessionFromStorage();
+      const { inviterName, inviterEmail } = deriveInviterContact({
+        user: session?.user || null,
+        profile: currentProfile,
+      });
+      const inviteCode = resolveInviteCodeValue(currentInviteGroup) || inviteCodeEl.value || '';
+      return buildInviteMessage({
+        appName: 'STAR App',
+        joinLink: getInviteJoinLink(),
+        inviteCode,
+        groupName: currentInviteGroup?.name || '',
+        inviterName,
+        inviterEmail,
+        roleHint,
+      });
+    }
+
+    copyMessageBtn.addEventListener('click', async () => {
+      if (!currentInviteGroup?.id) {
+        setInviteStatus('No active group invite is available yet.', true);
+        return;
+      }
+      try {
+        await copyToClipboard(buildCurrentInviteMessage());
+        setInviteStatus('Invite message copied.');
+      } catch (error) {
+        console.error(error);
+        setInviteStatus(error?.message || 'Could not copy the invite message automatically.', true);
+      }
+    });
+
     copyBtn.addEventListener('click', async () => {
-      if (!inviteCodeEl.value || inviteCodeEl.value.includes('loading')) return;
-      await navigator.clipboard.writeText(inviteCodeEl.value);
-      copyBtn.textContent = 'Copied!';
-      setTimeout(()=> copyBtn.textContent='Copy', 900);
+      const inviteCode = resolveInviteCodeValue(currentInviteGroup) || '';
+      if (!inviteCode || inviteCodeEl.value.includes('loading')) {
+        setInviteStatus('No active invite code is available to copy.', true);
+        return;
+      }
+      try {
+        await copyToClipboard(inviteCode);
+        setInviteStatus('Invite code copied.');
+        copyBtn.textContent = 'Copied!';
+        setTimeout(()=> copyBtn.textContent='Copy Code', 900);
+      } catch (error) {
+        console.error(error);
+        setInviteStatus('Could not copy the invite code automatically.', true);
+      }
     });
 
     joinBtn.addEventListener('click', async () => {
@@ -137,18 +212,26 @@
       }
       localStorage.removeItem(GROUP_KEY);
       window.loadGroupsIntoSwitcher?.();
+      currentInviteGroup = null;
       inviteCodeEl.value = 'no active group';
       alert('You left the group.');
     });
 
     (async () => {
-      await syncActiveGroupId();
-      await loadInviteCode();
+      try {
+        const session = await requireSession();
+        currentProfile = await fetchCurrentProfile(session.user.id);
+        await syncActiveGroupId();
+        await loadInviteCode();
+      } catch (error) {
+        console.error(error);
+        setInviteStatus(error?.message || 'Could not load your invite settings.', true);
+      }
     })();
   </script>
   <script>
     (function(){
-      const version = window.STAR_BUILD_VERSION || '2026.03.12D';
+      const version = window.STAR_BUILD_VERSION || '2026.03.16B';
       if (!window.STAR_BUILD_VERSION) window.STAR_BUILD_VERSION = version;
       const ensureBadge = () => {
         if (document.getElementById('star-build-version')) return;

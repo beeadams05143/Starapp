@@ -11,8 +11,12 @@
       --line:#d8e0ef;
       --panel:rgba(255,255,255,0.96);
       --accent:#0f172a;
-      --soft:#fff8e6;
-      --soft-line:#f2d58b;
+      --accent-soft:#eef4ff;
+      --accent-bright:#1d4ed8;
+      --good:#166534;
+      --warn-bg:#fff7dd;
+      --warn-line:#efd184;
+      --shadow:0 18px 38px rgba(15,23,42,0.10);
     }
     *{box-sizing:border-box}
     body{
@@ -20,30 +24,34 @@
       font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
       color:var(--ink);
       background:
-        radial-gradient(circle at top right, rgba(254,240,138,0.5), transparent 28%),
+        radial-gradient(circle at top right, rgba(191,219,254,0.58), transparent 26%),
         linear-gradient(180deg, #f8fafc 0%, #eef3fb 100%);
       min-height:100vh;
     }
-    #navbar{position:sticky;top:0;z-index:20}
     main{
-      max-width:920px;
+      max-width:1120px;
       margin:0 auto;
       padding:32px 18px 80px;
     }
-    .panel{
+    .hero,
+    .card{
       background:var(--panel);
       border:1px solid rgba(216,224,239,0.95);
       border-radius:24px;
-      padding:26px 22px;
-      box-shadow:0 18px 38px rgba(15,23,42,0.10);
+      box-shadow:var(--shadow);
+    }
+    .hero{
+      padding:28px 24px;
       margin-bottom:18px;
     }
-    .pill{
+    .eyebrow{
       display:inline-flex;
+      align-items:center;
+      gap:8px;
       padding:8px 12px;
       border-radius:999px;
       background:#e0ecff;
-      color:#1d4ed8;
+      color:var(--accent-bright);
       font-size:12px;
       font-weight:800;
       letter-spacing:.05em;
@@ -51,30 +59,35 @@
     }
     h1{
       margin:14px 0 8px;
-      font-size:clamp(2rem,4vw,2.8rem);
+      font-size:clamp(2rem,4vw,3rem);
+      line-height:1.05;
     }
     p{
       margin:0;
       color:var(--muted);
       line-height:1.6;
     }
-    .note{
+    .helper-note{
       margin-top:18px;
-      padding:16px;
+      padding:14px 16px;
       border-radius:18px;
-      border:1px solid var(--soft-line);
-      background:var(--soft);
-    }
-    .note strong{
-      display:block;
-      margin-bottom:6px;
+      border:1px solid var(--warn-line);
+      background:var(--warn-bg);
       color:#7c4a03;
     }
+    .status{
+      margin-top:14px;
+      min-height:22px;
+      font-size:14px;
+      font-weight:700;
+    }
+    .status.error{ color:#b91c1c; }
+    .status.success{ color:var(--good); }
     .actions{
       display:flex;
-      gap:12px;
       flex-wrap:wrap;
-      margin-top:22px;
+      gap:12px;
+      margin-top:20px;
     }
     .btn{
       display:inline-flex;
@@ -88,40 +101,514 @@
       color:#fff;
       text-decoration:none;
       font-weight:800;
+      cursor:pointer;
     }
     .btn.secondary{
       background:#fff;
       color:var(--accent);
       border-color:#cbd5e1;
     }
-    @media (max-width:640px){
-      .panel{padding:20px 16px;border-radius:20px}
-      .actions{flex-direction:column}
-      .btn{width:100%}
+    .btn:disabled{
+      opacity:.62;
+      cursor:not-allowed;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(2, minmax(0, 1fr));
+      gap:16px;
+      margin-top:18px;
+    }
+    .card{
+      padding:20px 18px;
+    }
+    .card-head{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:12px;
+    }
+    .category-toggle{
+      display:flex;
+      align-items:flex-start;
+      gap:12px;
+      cursor:pointer;
+      font-weight:800;
+      font-size:18px;
+      color:#0f172a;
+      flex:1;
+    }
+    .category-toggle input{
+      margin-top:4px;
+      width:18px;
+      height:18px;
+      accent-color:var(--accent-bright);
+      flex:0 0 auto;
+    }
+    .count-pill{
+      padding:7px 10px;
+      border-radius:999px;
+      background:#eef4ff;
+      color:#1d4ed8;
+      font-size:12px;
+      font-weight:800;
+      white-space:nowrap;
+    }
+    .item-list{
+      display:grid;
+      gap:10px;
+      margin:0;
+      padding:0;
+      list-style:none;
+    }
+    .item-label{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:10px 12px;
+      border:1px solid #dbe3f0;
+      border-radius:14px;
+      background:#fff;
+      cursor:pointer;
+      font-weight:600;
+      color:#22314a;
+    }
+    .item-label input{
+      width:17px;
+      height:17px;
+      accent-color:var(--accent-bright);
+      flex:0 0 auto;
+    }
+    .toolbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
+    .toolbar .muted{
+      color:var(--muted);
+      font-size:14px;
+    }
+    @media (max-width: 860px){
+      .grid{ grid-template-columns:1fr; }
+    }
+    @media (max-width: 640px){
+      main{ padding:24px 14px 78px; }
+      .hero,.card{ border-radius:20px; padding:18px 16px; }
+      .actions{ flex-direction:column; }
+      .btn{ width:100%; }
+      .card-head{ flex-direction:column; align-items:stretch; }
+      .count-pill{ align-self:flex-start; }
     }
   </style>
 </head>
 <body>
-
   <main>
-    <section class="panel">
-      <div class="pill">Coming Next</div>
+    <section class="hero">
+      <div class="eyebrow">Admin Configuration</div>
       <h1>Caregiver Check-In Setup</h1>
       <p>
-        This page will be used to choose which caregiver check-in categories and tracking items
-        are active for an individual. The setup interface will be added in the next step.
+        Choose which caregiver tracking items are enabled for this individual. This configuration
+        controls what will appear later in caregiver daily check-ins and does not change any historical check-in data.
       </p>
-      <div class="note">
-        <strong>Current status</strong>
-        The route is live and ready. No existing caregiver check-in form, submissions, tables, or reports
-        have been changed by this page.
+      <div class="helper-note">
+        Save updates whenever you change your selections. Your choices are stored as enabled categories and enabled items for this individual, and historical caregiver check-ins stay untouched.
       </div>
+      <div class="toolbar">
+        <div id="groupMeta" class="muted">Loading caregiver setup target…</div>
+        <div id="selectionMeta" class="muted">0 items selected</div>
+      </div>
+      <div id="setupStatus" class="status" role="status" aria-live="polite"></div>
       <div class="actions">
+        <button id="saveBtn" type="button" class="btn">Save Caregiver Setup</button>
         <a class="btn secondary" href="/customize-your-app">Back to Customize Your App</a>
-        <a class="btn" href="/dashboard.html">Go to Dashboard</a>
       </div>
     </section>
+
+    <section id="setupGrid" class="grid" aria-label="Caregiver setup categories"></section>
   </main>
+
+  <script type="module">
+    import { rest, getSessionFromStorage } from '/restClient.js?v=2026.03.16B';
+
+    const CATEGORY_DEFS = [
+      {
+        key: 'behavior_mental_health',
+        label: 'Behavior / Mental Health',
+        items: [
+          ['aggression', 'Aggression'],
+          ['anxiety', 'Anxiety'],
+          ['mania', 'Mania'],
+          ['withdrawal', 'Withdrawal'],
+          ['engagement', 'Engagement'],
+          ['ocd_behaviors', 'OCD Behaviors'],
+          ['adhd_symptoms', 'ADHD Symptoms'],
+          ['impulsivity', 'Impulsivity'],
+          ['restlessness', 'Restlessness'],
+          ['emotional_regulation_difficulty', 'Emotional Regulation Difficulty'],
+        ],
+      },
+      {
+        key: 'physical_health',
+        label: 'Physical Health',
+        items: [
+          ['sleep', 'Sleep'],
+          ['appetite', 'Appetite'],
+          ['medication_taken', 'Medication Taken'],
+          ['prn_used', 'PRN Used'],
+          ['energy_level', 'Energy Level'],
+          ['pain_discomfort', 'Pain / Discomfort'],
+          ['illness_symptoms', 'Illness Symptoms'],
+        ],
+      },
+      {
+        key: 'daily_living',
+        label: 'Daily Living',
+        items: [
+          ['hygiene', 'Hygiene'],
+          ['dressing', 'Dressing'],
+          ['food_preparation', 'Food Preparation'],
+          ['clean_up', 'Clean Up'],
+          ['laundry', 'Laundry'],
+          ['toileting', 'Toileting'],
+          ['following_routine', 'Following Routine'],
+        ],
+      },
+      {
+        key: 'community',
+        label: 'Community',
+        items: [
+          ['community_outing', 'Community Outing'],
+          ['social_interaction', 'Social Interaction'],
+          ['transportation', 'Transportation'],
+          ['safety_in_community', 'Safety in Community'],
+          ['recreation_participation', 'Recreation Participation'],
+        ],
+      },
+      {
+        key: 'vocational',
+        label: 'Vocational',
+        items: [
+          ['attended_work_program', 'Attended Work / Program'],
+          ['task_completion', 'Task Completion'],
+          ['prompting_needed', 'Prompting Needed'],
+          ['workplace_behavior', 'Workplace Behavior'],
+          ['independence', 'Independence'],
+        ],
+      },
+      {
+        key: 'educational',
+        label: 'Educational',
+        items: [
+          ['school_attendance', 'School Attendance'],
+          ['class_participation', 'Class Participation'],
+          ['assignment_completion', 'Assignment Completion'],
+          ['peer_interaction', 'Peer Interaction'],
+          ['transitions', 'Transitions'],
+        ],
+      },
+    ];
+
+    const groupMetaEl = document.getElementById('groupMeta');
+    const selectionMetaEl = document.getElementById('selectionMeta');
+    const setupStatusEl = document.getElementById('setupStatus');
+    const setupGridEl = document.getElementById('setupGrid');
+    const saveBtn = document.getElementById('saveBtn');
+
+    const state = {
+      individualId: null,
+      individualName: '',
+      configRowId: null,
+      categoryEls: new Map(),
+      itemEls: new Map(),
+    };
+
+    const setStatus = (text, type = '') => {
+      setupStatusEl.textContent = text || '';
+      setupStatusEl.className = `status${type ? ` ${type}` : ''}`;
+    };
+
+    function getCompositeKey(category, itemKey) {
+      return `${category}::${itemKey}`;
+    }
+
+    function selectedCountForCategory(categoryKey) {
+      const category = CATEGORY_DEFS.find((entry) => entry.key === categoryKey);
+      if (!category) return 0;
+      return category.items.filter(([itemKey]) => state.itemEls.get(getCompositeKey(categoryKey, itemKey))?.checked).length;
+    }
+
+    function totalSelectedCount() {
+      let total = 0;
+      state.itemEls.forEach((input) => {
+        if (input.checked) total += 1;
+      });
+      return total;
+    }
+
+    function syncCategoryState(categoryKey) {
+      const categoryInput = state.categoryEls.get(categoryKey);
+      if (!categoryInput) return;
+      const count = selectedCountForCategory(categoryKey);
+      categoryInput.checked = count > 0;
+      const countEl = document.getElementById(`count-${categoryKey}`);
+      if (countEl) {
+        countEl.textContent = `${count} selected`;
+      }
+      selectionMetaEl.textContent = `${totalSelectedCount()} items selected`;
+    }
+
+    function renderCategories() {
+      setupGridEl.innerHTML = '';
+      CATEGORY_DEFS.forEach((category) => {
+        const article = document.createElement('article');
+        article.className = 'card';
+
+        const head = document.createElement('div');
+        head.className = 'card-head';
+
+        const categoryLabel = document.createElement('label');
+        categoryLabel.className = 'category-toggle';
+
+        const categoryInput = document.createElement('input');
+        categoryInput.type = 'checkbox';
+        categoryInput.id = `category-${category.key}`;
+        state.categoryEls.set(category.key, categoryInput);
+
+        const titleWrap = document.createElement('span');
+        titleWrap.textContent = category.label;
+
+        categoryLabel.appendChild(categoryInput);
+        categoryLabel.appendChild(titleWrap);
+
+        const countPill = document.createElement('div');
+        countPill.className = 'count-pill';
+        countPill.id = `count-${category.key}`;
+        countPill.textContent = '0 selected';
+
+        head.appendChild(categoryLabel);
+        head.appendChild(countPill);
+        article.appendChild(head);
+
+        const itemList = document.createElement('ul');
+        itemList.className = 'item-list';
+
+        category.items.forEach(([itemKey, itemLabel]) => {
+          const li = document.createElement('li');
+          const label = document.createElement('label');
+          label.className = 'item-label';
+
+          const input = document.createElement('input');
+          input.type = 'checkbox';
+          input.dataset.category = category.key;
+          input.dataset.itemKey = itemKey;
+          state.itemEls.set(getCompositeKey(category.key, itemKey), input);
+
+          const text = document.createElement('span');
+          text.textContent = itemLabel;
+
+          label.appendChild(input);
+          label.appendChild(text);
+          li.appendChild(label);
+          itemList.appendChild(li);
+
+          input.addEventListener('change', () => {
+            syncCategoryState(category.key);
+          });
+        });
+
+        article.appendChild(itemList);
+        setupGridEl.appendChild(article);
+
+        categoryInput.addEventListener('change', () => {
+          if (!categoryInput.checked) {
+            category.items.forEach(([itemKey]) => {
+              const itemInput = state.itemEls.get(getCompositeKey(category.key, itemKey));
+              if (itemInput) itemInput.checked = false;
+            });
+          }
+          syncCategoryState(category.key);
+        });
+      });
+    }
+
+    function normalizeCategoryArray(value) {
+      if (Array.isArray(value)) {
+        return value.map((entry) => String(entry || '').trim()).filter(Boolean);
+      }
+      if (typeof value === 'string') {
+        try {
+          return normalizeCategoryArray(JSON.parse(value));
+        } catch {
+          return [];
+        }
+      }
+      return [];
+    }
+
+    function normalizeSelectedItems(value) {
+      if (Array.isArray(value)) {
+        const grouped = {};
+        value.forEach((entry) => {
+          if (!entry || typeof entry !== 'object') return;
+          const categoryKey = String(entry.category || entry.category_key || '').trim();
+          const itemKey = String(entry.item_key || entry.key || entry.item || '').trim();
+          if (!categoryKey || !itemKey) return;
+          if (!Array.isArray(grouped[categoryKey])) grouped[categoryKey] = [];
+          if (!grouped[categoryKey].includes(itemKey)) grouped[categoryKey].push(itemKey);
+        });
+        return grouped;
+      }
+      if (value && typeof value === 'object') {
+        return Object.fromEntries(
+          Object.entries(value).map(([categoryKey, items]) => [
+            categoryKey,
+            Array.isArray(items)
+              ? items.map((entry) => String(entry || '').trim()).filter(Boolean)
+              : [],
+          ])
+        );
+      }
+      if (typeof value === 'string') {
+        try {
+          return normalizeSelectedItems(JSON.parse(value));
+        } catch {
+          return {};
+        }
+      }
+      return {};
+    }
+
+    function buildSelectedCategories() {
+      return CATEGORY_DEFS
+        .map((category) => category.key)
+        .filter((categoryKey) => selectedCountForCategory(categoryKey) > 0);
+    }
+
+    function buildSelectedItems() {
+      const selectedItems = {};
+      CATEGORY_DEFS.forEach((category) => {
+        const items = category.items
+          .map(([itemKey]) => itemKey)
+          .filter((itemKey) => state.itemEls.get(getCompositeKey(category.key, itemKey))?.checked);
+        if (items.length) {
+          selectedItems[category.key] = items;
+        }
+      });
+      return selectedItems;
+    }
+
+    async function loadConfig() {
+      setStatus('');
+      const session = getSessionFromStorage();
+      if (!session?.user?.id) {
+        setStatus('Please log in again to manage caregiver setup.', 'error');
+        return;
+      }
+
+      const profileRows = await rest(
+        `profiles?id=eq.${encodeURIComponent(session.user.id)}&select=id,display_name,public_name,full_name&limit=1`
+      );
+      const profile = profileRows?.[0] || null;
+
+      if (!profile?.id) {
+        setStatus('No profile was found for this account.', 'error');
+        groupMetaEl.textContent = 'No individual profile selected';
+        saveBtn.disabled = true;
+        return;
+      }
+
+      state.individualId = profile.id;
+      state.individualName =
+        profile.display_name ||
+        profile.public_name ||
+        profile.full_name ||
+        session.user.email ||
+        'this individual';
+      groupMetaEl.textContent = `Configuring caregiver setup for ${state.individualName}`;
+
+      const rows = await rest(
+        `caregiver_checkin_configs?individual_id=eq.${encodeURIComponent(profile.id)}&select=id,individual_id,selected_categories,selected_items,updated_at&limit=1`
+      );
+      const config = rows?.[0] || null;
+
+      state.configRowId = config?.id || null;
+      const selectedCategories = new Set(normalizeCategoryArray(config?.selected_categories));
+      const selectedItems = normalizeSelectedItems(config?.selected_items);
+
+      CATEGORY_DEFS.forEach((category) => {
+        category.items.forEach(([itemKey]) => {
+          const input = state.itemEls.get(getCompositeKey(category.key, itemKey));
+          if (input) {
+            input.checked =
+              !!selectedCategories.has(category.key) &&
+              Array.isArray(selectedItems[category.key]) &&
+              selectedItems[category.key].includes(itemKey);
+          }
+        });
+        syncCategoryState(category.key);
+      });
+
+      saveBtn.disabled = false;
+      setStatus('Configuration loaded.', 'success');
+    }
+
+    async function saveConfig() {
+      if (!state.individualId) {
+        setStatus('No individual profile is selected.', 'error');
+        return;
+      }
+
+      setStatus('Saving caregiver setup…');
+      saveBtn.disabled = true;
+      const originalLabel = saveBtn.textContent;
+      saveBtn.textContent = 'Saving…';
+
+      try {
+        const payload = {
+          individual_id: state.individualId,
+          selected_categories: buildSelectedCategories(),
+          selected_items: buildSelectedItems(),
+          updated_at: new Date().toISOString(),
+        };
+
+        if (state.configRowId) {
+          await rest(`caregiver_checkin_configs?id=eq.${encodeURIComponent(state.configRowId)}`, {
+            method: 'PATCH',
+            headers: { Prefer: 'return=representation' },
+            body: JSON.stringify(payload),
+          });
+        } else {
+          const inserted = await rest('caregiver_checkin_configs', {
+            method: 'POST',
+            headers: { Prefer: 'return=representation' },
+            body: JSON.stringify([payload]),
+          });
+          state.configRowId = inserted?.[0]?.id || null;
+        }
+
+        await loadConfig();
+        setStatus('Caregiver setup saved.', 'success');
+      } catch (error) {
+        console.error('[cg-setup] save failed', error);
+        setStatus(error?.message || 'Could not save caregiver setup.', 'error');
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = originalLabel;
+      }
+    }
+
+    renderCategories();
+    saveBtn.addEventListener('click', saveConfig);
+
+    loadConfig().catch((error) => {
+      console.error('[cg-setup] load failed', error);
+      setStatus(error?.message || 'Could not load caregiver setup.', 'error');
+      saveBtn.disabled = true;
+    });
+  </script>
 
   <script defer src="/scripts/appbar-drawer.js?v=2026.03.16B"></script>
   <script defer src="/ui-shell.js?v=2026.03.16B"></script>

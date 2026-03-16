@@ -48,8 +48,12 @@
     body.cg-export-notes .cg-note-btn{display:none}
     body.cg-export-notes .cg-note-full{display:block}
     body.cg-export-notes #cgTable tbody tr{height:auto}
-    .cg-edit-btn{padding:6px 10px;font-size:13px;border-radius:8px;border:1px solid #c4c4c8;background:#f8fafc}
+    .cg-action-group{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .cg-edit-btn,
+    .cg-delete-btn{padding:6px 10px;font-size:13px;border-radius:8px;border:1px solid #c4c4c8;background:#f8fafc}
     .cg-edit-btn:hover{background:#eef2ff}
+    .cg-delete-btn{border-color:#fecdd3;background:#fff1f2;color:#b91c1c}
+    .cg-delete-btn:hover{background:#ffe4e6}
 
     .muted{color:var(--muted);font-size:13px;text-align:center;margin:.35rem 0}
 
@@ -3507,12 +3511,23 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.12D';
         // Each Edit button carries the Supabase row id so the delegation handler can load it in the modal.
         const checkinId = entry.id || row.id;
         if (checkinId) {
+          const actionGroup = document.createElement('div');
+          actionGroup.className = 'cg-action-group';
           const editBtn = document.createElement('button');
           editBtn.type = 'button';
           editBtn.className = 'cg-edit-btn';
           editBtn.textContent = 'Edit';
           editBtn.dataset.checkinId = checkinId;
-          actionTd.appendChild(editBtn);
+          actionGroup.appendChild(editBtn);
+
+          const deleteBtn = document.createElement('button');
+          deleteBtn.type = 'button';
+          deleteBtn.className = 'cg-delete-btn';
+          deleteBtn.textContent = 'Delete';
+          deleteBtn.dataset.checkinId = checkinId;
+          actionGroup.appendChild(deleteBtn);
+
+          actionTd.appendChild(actionGroup);
         } else {
           actionTd.textContent = '—';
         }
@@ -3837,38 +3852,44 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.12D';
       }
     }
 
-    async function handleDeleteCheckin(){
-      if (!editState.currentId) return;
+    async function deleteCaregiverCheckin(checkinId){
+      if (!checkinId) return;
       const confirmed = window.confirm('Delete this caregiver check-in? This cannot be undone.');
       if (!confirmed) return;
 
       const originalDeleteLabel = editUi.deleteBtn ? editUi.deleteBtn.textContent : 'Delete Entry';
       const originalSaveLabel = editUi.save ? editUi.save.textContent : 'Save Changes';
-      if (editUi.deleteBtn) {
+      const modalOpen = editState.currentId === checkinId && !editUi.overlay?.classList.contains('is-hidden');
+      if (modalOpen && editUi.deleteBtn) {
         editUi.deleteBtn.disabled = true;
         editUi.deleteBtn.textContent = 'Deleting…';
       }
-      if (editUi.save) editUi.save.disabled = true;
-      setEditStatus('Deleting entry…');
+      if (modalOpen && editUi.save) editUi.save.disabled = true;
+      if (modalOpen) setEditStatus('Deleting entry…');
 
       try {
-        const path = `caregiver_checkins?id=eq.${encodeURIComponent(editState.currentId)}`;
+        const path = `caregiver_checkins?id=eq.${encodeURIComponent(checkinId)}`;
         await rest(path, { method: 'DELETE' });
         await loadCaregiverData();
-        closeEditModal();
+        if (modalOpen) closeEditModal();
       } catch (error) {
         console.error('Caregiver delete failed', error);
         alert(error?.message || 'Could not delete this check-in.');
-        setEditStatus('Delete failed. Please try again.');
-        if (editUi.deleteBtn) {
+        if (modalOpen) setEditStatus('Delete failed. Please try again.');
+        if (modalOpen && editUi.deleteBtn) {
           editUi.deleteBtn.disabled = false;
           editUi.deleteBtn.textContent = originalDeleteLabel;
         }
-        if (editUi.save) {
+        if (modalOpen && editUi.save) {
           editUi.save.disabled = false;
           editUi.save.textContent = originalSaveLabel;
         }
       }
+    }
+
+    async function handleDeleteCheckin(){
+      if (!editState.currentId) return;
+      await deleteCaregiverCheckin(editState.currentId);
     }
 
     function updateCgSummary(filtered, total){
@@ -4973,10 +4994,19 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.12D';
         return;
       }
       const btn = event.target.closest('.cg-edit-btn');
-      if (!btn) return;
-      const checkinId = btn.dataset.checkinId;
-      if (checkinId) {
-        openEditModal(checkinId);
+      if (btn) {
+        const checkinId = btn.dataset.checkinId;
+        if (checkinId) {
+          openEditModal(checkinId);
+        }
+        return;
+      }
+      const deleteBtn = event.target.closest('.cg-delete-btn');
+      if (deleteBtn) {
+        const checkinId = deleteBtn.dataset.checkinId;
+        if (checkinId) {
+          deleteCaregiverCheckin(checkinId);
+        }
       }
     });
 

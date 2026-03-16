@@ -64,7 +64,49 @@
         background:#0f172a; color:#fff; border-color:#0f172a;
       }
       nav.drawer details{ padding:6px 12px; }
-      nav.drawer details>summary{ cursor:pointer; font-weight:800; list-style:none; font-size:16px; }
+      nav.drawer details > *:not(summary){ display:block; }
+      nav.drawer details>summary{
+        cursor:pointer;
+        font-weight:800;
+        list-style:none;
+        font-size:16px;
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:10px;
+      }
+      nav.drawer details>summary::-webkit-details-marker{ display:none; }
+      nav.drawer details>summary::after{
+        content:'▾';
+        font-size:13px;
+        color:#64748b;
+        transition:transform .22s ease;
+      }
+      nav.drawer details[open]>summary::after{ transform:rotate(180deg); }
+      nav.drawer .detail-body{
+        display:grid;
+        grid-template-rows:0fr;
+        opacity:0;
+        transition:grid-template-rows .22s ease, opacity .18s ease;
+      }
+      nav.drawer details[open] .detail-body{
+        grid-template-rows:1fr;
+        opacity:1;
+      }
+      nav.drawer .detail-body-inner{
+        overflow:hidden;
+        padding-top:6px;
+      }
+      nav.drawer .helper{
+        margin:6px 0 8px;
+        color:#64748b;
+        font-size:12px;
+        line-height:1.35;
+        font-weight:500;
+      }
+      nav.drawer .sub{
+        overflow:hidden;
+      }
       nav.drawer .sub a{
         display:block; padding:9px 10px; border-radius:10px;
         text-decoration:none; color:#111; font-size:15px;
@@ -93,8 +135,13 @@
       </div>
       <details data-role="shared">
         <summary>⚙️ Settings & Admin</summary>
-        <div class="sub">
-          <a href="/group-settings.html">Group Settings</a>
+        <div class="detail-body">
+          <div class="detail-body-inner">
+            <div class="sub">
+              <a href="/group-settings.html">Group Settings</a>
+              <a href="/caregiver-checkin-setup/">Caregiver Check-In Setup</a>
+            </div>
+          </div>
         </div>
       </details>
       <div class="drawer-item" data-role="shared">
@@ -118,9 +165,6 @@
       <div class="drawer-item" data-role="caregiver">
         <a href="/caregiver-report.html">📊 Caregiver Report</a>
       </div>
-      <div class="drawer-item" data-role="caregiver">
-        <a href="/customize-your-app">🛠 Customize Your App</a>
-      </div>
       <div class="drawer-item" data-role="shared">
         <a href="/chat.html">💬 Group Chat</a>
       </div>
@@ -130,9 +174,21 @@
       <div class="drawer-item" data-role="caregiver">
         <a href="/focus-week.html">⭐ Focus of the Week</a>
       </div>
-      <div class="drawer-item" data-role="caregiver">
-        <a href="/documents/index.html">📂 Documents</a>
-      </div>
+      <details data-role="caregiver shared">
+        <summary>📂 Documents</summary>
+        <div class="detail-body">
+          <div class="detail-body-inner">
+            <div class="helper">Access important records, ISA/IEP plans, meeting notes, medication info, and uploaded files.</div>
+            <div class="sub">
+              <a href="/emergency-medical.html">Emergency Sheet</a>
+              <a href="/documents/isa-iep.html">ISA / IEP</a>
+              <a href="/documents/meeting-minutes.html">Meeting Minutes</a>
+              <a href="/documents/medications.html">Medications</a>
+              <a href="/documents/files.html">Uploaded Files</a>
+            </div>
+          </div>
+        </div>
+      </details>
       <div class="drawer-item" data-role="shared">
         <a href="/emergency-medical.html">🚨 Emergency</a>
       </div>

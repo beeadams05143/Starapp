@@ -210,14 +210,14 @@
       <div class="eyebrow">Admin Configuration</div>
       <h1>Caregiver Check-In Setup</h1>
       <p>
-        Choose which caregiver tracking items are enabled for this individual. This configuration
-        controls what will appear later in caregiver daily check-ins and does not change any historical check-in data.
+        Choose which caregiver tracking items are enabled for this group. This configuration
+        controls what will appear later in caregiver daily check-ins for everyone in the group and does not change any historical check-in data.
       </p>
       <div class="helper-note">
-        Save updates whenever you change your selections. Your choices are stored as enabled categories and enabled items for this individual, and historical caregiver check-ins stay untouched.
+        Save updates whenever you change your selections. Your choices are stored as enabled categories and enabled items for this group, and historical caregiver check-ins stay untouched.
       </div>
       <div class="toolbar">
-        <div id="groupMeta" class="muted">Loading caregiver setup target…</div>
+        <div id="groupMeta" class="muted">Loading caregiver setup group…</div>
         <div id="selectionMeta" class="muted">0 items selected</div>
       </div>
       <div id="setupStatus" class="status" role="status" aria-live="polite"></div>
@@ -232,6 +232,7 @@
 
   <script type="module">
     import { rest, getSessionFromStorage } from '/restClient.js?v=2026.03.16B';
+    import { ensureActiveGroupId, resolveActiveGroup } from '/active-group.js?v=2026.03.12A';
 
     const CATEGORY_DEFS = [
       {
@@ -318,8 +319,8 @@
     const saveBtn = document.getElementById('saveBtn');
 
     const state = {
-      individualId: null,
-      individualName: '',
+      groupId: null,
+      groupName: '',
       configRowId: null,
       categoryEls: new Map(),
       itemEls: new Map(),
@@ -508,29 +509,26 @@
         return;
       }
 
-      const profileRows = await rest(
-        `profiles?id=eq.${encodeURIComponent(session.user.id)}&select=id,display_name,public_name,full_name&limit=1`
-      );
-      const profile = profileRows?.[0] || null;
+      const [groupId, activeGroup] = await Promise.all([
+        ensureActiveGroupId(session.user.id),
+        resolveActiveGroup(session.user.id),
+      ]);
 
-      if (!profile?.id) {
-        setStatus('No profile was found for this account.', 'error');
-        groupMetaEl.textContent = 'No individual profile selected';
+      if (!groupId) {
+        setStatus('No active group was found for this account.', 'error');
+        groupMetaEl.textContent = 'No active group selected';
         saveBtn.disabled = true;
         return;
       }
 
-      state.individualId = profile.id;
-      state.individualName =
-        profile.display_name ||
-        profile.public_name ||
-        profile.full_name ||
-        session.user.email ||
-        'this individual';
-      groupMetaEl.textContent = `Configuring caregiver setup for ${state.individualName}`;
+      state.groupId = groupId;
+      state.groupName = activeGroup?.groupName || '';
+      groupMetaEl.textContent = state.groupName
+        ? `Configuring caregiver setup for ${state.groupName}`
+        : `Configuring caregiver setup for group ${groupId}`;
 
       const rows = await rest(
-        `caregiver_checkin_configs?individual_id=eq.${encodeURIComponent(profile.id)}&select=id,individual_id,selected_categories,selected_items,updated_at&limit=1`
+        `caregiver_checkin_configs?group_id=eq.${encodeURIComponent(groupId)}&select=id,group_id,selected_categories,selected_items,updated_at&limit=1`
       );
       const config = rows?.[0] || null;
 
@@ -556,8 +554,8 @@
     }
 
     async function saveConfig() {
-      if (!state.individualId) {
-        setStatus('No individual profile is selected.', 'error');
+      if (!state.groupId) {
+        setStatus('No active group is selected.', 'error');
         return;
       }
 
@@ -568,7 +566,7 @@
 
       try {
         const payload = {
-          individual_id: state.individualId,
+          group_id: state.groupId,
           selected_categories: buildSelectedCategories(),
           selected_items: buildSelectedItems(),
           updated_at: new Date().toISOString(),

@@ -40,6 +40,7 @@
     .soft{border:0;height:1px;background:#eceff3;margin:10px 0}
     .step{display:none}
     .step.active{display:block}
+    .config-hidden{display:none!important}
     .is-dad-hidden{display:none!important}
     .is-dad-only{display:none}
     .is-dad-only.is-dad-active{display:grid}
@@ -1018,6 +1019,13 @@
   const DRAFT_KEY = 'cg-checkin-draft-v1';
   const GROUP_KEY = 'currentGroupId';
   const MOVEMENT_LAST_KEY = 'cg-movement-last-v1';
+  const caregiverSetupState = {
+    groupId: null,
+    groupName: '',
+    hasConfig: false,
+    selectedCategories: new Set(),
+    selectedItems: {},
+  };
 
   async function ensureGroupId(userId){
     const groupId = await ensureActiveGroupId(userId);
@@ -1058,6 +1066,187 @@
     }
     return false;
   };
+
+  const normalizeConfigCategories = (value) => {
+    if (Array.isArray(value)) {
+      return value.map((entry) => String(entry || '').trim()).filter(Boolean);
+    }
+    if (typeof value === 'string') {
+      try {
+        return normalizeConfigCategories(JSON.parse(value));
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  };
+
+  const normalizeConfigItems = (value) => {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      return Object.fromEntries(
+        Object.entries(value).map(([categoryKey, items]) => [
+          categoryKey,
+          Array.isArray(items) ? items.map((entry) => String(entry || '').trim()).filter(Boolean) : [],
+        ])
+      );
+    }
+    if (typeof value === 'string') {
+      try {
+        return normalizeConfigItems(JSON.parse(value));
+      } catch {
+        return {};
+      }
+    }
+    return {};
+  };
+
+  const labelForName = (name) => document.querySelector(`[name="${name}"]`)?.closest('label') || null;
+  const setConfigHidden = (elements, hidden) => {
+    elements.filter(Boolean).forEach((el) => el.classList.toggle('config-hidden', !!hidden));
+  };
+  const configItemEnabled = (categoryKey, itemKey) => {
+    if (!caregiverSetupState.hasConfig) return true;
+    if (!caregiverSetupState.selectedCategories.has(categoryKey)) return false;
+    return (caregiverSetupState.selectedItems[categoryKey] || []).includes(itemKey);
+  };
+  const anyConfigItemEnabled = (categoryKey, itemKeys = []) => {
+    if (!caregiverSetupState.hasConfig) return true;
+    return itemKeys.some((itemKey) => configItemEnabled(categoryKey, itemKey));
+  };
+
+  const BASE_ADL_OPTIONS = {
+    'Hygiene / Toileting': ['Brushed teeth','Flossed teeth','Washed face','Showered','Toileting routine','Combed hair','Clipped nails'],
+    'Dressing / Grooming': ['Chose clothes','Dressed self','Zipped / Buttoned','Tied shoes','Wore hat/sunglasses/jacket'],
+    'Cleaning / Household': ['Wiped table','Brought dishes to sink','Loaded dishwasher','Swept/Vacuumed','Made bed','Laundry assist'],
+    'Cooking / Food': ['Prepared snack','Prepared drink','Made sandwich','Helped cook','Used microwave','Helped bake'],
+    'Community / Errands': ['Brought trash out','Sorted recycling','Carried grocery bag']
+  };
+
+  function getConfiguredAdlOptions(){
+    if (!caregiverSetupState.hasConfig) return BASE_ADL_OPTIONS;
+    const next = {};
+    if (configItemEnabled('daily_living', 'hygiene') || configItemEnabled('daily_living', 'toileting')) {
+      next['Hygiene / Toileting'] = BASE_ADL_OPTIONS['Hygiene / Toileting'];
+    }
+    if (configItemEnabled('daily_living', 'dressing')) {
+      next['Dressing / Grooming'] = BASE_ADL_OPTIONS['Dressing / Grooming'];
+    }
+    if (
+      configItemEnabled('daily_living', 'clean_up') ||
+      configItemEnabled('daily_living', 'laundry') ||
+      configItemEnabled('daily_living', 'following_routine')
+    ) {
+      next['Cleaning / Household'] = BASE_ADL_OPTIONS['Cleaning / Household'];
+    }
+    if (configItemEnabled('daily_living', 'food_preparation')) {
+      next['Cooking / Food'] = BASE_ADL_OPTIONS['Cooking / Food'];
+    }
+    return next;
+  }
+
+  async function loadGroupCaregiverSetup(userId){
+    const groupId = await ensureGroupId(userId);
+    caregiverSetupState.groupId = groupId || null;
+    if (!groupId) return;
+    const rows = await rest(
+      `caregiver_checkin_configs?group_id=eq.${encodeURIComponent(groupId)}&select=id,group_id,selected_categories,selected_items,updated_at&limit=1`
+    );
+    const config = rows?.[0] || null;
+    if (!config) return;
+    caregiverSetupState.hasConfig = true;
+    caregiverSetupState.selectedCategories = new Set(normalizeConfigCategories(config.selected_categories));
+    caregiverSetupState.selectedItems = normalizeConfigItems(config.selected_items);
+  }
+
+  function applyCaregiverSetupVisibility(){
+    const subtitle = document.querySelector('.sub');
+    if (subtitle && caregiverSetupState.groupName) {
+      subtitle.innerHTML = `Autosaves as you type. Use <strong>Save &amp; Next</strong> to step through. Configured for ${caregiverSetupState.groupName}.`;
+    }
+    if (!caregiverSetupState.hasConfig) {
+      renderAdlCategoryChips();
+      renderAdlActivityChips();
+      return;
+    }
+
+    setConfigHidden([
+      labelForName('hours_sleep'),
+      labelForName('sleep_fell_asleep_time'),
+      labelForName('sleep_onset_difficulty'),
+      labelForName('night_wake_flag'),
+      document.getElementById('nightWakeCountWrap'),
+    ], !configItemEnabled('physical_health', 'sleep'));
+
+    setConfigHidden([
+      labelForName('appetite_change_flag'),
+      document.getElementById('appetiteDirectionWrap'),
+    ], !configItemEnabled('physical_health', 'appetite'));
+
+    setConfigHidden([
+      document.getElementById('medChangePanel'),
+    ], !configItemEnabled('physical_health', 'medication_taken'));
+
+    setConfigHidden([
+      labelForName('prn_administered'),
+      document.getElementById('prnNameWrap'),
+      document.getElementById('prnTimeWrap'),
+      document.getElementById('prnReasonWrap'),
+    ], !configItemEnabled('physical_health', 'prn_used'));
+
+    setConfigHidden([
+      labelForName('aggression_flag'),
+      document.getElementById('aggressionDetails'),
+      document.getElementById('aggressionNotesWrap'),
+    ], !configItemEnabled('behavior_mental_health', 'aggression'));
+
+    setConfigHidden([
+      labelForName('manic_flag'),
+      document.getElementById('maniaIntensityWrap'),
+      document.getElementById('maniaInstancesWrap'),
+      document.getElementById('maniaEpisodeStatusWrap'),
+      document.getElementById('maniaSymptomsWrap'),
+    ], !configItemEnabled('behavior_mental_health', 'mania'));
+
+    setConfigHidden([
+      labelForName('focus_trouble_flag'),
+    ], !anyConfigItemEnabled('behavior_mental_health', ['engagement', 'adhd_symptoms']));
+
+    setConfigHidden([
+      labelForName('behavior_anomaly_flag'),
+      document.getElementById('anomalyTriggerWrap'),
+      document.getElementById('anomalyNotesWrap'),
+      labelForName('behavior_notes'),
+    ], !anyConfigItemEnabled('behavior_mental_health', ['anxiety', 'withdrawal', 'impulsivity', 'restlessness', 'emotional_regulation_difficulty']));
+
+    setConfigHidden([
+      labelForName('fixation_present'),
+      document.getElementById('fixationCategoryWrap'),
+      labelForName('repetitive_behavior_present'),
+    ], !configItemEnabled('behavior_mental_health', 'ocd_behaviors'));
+
+    setConfigHidden([
+      labelForName('vocational_participation'),
+      document.getElementById('vocationalDetails'),
+      document.getElementById('vocationalNotesWrap'),
+    ], !anyConfigItemEnabled('vocational', ['attended_work_program', 'task_completion', 'prompting_needed', 'workplace_behavior', 'independence']));
+
+    setConfigHidden([
+      labelForName('public_activity_flag'),
+      document.getElementById('publicDetails'),
+      document.getElementById('publicDetailsNotes'),
+      labelForName('public_activity_note'),
+    ], !anyConfigItemEnabled('community', ['community_outing', 'transportation', 'recreation_participation']));
+
+    setConfigHidden([
+      labelForName('community_interaction_ok'),
+      document.getElementById('interactionDetails'),
+      document.getElementById('interactionDetailsNotes'),
+      labelForName('community_notes'),
+    ], !anyConfigItemEnabled('community', ['social_interaction', 'safety_in_community']));
+
+    renderAdlCategoryChips();
+    renderAdlActivityChips();
+  }
 
   const parseAdlEntries = (value) => {
     if (!value) return [];
@@ -1647,7 +1836,7 @@
   };
 
   // 4) Start logic once DOM is ready
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', async () => {
     formEl        = document.getElementById('cg-form');
     submitBtn     = document.getElementById('submitAll');
     steps         = Array.from(document.querySelectorAll('.step'));
@@ -1666,6 +1855,15 @@
     }
 
     console.log('✅ Form assets ready:', { formEl, submitBtn, steps });
+    const session = getSessionFromStorage();
+    try {
+      caregiverSetupState.groupId = await ensureGroupId(session?.user?.id || null);
+      const storedGroupName = localStorage.getItem('currentGroupName') || '';
+      caregiverSetupState.groupName = storedGroupName;
+      await loadGroupCaregiverSetup(session?.user?.id || null);
+    } catch (error) {
+      console.warn('[cg] caregiver setup config unavailable', error?.message || error);
+    }
 
     initAdlControls();
     movementEls = {
@@ -1858,6 +2056,7 @@
       hydrateMovementFromData(draft.data[movementStepIndex] || {});
       hydrateTempFromData(draft.data[movementStepIndex] || {});
       applyConditionalSections();
+      applyCaregiverSetupVisibility();
       toast('Draft restored');
     });
 
@@ -1868,6 +2067,7 @@
     // Initial position
     go(0);
     applyConditionalSections();
+    applyCaregiverSetupVisibility();
 
     const ynFields = [
       'behavior_anomaly_flag',
@@ -2071,17 +2271,11 @@
           if (input) input.checked = false;
         });
       }
+      applyCaregiverSetupVisibility();
     };
 
     // ADL activity options
-    const ADL_OPTIONS = {
-      'Hygiene / Toileting': ['Brushed teeth','Flossed teeth','Washed face','Showered','Toileting routine','Combed hair','Clipped nails'],
-      'Dressing / Grooming': ['Chose clothes','Dressed self','Zipped / Buttoned','Tied shoes','Wore hat/sunglasses/jacket'],
-      'Cleaning / Household': ['Wiped table','Brought dishes to sink','Loaded dishwasher','Swept/Vacuumed','Made bed','Laundry assist'],
-      'Cooking / Food': ['Prepared snack','Prepared drink','Made sandwich','Helped cook','Used microwave','Helped bake'],
-      'Community / Errands': ['Brought trash out','Sorted recycling','Carried grocery bag']
-    };
-    const ADL_ACTIVITY_MAP = Object.entries(ADL_OPTIONS).reduce((acc, [cat, items]) => {
+    const ADL_ACTIVITY_MAP = Object.entries(BASE_ADL_OPTIONS).reduce((acc, [cat, items]) => {
       items.forEach((item) => { acc[item] = cat; });
       return acc;
     }, {});
@@ -2117,7 +2311,7 @@
     function renderAdlCategoryChips(){
       if (!adlCategoryWrap) return;
       adlCategoryWrap.innerHTML = '';
-      Object.keys(ADL_OPTIONS).forEach((cat) => {
+      Object.keys(getConfiguredAdlOptions()).forEach((cat) => {
         const label = document.createElement('label');
         label.className = 'movement-chip';
         const input = document.createElement('input');
@@ -2137,7 +2331,7 @@
       const filterByCategory = selectedCategories.length > 0;
       adlActivityWrap.innerHTML = '';
 
-      Object.entries(ADL_OPTIONS).forEach(([cat, items]) => {
+      Object.entries(getConfiguredAdlOptions()).forEach(([cat, items]) => {
         if (filterByCategory && !selectedCategories.includes(cat)) return;
         const group = document.createElement('div');
         group.className = 'adl-activity-group';
@@ -2704,7 +2898,7 @@
 </script>
 <script>
   (function(){
-    const version = window.STAR_BUILD_VERSION || '2026.03.12D';
+    const version = window.STAR_BUILD_VERSION || '2026.03.16B';
     if (!window.STAR_BUILD_VERSION) window.STAR_BUILD_VERSION = version;
     const ensureBadge = () => {
       if (document.getElementById('star-build-version')) return;
@@ -2739,7 +2933,7 @@
 <div id="tabbar"></div>
 <!-- Bottom tab bar + hamburger drawer -->
 <script defer src="./load-tabbar.js?v=2025.01.09E"></script>
-<script defer src="./ui-shell.js?v=2026.03.12D"></script>
-<script defer src="./scripts/appbar-drawer.js?v=2026.03.12D"></script>
+<script defer src="./ui-shell.js?v=2026.03.16B"></script>
+<script defer src="./scripts/appbar-drawer.js?v=2026.03.16B"></script>
 </body>
 </html>

@@ -196,6 +196,30 @@
       padding:0;
       list-style:none;
     }
+    .item-section{
+      display:grid;
+      gap:10px;
+      padding:14px;
+      border:1px solid #dbe3f0;
+      border-radius:18px;
+      background:#f8fbff;
+    }
+    .item-section + .item-section{
+      margin-top:6px;
+    }
+    .item-section-head{
+      display:grid;
+      gap:4px;
+    }
+    .item-section-title{
+      font-weight:800;
+      color:#0f172a;
+    }
+    .item-section-objective{
+      font-size:13px;
+      color:var(--muted);
+      line-height:1.5;
+    }
     .item-label{
       display:flex;
       align-items:center;
@@ -274,16 +298,76 @@
         key: 'behavior_mental_health',
         label: 'Behavior / Mental Health',
         items: [
-          ['aggression', 'Aggression'],
-          ['anxiety', 'Anxiety'],
-          ['mania', 'Mania'],
-          ['withdrawal', 'Withdrawal'],
-          ['engagement', 'Engagement'],
-          ['ocd_behaviors', 'OCD Behaviors'],
-          ['adhd_symptoms', 'ADHD Symptoms'],
-          ['impulsivity', 'Impulsivity'],
-          ['restlessness', 'Restlessness'],
-          ['emotional_regulation_difficulty', 'Emotional Regulation Difficulty'],
+          {
+            key: 'emotional_regulation',
+            label: 'Emotional Regulation',
+            objective: 'How the individual manages feelings, frustration, coping, and emotional recovery',
+            behaviors: [
+              { key: 'identifies_feelings', label: 'Identifies feelings' },
+              { key: 'tolerates_frustration', label: 'Tolerates frustration' },
+              { key: 'uses_coping_strategy', label: 'Uses coping strategy' },
+              { key: 'accepts_redirection', label: 'Accepts redirection' },
+              { key: 'requests_break', label: 'Requests break' },
+              { key: 'recovers_after_distress', label: 'Recovers after distress' },
+            ],
+            fields: [],
+          },
+          {
+            key: 'behavioral_safety',
+            label: 'Behavioral Safety',
+            objective: 'How the individual maintains safe behavior and responds to support when dysregulated',
+            behaviors: [
+              { key: 'maintains_safe_body', label: 'Maintains safe body' },
+              { key: 'maintains_safe_space', label: 'Maintains safe space' },
+              { key: 'reduces_aggression', label: 'Reduces aggression' },
+              { key: 'reduces_self_injury', label: 'Reduces self-injury' },
+              { key: 'reduces_property_disruption', label: 'Reduces property disruption' },
+              { key: 'responds_to_safety_support', label: 'Responds to safety support' },
+            ],
+            fields: [],
+          },
+          {
+            key: 'flexibility_tolerance',
+            label: 'Flexibility & Tolerance',
+            objective: 'How the individual tolerates changes, waiting, non-preferred tasks, and limits',
+            behaviors: [
+              { key: 'tolerates_waiting', label: 'Tolerates waiting' },
+              { key: 'tolerates_denial', label: 'Tolerates denial' },
+              { key: 'tolerates_change', label: 'Tolerates change' },
+              { key: 'tolerates_nonpreferred_tasks', label: 'Tolerates non-preferred tasks' },
+              { key: 'accepts_limits', label: 'Accepts limits' },
+              { key: 'transitions_with_support', label: 'Transitions with support' },
+            ],
+            fields: [],
+          },
+          {
+            key: 'social_behavioral_response',
+            label: 'Social / Behavioral Response',
+            objective: 'How the individual responds behaviorally during interactions with staff, peers, and group expectations',
+            behaviors: [
+              { key: 'responds_to_staff_direction', label: 'Responds to staff direction' },
+              { key: 'responds_to_peer_interaction', label: 'Responds to peer interaction' },
+              { key: 'maintains_group_expectations', label: 'Maintains group expectations' },
+              { key: 'reduces_verbal_outbursts', label: 'Reduces verbal outbursts' },
+              { key: 'uses_repair_after_conflict', label: 'Uses repair after conflict' },
+              { key: 'returns_to_activity', label: 'Returns to activity' },
+            ],
+            fields: [],
+          },
+          {
+            key: 'mental_health_internal_state',
+            label: 'Mental Health / Internal State',
+            objective: 'Observable indicators of anxiety, withdrawal, mood instability, or distress that affect participation',
+            behaviors: [
+              { key: 'anxiety_signs_present', label: 'Anxiety signs present' },
+              { key: 'withdrawal_present', label: 'Withdrawal present' },
+              { key: 'perseveration_present', label: 'Gets stuck on the same topic or idea' },
+              { key: 'low_mood_indicators', label: 'Low mood indicators' },
+              { key: 'elevated_mood_indicators', label: 'Elevated mood indicators' },
+              { key: 'distress_impacts_participation', label: 'Distress impacts participation' },
+            ],
+            fields: [],
+          },
         ],
       },
       {
@@ -338,11 +422,95 @@
         key: 'educational',
         label: 'Educational',
         items: [
-          ['school_attendance', 'School Attendance'],
-          ['class_participation', 'Class Participation'],
-          ['assignment_completion', 'Assignment Completion'],
-          ['peer_interaction', 'Peer Interaction'],
-          ['transitions', 'Transitions'],
+          {
+            key: 'functional_communication',
+            label: 'Functional Communication',
+            objective: 'Communicates needs, wants, and responses using appropriate methods',
+            behaviors: [
+              { key: 'requests_needs', label: 'Requests needs' },
+              { key: 'uses_communication_method', label: 'Uses communication method' },
+              { key: 'responds_to_questions', label: 'Responds to questions' },
+              { key: 'initiates_communication', label: 'Initiates communication' },
+              { key: 'makes_choices', label: 'Makes choices' },
+              { key: 'expresses_emotions', label: 'Expresses emotions' },
+            ],
+            fields: [],
+          },
+          {
+            key: 'peer_interaction',
+            label: 'Peer Interaction (1:1 -> Small Group Progression)',
+            objective: 'Engages with peers at current level and builds toward small group participation',
+            behaviors: [
+              { key: 'engages_1to1', label: 'Engages 1:1' },
+              { key: 'responds_to_peer', label: 'Responds to peer' },
+              { key: 'initiates_interaction', label: 'Initiates interaction' },
+              { key: 'takes_turns', label: 'Takes turns' },
+              { key: 'shares_materials', label: 'Shares materials' },
+              { key: 'maintains_interaction', label: 'Maintains interaction' },
+              { key: 'participates_small_group', label: 'Participates in small group' },
+              { key: 'participates_group', label: 'Participates in group' },
+            ],
+            fields: [
+              { key: 'interaction_level', type: 'select' },
+              { key: 'support_level', type: 'select' },
+            ],
+          },
+          {
+            key: 'self_regulation',
+            label: 'Self Regulation',
+            objective: 'Manages emotions and behaviors with support',
+            behaviors: [
+              { key: 'uses_coping_strategies', label: 'Uses coping strategies' },
+              { key: 'accepts_redirection', label: 'Accepts redirection' },
+              { key: 'recovers_from_frustration', label: 'Recovers from frustration' },
+              { key: 'tolerates_nonpreferred', label: 'Tolerates non-preferred tasks' },
+              { key: 'maintains_safe_behavior', label: 'Maintains safe behavior' },
+              { key: 'requests_break', label: 'Requests a break' },
+            ],
+            fields: [],
+          },
+          {
+            key: 'daily_living_skills',
+            label: 'Daily Living Skills',
+            objective: 'Performs daily routines with increasing independence',
+            behaviors: [
+              { key: 'hygiene', label: 'Hygiene' },
+              { key: 'dressing', label: 'Dressing' },
+              { key: 'eating', label: 'Eating' },
+              { key: 'cleanup', label: 'Cleanup' },
+              { key: 'follows_routine', label: 'Follows routine' },
+              { key: 'uses_materials', label: 'Uses materials' },
+            ],
+            fields: [],
+          },
+          {
+            key: 'task_engagement',
+            label: 'Task Engagement',
+            objective: 'Engages in and completes tasks',
+            behaviors: [
+              { key: 'attends_to_task', label: 'Attends to task' },
+              { key: 'starts_task', label: 'Starts task' },
+              { key: 'completes_task', label: 'Completes task' },
+              { key: 'follows_directions', label: 'Follows directions' },
+              { key: 'transitions_between_tasks', label: 'Transitions between tasks' },
+              { key: 'stays_on_task', label: 'Stays on task' },
+            ],
+            fields: [],
+          },
+          {
+            key: 'community_vocational_participation',
+            label: 'Community & Vocational Participation',
+            objective: 'Participates in community and work-related activities',
+            behaviors: [
+              { key: 'participates_community', label: 'Participates in community activities' },
+              { key: 'engages_vocational', label: 'Engages in vocational activities' },
+              { key: 'follows_expectations', label: 'Follows expectations' },
+              { key: 'interacts_appropriately', label: 'Interacts appropriately' },
+              { key: 'completes_role', label: 'Completes role or responsibility' },
+              { key: 'transitions_activities', label: 'Transitions between activities' },
+            ],
+            fields: [],
+          },
         ],
       },
     ];
@@ -355,6 +523,7 @@
 
     const state = {
       groupId: null,
+      userId: null,
       groupName: '',
       configRowId: null,
       categoryEls: new Map(),
@@ -370,10 +539,27 @@
       return `${category}::${itemKey}`;
     }
 
+    function getCategoryItems(category) {
+      if (!category) return [];
+      return (category.items || []).flatMap((item) => {
+        if (Array.isArray(item)) {
+          const [key, label] = item;
+          return [{ key, label }];
+        }
+        if (item && Array.isArray(item.behaviors)) {
+          return item.behaviors.map((behavior) => ({
+            key: behavior.key,
+            label: behavior.label,
+          }));
+        }
+        return [];
+      });
+    }
+
     function selectedCountForCategory(categoryKey) {
       const category = CATEGORY_DEFS.find((entry) => entry.key === categoryKey);
       if (!category) return 0;
-      return category.items.filter(([itemKey]) => state.itemEls.get(getCompositeKey(categoryKey, itemKey))?.checked).length;
+      return getCategoryItems(category).filter(({ key }) => state.itemEls.get(getCompositeKey(categoryKey, key))?.checked).length;
     }
 
     function totalSelectedCount() {
@@ -399,10 +585,8 @@
     function renderCategories() {
       setupGridEl.innerHTML = '';
       CATEGORY_DEFS.forEach((category) => {
-        const isComingSoon = category.key === 'educational';
         const article = document.createElement('article');
         article.className = 'card';
-        if (isComingSoon) article.classList.add('is-coming-soon');
 
         const head = document.createElement('div');
         head.className = 'card-head';
@@ -422,13 +606,6 @@
         titleWrap.textContent = category.label;
         copyWrap.appendChild(titleWrap);
 
-        if (isComingSoon) {
-          const helper = document.createElement('span');
-          helper.className = 'category-helper';
-          helper.textContent = 'Coming soon: Educational tracking is not yet active in the caregiver check-in.';
-          copyWrap.appendChild(helper);
-        }
-
         categoryLabel.appendChild(categoryInput);
         categoryLabel.appendChild(copyWrap);
 
@@ -438,8 +615,8 @@
         badgeWrap.style.justifyItems = 'end';
 
         const statusBadge = document.createElement('div');
-        statusBadge.className = `status-badge${isComingSoon ? ' coming-soon' : ''}`;
-        statusBadge.textContent = isComingSoon ? 'Coming Soon' : 'Live';
+        statusBadge.className = 'status-badge';
+        statusBadge.textContent = 'Live';
 
         const countPill = document.createElement('div');
         countPill.className = 'count-pill';
@@ -455,28 +632,82 @@
         const itemList = document.createElement('ul');
         itemList.className = 'item-list';
 
-        category.items.forEach(([itemKey, itemLabel]) => {
+        category.items.forEach((item) => {
+          if (Array.isArray(item)) {
+            const [itemKey, itemLabel] = item;
+            const li = document.createElement('li');
+            const label = document.createElement('label');
+            label.className = 'item-label';
+
+            const input = document.createElement('input');
+            input.type = 'checkbox';
+            input.dataset.category = category.key;
+            input.dataset.itemKey = itemKey;
+            state.itemEls.set(getCompositeKey(category.key, itemKey), input);
+
+            const text = document.createElement('span');
+            text.textContent = itemLabel;
+
+            label.appendChild(input);
+            label.appendChild(text);
+            li.appendChild(label);
+            itemList.appendChild(li);
+
+            input.addEventListener('change', () => {
+              syncCategoryState(category.key);
+            });
+            return;
+          }
+
           const li = document.createElement('li');
-          const label = document.createElement('label');
-          label.className = 'item-label';
+          const section = document.createElement('div');
+          section.className = 'item-section';
 
-          const input = document.createElement('input');
-          input.type = 'checkbox';
-          input.dataset.category = category.key;
-          input.dataset.itemKey = itemKey;
-          state.itemEls.set(getCompositeKey(category.key, itemKey), input);
+          const sectionHead = document.createElement('div');
+          sectionHead.className = 'item-section-head';
 
-          const text = document.createElement('span');
-          text.textContent = itemLabel;
+          const sectionTitle = document.createElement('div');
+          sectionTitle.className = 'item-section-title';
+          sectionTitle.textContent = item.label;
+          sectionHead.appendChild(sectionTitle);
 
-          label.appendChild(input);
-          label.appendChild(text);
-          li.appendChild(label);
-          itemList.appendChild(li);
+          if (item.objective) {
+            const objective = document.createElement('div');
+            objective.className = 'item-section-objective';
+            objective.textContent = item.objective;
+            sectionHead.appendChild(objective);
+          }
 
-          input.addEventListener('change', () => {
-            syncCategoryState(category.key);
+          section.appendChild(sectionHead);
+
+          const behaviorList = document.createElement('div');
+          behaviorList.className = 'item-list';
+
+          (item.behaviors || []).forEach((behavior) => {
+            const label = document.createElement('label');
+            label.className = 'item-label';
+
+            const input = document.createElement('input');
+            input.type = 'checkbox';
+            input.dataset.category = category.key;
+            input.dataset.itemKey = behavior.key;
+            state.itemEls.set(getCompositeKey(category.key, behavior.key), input);
+
+            const text = document.createElement('span');
+            text.textContent = behavior.label;
+
+            label.appendChild(input);
+            label.appendChild(text);
+            behaviorList.appendChild(label);
+
+            input.addEventListener('change', () => {
+              syncCategoryState(category.key);
+            });
           });
+
+          section.appendChild(behaviorList);
+          li.appendChild(section);
+          itemList.appendChild(li);
         });
 
         article.appendChild(itemList);
@@ -484,7 +715,7 @@
 
         categoryInput.addEventListener('change', () => {
           if (!categoryInput.checked) {
-            category.items.forEach(([itemKey]) => {
+            getCategoryItems(category).forEach(({ key: itemKey }) => {
               const itemInput = state.itemEls.get(getCompositeKey(category.key, itemKey));
               if (itemInput) itemInput.checked = false;
             });
@@ -550,8 +781,8 @@
     function buildSelectedItems() {
       const selectedItems = {};
       CATEGORY_DEFS.forEach((category) => {
-        const items = category.items
-          .map(([itemKey]) => itemKey)
+        const items = getCategoryItems(category)
+          .map(({ key }) => key)
           .filter((itemKey) => state.itemEls.get(getCompositeKey(category.key, itemKey))?.checked);
         if (items.length) {
           selectedItems[category.key] = items;
@@ -567,6 +798,7 @@
         setStatus('Please log in again to manage caregiver setup.', 'error');
         return;
       }
+      state.userId = session.user.id;
 
       const [groupId, activeGroup] = await Promise.all([
         ensureActiveGroupId(session.user.id),
@@ -586,17 +818,24 @@
         ? `Configuring caregiver setup for ${state.groupName}`
         : `Configuring caregiver setup for group ${groupId}`;
 
-      const rows = await rest(
+      let rows = await rest(
         `caregiver_checkin_configs?group_id=eq.${encodeURIComponent(groupId)}&select=id,group_id,selected_categories,selected_items,updated_at&limit=1`
       );
-      const config = rows?.[0] || null;
+      let config = rows?.[0] || null;
+
+      if (!config && state.userId) {
+        rows = await rest(
+          `caregiver_checkin_configs?individual_id=eq.${encodeURIComponent(state.userId)}&select=id,individual_id,group_id,selected_categories,selected_items,updated_at&order=updated_at.desc.nullslast&limit=1`
+        );
+        config = rows?.[0] || null;
+      }
 
       state.configRowId = config?.id || null;
       const selectedCategories = new Set(normalizeCategoryArray(config?.selected_categories));
       const selectedItems = normalizeSelectedItems(config?.selected_items);
 
       CATEGORY_DEFS.forEach((category) => {
-        category.items.forEach(([itemKey]) => {
+        getCategoryItems(category).forEach(({ key: itemKey }) => {
           const input = state.itemEls.get(getCompositeKey(category.key, itemKey));
           if (input) {
             input.checked =
@@ -617,6 +856,10 @@
         setStatus('No active group is selected.', 'error');
         return;
       }
+      if (!state.userId) {
+        setStatus('Please log in again to save caregiver setup.', 'error');
+        return;
+      }
 
       setStatus('Saving caregiver setup…');
       saveBtn.disabled = true;
@@ -626,6 +869,7 @@
       try {
         const payload = {
           group_id: state.groupId,
+          individual_id: state.userId,
           selected_categories: buildSelectedCategories(),
           selected_items: buildSelectedItems(),
           updated_at: new Date().toISOString(),

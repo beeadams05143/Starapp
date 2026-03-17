@@ -166,7 +166,108 @@
     .yn-pill-group{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
     .yn-pill{display:inline-flex;align-items:center;gap:6px;border:1px solid #d1d5db;border-radius:999px;padding:4px 8px;background:#fff;font-weight:700;font-size:12.5px}
     .yn-pill input{width:auto}
+    .educational-card{
+      display:grid;
+      gap:14px;
+      align-content:start;
+      border:1px solid #dbe4ee;
+      border-radius:16px;
+      background:linear-gradient(180deg,#ffffff 0%,#f8fbff 100%);
+      box-shadow:0 8px 18px rgba(15,23,42,.05);
+    }
+    .educational-card-title{
+      margin:0;
+      font-size:16px;
+      line-height:1.35;
+      font-weight:900;
+      color:#0f172a;
+      letter-spacing:.01em;
+    }
+    .educational-card-question{
+      display:grid;
+      gap:8px;
+      padding-top:2px;
+    }
+    .educational-card-notes{
+      margin:0;
+    }
+    .educational-card-notes textarea{
+      margin-top:6px;
+      min-height:92px;
+    }
+    .behavior-followups,
+    .educational-followups{display:grid;gap:14px;padding-top:4px}
+    .behavior-followups.is-hidden,
+    .educational-followups.is-hidden{display:none}
+    #behaviorQuestionsWrap,
+    #educationalQuestionsWrap{grid-template-columns:minmax(0,1fr)}
+    .behavior-section,
+    .educational-section{display:grid;gap:14px;margin-top:18px}
+    .behavior-section + .behavior-section,
+    .educational-section + .educational-section{padding-top:18px;border-top:1px solid #e5e7eb}
+    .behavior-section-header,
+    .educational-section-header{margin:0;font-size:18px;font-weight:900;color:#1f2937}
+    .behavior-section-helper,
+    .educational-section-helper{margin:-6px 0 0;color:#6b7280;font-size:13px;line-height:1.5}
+    .behavior-section-items,
+    .educational-section-items{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));align-items:start}
+    .behavior-card{
+      display:grid;
+      gap:14px;
+      align-content:start;
+      border:1px solid #dbe4ee;
+      border-radius:16px;
+      background:linear-gradient(180deg,#ffffff 0%,#f8fbff 100%);
+      box-shadow:0 8px 18px rgba(15,23,42,.05);
+    }
+    .behavior-card-title{
+      margin:0;
+      font-size:16px;
+      line-height:1.35;
+      font-weight:900;
+      color:#0f172a;
+      letter-spacing:.01em;
+    }
+    .behavior-card-question{
+      display:grid;
+      gap:8px;
+      padding-top:2px;
+    }
+    .behavior-card-notes{
+      margin:0;
+    }
+    .behavior-card-notes textarea{
+      margin-top:6px;
+      min-height:92px;
+    }
+    .behavior-choice-field,
+    .educational-choice-field{display:grid;gap:8px}
+    .behavior-choice-label,
+    .educational-choice-label{font-weight:800;color:#111827}
+    .behavior-choice-group,
+    .educational-choice-group{display:flex;flex-wrap:wrap;gap:8px}
     .helper-note{margin-top:10px;padding:12px 14px;border-radius:14px;border:1px solid #fde68a;background:#fffbeb;color:#92400e}
+    #successBanner{
+      position:fixed;
+      top:18px;
+      left:50%;
+      transform:translateX(-50%) translateY(-10px);
+      z-index:10000;
+      padding:14px 18px;
+      border-radius:14px;
+      border:1px solid #86efac;
+      background:linear-gradient(180deg,#dcfce7,#bbf7d0);
+      color:#166534;
+      font-weight:800;
+      box-shadow:0 12px 30px rgba(22,101,52,.18);
+      opacity:0;
+      pointer-events:none;
+      transition:opacity .2s ease, transform .2s ease;
+    }
+    #successBanner.is-visible{
+      opacity:1;
+      transform:translateX(-50%) translateY(0);
+    }
   </style>
 </head>
 <body>
@@ -612,7 +713,7 @@
           <div class="section-title">Behavior / Mental Health</div>
           <p class="muted">Only the behaviors selected in caregiver setup will appear here.</p>
           <input type="hidden" name="behavior_tracking" id="behavior_tracking" value=""/>
-          <div id="behaviorQuestionsWrap" class="row cols-2"></div>
+          <div id="behaviorQuestionsWrap" class="row"></div>
           <div id="legacyBehaviorQuestions" class="config-hidden" aria-hidden="true">
             <div class="row cols-3 compact">
               <div id="question-aggression-flag" class="question-block">
@@ -1005,7 +1106,7 @@
           <div class="section-title">Educational</div>
           <p class="muted">Only the educational items selected in caregiver setup will appear here.</p>
           <input type="hidden" name="educational_tracking" id="educational_tracking" value=""/>
-          <div id="educationalQuestionsWrap" class="row cols-2"></div>
+          <div id="educationalQuestionsWrap" class="row"></div>
           <div class="controls">
             <div class="left-actions">
               <button class="btn" type="button" data-save>Save</button>
@@ -1022,6 +1123,7 @@
   </div>
 
   <div id="toast"></div>
+  <div id="successBanner" role="status" aria-live="polite">Check-in submitted successfully</div>
 
 
 <!-- App logic -->
@@ -1197,14 +1299,399 @@
     impulsivity: 'Impulsivity',
     restlessness: 'Restlessness',
     emotional_regulation_difficulty: 'Emotional Regulation Difficulty',
+    identifies_feelings: 'Identifies feelings',
+    tolerates_frustration: 'Tolerates frustration',
+    uses_coping_strategy: 'Uses coping strategy',
+    accepts_redirection: 'Accepts redirection',
+    requests_break: 'Requests break',
+    recovers_after_distress: 'Recovers after distress',
+    maintains_safe_body: 'Maintains safe body',
+    maintains_safe_space: 'Maintains safe space',
+    reduces_aggression: 'Reduces aggression',
+    reduces_self_injury: 'Reduces self-injury',
+    reduces_property_disruption: 'Reduces property disruption',
+    responds_to_safety_support: 'Responds to safety support',
+    tolerates_waiting: 'Tolerates waiting',
+    tolerates_denial: 'Tolerates denial',
+    tolerates_change: 'Tolerates change',
+    tolerates_nonpreferred_tasks: 'Tolerates non-preferred tasks',
+    accepts_limits: 'Accepts limits',
+    transitions_with_support: 'Transitions with support',
+    responds_to_staff_direction: 'Responds to staff direction',
+    responds_to_peer_interaction: 'Responds to peer interaction',
+    maintains_group_expectations: 'Maintains group expectations',
+    reduces_verbal_outbursts: 'Reduces verbal outbursts',
+    uses_repair_after_conflict: 'Uses repair after conflict',
+    returns_to_activity: 'Returns to activity',
+    anxiety_signs_present: 'Anxiety signs present',
+    withdrawal_present: 'Withdrawal present',
+    mood_lability_present: 'Rapid mood changes (big ups and downs throughout the day)',
+    grandiose_statements_present: 'Unrealistic or exaggerated beliefs about self',
+    pressured_speech_present: 'Talking very fast or hard to interrupt',
+    racing_thoughts_observed: 'Jumping quickly between ideas / hard to stay on one topic',
+    disorganized_thinking_observed: 'Thoughts or speech are hard to follow',
+    perseveration_present: 'Gets stuck on the same topic or idea',
+    compulsive_checking_repeating: 'Repeats actions or checks things over and over',
+    low_mood_indicators: 'Low mood indicators',
+    elevated_mood_indicators: 'Elevated mood indicators',
+    distress_impacts_participation: 'Distress impacts participation',
   };
+  const BEHAVIOR_PROMPT_LEVELS = [
+    { value: 'independent', label: 'Independent' },
+    { value: 'visual_prompt', label: 'Visual Prompt' },
+    { value: 'gestural_prompt', label: 'Gestural Prompt' },
+    { value: 'verbal_prompt', label: 'Verbal Prompt' },
+    { value: 'model_prompt', label: 'Model Prompt' },
+    { value: 'physical_prompt', label: 'Physical Prompt' },
+    { value: 'full_support', label: 'Full Support' },
+  ];
+  const BEHAVIOR_FIELD_CONFIGS = {
+    regulation_level: {
+      label: 'Regulation / Severity',
+      options: [
+        { value: 'mild', label: 'Mild' },
+        { value: 'moderate', label: 'Moderate' },
+        { value: 'significant', label: 'Significant' },
+      ],
+    },
+    safety_level: {
+      label: 'Safety Level',
+      options: [
+        { value: 'safe', label: 'Safe' },
+        { value: 'elevated_risk', label: 'Elevated Risk' },
+        { value: 'unsafe', label: 'Unsafe' },
+      ],
+    },
+    tolerance_level: {
+      label: 'Tolerance Level',
+      options: [
+        { value: 'tolerated_with_ease', label: 'Tolerated with ease' },
+        { value: 'tolerated_with_support', label: 'Tolerated with support' },
+        { value: 'not_tolerated', label: 'Not tolerated' },
+      ],
+    },
+    response_quality: {
+      label: 'Response Quality',
+      options: [
+        { value: 'appropriate', label: 'Appropriate' },
+        { value: 'needed_redirection', label: 'Needed redirection' },
+        { value: 'disrupted_participation', label: 'Disrupted participation' },
+      ],
+    },
+    recovery: {
+      label: 'Recovery',
+      options: [
+        { value: 'independent', label: 'Independent' },
+        { value: 'with_support', label: 'With support' },
+        { value: 'prolonged_recovery', label: 'Prolonged recovery' },
+      ],
+    },
+  };
+  const BEHAVIOR_CATEGORY_CONFIGS = [
+    {
+      key: 'emotional_regulation',
+      label: 'Emotional Regulation',
+      helper: 'How the individual manages feelings, frustration, coping, and emotional recovery',
+      behaviors: [
+        'identifies_feelings',
+        'tolerates_frustration',
+        'uses_coping_strategy',
+        'accepts_redirection',
+        'requests_break',
+        'recovers_after_distress',
+      ],
+      fields: ['regulation_level', 'recovery'],
+    },
+    {
+      key: 'behavioral_safety',
+      label: 'Behavioral Safety',
+      helper: 'How the individual maintains safe behavior and responds to support when dysregulated',
+      behaviors: [
+        'maintains_safe_body',
+        'maintains_safe_space',
+        'reduces_aggression',
+        'reduces_self_injury',
+        'reduces_property_disruption',
+        'responds_to_safety_support',
+      ],
+      fields: ['safety_level', 'recovery'],
+    },
+    {
+      key: 'flexibility_tolerance',
+      label: 'Flexibility & Tolerance',
+      helper: 'How the individual tolerates changes, waiting, non-preferred tasks, and limits',
+      behaviors: [
+        'tolerates_waiting',
+        'tolerates_denial',
+        'tolerates_change',
+        'tolerates_nonpreferred_tasks',
+        'accepts_limits',
+        'transitions_with_support',
+      ],
+      fields: ['tolerance_level'],
+    },
+    {
+      key: 'social_behavioral_response',
+      label: 'Social / Behavioral Response',
+      helper: 'How the individual responds behaviorally during interactions with staff, peers, and group expectations',
+      behaviors: [
+        'responds_to_staff_direction',
+        'responds_to_peer_interaction',
+        'maintains_group_expectations',
+        'reduces_verbal_outbursts',
+        'uses_repair_after_conflict',
+        'returns_to_activity',
+      ],
+      fields: ['response_quality'],
+    },
+    {
+      key: 'mental_health_internal_state',
+      label: 'Mental Health / Internal State',
+      helper: 'Observable indicators of anxiety, withdrawal, mood instability, or distress that affect participation',
+      behaviors: [
+        'anxiety_signs_present',
+        'withdrawal_present',
+        'perseveration_present',
+        'low_mood_indicators',
+        'elevated_mood_indicators',
+        'distress_impacts_participation',
+      ],
+      fields: ['regulation_level', 'recovery'],
+    },
+  ];
+  const BEHAVIOR_BEHAVIOR_CONFIG = BEHAVIOR_CATEGORY_CONFIGS.reduce((acc, category) => {
+    category.behaviors.forEach((behaviorKey) => {
+      acc[behaviorKey] = category;
+    });
+    return acc;
+  }, {});
   const EDUCATIONAL_LABEL_OVERRIDES = {
-    school_attendance: 'School Attendance',
-    class_participation: 'Class Participation',
-    assignment_completion: 'Assignment Completion',
-    peer_interaction: 'Peer Interaction',
-    transitions: 'Transitions',
+    requests_needs: 'Requests needs',
+    uses_communication_method: 'Uses communication method',
+    responds_to_questions: 'Responds to questions',
+    initiates_communication: 'Initiates communication',
+    makes_choices: 'Makes choices',
+    expresses_emotions: 'Expresses emotions',
+    engages_1to1: 'Engages 1:1',
+    responds_to_peer: 'Responds to peer',
+    initiates_interaction: 'Initiates interaction',
+    takes_turns: 'Takes turns',
+    shares_materials: 'Shares materials',
+    maintains_interaction: 'Maintains interaction',
+    participates_small_group: 'Participates in small group',
+    participates_group: 'Participates in group',
+    uses_coping_strategies: 'Uses coping strategies',
+    accepts_redirection: 'Accepts redirection',
+    recovers_from_frustration: 'Recovers from frustration',
+    tolerates_nonpreferred: 'Tolerates non-preferred tasks',
+    maintains_safe_behavior: 'Maintains safe behavior',
+    requests_break: 'Requests a break',
+    hygiene: 'Hygiene',
+    dressing: 'Dressing',
+    eating: 'Eating',
+    cleanup: 'Cleanup',
+    follows_routine: 'Follows routine',
+    uses_materials: 'Uses materials',
+    attends_to_task: 'Attends to task',
+    starts_task: 'Starts task',
+    completes_task: 'Completes task',
+    follows_directions: 'Follows directions',
+    transitions_between_tasks: 'Transitions between tasks',
+    stays_on_task: 'Stays on task',
+    participates_community: 'Participates in community activities',
+    engages_vocational: 'Engages in vocational activities',
+    follows_expectations: 'Follows expectations',
+    interacts_appropriately: 'Interacts appropriately',
+    completes_role: 'Completes role or responsibility',
+    transitions_activities: 'Transitions between activities',
   };
+  const EDUCATIONAL_PROMPT_LEVELS = [
+    { value: 'independent', label: 'Independent' },
+    { value: 'visual_prompt', label: 'Visual Prompt' },
+    { value: 'gestural_prompt', label: 'Gestural Prompt' },
+    { value: 'verbal_prompt', label: 'Verbal Prompt' },
+    { value: 'model_prompt', label: 'Model Prompt' },
+    { value: 'physical_prompt', label: 'Physical Prompt' },
+    { value: 'full_support', label: 'Full Support' },
+  ];
+  const EDUCATIONAL_FIELD_CONFIGS = {
+    communication_method: {
+      label: 'Communication Method',
+      options: [
+        { value: 'verbal', label: 'Verbal' },
+        { value: 'gesture', label: 'Gesture' },
+        { value: 'visual_support', label: 'Visual support' },
+        { value: 'aac_device', label: 'AAC device' },
+        { value: 'sign', label: 'Sign' },
+      ],
+    },
+    initiation_type: {
+      label: 'Initiation Type',
+      options: [
+        { value: 'spontaneous', label: 'Spontaneous' },
+        { value: 'prompted', label: 'Prompted' },
+        { value: 'choice_based', label: 'Choice-based' },
+      ],
+    },
+    interaction_level: {
+      label: 'Interaction Level',
+      options: [
+        { value: '1to1', label: '1:1' },
+        { value: 'small_group', label: 'Small Group' },
+        { value: 'group', label: 'Group' },
+      ],
+    },
+    engagement: {
+      label: 'Engagement',
+      options: [
+        { value: 'brief', label: 'Brief' },
+        { value: 'inconsistent', label: 'Inconsistent' },
+        { value: 'sustained', label: 'Sustained' },
+      ],
+    },
+    regulation_state: {
+      label: 'Regulation State',
+      options: [
+        { value: 'regulated', label: 'Regulated' },
+        { value: 'mildly_dysregulated', label: 'Mildly dysregulated' },
+        { value: 'dysregulated', label: 'Dysregulated' },
+      ],
+    },
+    recovery: {
+      label: 'Recovery',
+      options: [
+        { value: 'independent', label: 'Recovered independently' },
+        { value: 'with_prompting', label: 'Recovered with prompting' },
+        { value: 'required_break', label: 'Required break or reset' },
+      ],
+    },
+    completion: {
+      label: 'Completion',
+      options: [
+        { value: 'partial', label: 'Partial' },
+        { value: 'most', label: 'Most of task' },
+        { value: 'complete', label: 'Complete' },
+      ],
+    },
+    initiation: {
+      label: 'Initiation',
+      options: [
+        { value: 'independent', label: 'Initiated independently' },
+        { value: 'after_prompt', label: 'Started after prompt' },
+        { value: 'full_support', label: 'Needed full support to start' },
+      ],
+    },
+    participation: {
+      label: 'Participation',
+      options: [
+        { value: 'observed', label: 'Observed only' },
+        { value: 'partial', label: 'Partial participation' },
+        { value: 'active', label: 'Active participation' },
+      ],
+    },
+    behavior: {
+      label: 'Behavior',
+      options: [
+        { value: 'expected', label: 'Met expectations' },
+        { value: 'redirected', label: 'Needed redirection' },
+        { value: 'support_needed', label: 'Needed significant support' },
+      ],
+    },
+  };
+  const EDUCATIONAL_CATEGORY_CONFIGS = [
+    {
+      key: 'functional_communication',
+      label: 'Functional Communication',
+      helper: 'How the individual communicates wants, needs, and choices',
+      behaviors: [
+        'requests_needs',
+        'uses_communication_method',
+        'responds_to_questions',
+        'initiates_communication',
+        'makes_choices',
+        'expresses_emotions',
+      ],
+      fields: ['communication_method', 'initiation_type'],
+    },
+    {
+      key: 'peer_interaction',
+      label: 'Peer Interaction',
+      helper: 'How the individual engages with peers from 1:1 through group participation',
+      behaviors: [
+        'engages_1to1',
+        'responds_to_peer',
+        'initiates_interaction',
+        'takes_turns',
+        'shares_materials',
+        'maintains_interaction',
+        'participates_small_group',
+        'participates_group',
+      ],
+      fields: ['interaction_level', 'engagement'],
+    },
+    {
+      key: 'self_regulation',
+      label: 'Self Regulation',
+      helper: 'How the individual manages emotions, redirection, and recovery',
+      behaviors: [
+        'uses_coping_strategies',
+        'accepts_redirection',
+        'recovers_from_frustration',
+        'tolerates_nonpreferred',
+        'maintains_safe_behavior',
+        'requests_break',
+      ],
+      fields: ['regulation_state', 'recovery'],
+    },
+    {
+      key: 'daily_living_skills',
+      label: 'Daily Living Skills',
+      helper: 'How the individual participates in routines and practical self-care tasks',
+      behaviors: [
+        'hygiene',
+        'dressing',
+        'eating',
+        'cleanup',
+        'follows_routine',
+        'uses_materials',
+      ],
+      fields: ['completion'],
+    },
+    {
+      key: 'task_engagement',
+      label: 'Task Engagement',
+      helper: 'How the individual starts, follows, and completes tasks',
+      behaviors: [
+        'attends_to_task',
+        'starts_task',
+        'completes_task',
+        'follows_directions',
+        'transitions_between_tasks',
+        'stays_on_task',
+      ],
+      fields: ['engagement', 'initiation'],
+    },
+    {
+      key: 'community_vocational_participation',
+      label: 'Community & Vocational',
+      helper: 'How the individual participates in community and work-related activities',
+      behaviors: [
+        'participates_community',
+        'engages_vocational',
+        'follows_expectations',
+        'interacts_appropriately',
+        'completes_role',
+        'transitions_activities',
+      ],
+      fields: ['participation', 'behavior'],
+    },
+  ];
+  const EDUCATIONAL_BEHAVIOR_CONFIG = EDUCATIONAL_CATEGORY_CONFIGS.reduce((acc, category) => {
+    category.behaviors.forEach((behaviorKey) => {
+      acc[behaviorKey] = category;
+    });
+    return acc;
+  }, {});
 
   const toBehaviorKey = (value) =>
     String(value || '')
@@ -1268,21 +1755,90 @@
       .filter(Boolean);
   }
 
+  function getBehaviorConfig(itemKey){
+    return BEHAVIOR_BEHAVIOR_CONFIG[itemKey] || null;
+  }
+
+  function renderBehaviorChoiceField(fieldKey, itemKey){
+    const config = BEHAVIOR_FIELD_CONFIGS[fieldKey];
+    if (!config) return '';
+    return `
+      <div class="behavior-choice-field">
+        <div class="behavior-choice-label">${escapeHtml(config.label)}:</div>
+        <div class="behavior-choice-group" role="group" aria-label="${escapeHtml(config.label)}">
+          ${config.options.map((option) => `
+            <label class="yn-pill">
+              <input
+                type="radio"
+                name="behavior_${escapeHtml(fieldKey)}__${escapeHtml(itemKey)}"
+                value="${escapeHtml(option.value)}"
+              >
+              ${escapeHtml(option.label)}
+            </label>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  function clearBehaviorChoiceValue(block, inputName){
+    if (!block || !inputName) return;
+    block.querySelectorAll(`input[name="${inputName}"]`).forEach((input) => {
+      input.checked = false;
+    });
+  }
+
   function collectBehaviorTracking(){
     if (!behaviorQuestionsWrap) return [];
     return Array.from(behaviorQuestionsWrap.querySelectorAll('[data-behavior-key]')).map((block) => {
       const behaviorName = block.dataset.behaviorLabel || '';
       const behaviorKey = block.dataset.behaviorKey || '';
-      const occurred = getYnValue(`behavior_occurred__${behaviorKey}`) === 'yes';
-      const prnUsed = getYnValue(`behavior_prn__${behaviorKey}`) === 'yes';
+      const config = getBehaviorConfig(behaviorKey);
+      const occurredValue = getYnValue(`behavior_occurred__${behaviorKey}`);
+      const occurred = occurredValue === 'yes'
+        ? true
+        : occurredValue === 'no'
+          ? false
+          : null;
+      const promptLevel = trimOrNull(block.querySelector(`input[name="behavior_prompt_level__${behaviorKey}"]:checked`)?.value || '');
       const notes = trimOrNull(block.querySelector(`textarea[name="behavior_notes__${behaviorKey}"]`)?.value || '');
-      return {
+      const entry = {
+        item_key: behaviorKey,
         behavior_name: behaviorName,
         occurred,
-        prn_used: prnUsed,
+        prn_used: null,
+        prompt_level: promptLevel,
         notes,
       };
+      (config?.fields || []).forEach((fieldKey) => {
+        const value = trimOrNull(block.querySelector(`input[name="behavior_${fieldKey}__${behaviorKey}"]:checked`)?.value || '');
+        if (value !== null) entry[fieldKey] = value;
+      });
+      return entry;
     });
+  }
+
+  function syncBehaviorItemState(block){
+    if (!block) return;
+    const behaviorKey = block.dataset.behaviorKey || '';
+    const config = getBehaviorConfig(behaviorKey);
+    const occurredValue = getYnValue(`behavior_occurred__${behaviorKey}`);
+    const followups = block.querySelector('[data-behavior-followups]');
+    const showFollowups = occurredValue === 'yes';
+    followups?.classList.toggle('is-hidden', !showFollowups);
+    const notesField = block.querySelector(`textarea[name="behavior_notes__${behaviorKey}"]`);
+    if (showFollowups) return;
+
+    clearBehaviorChoiceValue(block, `behavior_prompt_level__${behaviorKey}`);
+    if (notesField) notesField.value = '';
+    (config?.fields || []).forEach((fieldKey) => {
+      clearBehaviorChoiceValue(block, `behavior_${fieldKey}__${behaviorKey}`);
+    });
+  }
+
+  function syncBehaviorQuestionStates(){
+    if (!behaviorQuestionsWrap) return;
+    behaviorQuestionsWrap.querySelectorAll('[data-behavior-key]').forEach(syncBehaviorItemState);
   }
 
   function syncBehaviorTrackingField({ dispatch = false } = {}){
@@ -1302,34 +1858,111 @@
       syncBehaviorTrackingField();
       return;
     }
-    behaviorQuestionsWrap.innerHTML = options.map(({ key, label }) => `
-      <article class="panel" data-behavior-key="${escapeHtml(key)}" data-behavior-label="${escapeHtml(label)}" style="padding:16px">
-        <div class="section-subtitle" style="margin-top:0">${escapeHtml(label)}</div>
-        <div class="row cols-2 compact">
-          <div class="question-block">
-            <div class="movement-label">Did this occur today?</div>
-            <div class="yn-pill-group" role="group" aria-label="${escapeHtml(label)} occurred today">
-              <label class="yn-pill"><input type="radio" name="behavior_occurred__${escapeHtml(key)}" value="yes"> Yes</label>
-              <label class="yn-pill"><input type="radio" name="behavior_occurred__${escapeHtml(key)}" value="no" checked> No</label>
+    const optionMap = new Map(options.map((option) => [option.key, option]));
+    const usedKeys = new Set();
+    const renderedSections = BEHAVIOR_CATEGORY_CONFIGS
+      .map((category) => {
+        const sectionOptions = category.behaviors
+          .map((behaviorKey) => optionMap.get(behaviorKey))
+          .filter(Boolean);
+        if (!sectionOptions.length) return '';
+        sectionOptions.forEach(({ key }) => usedKeys.add(key));
+        return `
+          <section class="behavior-section" data-behavior-section="${escapeHtml(category.key)}">
+            <div>
+              <h3 class="behavior-section-header">${escapeHtml(category.label || toBehaviorLabel(category.key))}</h3>
+              ${category.helper ? `<p class="behavior-section-helper">${escapeHtml(category.helper)}</p>` : ''}
             </div>
-          </div>
-          <div class="question-block">
-            <div class="movement-label">PRN used?</div>
-            <div class="yn-pill-group" role="group" aria-label="${escapeHtml(label)} PRN used">
-              <label class="yn-pill"><input type="radio" name="behavior_prn__${escapeHtml(key)}" value="yes"> Yes</label>
-              <label class="yn-pill"><input type="radio" name="behavior_prn__${escapeHtml(key)}" value="no" checked> No</label>
+            <div class="behavior-section-items">
+            ${sectionOptions.map(({ key, label }) => `
+              <article class="panel behavior-card" data-behavior-key="${escapeHtml(key)}" data-behavior-label="${escapeHtml(label)}" style="padding:16px">
+                <h4 class="behavior-card-title">${escapeHtml(label)}</h4>
+                <div class="behavior-card-question">
+                  <div class="movement-label">Did this occur today?</div>
+                  <div class="yn-pill-group" role="group" aria-label="${escapeHtml(label)} occurred today">
+                    <label class="yn-pill"><input type="radio" name="behavior_occurred__${escapeHtml(key)}" value="yes"> Yes</label>
+                    <label class="yn-pill"><input type="radio" name="behavior_occurred__${escapeHtml(key)}" value="no"> No</label>
+                  </div>
+                </div>
+                <div class="behavior-followups is-hidden" data-behavior-followups>
+                  <div class="behavior-choice-field">
+                    <div class="behavior-choice-label">Prompt / Support Level:</div>
+                    <div class="behavior-choice-group" role="group" aria-label="Prompt / Support Level">
+                      ${BEHAVIOR_PROMPT_LEVELS.map((option) => `
+                        <label class="yn-pill">
+                          <input
+                            type="radio"
+                            name="behavior_prompt_level__${escapeHtml(key)}"
+                            value="${escapeHtml(option.value)}"
+                          >
+                          ${escapeHtml(option.label)}
+                        </label>
+                      `).join('')}
+                    </div>
+                  </div>
+                  ${(getBehaviorConfig(key)?.fields || []).map((fieldKey) => renderBehaviorChoiceField(fieldKey, key)).join('')}
+                  <label class="behavior-card-notes">Notes:
+                    <textarea name="behavior_notes__${escapeHtml(key)}" placeholder="Optional notes for ${escapeHtml(label).toLowerCase()}"></textarea>
+                  </label>
+                </div>
+              </article>
+            `).join('')}
             </div>
+          </section>
+        `;
+      })
+      .filter(Boolean);
+    const uncategorizedOptions = options.filter(({ key }) => !usedKeys.has(key));
+    if (uncategorizedOptions.length) {
+      renderedSections.push(`
+        <section class="behavior-section" data-behavior-section="additional_behavior_tracking">
+          <div>
+            <h3 class="behavior-section-header">Additional Behavior Tracking</h3>
+            <p class="behavior-section-helper">Existing behavior items that are still enabled for this group.</p>
           </div>
-        </div>
-        <label>Notes:
-          <textarea name="behavior_notes__${escapeHtml(key)}" placeholder="Optional notes for ${escapeHtml(label).toLowerCase()}"></textarea>
-        </label>
-      </article>
-    `).join('');
+          <div class="behavior-section-items">
+          ${uncategorizedOptions.map(({ key, label }) => `
+            <article class="panel behavior-card" data-behavior-key="${escapeHtml(key)}" data-behavior-label="${escapeHtml(label)}" style="padding:16px">
+              <h4 class="behavior-card-title">${escapeHtml(label)}</h4>
+              <div class="behavior-card-question">
+                <div class="movement-label">Did this occur today?</div>
+                <div class="yn-pill-group" role="group" aria-label="${escapeHtml(label)} occurred today">
+                  <label class="yn-pill"><input type="radio" name="behavior_occurred__${escapeHtml(key)}" value="yes"> Yes</label>
+                  <label class="yn-pill"><input type="radio" name="behavior_occurred__${escapeHtml(key)}" value="no"> No</label>
+                </div>
+              </div>
+              <div class="behavior-followups is-hidden" data-behavior-followups>
+                <div class="behavior-choice-field">
+                  <div class="behavior-choice-label">Prompt / Support Level:</div>
+                  <div class="behavior-choice-group" role="group" aria-label="Prompt / Support Level">
+                    ${BEHAVIOR_PROMPT_LEVELS.map((option) => `
+                      <label class="yn-pill">
+                        <input
+                          type="radio"
+                          name="behavior_prompt_level__${escapeHtml(key)}"
+                          value="${escapeHtml(option.value)}"
+                        >
+                        ${escapeHtml(option.label)}
+                      </label>
+                    `).join('')}
+                  </div>
+                </div>
+                <label class="behavior-card-notes">Notes:
+                  <textarea name="behavior_notes__${escapeHtml(key)}" placeholder="Optional notes for ${escapeHtml(label).toLowerCase()}"></textarea>
+                </label>
+              </div>
+            </article>
+          `).join('')}
+          </div>
+        </section>
+      `);
+    }
+    behaviorQuestionsWrap.innerHTML = renderedSections.join('');
     const behaviorStep = document.querySelector('.step[data-step="1"]');
     if (behaviorStep && draft?.data?.[1]) {
       hydrate(behaviorStep, draft.data[1]);
     }
+    syncBehaviorQuestionStates();
     syncBehaviorTrackingField();
   }
 
@@ -1351,19 +1984,96 @@
       .filter(Boolean);
   }
 
+  function getEducationalBehaviorConfig(itemKey){
+    return EDUCATIONAL_BEHAVIOR_CONFIG[itemKey] || null;
+  }
+
+  function renderEducationalChoiceField(fieldKey, itemKey){
+    const config = EDUCATIONAL_FIELD_CONFIGS[fieldKey];
+    if (!config) return '';
+    return `
+      <div class="educational-choice-field">
+        <div class="educational-choice-label">${escapeHtml(config.label)}:</div>
+        <div class="educational-choice-group" role="group" aria-label="${escapeHtml(config.label)}">
+          ${config.options.map((option) => `
+            <label class="yn-pill">
+              <input
+                type="radio"
+                name="educational_${escapeHtml(fieldKey)}__${escapeHtml(itemKey)}"
+                value="${escapeHtml(option.value)}"
+              >
+              ${escapeHtml(option.label)}
+            </label>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  function clearEducationalChoiceValue(block, inputName){
+    if (!block || !inputName) return;
+    block.querySelectorAll(`input[name="${inputName}"]`).forEach((input) => {
+      input.checked = false;
+    });
+  }
+
   function collectEducationalTracking(){
     if (!educationalQuestionsWrap) return [];
     return Array.from(educationalQuestionsWrap.querySelectorAll('[data-educational-key]')).map((block) => {
       const itemName = block.dataset.educationalLabel || '';
       const itemKey = block.dataset.educationalKey || '';
-      const occurred = getYnValue(`educational_occurred__${itemKey}`) === 'yes';
+      const config = getEducationalBehaviorConfig(itemKey);
+      const occurredValue = getYnValue(`educational_occurred__${itemKey}`);
+      const occurred = occurredValue === 'yes'
+        ? true
+        : occurredValue === 'no'
+          ? false
+          : null;
+      const promptLevel = trimOrNull(block.querySelector(`input[name="educational_prompt_level__${itemKey}"]:checked`)?.value || '');
       const notes = trimOrNull(block.querySelector(`textarea[name="educational_notes__${itemKey}"]`)?.value || '');
-      return {
+      const entry = {
+        item_key: itemKey,
         item_name: itemName,
         occurred,
+        prompt_level: promptLevel,
         notes,
       };
+      (config?.fields || []).forEach((fieldKey) => {
+        const value = trimOrNull(block.querySelector(`input[name="educational_${fieldKey}__${itemKey}"]:checked`)?.value || '');
+        if (value !== null) entry[fieldKey] = value;
+      });
+      return entry;
     });
+  }
+
+  function collectEducationalPayload(){
+    return collectEducationalTracking().map((entry) => {
+      const { item_name, ...payloadEntry } = entry;
+      return payloadEntry;
+    });
+  }
+
+  function syncEducationalItemState(block){
+    if (!block) return;
+    const itemKey = block.dataset.educationalKey || '';
+    const config = getEducationalBehaviorConfig(itemKey);
+    const occurredValue = getYnValue(`educational_occurred__${itemKey}`);
+    const followups = block.querySelector('[data-educational-followups]');
+    const showFollowups = occurredValue === 'yes';
+    followups?.classList.toggle('is-hidden', !showFollowups);
+    const notesField = block.querySelector(`textarea[name="educational_notes__${itemKey}"]`);
+    if (showFollowups) return;
+
+    clearEducationalChoiceValue(block, `educational_prompt_level__${itemKey}`);
+    if (notesField) notesField.value = '';
+    (config?.fields || []).forEach((fieldKey) => {
+      clearEducationalChoiceValue(block, `educational_${fieldKey}__${itemKey}`);
+    });
+  }
+
+  function syncEducationalQuestionStates(){
+    if (!educationalQuestionsWrap) return;
+    educationalQuestionsWrap.querySelectorAll('[data-educational-key]').forEach(syncEducationalItemState);
   }
 
   function syncEducationalTrackingField({ dispatch = false } = {}){
@@ -1383,25 +2093,65 @@
       syncEducationalTrackingField();
       return;
     }
-    educationalQuestionsWrap.innerHTML = options.map(({ key, label }) => `
-      <article class="panel" data-educational-key="${escapeHtml(key)}" data-educational-label="${escapeHtml(label)}" style="padding:16px">
-        <div class="section-subtitle" style="margin-top:0">${escapeHtml(label)}</div>
-        <div class="question-block">
+    const optionMap = new Map(options.map((option) => [option.key, option]));
+    const renderedSections = EDUCATIONAL_CATEGORY_CONFIGS
+      .map((category) => {
+        const sectionOptions = category.behaviors
+          .map((behaviorKey) => optionMap.get(behaviorKey))
+          .filter(Boolean);
+        if (!sectionOptions.length) return '';
+        return `
+          <section class="educational-section" data-educational-section="${escapeHtml(category.key)}">
+            <div>
+              <h3 class="educational-section-header">${escapeHtml(category.label || toEducationalLabel(category.key))}</h3>
+              ${category.helper ? `<p class="educational-section-helper">${escapeHtml(category.helper)}</p>` : ''}
+            </div>
+            <div class="educational-section-items">
+            ${sectionOptions.map(({ key, label }) => `
+      <article class="panel educational-card" data-educational-key="${escapeHtml(key)}" data-educational-label="${escapeHtml(label)}" style="padding:16px">
+        <h4 class="educational-card-title">${escapeHtml(label)}</h4>
+        <div class="educational-card-question">
           <div class="movement-label">Did this occur today?</div>
           <div class="yn-pill-group" role="group" aria-label="${escapeHtml(label)} occurred today">
             <label class="yn-pill"><input type="radio" name="educational_occurred__${escapeHtml(key)}" value="yes"> Yes</label>
-            <label class="yn-pill"><input type="radio" name="educational_occurred__${escapeHtml(key)}" value="no" checked> No</label>
+            <label class="yn-pill"><input type="radio" name="educational_occurred__${escapeHtml(key)}" value="no"> No</label>
           </div>
         </div>
-        <label>Notes:
-          <textarea name="educational_notes__${escapeHtml(key)}" placeholder="Optional notes for ${escapeHtml(label).toLowerCase()}"></textarea>
-        </label>
+        <div class="educational-followups is-hidden" data-educational-followups>
+          <div class="educational-choice-field">
+            <div class="educational-choice-label">Prompt Level:</div>
+            <div class="educational-choice-group" role="group" aria-label="Prompt Level">
+              ${EDUCATIONAL_PROMPT_LEVELS.map((option) => `
+                <label class="yn-pill">
+                  <input
+                    type="radio"
+                    name="educational_prompt_level__${escapeHtml(key)}"
+                    value="${escapeHtml(option.value)}"
+                  >
+                  ${escapeHtml(option.label)}
+                </label>
+              `).join('')}
+            </div>
+          </div>
+          ${((getEducationalBehaviorConfig(key)?.fields) || []).map((fieldKey) => renderEducationalChoiceField(fieldKey, key)).join('')}
+          <label class="educational-card-notes">Notes:
+            <textarea name="educational_notes__${escapeHtml(key)}" placeholder="Optional notes for ${escapeHtml(label).toLowerCase()}"></textarea>
+          </label>
+        </div>
       </article>
-    `).join('');
+            `).join('')}
+            </div>
+          </section>
+        `;
+      })
+      .filter(Boolean)
+      .join('');
+    educationalQuestionsWrap.innerHTML = renderedSections;
     const educationalStep = document.getElementById('educational-step');
     if (educationalStep && draft?.data?.[6]) {
       hydrate(educationalStep, draft.data[6]);
     }
+    syncEducationalQuestionStates();
     syncEducationalTrackingField();
   }
 
@@ -2324,15 +3074,19 @@
       });
     });
     behaviorQuestionsWrap?.addEventListener('change', () => {
+      syncBehaviorQuestionStates();
       syncBehaviorTrackingField({ dispatch: true });
     });
     behaviorQuestionsWrap?.addEventListener('input', () => {
+      syncBehaviorQuestionStates();
       syncBehaviorTrackingField({ dispatch: true });
     });
     educationalQuestionsWrap?.addEventListener('change', () => {
+      syncEducationalQuestionStates();
       syncEducationalTrackingField({ dispatch: true });
     });
     educationalQuestionsWrap?.addEventListener('input', () => {
+      syncEducationalQuestionStates();
       syncEducationalTrackingField({ dispatch: true });
     });
     medEls.timeWindow?.addEventListener('change', () => {
@@ -2404,15 +3158,9 @@
     // Progress nav + show all
     progItems.forEach((pi) => pi.addEventListener('click', () => go(Number(pi.dataset.step))));
     toggleAllBtn?.addEventListener('click', () => {
-      showAll = !showAll;
-      if (showAll) {
-        steps.forEach((s) => s.classList.add('active'));
-        toggleAllBtn.textContent = 'Collapse to wizard';
-      } else {
-        steps.forEach((s, i) => s.classList.toggle('active', i === current));
-        toggleAllBtn.textContent = 'Show all sections';
-        steps[current].scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
+      isExpanded = !isExpanded;
+      syncWizardView({ scroll: true });
+      updateProgress();
     });
 
     // Draft resume
@@ -2428,6 +3176,7 @@
       hydrateTempFromData(draft.data[movementStepIndex] || {});
       applyConditionalSections();
       applyCaregiverSetupVisibility();
+      syncEducationalQuestionStates();
       toast('Draft restored');
     });
 
@@ -2439,6 +3188,7 @@
     go(0);
     applyConditionalSections();
     applyCaregiverSetupVisibility();
+    syncEducationalQuestionStates();
 
     const ynFields = [
       'behavior_anomaly_flag',
@@ -2846,7 +3596,7 @@
     }
 
   // Wizard state
-  let showAll = false;
+  let isExpanded = false;
   let current = 0;
   let draft = loadDraft() || { data: {}, savedAt: {} };
     function clearDadOnlySections(){
@@ -2903,6 +3653,14 @@
     function restore(step,idx){
       hydrate(step,draft.data[idx]);
       updateSavedAt(step,idx);
+      if (step.querySelector('#behaviorQuestionsWrap')) {
+        syncBehaviorQuestionStates();
+        syncBehaviorTrackingField();
+      }
+      if (step.querySelector('#educationalQuestionsWrap')) {
+        syncEducationalQuestionStates();
+        syncEducationalTrackingField();
+      }
       if(idx===adlStepIndex){
         hydrateAdlFieldsFromData(draft.data[idx] || {}, { silent: true });
       }
@@ -2938,9 +3696,23 @@
         seg.classList.toggle('done', hasData && idx<current);
       });
     }
+    function syncWizardView({ scroll = false } = {}){
+      current = normalizeStepIndex(current);
+      steps.forEach((step, idx) => {
+        const isVisible = !step.classList.contains('config-hidden');
+        const shouldShow = isExpanded ? isVisible : (isVisible && idx === current);
+        step.classList.toggle('active', shouldShow);
+      });
+      if (toggleAllBtn) {
+        toggleAllBtn.textContent = isExpanded ? 'Collapse to Wizard' : 'Show All Sections';
+      }
+      if (scroll && !isExpanded && steps[current]) {
+        steps[current].scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
     function go(i){
       current = normalizeStepIndex(i);
-      if(!showAll){ steps.forEach((s,idx)=>s.classList.toggle('active', idx===current)); steps[current].scrollIntoView({behavior:'smooth',block:'start'}); }
+      syncWizardView({ scroll: !isExpanded });
       updateProgress();
     }
     function buildPayload(){
@@ -2987,6 +3759,16 @@
       syncFixationControls();
     }
     function toast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.style.opacity='1'; clearTimeout(el._t); el._t=setTimeout(()=>el.style.opacity='0',1400); }
+    function showSuccessBanner(msg = 'Check-in submitted successfully'){
+      const el = document.getElementById('successBanner');
+      if (!el) return;
+      el.textContent = msg;
+      el.classList.add('is-visible');
+      clearTimeout(el._t);
+      el._t = setTimeout(() => {
+        el.classList.remove('is-visible');
+      }, 3000);
+    }
 
     // ---------- FINAL SUBMIT ----------
     async function submitFinal(e){
@@ -3006,8 +3788,10 @@
         const payload = buildPayload();
         const behaviorTracking = collectBehaviorTracking();
         const educationalTracking = collectEducationalTracking();
+        const educationalPayload = collectEducationalPayload();
         payload.behavior_tracking = behaviorTracking;
         payload.educational_tracking = educationalTracking;
+        payload.educational = educationalPayload;
         if (behaviorTrackingField) {
           behaviorTrackingField.value = behaviorTracking.length ? JSON.stringify(behaviorTracking) : '';
         }
@@ -3284,7 +4068,7 @@
 
         clearDraftUI();
         resetFormValues();
-        toast('Submitted ✓');
+        showSuccessBanner();
       } catch (err) {
         console.error('[cg] submit error:', err);
         alert('Could not submit. ' + (err?.message || 'Check your connection and try again.'));

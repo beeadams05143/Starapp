@@ -1,4 +1,4 @@
-import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.12D';
+import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.16B';
 
 const GROUP_KEY_ID = 'currentGroupId';
 const GROUP_KEY_NAME = 'currentGroupName';

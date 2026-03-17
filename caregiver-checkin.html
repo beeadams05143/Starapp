@@ -41,6 +41,10 @@
     .step{display:none}
     .step.active{display:block}
     .config-hidden{display:none!important}
+    .question-block{display:grid;gap:6px}
+    .section-subtitle{font-weight:800;color:#374151;margin:16px 0 6px}
+    .prn-option{display:flex;align-items:center;gap:8px;font-weight:700;color:#374151}
+    .prn-option input{width:auto}
     .is-dad-hidden{display:none!important}
     .is-dad-only{display:none}
     .is-dad-only.is-dad-active{display:grid}
@@ -162,6 +166,7 @@
     .yn-pill-group{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
     .yn-pill{display:inline-flex;align-items:center;gap:6px;border:1px solid #d1d5db;border-radius:999px;padding:4px 8px;background:#fff;font-weight:700;font-size:12.5px}
     .yn-pill input{width:auto}
+    .helper-note{margin-top:10px;padding:12px 14px;border-radius:14px;border:1px solid #fde68a;background:#fffbeb;color:#92400e}
   </style>
 </head>
 <body>
@@ -190,6 +195,7 @@
       <div class="prog-item" data-step="3"><div class="prog-label">Home / Family</div><div class="seg"></div></div>
       <div class="prog-item" data-step="4"><div class="prog-label">Community</div><div class="seg"></div></div>
       <div class="prog-item" data-step="5"><div class="prog-label">Daily Living</div><div class="seg"></div></div>
+      <div class="prog-item" data-step="6"><div class="prog-label">Educational</div><div class="seg"></div></div>
     </div>
 
     <div class="top-actions">
@@ -206,20 +212,22 @@
             <input type="date" id="entryDateInput" name="entry_date"/>
             <span class="muted">Pick another day if you missed logging it.</span>
           </div>
-          <div class="section-title">Physical Factors</div>
+          <div class="section-title">Physical Health</div>
           <div class="row cols-3 compact">
-            <label>Appears in good health?
+            <div id="question-appears-good-health" class="question-block">
+              <div class="movement-label">Appears in good health?</div>
               <div class="yn-pill-group" role="group" aria-label="Appears in good health">
-                <label class="yn-pill"><input type="radio" name="appears_good_health" value="Yes"> Yes</label>
-                <label class="yn-pill"><input type="radio" name="appears_good_health" value="No" checked> No</label>
+                <label class="yn-pill"><input type="radio" name="appears_good_health" value="yes"> Yes</label>
+                <label class="yn-pill"><input type="radio" name="appears_good_health" value="no" checked> No</label>
               </div>
-            </label>
-            <label>Appears tired?
+            </div>
+            <div id="question-appears-tired" class="question-block">
+              <div class="movement-label">Appears tired?</div>
               <div class="yn-pill-group" role="group" aria-label="Appears tired">
-                <label class="yn-pill"><input type="radio" name="appears_tired" value="Yes"> Yes</label>
-                <label class="yn-pill"><input type="radio" name="appears_tired" value="No" checked> No</label>
+                <label class="yn-pill"><input type="radio" name="appears_tired" value="yes"> Yes</label>
+                <label class="yn-pill"><input type="radio" name="appears_tired" value="no" checked> No</label>
               </div>
-            </label>
+            </div>
             <label>Hours of sleep:
               <select name="hours_sleep" class="yn"><option value="">Select</option><option>4</option><option>6</option><option>8</option><option>10+</option></select>
             </label>
@@ -230,12 +238,13 @@
               <input type="checkbox" name="sleep_onset_difficulty" style="width:auto"/>
               <span>Difficulty falling asleep (took ~2+ hours)</span>
             </label>
-            <label>Woke up during the night?
+            <div id="question-night-wake-flag" class="question-block">
+              <div class="movement-label">Woke up during the night?</div>
               <div class="yn-pill-group" role="group" aria-label="Woke up during the night">
-                <label class="yn-pill"><input type="radio" name="night_wake_flag" id="night_wake_flag_yes" value="Yes"> Yes</label>
-                <label class="yn-pill"><input type="radio" name="night_wake_flag" id="night_wake_flag_no" value="No" checked> No</label>
+                <label class="yn-pill"><input type="radio" name="night_wake_flag" id="night_wake_flag_yes" value="yes"> Yes</label>
+                <label class="yn-pill"><input type="radio" name="night_wake_flag" id="night_wake_flag_no" value="no" checked> No</label>
               </div>
-            </label>
+            </div>
             <label id="nightWakeCountWrap" style="display:none">How many times?
               <select name="night_wake_count" id="night_wake_count" class="yn">
                 <option value="">Select</option>
@@ -247,40 +256,40 @@
             </label>
           </div>
           <div class="muted" style="margin:-4px 0 8px">Record hours of sleep or time fell asleep — either one is fine, or both.</div>
+          <div id="question-prn-sleep-disturbance" class="question-block" style="margin:0 0 10px">
+            <label class="prn-option">
+              <input type="checkbox" name="prn_used_for_sleep_disturbance">
+              PRN used for sleep disturbance
+            </label>
+          </div>
           <div class="row cols-3 compact">
-            <label>Had a BM today?
+            <div id="question-had-bm" class="question-block">
+              <div class="movement-label">Had a BM today?</div>
               <div class="yn-pill-group" role="group" aria-label="Had a BM today">
                 <label class="yn-pill"><input type="radio" name="had_bm" id="had_bm_yes" value="yes"> Yes</label>
                 <label class="yn-pill"><input type="radio" name="had_bm" id="had_bm_no" value="no" checked> No</label>
               </div>
-            </label>
-            <label for="caregiver_name">Caregiver Name:
-              <input id="caregiver_name" name="caregiver_name" type="text" placeholder="Enter your name" required />
-            </label>
-            <label>PRN administered?
-              <div class="yn-pill-group" role="group" aria-label="PRN administered">
-                <label class="yn-pill"><input type="radio" name="prn_administered" id="prn_administered_yes" value="yes"> Yes</label>
-                <label class="yn-pill"><input type="radio" name="prn_administered" id="prn_administered_no" value="no" checked> No</label>
-              </div>
-            </label>
-            <label id="prnNameWrap" style="display:none">PRN name:
-              <input type="text" name="prn_name" placeholder="Name of PRN"/>
-            </label>
-            <label id="prnTimeWrap" style="display:none">Time PRN was given:<input type="time" name="prn_time"/></label>
-            <div class="row cols-3 compact" id="prnReasonWrap" style="display:none">
-              <label style="display:flex;align-items:center;gap:8px;margin-top:28px">
-                <input type="checkbox" name="prn_reason_sleep" id="prn_reason_sleep" style="width:auto"/>
-                <span>Sleep</span>
-              </label>
-              <label style="display:flex;align-items:center;gap:8px;margin-top:28px">
-                <input type="checkbox" name="prn_reason_aggression" id="prn_reason_aggression" style="width:auto"/>
-                <span>Aggression</span>
-              </label>
-              <label style="display:flex;align-items:center;gap:8px;margin-top:28px">
-                <input type="checkbox" name="prn_reason_mania" id="prn_reason_mania" style="width:auto"/>
-                <span>Mania</span>
+            </div>
+            <div id="question-caregiver-name" class="question-block">
+              <label for="caregiver_name">Caregiver Name:
+                <input id="caregiver_name" name="caregiver_name" type="text" placeholder="Enter your name" required />
               </label>
             </div>
+            <div id="question-appetite-change-flag" class="question-block">
+              <div class="movement-label">Change in appetite?</div>
+              <div class="yn-pill-group" role="group" aria-label="Change in appetite">
+                <label class="yn-pill"><input type="radio" name="appetite_change_flag" value="yes"> Yes</label>
+                <label class="yn-pill"><input type="radio" name="appetite_change_flag" value="no" checked> No</label>
+              </div>
+            </div>
+            <label id="appetiteDirectionWrap" style="display:none">Appetite shift:
+              <select name="appetite_change_direction" id="appetite_change_direction">
+                <option value="">Select</option>
+                <option value="less">Eating less</option>
+                <option value="more">Eating more</option>
+                <option value="unclear">Unclear / mixed</option>
+              </select>
+            </label>
           </div>
           <div class="med-panel" id="medChangePanel">
             <div class="med-head">
@@ -344,6 +353,12 @@
                 <div class="movement-title">Movement / Tics / Vocalizations <span class="muted">(Tremor / Dyskinesia)</span></div>
                 <p class="movement-desc">Track unusual movements, shaking, vocalizations, grimacing, or repetitive motions.</p>
               </div>
+            </div>
+            <div id="question-prn-pain" class="question-block" style="margin-bottom:8px">
+              <label class="prn-option">
+                <input type="checkbox" name="prn_used_for_pain">
+                PRN used for pain or discomfort
+              </label>
             </div>
 
             <div class="movement-yn" role="group" aria-label="Movement symptoms today">
@@ -502,6 +517,12 @@
                 <p class="temp-desc">Track low-grade temperature and related symptoms prior to tests.</p>
               </div>
             </div>
+            <div id="question-prn-headache" class="question-block" style="margin-bottom:8px">
+              <label class="prn-option">
+                <input type="checkbox" name="prn_used_for_headache">
+                PRN used for headache or illness symptoms
+              </label>
+            </div>
 
             <div class="temp-yn" role="group" aria-label="Temperature today">
               <strong>Temperature today?</strong>
@@ -577,7 +598,7 @@
               <input type="text" name="temp_notes" id="temp_notes" placeholder="Short note, e.g. warm at 7am"/>
             </div>
           </div>
-          <label>Caregiver notes:<textarea name="physical_notes" placeholder="Optional notes..."></textarea></label>
+          <label>Physical health notes:<textarea name="physical_notes" placeholder="Optional notes..."></textarea></label>
           <div class="controls">
             <div class="left-actions"><button class="btn" type="button" data-save>Save</button><span class="savedAt" data-savedat></span></div>
             <div><button class="btn primary" type="button" data-next>Save &amp; Next →</button></div>
@@ -588,123 +609,138 @@
       <!-- STEP 2: Behavior -->
       <div class="step" data-step="1">
         <fieldset class="panel">
-          <div class="section-title">Behavioral Observations</div>
-          <div class="row cols-3 compact">
-            <label>Did the individual display any aggression?
-              <div class="yn-pill-group" role="group" aria-label="Aggression observed">
-                <label class="yn-pill"><input type="radio" name="aggression_flag" value="Yes"> Yes</label>
-                <label class="yn-pill"><input type="radio" name="aggression_flag" value="No" checked> No</label>
+          <div class="section-title">Behavior / Mental Health</div>
+          <p class="muted">Only the behaviors selected in caregiver setup will appear here.</p>
+          <input type="hidden" name="behavior_tracking" id="behavior_tracking" value=""/>
+          <div id="behaviorQuestionsWrap" class="row cols-2"></div>
+          <div id="legacyBehaviorQuestions" class="config-hidden" aria-hidden="true">
+            <div class="row cols-3 compact">
+              <div id="question-aggression-flag" class="question-block">
+                <div class="movement-label">Did the individual display any aggression?</div>
+                <div class="yn-pill-group" role="group" aria-label="Aggression observed">
+                  <label class="yn-pill"><input type="radio" name="aggression_flag" value="yes"> Yes</label>
+                  <label class="yn-pill"><input type="radio" name="aggression_flag" value="no" checked> No</label>
+                </div>
               </div>
-            </label>
-            <div id="aggressionDetails" class="row cols-3 compact" style="margin:0">
-              <label>Aggression type:
-                <select name="aggression_type" id="aggression_type" disabled>
-                  <option value="">Select type</option>
-                  <option>Posturing</option><option>Physical</option><option>Verbal</option><option>Self-harm</option>
-                </select>
-              </label>
-              <label>Aggression instances from tally sheet <span class="muted">(optional)</span>:
-                <input type="number" min="0" step="1" name="aggression_instances_today" id="aggression_instances_today" disabled placeholder="e.g., 3"/>
-              </label>
-              <label>Intensity (0–5):
-                <input type="range" min="0" max="5" step="1" value="0" name="aggression_intensity" id="aggression_intensity" disabled/>
-                <div class="savedAt"><span id="intensityVal">0</span></div>
+              <div id="aggressionDetails" class="row cols-3 compact" style="margin:0">
+                <label>Aggression type:
+                  <select name="aggression_type" id="aggression_type" disabled>
+                    <option value="">Select type</option>
+                    <option>Posturing</option><option>Physical</option><option>Verbal</option><option>Self-harm</option>
+                  </select>
+                </label>
+                <label>Aggression instances from tally sheet <span class="muted">(optional)</span>:
+                  <input type="number" min="0" step="1" name="aggression_instances_today" id="aggression_instances_today" disabled placeholder="e.g., 3"/>
+                </label>
+                <label>Intensity (0–5):
+                  <input type="range" min="0" max="5" step="1" value="0" name="aggression_intensity" id="aggression_intensity" disabled/>
+                  <div class="savedAt"><span id="intensityVal">0</span></div>
+                </label>
+              </div>
+            </div>
+            <div id="question-prn-aggression" class="question-block" style="margin:0 0 8px">
+              <label class="prn-option">
+                <input type="checkbox" name="prn_used_for_aggression">
+                PRN used for this behavior
               </label>
             </div>
-          </div>
-          <label id="aggressionNotesWrap">Aggression notes:
-            <textarea name="aggression_notes" placeholder="What happened, what helped"></textarea>
-          </label>
-          <hr class="soft"/>
-          <div class="subcap">Mania, focus, appetite</div>
-          <div class="row cols-3 compact">
-            <label>Did Ben seem manic?
-              <div class="yn-pill-group" role="group" aria-label="Seemed manic">
-                <label class="yn-pill"><input type="radio" name="manic_flag" value="Yes"> Yes</label>
-                <label class="yn-pill"><input type="radio" name="manic_flag" value="No" checked> No</label>
+            <label id="aggressionNotesWrap">Aggression notes:
+              <textarea name="aggression_notes" placeholder="What happened, what helped"></textarea>
+            </label>
+            <hr class="soft"/>
+            <div class="section-subtitle">Mood / Regulation</div>
+            <div class="row cols-3 compact">
+              <div id="question-manic-flag" class="question-block">
+                <div class="movement-label">Did the individual seem manic?</div>
+                <div class="yn-pill-group" role="group" aria-label="Seemed manic">
+                  <label class="yn-pill"><input type="radio" name="manic_flag" value="yes"> Yes</label>
+                  <label class="yn-pill"><input type="radio" name="manic_flag" value="no" checked> No</label>
+                </div>
               </div>
-            </label>
-            <label id="maniaIntensityWrap">Mania intensity (0–5):
-              <input type="range" min="0" max="5" step="1" value="0" name="manic_intensity" id="manic_intensity" disabled/>
-              <div class="savedAt"><span id="manicIntensityVal">0</span></div>
-            </label>
-            <label id="maniaInstancesWrap">Mania instances today <span class="muted">(optional)</span>:
-              <input type="number" min="0" step="1" name="mania_instances_today" id="mania_instances_today" disabled placeholder="e.g., 2"/>
-            </label>
-            <label>Trouble focusing?
-              <div class="yn-pill-group" role="group" aria-label="Trouble focusing">
-                <label class="yn-pill"><input type="radio" name="focus_trouble_flag" value="Yes"> Yes</label>
-                <label class="yn-pill"><input type="radio" name="focus_trouble_flag" value="No" checked> No</label>
+              <label id="maniaIntensityWrap">Mania intensity (0–5):
+                <input type="range" min="0" max="5" step="1" value="0" name="manic_intensity" id="manic_intensity" disabled/>
+                <div class="savedAt"><span id="manicIntensityVal">0</span></div>
+              </label>
+              <label id="maniaInstancesWrap">Mania instances today <span class="muted">(optional)</span>:
+                <input type="number" min="0" step="1" name="mania_instances_today" id="mania_instances_today" disabled placeholder="e.g., 2"/>
+              </label>
+              <label id="maniaEpisodeStatusWrap" style="display:none">Episode status:
+                <select name="mania_episode_status" id="mania_episode_status">
+                  <option value="">Select</option>
+                  <option value="suspected">Suspected</option>
+                  <option value="active">Active</option>
+                  <option value="improving">Improving</option>
+                </select>
+              </label>
+            </div>
+            <div id="question-prn-mania" class="question-block" style="margin:0 0 8px">
+              <label class="prn-option">
+                <input type="checkbox" name="prn_used_for_mania">
+                PRN used for this behavior
+              </label>
+            </div>
+            <div class="section-subtitle">Attention / Engagement</div>
+            <div class="row cols-3 compact">
+              <div id="question-focus-trouble-flag" class="question-block">
+                <div class="movement-label">Trouble focusing?</div>
+                <div class="yn-pill-group" role="group" aria-label="Trouble focusing">
+                  <label class="yn-pill"><input type="radio" name="focus_trouble_flag" value="yes"> Yes</label>
+                  <label class="yn-pill"><input type="radio" name="focus_trouble_flag" value="no" checked> No</label>
+                </div>
               </div>
-            </label>
-            <label id="maniaEpisodeStatusWrap" style="display:none">Episode status:
-              <select name="mania_episode_status" id="mania_episode_status">
-                <option value="">Select</option>
-                <option value="suspected">Suspected</option>
-                <option value="active">Active</option>
-                <option value="improving">Improving</option>
-              </select>
-            </label>
-            <label>Change in appetite?
-              <div class="yn-pill-group" role="group" aria-label="Change in appetite">
-                <label class="yn-pill"><input type="radio" name="appetite_change_flag" value="Yes"> Yes</label>
-                <label class="yn-pill"><input type="radio" name="appetite_change_flag" value="No" checked> No</label>
+            </div>
+            <div class="row cols-3 compact" id="maniaSymptomsWrap" style="display:none;margin-top:6px">
+              <label style="display:flex;align-items:center;gap:8px;margin-top:28px">
+                <input type="checkbox" name="fixation_present" id="fixation_present" style="width:auto"/>
+                <span>Fixation / perseveration</span>
+              </label>
+              <label id="fixationCategoryWrap" style="display:none">Fixation category:
+                <select name="fixation_category" id="fixation_category">
+                  <option value="">Select</option>
+                  <option value="person">Person</option>
+                  <option value="topic">Topic</option>
+                  <option value="object">Object / item</option>
+                  <option value="routine">Routine / schedule</option>
+                  <option value="food">Food</option>
+                  <option value="activity">Activity / goal</option>
+                  <option value="other">Other</option>
+                </select>
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;margin-top:28px">
+                <input type="checkbox" name="repetitive_behavior_present" id="repetitive_behavior_present" style="width:auto"/>
+                <span>Repetitive behavior</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;margin-top:28px">
+                <input type="checkbox" name="pressured_speech_present" id="pressured_speech_present" style="width:auto"/>
+                <span>Pressured / rapid speech</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;margin-top:28px">
+                <input type="checkbox" name="grandiosity_present" id="grandiosity_present" style="width:auto"/>
+                <span>Grandiosity</span>
+              </label>
+            </div>
+            <div class="subcap">Anomalies <span class="muted">(unexpected behaviors, mood shifts, or unusual reactions)</span></div>
+            <div class="row cols-2">
+              <div id="question-behavior-anomaly-flag" class="question-block">
+                <div class="movement-label">Noticed anything unusual in mood or behavior?</div>
+                <div class="yn-pill-group" role="group" aria-label="Noticed anything unusual in mood or behavior">
+                  <label class="yn-pill"><input type="radio" name="behavior_anomaly_flag" value="yes"> Yes</label>
+                  <label class="yn-pill"><input type="radio" name="behavior_anomaly_flag" value="no" checked> No</label>
+                </div>
               </div>
-            </label>
-            <label id="appetiteDirectionWrap" style="display:none">Appetite shift:
-              <select name="appetite_change_direction" id="appetite_change_direction">
-                <option value="">Select</option>
-                <option value="less">Eating less</option>
-                <option value="more">Eating more</option>
-                <option value="unclear">Unclear / mixed</option>
-              </select>
-            </label>
+              <label id="anomalyTriggerWrap" style="display:none">Trigger or context:
+                <input type="text" name="behavior_anomaly_trigger" placeholder="e.g., loud noise, new staff, schedule change"/>
+              </label>
+            </div>
+            <div id="question-prn-anxiety" class="question-block" style="margin:0 0 8px">
+              <label class="prn-option">
+                <input type="checkbox" name="prn_used_for_anxiety">
+                PRN used for this behavior
+              </label>
+            </div>
+            <label id="anomalyNotesWrap" style="display:none">Anomaly details:<textarea name="behavior_anomaly_notes" placeholder="Describe what felt off, how long it lasted, what helped"></textarea></label>
+            <label>Behavior notes:<textarea name="behavior_notes" placeholder="What happened, what helped"></textarea></label>
           </div>
-          <div class="row cols-3 compact" id="maniaSymptomsWrap" style="display:none;margin-top:6px">
-            <label style="display:flex;align-items:center;gap:8px;margin-top:28px">
-              <input type="checkbox" name="fixation_present" id="fixation_present" style="width:auto"/>
-              <span>Fixation / perseveration</span>
-            </label>
-            <label id="fixationCategoryWrap" style="display:none">Fixation category:
-              <select name="fixation_category" id="fixation_category">
-                <option value="">Select</option>
-                <option value="person">Person</option>
-                <option value="topic">Topic</option>
-                <option value="object">Object / item</option>
-                <option value="routine">Routine / schedule</option>
-                <option value="food">Food</option>
-                <option value="activity">Activity / goal</option>
-                <option value="other">Other</option>
-              </select>
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;margin-top:28px">
-              <input type="checkbox" name="repetitive_behavior_present" id="repetitive_behavior_present" style="width:auto"/>
-              <span>Repetitive behavior</span>
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;margin-top:28px">
-              <input type="checkbox" name="pressured_speech_present" id="pressured_speech_present" style="width:auto"/>
-              <span>Pressured / rapid speech</span>
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;margin-top:28px">
-              <input type="checkbox" name="grandiosity_present" id="grandiosity_present" style="width:auto"/>
-              <span>Grandiosity</span>
-            </label>
-          </div>
-          <div class="subcap">Anomalies <span class="muted">(unexpected behaviors, mood shifts, or unusual reactions)</span></div>
-          <div class="row cols-2">
-            <label>Noticed anything unusual?
-              <div class="yn-pill-group" role="group" aria-label="Noticed anything unusual">
-                <label class="yn-pill"><input type="radio" name="behavior_anomaly_flag" value="Yes"> Yes</label>
-                <label class="yn-pill"><input type="radio" name="behavior_anomaly_flag" value="No" checked> No</label>
-              </div>
-            </label>
-            <label id="anomalyTriggerWrap" style="display:none">Trigger or context:
-              <input type="text" name="behavior_anomaly_trigger" placeholder="e.g., loud noise, new staff, schedule change"/>
-            </label>
-          </div>
-          <label id="anomalyNotesWrap" style="display:none">Anomaly details:<textarea name="behavior_anomaly_notes" placeholder="Describe what felt off, how long it lasted, what helped"></textarea></label>
-
-          <label>Behavior notes:<textarea name="behavior_notes" placeholder="What happened, what helped"></textarea></label>
           <div class="controls">
             <div class="left-actions"><button class="btn" type="button" data-save>Save</button><span class="savedAt" data-savedat></span></div>
             <div>
@@ -720,12 +756,13 @@
         <fieldset class="panel">
           <div class="section-title">Vocational Participation</div>
           <div class="row cols-3 compact">
-            <label>Participated in vocational activity?
+            <div id="question-vocational-participation" class="question-block">
+              <div class="movement-label">Participated in vocational activity?</div>
               <div class="yn-pill-group" role="group" aria-label="Vocational participation">
-                <label class="yn-pill"><input type="radio" name="vocational_participation" value="Yes"> Yes</label>
-                <label class="yn-pill"><input type="radio" name="vocational_participation" value="No" checked> No</label>
+                <label class="yn-pill"><input type="radio" name="vocational_participation" value="yes"> Yes</label>
+                <label class="yn-pill"><input type="radio" name="vocational_participation" value="no" checked> No</label>
               </div>
-            </label>
+            </div>
             <div id="vocationalDetails" class="row cols-3 compact" style="margin:0;display:none">
               <label>Time in vocational activity:
                 <select name="vocational_time">
@@ -751,12 +788,13 @@
         <fieldset class="panel">
           <div class="section-title">Home / Family Community</div>
           <div class="row cols-3 compact">
-            <label>Engaged in a home/community activity?
+            <div id="question-home-activity-flag" class="question-block">
+              <div class="movement-label">Engaged in a home/community activity?</div>
               <div class="yn-pill-group" role="group" aria-label="Home activity">
-                <label class="yn-pill"><input type="radio" name="home_activity_flag" value="Yes"> Yes</label>
-                <label class="yn-pill"><input type="radio" name="home_activity_flag" value="No" checked> No</label>
+                <label class="yn-pill"><input type="radio" name="home_activity_flag" value="yes"> Yes</label>
+                <label class="yn-pill"><input type="radio" name="home_activity_flag" value="no" checked> No</label>
               </div>
-            </label>
+            </div>
           </div>
           <div id="homeDetails" class="row cols-3 compact" style="display:none">
             <label>Time spent (home):
@@ -787,12 +825,13 @@
             <label>Home activity note:<input type="text" name="home_activity_note" placeholder="e.g., hosted grandma for dinner"/></label>
           </div>
           <div class="row cols-2 is-dad-only" id="dadPetsSection">
-            <label>Pet interaction?
+            <div id="question-pet-interaction-flag" class="question-block">
+              <div class="movement-label">Pet interaction?</div>
               <div class="yn-pill-group" role="group" aria-label="Pet interaction">
-                <label class="yn-pill"><input type="radio" name="pet_interaction_flag" value="Yes"> Yes</label>
-                <label class="yn-pill"><input type="radio" name="pet_interaction_flag" value="No" checked> No</label>
+                <label class="yn-pill"><input type="radio" name="pet_interaction_flag" value="yes"> Yes</label>
+                <label class="yn-pill"><input type="radio" name="pet_interaction_flag" value="no" checked> No</label>
               </div>
-            </label>
+            </div>
             <div id="petDetails" class="row cols-2" style="margin:0;display:none">
               <label>Pet activity type:
                 <select name="pet_activity_type">
@@ -830,12 +869,13 @@
           <div class="section-title">Community &amp; Social Interaction</div>
           <div class="subcap">Community at large</div>
           <div class="row cols-3 compact">
-            <label>Engaged in a community-at-large activity?
+            <div id="question-public-activity-flag" class="question-block">
+              <div class="movement-label">Engaged in a community-at-large activity?</div>
               <div class="yn-pill-group" role="group" aria-label="Community activity">
-                <label class="yn-pill"><input type="radio" name="public_activity_flag" value="Yes"> Yes</label>
-                <label class="yn-pill"><input type="radio" name="public_activity_flag" value="No" checked> No</label>
+                <label class="yn-pill"><input type="radio" name="public_activity_flag" value="yes"> Yes</label>
+                <label class="yn-pill"><input type="radio" name="public_activity_flag" value="no" checked> No</label>
               </div>
-            </label>
+            </div>
           </div>
           <div id="publicDetails" class="row cols-3 compact" style="display:none">
             <label>Time spent (community-at-large):
@@ -876,12 +916,13 @@
           <hr class="soft"/>
           <div class="subcap">Interactions</div>
           <div class="row cols-3 compact">
-            <label>Engaged with a community member appropriately?
+            <div id="question-community-interaction-ok" class="question-block">
+              <div class="movement-label">Engaged with a community member appropriately?</div>
               <div class="yn-pill-group" role="group" aria-label="Community interaction ok">
-                <label class="yn-pill"><input type="radio" name="community_interaction_ok" value="Yes"> Yes</label>
-                <label class="yn-pill"><input type="radio" name="community_interaction_ok" value="No" checked> No</label>
+                <label class="yn-pill"><input type="radio" name="community_interaction_ok" value="yes"> Yes</label>
+                <label class="yn-pill"><input type="radio" name="community_interaction_ok" value="no" checked> No</label>
               </div>
-            </label>
+            </div>
           </div>
           <div id="interactionDetails" class="row cols-3 compact" style="display:none">
             <div>
@@ -920,7 +961,7 @@
       <!-- STEP 6: Daily Living -->
       <div class="step" data-step="5" id="daily-living-step">
         <fieldset class="panel">
-          <div class="section-title">Daily Living Activities</div>
+          <div class="section-title">Daily Living</div>
           <div class="row cols-2">
             <div>
               <div class="movement-label">ADL categories</div>
@@ -953,6 +994,26 @@
             <div>
               <button class="btn" type="button" data-prev>← Back</button>
               <button class="btn primary" id="submitAll" type="submit">Submit Final</button>
+            </div>
+          </div>
+        </fieldset>
+      </div>
+
+      <!-- STEP 7: Educational -->
+      <div class="step" data-step="6" id="educational-step">
+        <fieldset class="panel">
+          <div class="section-title">Educational</div>
+          <p class="muted">Only the educational items selected in caregiver setup will appear here.</p>
+          <input type="hidden" name="educational_tracking" id="educational_tracking" value=""/>
+          <div id="educationalQuestionsWrap" class="row cols-2"></div>
+          <div class="controls">
+            <div class="left-actions">
+              <button class="btn" type="button" data-save>Save</button>
+              <span class="savedAt" data-savedat></span>
+            </div>
+            <div>
+              <button class="btn" type="button" data-prev>← Back</button>
+              <button class="btn primary" type="submit">Submit Final</button>
             </div>
           </div>
         </fieldset>
@@ -996,6 +1057,7 @@
   let adlCategoryWrap, adlActivityWrap, adlCategoryInput, adlActivityInput;
   let adlNoteInput, adlPromptingSelect, adlEntryListEl, addAdlEntryBtn, adlEntriesField;
   let homeActivityTypeInput, publicActivityTypeInput, interactionTypeInput;
+  let behaviorQuestionsWrap, behaviorTrackingField, educationalQuestionsWrap, educationalTrackingField;
   let adlEntries = [];
   let adlHandlersBound = false;
   const todayISO = () => new Date().toISOString().slice(0,10);
@@ -1105,14 +1167,16 @@
     elements.filter(Boolean).forEach((el) => el.classList.toggle('config-hidden', !!hidden));
   };
   const configItemEnabled = (categoryKey, itemKey) => {
-    if (!caregiverSetupState.hasConfig) return true;
+    if (!caregiverSetupState.hasConfig) return false;
     if (!caregiverSetupState.selectedCategories.has(categoryKey)) return false;
     return (caregiverSetupState.selectedItems[categoryKey] || []).includes(itemKey);
   };
   const anyConfigItemEnabled = (categoryKey, itemKeys = []) => {
-    if (!caregiverSetupState.hasConfig) return true;
+    if (!caregiverSetupState.hasConfig) return false;
+    if (!caregiverSetupState.selectedCategories.has(categoryKey)) return false;
     return itemKeys.some((itemKey) => configItemEnabled(categoryKey, itemKey));
   };
+  const hasAnyEnabledCategory = () => caregiverSetupState.selectedCategories.size > 0;
 
   const BASE_ADL_OPTIONS = {
     'Hygiene / Toileting': ['Brushed teeth','Flossed teeth','Washed face','Showered','Toileting routine','Combed hair','Clipped nails'],
@@ -1121,6 +1185,225 @@
     'Cooking / Food': ['Prepared snack','Prepared drink','Made sandwich','Helped cook','Used microwave','Helped bake'],
     'Community / Errands': ['Brought trash out','Sorted recycling','Carried grocery bag']
   };
+
+  const BEHAVIOR_LABEL_OVERRIDES = {
+    aggression: 'Aggression',
+    anxiety: 'Anxiety',
+    mania: 'Mania',
+    withdrawal: 'Withdrawal',
+    engagement: 'Engagement',
+    ocd_behaviors: 'OCD Behaviors',
+    adhd_symptoms: 'ADHD Symptoms',
+    impulsivity: 'Impulsivity',
+    restlessness: 'Restlessness',
+    emotional_regulation_difficulty: 'Emotional Regulation Difficulty',
+  };
+  const EDUCATIONAL_LABEL_OVERRIDES = {
+    school_attendance: 'School Attendance',
+    class_participation: 'Class Participation',
+    assignment_completion: 'Assignment Completion',
+    peer_interaction: 'Peer Interaction',
+    transitions: 'Transitions',
+  };
+
+  const toBehaviorKey = (value) =>
+    String(value || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '');
+
+  const toBehaviorLabel = (value) => {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+    const key = toBehaviorKey(raw);
+    if (BEHAVIOR_LABEL_OVERRIDES[key]) return BEHAVIOR_LABEL_OVERRIDES[key];
+    if (/[A-Z]/.test(raw) || /\s/.test(raw)) return raw;
+    return raw
+      .split('_')
+      .filter(Boolean)
+      .map((part) => {
+        const upper = part.toUpperCase();
+        if (upper === 'OCD' || upper === 'ADHD' || upper === 'PRN') return upper;
+        return part.charAt(0).toUpperCase() + part.slice(1);
+      })
+      .join(' ');
+  };
+
+  const toEducationalKey = (value) =>
+    String(value || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '');
+
+  const toEducationalLabel = (value) => {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+    const key = toEducationalKey(raw);
+    if (EDUCATIONAL_LABEL_OVERRIDES[key]) return EDUCATIONAL_LABEL_OVERRIDES[key];
+    if (/[A-Z]/.test(raw) || /\s/.test(raw)) return raw;
+    return raw
+      .split('_')
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
+  };
+
+  function getConfiguredBehaviorOptions(){
+    if (!caregiverSetupState.hasConfig || !caregiverSetupState.selectedCategories.has('behavior_mental_health')) {
+      return [];
+    }
+    const seen = new Set();
+    return (caregiverSetupState.selectedItems.behavior_mental_health || [])
+      .map((entry, index) => {
+        const key = toBehaviorKey(entry) || `behavior_${index + 1}`;
+        if (seen.has(key)) return null;
+        seen.add(key);
+        return {
+          key,
+          label: toBehaviorLabel(entry),
+        };
+      })
+      .filter(Boolean);
+  }
+
+  function collectBehaviorTracking(){
+    if (!behaviorQuestionsWrap) return [];
+    return Array.from(behaviorQuestionsWrap.querySelectorAll('[data-behavior-key]')).map((block) => {
+      const behaviorName = block.dataset.behaviorLabel || '';
+      const behaviorKey = block.dataset.behaviorKey || '';
+      const occurred = getYnValue(`behavior_occurred__${behaviorKey}`) === 'yes';
+      const prnUsed = getYnValue(`behavior_prn__${behaviorKey}`) === 'yes';
+      const notes = trimOrNull(block.querySelector(`textarea[name="behavior_notes__${behaviorKey}"]`)?.value || '');
+      return {
+        behavior_name: behaviorName,
+        occurred,
+        prn_used: prnUsed,
+        notes,
+      };
+    });
+  }
+
+  function syncBehaviorTrackingField({ dispatch = false } = {}){
+    if (!behaviorTrackingField) return;
+    const tracking = collectBehaviorTracking();
+    behaviorTrackingField.value = tracking.length ? JSON.stringify(tracking) : '';
+    if (dispatch) {
+      behaviorTrackingField.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  }
+
+  function renderBehaviorQuestions(){
+    if (!behaviorQuestionsWrap) return;
+    const options = getConfiguredBehaviorOptions();
+    if (!options.length) {
+      behaviorQuestionsWrap.innerHTML = '<p class="muted">No behavior tracking items are enabled for this group.</p>';
+      syncBehaviorTrackingField();
+      return;
+    }
+    behaviorQuestionsWrap.innerHTML = options.map(({ key, label }) => `
+      <article class="panel" data-behavior-key="${escapeHtml(key)}" data-behavior-label="${escapeHtml(label)}" style="padding:16px">
+        <div class="section-subtitle" style="margin-top:0">${escapeHtml(label)}</div>
+        <div class="row cols-2 compact">
+          <div class="question-block">
+            <div class="movement-label">Did this occur today?</div>
+            <div class="yn-pill-group" role="group" aria-label="${escapeHtml(label)} occurred today">
+              <label class="yn-pill"><input type="radio" name="behavior_occurred__${escapeHtml(key)}" value="yes"> Yes</label>
+              <label class="yn-pill"><input type="radio" name="behavior_occurred__${escapeHtml(key)}" value="no" checked> No</label>
+            </div>
+          </div>
+          <div class="question-block">
+            <div class="movement-label">PRN used?</div>
+            <div class="yn-pill-group" role="group" aria-label="${escapeHtml(label)} PRN used">
+              <label class="yn-pill"><input type="radio" name="behavior_prn__${escapeHtml(key)}" value="yes"> Yes</label>
+              <label class="yn-pill"><input type="radio" name="behavior_prn__${escapeHtml(key)}" value="no" checked> No</label>
+            </div>
+          </div>
+        </div>
+        <label>Notes:
+          <textarea name="behavior_notes__${escapeHtml(key)}" placeholder="Optional notes for ${escapeHtml(label).toLowerCase()}"></textarea>
+        </label>
+      </article>
+    `).join('');
+    const behaviorStep = document.querySelector('.step[data-step="1"]');
+    if (behaviorStep && draft?.data?.[1]) {
+      hydrate(behaviorStep, draft.data[1]);
+    }
+    syncBehaviorTrackingField();
+  }
+
+  function getConfiguredEducationalOptions(){
+    if (!caregiverSetupState.hasConfig || !caregiverSetupState.selectedCategories.has('educational')) {
+      return [];
+    }
+    const seen = new Set();
+    return (caregiverSetupState.selectedItems.educational || [])
+      .map((entry, index) => {
+        const key = toEducationalKey(entry) || `educational_${index + 1}`;
+        if (seen.has(key)) return null;
+        seen.add(key);
+        return {
+          key,
+          label: toEducationalLabel(entry),
+        };
+      })
+      .filter(Boolean);
+  }
+
+  function collectEducationalTracking(){
+    if (!educationalQuestionsWrap) return [];
+    return Array.from(educationalQuestionsWrap.querySelectorAll('[data-educational-key]')).map((block) => {
+      const itemName = block.dataset.educationalLabel || '';
+      const itemKey = block.dataset.educationalKey || '';
+      const occurred = getYnValue(`educational_occurred__${itemKey}`) === 'yes';
+      const notes = trimOrNull(block.querySelector(`textarea[name="educational_notes__${itemKey}"]`)?.value || '');
+      return {
+        item_name: itemName,
+        occurred,
+        notes,
+      };
+    });
+  }
+
+  function syncEducationalTrackingField({ dispatch = false } = {}){
+    if (!educationalTrackingField) return;
+    const tracking = collectEducationalTracking();
+    educationalTrackingField.value = tracking.length ? JSON.stringify(tracking) : '';
+    if (dispatch) {
+      educationalTrackingField.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  }
+
+  function renderEducationalQuestions(){
+    if (!educationalQuestionsWrap) return;
+    const options = getConfiguredEducationalOptions();
+    if (!options.length) {
+      educationalQuestionsWrap.innerHTML = '';
+      syncEducationalTrackingField();
+      return;
+    }
+    educationalQuestionsWrap.innerHTML = options.map(({ key, label }) => `
+      <article class="panel" data-educational-key="${escapeHtml(key)}" data-educational-label="${escapeHtml(label)}" style="padding:16px">
+        <div class="section-subtitle" style="margin-top:0">${escapeHtml(label)}</div>
+        <div class="question-block">
+          <div class="movement-label">Did this occur today?</div>
+          <div class="yn-pill-group" role="group" aria-label="${escapeHtml(label)} occurred today">
+            <label class="yn-pill"><input type="radio" name="educational_occurred__${escapeHtml(key)}" value="yes"> Yes</label>
+            <label class="yn-pill"><input type="radio" name="educational_occurred__${escapeHtml(key)}" value="no" checked> No</label>
+          </div>
+        </div>
+        <label>Notes:
+          <textarea name="educational_notes__${escapeHtml(key)}" placeholder="Optional notes for ${escapeHtml(label).toLowerCase()}"></textarea>
+        </label>
+      </article>
+    `).join('');
+    const educationalStep = document.getElementById('educational-step');
+    if (educationalStep && draft?.data?.[6]) {
+      hydrate(educationalStep, draft.data[6]);
+    }
+    syncEducationalTrackingField();
+  }
 
   function getConfiguredAdlOptions(){
     if (!caregiverSetupState.hasConfig) return BASE_ADL_OPTIONS;
@@ -1169,83 +1452,155 @@
       return;
     }
 
+    let emptyState = document.getElementById('cg-setup-empty-state');
+    if (!emptyState) {
+      emptyState = document.createElement('div');
+      emptyState.id = 'cg-setup-empty-state';
+      emptyState.className = 'panel config-hidden';
+      emptyState.style.marginTop = '12px';
+      emptyState.innerHTML = '<div class="section-title">Caregiver Check-In</div><p>No caregiver tracking items are enabled for this group.</p>';
+      formEl?.parentNode?.insertBefore(emptyState, formEl);
+    }
+
+    const anythingEnabled = hasAnyEnabledCategory();
+    setConfigHidden([formEl], !anythingEnabled);
+    setConfigHidden([emptyState], anythingEnabled);
+
+    const physicalStep = document.querySelector('.step[data-step="0"]');
+    const behaviorStep = document.querySelector('.step[data-step="1"]');
+    const vocationalStep = document.querySelector('.step[data-step="2"]');
+    const homeFamilyStep = document.querySelector('.step[data-step="3"]');
+    const communityStep = document.querySelector('.step[data-step="4"]');
+    const dailyLivingStep = document.getElementById('daily-living-step');
+    const educationalStep = document.getElementById('educational-step');
+    const progressItems = {
+      physical: document.querySelector('.prog-item[data-step="0"]'),
+      behavior: document.querySelector('.prog-item[data-step="1"]'),
+      vocational: document.querySelector('.prog-item[data-step="2"]'),
+      home_family: document.querySelector('.prog-item[data-step="3"]'),
+      community: document.querySelector('.prog-item[data-step="4"]'),
+      daily_living: document.querySelector('.prog-item[data-step="5"]'),
+      educational: document.querySelector('.prog-item[data-step="6"]'),
+    };
+
+    const physicalVisible = caregiverSetupState.selectedCategories.has('physical_health');
+    const behaviorVisible = caregiverSetupState.selectedCategories.has('behavior_mental_health');
+    const vocationalVisible = caregiverSetupState.selectedCategories.has('vocational');
+    const communityVisible = caregiverSetupState.selectedCategories.has('community');
+    const dailyLivingVisible = caregiverSetupState.selectedCategories.has('daily_living');
+    const educationalVisible = caregiverSetupState.selectedCategories.has('educational');
+    const educationalItemsVisible = getConfiguredEducationalOptions().length > 0;
+
+    const sleepEnabled = configItemEnabled('physical_health', 'sleep');
+    const appetiteEnabled = configItemEnabled('physical_health', 'appetite');
+    const energyEnabled = configItemEnabled('physical_health', 'energy_level');
+    const illnessEnabled = configItemEnabled('physical_health', 'illness_symptoms');
+    const painEnabled = configItemEnabled('physical_health', 'pain_discomfort');
+    const medicationEnabled = configItemEnabled('physical_health', 'medication_taken');
+    const prnEnabled = configItemEnabled('physical_health', 'prn_used');
+
+    setConfigHidden([physicalStep, progressItems.physical], !physicalVisible);
+    setConfigHidden([behaviorStep, progressItems.behavior], !behaviorVisible);
+    setConfigHidden([vocationalStep, progressItems.vocational], !vocationalVisible);
+    setConfigHidden([homeFamilyStep, progressItems.home_family], true);
+    setConfigHidden([communityStep, progressItems.community], !communityVisible);
+    setConfigHidden([dailyLivingStep, progressItems.daily_living], !dailyLivingVisible);
+    setConfigHidden([educationalStep, progressItems.educational], !(educationalVisible && educationalItemsVisible));
+
     setConfigHidden([
       labelForName('hours_sleep'),
       labelForName('sleep_fell_asleep_time'),
       labelForName('sleep_onset_difficulty'),
-      labelForName('night_wake_flag'),
+      document.getElementById('question-night-wake-flag'),
       document.getElementById('nightWakeCountWrap'),
-    ], !configItemEnabled('physical_health', 'sleep'));
+    ], !sleepEnabled);
 
     setConfigHidden([
-      labelForName('appetite_change_flag'),
+      document.getElementById('question-prn-sleep-disturbance'),
+    ], !(sleepEnabled && prnEnabled));
+
+    setConfigHidden([
+      document.getElementById('question-appetite-change-flag'),
       document.getElementById('appetiteDirectionWrap'),
-    ], !configItemEnabled('physical_health', 'appetite'));
+    ], !appetiteEnabled);
+
+    setConfigHidden([
+      document.getElementById('question-appears-tired'),
+    ], !energyEnabled);
+
+    setConfigHidden([
+      document.getElementById('question-appears-good-health'),
+      document.getElementById('tempPanel'),
+    ], !illnessEnabled);
+
+    setConfigHidden([
+      document.getElementById('question-prn-headache'),
+    ], !(illnessEnabled && prnEnabled));
+
+    setConfigHidden([
+      document.getElementById('movementSymptomsPanel'),
+    ], !painEnabled);
+
+    setConfigHidden([
+      document.getElementById('question-prn-pain'),
+    ], !(painEnabled && prnEnabled));
 
     setConfigHidden([
       document.getElementById('medChangePanel'),
-    ], !configItemEnabled('physical_health', 'medication_taken'));
+    ], !medicationEnabled);
 
     setConfigHidden([
-      labelForName('prn_administered'),
-      document.getElementById('prnNameWrap'),
-      document.getElementById('prnTimeWrap'),
-      document.getElementById('prnReasonWrap'),
-    ], !configItemEnabled('physical_health', 'prn_used'));
+      document.getElementById('question-had-bm'),
+    ], !configItemEnabled('daily_living', 'toileting'));
 
     setConfigHidden([
-      labelForName('aggression_flag'),
-      document.getElementById('aggressionDetails'),
-      document.getElementById('aggressionNotesWrap'),
-    ], !configItemEnabled('behavior_mental_health', 'aggression'));
+      document.getElementById('question-caregiver-name'),
+    ], !anythingEnabled);
 
     setConfigHidden([
-      labelForName('manic_flag'),
-      document.getElementById('maniaIntensityWrap'),
-      document.getElementById('maniaInstancesWrap'),
-      document.getElementById('maniaEpisodeStatusWrap'),
-      document.getElementById('maniaSymptomsWrap'),
-    ], !configItemEnabled('behavior_mental_health', 'mania'));
+      labelForName('physical_notes'),
+    ], !anyConfigItemEnabled('daily_living', ['following_routine']));
+    renderBehaviorQuestions();
+    setConfigHidden([
+      behaviorQuestionsWrap,
+    ], !behaviorVisible);
+    setConfigHidden([
+      document.getElementById('legacyBehaviorQuestions'),
+    ], true);
+
+    renderEducationalQuestions();
+    setConfigHidden([
+      educationalQuestionsWrap,
+    ], !(educationalVisible && educationalItemsVisible));
 
     setConfigHidden([
-      labelForName('focus_trouble_flag'),
-    ], !anyConfigItemEnabled('behavior_mental_health', ['engagement', 'adhd_symptoms']));
-
-    setConfigHidden([
-      labelForName('behavior_anomaly_flag'),
-      document.getElementById('anomalyTriggerWrap'),
-      document.getElementById('anomalyNotesWrap'),
-      labelForName('behavior_notes'),
-    ], !anyConfigItemEnabled('behavior_mental_health', ['anxiety', 'withdrawal', 'impulsivity', 'restlessness', 'emotional_regulation_difficulty']));
-
-    setConfigHidden([
-      labelForName('fixation_present'),
-      document.getElementById('fixationCategoryWrap'),
-      labelForName('repetitive_behavior_present'),
-    ], !configItemEnabled('behavior_mental_health', 'ocd_behaviors'));
-
-    setConfigHidden([
-      labelForName('vocational_participation'),
+      document.getElementById('question-vocational-participation'),
       document.getElementById('vocationalDetails'),
       document.getElementById('vocationalNotesWrap'),
     ], !anyConfigItemEnabled('vocational', ['attended_work_program', 'task_completion', 'prompting_needed', 'workplace_behavior', 'independence']));
 
     setConfigHidden([
-      labelForName('public_activity_flag'),
+      document.getElementById('question-public-activity-flag'),
       document.getElementById('publicDetails'),
       document.getElementById('publicDetailsNotes'),
       labelForName('public_activity_note'),
     ], !anyConfigItemEnabled('community', ['community_outing', 'transportation', 'recreation_participation']));
 
     setConfigHidden([
-      labelForName('community_interaction_ok'),
+      document.getElementById('question-community-interaction-ok'),
       document.getElementById('interactionDetails'),
       document.getElementById('interactionDetailsNotes'),
       labelForName('community_notes'),
     ], !anyConfigItemEnabled('community', ['social_interaction', 'safety_in_community']));
 
+    setConfigHidden([
+      labelForName('daily_living_notes'),
+    ], !anyConfigItemEnabled('daily_living', ['following_routine', 'hygiene', 'dressing', 'food_preparation', 'clean_up', 'laundry', 'toileting']));
+
     renderAdlCategoryChips();
     renderAdlActivityChips();
+    current = normalizeStepIndex(current);
+    updateProgress();
   }
 
   const parseAdlEntries = (value) => {
@@ -1845,6 +2200,10 @@
     entryDateInput = document.getElementById('entryDateInput');
     toggleAllBtn  = document.getElementById('toggleAll');
     resumeDraftBtn = document.getElementById('resumeDraftBtn');
+    behaviorQuestionsWrap = document.getElementById('behaviorQuestionsWrap');
+    behaviorTrackingField = document.getElementById('behavior_tracking');
+    educationalQuestionsWrap = document.getElementById('educationalQuestionsWrap');
+    educationalTrackingField = document.getElementById('educational_tracking');
     const progressEl = document.getElementById('progress');
     progItems     = progressEl ? Array.from(progressEl.querySelectorAll('.prog-item')) : [];
     segs          = progressEl ? Array.from(progressEl.querySelectorAll('.seg')) : [];
@@ -1964,6 +2323,18 @@
         save(steps[movementStepIndex], movementStepIndex, true);
       });
     });
+    behaviorQuestionsWrap?.addEventListener('change', () => {
+      syncBehaviorTrackingField({ dispatch: true });
+    });
+    behaviorQuestionsWrap?.addEventListener('input', () => {
+      syncBehaviorTrackingField({ dispatch: true });
+    });
+    educationalQuestionsWrap?.addEventListener('change', () => {
+      syncEducationalTrackingField({ dispatch: true });
+    });
+    educationalQuestionsWrap?.addEventListener('input', () => {
+      syncEducationalTrackingField({ dispatch: true });
+    });
     medEls.timeWindow?.addEventListener('change', () => {
       syncMedTimeWindow();
       save(steps[movementStepIndex], movementStepIndex, true);
@@ -2082,7 +2453,7 @@
       'pet_interaction_flag'
     ];
     document.addEventListener('change', (event) => {
-      if (event.target?.matches('input[name="prn_administered"],input[name="night_wake_flag"]')) {
+      if (event.target?.matches('input[name="night_wake_flag"]')) {
         applyConditionalSections();
         return;
       }
@@ -2130,7 +2501,7 @@
     const aggressionDetails = document.getElementById('aggressionDetails');
     const aggressionNotesWrap = document.getElementById('aggressionNotesWrap');
     function syncAggressionControls(){
-      const yes = getYnValue('aggression_flag') === 'Yes';
+      const yes = getYnValue('aggression_flag') === 'yes';
       [aType,aInt,aInstances].forEach(el=>el && (el.disabled=!yes));
       if(!yes){
         if(aType) aType.value='';
@@ -2158,7 +2529,7 @@
       }
     }
     function syncManiaControls(){
-      const yes = getYnValue('manic_flag') === 'Yes';
+      const yes = getYnValue('manic_flag') === 'yes';
       if (manicInt) manicInt.disabled = !yes;
       if (maniaInstances) maniaInstances.disabled = !yes;
       if (maniaIntensityWrap) maniaIntensityWrap.style.display = yes ? '' : 'none';
@@ -2186,7 +2557,7 @@
       syncFixationControls();
     }
     function syncAppetiteControls(){
-      const yes = getYnValue('appetite_change_flag') === 'Yes';
+      const yes = getYnValue('appetite_change_flag') === 'yes';
       if (appetiteDirectionWrap) appetiteDirectionWrap.style.display = yes ? '' : 'none';
       if (!yes) {
         const input = document.getElementById('appetite_change_direction');
@@ -2194,7 +2565,7 @@
       }
     }
 
-    const toggleFieldGroup = (selectId, { showWhen = 'Yes', targets = [] } = {}) => {
+    const toggleFieldGroup = (selectId, { showWhen = 'yes', targets = [] } = {}) => {
       const isMatch = getYnValue(selectId) === showWhen;
       targets.forEach((id) => {
         const el = document.getElementById(id);
@@ -2203,39 +2574,39 @@
     };
     const applyConditionalSections = () => {
       toggleFieldGroup('behavior_anomaly_flag', {
-        showWhen: 'Yes',
+        showWhen: 'yes',
         targets: ['anomalyTriggerWrap', 'anomalyNotesWrap']
       });
       toggleFieldGroup('appetite_change_flag', {
-        showWhen: 'Yes',
+        showWhen: 'yes',
         targets: ['appetiteDirectionWrap']
       });
       toggleFieldGroup('vocational_participation', {
-        showWhen: 'Yes',
+        showWhen: 'yes',
         targets: ['vocationalDetails', 'vocationalNotesWrap']
       });
       toggleFieldGroup('home_activity_flag', {
-        showWhen: 'Yes',
+        showWhen: 'yes',
         targets: ['homeDetails', 'homeDetailsNotes', 'homeNotesWrap']
       });
       toggleFieldGroup('public_activity_flag', {
-        showWhen: 'Yes',
+        showWhen: 'yes',
         targets: ['publicDetails', 'publicDetailsNotes']
       });
       toggleFieldGroup('community_interaction_ok', {
-        showWhen: 'Yes',
+        showWhen: 'yes',
         targets: ['interactionDetails', 'interactionDetailsNotes']
       });
-      const publicYes = getYnValue('public_activity_flag') === 'Yes';
-      const interactionYes = getYnValue('community_interaction_ok') === 'Yes';
+      const publicYes = getYnValue('public_activity_flag') === 'yes';
+      const interactionYes = getYnValue('community_interaction_ok') === 'yes';
       const communityNotesWrap = document.getElementById('communityNotesWrap');
       if (communityNotesWrap) communityNotesWrap.style.display = (publicYes || interactionYes) ? '' : 'none';
       syncAggressionControls();
       toggleFieldGroup('pet_interaction_flag', {
-        showWhen: 'Yes',
+        showWhen: 'yes',
         targets: ['petDetails']
       });
-      const petYes = getYnValue('pet_interaction_flag') === 'Yes';
+      const petYes = getYnValue('pet_interaction_flag') === 'yes';
       if (!petYes) {
         const petType = document.querySelector('select[name="pet_activity_type"]');
         const petNote = document.querySelector('input[name="pet_activity_note"]');
@@ -2253,24 +2624,6 @@
       if (nightWrap) nightWrap.style.display = nightChecked ? '' : 'none';
       if (!nightChecked && nightCount) nightCount.value = '';
 
-      const prnYes = document.getElementById('prn_administered_yes');
-      const prnWrap = document.getElementById('prnNameWrap');
-      const prnTimeWrap = document.getElementById('prnTimeWrap');
-      const prnReasonWrap = document.getElementById('prnReasonWrap');
-      const prnInput = prnWrap?.querySelector('input');
-      const prnTimeInput = prnTimeWrap?.querySelector('input');
-      const prnChecked = !!prnYes?.checked;
-      if (prnWrap) prnWrap.style.display = prnChecked ? '' : 'none';
-      if (prnTimeWrap) prnTimeWrap.style.display = prnChecked ? '' : 'none';
-      if (prnReasonWrap) prnReasonWrap.style.display = prnChecked ? '' : 'none';
-      if (!prnChecked && prnInput) prnInput.value = '';
-      if (!prnChecked && prnTimeInput) prnTimeInput.value = '';
-      if (!prnChecked) {
-        ['prn_reason_sleep', 'prn_reason_aggression', 'prn_reason_mania'].forEach((id) => {
-          const input = document.getElementById(id);
-          if (input) input.checked = false;
-        });
-      }
       applyCaregiverSetupVisibility();
     };
 
@@ -2502,7 +2855,17 @@
       });
     }
     function normalizeStepIndex(target){
-      return Math.max(0, Math.min(target, steps.length - 1));
+      if (!steps.length) return 0;
+      const clamped = Math.max(0, Math.min(target, steps.length - 1));
+      if (!steps[clamped]?.classList.contains('config-hidden')) return clamped;
+
+      for (let offset = 1; offset < steps.length; offset += 1) {
+        const forward = clamped + offset;
+        if (forward < steps.length && !steps[forward].classList.contains('config-hidden')) return forward;
+        const backward = clamped - offset;
+        if (backward >= 0 && !steps[backward].classList.contains('config-hidden')) return backward;
+      }
+      return clamped;
     }
 
     // ---------- helpers ----------
@@ -2564,6 +2927,12 @@
     }
     function updateProgress(){
       segs.forEach((seg,idx)=>{
+        const hidden = steps[idx]?.classList.contains('config-hidden');
+        seg.parentElement?.classList.toggle('config-hidden', !!hidden);
+        if (hidden) {
+          seg.classList.remove('active', 'done');
+          return;
+        }
         seg.classList.toggle('active', idx===current);
         const hasData = !!draft.data[idx] && Object.values(draft.data[idx]).some(v=>v!=='' && v!==false && v!==null && v!==undefined);
         seg.classList.toggle('done', hasData && idx<current);
@@ -2635,6 +3004,16 @@
         if (!user_id) throw new Error('Not signed in');
 
         const payload = buildPayload();
+        const behaviorTracking = collectBehaviorTracking();
+        const educationalTracking = collectEducationalTracking();
+        payload.behavior_tracking = behaviorTracking;
+        payload.educational_tracking = educationalTracking;
+        if (behaviorTrackingField) {
+          behaviorTrackingField.value = behaviorTracking.length ? JSON.stringify(behaviorTracking) : '';
+        }
+        if (educationalTrackingField) {
+          educationalTrackingField.value = educationalTracking.length ? JSON.stringify(educationalTracking) : '';
+        }
         const entryDateRaw = payload.entry_date || entryDateInput?.value || '';
         const entryDate = /^\d{4}-\d{2}-\d{2}$/.test(entryDateRaw)
           ? entryDateRaw
@@ -2725,26 +3104,30 @@
         };
         normalizeMania();
         const normalizePrn = () => {
-          const administered = String(payload.prn_administered || '').toLowerCase() === 'yes';
-          const reasonSleep = administered && !!payload.prn_reason_sleep;
-          const reasonAggression = administered && !!payload.prn_reason_aggression;
-          const reasonMania = administered && !!payload.prn_reason_mania;
-          const prnName = administered ? trimOrNull(payload.prn_name) : null;
-          const prnTime = administered ? trimOrNull(payload.prn_time) : null;
+          const reasonSleep = !!payload.prn_used_for_sleep_disturbance;
+          const reasonAggression = !!payload.prn_used_for_aggression;
+          const reasonMania = !!payload.prn_used_for_mania;
+          const reasonAnxiety = !!payload.prn_used_for_anxiety;
+          const reasonPain = !!payload.prn_used_for_pain;
+          const reasonHeadache = !!payload.prn_used_for_headache;
+          const administered = reasonSleep || reasonAggression || reasonMania || reasonAnxiety || reasonPain || reasonHeadache;
           const cleaned = {
             prn_administered: administered ? 'yes' : 'no',
-            prn_name: prnName,
-            prn_time: prnTime,
+            prn_name: null,
+            prn_time: null,
             prn_reason_sleep: reasonSleep,
             prn_reason_aggression: reasonAggression,
             prn_reason_mania: reasonMania,
+            prn_used_for_anxiety: reasonAnxiety,
+            prn_used_for_pain: reasonPain,
+            prn_used_for_headache: reasonHeadache,
             prn_given: reasonSleep ? 'yes' : 'no',
             prn_mania_given: reasonMania ? 'yes' : 'no',
             prn_aggression_given: reasonAggression ? 'yes' : 'no',
-            prn_mania_name: reasonMania ? prnName : null,
-            prn_mania_time: reasonMania ? prnTime : null,
-            prn_aggression_name: reasonAggression ? prnName : null,
-            prn_aggression_time: reasonAggression ? prnTime : null
+            prn_mania_name: null,
+            prn_mania_time: null,
+            prn_aggression_name: null,
+            prn_aggression_time: null
           };
           Object.assign(payload, cleaned);
           return cleaned;
@@ -2783,8 +3166,22 @@
           ? Number(payload.prompting_level)
           : null;
 
+        const behaviorTrackingNotes = behaviorTracking
+          .filter((entry) => entry.occurred || entry.prn_used || entry.notes)
+          .map((entry) => {
+            const details = [
+              entry.occurred ? 'occurred' : null,
+              entry.prn_used ? 'PRN used' : null,
+              entry.notes || null,
+            ].filter(Boolean).join(' - ');
+            return details ? `${entry.behavior_name}: ${details}` : null;
+          })
+          .filter(Boolean)
+          .join('\n');
+
         const caregiverNotes = [
           payload.physical_notes,
+          behaviorTrackingNotes,
           payload.behavior_notes,
           payload.vocational_notes,
           payload.home_notes,

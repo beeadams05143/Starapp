@@ -6,7 +6,7 @@ import {
   clearSavedSession,
   getSessionFromStorage,
 } from './supabaseClient.js?v=2025.01.09E';
-import { resolvePostAuthDestination } from './onboarding-flow.js?v=2026.03.12D';
+import { resolvePostAuthDestination } from './onboarding-flow.js?v=2026.03.16B';
 
 function normalizeSession(payload) {
   if (!payload || typeof payload !== 'object') return null;

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Sign Up - STAR</title>
-  <link href="style.css?v=2026.03.12D" rel="stylesheet" />
+  <link href="style.css?v=2026.03.16B" rel="stylesheet" />
   <style>
     body.plain-page {
       font-family: Arial, sans-serif;
@@ -151,15 +151,15 @@
   </div>
 
   <!-- Navbar loader -->
-  <script type="module" src="load-navbar.js?v=2026.03.12D"></script>
+  <script type="module" src="load-navbar.js?v=2026.03.16B"></script>
   <script type="module">
     import {
       SUPABASE_URL,
       SUPABASE_ANON_KEY,
       saveSession,
       getSessionFromStorage,
-    } from './supabaseClient.js?v=2026.03.12D';
-    import { resolvePostAuthDestination, normalizeRedirect } from './onboarding-flow.js?v=2026.03.12D';
+    } from './supabaseClient.js?v=2026.03.16B';
+    import { resolvePostAuthDestination, normalizeRedirect } from './onboarding-flow.js?v=2026.03.16B';
 
     const params = new URLSearchParams(location.search);
     const redirect = normalizeRedirect(params.get('redirect'));
@@ -251,7 +251,7 @@
   </script>
   <script>
     (function(){
-      const version = window.STAR_BUILD_VERSION || '2026.03.12D';
+      const version = window.STAR_BUILD_VERSION || '2026.03.16B';
       if (!window.STAR_BUILD_VERSION) window.STAR_BUILD_VERSION = version;
       const ensureBadge = () => {
         if (document.getElementById('star-build-version')) return;

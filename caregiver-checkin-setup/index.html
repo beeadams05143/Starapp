@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Caregiver Check-In Setup - STAR</title>
+  <title>Custom Caregiver Check-In Setup - STAR</title>
   <style>
     :root{
       --ink:#172033;
@@ -267,13 +267,14 @@
   <main>
     <section class="hero">
       <div class="eyebrow">Admin Configuration</div>
-      <h1>Caregiver Check-In Setup</h1>
+      <h1>Custom Caregiver Check-In Setup</h1>
       <p>
-        Choose which caregiver tracking items are enabled for this group. This configuration
-        controls what will appear later in caregiver daily check-ins for everyone in the group and does not change any historical check-in data.
+        Choose which caregiver tracking items are enabled for this group if you want a custom caregiver workflow.
+        Groups that do not save a custom setup keep the standard caregiver check-in.
       </p>
       <div class="helper-note">
-        Save updates whenever you change your selections. Your choices are stored as enabled categories and enabled items for this group, and historical caregiver check-ins stay untouched.
+        Save updates whenever you change your selections. This only affects groups that intentionally use
+        custom caregiver setup, and historical caregiver check-ins stay untouched.
       </div>
       <div class="toolbar">
         <div id="groupMeta" class="muted">Loading caregiver setup group…</div>
@@ -788,6 +789,7 @@
           selectedItems[category.key] = items;
         }
       });
+      selectedItems.__custom_mode__ = true;
       return selectedItems;
     }
 

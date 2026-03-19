@@ -139,7 +139,7 @@
           <div class="detail-body-inner">
             <div class="sub">
               <a href="/group-settings.html">Group Settings</a>
-              <a href="/caregiver-checkin-setup/">Caregiver Check-In Setup</a>
+              <a href="/caregiver-checkin-setup/">Custom Caregiver Check-In Setup</a>
             </div>
           </div>
         </div>

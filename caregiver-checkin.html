@@ -300,7 +300,6 @@
     </div>
 
     <div class="top-actions">
-      <button class="btn ghost" id="toggleAll">Show all sections</button>
       <button class="btn" id="resumeDraftBtn" style="display:none" disabled>Resume last draft</button>
     </div>
 
@@ -762,9 +761,6 @@
                 <input type="range" min="0" max="5" step="1" value="0" name="manic_intensity" id="manic_intensity" disabled/>
                 <div class="savedAt"><span id="manicIntensityVal">0</span></div>
               </label>
-              <label id="maniaInstancesWrap">Mania instances today <span class="muted">(optional)</span>:
-                <input type="number" min="0" step="1" name="mania_instances_today" id="mania_instances_today" disabled placeholder="e.g., 2"/>
-              </label>
               <label id="maniaEpisodeStatusWrap" style="display:none">Episode status:
                 <select name="mania_episode_status" id="mania_episode_status">
                   <option value="">Select</option>
@@ -917,6 +913,11 @@
                 <label class="movement-chip"><input type="checkbox" data-home-type value="Played a game">Played a game</label>
                 <label class="movement-chip"><input type="checkbox" data-home-type value="Family celebration">Family celebration</label>
                 <label class="movement-chip"><input type="checkbox" data-home-type value="Art / craft project">Art / craft project</label>
+                <label class="movement-chip"><input type="checkbox" data-home-type value="Walk / Stroll">Walk / Stroll</label>
+                <label class="movement-chip"><input type="checkbox" data-home-type value="Outside time in yard / neighborhood">Outside time in yard / neighborhood</label>
+                <label class="movement-chip"><input type="checkbox" data-home-type value="Helped with meal prep">Helped with meal prep</label>
+                <label class="movement-chip"><input type="checkbox" data-home-type value="Household chore with family">Household chore with family</label>
+                <label class="movement-chip"><input type="checkbox" data-home-type value="Video game / screen time together">Video game / screen time together</label>
                 <label class="movement-chip"><input type="checkbox" data-home-type value="Meal in the common area">Meal in the common area</label>
                 <label class="movement-chip"><input type="checkbox" data-home-type value="Meal at the table with family">Meal at the table with family</label>
                 <label class="movement-chip"><input type="checkbox" data-home-type value="Other">Other</label>
@@ -1063,15 +1064,11 @@
       <div class="step" data-step="5" id="daily-living-step">
         <fieldset class="panel">
           <div class="section-title">Daily Living</div>
-          <div class="row cols-2">
-            <div>
-              <div class="movement-label">ADL categories</div>
-              <div class="movement-chips" id="adlCategoryChips"></div>
-              <input type="hidden" name="adl_category" id="adl_category" value=""/>
-            </div>
+          <div class="row">
             <div>
               <div class="movement-label">ADL activities</div>
               <div class="adl-activity-list" id="adlActivityChips"></div>
+              <input type="hidden" name="adl_category" id="adl_category" value=""/>
               <input type="hidden" name="adl_activity" id="adl_activity" value=""/>
             </div>
           </div>
@@ -1191,6 +1188,46 @@
     selectedItems: {},
   };
 
+  function parseConfigObject(value){
+    if (value && typeof value === 'object') return value;
+    if (typeof value === 'string') {
+      try {
+        const parsed = JSON.parse(value);
+        return parsed && typeof parsed === 'object' ? parsed : null;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  function isCustomCaregiverSetupEnabled(config){
+    const selectedItems = parseConfigObject(config?.selected_items);
+    return selectedItems?.__custom_mode__ === true;
+  }
+
+  const CONFIG_CATEGORY_ALIASES = {
+    physical: 'physical_health',
+    physical_health: 'physical_health',
+    'physical health': 'physical_health',
+    behavior: 'behavior_mental_health',
+    behavioral: 'behavior_mental_health',
+    behavior_mental_health: 'behavior_mental_health',
+    'behavior / mental health': 'behavior_mental_health',
+    'behavior mental health': 'behavior_mental_health',
+    vocational: 'vocational',
+    home_family: 'community',
+    'home / family': 'community',
+    'home/family': 'community',
+    'home family': 'community',
+    community: 'community',
+    'community at large': 'community',
+    community_at_large: 'community',
+    daily_living: 'daily_living',
+    'daily living': 'daily_living',
+    educational: 'educational',
+  };
+
   async function ensureGroupId(userId){
     const groupId = await ensureActiveGroupId(userId);
     if (groupId) {
@@ -1233,7 +1270,13 @@
 
   const normalizeConfigCategories = (value) => {
     if (Array.isArray(value)) {
-      return value.map((entry) => String(entry || '').trim()).filter(Boolean);
+      return value
+        .map((entry) => {
+          const raw = String(entry || '').trim();
+          if (!raw) return '';
+          return CONFIG_CATEGORY_ALIASES[raw.toLowerCase()] || raw;
+        })
+        .filter(Boolean);
     }
     if (typeof value === 'string') {
       try {
@@ -2180,15 +2223,70 @@
   async function loadGroupCaregiverSetup(userId){
     const groupId = await ensureGroupId(userId);
     caregiverSetupState.groupId = groupId || null;
-    if (!groupId) return;
-    const rows = await rest(
-      `caregiver_checkin_configs?group_id=eq.${encodeURIComponent(groupId)}&select=id,group_id,selected_categories,selected_items,updated_at&limit=1`
-    );
-    const config = rows?.[0] || null;
+    let config = null;
+    if (groupId) {
+      const rows = await rest(
+        `caregiver_checkin_configs?group_id=eq.${encodeURIComponent(groupId)}&select=id,group_id,selected_categories,selected_items,updated_at&limit=1`
+      );
+      config = rows?.[0] || null;
+    }
+    if (!config && userId) {
+      const rows = await rest(
+        `caregiver_checkin_configs?individual_id=eq.${encodeURIComponent(userId)}&select=id,individual_id,group_id,selected_categories,selected_items,updated_at&order=updated_at.desc.nullslast&limit=1`
+      );
+      config = rows?.[0] || null;
+    }
     if (!config) return;
+    if (!isCustomCaregiverSetupEnabled(config)) return;
     caregiverSetupState.hasConfig = true;
     caregiverSetupState.selectedCategories = new Set(normalizeConfigCategories(config.selected_categories));
     caregiverSetupState.selectedItems = normalizeConfigItems(config.selected_items);
+  }
+
+  function applyLegacyCheckinVisibility(){
+    const subtitle = document.querySelector('.sub');
+    if (subtitle) {
+      subtitle.innerHTML = 'Autosaves as you type. Use <strong>Save &amp; Next</strong> to step through.';
+    }
+
+    const physicalStep = document.querySelector('.step[data-step="0"]');
+    const behaviorStep = document.querySelector('.step[data-step="1"]');
+    const vocationalStep = document.querySelector('.step[data-step="2"]');
+    const homeFamilyStep = document.querySelector('.step[data-step="3"]');
+    const communityStep = document.querySelector('.step[data-step="4"]');
+    const dailyLivingStep = document.getElementById('daily-living-step');
+    const educationalStep = document.getElementById('educational-step');
+    const progressItems = {
+      physical: document.querySelector('.prog-item[data-step="0"]'),
+      behavior: document.querySelector('.prog-item[data-step="1"]'),
+      vocational: document.querySelector('.prog-item[data-step="2"]'),
+      home_family: document.querySelector('.prog-item[data-step="3"]'),
+      community: document.querySelector('.prog-item[data-step="4"]'),
+      daily_living: document.querySelector('.prog-item[data-step="5"]'),
+      educational: document.querySelector('.prog-item[data-step="6"]'),
+    };
+
+    setConfigHidden([formEl], false);
+    setConfigHidden([document.getElementById('cg-setup-empty-state')], true);
+
+    setConfigHidden([physicalStep, progressItems.physical], false);
+    setConfigHidden([behaviorStep, progressItems.behavior], false);
+    setConfigHidden([vocationalStep, progressItems.vocational], false);
+    setConfigHidden([homeFamilyStep, progressItems.home_family], false);
+    setConfigHidden([communityStep, progressItems.community], false);
+    setConfigHidden([dailyLivingStep, progressItems.daily_living], false);
+    setConfigHidden([educationalStep, progressItems.educational], true);
+
+    setConfigHidden([
+      educationalQuestionsWrap,
+    ], true);
+    setConfigHidden([behaviorQuestionsWrap], true);
+    setConfigHidden([document.getElementById('legacyBehaviorQuestions')], false);
+
+    renderAdlCategoryChips();
+    renderAdlActivityChips();
+    current = normalizeStepIndex(current);
+    updateProgress();
   }
 
   function applyCaregiverSetupVisibility(){
@@ -2197,8 +2295,7 @@
       subtitle.innerHTML = `Autosaves as you type. Use <strong>Save &amp; Next</strong> to step through. Configured for ${caregiverSetupState.groupName}.`;
     }
     if (!caregiverSetupState.hasConfig) {
-      renderAdlCategoryChips();
-      renderAdlActivityChips();
+      applyLegacyCheckinVisibility();
       return;
     }
 
@@ -2252,7 +2349,7 @@
     setConfigHidden([physicalStep, progressItems.physical], !physicalVisible);
     setConfigHidden([behaviorStep, progressItems.behavior], !behaviorVisible);
     setConfigHidden([vocationalStep, progressItems.vocational], !vocationalVisible);
-    setConfigHidden([homeFamilyStep, progressItems.home_family], true);
+    setConfigHidden([homeFamilyStep, progressItems.home_family], !communityVisible);
     setConfigHidden([communityStep, progressItems.community], !communityVisible);
     setConfigHidden([dailyLivingStep, progressItems.daily_living], !dailyLivingVisible);
     setConfigHidden([educationalStep, progressItems.educational], !(educationalVisible && educationalItemsVisible));
@@ -3263,17 +3360,23 @@
     }
     // Mania enable/disable
     const manicInt  = document.getElementById('manic_intensity');
-    const maniaInstances = document.getElementById('mania_instances_today');
     const appetiteDirectionWrap = document.getElementById('appetiteDirectionWrap');
     const maniaIntensityWrap = document.getElementById('maniaIntensityWrap');
-    const maniaInstancesWrap = document.getElementById('maniaInstancesWrap');
     const maniaEpisodeStatusWrap = document.getElementById('maniaEpisodeStatusWrap');
     const maniaSymptomsWrap = document.getElementById('maniaSymptomsWrap');
     const fixationCategoryWrap = document.getElementById('fixationCategoryWrap');
     function syncFixationControls(){
-      const yes = !!document.getElementById('fixation_present')?.checked;
-      if (fixationCategoryWrap) fixationCategoryWrap.style.display = yes ? '' : 'none';
-      if (!yes) {
+      const focusYes = getYnValue('focus_trouble_flag') === 'yes';
+      const fixationYes = !!document.getElementById('fixation_present')?.checked;
+      if (maniaSymptomsWrap) maniaSymptomsWrap.style.display = focusYes ? '' : 'none';
+      if (fixationCategoryWrap) fixationCategoryWrap.style.display = focusYes && fixationYes ? '' : 'none';
+      if (!focusYes) {
+        ['fixation_present','repetitive_behavior_present','pressured_speech_present','grandiosity_present'].forEach((id) => {
+          const input = document.getElementById(id);
+          if (input) input.checked = false;
+        });
+      }
+      if (!focusYes || !fixationYes) {
         const select = document.getElementById('fixation_category');
         if (select) select.value = '';
       }
@@ -3281,28 +3384,16 @@
     function syncManiaControls(){
       const yes = getYnValue('manic_flag') === 'yes';
       if (manicInt) manicInt.disabled = !yes;
-      if (maniaInstances) maniaInstances.disabled = !yes;
       if (maniaIntensityWrap) maniaIntensityWrap.style.display = yes ? '' : 'none';
-      if (maniaInstancesWrap) maniaInstancesWrap.style.display = yes ? '' : 'none';
       if (maniaEpisodeStatusWrap) maniaEpisodeStatusWrap.style.display = yes ? '' : 'none';
-      if (maniaSymptomsWrap) maniaSymptomsWrap.style.display = yes ? '' : 'none';
       if (!yes && manicInt) {
         manicInt.value = 0;
         const iv = document.getElementById('manicIntensityVal');
         if (iv) iv.textContent = '0';
       }
-      if (!yes && maniaInstances) {
-        maniaInstances.value = '';
-      }
       if (!yes) {
         const status = document.getElementById('mania_episode_status');
         if (status) status.value = '';
-        ['fixation_present','repetitive_behavior_present','pressured_speech_present','grandiosity_present'].forEach((id) => {
-          const input = document.getElementById(id);
-          if (input) input.checked = false;
-        });
-        const fixationCategory = document.getElementById('fixation_category');
-        if (fixationCategory) fixationCategory.value = '';
       }
       syncFixationControls();
     }
@@ -3399,8 +3490,12 @@
     }
 
     function syncAdlMultiFields({ silent } = {}){
-      const categories = getMultiCheckboxValues('[data-adl-category]');
       const activities = getMultiCheckboxValues('[data-adl-activity]');
+      const categories = Array.from(new Set(
+        activities
+          .map((activity) => ADL_ACTIVITY_MAP[activity] || '')
+          .filter(Boolean)
+      ));
       if (adlCategoryInput) {
         adlCategoryInput.value = categories.length ? JSON.stringify(categories) : '';
         if (!silent) adlCategoryInput.dispatchEvent(new Event('input', { bubbles: true }));
@@ -3412,30 +3507,15 @@
     }
 
     function renderAdlCategoryChips(){
-      if (!adlCategoryWrap) return;
-      adlCategoryWrap.innerHTML = '';
-      Object.keys(getConfiguredAdlOptions()).forEach((cat) => {
-        const label = document.createElement('label');
-        label.className = 'movement-chip';
-        const input = document.createElement('input');
-        input.type = 'checkbox';
-        input.value = cat;
-        input.setAttribute('data-adl-category', 'true');
-        label.appendChild(input);
-        label.appendChild(document.createTextNode(cat));
-        adlCategoryWrap.appendChild(label);
-      });
+      if (adlCategoryWrap) adlCategoryWrap.innerHTML = '';
     }
 
     function renderAdlActivityChips(){
       if (!adlActivityWrap) return;
       const selectedActivities = getMultiCheckboxValues('[data-adl-activity]');
-      const selectedCategories = getMultiCheckboxValues('[data-adl-category]');
-      const filterByCategory = selectedCategories.length > 0;
       adlActivityWrap.innerHTML = '';
 
       Object.entries(getConfiguredAdlOptions()).forEach(([cat, items]) => {
-        if (filterByCategory && !selectedCategories.includes(cat)) return;
         const group = document.createElement('div');
         group.className = 'adl-activity-group';
         const heading = document.createElement('div');
@@ -3526,9 +3606,7 @@
     }
 
     function hydrateAdlFieldsFromData(stepData, { silent } = {}){
-      const categories = parseMultiValue(stepData?.adl_category);
       const activities = parseMultiValue(stepData?.adl_activity);
-      setMultiCheckboxValues('[data-adl-category]', categories);
       renderAdlActivityChips();
       setMultiCheckboxValues('[data-adl-activity]', activities);
       syncAdlMultiFields({ silent: true });
@@ -3537,7 +3615,6 @@
     }
 
     function addAdlEntry(){
-      const categories = getMultiCheckboxValues('[data-adl-category]');
       const activities = getMultiCheckboxValues('[data-adl-activity]');
       const note = (adlNoteInput?.value || '').trim();
       const prompting = adlPromptingSelect?.value || '';
@@ -3546,7 +3623,7 @@
         return;
       }
       activities.forEach((activity) => {
-        const category = ADL_ACTIVITY_MAP[activity] || (categories.length === 1 ? categories[0] : '');
+        const category = ADL_ACTIVITY_MAP[activity] || '';
         adlEntries.push({
           category,
           activity,
@@ -3582,10 +3659,6 @@
       if (!adlHandlersBound){
         renderAdlCategoryChips();
         renderAdlActivityChips();
-        adlCategoryWrap?.addEventListener('change', () => {
-          renderAdlActivityChips();
-          syncAdlMultiFields();
-        });
         adlActivityWrap?.addEventListener('change', () => syncAdlMultiFields());
         addAdlEntryBtn?.addEventListener('click', addAdlEntry);
         adlEntryListEl?.addEventListener('click', handleAdlRemoval);
@@ -3700,19 +3773,16 @@
       current = normalizeStepIndex(current);
       steps.forEach((step, idx) => {
         const isVisible = !step.classList.contains('config-hidden');
-        const shouldShow = isExpanded ? isVisible : (isVisible && idx === current);
+        const shouldShow = isVisible && idx === current;
         step.classList.toggle('active', shouldShow);
       });
-      if (toggleAllBtn) {
-        toggleAllBtn.textContent = isExpanded ? 'Collapse to Wizard' : 'Show All Sections';
-      }
-      if (scroll && !isExpanded && steps[current]) {
+      if (scroll && steps[current]) {
         steps[current].scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     }
     function go(i){
       current = normalizeStepIndex(i);
-      syncWizardView({ scroll: !isExpanded });
+      syncWizardView({ scroll: true });
       updateProgress();
     }
     function buildPayload(){
@@ -3862,8 +3932,8 @@
         normalizeTemp();
         const normalizeMania = () => {
           const manic = String(payload.manic_flag || '').toLowerCase() === 'yes';
+          const focusTrouble = String(payload.focus_trouble_flag || '').toLowerCase() === 'yes';
           const intensity = Number(payload.manic_intensity);
-          const instances = Number(payload.mania_instances_today);
           const fixation = !!payload.fixation_present;
           const repetitive = !!payload.repetitive_behavior_present;
           const pressuredSpeech = !!payload.pressured_speech_present;
@@ -3871,13 +3941,13 @@
           const cleaned = {
             manic_flag: manic ? 'Yes' : 'No',
             manic_intensity: manic && Number.isFinite(intensity) ? intensity : 0,
-            mania_instances_today: manic && Number.isFinite(instances) && instances >= 0 ? instances : null,
+            mania_instances_today: null,
             mania_episode_status: manic ? trimOrNull(payload.mania_episode_status) : null,
-            fixation_present: manic ? fixation : false,
-            fixation_category: manic && fixation ? trimOrNull(payload.fixation_category) : null,
-            repetitive_behavior_present: manic ? repetitive : false,
-            pressured_speech_present: manic ? pressuredSpeech : false,
-            grandiosity_present: manic ? grandiosity : false,
+            fixation_present: focusTrouble ? fixation : false,
+            fixation_category: focusTrouble && fixation ? trimOrNull(payload.fixation_category) : null,
+            repetitive_behavior_present: focusTrouble ? repetitive : false,
+            pressured_speech_present: focusTrouble ? pressuredSpeech : false,
+            grandiosity_present: focusTrouble ? grandiosity : false,
             appetite_change_flag: isAffirmative(payload.appetite_change_flag) ? 'Yes' : 'No',
             appetite_change_direction: isAffirmative(payload.appetite_change_flag)
               ? trimOrNull(payload.appetite_change_direction)

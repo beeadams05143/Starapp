@@ -14,12 +14,29 @@
 
   <!-- Page-specific hardening / tweaks -->
   <style>
-    :root{ --ink:#1f2937; --paper:#fffdfa; --rule:#eceff4; --accent:#f59e0b; --vio:#7c3aed; --muted:#9aa3b2; --chip:#f8fafc; }
+    :root{
+      --ink:#24314a;
+      --paper:#fffdfa;
+      --rule:#e7dcc5;
+      --accent:#d9a441;
+      --vio:#c89c4a;
+      --muted:#9aa3b2;
+      --chip:#f8fafc;
+      --sans:"Avenir Next","Segoe UI","Helvetica Neue",Arial,sans-serif;
+      --serif:Georgia,"Iowan Old Style","Palatino Linotype","Book Antiqua",serif;
+    }
     *{ box-sizing:border-box; }
-    body.calendar-page{ margin:0; background:#f5f6ff; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; color:var(--ink); }
+    body.calendar-page{
+      margin:0;
+      background:
+        radial-gradient(circle at top, rgba(242, 221, 176, .34), transparent 30%),
+        linear-gradient(180deg, #fffefb 0%, #fbf5e8 100%);
+      font-family: var(--sans);
+      color:var(--ink);
+    }
     main.cal-wrap{ width:100%; max-width:1100px; padding:16px; margin:0 auto; }
 
-    .notebook{ display:grid; grid-template-columns: 1fr 110px; gap:0; border-radius:20px; overflow:hidden; background:var(--paper); box-shadow:0 16px 40px rgba(0,0,0,.10); }
+    .notebook{ display:block; border-radius:20px; overflow:hidden; background:var(--paper); box-shadow:0 16px 40px rgba(0,0,0,.10); }
     .paper{
       position:relative; padding:22px 22px 26px 38px;
       background:
@@ -28,26 +45,26 @@
       min-height:72vh;
     }
     .paper:before{ content:""; position:absolute; left:12px; top:18px; bottom:18px; width:8px; background:radial-gradient(#d7dee6 60%, transparent 62%) 0 0/100% 48px repeat-y; border-radius:8px; }
-    .rail{ display:flex; align-items:center; justify-content:center; background:linear-gradient(180deg,#fff,#f6f9ff); border-left:1px solid #e5e7eb; }
-    .pencil{ width:56px; height:320px; filter: drop-shadow(0 10px 20px rgba(0,0,0,.15)); }
+    .rail{ display:none; }
+    .pencil{ display:none; }
 
     .cal-header{ display:flex; gap:10px; align-items:center; justify-content:space-between; margin:4px 8px 14px 8px; }
-    .month-title{ font-size:24px; font-weight:800; letter-spacing:.2px; }
-    .nav{ display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; border-radius:12px; border:1px solid #e5e7eb; background:#fff; cursor:pointer; font-size:18px; }
+    .month-title{ font-size:24px; font-weight:700; letter-spacing:.2px; font-family:var(--serif); color:#73441b; }
+    .nav{ display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; border-radius:12px; border:1px solid #e8dcc3; background:#fff; cursor:pointer; font-size:18px; }
 
-    .weekday-row{ display:grid; grid-template-columns: repeat(7, 1fr); margin:0 8px 6px 8px; font-weight:700; font-size:12px; color:#6b7280; text-align:center; }
+    .weekday-row{ display:grid; grid-template-columns: repeat(7, 1fr); margin:0 8px 6px 8px; font-weight:600; font-size:12px; color:#6b7280; text-align:center; }
     .month-grid{ display:grid; grid-template-columns: repeat(7, 1fr); gap:8px; padding:0 8px; }
-    .day{ position:relative; display:flex; align-items:flex-start; justify-content:flex-start; min-height:84px; padding:8px 8px 6px 8px; border-radius:14px; background:#fff; border:1px solid #eceff4; text-align:left; cursor:pointer; box-shadow: 0 1px 0 rgba(0,0,0,.02); }
+    .day{ position:relative; display:flex; align-items:flex-start; justify-content:flex-start; min-height:84px; padding:8px 8px 6px 8px; border-radius:14px; background:#fff; border:1px solid #ece7d8; text-align:left; cursor:pointer; box-shadow: 0 1px 0 rgba(0,0,0,.02); }
     .day .num{ font-weight:800; font-size:14px; }
-    .day .dots{ position:absolute; right:8px; top:8px; width:8px; height:8px; border-radius:999px; background:var(--vio); box-shadow: 12px 0 0 #10b981, 24px 0 0 #f59e0b; }
-    .day.today{ outline:2px solid #a78bfa; }
+    .day .dots{ position:absolute; right:8px; top:8px; width:8px; height:8px; border-radius:999px; background:var(--vio); box-shadow: 12px 0 0 #6fb28f, 24px 0 0 #d9a441; }
+    .day.today{ outline:2px solid #d9a441; }
     .day.selected{ border-color:#f1d58a; box-shadow:0 6px 18px rgba(0,0,0,.06), inset 0 0 0 2px #f7e3a6; }
     .day.muted{ color:#9aa3b2; background:#fafbff; }
 
-    .event-panel{ margin:16px 8px 8px 8px; background:#fff; border:1px solid #eceff4; border-radius:16px; }
+    .event-panel{ margin:16px 8px 8px 8px; background:#fffdf8; border:1px solid #ece7d8; border-radius:16px; }
     .event-header{ display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border-bottom:1px solid #f1f5f9; }
-    .event-title{ font-weight:800; }
-    .btn{ appearance:none; background:#111; color:#fff; border:0; border-radius:12px; padding:10px 12px; font-weight:700; cursor:pointer; }
+    .event-title{ font-weight:700; font-family:var(--serif); color:#73441b; }
+    .btn{ appearance:none; background:#8a6b44; color:#fff; border:0; border-radius:12px; padding:10px 12px; font-weight:600; cursor:pointer; }
     .btn.secondary{ background:#fff; color:#111; border:1px solid #e5e7eb; }
     ul.event-list{ list-style:none; margin:0; padding:10px 12px; }
     .event{ display:flex; align-items:center; justify-content:space-between; padding:10px 10px; border:1px solid #eef2f7; border-radius:12px; margin:8px 0; background:#fff; }
@@ -97,7 +114,6 @@
     @media (max-width: 720px){ .day{ min-height:64px; } .paper{ padding-left:26px; } .paper:before{ left:6px; } }
     @media (max-width: 640px){
       main.cal-wrap{ padding:10px; }
-      .notebook{ grid-template-columns:1fr; }
       .rail{ display:none; }
       .paper{ padding:16px 12px 110px 24px; }
       .paper:before{ left:6px; }
@@ -165,7 +181,6 @@
       #cgOnePdf, #cgOnePdf *{ visibility:hidden !important; }
       #navbar, .calendar-actions, .rail { display:none !important; }
       body.calendar-page{ padding:0 !important; }
-      .notebook{ grid-template-columns:1fr; }
     }
   </style>
 </head>
@@ -200,15 +215,6 @@
         </section>
       </div>
 
-      <div class="rail" aria-hidden="true">
-        <!-- Pencil -->
-        <svg class="pencil" viewBox="0 0 80 460" xmlns="http://www.w3.org/2000/svg">
-          <defs><linearGradient id="wood" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#f5deb3"/><stop offset="1" stop-color="#e9c999"/></linearGradient></defs>
-          <rect x="10" y="0" width="60" height="70" rx="8" fill="#fca5a5"/><rect x="10" y="68" width="60" height="10" fill="#9ca3af"/>
-          <rect x="10" y="78" width="60" height="310" fill="#f59e0b"/><rect x="18" y="78" width="44" height="310" fill="#fbbf24" opacity=".6"/>
-          <polygon points="10,388 70,388 40,458" fill="url(#wood)"/><polygon points="26,420 54,420 40,458" fill="#111"/>
-        </svg>
-      </div>
     </div>
   </main>
 

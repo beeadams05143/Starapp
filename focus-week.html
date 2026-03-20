@@ -6,57 +6,59 @@
   <title>Focus of the Week • Planning Page</title>
   <style>
     :root{
-      --paper:#fffef8; --ink:#2b2b2b;
-      --accent:#ffb703; --accent-2:#8ecae6;
-      --line:rgba(0,0,0,.08); --margin-line:rgba(255,0,0,.25);
-      --ring:#222;
+      --paper:#fffef8; --ink:#243047;
+      --accent:#ffd15b; --accent-2:#8ecae6;
+      --line:rgba(152,111,36,.11); --margin-line:rgba(214,88,88,.22);
+      --ring:#caa13a;
+      --font-sans:"Avenir Next","Segoe UI","Helvetica Neue",Arial,sans-serif;
+      --font-serif:"Iowan Old Style","Palatino Linotype","Book Antiqua",Georgia,serif;
     }
     html,body{height:100%;margin:0;background:#f4f1ea;color:var(--ink);
-      font-family:ui-rounded,system-ui,-apple-system,Segoe UI,Roboto,"Comic Neue","Bradley Hand","Segoe Print",sans-serif;}
+      font-family:var(--font-sans);}
     #navbar{position:sticky;top:0;z-index:10;}
     #groupSelect, .group-select, [data-group-control], .nav-group, .group-dropdown { display:none !important; }
 
     .wrapper{max-width:960px;margin:24px auto;padding:16px;}
     .clipboard{position:relative;padding:24px 20px 28px;border-radius:16px;background:#e3d7c6;
       box-shadow:0 6px 24px rgba(0,0,0,.15), inset 0 1px 0 rgba(255,255,255,.6);}
-    .clip{position:absolute;top:-18px;left:50%;transform:translateX(-50%);
-      width:120px;height:36px;background:#715a3a;border-radius:8px 8px 2px 2px;box-shadow:0 8px 0 rgba(0,0,0,.2);}
+    .clip{display:none;}
     .sheet{position:relative;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.12);
       padding:28px 22px 28px 46px;border:1px solid rgba(0,0,0,.08);
       background:repeating-linear-gradient(to bottom,var(--paper),var(--paper) 28px,var(--line) 29px,var(--paper) 30px);}
     .sheet::before{content:"";position:absolute;left:32px;top:0;bottom:0;width:2px;background:var(--margin-line);}
 
-    h1,h2,h3,label,.label{font-family:"Comic Neue","Bradley Hand","Segoe Print",system-ui,sans-serif;}
-    h1{margin:0 0 6px;font-size:28px;letter-spacing:.2px;}
-    .sub{font-size:13px;opacity:.8;margin-bottom:14px;}
+    h1,h2,h3{font-family:var(--font-serif);color:#724016;}
+    label,.label{font-family:var(--font-sans);}
+    h1{margin:0 0 6px;font-size:clamp(2.2rem,5vw,3.4rem);letter-spacing:.2px;text-align:left;}
+    .sub{font-size:15px;opacity:1;margin-bottom:14px;color:#6a768d;font-style:italic;}
 
     .grid{display:grid;gap:12px;}
     .grid-2{grid-template-columns:repeat(2,minmax(0,1fr));}
     .grid-3{grid-template-columns:repeat(3,minmax(0,1fr));}
 
     .row{display:grid;grid-template-columns:160px 1fr;gap:8px;align-items:center;}
-    .row .label{font-weight:700;white-space:nowrap;}
+    .row .label{font-weight:600;white-space:nowrap;color:#20324f;}
 
-    .card{background:rgba(255,255,255,.7);border:1px dashed rgba(0,0,0,.2);border-radius:12px;padding:14px;}
-    .sticky{background:var(--accent);border:1px solid rgba(0,0,0,.15);transform:rotate(-1.2deg);box-shadow:0 3px 8px rgba(0,0,0,.15);}
+    .card{background:rgba(255,253,248,.84);border:1px dashed rgba(202,161,58,.45);border-radius:20px;padding:16px;box-shadow:0 12px 26px rgba(125,89,34,.08);}
+    .sticky{background:#ffe18a;border:1px solid rgba(202,161,58,.55);transform:none;box-shadow:0 12px 26px rgba(125,89,34,.12);}
 
     .input, select, textarea{
       width:100%; box-sizing:border-box;
       border:2px solid transparent; border-bottom:2px solid rgba(0,0,0,.2);
-      background:transparent; font-size:16px; padding:8px 6px; outline:none;
+      background:transparent; font-size:16px; padding:8px 6px; outline:none; font-family:var(--font-sans); color:var(--ink);
     }
-    .input::placeholder, textarea::placeholder{color:rgba(0,0,0,.45);}
-    .input:focus, select:focus, textarea:focus{border-color:var(--ring);border-radius:6px;background:rgba(255,255,255,.7);}
+    .input::placeholder, textarea::placeholder{color:#7a859b;}
+    .input:focus, select:focus, textarea:focus{border-color:var(--ring);border-radius:10px;background:rgba(255,255,255,.86);}
 
     /* Compact “chip” controls */
     .input-chip{
-      border:1px solid rgba(0,0,0,.18) !important;
-      border-bottom-color:rgba(0,0,0,.18) !important;
+      border:1px solid rgba(207,216,230,.95) !important;
+      border-bottom-color:rgba(207,216,230,.95) !important;
       background:rgba(255,255,255,.95);
-      border-radius:10px;
-      padding:6px 10px;
-      box-shadow:0 1px 0 rgba(0,0,0,.08);
-      font-size:14px;
+      border-radius:16px;
+      padding:10px 14px;
+      box-shadow:0 8px 18px rgba(36,48,71,.08);
+      font-size:17px;
       line-height:1.2;
     }
     select.input-chip{padding-right:28px;}
@@ -70,7 +72,7 @@
     .pill{border:none;padding:0;background:transparent;display:inline-flex;gap:6px;align-items:center;font-size:14px;cursor:pointer;}
     .pill input{accent-color:#222;transform:scale(.95);}
 
-    .goal{border:2px solid rgba(0,0,0,.18);border-radius:12px;padding:10px;background:rgba(255,255,255,.65);}
+    .goal{border:1px solid #e4cf9c;border-radius:20px;padding:14px;background:rgba(255,253,248,.84);box-shadow:0 12px 24px rgba(125,89,34,.08);}
     .goal h3{margin:6px 0 8px;font-size:18px;}
     .goal-title{
       display:block;
@@ -88,6 +90,12 @@
       border-color:#222;
       background:#ffe18a;
     }
+    .goal-prompt{
+      max-width:260px;
+      min-height:50px;
+      padding:8px 12px;
+      font-size:15px;
+    }
     .checklist{display:grid;gap:8px;}
     .checklist input[type="text"]{width:100%;}
     .support-select{display:grid;gap:6px;grid-template-columns:repeat(3,minmax(0,1fr));}
@@ -96,10 +104,42 @@
     .week-grid th,.week-grid td{border:1px solid rgba(0,0,0,.2);padding:8px;text-align:center;background:rgba(255,255,255,.6);}
 
     .btns{display:flex;gap:10px;flex-wrap:wrap;}
-    .btn{border:2px solid #222;background:#fff;padding:8px 14px;border-radius:10px;cursor:pointer;font-weight:700;
-      box-shadow:2px 2px 0 #222;transition:transform .05s ease;}
-    .btn:active{transform:translate(1px,1px);box-shadow:1px 1px 0 #222;}
+    .btn{border:1px solid #d8c7a4;background:#fffdf8;padding:10px 16px;border-radius:18px;cursor:pointer;font-weight:700;
+      box-shadow:0 10px 22px rgba(36,48,71,.08);transition:transform .05s ease;}
+    .btn:active{transform:translateY(1px);}
     .add-goal-wrap{margin-top:18px;}
+    .save-next-prompt{
+      display:none;
+      margin-top:16px;
+      padding:20px 22px;
+      border-radius:18px;
+      border:3px solid #1d4ed8;
+      background:linear-gradient(180deg,#eff6ff 0%,#dbeafe 100%);
+      box-shadow:0 10px 26px rgba(29,78,216,.18);
+    }
+    .save-next-prompt.is-visible{display:grid;gap:12px;}
+    .save-next-prompt-title{
+      margin:0;
+      font-size:24px;
+      line-height:1.2;
+      font-weight:900;
+      color:#1e3a8a;
+    }
+    .save-next-prompt p{margin:0;font-size:18px;line-height:1.55;font-weight:700;color:#1e3a8a;}
+    .save-next-prompt .btns{margin-top:4px}
+    .save-next-prompt .btn{
+      width:100%;
+      justify-content:center;
+      text-align:center;
+      padding:16px 18px;
+      font-size:22px;
+      font-weight:900;
+      border:2px solid #0f172a;
+      background:#22c55e;
+      color:#052e16;
+      box-shadow:3px 3px 0 #0f172a;
+    }
+    .save-next-prompt .btn:hover{background:#16a34a}
 
     .footer-hint{font-size:12px;opacity:.7;text-align:right;margin-top:8px;}
 
@@ -119,7 +159,6 @@
       body{overflow-x:hidden;}
       .wrapper{margin:12px auto;padding:10px;}
       .clipboard{padding:16px;}
-      .clip{width:96px;height:28px;top:-14px;}
       .sheet{padding:18px 14px 22px 24px;}
       .sheet::before{left:18px;}
       h1{font-size:22px;}
@@ -161,6 +200,7 @@
                   <option value="daily-living">Daily Living</option>
                   <option value="self-help">Self Help</option>
                   <option value="advocacy">Advocacy</option>
+                  <option value="educational">Educational</option>
                   <option value="communication" selected>Communication</option>
                 </select>
               </div>
@@ -196,17 +236,6 @@
           </div>
         </section>
 
-        <!-- Daily Practice Tracker -->
-        <section style="margin-top:14px;" class="grid">
-          <h2>Daily Practice Tracker</h2>
-          <table class="week-grid" aria-label="Weekly practice tracker">
-            <thead>
-              <tr><th>Day</th><th>Practiced</th><th>Prompt level used</th><th>Notes</th></tr>
-            </thead>
-            <tbody id="weekTableBody"></tbody>
-          </table>
-        </section>
-
         <!-- Reflection / Next steps -->
         <section style="margin-top:14px;" class="grid grid-2">
           <div class="card">
@@ -224,6 +253,13 @@
           <button class="btn" id="printBtn">🖨️ Print / PDF</button>
           <button class="btn" id="copyNextBtn">➡️ Copy to Next Week</button>
           <button class="btn" id="clearBtn">🧹 Clear</button>
+        </div>
+        <div class="save-next-prompt" id="saveNextPrompt" role="status" aria-live="polite">
+          <h3 class="save-next-prompt-title">Next Step: Open The Caregiver Report</h3>
+          <p>Your weekly focus was saved. Now go to the caregiver report to see the check-in data shown in graphs, summaries, and trends.</p>
+          <div class="btns">
+            <a class="btn" href="/caregiver-report.html">Open Caregiver Report Now</a>
+          </div>
         </div>
         <div class="footer-hint">Pro tip: Use “Print / PDF” to share at team meetings.</div>
       </div>
@@ -285,7 +321,7 @@
     const printBtn      = document.getElementById('printBtn');
     const copyNextBtn   = document.getElementById('copyNextBtn');
     const clearBtn      = document.getElementById('clearBtn');
-    const weekTableBody = document.getElementById('weekTableBody');
+    const saveNextPrompt = document.getElementById('saveNextPrompt');
     const weekFreqEl    = document.getElementById('weekFreq');
 
     const makeGoalId = () =>
@@ -317,7 +353,6 @@
     let currentMonday = startOfWeek(new Date());
     let lastUpdatedAt = null;
 
-    // --- build week rows
     const PROMPT_SCALE = [
       { value:"", label:"Select prompt level" },
       { value:"0", label:"0 – Independent" },
@@ -327,34 +362,12 @@
       { value:"4", label:"4 – Dependent" }
     ];
 
-    function buildWeekRows(startDate = currentMonday) {
-      if (!weekTableBody) return;
-      const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-      weekTableBody.innerHTML = '';
-      for (let i = 0; i < 7; i++) {
-        const d = new Date(startDate); d.setDate(d.getDate() + i);
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td><strong>${days[i]}</strong><div style="font-size:12px;opacity:.7">${d.toLocaleDateString()}</div></td>
-          <td><input type="checkbox" class="practiced"></td>
-          <td>
-            <select class="input input-chip day-prompt" aria-label="Prompt level used">
-              ${PROMPT_SCALE.map(o => `<option value="${o.value}">${o.label}</option>`).join('')}
-            </select>
-          </td>
-          <td><input type="text" class="input day-note" placeholder="Quick note…"></td>`;
-        weekTableBody.appendChild(tr);
-      }
-      wireDayInputs();
-    }
-
     function updateWeekText() {
       const end = endOfWeek(currentMonday);
       const stamp = lastUpdatedAt || new Date();
       const updatedLabel = `Updated ${fmtTime(stamp)}`;
       weekRangeText.textContent = `Week of ${fmt(currentMonday)} – ${fmt(end)} • ${updatedLabel}`;
       if (weekStartPicker) weekStartPicker.value = isoDateOnly(currentMonday);
-      buildWeekRows(currentMonday);
     }
 
     // --- goals
@@ -409,19 +422,10 @@
     }
 
     function collectDays(){
-      return Array.from(weekTableBody.querySelectorAll('tr')).map(tr => ({
-        practiced: !!tr.querySelector('.practiced')?.checked,
-        promptLevel: tr.querySelector('.day-prompt')?.value || '',
-        note: tr.querySelector('.day-note')?.value || ''
-      }));
+      return [];
     }
     function hydrateDays(days){
-      if (!days || days.length !== 7) return;
-      Array.from(weekTableBody.querySelectorAll('tr')).forEach((tr, i) => {
-        setChecked(tr.querySelector('.practiced'), !!days[i].practiced);
-        setV(tr.querySelector('.day-prompt'), days[i].promptLevel || '');
-        setV(tr.querySelector('.day-note'), days[i].note || '');
-      });
+      return;
     }
 
     let autoSaveTimer = null;
@@ -466,7 +470,10 @@
         await persistShared(data);
         lastUpdatedAt = now;
         updateWeekText();
-        if (!silent) alert('Saved!');
+        if (!silent && saveNextPrompt) {
+          saveNextPrompt.classList.add('is-visible');
+          saveNextPrompt.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
       }catch(e){
         console.error('Save failed', e);
         if (!silent) alert('Save failed. See console.');
@@ -502,7 +509,6 @@
         init(true);
       }
       focusDataReady = true;
-      wireDayInputs();
     }
 
     async function loadSharedFocus(){
@@ -535,12 +541,6 @@
     function copyToNextWeek(){
       currentMonday.setDate(currentMonday.getDate() + 7);
       updateWeekText();
-      // keep goals/notes; clear daily tracker + reflection
-      Array.from(weekTableBody.querySelectorAll('tr')).forEach(tr => {
-        setChecked(tr.querySelector('.practiced'), false);
-        setV(tr.querySelector('.day-prompt'), '');
-        setV(tr.querySelector('.day-note'), '');
-      });
       setV(fields.reflection, '');
       scheduleAutoSave();
     }
@@ -555,30 +555,19 @@
       });
     }
 
-    // --- initialize page (rebuild rows + one default goal)
+    // --- initialize page
     function init(resetWeek=false){
       if (resetWeek) currentMonday = startOfWeek(new Date());
       lastUpdatedAt = new Date();
-      updateWeekText();                 // builds the 7 day rows
+      updateWeekText();
       goalsEl.innerHTML = '';
-      addGoal();                        // ensure first goal exists
+      addGoal();
       setV(fields.customTitle,'');
       setV(fields.whyMatters,'');
       setV(fields.reflection,'');
       setV(fields.nextSteps,'');
-      if (fields.focusArea) fields.focusArea.selectedIndex = 5; // Communication default
+      if (fields.focusArea) fields.focusArea.value = 'communication';
       weekFreqEl.value = 'Daily';
-    }
-
-    function wireDayInputs(){
-      if (!weekTableBody) return;
-      weekTableBody.querySelectorAll('.practiced, .day-prompt, .day-note').forEach(el => {
-        const event = el.matches('.day-note') ? 'input' : 'change';
-        if (!el.dataset.focusBound){
-          el.addEventListener(event, scheduleAutoSave);
-          el.dataset.focusBound = '1';
-        }
-      });
     }
 
     // --- wire buttons
@@ -595,7 +584,7 @@
     });
 
     // first render + try to load saved data
-    init();      // builds rows + 1 goal so page isn't empty
+    init();
     load();
 
     // expose for console if needed

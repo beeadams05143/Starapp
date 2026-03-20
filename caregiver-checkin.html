@@ -7,26 +7,165 @@
   <link rel="stylesheet" href="style.css?v=2025.01.09E"/>
   <style>
     html,body{height:auto!important;min-height:100%;overflow-y:auto!important;-webkit-overflow-scrolling:touch}
-    body{margin:0}
-    .page-wrap{max-width:940px;margin:24px auto 96px;padding:16px;background:rgba(255,255,255,.92);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.08)}
-    h1{margin:8px 0 6px;font-size:clamp(28px,4.2vw,44px)}
-    .sub{color:#6b7280;margin-bottom:12px}
+    body{
+      margin:0;
+      font-family:var(--font-sans);
+      color:#273449;
+      background:
+        radial-gradient(circle at top left, rgba(255,239,199,.75), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(254,240,210,.7), transparent 32%),
+        linear-gradient(180deg,#fff9ef 0%,#fdf4df 52%,#f8ead0 100%);
+    }
+    .page-wrap{
+      max-width:940px;
+      margin:24px auto 96px;
+      padding:16px;
+      background:linear-gradient(180deg,rgba(255,252,245,.97) 0%,rgba(255,248,236,.95) 100%);
+      border:1px solid rgba(234,179,88,.28);
+      border-radius:22px;
+      box-shadow:0 18px 40px rgba(120,92,44,.12);
+    }
+    h1{
+      margin:8px 0 6px;
+      font-size:clamp(30px,4.2vw,46px);
+      font-family:var(--font-serif);
+      font-weight:800;
+      letter-spacing:.01em;
+      color:#5c3514;
+    }
+    .sub{
+      color:#6b7280;
+      margin-bottom:12px;
+      font-style:italic;
+      line-height:1.55;
+    }
     .progress{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:14px;margin:.25rem 0 .5rem}
     .prog-item{display:grid;gap:6px;cursor:pointer}
-    .prog-label{text-align:center;font-size:13px;color:#6b7280;font-weight:700}
+    .prog-label{
+      text-align:center;
+      font-size:18px;
+      line-height:1.2;
+      color:#6d7485;
+      font-weight:700;
+      font-family:var(--font-serif);
+    }
     .seg{height:8px;background:#e9edf2;border-radius:999px}
     .seg.active{background:linear-gradient(90deg,#4ade80,#22c55e)}
     .seg.done{background:#c7f9d6}
     .top-actions{display:flex;gap:8px;justify-content:flex-end;align-items:center;margin:4px 0 10px}
-    .btn{appearance:none;border:1px solid #e5e7eb;background:#fff;color:#111827;padding:10px 14px;border-radius:12px;font-weight:800;cursor:pointer}
+    .btn{
+      appearance:none;
+      border:1px solid #e5e7eb;
+      background:#fff;
+      color:#111827;
+      padding:10px 14px;
+      border-radius:12px;
+      font-weight:650;
+      font-family:var(--font-sans);
+      letter-spacing:.01em;
+      cursor:pointer;
+    }
     .btn.primary{background:linear-gradient(180deg,#4ade80,#22c55e);border-color:#22c55e;color:#053a19;box-shadow:0 6px 16px rgba(16,185,129,.25)}
     .btn:disabled{opacity:.55;cursor:not-allowed}
-    fieldset.panel{background:#fff;border-radius:16px;border:2px dashed #d8dbe2;padding:16px;margin:10px 0 20px;box-shadow:0 6px 18px rgba(0,0,0,.05)}
+    fieldset.panel{
+      background:linear-gradient(180deg,#fffdf8 0%,#fff7e9 100%);
+      border-radius:20px;
+      border:2px dashed #d8dbe2;
+      padding:16px;
+      margin:10px 0 20px;
+      box-shadow:0 12px 28px rgba(120,92,44,.08);
+      position:relative;
+      overflow:visible;
+    }
     legend{display:none}
-    .section-title{font-weight:900;margin-bottom:8px;border-bottom:1px solid #ececec;padding-bottom:6px}
-    .subcap{font-weight:800;color:#374151;margin:16px 0 6px}
+    .section-title{
+      display:inline-flex;
+      align-items:center;
+      width:max-content;
+      max-width:100%;
+      margin:-30px 0 18px 18px;
+      padding:10px 20px 11px;
+      background:linear-gradient(180deg,#fff4d6 0%,#f8dd95 100%);
+      border:1px solid #e7ba57;
+      border-bottom:none;
+      border-radius:18px 18px 12px 12px;
+      box-shadow:0 8px 18px rgba(180,134,44,.16);
+      font-weight:900;
+      font-size:clamp(26px,3vw,34px);
+      font-family:var(--font-serif);
+      letter-spacing:.01em;
+      color:#6f3d11;
+      position:relative;
+      z-index:1;
+    }
+    .section-title::after{
+      content:"";
+      position:absolute;
+      left:18px;
+      right:18px;
+      bottom:-1px;
+      height:2px;
+      background:#fff7e9;
+      border-radius:999px;
+    }
+    .section-title::before{
+      content:"";
+      position:absolute;
+      left:-18px;
+      right:-420px;
+      bottom:-1px;
+      height:2px;
+      background:linear-gradient(90deg,#ead5a0 0%,#ead5a0 35%,rgba(234,213,160,.5) 70%,rgba(234,213,160,0) 100%);
+      z-index:-1;
+    }
+    .subcap{
+      display:inline-flex;
+      align-items:center;
+      width:max-content;
+      max-width:100%;
+      margin:20px 0 12px 14px;
+      padding:6px 14px 7px;
+      border-radius:14px 14px 10px 10px;
+      background:linear-gradient(180deg,#fff7e4 0%,#f6e6bb 100%);
+      border:1px solid #e8d29a;
+      color:#5f4a1f;
+      font-weight:900;
+      font-family:var(--font-serif);
+      font-size:clamp(18px,2.2vw,24px);
+      box-shadow:0 5px 14px rgba(145,114,41,.08);
+      position:relative;
+      z-index:1;
+    }
+    .subcap::after{
+      content:"";
+      position:absolute;
+      left:14px;
+      right:14px;
+      bottom:-1px;
+      height:2px;
+      background:#fff7e9;
+      border-radius:999px;
+    }
+    .subcap::before{
+      content:"";
+      position:absolute;
+      left:-14px;
+      right:-260px;
+      bottom:-1px;
+      height:2px;
+      background:linear-gradient(90deg,#ead5a0 0%,#ead5a0 35%,rgba(234,213,160,.45) 70%,rgba(234,213,160,0) 100%);
+      z-index:-1;
+    }
     label{display:block;margin:10px 0 6px;font-weight:700}
-    input,select,textarea{width:100%;padding:11px 12px;border:1px solid #cfd6df;border-radius:12px;font-size:16px;background:#fff}
+    input,select,textarea{
+      width:100%;
+      padding:11px 12px;
+      border:1px solid #cfd6df;
+      border-radius:12px;
+      font-size:16px;
+      font-family:var(--font-sans);
+      background:#fff;
+    }
     textarea{min-height:84px;resize:vertical}
     input[type="range"]{width:100%}
     .row{display:grid;gap:12px}
@@ -36,13 +175,57 @@
     .yn{width:min(100%,200px)}
     .controls{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;flex-wrap:wrap}
     .left-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-    .savedAt,.tip,.muted{color:#6b7280;font-size:12px}
+    .action-note{
+      color:#6b7280;
+      font-size:13px;
+      line-height:1.4;
+      font-style:italic;
+      white-space:normal;
+    }
+    .savedAt,.tip,.muted{color:#6b7280;font-size:13px;line-height:1.45}
     .soft{border:0;height:1px;background:#eceff3;margin:10px 0}
     .step{display:none}
     .step.active{display:block}
     .config-hidden{display:none!important}
     .question-block{display:grid;gap:6px}
-    .section-subtitle{font-weight:800;color:#374151;margin:16px 0 6px}
+    .section-subtitle{
+      display:inline-flex;
+      align-items:center;
+      width:max-content;
+      max-width:100%;
+      margin:20px 0 12px 12px;
+      padding:7px 16px 8px;
+      border-radius:15px 15px 10px 10px;
+      background:linear-gradient(180deg,#fff7e4 0%,#f6e6bb 100%);
+      border:1px solid #e8d29a;
+      color:#5f4a1f;
+      font-family:var(--font-serif);
+      font-size:clamp(18px,2vw,22px);
+      font-weight:700;
+      position:relative;
+      box-shadow:0 5px 14px rgba(145,114,41,.08);
+      z-index:1;
+    }
+    .section-subtitle::after{
+      content:"";
+      position:absolute;
+      left:14px;
+      right:14px;
+      bottom:-1px;
+      height:2px;
+      background:#fff7e9;
+      border-radius:999px;
+    }
+    .section-subtitle::before{
+      content:"";
+      position:absolute;
+      left:-14px;
+      right:-260px;
+      bottom:-1px;
+      height:2px;
+      background:linear-gradient(90deg,#ead5a0 0%,#ead5a0 35%,rgba(234,213,160,.45) 70%,rgba(234,213,160,0) 100%);
+      z-index:-1;
+    }
     .prn-option{display:flex;align-items:center;gap:8px;font-weight:700;color:#374151}
     .prn-option input{width:auto}
     .is-dad-hidden{display:none!important}
@@ -85,7 +268,14 @@
       box-shadow:0 4px 10px rgba(15,23,42,.08);
     }
     .focus-header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;text-align:center;margin-bottom:6px}
-    .focus-panel .section-title{margin:0;font-size:15px;text-transform:uppercase;letter-spacing:.04em;color:#a16207}
+    .focus-panel .section-title{
+      margin:0;
+      font-size:15px;
+      text-transform:uppercase;
+      letter-spacing:.04em;
+      color:#a16207;
+      font-family:var(--font-sans);
+    }
     .focus-panel .focus-summary{flex:1;margin:0;font-weight:600;color:#5b4a1a;display:grid;gap:4px;justify-items:center}
     .focus-panel .focus-summary strong{font-size:15px;color:#7c2d12}
     .focus-panel .focus-summary .focus-title-text{font-weight:800;color:#1f2937}
@@ -117,14 +307,32 @@
     .adl-entry strong{display:block;font-size:15px;margin-bottom:2px;color:#111827}
     .adl-entry small{display:block;color:#6b7280;font-size:12px}
     .adl-entry-actions{display:flex;gap:8px;align-items:center}
-    .entry-date-row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:6px 0 14px}
-    .entry-date-row label{margin:0;font-weight:800}
+    .entry-date-row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:6px 0 20px}
+    .entry-date-row label{margin:0;font-weight:700;font-family:var(--font-sans);font-size:17px}
     .entry-date-row input[type="date"]{padding:8px 10px;border:1px solid #d1d5db;border-radius:10px;font-size:15px}
     .entry-date-row .muted{font-size:13px}
-    .movement-panel,.temp-panel,.med-panel{background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:12px;margin-top:12px}
+    .movement-panel,.temp-panel,.med-panel{
+      background:linear-gradient(180deg,#fffefb 0%,#fff5e5 100%);
+      border:1px solid #ecdab3;
+      border-radius:18px;
+      padding:14px;
+      margin-top:12px;
+      box-shadow:0 10px 22px rgba(120,92,44,.06);
+    }
     .movement-head,.temp-head,.med-head{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
-    .movement-title,.temp-title,.med-title{font-weight:900}
-    .movement-desc,.temp-desc,.med-desc{margin:4px 0 0;color:#64748b;font-size:13px}
+    .movement-title,.temp-title,.med-title{
+      font-weight:900;
+      font-family:var(--font-serif);
+      font-size:24px;
+      color:#273449;
+    }
+    .movement-desc,.temp-desc,.med-desc{
+      margin:4px 0 0;
+      color:#64748b;
+      font-size:15px;
+      line-height:1.5;
+      font-style:italic;
+    }
     .movement-yn,.temp-yn,.med-yn{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:8px 0}
     .movement-pill,.temp-pill,.med-pill{display:inline-flex;align-items:center;gap:6px;border:1px solid #d1d5db;border-radius:999px;padding:4px 8px;background:#fff;font-weight:700;font-size:12.5px}
     .movement-pill input,.temp-pill input,.med-pill input{width:auto}
@@ -141,7 +349,13 @@
     .med-body select{width:100%}
     .med-body textarea{min-height:72px}
     .movement-row,.temp-row{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));align-items:end}
-    .movement-label,.temp-label,.med-label{font-weight:800;color:#1f2937;margin-bottom:6px}
+    .movement-label,.temp-label,.med-label{
+      font-weight:650;
+      color:#1f2937;
+      margin-bottom:6px;
+      font-family:var(--font-sans);
+      font-size:18px;
+    }
     .movement-chips,.temp-chips{display:flex;flex-wrap:wrap;gap:6px}
     .movement-chip,.temp-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid #cbd5f5;border-radius:8px;padding:4px 8px;background:#fff;font-weight:700;font-size:12.5px;line-height:1.2}
     .movement-chip input,.temp-chip input{width:auto}
@@ -159,7 +373,13 @@
     .movement-chip.is-toggle{cursor:pointer;border-style:dashed}
     .movement-chip.active{background:#1d4ed8;color:#fff;border-color:#1d4ed8}
     .adl-activity-list{display:grid;gap:8px}
-    .adl-activity-group{border:1px dashed #e2e8f0;border-radius:10px;padding:8px;background:#fff}
+    .adl-activity-group{
+      border:1px dashed #e4d7b8;
+      border-radius:16px;
+      padding:14px 12px 12px;
+      background:linear-gradient(180deg,#fffefb 0%,#fff8ec 100%);
+      box-shadow:0 8px 16px rgba(120,92,44,.05);
+    }
     .movement-grid,.temp-grid{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
     .movement-inline-input,.temp-inline-input{display:flex;gap:8px;align-items:center}
     .movement-inline-input input[type="text"],.temp-inline-input input[type="text"]{flex:1}
@@ -170,23 +390,28 @@
       display:grid;
       gap:14px;
       align-content:start;
-      border:1px solid #dbe4ee;
-      border-radius:16px;
-      background:linear-gradient(180deg,#ffffff 0%,#f8fbff 100%);
-      box-shadow:0 8px 18px rgba(15,23,42,.05);
+      border:1px solid #ead9b4;
+      border-radius:18px;
+      background:linear-gradient(180deg,#fffefb 0%,#fff5e7 100%);
+      box-shadow:0 10px 22px rgba(120,92,44,.07);
     }
     .educational-card-title{
       margin:0;
-      font-size:16px;
+      font-size:18px;
       line-height:1.35;
       font-weight:900;
       color:#0f172a;
       letter-spacing:.01em;
+      font-family:var(--font-serif);
     }
     .educational-card-question{
-      display:grid;
-      gap:8px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+      align-items:center;
+      justify-content:flex-start;
       padding-top:2px;
+      font-size:17px;
     }
     .educational-card-notes{
       margin:0;
@@ -202,50 +427,280 @@
     #behaviorQuestionsWrap,
     #educationalQuestionsWrap{grid-template-columns:minmax(0,1fr)}
     .behavior-section,
-    .educational-section{display:grid;gap:14px;margin-top:18px}
-    .behavior-section + .behavior-section,
-    .educational-section + .educational-section{padding-top:18px;border-top:1px solid #e5e7eb}
-    .behavior-section-header,
-    .educational-section-header{margin:0;font-size:18px;font-weight:900;color:#1f2937}
-    .behavior-section-helper,
-    .educational-section-helper{margin:-6px 0 0;color:#6b7280;font-size:13px;line-height:1.5}
-    .behavior-section-items,
-    .educational-section-items{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));align-items:start}
-    .behavior-card{
+    .educational-section{
       display:grid;
       gap:14px;
+      margin-top:22px;
+      padding:20px 18px 16px;
+      background:linear-gradient(180deg,#fffcf5 0%,#fff5e6 100%);
+      border:1px solid #ead7ac;
+      border-radius:22px;
+      box-shadow:0 12px 24px rgba(120,92,44,.06);
+      position:relative;
+    }
+    .behavior-section + .behavior-section,
+    .educational-section + .educational-section{padding-top:20px;border-top:none}
+    .behavior-section-header,
+    .educational-section-header{
+      display:inline-flex;
+      align-items:center;
+      width:max-content;
+      max-width:100%;
+      margin:-40px 0 8px 18px;
+      padding:10px 20px 11px;
+      border-radius:18px 18px 12px 12px;
+      background:linear-gradient(180deg,#fff1c8 0%,#f4d88c 100%);
+      border:1px solid #dfb85e;
+      box-shadow:0 10px 18px rgba(180,134,44,.14);
+      font-size:clamp(20px,2.2vw,26px);
+      font-weight:900;
+      color:#6a3d15;
+      line-height:1.25;
+      position:relative;
+      z-index:1;
+      font-family:var(--font-serif);
+    }
+    .behavior-section-header::after,
+    .educational-section-header::after{
+      content:"";
+      position:absolute;
+      left:18px;
+      right:18px;
+      bottom:-1px;
+      height:2px;
+      background:#fff5e6;
+      border-radius:999px;
+    }
+    .behavior-section-header::before,
+    .educational-section-header::before{
+      content:"";
+      position:absolute;
+      left:-18px;
+      right:-420px;
+      bottom:-1px;
+      height:2px;
+      background:linear-gradient(90deg,#e5c880 0%,#e5c880 38%,rgba(229,200,128,.42) 72%,rgba(229,200,128,0) 100%);
+      z-index:-1;
+    }
+    .behavior-section-helper,
+    .educational-section-helper{
+      margin:0;
+      color:#6b7280;
+      font-size:15px;
+      line-height:1.6;
+    }
+    [data-behavior-description-text],
+    [data-educational-description-text],
+    .behavior-section-helper,
+    .educational-section-helper{
+      font-style:italic;
+      font-weight:400;
+      letter-spacing:.01em;
+    }
+    .behavior-section-items,
+    .educational-section-items{display:grid;gap:14px;grid-template-columns:minmax(0,1fr);align-items:start}
+    .behavior-card{
+      display:grid;
+      gap:12px;
+      padding:22px 24px;
       align-content:start;
-      border:1px solid #dbe4ee;
-      border-radius:16px;
-      background:linear-gradient(180deg,#ffffff 0%,#f8fbff 100%);
-      box-shadow:0 8px 18px rgba(15,23,42,.05);
+      border:1px solid #ead9b4;
+      border-radius:18px;
+      background:linear-gradient(180deg,#fffefc 0%,#fff6ea 100%);
+      box-shadow:0 10px 22px rgba(120,92,44,.07);
     }
     .behavior-card-title{
       margin:0;
-      font-size:16px;
+      font-size:18px;
       line-height:1.35;
-      font-weight:900;
+      font-weight:700;
       color:#0f172a;
       letter-spacing:.01em;
+      font-family:var(--font-serif);
     }
     .behavior-card-question{
-      display:grid;
-      gap:8px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+      align-items:center;
+      justify-content:flex-start;
       padding-top:2px;
+      font-size:17px;
     }
+    .behavior-card-question .yn-pill-group,
+    .educational-card-question .yn-pill-group{margin:0}
     .behavior-card-notes{
       margin:0;
+      font-size:16px;
     }
     .behavior-card-notes textarea{
       margin-top:6px;
-      min-height:92px;
+      min-height:72px;
     }
     .behavior-choice-field,
     .educational-choice-field{display:grid;gap:8px}
     .behavior-choice-label,
-    .educational-choice-label{font-weight:800;color:#111827}
+    .educational-choice-label{
+      font-weight:600;
+      color:#111827;
+      font-size:16px;
+      font-family:var(--font-sans);
+    }
     .behavior-choice-group,
     .educational-choice-group{display:flex;flex-wrap:wrap;gap:8px}
+    .behavior-followup-grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+    .behavior-compact-label{font-weight:700;color:#111827;font-family:var(--font-serif)}
+    .behavior-inline-select,
+    .behavior-inline-time,
+    .behavior-inline-range{width:100%}
+    .behavior-inline-range{
+      -webkit-appearance:none;
+      appearance:none;
+      height:12px;
+      border-radius:999px;
+      background:linear-gradient(90deg,#f3c867 0%,#efd892 35%,#9ad79a 68%,#35c96b 100%);
+      border:1px solid rgba(191,161,90,.45);
+      box-shadow:inset 0 1px 2px rgba(255,255,255,.5), 0 1px 3px rgba(120,92,44,.06);
+      accent-color:#35c96b;
+    }
+    .behavior-inline-range::-webkit-slider-runnable-track{
+      height:12px;
+      border-radius:999px;
+      background:linear-gradient(90deg,#f3c867 0%,#efd892 35%,#9ad79a 68%,#35c96b 100%);
+    }
+    .behavior-inline-range::-webkit-slider-thumb{
+      -webkit-appearance:none;
+      appearance:none;
+      width:24px;
+      height:24px;
+      border-radius:50%;
+      margin-top:-7px;
+      border:2px solid #fff7ea;
+      background:linear-gradient(180deg,#b9a25f 0%,#7a5e2a 100%);
+      box-shadow:0 3px 8px rgba(120,92,44,.22);
+    }
+    .behavior-inline-range::-moz-range-track{
+      height:12px;
+      border-radius:999px;
+      background:linear-gradient(90deg,#f3c867 0%,#efd892 35%,#9ad79a 68%,#35c96b 100%);
+      border:1px solid rgba(191,161,90,.45);
+    }
+    .behavior-inline-range::-moz-range-thumb{
+      width:24px;
+      height:24px;
+      border-radius:50%;
+      border:2px solid #fff7ea;
+      background:linear-gradient(180deg,#b9a25f 0%,#7a5e2a 100%);
+      box-shadow:0 3px 8px rgba(120,92,44,.22);
+    }
+    #aggression_intensity,
+    #manic_intensity{
+      -webkit-appearance:none;
+      appearance:none;
+      height:12px;
+      border-radius:999px;
+      background:linear-gradient(90deg,#f3c867 0%,#efd892 35%,#9ad79a 68%,#35c96b 100%);
+      border:1px solid rgba(191,161,90,.45);
+      box-shadow:inset 0 1px 2px rgba(255,255,255,.5), 0 1px 3px rgba(120,92,44,.06);
+      accent-color:#35c96b;
+    }
+    #aggression_intensity::-webkit-slider-runnable-track,
+    #manic_intensity::-webkit-slider-runnable-track{
+      height:12px;
+      border-radius:999px;
+      background:linear-gradient(90deg,#f3c867 0%,#efd892 35%,#9ad79a 68%,#35c96b 100%);
+    }
+    #aggression_intensity::-webkit-slider-thumb,
+    #manic_intensity::-webkit-slider-thumb{
+      -webkit-appearance:none;
+      appearance:none;
+      width:24px;
+      height:24px;
+      border-radius:50%;
+      margin-top:-7px;
+      border:2px solid #fff7ea;
+      background:linear-gradient(180deg,#b9a25f 0%,#7a5e2a 100%);
+      box-shadow:0 3px 8px rgba(120,92,44,.22);
+    }
+    #aggression_intensity::-moz-range-track,
+    #manic_intensity::-moz-range-track{
+      height:12px;
+      border-radius:999px;
+      background:linear-gradient(90deg,#f3c867 0%,#efd892 35%,#9ad79a 68%,#35c96b 100%);
+      border:1px solid rgba(191,161,90,.45);
+    }
+    #aggression_intensity::-moz-range-thumb,
+    #manic_intensity::-moz-range-thumb{
+      width:24px;
+      height:24px;
+      border-radius:50%;
+      border:2px solid #fff7ea;
+      background:linear-gradient(180deg,#b9a25f 0%,#7a5e2a 100%);
+      box-shadow:0 3px 8px rgba(120,92,44,.22);
+    }
+    #intensityVal,
+    #manicIntensityVal{
+      font-size:30px;
+      line-height:1;
+      font-weight:600;
+      color:#2d9159;
+      font-family:"Avenir Next Condensed","Avenir Next","Segoe UI",sans-serif;
+      letter-spacing:-.02em;
+    }
+    .behavior-intensity-readout{
+      display:flex;
+      align-items:baseline;
+      gap:10px;
+      margin-top:2px;
+      color:#6b7280;
+    }
+    .behavior-intensity-number{
+      font-size:34px;
+      line-height:1;
+      font-weight:600;
+      color:#2d9159;
+      min-width:1ch;
+      font-family:"Avenir Next Condensed","Avenir Next","Segoe UI",sans-serif;
+      letter-spacing:-.02em;
+    }
+    .behavior-intensity-text{
+      font-size:16px;
+      font-weight:500;
+      color:#7c9253;
+      font-style:italic;
+      font-family:var(--font-sans);
+    }
+    .behavior-followup-span-2{grid-column:span 2}
+    button[data-behavior-desc-edit],
+    button[data-educational-desc-edit],
+    button[data-behavior-desc-cancel],
+    button[data-educational-desc-cancel]{
+      font-weight:500;
+      font-style:italic;
+      color:#5f4a1f;
+      border-color:#e5d6ae;
+      background:rgba(255,255,255,.78);
+      box-shadow:none;
+    }
+    button[data-behavior-desc-save],
+    button[data-educational-desc-save]{
+      font-weight:600;
+    }
+    .step[data-step="0"] .section-title{margin-top:8px}
+    #postSubmitPrompt{
+      display:none;
+      margin:18px auto 0;
+      max-width:960px;
+      padding:18px 20px;
+      border-radius:18px;
+      border:1px solid #bfdbfe;
+      background:linear-gradient(180deg,#eff6ff 0%,#dbeafe 100%);
+      color:#1e3a8a;
+      box-shadow:0 12px 28px rgba(30,64,175,.10);
+    }
+    #postSubmitPrompt.is-visible{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px}
+    #postSubmitPrompt p{margin:0;font-size:16px;line-height:1.5;font-weight:700}
+    #postSubmitPrompt .btn{white-space:nowrap}
     .helper-note{margin-top:10px;padding:12px 14px;border-radius:14px;border:1px solid #fde68a;background:#fffbeb;color:#92400e}
     #successBanner{
       position:fixed;
@@ -273,7 +728,7 @@
 <body>
   <div class="page-wrap">
     <h1>Caregiver Check-In</h1>
-    <div class="sub">Autosaves as you type. Use <strong>Save &amp; Next</strong> to step through.</div>
+    <div class="sub">This check-in autosaves while you type. <strong>Save</strong> saves your progress so far and lets you come back later. <strong>Save &amp; Next</strong> saves the current section and moves you to the next one.</div>
 
     <section class="panel focus-panel" id="caregiver-focus-panel">
       <div class="focus-title-pill">Weekly Focus</div>
@@ -291,7 +746,7 @@
 
     <div class="progress" id="progress">
       <div class="prog-item" data-step="0"><div class="prog-label">Physical</div><div class="seg active"></div></div>
-      <div class="prog-item" data-step="1"><div class="prog-label">Behavior</div><div class="seg"></div></div>
+      <div class="prog-item" data-step="1"><div class="prog-label">Behavior / Mental Health</div><div class="seg"></div></div>
       <div class="prog-item" data-step="2"><div class="prog-label">Vocational</div><div class="seg"></div></div>
       <div class="prog-item" data-step="3"><div class="prog-label">Home / Family</div><div class="seg"></div></div>
       <div class="prog-item" data-step="4"><div class="prog-label">Community</div><div class="seg"></div></div>
@@ -360,6 +815,14 @@
             <label class="prn-option">
               <input type="checkbox" name="prn_used_for_sleep_disturbance">
               PRN used for sleep disturbance
+            </label>
+          </div>
+          <div class="row cols-2" style="margin:0 0 10px">
+            <label>What was used? (optional)
+              <input type="text" name="sleep_prn_name" id="sleep_prn_name" placeholder="Enter medication or support used"/>
+            </label>
+            <label>Time given (optional)
+              <input type="time" name="sleep_prn_time" id="sleep_prn_time"/>
             </label>
           </div>
           <div class="row cols-3 compact">
@@ -441,17 +904,14 @@
               <label>Notes (optional)
                 <textarea name="med_change_note" id="med_change_note" placeholder="Short note about the change or reason."></textarea>
               </label>
-              <label>Caregiver notes (optional)
-                <textarea name="med_change_caregiver_notes" id="med_change_caregiver_notes" placeholder="Optional notes…"></textarea>
-              </label>
             </div>
           </div>
 
           <div class="movement-panel" id="movementSymptomsPanel">
             <div class="movement-head">
               <div>
-                <div class="movement-title">Movement / Tics / Vocalizations <span class="muted">(Tremor / Dyskinesia)</span></div>
-                <p class="movement-desc">Track unusual movements, shaking, vocalizations, grimacing, or repetitive motions.</p>
+                <div class="movement-title">Pain / Discomfort</div>
+                <p class="movement-desc">Track pain, physical discomfort, shakiness, or other body-based symptoms when they come up.</p>
               </div>
             </div>
             <div id="question-prn-pain" class="question-block" style="margin-bottom:8px">
@@ -461,8 +921,8 @@
               </label>
             </div>
 
-            <div class="movement-yn" role="group" aria-label="Movement symptoms today">
-              <strong>Movement symptoms today?</strong>
+            <div class="movement-yn" role="group" aria-label="Pain or discomfort today">
+              <strong>Pain or discomfort today?</strong>
               <label class="movement-pill"><input type="radio" name="movement_present" value="no" checked> No</label>
               <label class="movement-pill"><input type="radio" name="movement_present" value="yes"> Yes</label>
             </div>
@@ -470,12 +930,12 @@
             <div class="movement-body is-collapsed" data-movement-body-wrap>
               <div class="movement-row">
                 <div>
-                  <div class="movement-label">Main type</div>
+                  <div class="movement-label">Main symptom</div>
                   <div class="movement-chips">
-                    <label class="movement-chip"><input type="radio" name="movement_main_type" value="hands_shaking">Hands shaking</label>
-                    <label class="movement-chip"><input type="radio" name="movement_main_type" value="face_mouth">Face / mouth</label>
-                    <label class="movement-chip"><input type="radio" name="movement_main_type" value="arms_legs">Arms / legs</label>
-                    <label class="movement-chip"><input type="radio" name="movement_main_type" value="vocalizations">Vocalizations</label>
+                    <label class="movement-chip"><input type="radio" name="movement_main_type" value="pain">Pain</label>
+                    <label class="movement-chip"><input type="radio" name="movement_main_type" value="headache">Headache</label>
+                    <label class="movement-chip"><input type="radio" name="movement_main_type" value="stomach">Stomach discomfort</label>
+                    <label class="movement-chip"><input type="radio" name="movement_main_type" value="shaking">Shaking / restlessness</label>
                     <label class="movement-chip"><input type="radio" name="movement_main_type" value="other">Other</label>
                   </div>
                 </div>
@@ -503,17 +963,17 @@
                 </div>
                 <div>
                   <label class="movement-label" for="movement_notes">Notes (optional)</label>
-                  <input type="text" name="movement_notes" id="movement_notes" placeholder="Short note, e.g. shaky at breakfast"/>
+                  <input type="text" name="movement_notes" id="movement_notes" placeholder="Short note, e.g. headache after lunch"/>
                 </div>
               </div>
 
               <div class="movement-actions">
                 <button class="btn" type="button" id="movementSameBtn">Same as last check-in</button>
-                <button class="btn" type="button" id="movementDetailsToggle" aria-expanded="false" aria-controls="movementDetails">Show body map &amp; triggers</button>
+                <button class="btn" type="button" id="movementDetailsToggle" aria-expanded="false" aria-controls="movementDetails">Show optional symptom details</button>
               </div>
 
               <div class="movement-details is-hidden" id="movementDetails">
-                <div class="movement-label">Body map</div>
+                <div class="movement-label">Optional symptom details</div>
                 <div class="movement-grid">
                   <label class="movement-chip"><input type="checkbox" data-movement-body value="eyes_blinking">Eyes blinking / eye movements</label>
                   <label class="movement-chip"><input type="checkbox" data-movement-body value="face_grimacing">Face grimacing</label>
@@ -583,7 +1043,7 @@
 
                 <div class="movement-collapse" style="margin-top:10px">
                   <button class="movement-collapse-toggle" type="button" id="movementAwarenessToggle" aria-expanded="false" aria-controls="movementAwarenessBody">
-                    Awareness (optional)
+                    Awareness / impact (optional)
                     <span class="movement-toggle-hint">Show</span>
                   </button>
                   <div class="movement-collapse-body is-hidden" id="movementAwarenessBody">
@@ -613,27 +1073,36 @@
           <div class="temp-panel" id="tempPanel">
             <div class="temp-head">
               <div>
-                <div class="temp-title">Temperature</div>
-                <p class="temp-desc">Track low-grade temperature and related symptoms prior to tests.</p>
+                <div class="temp-title">Illness Symptoms / Discomfort</div>
+                <p class="temp-desc">Track illness symptoms, pain, physical discomfort, shakiness, headache, stomach upset, or other body-based concerns in one place.</p>
               </div>
             </div>
-            <div id="question-prn-headache" class="question-block" style="margin-bottom:8px">
+            <div class="temp-yn" role="group" aria-label="Symptoms or discomfort today">
+              <strong>Symptoms or discomfort today?</strong>
+              <label class="temp-pill"><input type="radio" name="temp_present" value="no" checked> No</label>
+              <label class="temp-pill"><input type="radio" name="temp_present" value="yes"> Yes</label>
+            </div>
+
+            <div id="question-prn-headache" class="question-block" style="margin:8px 0 8px">
               <label class="prn-option">
                 <input type="checkbox" name="prn_used_for_headache">
-                PRN used for headache or illness symptoms
+                PRN used for symptoms / discomfort (e.g., ibuprofen or acetaminophen)
               </label>
             </div>
 
-            <div class="temp-yn" role="group" aria-label="Temperature today">
-              <strong>Temperature today?</strong>
-              <label class="temp-pill"><input type="radio" name="temp_present" value="no" checked> No</label>
-              <label class="temp-pill"><input type="radio" name="temp_present" value="yes"> Yes</label>
+            <div class="temp-row" style="margin-bottom:8px">
+              <label>What was used? (optional)
+                <input type="text" name="temp_prn_name" id="temp_prn_name" placeholder="Enter medication or support used"/>
+              </label>
+              <label>Time given (optional)
+                <input type="time" name="temp_prn_time" id="temp_prn_time"/>
+              </label>
             </div>
 
             <div class="temp-body is-collapsed" data-temp-body-wrap>
               <div class="temp-row">
                 <div>
-                  <label class="temp-label" for="temp_value">Temperature</label>
+                  <label class="temp-label" for="temp_value">Temperature (if taken)</label>
                   <select name="temp_value" id="temp_value">
                     <option value="">Select temp</option>
                     <option value="96.0">96.0°F</option>
@@ -652,7 +1121,6 @@
                     <option value="102.5">102.5°F</option>
                     <option value="103.0">103.0°F</option>
                     <option value="104.0">104.0°F</option>
-                    <option value="other">Other</option>
                   </select>
                 </div>
                 <div>
@@ -664,25 +1132,23 @@
                     <option value="forehead">Forehead</option>
                     <option value="axillary">Underarm</option>
                     <option value="temporal">Temporal</option>
-                    <option value="other">Other</option>
                   </select>
                 </div>
               </div>
 
-              <div class="temp-inline-input" style="margin-top:8px">
-                <input type="text" name="temp_other_value" id="temp_other_value" placeholder="Other temperature or method (optional)"/>
-              </div>
-
-              <div class="temp-label" style="margin-top:12px">Symptoms</div>
+              <div class="temp-label" style="margin-top:12px">Symptoms / concerns</div>
               <div class="temp-grid">
+                <label class="temp-chip"><input type="checkbox" data-temp-symptom value="pain_discomfort">Pain / discomfort</label>
                 <label class="temp-chip"><input type="checkbox" data-temp-symptom value="runny_nose">Runny nose</label>
                 <label class="temp-chip"><input type="checkbox" data-temp-symptom value="cough">Cough</label>
                 <label class="temp-chip"><input type="checkbox" data-temp-symptom value="congestion">Congestion</label>
                 <label class="temp-chip"><input type="checkbox" data-temp-symptom value="sore_throat">Sore throat</label>
                 <label class="temp-chip"><input type="checkbox" data-temp-symptom value="chills">Chills</label>
                 <label class="temp-chip"><input type="checkbox" data-temp-symptom value="headache">Headache</label>
+                <label class="temp-chip"><input type="checkbox" data-temp-symptom value="stomach_discomfort">Stomach discomfort</label>
                 <label class="temp-chip"><input type="checkbox" data-temp-symptom value="fatigue">Fatigue</label>
                 <label class="temp-chip"><input type="checkbox" data-temp-symptom value="body_aches">Body aches</label>
+                <label class="temp-chip"><input type="checkbox" data-temp-symptom value="shakiness_restlessness">Shakiness / restlessness</label>
                 <label class="temp-chip"><input type="checkbox" data-temp-symptom value="nausea">Nausea</label>
                 <label class="temp-chip"><input type="checkbox" data-temp-symptom value="vomiting">Vomiting</label>
                 <label class="temp-chip"><input type="checkbox" data-temp-symptom value="diarrhea">Diarrhea</label>
@@ -698,10 +1164,42 @@
               <input type="text" name="temp_notes" id="temp_notes" placeholder="Short note, e.g. warm at 7am"/>
             </div>
           </div>
+          <div class="temp-panel" id="menstrualPanel">
+            <div class="temp-head">
+              <div>
+                <div class="temp-title">Menstrual Tracking</div>
+                <p class="temp-desc">Record cycle-related symptoms when they are relevant for the day.</p>
+              </div>
+            </div>
+            <div class="temp-yn" role="group" aria-label="Menstrual symptoms today">
+              <strong>Menstrual symptoms today?</strong>
+              <label class="temp-pill"><input type="radio" name="menstrual_present" value="no" checked> No</label>
+              <label class="temp-pill"><input type="radio" name="menstrual_present" value="yes"> Yes</label>
+            </div>
+            <div class="temp-body is-collapsed" data-menstrual-body-wrap>
+              <div class="temp-label" style="margin-top:12px">Symptoms</div>
+              <div class="temp-grid">
+                <label class="temp-chip"><input type="checkbox" data-menstrual-symptom value="bleeding">Bleeding / period started</label>
+                <label class="temp-chip"><input type="checkbox" data-menstrual-symptom value="spotting">Spotting</label>
+                <label class="temp-chip"><input type="checkbox" data-menstrual-symptom value="cramps">Cramps</label>
+                <label class="temp-chip"><input type="checkbox" data-menstrual-symptom value="bloating">Bloating</label>
+                <label class="temp-chip"><input type="checkbox" data-menstrual-symptom value="fatigue">Fatigue</label>
+                <label class="temp-chip"><input type="checkbox" data-menstrual-symptom value="mood_changes">Mood changes</label>
+                <label class="temp-chip"><input type="checkbox" data-menstrual-symptom value="other">Other</label>
+              </div>
+              <div class="temp-inline-input" style="margin-top:8px">
+                <input type="text" name="menstrual_symptom_other" id="menstrual_symptom_other" placeholder="Other symptom (optional)"/>
+              </div>
+              <input type="hidden" name="menstrual_symptoms" id="menstrual_symptoms" value=""/>
+
+              <label class="temp-label" for="menstrual_notes" style="margin-top:10px">Notes (optional)</label>
+              <input type="text" name="menstrual_notes" id="menstrual_notes" placeholder="Short note for the next caregiver"/>
+            </div>
+          </div>
           <label>Physical health notes:<textarea name="physical_notes" placeholder="Optional notes..."></textarea></label>
           <div class="controls">
-            <div class="left-actions"><button class="btn" type="button" data-save>Save</button><span class="savedAt" data-savedat></span></div>
-            <div><button class="btn primary" type="button" data-next>Save &amp; Next →</button></div>
+            <div class="left-actions"><button class="btn" type="button" data-save>Save</button><span class="action-note">Saves your progress so far so you can come back later.</span><span class="savedAt" data-savedat></span></div>
+            <div class="left-actions"><span class="action-note">Saves this section and opens the next one.</span><button class="btn primary" type="button" data-next>Save &amp; Next →</button></div>
           </div>
         </fieldset>
       </div>
@@ -839,9 +1337,10 @@
             <label>Behavior notes:<textarea name="behavior_notes" placeholder="What happened, what helped"></textarea></label>
           </div>
           <div class="controls">
-            <div class="left-actions"><button class="btn" type="button" data-save>Save</button><span class="savedAt" data-savedat></span></div>
+            <div class="left-actions"><button class="btn" type="button" data-save>Save</button><span class="action-note">Saves your progress so far so you can come back later.</span><span class="savedAt" data-savedat></span></div>
             <div>
               <button class="btn" type="button" data-prev>← Back</button>
+              <span class="action-note">Saves this section and opens the next one.</span>
               <button class="btn primary" type="button" data-next>Save &amp; Next →</button>
             </div>
           </div>
@@ -874,8 +1373,8 @@
           </div>
           <label id="vocationalNotesWrap" style="display:none">Vocational notes:<textarea name="vocational_notes" placeholder="Describe tasks, progress, or challenges during vocational time."></textarea></label>
           <div class="controls">
-            <div class="left-actions"><button class="btn" type="button" data-save>Save</button><span class="savedAt" data-savedat></span></div>
-            <div><button class="btn" type="button" data-prev>← Back</button><button class="btn primary" type="button" data-next>Save &amp; Next →</button></div>
+            <div class="left-actions"><button class="btn" type="button" data-save>Save</button><span class="action-note">Saves your progress so far so you can come back later.</span><span class="savedAt" data-savedat></span></div>
+            <div class="left-actions"><button class="btn" type="button" data-prev>← Back</button><span class="action-note">Saves this section and opens the next one.</span><button class="btn primary" type="button" data-next>Save &amp; Next →</button></div>
           </div>
         </fieldset>
       </div>
@@ -955,9 +1454,10 @@
           </div>
           <label id="homeNotesWrap" style="display:none">Home / family notes:<textarea name="home_notes" placeholder="Interactions, meals, visitors, or notable moments at home."></textarea></label>
           <div class="controls">
-            <div class="left-actions"><button class="btn" type="button" data-save>Save</button><span class="savedAt" data-savedat></span></div>
+            <div class="left-actions"><button class="btn" type="button" data-save>Save</button><span class="action-note">Saves your progress so far so you can come back later.</span><span class="savedAt" data-savedat></span></div>
             <div>
               <button class="btn" type="button" data-prev>← Back</button>
+              <span class="action-note">Saves this section and opens the next one.</span>
               <button class="btn primary" type="button" data-next>Save &amp; Next →</button>
               <button class="btn" type="submit">SUBMIT</button>
             </div>
@@ -1052,10 +1552,9 @@
           <div id="interactionDetailsNotes" class="row cols-2" style="display:none">
             <label>Interaction note:<input type="text" name="interaction_note" placeholder="e.g., greeted neighbor with 'Hi' and smile"/></label>
           </div>
-          <label id="communityNotesWrap" style="display:none">Community notes:<textarea name="community_notes" placeholder="Additional context for community participation or interactions."></textarea></label>
           <div class="controls">
-            <div class="left-actions"><button class="btn" type="button" data-save>Save</button><span class="savedAt" data-savedat></span></div>
-            <div><button class="btn" type="button" data-prev>← Back</button><button class="btn primary" type="button" data-next>Save &amp; Next →</button></div>
+            <div class="left-actions"><button class="btn" type="button" data-save>Save</button><span class="action-note">Saves your progress so far so you can come back later.</span><span class="savedAt" data-savedat></span></div>
+            <div class="left-actions"><button class="btn" type="button" data-prev>← Back</button><span class="action-note">Saves this section and opens the next one.</span><button class="btn primary" type="button" data-next>Save &amp; Next →</button></div>
           </div>
         </fieldset>
       </div>
@@ -1086,6 +1585,7 @@
           <div class="controls">
             <div class="left-actions">
               <button class="btn" type="button" data-save>Save</button>
+              <span class="action-note">Saves your progress so far so you can come back later.</span>
               <span class="savedAt" data-savedat></span>
               <span class="savedAt" id="finalSubmittedAt"></span>
             </div>
@@ -1107,6 +1607,7 @@
           <div class="controls">
             <div class="left-actions">
               <button class="btn" type="button" data-save>Save</button>
+              <span class="action-note">Saves your progress so far so you can come back later.</span>
               <span class="savedAt" data-savedat></span>
             </div>
             <div>
@@ -1121,6 +1622,10 @@
 
   <div id="toast"></div>
   <div id="successBanner" role="status" aria-live="polite">Check-in submitted successfully</div>
+  <div id="postSubmitPrompt" role="status" aria-live="polite">
+    <p>Your caregiver check-in was submitted. Want to see how the data looks in the report?</p>
+    <a class="btn primary" href="/caregiver-report.html">View Caregiver Report</a>
+  </div>
 
 
 <!-- App logic -->
@@ -1182,10 +1687,12 @@
   const MOVEMENT_LAST_KEY = 'cg-movement-last-v1';
   const caregiverSetupState = {
     groupId: null,
+    configRowId: null,
     groupName: '',
     hasConfig: false,
     selectedCategories: new Set(),
     selectedItems: {},
+    itemDescriptions: {},
   };
 
   function parseConfigObject(value){
@@ -1293,7 +1800,9 @@
       return Object.fromEntries(
         Object.entries(value).map(([categoryKey, items]) => [
           categoryKey,
-          Array.isArray(items) ? items.map((entry) => String(entry || '').trim()).filter(Boolean) : [],
+          categoryKey.startsWith('__')
+            ? items
+            : Array.isArray(items) ? items.map((entry) => String(entry || '').trim()).filter(Boolean) : [],
         ])
       );
     }
@@ -1307,9 +1816,26 @@
     return {};
   };
 
+  const normalizeItemDescriptions = (value) => {
+    const parsed = parseConfigObject(value);
+    if (!parsed || typeof parsed !== 'object') return {};
+    return Object.fromEntries(
+      Object.entries(parsed)
+        .map(([key, text]) => [String(key || '').trim(), trimOrNull(text) || ''])
+        .filter(([key, text]) => key && text)
+    );
+  };
+
   const labelForName = (name) => document.querySelector(`[name="${name}"]`)?.closest('label') || null;
   const setConfigHidden = (elements, hidden) => {
     elements.filter(Boolean).forEach((el) => el.classList.toggle('config-hidden', !!hidden));
+  };
+  const setStepAndNavHidden = (stepEl, navEl, hidden) => {
+    setConfigHidden([stepEl, navEl], hidden);
+    [stepEl, navEl].filter(Boolean).forEach((el) => {
+      el.hidden = !!hidden;
+      el.setAttribute('aria-hidden', hidden ? 'true' : 'false');
+    });
   };
   const configItemEnabled = (categoryKey, itemKey) => {
     if (!caregiverSetupState.hasConfig) return false;
@@ -1324,9 +1850,9 @@
   const hasAnyEnabledCategory = () => caregiverSetupState.selectedCategories.size > 0;
 
   const BASE_ADL_OPTIONS = {
-    'Hygiene / Toileting': ['Brushed teeth','Flossed teeth','Washed face','Showered','Toileting routine','Combed hair','Clipped nails'],
+    'Hygiene / Toileting': ['Brushed teeth','Flossed teeth','Washed face','Showered','Toileting routine','Combed hair','Clipped nails','Got a haircut'],
     'Dressing / Grooming': ['Chose clothes','Dressed self','Zipped / Buttoned','Tied shoes','Wore hat/sunglasses/jacket'],
-    'Cleaning / Household': ['Wiped table','Brought dishes to sink','Loaded dishwasher','Swept/Vacuumed','Made bed','Laundry assist'],
+    'Cleaning / Household': ['Wiped table','Brought dishes to sink','Loaded dishwasher','Unloaded dishwasher','Put dishes away','Swept/Vacuumed','Made bed','Laundry assist'],
     'Cooking / Food': ['Prepared snack','Prepared drink','Made sandwich','Helped cook','Used microwave','Helped bake'],
     'Community / Errands': ['Brought trash out','Sorted recycling','Carried grocery bag']
   };
@@ -1366,6 +1892,7 @@
     reduces_verbal_outbursts: 'Reduces verbal outbursts',
     uses_repair_after_conflict: 'Uses repair after conflict',
     returns_to_activity: 'Returns to activity',
+    behavior_prn_used: 'PRN used for behavior / mental health support',
     anxiety_signs_present: 'Anxiety signs present',
     withdrawal_present: 'Withdrawal present',
     mood_lability_present: 'Rapid mood changes (big ups and downs throughout the day)',
@@ -1379,14 +1906,42 @@
     elevated_mood_indicators: 'Elevated mood indicators',
     distress_impacts_participation: 'Distress impacts participation',
   };
+  const BEHAVIOR_DESCRIPTION_OVERRIDES = {
+    identifies_feelings: 'Names or points to a feeling without staff guessing for them.',
+    tolerates_frustration: 'Stays regulated enough to keep going when something is hard or disappointing.',
+    uses_coping_strategy: 'Uses a coping tool or calming strategy when upset.',
+    accepts_redirection: 'Shifts back to the task or expectation after caregiver guidance.',
+    requests_break: 'Asks for a break before becoming overwhelmed.',
+    recovers_after_distress: 'Returns to baseline after being upset.',
+    tolerates_waiting: 'Waits without escalating when asked to pause.',
+    tolerates_denial: 'Handles being told no without major dysregulation.',
+    tolerates_change: 'Adjusts when plans, routines, or expectations change.',
+    tolerates_nonpreferred_tasks: 'Participates in a task they do not prefer.',
+    accepts_limits: 'Accepts boundaries or limits set by caregivers.',
+    transitions_with_support: 'Moves from one activity to the next with caregiver support.',
+    responds_to_staff_direction: 'Follows caregiver direction after being told what to do, with support documented if prompts were needed.',
+    responds_to_peer_interaction: 'Responds appropriately when peers interact.',
+    maintains_group_expectations: 'Keeps expected behavior in shared settings.',
+    reduces_verbal_outbursts: 'Uses a calmer voice and fewer verbal escalations.',
+    uses_repair_after_conflict: 'Repairs after conflict through apology, calm return, or problem solving.',
+    returns_to_activity: 'Returns to the planned activity after interruption or upset.',
+    behavior_prn_used: 'Use this when a PRN was given for anxiety, agitation, escalation, dysregulation, or another behavior or mental health reason during the shift.',
+    anxiety_signs_present: 'Shows worry, tension, reassurance seeking, or other anxiety signs.',
+    withdrawal_present: 'Pulls away from people, tasks, leisure activities, or participation more than usual.',
+    perseveration_present: 'Gets stuck on one topic, thought, concern, or activity and has trouble shifting away from it.',
+    compulsive_checking_repeating: 'Repeats the same routine, action, checking pattern, or ritual over and over and has difficulty stopping or shifting away from it.',
+    low_mood_indicators: 'Shows sadness, low energy, tearfulness, reduced motivation, or decreased interest in usual activities.',
+    elevated_mood_indicators: 'Shows unusually high energy, silliness, agitation, or overly elevated mood.',
+    pressured_speech_present: 'Talks very fast, talks over others, or is hard to interrupt because speech is coming out so quickly.',
+    grandiose_statements_present: 'Makes unrealistic or exaggerated statements about self, abilities, plans, or power that are outside usual presentation.',
+    distress_impacts_participation: 'Emotional distress makes it harder to join, stay, or finish activities.',
+  };
   const BEHAVIOR_PROMPT_LEVELS = [
-    { value: 'independent', label: 'Independent' },
-    { value: 'visual_prompt', label: 'Visual Prompt' },
-    { value: 'gestural_prompt', label: 'Gestural Prompt' },
-    { value: 'verbal_prompt', label: 'Verbal Prompt' },
-    { value: 'model_prompt', label: 'Model Prompt' },
-    { value: 'physical_prompt', label: 'Physical Prompt' },
-    { value: 'full_support', label: 'Full Support' },
+    { value: '0', label: '0 - Independent' },
+    { value: '1', label: '1 - 1-2 prompts' },
+    { value: '2', label: '2 - Periodic prompts' },
+    { value: '3', label: '3 - Frequent prompts' },
+    { value: '4', label: '4 - Dependent' },
   ];
   const BEHAVIOR_FIELD_CONFIGS = {
     regulation_level: {
@@ -1429,6 +1984,34 @@
         { value: 'prolonged_recovery', label: 'Prolonged recovery' },
       ],
     },
+  };
+  const PROMPT_TYPE_OPTIONS = [
+    { value: '', label: 'No prompt / not needed' },
+    { value: 'verbal', label: 'Verbal prompt' },
+    { value: 'visual', label: 'Visual prompt' },
+    { value: 'gestural', label: 'Gestural prompt' },
+    { value: 'model', label: 'Model prompt' },
+    { value: 'physical', label: 'Physical prompt' },
+  ];
+  const INTENSITY_OPTIONS = [
+    { value: '', label: 'Select intensity' },
+    { value: '1', label: '1 - Very mild' },
+    { value: '2', label: '2 - Mild' },
+    { value: '3', label: '3 - Moderate' },
+    { value: '4', label: '4 - High' },
+    { value: '5', label: '5 - Severe' },
+  ];
+  const BEHAVIOR_TRACKING_TYPES = {
+    behavior_prn_used: 'prn_usage',
+    anxiety_signs_present: 'symptom_intensity',
+    withdrawal_present: 'symptom_intensity',
+    perseveration_present: 'symptom_intensity',
+    compulsive_checking_repeating: 'symptom_intensity',
+    low_mood_indicators: 'symptom_intensity',
+    elevated_mood_indicators: 'symptom_intensity',
+    pressured_speech_present: 'symptom_intensity',
+    grandiose_statements_present: 'symptom_intensity',
+    distress_impacts_participation: 'symptom_intensity',
   };
   const BEHAVIOR_CATEGORY_CONFIGS = [
     {
@@ -1495,8 +2078,11 @@
         'anxiety_signs_present',
         'withdrawal_present',
         'perseveration_present',
+        'compulsive_checking_repeating',
         'low_mood_indicators',
         'elevated_mood_indicators',
+        'pressured_speech_present',
+        'grandiose_statements_present',
         'distress_impacts_participation',
       ],
       fields: ['regulation_level', 'recovery'],
@@ -1548,14 +2134,52 @@
     completes_role: 'Completes role or responsibility',
     transitions_activities: 'Transitions between activities',
   };
+  const EDUCATIONAL_DESCRIPTION_OVERRIDES = {
+    requests_needs: 'Clearly asks for wants or needs instead of only relying on caregiver guessing.',
+    uses_communication_method: 'Uses their communication system in a functional way.',
+    responds_to_questions: 'Answers or responds when asked a question.',
+    initiates_communication: 'Starts communication without waiting for someone else first.',
+    makes_choices: 'Chooses between options when given the chance.',
+    expresses_emotions: 'Communicates feelings in a way others can understand.',
+    engages_1to1: 'Participates appropriately in a one-to-one interaction.',
+    responds_to_peer: 'Responds when a peer talks, gestures, or engages.',
+    initiates_interaction: 'Starts an interaction with another person.',
+    takes_turns: 'Waits for and takes a turn during an activity or conversation.',
+    shares_materials: 'Shares materials or space with support as needed.',
+    maintains_interaction: 'Stays in the interaction for more than a brief exchange.',
+    participates_small_group: 'Joins a small group activity appropriately.',
+    participates_group: 'Participates in a larger group activity appropriately.',
+    uses_coping_strategies: 'Uses regulation tools when frustrated or overwhelmed.',
+    accepts_redirection: 'Shifts back to the expected task or behavior after support.',
+    recovers_from_frustration: 'Returns to baseline after frustration.',
+    tolerates_nonpreferred: 'Participates in a non-preferred task with support as needed.',
+    maintains_safe_behavior: 'Keeps body and behavior safe during activities.',
+    requests_break: 'Asks for a break before dysregulation increases.',
+    hygiene: 'Participates in hygiene routines.',
+    dressing: 'Participates in dressing tasks.',
+    eating: 'Participates in eating or meal routines.',
+    cleanup: 'Helps clean up after activities or meals.',
+    follows_routine: 'Follows the expected daily routine.',
+    uses_materials: 'Uses materials appropriately for the task.',
+    attends_to_task: 'Stays oriented to the task.',
+    starts_task: 'Begins the task within a reasonable time.',
+    completes_task: 'Finishes the task or expected portion of it.',
+    follows_directions: 'Follows caregiver or teacher directions.',
+    transitions_between_tasks: 'Moves from one task to the next with support as needed.',
+    stays_on_task: 'Remains engaged without frequent drifting away.',
+    participates_community: 'Participates appropriately in community-based learning or outings.',
+    engages_vocational: 'Participates in work or pre-vocational activities.',
+    follows_expectations: 'Follows the expectations of the setting.',
+    interacts_appropriately: 'Uses appropriate behavior during interactions.',
+    completes_role: 'Completes the expected role or responsibility.',
+    transitions_activities: 'Transitions between activities with support as needed.',
+  };
   const EDUCATIONAL_PROMPT_LEVELS = [
-    { value: 'independent', label: 'Independent' },
-    { value: 'visual_prompt', label: 'Visual Prompt' },
-    { value: 'gestural_prompt', label: 'Gestural Prompt' },
-    { value: 'verbal_prompt', label: 'Verbal Prompt' },
-    { value: 'model_prompt', label: 'Model Prompt' },
-    { value: 'physical_prompt', label: 'Physical Prompt' },
-    { value: 'full_support', label: 'Full Support' },
+    { value: '0', label: '0 - Independent' },
+    { value: '1', label: '1 - 1-2 prompts' },
+    { value: '2', label: '2 - Periodic prompts' },
+    { value: '3', label: '3 - Frequent prompts' },
+    { value: '4', label: '4 - Dependent' },
   ];
   const EDUCATIONAL_FIELD_CONFIGS = {
     communication_method: {
@@ -1785,7 +2409,7 @@
       return [];
     }
     const seen = new Set();
-    return (caregiverSetupState.selectedItems.behavior_mental_health || [])
+    const configured = (caregiverSetupState.selectedItems.behavior_mental_health || [])
       .map((entry, index) => {
         const key = toBehaviorKey(entry) || `behavior_${index + 1}`;
         if (seen.has(key)) return null;
@@ -1796,10 +2420,131 @@
         };
       })
       .filter(Boolean);
+
+    // Behavior / Mental Health should always include a PRN tracker,
+    // even if admins did not explicitly select the dedicated library item.
+    if (!seen.has('behavior_prn_used')) {
+      configured.unshift({
+        key: 'behavior_prn_used',
+        label: toBehaviorLabel('behavior_prn_used'),
+      });
+    }
+    return configured;
   }
 
   function getBehaviorConfig(itemKey){
     return BEHAVIOR_BEHAVIOR_CONFIG[itemKey] || null;
+  }
+
+  function getBehaviorDescription(itemKey, label){
+    const custom = trimOrNull(caregiverSetupState.itemDescriptions?.[itemKey]);
+    if (custom) return custom;
+    return BEHAVIOR_DESCRIPTION_OVERRIDES[itemKey] || `Define what "${label}" looks like for this individual.`;
+  }
+
+  function getBehaviorTrackingType(itemKey){
+    return BEHAVIOR_TRACKING_TYPES[itemKey] || 'prompt_skill';
+  }
+
+  function getEducationalTrackingType(){
+    return 'prompt_skill';
+  }
+
+  function renderPromptSkillFields(prefix, itemKey){
+    return `
+      <div class="behavior-followup-grid">
+        <label class="behavior-choice-field">Prompt type:
+          <select class="behavior-inline-select" name="${prefix}_prompt_type__${escapeHtml(itemKey)}">
+            ${PROMPT_TYPE_OPTIONS.map((option) => `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`).join('')}
+          </select>
+        </label>
+        <label class="behavior-choice-field">Prompt level:
+          <select class="behavior-inline-select" name="${prefix}_prompt_level__${escapeHtml(itemKey)}">
+            <option value="">Select prompt level</option>
+            ${BEHAVIOR_PROMPT_LEVELS.map((option) => `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`).join('')}
+          </select>
+        </label>
+      </div>
+    `;
+  }
+
+  function renderSymptomFields(prefix, itemKey){
+    return `
+      <div class="behavior-followup-grid">
+        <label class="behavior-choice-field">Intensity (0-5):
+          <input
+            class="behavior-inline-range"
+            type="range"
+            min="0"
+            max="5"
+            step="1"
+            value="0"
+            name="${prefix}_intensity__${escapeHtml(itemKey)}"
+            data-behavior-intensity="${escapeHtml(itemKey)}"
+          />
+          <div class="behavior-intensity-readout">
+            <span class="behavior-intensity-number" data-behavior-intensity-value="${escapeHtml(itemKey)}">0</span>
+            <span class="behavior-intensity-text" data-behavior-intensity-text="${escapeHtml(itemKey)}">None</span>
+          </div>
+        </label>
+      </div>
+    `;
+  }
+
+  function renderPrnUsageFields(prefix, itemKey){
+    return `
+      <div class="behavior-followup-grid">
+        <label class="behavior-choice-field behavior-followup-span-2">Reason / target behavior:
+          <input
+            class="behavior-inline-input"
+            type="text"
+            name="${prefix}_prn_reason__${escapeHtml(itemKey)}"
+            placeholder="e.g., anxiety, agitation, escalating behavior"
+          >
+        </label>
+        <label class="behavior-choice-field">What was used?:
+          <input
+            class="behavior-inline-input"
+            type="text"
+            name="${prefix}_prn_name__${escapeHtml(itemKey)}"
+            placeholder="e.g., hydroxyzine"
+          >
+        </label>
+        <label class="behavior-choice-field">Time given:
+          <input
+            class="behavior-inline-time"
+            type="time"
+            name="${prefix}_prn_time__${escapeHtml(itemKey)}"
+          >
+        </label>
+      </div>
+    `;
+  }
+
+  async function saveBehaviorDescription(itemKey, description){
+    const nextDescription = trimOrNull(description);
+    const nextDescriptions = { ...(caregiverSetupState.itemDescriptions || {}) };
+    if (nextDescription) nextDescriptions[itemKey] = nextDescription;
+    else delete nextDescriptions[itemKey];
+
+    caregiverSetupState.itemDescriptions = nextDescriptions;
+    if (!caregiverSetupState.configRowId) return;
+
+    const nextSelectedItems = {
+      ...caregiverSetupState.selectedItems,
+      __custom_mode__: true,
+      __item_descriptions__: nextDescriptions,
+    };
+
+    await rest(`caregiver_checkin_configs?id=eq.${encodeURIComponent(caregiverSetupState.configRowId)}`, {
+      method: 'PATCH',
+      headers: { Prefer: 'return=representation' },
+      body: JSON.stringify({
+        selected_items: nextSelectedItems,
+        updated_at: new Date().toISOString(),
+      }),
+    });
+    caregiverSetupState.selectedItems = nextSelectedItems;
   }
 
   function renderBehaviorChoiceField(fieldKey, itemKey){
@@ -1837,28 +2582,58 @@
       const behaviorName = block.dataset.behaviorLabel || '';
       const behaviorKey = block.dataset.behaviorKey || '';
       const config = getBehaviorConfig(behaviorKey);
+      const trackingType = getBehaviorTrackingType(behaviorKey);
       const occurredValue = getYnValue(`behavior_occurred__${behaviorKey}`);
       const occurred = occurredValue === 'yes'
         ? true
         : occurredValue === 'no'
           ? false
           : null;
-      const promptLevel = trimOrNull(block.querySelector(`input[name="behavior_prompt_level__${behaviorKey}"]:checked`)?.value || '');
+      const promptLevel = trimOrNull(block.querySelector(`select[name="behavior_prompt_level__${behaviorKey}"]`)?.value || '');
+      const promptType = trimOrNull(block.querySelector(`select[name="behavior_prompt_type__${behaviorKey}"]`)?.value || '');
+      const intensity = trimOrNull(block.querySelector(`input[name="behavior_intensity__${behaviorKey}"]`)?.value || '');
+      const prnReason = trimOrNull(block.querySelector(`input[name="behavior_prn_reason__${behaviorKey}"]`)?.value || '');
+      const prnName = trimOrNull(block.querySelector(`input[name="behavior_prn_name__${behaviorKey}"]`)?.value || '');
+      const prnTime = trimOrNull(block.querySelector(`input[name="behavior_prn_time__${behaviorKey}"]`)?.value || '');
       const notes = trimOrNull(block.querySelector(`textarea[name="behavior_notes__${behaviorKey}"]`)?.value || '');
       const entry = {
         item_key: behaviorKey,
         behavior_name: behaviorName,
+        tracking_type: trackingType,
         occurred,
-        prn_used: null,
+        prn_used: trackingType === 'prn_usage' ? occurred === true : null,
+        observed_periods: [],
         prompt_level: promptLevel,
+        prompt_count: promptLevel,
+        prompt_type: promptType,
+        intensity,
+        prn_reason: prnReason,
+        prn_name: prnName,
+        prn_time: prnTime,
         notes,
       };
-      (config?.fields || []).forEach((fieldKey) => {
-        const value = trimOrNull(block.querySelector(`input[name="behavior_${fieldKey}__${behaviorKey}"]:checked`)?.value || '');
-        if (value !== null) entry[fieldKey] = value;
-      });
       return entry;
     });
+  }
+
+  function syncBehaviorIntensityDisplay(block){
+    if (!block) return;
+    const behaviorKey = block.dataset.behaviorKey || '';
+    const slider = block.querySelector(`input[name="behavior_intensity__${behaviorKey}"]`);
+    const valueEl = block.querySelector(`[data-behavior-intensity-value="${behaviorKey}"]`);
+    const textEl = block.querySelector(`[data-behavior-intensity-text="${behaviorKey}"]`);
+    if (!slider || !valueEl) return;
+    const value = slider.value || '0';
+    const labels = {
+      '0': 'None',
+      '1': 'Very mild',
+      '2': 'Mild',
+      '3': 'Moderate',
+      '4': 'High',
+      '5': 'Severe',
+    };
+    valueEl.textContent = value;
+    if (textEl) textEl.textContent = labels[value] || 'None';
   }
 
   function syncBehaviorItemState(block){
@@ -1870,18 +2645,30 @@
     const showFollowups = occurredValue === 'yes';
     followups?.classList.toggle('is-hidden', !showFollowups);
     const notesField = block.querySelector(`textarea[name="behavior_notes__${behaviorKey}"]`);
+    const promptField = block.querySelector(`select[name="behavior_prompt_level__${behaviorKey}"]`);
+    const promptTypeField = block.querySelector(`select[name="behavior_prompt_type__${behaviorKey}"]`);
+    const intensityField = block.querySelector(`input[name="behavior_intensity__${behaviorKey}"]`);
+    const prnReasonField = block.querySelector(`input[name="behavior_prn_reason__${behaviorKey}"]`);
+    const prnNameField = block.querySelector(`input[name="behavior_prn_name__${behaviorKey}"]`);
+    const prnTimeField = block.querySelector(`input[name="behavior_prn_time__${behaviorKey}"]`);
     if (showFollowups) return;
 
-    clearBehaviorChoiceValue(block, `behavior_prompt_level__${behaviorKey}`);
+    if (promptField) promptField.value = '';
+    if (promptTypeField) promptTypeField.value = '';
+    if (intensityField) intensityField.value = '0';
+    if (prnReasonField) prnReasonField.value = '';
+    if (prnNameField) prnNameField.value = '';
+    if (prnTimeField) prnTimeField.value = '';
     if (notesField) notesField.value = '';
-    (config?.fields || []).forEach((fieldKey) => {
-      clearBehaviorChoiceValue(block, `behavior_${fieldKey}__${behaviorKey}`);
-    });
+    syncBehaviorIntensityDisplay(block);
   }
 
   function syncBehaviorQuestionStates(){
     if (!behaviorQuestionsWrap) return;
-    behaviorQuestionsWrap.querySelectorAll('[data-behavior-key]').forEach(syncBehaviorItemState);
+    behaviorQuestionsWrap.querySelectorAll('[data-behavior-key]').forEach((block) => {
+      syncBehaviorItemState(block);
+      syncBehaviorIntensityDisplay(block);
+    });
   }
 
   function syncBehaviorTrackingField({ dispatch = false } = {}){
@@ -1919,31 +2706,32 @@
             <div class="behavior-section-items">
             ${sectionOptions.map(({ key, label }) => `
               <article class="panel behavior-card" data-behavior-key="${escapeHtml(key)}" data-behavior-label="${escapeHtml(label)}" style="padding:16px">
-                <h4 class="behavior-card-title">${escapeHtml(label)}</h4>
                 <div class="behavior-card-question">
-                  <div class="movement-label">Did this occur today?</div>
-                  <div class="yn-pill-group" role="group" aria-label="${escapeHtml(label)} occurred today">
+                  <h4 class="behavior-card-title">${escapeHtml(label)}</h4>
+                  <div class="yn-pill-group" role="group" aria-label="${escapeHtml(label)}">
                     <label class="yn-pill"><input type="radio" name="behavior_occurred__${escapeHtml(key)}" value="yes"> Yes</label>
                     <label class="yn-pill"><input type="radio" name="behavior_occurred__${escapeHtml(key)}" value="no"> No</label>
                   </div>
                 </div>
-                <div class="behavior-followups is-hidden" data-behavior-followups>
-                  <div class="behavior-choice-field">
-                    <div class="behavior-choice-label">Prompt / Support Level:</div>
-                    <div class="behavior-choice-group" role="group" aria-label="Prompt / Support Level">
-                      ${BEHAVIOR_PROMPT_LEVELS.map((option) => `
-                        <label class="yn-pill">
-                          <input
-                            type="radio"
-                            name="behavior_prompt_level__${escapeHtml(key)}"
-                            value="${escapeHtml(option.value)}"
-                          >
-                          ${escapeHtml(option.label)}
-                        </label>
-                      `).join('')}
-                    </div>
+                <div class="behavior-section-helper" data-behavior-description-text="${escapeHtml(key)}">${escapeHtml(getBehaviorDescription(key, label))}</div>
+                <div>
+                  <button class="btn" type="button" data-behavior-desc-edit="${escapeHtml(key)}">Edit description</button>
+                </div>
+                <div class="behavior-followups is-hidden" data-behavior-desc-editor="${escapeHtml(key)}">
+                  <label class="behavior-card-notes">Behavior description:
+                    <textarea name="behavior_description__${escapeHtml(key)}" placeholder="Describe exactly what caregivers should count for ${escapeHtml(label).toLowerCase()}">${escapeHtml(getBehaviorDescription(key, label))}</textarea>
+                  </label>
+                  <div class="movement-actions">
+                    <button class="btn primary" type="button" data-behavior-desc-save="${escapeHtml(key)}">Save description</button>
+                    <button class="btn" type="button" data-behavior-desc-cancel="${escapeHtml(key)}">Cancel</button>
                   </div>
-                  ${(getBehaviorConfig(key)?.fields || []).map((fieldKey) => renderBehaviorChoiceField(fieldKey, key)).join('')}
+                </div>
+                <div class="behavior-followups is-hidden" data-behavior-followups>
+                  ${getBehaviorTrackingType(key) === 'symptom_intensity'
+                    ? renderSymptomFields('behavior', key)
+                    : getBehaviorTrackingType(key) === 'prn_usage'
+                      ? renderPrnUsageFields('behavior', key)
+                      : renderPromptSkillFields('behavior', key)}
                   <label class="behavior-card-notes">Notes:
                     <textarea name="behavior_notes__${escapeHtml(key)}" placeholder="Optional notes for ${escapeHtml(label).toLowerCase()}"></textarea>
                   </label>
@@ -1966,30 +2754,32 @@
           <div class="behavior-section-items">
           ${uncategorizedOptions.map(({ key, label }) => `
             <article class="panel behavior-card" data-behavior-key="${escapeHtml(key)}" data-behavior-label="${escapeHtml(label)}" style="padding:16px">
-              <h4 class="behavior-card-title">${escapeHtml(label)}</h4>
               <div class="behavior-card-question">
-                <div class="movement-label">Did this occur today?</div>
-                <div class="yn-pill-group" role="group" aria-label="${escapeHtml(label)} occurred today">
+                <h4 class="behavior-card-title">${escapeHtml(label)}</h4>
+                <div class="yn-pill-group" role="group" aria-label="${escapeHtml(label)}">
                   <label class="yn-pill"><input type="radio" name="behavior_occurred__${escapeHtml(key)}" value="yes"> Yes</label>
                   <label class="yn-pill"><input type="radio" name="behavior_occurred__${escapeHtml(key)}" value="no"> No</label>
                 </div>
               </div>
-              <div class="behavior-followups is-hidden" data-behavior-followups>
-                <div class="behavior-choice-field">
-                  <div class="behavior-choice-label">Prompt / Support Level:</div>
-                  <div class="behavior-choice-group" role="group" aria-label="Prompt / Support Level">
-                    ${BEHAVIOR_PROMPT_LEVELS.map((option) => `
-                      <label class="yn-pill">
-                        <input
-                          type="radio"
-                          name="behavior_prompt_level__${escapeHtml(key)}"
-                          value="${escapeHtml(option.value)}"
-                        >
-                        ${escapeHtml(option.label)}
-                      </label>
-                    `).join('')}
-                  </div>
+              <div class="behavior-section-helper" data-behavior-description-text="${escapeHtml(key)}">${escapeHtml(getBehaviorDescription(key, label))}</div>
+              <div>
+                <button class="btn" type="button" data-behavior-desc-edit="${escapeHtml(key)}">Edit description</button>
+              </div>
+              <div class="behavior-followups is-hidden" data-behavior-desc-editor="${escapeHtml(key)}">
+                <label class="behavior-card-notes">Behavior description:
+                  <textarea name="behavior_description__${escapeHtml(key)}" placeholder="Describe exactly what caregivers should count for ${escapeHtml(label).toLowerCase()}">${escapeHtml(getBehaviorDescription(key, label))}</textarea>
+                </label>
+                <div class="movement-actions">
+                  <button class="btn primary" type="button" data-behavior-desc-save="${escapeHtml(key)}">Save description</button>
+                  <button class="btn" type="button" data-behavior-desc-cancel="${escapeHtml(key)}">Cancel</button>
                 </div>
+              </div>
+              <div class="behavior-followups is-hidden" data-behavior-followups>
+                ${getBehaviorTrackingType(key) === 'symptom_intensity'
+                  ? renderSymptomFields('behavior', key)
+                  : getBehaviorTrackingType(key) === 'prn_usage'
+                    ? renderPrnUsageFields('behavior', key)
+                    : renderPromptSkillFields('behavior', key)}
                 <label class="behavior-card-notes">Notes:
                   <textarea name="behavior_notes__${escapeHtml(key)}" placeholder="Optional notes for ${escapeHtml(label).toLowerCase()}"></textarea>
                 </label>
@@ -2031,6 +2821,12 @@
     return EDUCATIONAL_BEHAVIOR_CONFIG[itemKey] || null;
   }
 
+  function getEducationalDescription(itemKey, label){
+    const custom = trimOrNull(caregiverSetupState.itemDescriptions?.[itemKey]);
+    if (custom) return custom;
+    return EDUCATIONAL_DESCRIPTION_OVERRIDES[itemKey] || `Define what "${label}" looks like for this individual.`;
+  }
+
   function renderEducationalChoiceField(fieldKey, itemKey){
     const config = EDUCATIONAL_FIELD_CONFIGS[fieldKey];
     if (!config) return '';
@@ -2065,26 +2861,27 @@
     return Array.from(educationalQuestionsWrap.querySelectorAll('[data-educational-key]')).map((block) => {
       const itemName = block.dataset.educationalLabel || '';
       const itemKey = block.dataset.educationalKey || '';
-      const config = getEducationalBehaviorConfig(itemKey);
+      const trackingType = getEducationalTrackingType(itemKey);
       const occurredValue = getYnValue(`educational_occurred__${itemKey}`);
       const occurred = occurredValue === 'yes'
         ? true
         : occurredValue === 'no'
           ? false
           : null;
-      const promptLevel = trimOrNull(block.querySelector(`input[name="educational_prompt_level__${itemKey}"]:checked`)?.value || '');
+      const promptLevel = trimOrNull(block.querySelector(`select[name="educational_prompt_level__${itemKey}"]`)?.value || '');
+      const promptType = trimOrNull(block.querySelector(`select[name="educational_prompt_type__${itemKey}"]`)?.value || '');
       const notes = trimOrNull(block.querySelector(`textarea[name="educational_notes__${itemKey}"]`)?.value || '');
       const entry = {
         item_key: itemKey,
         item_name: itemName,
+        tracking_type: trackingType,
         occurred,
+        observed_periods: [],
         prompt_level: promptLevel,
+        prompt_count: promptLevel,
+        prompt_type: promptType,
         notes,
       };
-      (config?.fields || []).forEach((fieldKey) => {
-        const value = trimOrNull(block.querySelector(`input[name="educational_${fieldKey}__${itemKey}"]:checked`)?.value || '');
-        if (value !== null) entry[fieldKey] = value;
-      });
       return entry;
     });
   }
@@ -2099,19 +2896,18 @@
   function syncEducationalItemState(block){
     if (!block) return;
     const itemKey = block.dataset.educationalKey || '';
-    const config = getEducationalBehaviorConfig(itemKey);
     const occurredValue = getYnValue(`educational_occurred__${itemKey}`);
     const followups = block.querySelector('[data-educational-followups]');
     const showFollowups = occurredValue === 'yes';
     followups?.classList.toggle('is-hidden', !showFollowups);
     const notesField = block.querySelector(`textarea[name="educational_notes__${itemKey}"]`);
+    const promptField = block.querySelector(`select[name="educational_prompt_level__${itemKey}"]`);
+    const promptTypeField = block.querySelector(`select[name="educational_prompt_type__${itemKey}"]`);
     if (showFollowups) return;
 
-    clearEducationalChoiceValue(block, `educational_prompt_level__${itemKey}`);
+    if (promptField) promptField.value = '';
+    if (promptTypeField) promptTypeField.value = '';
     if (notesField) notesField.value = '';
-    (config?.fields || []).forEach((fieldKey) => {
-      clearEducationalChoiceValue(block, `educational_${fieldKey}__${itemKey}`);
-    });
   }
 
   function syncEducationalQuestionStates(){
@@ -2152,31 +2948,42 @@
             <div class="educational-section-items">
             ${sectionOptions.map(({ key, label }) => `
       <article class="panel educational-card" data-educational-key="${escapeHtml(key)}" data-educational-label="${escapeHtml(label)}" style="padding:16px">
-        <h4 class="educational-card-title">${escapeHtml(label)}</h4>
         <div class="educational-card-question">
-          <div class="movement-label">Did this occur today?</div>
-          <div class="yn-pill-group" role="group" aria-label="${escapeHtml(label)} occurred today">
+          <h4 class="educational-card-title">${escapeHtml(label)}</h4>
+          <div class="yn-pill-group" role="group" aria-label="${escapeHtml(label)}">
             <label class="yn-pill"><input type="radio" name="educational_occurred__${escapeHtml(key)}" value="yes"> Yes</label>
             <label class="yn-pill"><input type="radio" name="educational_occurred__${escapeHtml(key)}" value="no"> No</label>
           </div>
         </div>
-        <div class="educational-followups is-hidden" data-educational-followups>
-          <div class="educational-choice-field">
-            <div class="educational-choice-label">Prompt Level:</div>
-            <div class="educational-choice-group" role="group" aria-label="Prompt Level">
-              ${EDUCATIONAL_PROMPT_LEVELS.map((option) => `
-                <label class="yn-pill">
-                  <input
-                    type="radio"
-                    name="educational_prompt_level__${escapeHtml(key)}"
-                    value="${escapeHtml(option.value)}"
-                  >
-                  ${escapeHtml(option.label)}
-                </label>
-              `).join('')}
-            </div>
+        <div class="educational-section-helper" data-educational-description-text="${escapeHtml(key)}">${escapeHtml(getEducationalDescription(key, label))}</div>
+        <div>
+          <button class="btn" type="button" data-educational-desc-edit="${escapeHtml(key)}">Edit description</button>
+        </div>
+        <div class="educational-followups is-hidden" data-educational-desc-editor="${escapeHtml(key)}">
+          <label class="educational-card-notes">Skill description:
+            <textarea name="educational_description__${escapeHtml(key)}" placeholder="Describe exactly what caregivers should count for ${escapeHtml(label).toLowerCase()}">${escapeHtml(getEducationalDescription(key, label))}</textarea>
+          </label>
+          <div class="movement-actions">
+            <button class="btn primary" type="button" data-educational-desc-save="${escapeHtml(key)}">Save description</button>
+            <button class="btn" type="button" data-educational-desc-cancel="${escapeHtml(key)}">Cancel</button>
           </div>
-          ${((getEducationalBehaviorConfig(key)?.fields) || []).map((fieldKey) => renderEducationalChoiceField(fieldKey, key)).join('')}
+        </div>
+        <div class="educational-followups is-hidden" data-educational-followups>
+          <div class="behavior-followup-grid">
+            <label class="educational-choice-field">Prompt type:
+              <select class="behavior-inline-select" name="educational_prompt_type__${escapeHtml(key)}">
+                ${PROMPT_TYPE_OPTIONS.map((option) => `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`).join('')}
+              </select>
+            </label>
+            <label class="educational-choice-field">Prompt Level:
+              <select class="behavior-inline-select" name="educational_prompt_level__${escapeHtml(key)}">
+                <option value="">Select prompt level</option>
+                ${EDUCATIONAL_PROMPT_LEVELS.map((option) => `
+                  <option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>
+                `).join('')}
+              </select>
+            </label>
+          </div>
           <label class="educational-card-notes">Notes:
             <textarea name="educational_notes__${escapeHtml(key)}" placeholder="Optional notes for ${escapeHtml(label).toLowerCase()}"></textarea>
           </label>
@@ -2238,15 +3045,17 @@
     }
     if (!config) return;
     if (!isCustomCaregiverSetupEnabled(config)) return;
+    caregiverSetupState.configRowId = config.id || null;
     caregiverSetupState.hasConfig = true;
     caregiverSetupState.selectedCategories = new Set(normalizeConfigCategories(config.selected_categories));
     caregiverSetupState.selectedItems = normalizeConfigItems(config.selected_items);
+    caregiverSetupState.itemDescriptions = normalizeItemDescriptions(parseConfigObject(config.selected_items)?.__item_descriptions__);
   }
 
   function applyLegacyCheckinVisibility(){
     const subtitle = document.querySelector('.sub');
     if (subtitle) {
-      subtitle.innerHTML = 'Autosaves as you type. Use <strong>Save &amp; Next</strong> to step through.';
+      subtitle.innerHTML = 'This check-in autosaves while you type. <strong>Save</strong> saves your progress so far so you can come back later. <strong>Save &amp; Next</strong> saves the current section and moves you to the next one.';
     }
 
     const physicalStep = document.querySelector('.step[data-step="0"]');
@@ -2269,13 +3078,13 @@
     setConfigHidden([formEl], false);
     setConfigHidden([document.getElementById('cg-setup-empty-state')], true);
 
-    setConfigHidden([physicalStep, progressItems.physical], false);
-    setConfigHidden([behaviorStep, progressItems.behavior], false);
-    setConfigHidden([vocationalStep, progressItems.vocational], false);
-    setConfigHidden([homeFamilyStep, progressItems.home_family], false);
-    setConfigHidden([communityStep, progressItems.community], false);
-    setConfigHidden([dailyLivingStep, progressItems.daily_living], false);
-    setConfigHidden([educationalStep, progressItems.educational], true);
+    setStepAndNavHidden(physicalStep, progressItems.physical, false);
+    setStepAndNavHidden(behaviorStep, progressItems.behavior, false);
+    setStepAndNavHidden(vocationalStep, progressItems.vocational, false);
+    setStepAndNavHidden(homeFamilyStep, progressItems.home_family, false);
+    setStepAndNavHidden(communityStep, progressItems.community, false);
+    setStepAndNavHidden(dailyLivingStep, progressItems.daily_living, false);
+    setStepAndNavHidden(educationalStep, progressItems.educational, true);
 
     setConfigHidden([
       educationalQuestionsWrap,
@@ -2286,13 +3095,14 @@
     renderAdlCategoryChips();
     renderAdlActivityChips();
     current = normalizeStepIndex(current);
+    syncWizardView();
     updateProgress();
   }
 
   function applyCaregiverSetupVisibility(){
     const subtitle = document.querySelector('.sub');
     if (subtitle && caregiverSetupState.groupName) {
-      subtitle.innerHTML = `Autosaves as you type. Use <strong>Save &amp; Next</strong> to step through. Configured for ${caregiverSetupState.groupName}.`;
+      subtitle.innerHTML = `This check-in autosaves while you type. <strong>Save</strong> saves your progress so far so you can come back later. <strong>Save &amp; Next</strong> saves the current section and moves you to the next one. Configured for ${caregiverSetupState.groupName}.`;
     }
     if (!caregiverSetupState.hasConfig) {
       applyLegacyCheckinVisibility();
@@ -2343,16 +3153,18 @@
     const energyEnabled = configItemEnabled('physical_health', 'energy_level');
     const illnessEnabled = configItemEnabled('physical_health', 'illness_symptoms');
     const painEnabled = configItemEnabled('physical_health', 'pain_discomfort');
+    const symptomPanelEnabled = illnessEnabled || painEnabled;
+    const menstrualEnabled = configItemEnabled('physical_health', 'menstrual_tracking');
     const medicationEnabled = configItemEnabled('physical_health', 'medication_taken');
     const prnEnabled = configItemEnabled('physical_health', 'prn_used');
 
-    setConfigHidden([physicalStep, progressItems.physical], !physicalVisible);
-    setConfigHidden([behaviorStep, progressItems.behavior], !behaviorVisible);
-    setConfigHidden([vocationalStep, progressItems.vocational], !vocationalVisible);
-    setConfigHidden([homeFamilyStep, progressItems.home_family], !communityVisible);
-    setConfigHidden([communityStep, progressItems.community], !communityVisible);
-    setConfigHidden([dailyLivingStep, progressItems.daily_living], !dailyLivingVisible);
-    setConfigHidden([educationalStep, progressItems.educational], !(educationalVisible && educationalItemsVisible));
+    setStepAndNavHidden(physicalStep, progressItems.physical, !physicalVisible);
+    setStepAndNavHidden(behaviorStep, progressItems.behavior, !behaviorVisible);
+    setStepAndNavHidden(vocationalStep, progressItems.vocational, !vocationalVisible);
+    setStepAndNavHidden(homeFamilyStep, progressItems.home_family, true);
+    setStepAndNavHidden(communityStep, progressItems.community, !communityVisible);
+    setStepAndNavHidden(dailyLivingStep, progressItems.daily_living, !dailyLivingVisible);
+    setStepAndNavHidden(educationalStep, progressItems.educational, !(educationalVisible && educationalItemsVisible));
 
     setConfigHidden([
       labelForName('hours_sleep'),
@@ -2378,19 +3190,23 @@
     setConfigHidden([
       document.getElementById('question-appears-good-health'),
       document.getElementById('tempPanel'),
-    ], !illnessEnabled);
+    ], !symptomPanelEnabled);
 
     setConfigHidden([
       document.getElementById('question-prn-headache'),
-    ], !(illnessEnabled && prnEnabled));
+    ], !(symptomPanelEnabled && prnEnabled));
 
     setConfigHidden([
       document.getElementById('movementSymptomsPanel'),
-    ], !painEnabled);
+    ], true);
 
     setConfigHidden([
       document.getElementById('question-prn-pain'),
-    ], !(painEnabled && prnEnabled));
+    ], true);
+
+    setConfigHidden([
+      document.getElementById('menstrualPanel'),
+    ], !menstrualEnabled);
 
     setConfigHidden([
       document.getElementById('medChangePanel'),
@@ -2437,7 +3253,6 @@
       document.getElementById('question-community-interaction-ok'),
       document.getElementById('interactionDetails'),
       document.getElementById('interactionDetailsNotes'),
-      labelForName('community_notes'),
     ], !anyConfigItemEnabled('community', ['social_interaction', 'safety_in_community']));
 
     setConfigHidden([
@@ -2447,6 +3262,7 @@
     renderAdlCategoryChips();
     renderAdlActivityChips();
     current = normalizeStepIndex(current);
+    syncWizardView();
     updateProgress();
   }
 
@@ -2720,6 +3536,7 @@
 
   let movementEls = {};
   let tempEls = {};
+  let menstrualEls = {};
   let medEls = {};
   const getMovementCheckboxValues = (selector) =>
     Array.from(document.querySelectorAll(selector))
@@ -2825,6 +3642,11 @@
     syncTempHiddenField(tempEls.symptomsInput, symptoms);
   };
 
+  const syncMenstrualArrays = () => {
+    const symptoms = getTempCheckboxValues('[data-menstrual-symptom]');
+    syncTempHiddenField(menstrualEls.symptomsInput, symptoms);
+  };
+
   const setMovementPresent = (present) => {
     if (!movementEls.bodyWrap) return;
     movementEls.bodyWrap.classList.toggle('is-collapsed', !present);
@@ -2850,6 +3672,14 @@
     tempEls.bodyWrap.classList.toggle('is-collapsed', !present);
     if (!present) {
       clearTempFields({ keepPresent: true });
+    }
+  };
+
+  const setMenstrualPresent = (present) => {
+    if (!menstrualEls.bodyWrap) return;
+    menstrualEls.bodyWrap.classList.toggle('is-collapsed', !present);
+    if (!present) {
+      clearMenstrualFields({ keepPresent: true });
     }
   };
 
@@ -2890,7 +3720,7 @@
       const el = document.querySelector(`input[name="${name}"]`);
       if (el) el.checked = false;
     });
-    ['med_change_time_window','med_change_time_other','med_change_name','med_change_dose','med_change_note','med_change_caregiver_notes']
+    ['med_change_time_window','med_change_time_other','med_change_name','med_change_dose','med_change_note']
       .forEach((id) => {
         const el = document.getElementById(id);
         if (el) el.value = '';
@@ -2929,13 +3759,28 @@
         el.checked = el.value === 'no';
       });
     }
-    ['temp_value', 'temp_method', 'temp_other_value', 'temp_symptom_other', 'temp_notes']
+    ['temp_value', 'temp_method', 'temp_prn_name', 'temp_prn_time', 'temp_symptom_other', 'temp_notes']
       .forEach((id) => {
         const el = document.getElementById(id);
         if (el) el.value = '';
       });
     setTempCheckboxValues('[data-temp-symptom]', []);
     syncTempArrays();
+  };
+
+  const clearMenstrualFields = ({ keepPresent = false } = {}) => {
+    if (!keepPresent) {
+      document.querySelectorAll('input[name="menstrual_present"]').forEach((el) => {
+        el.checked = el.value === 'no';
+      });
+    }
+    ['menstrual_symptom_other', 'menstrual_notes']
+      .forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+    setTempCheckboxValues('[data-menstrual-symptom]', []);
+    syncMenstrualArrays();
   };
 
   const hydrateMovementFromData = (data = {}) => {
@@ -2998,7 +3843,8 @@
     const fields = [
       ['temp_value', data.temp_value],
       ['temp_method', data.temp_method],
-      ['temp_other_value', data.temp_other_value],
+      ['temp_prn_name', data.temp_prn_name],
+      ['temp_prn_time', data.temp_prn_time],
       ['temp_symptom_other', data.temp_symptom_other],
       ['temp_notes', data.temp_notes],
     ];
@@ -3010,6 +3856,29 @@
     setTempCheckboxValues('[data-temp-symptom]', symptoms);
     if (tempEls.symptomsInput) tempEls.symptomsInput.value = symptoms.length ? JSON.stringify(symptoms) : '';
     syncTempArrays();
+  };
+
+  const hydrateMenstrualFromData = (data = {}) => {
+    const present = String(data.menstrual_present || '').toLowerCase() === 'yes'
+      || data.menstrual_present === true;
+    document.querySelectorAll('input[name="menstrual_present"]').forEach((el) => {
+      el.checked = present ? el.value === 'yes' : el.value === 'no';
+    });
+    setMenstrualPresent(present);
+    if (!present) return;
+
+    const fields = [
+      ['menstrual_symptom_other', data.menstrual_symptom_other],
+      ['menstrual_notes', data.menstrual_notes],
+    ];
+    fields.forEach(([id, value]) => {
+      const el = document.getElementById(id);
+      if (el && value != null) el.value = value;
+    });
+    const symptoms = parseJsonArray(data.menstrual_symptoms);
+    setTempCheckboxValues('[data-menstrual-symptom]', symptoms);
+    if (menstrualEls.symptomsInput) menstrualEls.symptomsInput.value = symptoms.length ? JSON.stringify(symptoms) : '';
+    syncMenstrualArrays();
   };
 
   const hydrateHomeCommunityFromData = (data = {}) => {
@@ -3091,6 +3960,10 @@
       bodyWrap: document.querySelector('[data-temp-body-wrap]'),
       symptomsInput: document.getElementById('temp_symptoms')
     };
+    menstrualEls = {
+      bodyWrap: document.querySelector('[data-menstrual-body-wrap]'),
+      symptomsInput: document.getElementById('menstrual_symptoms')
+    };
     medEls = {
       bodyWrap: document.querySelector('[data-med-body-wrap]'),
       noteInput: document.getElementById('med_change_note'),
@@ -3113,6 +3986,7 @@
     loadFocusSummary();
     syncMovementArrays();
     syncTempArrays();
+    syncMenstrualArrays();
     syncHomeActivityTypes();
     syncPublicActivityTypes();
     syncInteractionTypes();
@@ -3163,6 +4037,13 @@
         save(steps[movementStepIndex], movementStepIndex, true);
       });
     });
+    document.querySelectorAll('input[name="menstrual_present"]').forEach((el) => {
+      el.addEventListener('change', () => {
+        const present = el.value === 'yes';
+        setMenstrualPresent(present);
+        save(steps[movementStepIndex], movementStepIndex, true);
+      });
+    });
     document.querySelectorAll('input[name="med_change_flag"]').forEach((el) => {
       el.addEventListener('change', () => {
         const present = el.value === 'yes';
@@ -3178,6 +4059,45 @@
       syncBehaviorQuestionStates();
       syncBehaviorTrackingField({ dispatch: true });
     });
+    behaviorQuestionsWrap?.addEventListener('input', (event) => {
+      if (event.target?.matches('[data-behavior-intensity]')) {
+        syncBehaviorIntensityDisplay(event.target.closest('[data-behavior-key]'));
+      }
+    });
+    behaviorQuestionsWrap?.addEventListener('click', async (event) => {
+      const editBtn = event.target.closest('[data-behavior-desc-edit]');
+      if (editBtn) {
+        const key = editBtn.dataset.behaviorDescEdit || '';
+        const editor = behaviorQuestionsWrap.querySelector(`[data-behavior-desc-editor="${key}"]`);
+        editor?.classList.toggle('is-hidden');
+        return;
+      }
+      const cancelBtn = event.target.closest('[data-behavior-desc-cancel]');
+      if (cancelBtn) {
+        const key = cancelBtn.dataset.behaviorDescCancel || '';
+        const editor = behaviorQuestionsWrap.querySelector(`[data-behavior-desc-editor="${key}"]`);
+        const textarea = behaviorQuestionsWrap.querySelector(`textarea[name="behavior_description__${key}"]`);
+        if (textarea) textarea.value = getBehaviorDescription(key, cancelBtn.closest('[data-behavior-key]')?.dataset.behaviorLabel || '');
+        editor?.classList.add('is-hidden');
+        return;
+      }
+      const saveBtn = event.target.closest('[data-behavior-desc-save]');
+      if (saveBtn) {
+        const key = saveBtn.dataset.behaviorDescSave || '';
+        const block = saveBtn.closest('[data-behavior-key]');
+        const textarea = behaviorQuestionsWrap.querySelector(`textarea[name="behavior_description__${key}"]`);
+        const display = behaviorQuestionsWrap.querySelector(`[data-behavior-description-text="${key}"]`);
+        try {
+          await saveBehaviorDescription(key, textarea?.value || '');
+          if (display) display.textContent = getBehaviorDescription(key, block?.dataset.behaviorLabel || '');
+          saveBtn.closest('[data-behavior-desc-editor]')?.classList.add('is-hidden');
+          toast('Behavior description saved');
+        } catch (error) {
+          console.error('[cg] description save failed', error);
+          alert('Could not save behavior description.');
+        }
+      }
+    });
     educationalQuestionsWrap?.addEventListener('change', () => {
       syncEducationalQuestionStates();
       syncEducationalTrackingField({ dispatch: true });
@@ -3185,6 +4105,40 @@
     educationalQuestionsWrap?.addEventListener('input', () => {
       syncEducationalQuestionStates();
       syncEducationalTrackingField({ dispatch: true });
+    });
+    educationalQuestionsWrap?.addEventListener('click', async (event) => {
+      const editBtn = event.target.closest('[data-educational-desc-edit]');
+      if (editBtn) {
+        const key = editBtn.dataset.educationalDescEdit || '';
+        const editor = educationalQuestionsWrap.querySelector(`[data-educational-desc-editor="${key}"]`);
+        editor?.classList.toggle('is-hidden');
+        return;
+      }
+      const cancelBtn = event.target.closest('[data-educational-desc-cancel]');
+      if (cancelBtn) {
+        const key = cancelBtn.dataset.educationalDescCancel || '';
+        const editor = educationalQuestionsWrap.querySelector(`[data-educational-desc-editor="${key}"]`);
+        const textarea = educationalQuestionsWrap.querySelector(`textarea[name="educational_description__${key}"]`);
+        if (textarea) textarea.value = getEducationalDescription(key, cancelBtn.closest('[data-educational-key]')?.dataset.educationalLabel || '');
+        editor?.classList.add('is-hidden');
+        return;
+      }
+      const saveBtn = event.target.closest('[data-educational-desc-save]');
+      if (saveBtn) {
+        const key = saveBtn.dataset.educationalDescSave || '';
+        const block = saveBtn.closest('[data-educational-key]');
+        const textarea = educationalQuestionsWrap.querySelector(`textarea[name="educational_description__${key}"]`);
+        const display = educationalQuestionsWrap.querySelector(`[data-educational-description-text="${key}"]`);
+        try {
+          await saveBehaviorDescription(key, textarea?.value || '');
+          if (display) display.textContent = getEducationalDescription(key, block?.dataset.educationalLabel || '');
+          saveBtn.closest('[data-educational-desc-editor]')?.classList.add('is-hidden');
+          toast('Skill description saved');
+        } catch (error) {
+          console.error('[cg] educational description save failed', error);
+          alert('Could not save skill description.');
+        }
+      }
     });
     medEls.timeWindow?.addEventListener('change', () => {
       syncMedTimeWindow();
@@ -3218,6 +4172,9 @@
       }
       if (event.target?.matches('[data-temp-symptom]')) {
         syncTempArrays();
+      }
+      if (event.target?.matches('[data-menstrual-symptom]')) {
+        syncMenstrualArrays();
       }
       if (event.target?.matches('#fixation_present')) {
         syncFixationControls();
@@ -3271,6 +4228,7 @@
       syncFixationControls();
       hydrateMovementFromData(draft.data[movementStepIndex] || {});
       hydrateTempFromData(draft.data[movementStepIndex] || {});
+      hydrateMenstrualFromData(draft.data[movementStepIndex] || {});
       applyConditionalSections();
       applyCaregiverSetupVisibility();
       syncEducationalQuestionStates();
@@ -3438,10 +4396,6 @@
         showWhen: 'yes',
         targets: ['interactionDetails', 'interactionDetailsNotes']
       });
-      const publicYes = getYnValue('public_activity_flag') === 'yes';
-      const interactionYes = getYnValue('community_interaction_ok') === 'yes';
-      const communityNotesWrap = document.getElementById('communityNotesWrap');
-      if (communityNotesWrap) communityNotesWrap.style.display = (publicYes || interactionYes) ? '' : 'none';
       syncAggressionControls();
       toggleFieldGroup('pet_interaction_flag', {
         showWhen: 'yes',
@@ -3740,6 +4694,7 @@
       if (idx === movementStepIndex) {
         hydrateMovementFromData(draft.data[idx] || {});
         hydrateTempFromData(draft.data[idx] || {});
+        hydrateMenstrualFromData(draft.data[idx] || {});
         syncMedTimeWindow();
       }
       if (step.querySelector('[data-home-type]') || step.querySelector('[data-public-type]')) {
@@ -3804,8 +4759,10 @@
       movementEls.detailsPanel?.classList.add('is-hidden');
       movementEls.detailsToggle?.setAttribute('aria-expanded', 'false');
       clearTempFields();
+      clearMenstrualFields();
       clearMedFields();
       tempEls.bodyWrap?.classList.add('is-collapsed');
+      menstrualEls.bodyWrap?.classList.add('is-collapsed');
       setMedChangePresent(false);
       clearHomeCommunityAdlFields();
       renderAdlActivityChips();
@@ -3821,6 +4778,7 @@
       resetAdlEntries();
       clearMovementFields();
       clearTempFields();
+      clearMenstrualFields();
       setMedChangePresent(false);
       clearHomeCommunityAdlFields();
       renderAdlActivityChips();
@@ -3838,6 +4796,10 @@
       el._t = setTimeout(() => {
         el.classList.remove('is-visible');
       }, 3000);
+    }
+    function showPostSubmitPrompt(){
+      const el = document.getElementById('postSubmitPrompt');
+      if (el) el.classList.add('is-visible');
     }
 
     // ---------- FINAL SUBMIT ----------
@@ -3874,6 +4836,27 @@
           : todayISO();
         payload.entry_date = entryDate;
         const normalizeMovement = () => {
+          if (caregiverSetupState.hasConfig && caregiverSetupState.selectedCategories.has('physical_health')) {
+            const cleared = {
+              movement_present: false,
+              movement_main_type: null,
+              movement_severity: null,
+              movement_times: [],
+              movement_notes: null,
+              movement_body_map: [],
+              movement_other_text: null,
+              movement_frequency: null,
+              movement_triggers: [],
+              movement_trigger_other: null,
+              movement_interfered: null,
+              movement_interfered_notes: null,
+              movement_awareness: null,
+              movement_safety_risk: null,
+              movement_safety_notes: null,
+            };
+            Object.assign(payload, cleared);
+            return cleared;
+          }
           const presentRaw = String(payload.movement_present || '').toLowerCase();
           const movementPresent = presentRaw === 'yes' || presentRaw === 'true';
           const severityVal = Number(payload.movement_severity);
@@ -3915,7 +4898,8 @@
             temp_present: tempPresent,
             temp_value: trimOrNull(payload.temp_value),
             temp_method: trimOrNull(payload.temp_method),
-            temp_other_value: trimOrNull(payload.temp_other_value),
+            temp_prn_name: trimOrNull(payload.temp_prn_name),
+            temp_prn_time: trimOrNull(payload.temp_prn_time),
             temp_symptoms: symptoms,
             temp_symptom_other: trimOrNull(payload.temp_symptom_other),
             temp_notes: trimOrNull(payload.temp_notes),
@@ -3930,6 +4914,26 @@
           return cleaned;
         };
         normalizeTemp();
+        const normalizeMenstrual = () => {
+          const presentRaw = String(payload.menstrual_present || '').toLowerCase();
+          const present = presentRaw === 'yes' || presentRaw === 'true';
+          const symptoms = parseJsonArray(payload.menstrual_symptoms);
+          const cleaned = {
+            menstrual_present: present,
+            menstrual_symptoms: symptoms,
+            menstrual_symptom_other: trimOrNull(payload.menstrual_symptom_other),
+            menstrual_notes: trimOrNull(payload.menstrual_notes),
+          };
+          if (!present) {
+            Object.keys(cleaned).forEach((key) => {
+              if (key === 'menstrual_present') return;
+              cleaned[key] = Array.isArray(cleaned[key]) ? [] : null;
+            });
+          }
+          Object.assign(payload, cleaned);
+          return cleaned;
+        };
+        normalizeMenstrual();
         const normalizeMania = () => {
           const manic = String(payload.manic_flag || '').toLowerCase() === 'yes';
           const focusTrouble = String(payload.focus_trouble_flag || '').toLowerCase() === 'yes';
@@ -3967,8 +4971,16 @@
           const administered = reasonSleep || reasonAggression || reasonMania || reasonAnxiety || reasonPain || reasonHeadache;
           const cleaned = {
             prn_administered: administered ? 'yes' : 'no',
-            prn_name: null,
-            prn_time: null,
+            prn_name: reasonSleep
+              ? trimOrNull(payload.sleep_prn_name)
+              : reasonHeadache
+                ? trimOrNull(payload.temp_prn_name)
+                : null,
+            prn_time: reasonSleep
+              ? trimOrNull(payload.sleep_prn_time)
+              : reasonHeadache
+                ? trimOrNull(payload.temp_prn_time)
+                : null,
             prn_reason_sleep: reasonSleep,
             prn_reason_aggression: reasonAggression,
             prn_reason_mania: reasonMania,
@@ -4026,6 +5038,9 @@
             const details = [
               entry.occurred ? 'occurred' : null,
               entry.prn_used ? 'PRN used' : null,
+              entry.prn_reason ? `reason: ${entry.prn_reason}` : null,
+              entry.prn_name ? `used: ${entry.prn_name}` : null,
+              entry.prn_time ? `time: ${entry.prn_time}` : null,
               entry.notes || null,
             ].filter(Boolean).join(' - ');
             return details ? `${entry.behavior_name}: ${details}` : null;
@@ -4039,7 +5054,8 @@
           payload.behavior_notes,
           payload.vocational_notes,
           payload.home_notes,
-          payload.community_notes,
+          payload.public_activity_note,
+          payload.interaction_note,
           payload.daily_living_notes,
         ]
           .map((note) => trimOrNull(note))
@@ -4139,6 +5155,7 @@
         clearDraftUI();
         resetFormValues();
         showSuccessBanner();
+        showPostSubmitPrompt();
       } catch (err) {
         console.error('[cg] submit error:', err);
         alert('Could not submit. ' + (err?.message || 'Check your connection and try again.'));

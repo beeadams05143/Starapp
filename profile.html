@@ -6,8 +6,34 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>My Profile</title>
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; padding: 16px; }
-    h1 { margin: 16px 0; }
+    :root{
+      --font-sans:"Avenir Next","Segoe UI","Helvetica Neue",Arial,sans-serif;
+      --font-serif:"Iowan Old Style","Palatino Linotype","Book Antiqua",Georgia,serif;
+      --page-bg:
+        radial-gradient(circle at top center, rgba(251,230,194,0.75), transparent 34%),
+        linear-gradient(180deg, #fff8ea 0%, #f8ecd0 100%);
+      --panel:#fffdf8;
+      --panel-border:#ead7ab;
+      --panel-shadow:0 18px 36px rgba(125,89,34,0.12);
+      --text:#243047;
+      --muted:#667188;
+      --navy:#20324f;
+    }
+    body {
+      font-family: var(--font-sans);
+      padding: 24px 16px calc(96px + env(safe-area-inset-bottom, 0px));
+      margin: 0;
+      min-height: 100vh;
+      background: var(--page-bg);
+      color: var(--text);
+    }
+    h1 {
+      margin: 8px 0 18px;
+      font-family: var(--font-serif);
+      font-size: clamp(2.2rem, 5vw, 3.4rem);
+      color: #724016;
+      text-align: left;
+    }
     .avatar-block {
       display: inline-flex;
       flex-direction: column;
@@ -19,25 +45,95 @@
       width: 96px; height: 96px;
       border-radius: 50%;
       object-fit: cover;
-      border: 2px solid #ddd;
+      border: 2px solid #ead7ab;
       background: #f7f7f7;
+      box-shadow: 0 10px 22px rgba(125,89,34,0.12);
     }
     .edit-avatar-btn {
       width: 32px; height: 32px;
       display: inline-flex; align-items: center; justify-content: center;
-      border: 1px solid #ccc; border-radius: 6px;
-      background: #fff; cursor: pointer;
+      border: 1px solid #ead7ab; border-radius: 12px;
+      background: #fffdf8; cursor: pointer;
       font-size: 16px;
+      box-shadow: 0 4px 10px rgba(36,48,71,0.08);
     }
-    .edit-avatar-btn:hover { background: #f2f2f2; }
-    .form { margin: 12px 0 16px; display: grid; gap: 10px; max-width: 480px; }
-    label { font-weight: 600; }
+    .edit-avatar-btn:hover { background: #fff7e0; }
+    .avatar-edit-row{
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .avatar-edit-label{
+      font-size: 1rem;
+      color: #6f7b93;
+      font-style: italic;
+    }
+    .form {
+      margin: 12px 0 18px;
+      display: grid;
+      gap: 16px;
+      max-width: 620px;
+      padding: 22px 22px 18px;
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 28px;
+      box-shadow: var(--panel-shadow);
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-family: var(--font-serif);
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--navy);
+    }
     input[type="text"], select {
-      padding: 10px; border: 1px solid #ccc; border-radius: 6px; width: 100%;
+      padding: 14px 18px;
+      border: 1.5px solid #cfd8e6;
+      border-radius: 18px;
+      width: 100%;
+      background: rgba(255,255,255,0.94);
+      color: var(--text);
+      font-size: 1.15rem;
     }
-    #saveBtn { padding: 10px 14px; border: 0; border-radius: 8px; background: #2563eb; color: white; cursor: pointer; }
-    #saveBtn:hover { background: #1f55c8; }
-    small { opacity: .7; display: block; margin-top: 6px; }
+    #saveBtn {
+      padding: 14px 22px;
+      border: 1px solid #d8c7a4;
+      border-radius: 18px;
+      background: #fffdf8;
+      color: var(--navy);
+      cursor: pointer;
+      font-family: var(--font-sans);
+      font-size: 1.2rem;
+      font-weight: 700;
+      box-shadow: 0 10px 24px rgba(36,48,71,0.08);
+    }
+    #saveBtn:hover { background: #fff5da; }
+    .next-step-btn{
+      margin-left: 10px;
+      padding: 14px 22px;
+      border: 1px solid #2bbf67;
+      border-radius: 18px;
+      background: linear-gradient(180deg, #49da7b 0%, #22c55e 100%);
+      color: #08331d;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 1.2rem;
+      display: none;
+      box-shadow: 0 14px 28px rgba(34,197,94,0.22);
+    }
+    .next-step-btn.is-visible{
+      display: inline-block;
+    }
+    .next-step-btn:hover { background: linear-gradient(180deg, #42cf74 0%, #1fb656 100%); }
+    small {
+      opacity: 1;
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 15px;
+      font-style: italic;
+    }
     #profileMessage {
       margin-top: 12px;
       padding: 10px 12px;
@@ -57,16 +153,99 @@
       color: #991b1b;
       border: 1px solid #fecaca;
     }
+    .setup-note{
+      max-width: 520px;
+      margin: 0 0 16px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid #bfdbfe;
+      background: rgba(255,249,234,0.94);
+      color: #6d4a1f;
+      display: none;
+      line-height: 1.45;
+      border-color: #efd089;
+      box-shadow: 0 10px 22px rgba(125,89,34,0.10);
+    }
+    .setup-note.is-visible{
+      display: block;
+    }
+    .setup-checklist{
+      max-width: 520px;
+      margin: 0 0 18px;
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid #d8e8c3;
+      background: linear-gradient(180deg, #fffdf6 0%, #f7f3df 100%);
+      display: none;
+      box-shadow: var(--panel-shadow);
+    }
+    .setup-checklist.is-visible{
+      display: block;
+    }
+    .setup-checklist-title{
+      margin: 0 0 10px;
+      font-family: var(--font-serif);
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: #724016;
+    }
+    .setup-checklist ul{
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 8px;
+    }
+    .setup-checklist li{
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      color: var(--text);
+      line-height: 1.45;
+    }
+    .setup-check{
+      width: 20px;
+      height: 20px;
+      border-radius: 6px;
+      background: linear-gradient(180deg, #49da7b 0%, #22c55e 100%);
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 900;
+      flex: 0 0 auto;
+      margin-top: 1px;
+    }
+    .field-helper{
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.45;
+      font-style: italic;
+    }
   </style>
 </head>
 <body>
   
 
   <h1>Update Your Profile</h1>
+  <div id="setupNote" class="setup-note" role="status" aria-live="polite"></div>
+  <div id="setupChecklist" class="setup-checklist" aria-live="polite">
+    <p class="setup-checklist-title">First-time setup on this page:</p>
+    <ul>
+      <li><span class="setup-check">✓</span><span>Your email may appear in the name box at first. You can change it to your real display name, like Beth.</span></li>
+      <li><span class="setup-check">✓</span><span>Upload a profile picture if you want one to show across the app.</span></li>
+      <li><span class="setup-check">✓</span><span>Check that the correct default group is selected, then tap Save Profile.</span></li>
+    </ul>
+  </div>
 
   <div class="avatar-block">
     <img id="avatarPreview" src="IMG/default-avatar.png" alt="Your avatar" class="avatar-big">
-    <button id="editAvatarBtn" type="button" class="edit-avatar-btn" title="Change avatar">✏️</button>
+    <div class="avatar-edit-row">
+      <button id="editAvatarBtn" type="button" class="edit-avatar-btn" title="Change avatar">✏️</button>
+      <span class="avatar-edit-label">Upload a profile pic</span>
+    </div>
     <input id="avatarFile" type="file" accept="image/*"
       style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;" />
   </div>
@@ -75,6 +254,7 @@
     <div>
       <label for="displayName">Display Name</label>
       <input id="displayName" type="text" placeholder="Enter your name" />
+      <div class="field-helper">If this starts as your email address, just replace it with the name you want people to see.</div>
     </div>
 
     <div>
@@ -85,6 +265,7 @@
   </div>
 
 <button id="saveBtn" type="button">Save Profile</button>
+<button id="nextStepBtn" type="button" class="next-step-btn">Next: Caregiver Check-In Setup</button>
 <div id="profileMessage" role="status" aria-live="polite"></div>
 
 <script type="module">
@@ -99,6 +280,7 @@
   const displayNameEl     = document.getElementById('displayName');
   const groupSelectEl     = document.getElementById('profile-group-select');
   const saveBtn           = document.getElementById('saveBtn');
+  const nextStepBtn       = document.getElementById('nextStepBtn');
   const profileMessage    = document.getElementById('profileMessage');
   let messageTimer        = null;
 
@@ -112,6 +294,33 @@
   let accessToken = null;
   let currentUser = null;
   let currentAvatarUrl = null;
+  const setupNote = document.getElementById('setupNote');
+  const setupChecklist = document.getElementById('setupChecklist');
+  const searchParams = new URLSearchParams(window.location.search);
+  const nextPathRaw = searchParams.get('next') || '';
+  const nextPath = nextPathRaw && !nextPathRaw.includes('://') && !nextPathRaw.startsWith('//')
+    ? nextPathRaw.replace(/^\/+/, '')
+    : '';
+  const fallbackNextPath = 'caregiver-checkin-setup/';
+
+  function showSetupNote() {
+    if (!setupNote) return;
+    setupNote.textContent = 'Getting started: update the display name if needed, upload a profile picture if you want one, then tap Save Profile and we will take you to the next step automatically.';
+    setupNote.classList.add('is-visible');
+    setupChecklist?.classList.add('is-visible');
+  }
+
+  function getNextStepTarget() {
+    return nextPath || (groupSelectEl.value ? fallbackNextPath : '');
+  }
+
+  function syncNextStepButton() {
+    if (!nextStepBtn) return;
+    const target = getNextStepTarget();
+    const show = !!target;
+    nextStepBtn.classList.toggle('is-visible', show);
+    nextStepBtn.disabled = !show;
+  }
 
   function ensureSession(redirect = true) {
     session = getSessionFromStorage();
@@ -189,6 +398,7 @@
     if (!groups.length) {
       groupSelectEl.innerHTML = '<option value="">(no groups yet)</option>';
       groupSelectEl.disabled = true;
+      syncNextStepButton();
       return;
     }
 
@@ -198,6 +408,7 @@
     groupSelectEl.value = match ? match.id : groups[0].id;
     groupSelectEl.disabled = false;
     cacheSelectedGroup();
+    syncNextStepButton();
   }
 
   async function fetchProfile({ silent = false } = {}) {
@@ -308,6 +519,7 @@
       showMessage(`Profile saved! ✅ ${savedAt}`, true);
       avatarFile.value = '';
       await fetchProfile({ silent: true });
+      syncNextStepButton();
     } catch (err) {
       console.error('[PROFILE] save failed', err);
       showMessage(err?.message || 'Could not save profile. Please try again.', false);
@@ -347,12 +559,20 @@
 
   saveBtn.addEventListener('click', saveProfile);
   groupSelectEl.addEventListener('change', cacheSelectedGroup);
+  groupSelectEl.addEventListener('change', syncNextStepButton);
+  nextStepBtn?.addEventListener('click', () => {
+    const target = getNextStepTarget();
+    if (!target) return;
+    window.location.href = target;
+  });
 
   document.addEventListener('DOMContentLoaded', async () => {
     try {
       ensureSession();
+      showSetupNote();
       await loadGroups();
       await fetchProfile();
+      syncNextStepButton();
     } catch (err) {
       console.error('[PROFILE] init failed', err);
     }

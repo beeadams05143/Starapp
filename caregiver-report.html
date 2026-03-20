@@ -6,24 +6,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
   <style>
-    :root{ --card:#fff; --border:#e9e9e9; --muted:#666; }
+    :root{
+      --card:#fffdf8;
+      --border:#ead7ab;
+      --muted:#667188;
+      --font-sans:"Avenir Next","Segoe UI","Helvetica Neue",Arial,sans-serif;
+      --font-serif:"Iowan Old Style","Palatino Linotype","Book Antiqua",Georgia,serif;
+      --page-bg:
+        radial-gradient(circle at top center, rgba(251,230,194,0.78), transparent 36%),
+        linear-gradient(180deg, #fff8ea 0%, #f7ead0 100%);
+    }
     html,body{height:auto;min-height:100%;overflow-y:auto}
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#f7f7f8;margin:0}
+    body{font-family:var(--font-sans);background:var(--page-bg);margin:0;color:#243047}
     main.page{max-width:1200px;margin:0 auto;padding:20px}
 
-    h1,h2{margin:10px 0;text-align:center}
-    h3{margin:.25rem 0 .5rem;text-align:center}
+    h1,h2{margin:10px 0;text-align:center;font-family:var(--font-serif);color:#724016}
+    h3{margin:.25rem 0 .5rem;text-align:center;font-family:var(--font-serif);color:#20324f}
 
-    .panel{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin:14px 0}
+    .panel{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:16px;margin:14px 0;box-shadow:0 14px 28px rgba(125,89,34,.08)}
     .toolbar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:center;margin:.5rem 0 .75rem}
-    select,button{padding:10px 14px;border:1px solid var(--border);border-radius:12px;background:#fff;font-size:15px;font-weight:600}
+    select,button{padding:10px 14px;border:1px solid #d8c7a4;border-radius:16px;background:#fffdf8;font-size:15px;font-weight:600;color:#20324f}
     .toolbar input[type="date"],
     .toolbar select,
     .toolbar button{min-height:46px}
     .toolbar label{display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:600}
     button{cursor:pointer;transition:background .15s ease}
-    button:hover{background:#f5f5f5}
-    button:active{background:#f0f0f0}
+    button:hover{background:#fff4d7}
+    button:active{background:#ffeec0}
     button:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
     #cgQuickLookToggle,
     #cgPdf,
@@ -32,7 +41,7 @@
 
     table{width:100%;border-collapse:collapse}
     th,td{border:1px solid #ddd;padding:8px;vertical-align:middle}
-    thead th{background:#fafafa;position:sticky;top:0}
+    thead th{background:#fff7e0;position:sticky;top:0}
     #cgTable tbody tr{height:64px}
     #cgTable td{line-height:1.2}
     .cg-notes-cell{max-width:320px}
@@ -58,7 +67,7 @@
     .muted{color:var(--muted);font-size:13px;text-align:center;margin:.35rem 0}
 
     .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:14px 0}
-    .kpi{background:var(--card);border:1px solid var(--border);border-radius:12px;text-align:center;padding:12px;box-shadow:0 6px 18px rgba(148,163,184,.12)}
+    .kpi{background:var(--card);border:1px solid var(--border);border-radius:18px;text-align:center;padding:12px;box-shadow:0 12px 24px rgba(125,89,34,.08)}
     .kpi .label{font-size:12px;color:var(--muted)}
     .kpi .value{margin-top:6px;font-size:20px;font-weight:700}
 
@@ -77,10 +86,10 @@
     .cg-summary-row:last-child{border-bottom:0}
     .cg-summary-row .label{color:var(--muted)}
 
-    .chart{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;margin:16px auto;max-width:940px}
+    .chart{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:12px;margin:16px auto;max-width:940px;box-shadow:0 12px 24px rgba(125,89,34,.08)}
     .chart.small{max-width:700px}
     canvas{display:block;max-width:100% !important;height:auto !important}
-    .movement-panel{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin:12px 0}
+    .movement-panel{background:var(--card);border:1px solid var(--border);border-radius:22px;padding:16px;margin:12px 0;box-shadow:0 12px 24px rgba(125,89,34,.08)}
     .movement-panel h3{margin:0 0 6px;text-align:left}
     .movement-sub{margin:0 0 10px;font-size:12px;color:var(--muted)}
     .movement-summary{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin-bottom:12px}
@@ -99,7 +108,7 @@
 
     /* ===== Health Calendar (scoped) ===== */
     .hc-wrap{max-width:1200px;margin:16px auto}
-    .hc-card{background:#fff;border:1px solid #e9e9e9;border-radius:16px;box-shadow:0 12px 30px rgba(0,0,0,.04)}
+    .hc-card{background:#fffdf8;border:1px solid var(--border);border-radius:20px;box-shadow:0 12px 30px rgba(125,89,34,.08)}
     .hc-head{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid #e9e9e9}
     .hc-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
     .hc-title{font-weight:900;font-size:18px}
@@ -695,7 +704,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.16B';
         </div>
       </div>
 
-      <div class="movement-panel">
+      <div class="movement-panel" id="movementPanelCard">
         <h3>Movement Symptoms</h3>
         <p class="movement-sub" id="movementRangeLabel">Summary for selected date range</p>
         <div class="movement-range-controls no-export">
@@ -889,6 +898,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.16B';
             <div class="hc-kv" id="hc-kv-manic">⚡️ Manic days: 0</div>
             <div class="hc-kv" id="hc-kv-sick">🤒 Sick days: 0</div>
             <div class="hc-kv" id="hc-kv-temp">🌡️ Temperature days: 0</div>
+            <div class="hc-kv" id="hc-kv-menstrual">🩸 Menstrual cycle days: 0</div>
             <div class="hc-kv" id="hc-kv-appetite">🍽️ Appetite change days: 0</div>
             <div class="hc-kv" id="hc-kv-anomaly">🚩 Anomaly days: 0</div>
           </div>
@@ -907,6 +917,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.16B';
           <label><input type="checkbox" data-hc-layer="manic" checked/> <span class="hc-emo" aria-hidden="true">⚡️</span> Manic</label>
           <label><input type="checkbox" data-hc-layer="sick" checked/> <span class="hc-emo" aria-hidden="true">🤒</span> Sick</label>
           <label><input type="checkbox" data-hc-layer="temp" checked/> <span class="hc-emo" aria-hidden="true">🌡️</span> Temperature</label>
+          <label><input type="checkbox" data-hc-layer="menstrual" checked/> <span class="hc-emo" aria-hidden="true">🩸</span> Menstrual cycle</label>
           <label><input type="checkbox" data-hc-layer="appetite" checked/> <span class="hc-emo" aria-hidden="true">🍽️</span> Appetite change</label>
           <label><input type="checkbox" data-hc-layer="med_change" checked/> <span class="hc-emo" aria-hidden="true">🗒️</span> Med change note</label>
           <label><input type="checkbox" data-hc-layer="moon" checked/> <span class="hc-emo" aria-hidden="true">🌕</span> Full moon</label>
@@ -1072,6 +1083,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.16B';
           <option value="manic">Manic</option>
           <option value="sick">Sick</option>
           <option value="temp">Temperature</option>
+          <option value="menstrual">Menstrual cycle</option>
           <option value="moon">Full moon</option>
           <option value="appetite">Change in appetite</option>
           <option value="anomaly">Anomaly</option>
@@ -1090,6 +1102,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.16B';
         <label><input type="checkbox" name="manic"> ⚡️ Manic</label>
         <label><input type="checkbox" name="sick"> 🤒 Sick</label>
         <label><input type="checkbox" name="temp"> 🌡️ Temperature</label>
+        <label><input type="checkbox" name="menstrual"> 🩸 Menstrual cycle</label>
         <label><input type="checkbox" name="moon"> 🌕 Full moon</label>
         <label><input type="checkbox" name="appetite"> 🍽️ Change in appetite</label>
         <label><input type="checkbox" name="anomaly"> 🚩 Anomaly</label>
@@ -1539,14 +1552,19 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.16B';
       }
 
       const summary = summaryData || summarizeEntries(caregiverEntries);
+      const visibility = getReportVisibility();
       const lines = [];
-      lines.push(`Daily living completion rates were Hygiene ${summary.percents?.hygiene_yes ?? 0}%, Food ${summary.percents?.food_prep_yes ?? 0}%, and Clean-up ${summary.percents?.cleanup_yes ?? 0}%.`);
+      if (visibility.dailyLiving) {
+        lines.push(`Daily living completion rates were Hygiene ${summary.percents?.hygiene_yes ?? 0}%, Food ${summary.percents?.food_prep_yes ?? 0}%, and Clean-up ${summary.percents?.cleanup_yes ?? 0}%.`);
+      }
 
       const avgPrompt = summary.averages?.new_skill_score;
       const promptText = Number.isFinite(avgPrompt)
         ? `${avgPrompt} (${PROMPT_LABELS[String(Math.round(avgPrompt))] || 'see chart scale'})`
         : '—';
-      lines.push(`Average prompt level was ${promptText}.`);
+      if (visibility.prompt) {
+        lines.push(`Average prompt level was ${promptText}.`);
+      }
 
       const mania = summary.behavior?.mania || {};
       const aggression = summary.behavior?.aggression || {};
@@ -1574,17 +1592,21 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.16B';
       const aggressionInstanceTrend = behaviorComparison?.aggression
         ? formatDelta(behaviorComparison.aggression.instances_delta, 'optional instance(s)')
         : 'trend unavailable for optional instances';
-      lines.push(`Mania signal was present on ${mania.days ?? 0} day(s), ${maniaInstancesText}, average intensity ${avgLabel(mania.avg_intensity)}, peak intensity ${mania.max_intensity ?? '—'}; ${maniaTrend}, and ${maniaInstanceTrend} versus the prior comparable period.`);
-      const statusParts = [];
-      if ((mania.status_counts?.active ?? 0) > 0) statusParts.push(`${mania.status_counts.active} active`);
-      if ((mania.status_counts?.suspected ?? 0) > 0) statusParts.push(`${mania.status_counts.suspected} suspected`);
-      if ((mania.status_counts?.improving ?? 0) > 0) statusParts.push(`${mania.status_counts.improving} improving`);
-      const statusText = statusParts.length ? statusParts.join(', ') : 'no episode-status entries yet';
-      const cycleRange = mania.current_cycle_start
-        ? `possible onset ${humanDate(mania.current_cycle_start)} through ${humanDate(mania.current_cycle_end || mania.current_cycle_start)}`
-        : 'cycle onset not clear yet';
-      lines.push(`Mania pattern: current cycle ${mania.current_streak ?? 0} day(s), longest cycle ${mania.longest_streak ?? 0} day(s), severe days ${mania.severe_days ?? 0}, PRN mania days ${mania.prn_days ?? 0}, late sleep onset days ${mania.late_sleep_onset_days ?? 0}, sleep-disruption days ${mania.sleep_disruption_days ?? 0}, appetite-change days ${mania.appetite_days ?? 0}, fixation days ${mania.fixation_days ?? 0}, repetitive-behavior days ${mania.repetitive_days ?? 0}, pressured-speech days ${mania.pressured_speech_days ?? 0}, grandiosity days ${mania.grandiosity_days ?? 0}; ${cycleRange}; status mix: ${statusText}.`);
-      lines.push(`Aggression occurred on ${aggression.days ?? 0} day(s), ${aggressionInstancesText}, average intensity ${avgLabel(aggression.avg_intensity)}, peak intensity ${aggression.max_intensity ?? '—'}; ${aggressionTrend}, and ${aggressionInstanceTrend} versus the prior comparable period.`);
+      if (visibility.mania) {
+        lines.push(`Mania signal was present on ${mania.days ?? 0} day(s), ${maniaInstancesText}, average intensity ${avgLabel(mania.avg_intensity)}, peak intensity ${mania.max_intensity ?? '—'}; ${maniaTrend}, and ${maniaInstanceTrend} versus the prior comparable period.`);
+        const statusParts = [];
+        if ((mania.status_counts?.active ?? 0) > 0) statusParts.push(`${mania.status_counts.active} active`);
+        if ((mania.status_counts?.suspected ?? 0) > 0) statusParts.push(`${mania.status_counts.suspected} suspected`);
+        if ((mania.status_counts?.improving ?? 0) > 0) statusParts.push(`${mania.status_counts.improving} improving`);
+        const statusText = statusParts.length ? statusParts.join(', ') : 'no episode-status entries yet';
+        const cycleRange = mania.current_cycle_start
+          ? `possible onset ${humanDate(mania.current_cycle_start)} through ${humanDate(mania.current_cycle_end || mania.current_cycle_start)}`
+          : 'cycle onset not clear yet';
+        lines.push(`Mania pattern: current cycle ${mania.current_streak ?? 0} day(s), longest cycle ${mania.longest_streak ?? 0} day(s), severe days ${mania.severe_days ?? 0}, PRN mania days ${mania.prn_days ?? 0}, late sleep onset days ${mania.late_sleep_onset_days ?? 0}, sleep-disruption days ${mania.sleep_disruption_days ?? 0}, appetite-change days ${mania.appetite_days ?? 0}, fixation days ${mania.fixation_days ?? 0}, repetitive-behavior days ${mania.repetitive_days ?? 0}, pressured-speech days ${mania.pressured_speech_days ?? 0}, grandiosity days ${mania.grandiosity_days ?? 0}; ${cycleRange}; status mix: ${statusText}.`);
+      }
+      if (visibility.aggression) {
+        lines.push(`Aggression occurred on ${aggression.days ?? 0} day(s), ${aggressionInstancesText}, average intensity ${avgLabel(aggression.avg_intensity)}, peak intensity ${aggression.max_intensity ?? '—'}; ${aggressionTrend}, and ${aggressionInstanceTrend} versus the prior comparable period.`);
+      }
 
       if (moodEntries.length) {
         const moodCounts = {};
@@ -1598,26 +1620,26 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.16B';
         lines.push(`Most common mood was ${topMood ? topMood[0] : '—'} (${topMood ? topMood[1] : 0} entries). Positive moods were ${pctLabel(buckets.Positive, totalMoods)} and challenging moods were ${pctLabel(buckets.Challenging, totalMoods)}.`);
       }
 
-      if (movementInsights && caregiverEntries.length) {
+      if (visibility.movement && movementInsights && caregiverEntries.length) {
         const topTypeLabel = MOVEMENT_TYPE_LABELS[movementInsights.mostCommonType] || movementInsights.mostCommonType || '—';
         lines.push(`Movement symptoms were logged on ${movementInsights.daysWithSymptoms ?? 0} day(s), average severity ${avgLabel(movementInsights.avgSeverity)}, max severity ${movementInsights.maxSeverity ?? '—'}, and most common type was ${topTypeLabel}.`);
       }
 
       const interactionRows = buildInteractionTypeCounts(caregiverEntries);
-      if (interactionRows.length) {
+      if (visibility.community && interactionRows.length) {
         lines.push(`Most common community interaction type was ${interactionRows[0].label} (${interactionRows[0].count} time(s)).`);
       }
 
       const homeRows = buildActivityTypeCounts(caregiverEntries, 'home_activity_type');
-      if (homeRows.length) {
+      if (visibility.homeFamily && homeRows.length) {
         lines.push(`Top home/community activity was ${homeRows[0].label} (${homeRows[0].count} entries).`);
       }
       const communityRows = buildActivityTypeCounts(caregiverEntries, 'public_activity_type');
-      if (communityRows.length) {
+      if (visibility.community && communityRows.length) {
         lines.push(`Top community-at-large activity was ${communityRows[0].label} (${communityRows[0].count} entries).`);
       }
 
-      if (monthlySeries.length >= 2) {
+      if (visibility.dailyLiving && monthlySeries.length >= 2) {
         const previous = monthlySeries[monthlySeries.length - 2];
         const latest = monthlySeries[monthlySeries.length - 1];
         const metricDelta = (key) => Number(latest?.[key] || 0) - Number(previous?.[key] || 0);
@@ -1640,9 +1662,11 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.16B';
       const rangeKey = document.getElementById('chartRangeSelect')?.value || 'month';
       const caregiverSource = (cgState.filtered && cgState.filtered.length) ? cgState.filtered : (cgState.entries || []);
       const range = getChartRangeWindow(rangeKey, caregiverSource);
+      const visibility = getReportVisibility();
 
       // Update labels first so UI reflects the selection even if a chart fails.
       updateChartRangeLabels(range, rangeKey);
+      updateReportSectionVisibility();
 
       try {
         const filteredCaregiver = filterEntriesByRange(caregiverSource, range);
@@ -1671,8 +1695,10 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.16B';
         const filteredMood = filterMoodEntriesByRange(moodSource, range);
         drawInteractionTypeChart(filteredCaregiver);
         renderActivityTypeSummary(filteredCaregiver);
-        renderManiaStreak(historyForCycle, summary.behavior?.mania || {}, range);
-        const movementInsights = buildMovementInsights(filteredCaregiver);
+        if (visibility.mania) {
+          renderManiaStreak(historyForCycle, summary.behavior?.mania || {}, range);
+        }
+        const movementInsights = visibility.movement ? buildMovementInsights(filteredCaregiver) : null;
         let behaviorComparison = null;
         const prevRange = rangeKey === 'all' ? null : getPreviousRangeWindow(range);
         if (prevRange) {
@@ -1713,7 +1739,9 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.16B';
 
         const movementSelect = document.getElementById('movementRangeSelect');
         if (movementSelect) movementSelect.value = rangeKey;
-        applyMovementRange(rangeKey, caregiverSource);
+        if (visibility.movement) {
+          applyMovementRange(rangeKey, caregiverSource);
+        }
 
         const quickLookLabel = formatRangeDisplay(rangeKey, range?.label || '');
         const quickLookCounts = buildCalendarRangeCounts(filteredCaregiver);
@@ -1724,6 +1752,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.16B';
     }
 
     function applyMovementRange(rangeKey, caregiverSource = null){
+      if (!getReportVisibility().movement) return;
       const source = caregiverSource
         || ((cgState.filtered && cgState.filtered.length) ? cgState.filtered : (cgState.entries || []));
       const range = getChartRangeWindow(rangeKey, source);
@@ -1781,6 +1810,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.16B';
         const temp = p.temp_present === true
           || /yes|true/i.test(String(p.temp_present || ''))
           || !!p.temp_value;
+        const menstrual = p.menstrual_present === true
+          || /yes|true/i.test(String(p.menstrual_present || ''));
         const appetite = hasAppetiteChange(p) || hasAppetiteChange(entry);
         const anomaly = p.anomaly_flag === true || /yes/i.test(String(p.anomaly || ''));
 
@@ -1796,6 +1827,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.16B';
         if (manic) counts.manic += 1;
         if (sick) counts.sick += 1;
         if (temp) counts.temp += 1;
+        if (menstrual) counts.menstrual += 1;
         if (appetite) counts.appetite += 1;
         if (anomaly) counts.anomaly += 1;
       });
@@ -1910,6 +1942,158 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.16B';
       entryById: new Map(),
       focusStats: new Map()
     };
+    const reportConfigState = {
+      groupId: null,
+      isCustom: false,
+      selectedItems: {},
+      selectedCategories: new Set(),
+    };
+    window.caregiverReportConfigState = reportConfigState;
+
+    const parseConfigObject = (value) => {
+      if (!value) return {};
+      if (typeof value === 'object') return value;
+      if (typeof value === 'string') {
+        try {
+          const parsed = JSON.parse(value);
+          return parsed && typeof parsed === 'object' ? parsed : {};
+        } catch {
+          return {};
+        }
+      }
+      return {};
+    };
+
+    function setReportConfigState(configRow = null, groupId = null){
+      const selectedItems = parseConfigObject(configRow?.selected_items);
+      const isCustom = selectedItems?.__custom_mode__ === true;
+      const selectedCategories = new Set(
+        Object.entries(selectedItems || {})
+          .filter(([key, value]) => !String(key).startsWith('__') && Array.isArray(value) && value.length > 0)
+          .map(([key]) => key)
+      );
+      reportConfigState.groupId = groupId || configRow?.group_id || null;
+      reportConfigState.isCustom = isCustom;
+      reportConfigState.selectedItems = selectedItems || {};
+      reportConfigState.selectedCategories = selectedCategories;
+      window.caregiverReportConfigState = reportConfigState;
+    }
+
+    async function loadReportConfig(groupId){
+      if (!groupId) {
+        setReportConfigState(null, null);
+        return null;
+      }
+      try {
+        const rows = await rest(`caregiver_checkin_configs?select=id,group_id,selected_items,updated_at&group_id=eq.${encodeURIComponent(groupId)}&order=updated_at.desc&limit=1`);
+        const configRow = Array.isArray(rows) ? rows[0] : rows;
+        setReportConfigState(configRow || null, groupId);
+        return configRow || null;
+      } catch (error) {
+        console.warn('[REPORT] caregiver config load failed', error?.message || error);
+        setReportConfigState(null, groupId);
+        return null;
+      }
+    }
+
+    function getReportVisibility(){
+      const isCustom = reportConfigState.isCustom;
+      const categories = reportConfigState.selectedCategories;
+      return {
+        isCustom,
+        dailyLiving: !isCustom || categories.has('daily_living'),
+        prompt: !isCustom || ['behavior_mental_health', 'educational', 'community', 'vocational', 'daily_living'].some((key) => categories.has(key)),
+        movement: !isCustom,
+        mania: !isCustom,
+        aggression: !isCustom,
+        community: !isCustom || categories.has('community'),
+        homeFamily: !isCustom || categories.has('home_family'),
+      };
+    }
+
+    function getHiddenLegacyCalendarKeys(){
+      const visibility = getReportVisibility();
+      const hidden = new Set();
+      if (!visibility.mania) {
+        hidden.add('prn_mania');
+        hidden.add('manic');
+      }
+      if (!visibility.aggression) {
+        hidden.add('prn_aggr');
+      }
+      return hidden;
+    }
+
+    function getVisibleCalendarTrackingKeys(){
+      if (!reportConfigState.isCustom) return null;
+      const selectedItems = reportConfigState.selectedItems || {};
+      const physicalItems = new Set(Array.isArray(selectedItems.physical_health) ? selectedItems.physical_health : []);
+      const dailyLivingItems = new Set(Array.isArray(selectedItems.daily_living) ? selectedItems.daily_living : []);
+      const visible = new Set();
+
+      if (dailyLivingItems.has('toileting')) visible.add('bm');
+
+      if (physicalItems.has('sleep')) {
+        visible.add('sleep');
+        visible.add('sleep_low');
+        visible.add('onset');
+        visible.add('night');
+      }
+      if (physicalItems.has('prn_used')) {
+        visible.add('prn_sleep');
+      }
+      if (physicalItems.has('energy_level')) {
+        visible.add('tired');
+      }
+      if (physicalItems.has('appetite')) {
+        visible.add('appetite');
+      }
+      if (physicalItems.has('illness_symptoms') || physicalItems.has('pain_discomfort')) {
+        visible.add('sick');
+        visible.add('temp');
+      }
+      if (physicalItems.has('medication_taken')) {
+        visible.add('med_change');
+      }
+      if (physicalItems.has('menstrual_tracking')) {
+        visible.add('menstrual');
+      }
+
+      return visible;
+    }
+    window.getCaregiverReportCalendarKeys = () => getVisibleCalendarTrackingKeys();
+
+    function updateReportSectionVisibility(){
+      const visibility = getReportVisibility();
+      const movementPanel = document.getElementById('movementPanelCard');
+      const maniaCard = document.getElementById('maniaStreakCard');
+      const moveDaysKpi = document.getElementById('kpi-move-days')?.closest('.kpi');
+      const moveAvgKpi = document.getElementById('kpi-move-avg')?.closest('.kpi');
+      const moveMaxKpi = document.getElementById('kpi-move-max')?.closest('.kpi');
+      if (movementPanel) movementPanel.style.display = visibility.movement ? '' : 'none';
+      if (maniaCard) maniaCard.style.display = visibility.mania ? '' : 'none';
+      [moveDaysKpi, moveAvgKpi, moveMaxKpi].forEach((el) => {
+        if (el) el.style.display = visibility.movement ? '' : 'none';
+      });
+      const hiddenLegacyCalendarKeys = getHiddenLegacyCalendarKeys();
+      ['prn_mania', 'prn_aggr', 'manic'].forEach((key) => {
+        const show = !hiddenLegacyCalendarKeys.has(key);
+        const quickLookStat = document.getElementById(`hc-kv-${key}`);
+        if (quickLookStat) quickLookStat.style.display = show ? '' : 'none';
+        document.querySelectorAll(`[data-hc-layer="${key}"]`).forEach((el) => {
+          const label = el.closest('label');
+          if (label) label.style.display = show ? '' : 'none';
+        });
+        document.querySelectorAll(`[name="${key}"]`).forEach((el) => {
+          const label = el.closest('label');
+          if (label) label.style.display = show ? '' : 'none';
+        });
+        document.querySelectorAll(`option[value="${key}"]`).forEach((el) => {
+          el.hidden = !show;
+        });
+      });
+      window.applyHealthCalendarVisibility?.();
+    }
 
     const caregiverIdFromEntry = (entry = {}) => {
       const payload = entry.payload || {};
@@ -4373,7 +4557,9 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.16B';
 
     async function loadCaregiverData(){
       let res = null;
-      await ensureReportGroupContext();
+      const groupId = await ensureReportGroupContext();
+      await loadReportConfig(groupId);
+      updateReportSectionVisibility();
 
       if (loadFromSupabase){
         try {
@@ -4410,6 +4596,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.16B';
       populateCaregiverOptions(cgState.entries);
       updateDateInputs(cgState.entries);
       applyCaregiverFilters();
+      updateReportSectionVisibility();
       if (currentFocusPlan) {
         renderFocusGoalList(currentFocusPlan.goals || []);
         renderFocusGoalChart(currentFocusPlan.goals || []);
@@ -5514,6 +5701,7 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-sh
   const kvMan  = document.getElementById('hc-kv-manic');
   const kvSick = document.getElementById('hc-kv-sick');
   const kvTemp = document.getElementById('hc-kv-temp');
+  const kvMenstrual = document.getElementById('hc-kv-menstrual');
   const kvApp  = document.getElementById('hc-kv-appetite');
   const kvMoon = document.getElementById('hc-kv-moon');
   const kvAno  = document.getElementById('hc-kv-anomaly');
@@ -5651,6 +5839,73 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-sh
   const EMO = CALENDAR_EMOJI;
   const QUICK_LOOK_ITEMS = CALENDAR_QUICK_LOOK_ITEMS;
 
+  function getCalendarVisibilityState(){
+    const config = window.caregiverReportConfigState || {};
+    const isCustom = config.isCustom === true;
+    return {
+      isCustom,
+      showLegacyMania: !isCustom,
+      showLegacyAggression: !isCustom,
+    };
+  }
+
+  function getVisibleQuickLookItems(){
+    const allowed = window.getCaregiverReportCalendarKeys?.();
+    if (allowed instanceof Set) {
+      return QUICK_LOOK_ITEMS.filter((item) => allowed.has(item.key));
+    }
+    const visibility = getCalendarVisibilityState();
+    const hidden = new Set();
+    if (!visibility.showLegacyMania) {
+      hidden.add('prn_mania');
+      hidden.add('manic');
+    }
+    if (!visibility.showLegacyAggression) {
+      hidden.add('prn_aggr');
+    }
+    return QUICK_LOOK_ITEMS.filter((item) => !hidden.has(item.key));
+  }
+
+  function applyCalendarVisibility(){
+    const visibility = getCalendarVisibilityState();
+    const setDisplayForKey = (key, show) => {
+      const stat = document.getElementById(`hc-kv-${key}`);
+      if (stat) stat.style.display = show ? '' : 'none';
+      document.querySelectorAll(`[data-hc-layer="${key}"]`).forEach((el) => {
+        const label = el.closest('label');
+        if (label) label.style.display = show ? '' : 'none';
+      });
+      document.querySelectorAll(`[name="${key}"]`).forEach((el) => {
+        const label = el.closest('label');
+        if (label) label.style.display = show ? '' : 'none';
+      });
+      document.querySelectorAll(`#hcEditorQuickTag option[value="${key}"]`).forEach((el) => {
+        el.hidden = !show;
+      });
+    };
+    const visibleKeys = window.getCaregiverReportCalendarKeys?.();
+    const allowed = visibleKeys instanceof Set ? visibleKeys : null;
+    const canShow = (key, fallback) => (allowed ? allowed.has(key) : fallback);
+    setDisplayForKey('bm', canShow('bm', true));
+    setDisplayForKey('sleep', canShow('sleep', true));
+    setDisplayForKey('sleep_low', canShow('sleep_low', true));
+    setDisplayForKey('onset', canShow('onset', true));
+    setDisplayForKey('night', canShow('night', true));
+    setDisplayForKey('prn_sleep', canShow('prn_sleep', true));
+    setDisplayForKey('prn_mania', canShow('prn_mania', visibility.showLegacyMania));
+    setDisplayForKey('prn_aggr', canShow('prn_aggr', visibility.showLegacyAggression));
+    setDisplayForKey('tired', canShow('tired', true));
+    setDisplayForKey('manic', canShow('manic', visibility.showLegacyMania));
+    setDisplayForKey('sick', canShow('sick', true));
+    setDisplayForKey('temp', canShow('temp', true));
+    setDisplayForKey('menstrual', canShow('menstrual', true));
+    setDisplayForKey('appetite', canShow('appetite', true));
+    setDisplayForKey('med_change', canShow('med_change', true));
+    setDisplayForKey('moon', canShow('moon', true));
+    setDisplayForKey('anomaly', canShow('anomaly', true));
+  }
+  window.applyHealthCalendarVisibility = applyCalendarVisibility;
+
   function saveLocalHealth(){
     try { localStorage.setItem(LOCAL_HEALTH_KEY, JSON.stringify(LOCAL_HEALTH)); } catch {}
     stampHealthUpdate();
@@ -5661,7 +5916,7 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-sh
   }
 
   function applyHealthFlagToMap(key, data = {}){
-    const base = MAP[key] || { bm:false, sleep:null, sleep_low:false, onset:false, night:false, prn_sleep:false, prn_mania:false, prn_aggr:false, tired:false, manic:false, sick:false, temp:false, appetite:false, moon:false, anomaly:false, med_change_notes:[] };
+    const base = MAP[key] || { bm:false, sleep:null, sleep_low:false, onset:false, night:false, prn_sleep:false, prn_mania:false, prn_aggr:false, tired:false, manic:false, sick:false, temp:false, menstrual:false, appetite:false, moon:false, anomaly:false, med_change_notes:[] };
     const hours = data.sleepHours != null ? Number(data.sleepHours) : (data.sleep ? 8 : null);
     const sleepLowFromHours = Number.isFinite(hours) ? hours < 8 : null;
     const incomingNotes = Array.isArray(data.med_change_notes) ? data.med_change_notes.filter(Boolean) : [];
@@ -5686,6 +5941,7 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-sh
       manic: base.manic || !!data.manic,
       sick: base.sick || !!data.sick,
       temp: base.temp || !!data.temp,
+      menstrual: base.menstrual || !!data.menstrual,
       appetite: base.appetite || !!data.appetite,
       moon: base.moon || !!data.moon,
       anomaly: base.anomaly || !!data.anomaly,
@@ -5698,7 +5954,7 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-sh
   let MAP = {};
   let EVENT_MAP = {};              // meetings/appointments
   let HEALTH_FLAGS = {};           // persisted manual flags
-  const layers = { bm:true, sleep:true, sleep_low:true, onset:true, night:true, prn_sleep:true, prn_mania:true, prn_aggr:true, tired:true, manic:true, sick:true, temp:true, appetite:true, med_change:true, moon:true, anomaly:true };
+  const layers = { bm:true, sleep:true, sleep_low:true, onset:true, night:true, prn_sleep:true, prn_mania:true, prn_aggr:true, tired:true, manic:true, sick:true, temp:true, menstrual:true, appetite:true, med_change:true, moon:true, anomaly:true };
   const SYNODIC_MONTH = 29.530588853; // days
   const BASE_FULL_MOON = Date.UTC(2024, 8, 17, 18, 34); // Sep 17 2024 full moon reference
 
@@ -5723,6 +5979,7 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-sh
 
   function render(){
     if (!grid || !title) return;
+    applyCalendarVisibility();
 
     title.textContent = fmtMonth(Y, M);
     grid.innerHTML = '';
@@ -5735,12 +5992,12 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-sh
     const startPad = first.getDay();
     for(let i=0;i<startPad;i++){ const b=document.createElement('div'); b.className='hc-cell'; grid.appendChild(b); }
 
-  let bmDays=0, sleepDays=0, sleepLowDays=0, onsetDays=0, nightDays=0, prnSleepDays=0, prnManiaDays=0, prnAggrDays=0, tiredDays=0, manicDays=0, sickDays=0, tempDays=0, appetiteDays=0, moonDays=0, anomalyDays=0;
+  let bmDays=0, sleepDays=0, sleepLowDays=0, onsetDays=0, nightDays=0, prnSleepDays=0, prnManiaDays=0, prnAggrDays=0, tiredDays=0, manicDays=0, sickDays=0, tempDays=0, menstrualDays=0, appetiteDays=0, moonDays=0, anomalyDays=0;
 
     for(let day=1; day<=last.getDate(); day++){
       const cell = document.createElement('div'); cell.className='hc-cell'; cell.setAttribute('role','gridcell');
       const key = Y + '-' + pad(M+1) + '-' + pad(day);
-      const rec = MAP[key] || { bm:false, sleep:null, sleep_low:false, onset:false, night:false, prn_sleep:false, prn_mania:false, prn_aggr:false, tired:false, manic:false, sick:false, temp:false, appetite:false, moon:false, anomaly:false, med_change_notes:[] };
+      const rec = MAP[key] || { bm:false, sleep:null, sleep_low:false, onset:false, night:false, prn_sleep:false, prn_mania:false, prn_aggr:false, tired:false, manic:false, sick:false, temp:false, menstrual:false, appetite:false, moon:false, anomaly:false, med_change_notes:[] };
       const moonToday = isFullMoonKey(key);
       if (!rec.moon && moonToday) {
         rec.moon = true;
@@ -5766,6 +6023,7 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-sh
       if (rec.manic && layers.manic){ const s=document.createElement('span'); s.className='hc-icon'; s.textContent=EMO.manic; s.setAttribute('aria-label','Manic'); icons.appendChild(s); manicDays++; }
       if (rec.sick  && layers.sick ){ const s=document.createElement('span'); s.className='hc-icon'; s.textContent=EMO.sick;  s.setAttribute('aria-label','Sick'); icons.appendChild(s); sickDays++; }
       if (rec.temp  && layers.temp ){ const s=document.createElement('span'); s.className='hc-icon'; s.textContent=EMO.temp;  s.setAttribute('aria-label','Temperature'); icons.appendChild(s); tempDays++; }
+      if (rec.menstrual && layers.menstrual){ const s=document.createElement('span'); s.className='hc-icon'; s.textContent=EMO.menstrual; s.setAttribute('aria-label','Menstrual cycle'); icons.appendChild(s); menstrualDays++; }
       if (rec.appetite && layers.appetite){ const s=document.createElement('span'); s.className='hc-icon'; s.textContent=EMO.appetite; s.setAttribute('aria-label','Change in appetite'); icons.appendChild(s); appetiteDays++; }
       if (rec.moon && layers.moon){ const s=document.createElement('span'); s.className='hc-icon'; s.textContent=EMO.moon; s.setAttribute('aria-label','Full moon'); icons.appendChild(s); moonDays++; }
       if (rec.anomaly && layers.anomaly){ const s=document.createElement('span'); s.className='hc-icon'; s.textContent=EMO.anomaly; s.setAttribute('aria-label','Anomaly'); icons.appendChild(s); anomalyDays++; }
@@ -5816,6 +6074,7 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-sh
     kvMan && (kvMan.textContent = '⚡️ Manic days: ' + manicDays);
     kvSick&& (kvSick.textContent= '🤒 Sick days: ' + sickDays);
     kvTemp && (kvTemp.textContent= '🌡️ Temperature days: ' + tempDays);
+    kvMenstrual && (kvMenstrual.textContent= '🩸 Menstrual cycle days: ' + menstrualDays);
     kvApp && (kvApp.textContent = '🍽️ Appetite change days: ' + appetiteDays);
     kvMoon&& (kvMoon.textContent= '🌕 Full moon days: ' + moonDays);
     kvAno && (kvAno.textContent = '🚩 Anomaly days: ' + anomalyDays);
@@ -5833,6 +6092,7 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-sh
       manic: manicDays,
       sick: sickDays,
       temp: tempDays,
+      menstrual: menstrualDays,
       appetite: appetiteDays,
       moon: moonDays,
       anomaly: anomalyDays
@@ -5853,7 +6113,7 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-sh
     if (quickLookRange && title) {
       quickLookRange.textContent = override?.label || labelOverride || `Month: ${title.textContent}`;
     }
-    const items = QUICK_LOOK_ITEMS.map(item => ({
+    const items = getVisibleQuickLookItems().map(item => ({
       ...item,
       count: (override?.counts ?? legendCounts)[item.key] ?? 0
     }));
@@ -5871,7 +6131,7 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-sh
   }
 
   function applyHealthFlagToMapLocal(key, data = {}, targetMap){
-    const base = targetMap[key] || { bm:false, sleep:null, sleep_low:false, onset:false, night:false, prn_sleep:false, prn_mania:false, prn_aggr:false, tired:false, manic:false, sick:false, temp:false, appetite:false, moon:false, anomaly:false, med_change_notes:[] };
+    const base = targetMap[key] || { bm:false, sleep:null, sleep_low:false, onset:false, night:false, prn_sleep:false, prn_mania:false, prn_aggr:false, tired:false, manic:false, sick:false, temp:false, menstrual:false, appetite:false, moon:false, anomaly:false, med_change_notes:[] };
     const hours = data.sleepHours != null ? Number(data.sleepHours) : (data.sleep ? 8 : null);
     const sleepLowFromHours = Number.isFinite(hours) ? hours < 8 : null;
     const incomingNotes = Array.isArray(data.med_change_notes) ? data.med_change_notes.filter(Boolean) : [];
@@ -5896,6 +6156,7 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-sh
       manic: base.manic || !!data.manic,
       sick: base.sick || !!data.sick,
       temp: base.temp || !!data.temp,
+      menstrual: base.menstrual || !!data.menstrual,
       appetite: base.appetite || !!data.appetite,
       moon: base.moon || !!data.moon,
       anomaly: base.anomaly || !!data.anomaly,
@@ -5963,9 +6224,11 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-sh
           const temp = p.temp_present === true
             || /yes|true/i.test(String(p.temp_present || ''))
             || !!p.temp_value;
+          const menstrual = p.menstrual_present === true
+            || /yes|true/i.test(String(p.menstrual_present || ''));
           const appetite = hasAppetiteChange(p) || hasAppetiteChange(row);
           const anomaly = p.anomaly_flag === true || /yes/i.test(String(p.anomaly || ''));
-          const cur = map[key] || { bm:false, sleep:null, sleep_low:false, onset:false, night:false, prn_sleep:false, prn_mania:false, prn_aggr:false, tired:false, manic:false, sick:false, temp:false, appetite:false, moon:false, anomaly:false, med_change_notes:[] };
+          const cur = map[key] || { bm:false, sleep:null, sleep_low:false, onset:false, night:false, prn_sleep:false, prn_mania:false, prn_aggr:false, tired:false, manic:false, sick:false, temp:false, menstrual:false, appetite:false, moon:false, anomaly:false, med_change_notes:[] };
           const medChangeFlag = /yes|true/i.test(String(p.med_change_flag || ''));
           const medChangeNote = String(p.med_change_note || '').trim();
           const caregiverLabel = String(p.caregiver_name || '').trim();
@@ -5987,6 +6250,7 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-sh
             manic: cur.manic || manic,
             sick:  cur.sick  || sick,
             temp:  cur.temp  || temp,
+            menstrual: cur.menstrual || menstrual,
             appetite: cur.appetite || appetite,
             moon: cur.moon || isFullMoonKey(key),
             anomaly: cur.anomaly || anomaly,
@@ -6199,10 +6463,12 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-sh
           const temp = p.temp_present === true
             || /yes|true/i.test(String(p.temp_present || ''))
             || !!p.temp_value;
+          const menstrual = p.menstrual_present === true
+            || /yes|true/i.test(String(p.menstrual_present || ''));
           const appetite = hasAppetiteChange(p) || hasAppetiteChange(row);
           const anomaly = p.anomaly_flag === true || /yes/i.test(String(p.anomaly || ''));
 
-          const cur = MAP[key] || { bm:false, sleep:null, sleep_low:false, onset:false, night:false, prn_sleep:false, prn_mania:false, prn_aggr:false, tired:false, manic:false, sick:false, temp:false, appetite:false, moon:false, anomaly:false, med_change_notes:[] };
+          const cur = MAP[key] || { bm:false, sleep:null, sleep_low:false, onset:false, night:false, prn_sleep:false, prn_mania:false, prn_aggr:false, tired:false, manic:false, sick:false, temp:false, menstrual:false, appetite:false, moon:false, anomaly:false, med_change_notes:[] };
           const medChangeFlag = /yes|true/i.test(String(p.med_change_flag || ''));
           const medChangeNote = String(p.med_change_note || '').trim();
           const caregiverLabel = String(p.caregiver_name || '').trim();
@@ -6224,6 +6490,7 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-sh
             manic: cur.manic || manic,
             sick:  cur.sick  || sick,
             temp:  cur.temp  || temp,
+            menstrual: cur.menstrual || menstrual,
             appetite: cur.appetite || appetite,
             moon: cur.moon || isFullMoonKey(key),
             anomaly: cur.anomaly || anomaly,
@@ -6267,9 +6534,11 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-sh
           const temp = e.temp_present === true
             || /yes|true/i.test(String(e.temp_present || ''))
             || !!e.temp_value;
+          const menstrual = e.menstrual_present === true
+            || /yes|true/i.test(String(e.menstrual_present || ''));
           const appetite = hasAppetiteChange(e);
           const anomaly = e.anomaly_flag === true || /yes/i.test(String(e.anomaly || ''));
-          const cur = MAP[key] || { bm:false, sleep:null, sleep_low:false, onset:false, night:false, prn_sleep:false, prn_mania:false, prn_aggr:false, tired:false, manic:false, sick:false, temp:false, appetite:false, anomaly:false };
+          const cur = MAP[key] || { bm:false, sleep:null, sleep_low:false, onset:false, night:false, prn_sleep:false, prn_mania:false, prn_aggr:false, tired:false, manic:false, sick:false, temp:false, menstrual:false, appetite:false, anomaly:false };
           MAP[key] = {
             bm:    cur.bm    || bm,
             sleep: (sleep!=null && (cur.sleep==null || sleep>cur.sleep)) ? sleep : cur.sleep,
@@ -6283,6 +6552,7 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-sh
             manic: cur.manic || manic,
             sick:  cur.sick  || sick,
             temp:  cur.temp  || temp,
+            menstrual: cur.menstrual || menstrual,
             appetite: cur.appetite || appetite,
             anomaly: cur.anomaly || anomaly
           };
@@ -6385,6 +6655,7 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-sh
     setBox('manic', existing.manic ?? rec.manic);
     setBox('sick', existing.sick ?? rec.sick);
     setBox('temp', existing.temp ?? rec.temp);
+    setBox('menstrual', existing.menstrual ?? rec.menstrual);
     setBox('moon', existing.moon ?? rec.moon ?? isFullMoonKey(dateKey));
     setBox('appetite', existing.appetite ?? rec.appetite);
     setBox('anomaly', existing.anomaly ?? rec.anomaly);
@@ -6418,6 +6689,7 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-sh
         manic: !!payload.manic,
         sick: !!payload.sick,
         temp: !!payload.temp,
+        menstrual: !!payload.menstrual,
         appetite: !!payload.appetite,
         moon: !!payload.moon,
         anomaly: !!payload.anomaly,
@@ -6447,6 +6719,7 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-sh
       if (normalized.manic) summaryBits.push('Manic');
       if (normalized.sick) summaryBits.push('Sick');
       if (normalized.temp) summaryBits.push('Temp');
+      if (normalized.menstrual) summaryBits.push('Menstrual cycle');
       if (normalized.appetite) summaryBits.push('Appetite');
       if (normalized.moon) summaryBits.push('Full moon');
       if (normalized.anomaly) summaryBits.push('Anomaly');
@@ -6523,6 +6796,7 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-sh
       manic: editorForm.elements.manic?.checked,
       sick: editorForm.elements.sick?.checked,
       temp: editorForm.elements.temp?.checked,
+      menstrual: editorForm.elements.menstrual?.checked,
       moon: editorForm.elements.moon?.checked,
       appetite: editorForm.elements.appetite?.checked,
       anomaly: editorForm.elements.anomaly?.checked,

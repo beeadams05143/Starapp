@@ -14,6 +14,8 @@
       --paper:#fffdfa;       /* warm paper */
       --rule:#e5e7eb;        /* light line color */
       --punch:#d1d5db;       /* binder holes */
+      --sans:"Avenir Next","Segoe UI","Helvetica Neue",Arial,sans-serif;
+      --serif:Georgia,"Iowan Old Style","Palatino Linotype","Book Antiqua",serif;
     }
     *{ box-sizing:border-box; }
 
@@ -22,14 +24,17 @@
     body{
       margin:0;
       /* add bottom padding for the fixed save bar space (approx 120px) */
-      padding:24px 24px 140px;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      color:var(--ink); background:#fafaf9;
+      padding:24px 24px 220px;
+      font-family: var(--sans);
+      color:var(--ink);
+      background:
+        radial-gradient(circle at top, rgba(242, 221, 176, .34), transparent 30%),
+        linear-gradient(180deg, #fffefb 0%, #fbf5e8 100%);
       display:block; /* allow natural page scroll */
     }
     body[data-doc-page="minutes"]{
       padding-top: calc(var(--appbar-h,56px) + 24px) !important;
-      padding-bottom: calc(var(--tabbar-h,72px) + 140px) !important;
+      padding-bottom: calc(var(--tabbar-h,72px) + 230px) !important;
     }
 
     .wrap{ max-width:900px; width:100%; margin: 0 auto; }
@@ -46,7 +51,7 @@
     .notebook{
       position:relative; border-radius:18px; overflow:hidden;
       box-shadow: 0 10px 30px rgba(0,0,0,.08);
-      display:grid; grid-template-columns: 1fr 110px;  /* paper + pencil rail */
+      display:block;
       background:var(--paper);
     }
 
@@ -59,7 +64,7 @@
         /* horizontal rules */
         repeating-linear-gradient(#0000, #0000 30px, var(--rule) 31px);
       /* extra space so the fixed save bar never covers inputs */
-      padding-bottom: 120px;
+      padding-bottom: 220px;
     }
 
     /* binder holes */
@@ -73,31 +78,22 @@
 
     /* pencil rail */
     /* pencil rail (move to right side, below quick tabs) */
-.rail{
-  position: fixed;
-  right: 12px;          /* hug the right edge */
-  top: 148px;           /* BELOW the quick tabs (yours are at top: 88px) */
-  bottom: calc(var(--tabbar-h,72px) + 12px); /* stay above the bottom tab bar */
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 10px;
-  background: linear-gradient(180deg, #fff, #f8fafc);
-  border-left: 1px solid var(--rule);
-  padding: 6px 8px;
-  z-index: 900;         /* under quick tabs (which are z-index: 1050) */
-}
+.rail{display:none}
 
   
-    .pencil{
-      width:56px; height:320px;
-      filter: drop-shadow(0 8px 18px rgba(0,0,0,.15));
-    }
+    .pencil{display:none}
 
-    h1{ margin:0 0 12px 0; letter-spacing:.2px; }
+    h1{
+      margin:0 0 12px 0;
+      letter-spacing:.2px;
+      font-family:var(--serif);
+      font-size:clamp(2.4rem, 4vw, 3.2rem);
+      font-weight:700;
+      color:#73441b;
+    }
     label{ font-weight:600; display:block; margin:6px 0 6px; }
     input[type="text"], input[type="datetime-local"], textarea, select{
-      width:100%; padding:10px 12px; border:1px solid #e5e7eb; border-radius:10px;
+      width:100%; padding:10px 12px; border:1px solid #d9e2f2; border-radius:10px;
       font-size:16px; background:#fff; outline:none;
     }
     textarea{
@@ -118,44 +114,94 @@
     .hint{ color:#6b7280; font-size:13px; margin-top:6px; }
     .divider{ height:1px; background:#f1f5f9; margin:16px 0; }
 
+    .related-links{
+      display:grid;
+      gap:10px;
+      margin:0 0 16px;
+      padding:14px;
+      border:1px dashed #d6d3d1;
+      border-radius:14px;
+      background:rgba(255,255,255,.76);
+    }
+    .related-links p{
+      margin:0;
+      color:#6b7280;
+      font-size:14px;
+      font-style:italic;
+    }
+    .related-link-grid{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+    }
+    .related-chip{
+      appearance:none;
+      border:1px solid #d9e2f2;
+      background:#fff;
+      color:#24314a;
+      padding:10px 16px;
+      border-radius:999px;
+      cursor:pointer;
+      font-size:15px;
+      font-weight:600;
+      font-family:var(--sans);
+    }
+    .related-chip.is-selected{
+      background:#fff1c5;
+      border-color:#d9a441;
+      color:#73441b;
+      box-shadow:0 10px 24px rgba(217, 164, 65, .18);
+    }
+    .upload-chooser{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:8px;
+    }
+    .upload-file-name{
+      color:#6b7280;
+      font-size:14px;
+    }
     .dictation-toolbar{
       display:flex;
       flex-wrap:wrap;
-      gap:6px;
+      gap:8px;
       align-items:center;
-      margin:6px 0 8px;
+      margin:8px 0 10px;
     }
     .dictation-toolbar .label{
-      font-size:12px;
+      font-size:13px;
       color:#6b7280;
-      margin-right:4px;
+      margin-right:6px;
       font-weight:600;
     }
     .dictation-toolbar .chip-btn,
     .dictation-toolbar .mic-btn{
       appearance:none;
-      border:1px solid #e5e7eb;
+      border:1px solid #d9e2f2;
       background:#fff;
-      color:#111;
-      padding:6px 10px;
+      color:#24314a;
+      padding:8px 14px;
       border-radius:999px;
       cursor:pointer;
       font-weight:600;
-      font-size:13px;
+      font-size:14px;
+      font-family:var(--sans);
     }
     .dictation-toolbar .mic-btn{
-      background:#111;
+      background:#8a6b44;
       color:#fff;
-      border-color:#111;
+      border-color:#8a6b44;
     }
     .dictation-toolbar .mic-btn.is-active{
-      background:#ef4444;
-      border-color:#ef4444;
+      background:#c96a4a;
+      border-color:#c96a4a;
     }
     .dictation-toolbar .status{
-      font-size:12px;
+      font-size:13px;
       color:#6b7280;
-      margin-left:6px;
+      line-height:1.4;
     }
     .dictation-toolbar .status.error{
       color:#b91c1c;
@@ -214,13 +260,13 @@
     }
     @media print { .edge-tabs, .save-bar { display: none !important; } }
     @media (max-width: 720px) {
-      body{padding:16px 12px 160px}
+      body{padding:16px 12px 220px}
       body[data-doc-page="minutes"]{
         padding-top: calc(var(--appbar-h,56px) + 16px) !important;
-        padding-bottom: calc(var(--tabbar-h,72px) + 160px) !important;
+        padding-bottom: calc(var(--tabbar-h,72px) + 280px) !important;
       }
       .notebook{grid-template-columns:1fr}
-      .paper{padding:18px 16px 160px 30px}
+      .paper{padding:18px 16px 250px 30px}
       .paper:before{left:8px}
       .grid2{grid-template-columns:1fr}
       .rail{display:none}
@@ -241,7 +287,7 @@
     <a href="/documents/documents.html?cat=Medical" data-cat="Medical" title="Medical">🩺</a>
     <a href="/documents/documents.html?cat=HR" data-cat="HR" title="HR">🏢</a>
     <a href="/documents/documents.html?cat=Caregiving" data-cat="Caregiving" title="Caregiving">🧩</a>
-    <a href="/documents/documents.html?cat=ISA" data-cat="ISA" title="ISA / IEP">📚</a>
+    <a href="/documents/documents.html?cat=ISA" data-cat="ISA" title="ISA Review">📚</a>
     <a href="/documents/documents.html?cat=Year%20End%20Paperwork" data-cat="Year End Paperwork" title="Year End">📦</a>
     <a href="/documents/documents.html?cat=Guardianship" data-cat="Guardianship" title="Guardianship">🛡️</a>
     <a href="/documents/minutes-form.html" data-doc-page="minutes" title="Meeting Minutes">📝</a>
@@ -256,6 +302,18 @@
     <div class="notebook">
       <div class="paper">
         <h1>Add Meeting Minutes</h1>
+        <div class="related-links">
+          <p>Select the one document page this meeting belongs to. When you save, these minutes will attach only to that section.</p>
+          <div class="related-link-grid">
+            <button class="related-chip" type="button" data-related-cat="ISA">ISA Review</button>
+            <button class="related-chip" type="button" data-related-cat="Medical">Medical</button>
+            <button class="related-chip" type="button" data-related-cat="Caregiving">Caregiving</button>
+            <button class="related-chip" type="button" data-related-cat="HR">HR</button>
+            <button class="related-chip" type="button" data-related-cat="Finance">Finance</button>
+            <button class="related-chip" type="button" data-related-cat="Year End Paperwork">Year End</button>
+            <button class="related-chip" type="button" data-related-cat="Guardianship">Guardianship</button>
+          </div>
+        </div>
         <form id="minutesForm" novalidate>
 
         <div class="grid2">
@@ -326,44 +384,22 @@
         <div class="divider"></div>
 
         <label for="attachment">Upload or Scan (optional)</label>
-        <input id="attachment" type="file" accept=".pdf,.jpg,.jpeg" />
+        <div class="upload-chooser">
+          <input id="attachment" type="file" accept=".pdf,.jpg,.jpeg" hidden />
+          <span id="attachmentName" class="upload-file-name">No file chosen yet.</span>
+        </div>
         <div class="hint">Upload PDF or JPG only.</div>
         <div class="hint">Attach official minutes, photos of notes, or scans. Files stay private; the app uses signed links.</div>
-     
-     <!-- Buttons INSIDE the form (recommended) -->
-<div class="actions" style="margin:16px 0;">
-  <button type="submit" class="btn primary" id="saveBtn">Save Minutes</button>
-  <button type="button" id="clearBtn" class="btn">Clear</button>
-</div>
 
         </form>
-      </div>
-
-      <!-- PENCIL RAIL -->
-      <div class="rail" aria-hidden="true">
-        <!-- Cute pencil SVG -->
-        <svg class="pencil" viewBox="0 0 80 460" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="wood" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0" stop-color="#f5deb3"/>
-              <stop offset="1" stop-color="#e9c999"/>
-            </linearGradient>
-          </defs>
-          <!-- eraser -->
-          <rect x="10" y="0" width="60" height="70" rx="8" fill="#fca5a5"/>
-          <rect x="10" y="68" width="60" height="10" fill="#9ca3af"/>
-          <!-- body -->
-          <rect x="10" y="78" width="60" height="310" fill="#f59e0b"/>
-          <rect x="18" y="78" width="44" height="310" fill="#fbbf24" opacity=".6"/>
-          <!-- wood + tip -->
-          <polygon points="10,388 70,388 40,458" fill="url(#wood)"/>
-          <polygon points="26,420 54,420 40,458" fill="#111"/>
-        </svg>
       </div>
     </div>
   </div>   <!-- /.wrap -->
 
   <div class="save-bar">
+    <button class="btn secondary" type="button" id="minutesAttachBtn">Add PDF / JPG</button>
+    <button class="btn secondary" type="button" id="minutesSummarizeBtn">Summarize Meeting</button>
+    <button class="btn" type="button" id="saveBtn">Save Minutes</button>
     <button class="btn secondary" type="button" id="minutesPrintBtnBottom">View / Print</button>
     <button class="btn" type="button" id="minutesShareBtn">Share PDF</button>
   </div>
@@ -376,8 +412,82 @@
 
     // attendees UI
     const attendees = [];
+    let selectedCategory = '';
     const attendeeInput = document.getElementById('attendeeName');
     const attendeesList = document.getElementById('attendeesList');
+    const relatedButtons = Array.from(document.querySelectorAll('[data-related-cat]'));
+    const attachmentInput = document.getElementById('attachment');
+    const attachmentName = document.getElementById('attachmentName');
+    const attachBtn = document.getElementById('minutesAttachBtn');
+    const summarizeBtn = document.getElementById('minutesSummarizeBtn');
+    const notesField = document.getElementById('notes');
+
+    function listFromTextarea(id) {
+      return document.getElementById(id).value
+        .split('\n')
+        .map((item) => item.replace(/^[\-\d\)\.\s]+/, '').trim())
+        .filter(Boolean);
+    }
+
+    function buildMeetingSummary() {
+      const parts = [];
+      const title = document.getElementById('title').value.trim();
+      const meetingDate = document.getElementById('dateTime').value;
+      const location = document.getElementById('location').value.trim();
+      const facilitator = document.getElementById('facilitator').value.trim();
+      const agendaItems = listFromTextarea('agenda');
+      const decisions = listFromTextarea('decisions');
+      const actions = listFromTextarea('actions');
+      const nextDate = document.getElementById('nextDate').value;
+      const nextLink = document.getElementById('nextLink').value.trim();
+      const discussion = notesField.value.trim();
+
+      if (selectedCategory) parts.push(`Document page: ${selectedCategory}`);
+      if (title) parts.push(`Meeting: ${title}`);
+      if (meetingDate) parts.push(`Date and time: ${meetingDate.replace('T', ' ')}`);
+      if (location) parts.push(`Location or link: ${location}`);
+      if (facilitator) parts.push(`Facilitator: ${facilitator}`);
+      if (attendees.length) parts.push(`Attendees: ${attendees.join(', ')}`);
+      if (agendaItems.length) parts.push(`Agenda: ${agendaItems.join('; ')}`);
+      if (discussion) parts.push(`Discussion highlights: ${discussion.replace(/\s+/g, ' ').trim()}`);
+      if (decisions.length) parts.push(`Decisions: ${decisions.join('; ')}`);
+      if (actions.length) parts.push(`Action items: ${actions.join('; ')}`);
+      if (nextDate || nextLink) {
+        const nextParts = [];
+        if (nextDate) nextParts.push(nextDate.replace('T', ' '));
+        if (nextLink) nextParts.push(nextLink);
+        parts.push(`Next meeting: ${nextParts.join(' | ')}`);
+      }
+
+      return parts.join('\n');
+    }
+
+    function updateAttachmentName() {
+      if (!attachmentName || !attachmentInput) return;
+      attachmentName.textContent = attachmentInput.files?.[0]?.name || 'No file chosen yet.';
+    }
+
+    function updateCategoryButtons() {
+      relatedButtons.forEach((button) => {
+        const category = button.dataset.relatedCat;
+        button.classList.toggle('is-selected', selectedCategory === category);
+      });
+    }
+
+    relatedButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        const category = button.dataset.relatedCat;
+        selectedCategory = selectedCategory === category ? '' : category;
+        updateCategoryButtons();
+      });
+    });
+
+    const preselected = new URLSearchParams(window.location.search).get('related');
+    if (preselected) {
+      selectedCategory = preselected.split(',').map((item) => item.trim()).filter(Boolean)[0] || '';
+      updateCategoryButtons();
+    }
+
     document.getElementById('addAttendeeBtn').addEventListener('click', () => {
       const v = attendeeInput.value.trim();
       if (!v) return;
@@ -397,23 +507,27 @@
     }
 
     // save
-    document.getElementById('saveBtn').addEventListener('click', async () => {
+    document.getElementById('saveBtn').addEventListener('click', async (event) => {
+      event.preventDefault();
       const title = document.getElementById('title').value.trim();
       if (!title) return alert("Please add a title.");
 
-      const file = document.getElementById('attachment').files[0];
+      const file = attachmentInput.files[0];
       if (file) {
         const allowedTypes = ['application/pdf', 'image/jpeg'];
         const allowedExt = /\.(pdf|jpe?g)$/i;
         if (!allowedTypes.includes(file.type) && !allowedExt.test(file.name || '')) {
           alert('Please upload a JPG or PDF file.');
-          document.getElementById('attachment').value = '';
+          attachmentInput.value = '';
+          updateAttachmentName();
           return;
         }
       }
 
       const payload = {
         title,
+        primary_category: selectedCategory || 'Minutes',
+        related_categories: selectedCategory ? [selectedCategory] : [],
         datetime: document.getElementById('dateTime').value,
         location: document.getElementById('location').value,
         facilitator: document.getElementById('facilitator').value,
@@ -431,17 +545,33 @@
         if (file) attachment = await uploadFileToBucket({ file }); // handles bucket fallback internally
         await saveMinutesRich(payload, attachment);                 // inserts markdown + optional file data
         alert("Saved!");
-        window.location.href = "./documents.html";
+        window.location.href = selectedCategory
+          ? `./documents.html?cat=${encodeURIComponent(selectedCategory)}`
+          : "./documents.html";
       }catch(err){
         console.error(err);
         alert("Save failed: " + err.message);
       }
     });
 
-    document.getElementById('clearBtn').addEventListener('click', () => {
-      document.querySelectorAll('input, textarea').forEach(el => { if (el.type !== 'file') el.value = '' });
-      attendees.splice(0, attendees.length); renderAttendees();
+    attachBtn?.addEventListener('click', () => attachmentInput?.click());
+    summarizeBtn?.addEventListener('click', () => {
+      const summary = buildMeetingSummary();
+      if (!summary) {
+        alert('Add a few meeting details first, then tap Summarize Meeting.');
+        return;
+      }
+      const summaryBlock = `Meeting summary\n${summary}`;
+      const existing = notesField.value
+        .replace(/\n*Meeting summary\n[\s\S]*$/m, '')
+        .trim();
+      notesField.value = existing ? `${existing}\n\n${summaryBlock}` : summaryBlock;
+      notesField.dispatchEvent(new Event('input', { bubbles: true }));
+      notesField.focus();
+      notesField.setSelectionRange(notesField.value.length, notesField.value.length);
     });
+    attachmentInput?.addEventListener('change', updateAttachmentName);
+    updateAttachmentName();
 
     const printBtn = document.getElementById('minutesPrintBtn');
     const printBtnBottom = document.getElementById('minutesPrintBtnBottom');
@@ -508,36 +638,11 @@
     }
     shareBtn?.addEventListener('click', shareMinutesPdf);
   </script>
-
-  <!-- Page-specific logic (keep if you use it) -->
-  <script type="module" src="/script.js?v=2026.02.16B"></script>
-
-  <!-- Top app bar + bottom tabs (creates #openMenu) -->
-  <script defer src="/ui-shell.js?v=2026.03.16B"></script>
-
-  <!-- Hamburger drawer (depends on #openMenu created by ui-shell) -->
-  <script defer src="/scripts/appbar-drawer.js?v=2026.03.16B"></script>
-
-  <!-- Floating avatar (top-right across pages) -->
-  <script type="module" src="/avatar-float.js?v=2026.03.16B"></script>
-  <script>
-    (function(){
-      const cat = (document.body.dataset.docCat || '').toLowerCase();
-      const page = document.body.dataset.docPage || '';
-      document.querySelectorAll('.edge-tabs a').forEach(link => {
-        const linkCat = (link.dataset.cat || '').toLowerCase();
-        const linkPage = link.dataset.docPage || '';
-        if ((cat && linkCat === cat) || (page && linkPage === page)) {
-          link.setAttribute('aria-current', 'page');
-        }
-      });
-    })();
-  </script>
   <script>
     (function(){
       const RecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
       const supportsSpeech = !!RecognitionCtor;
-      const speakerLabels = ['Doctor', 'Mom', 'Dad', 'Caregiver', 'Case Manager', 'Other'];
+      const speakerLabels = ['Parent', 'Caregiver', 'Case Manager', 'Other'];
       let activeSession = null;
 
       const insertAtCursor = (el, text) => {
@@ -579,9 +684,7 @@
           return;
         }
 
-        if (activeSession && activeSession.target !== el) {
-          stopActive();
-        }
+        if (activeSession && activeSession.target !== el) stopActive();
 
         const recognition = new RecognitionCtor();
         recognition.continuous = true;
@@ -600,9 +703,7 @@
           let transcript = '';
           for (let i = event.resultIndex; i < event.results.length; i += 1) {
             const result = event.results[i];
-            if (result.isFinal) {
-              transcript += result[0].transcript;
-            }
+            if (result.isFinal) transcript += result[0].transcript;
           }
           if (transcript.trim()) {
             const spacer = el.value && !el.value.endsWith(' ') ? ' ' : '';
@@ -654,10 +755,6 @@
         micBtn.textContent = 'Start dictation';
         toolbar.appendChild(micBtn);
 
-        const status = document.createElement('span');
-        status.className = 'status';
-        toolbar.appendChild(status);
-
         speakerLabels.forEach((labelText) => {
           const btn = document.createElement('button');
           btn.type = 'button';
@@ -666,15 +763,22 @@
           btn.addEventListener('click', () => {
             if (labelText === 'Other') {
               const name = window.prompt('Speaker name?');
-              if (name && name.trim()) {
-                addSpeakerLabel(target, name.trim());
-              }
+              if (name && name.trim()) addSpeakerLabel(target, name.trim());
               return;
             }
             addSpeakerLabel(target, labelText);
           });
           toolbar.appendChild(btn);
         });
+
+        const helper = document.createElement('span');
+        helper.className = 'status';
+        helper.textContent = 'Tap a role name to insert who is speaking, then use dictation for the meeting discussion.';
+        toolbar.appendChild(helper);
+
+        const status = document.createElement('span');
+        status.className = 'status';
+        toolbar.appendChild(status);
 
         if (!supportsSpeech) {
           micBtn.disabled = true;
@@ -695,5 +799,29 @@
     })();
   </script>
 
+  <!-- Page-specific logic (keep if you use it) -->
+  <script type="module" src="/script.js?v=2026.02.16B"></script>
+
+  <!-- Top app bar + bottom tabs (creates #openMenu) -->
+  <script defer src="/ui-shell.js?v=2026.03.16B"></script>
+
+  <!-- Hamburger drawer (depends on #openMenu created by ui-shell) -->
+  <script defer src="/scripts/appbar-drawer.js?v=2026.03.16B"></script>
+
+  <!-- Floating avatar (top-right across pages) -->
+  <script type="module" src="/avatar-float.js?v=2026.03.16B"></script>
+  <script>
+    (function(){
+      const cat = (document.body.dataset.docCat || '').toLowerCase();
+      const page = document.body.dataset.docPage || '';
+      document.querySelectorAll('.edge-tabs a').forEach(link => {
+        const linkCat = (link.dataset.cat || '').toLowerCase();
+        const linkPage = link.dataset.docPage || '';
+        if ((cat && linkCat === cat) || (page && linkPage === page)) {
+          link.setAttribute('aria-current', 'page');
+        }
+      });
+    })();
+  </script>
 </body>
 </html>

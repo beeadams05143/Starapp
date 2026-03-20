@@ -9,23 +9,25 @@
       --ink:#172033;
       --muted:#5c667a;
       --line:#d8e0ef;
-      --panel:rgba(255,255,255,0.96);
-      --accent:#0f172a;
-      --accent-soft:#eef4ff;
-      --accent-bright:#1d4ed8;
+      --panel:rgba(255,253,248,0.97);
+      --accent:#20324f;
+      --accent-soft:#fff7e0;
+      --accent-bright:#7a4a1f;
       --good:#166534;
       --warn-bg:#fff7dd;
       --warn-line:#efd184;
-      --shadow:0 18px 38px rgba(15,23,42,0.10);
+      --shadow:0 18px 38px rgba(125,89,34,0.12);
+      --font-sans:"Avenir Next","Segoe UI","Helvetica Neue",Arial,sans-serif;
+      --font-serif:"Iowan Old Style","Palatino Linotype","Book Antiqua",Georgia,serif;
     }
     *{box-sizing:border-box}
     body{
       margin:0;
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      font-family:var(--font-sans);
       color:var(--ink);
       background:
-        radial-gradient(circle at top right, rgba(191,219,254,0.58), transparent 26%),
-        linear-gradient(180deg, #f8fafc 0%, #eef3fb 100%);
+        radial-gradient(circle at top right, rgba(251,230,194,0.78), transparent 28%),
+        linear-gradient(180deg, #fff8ea 0%, #f7ead0 100%);
       min-height:100vh;
     }
     main{
@@ -50,7 +52,7 @@
       gap:8px;
       padding:8px 12px;
       border-radius:999px;
-      background:#e0ecff;
+      background:#fff2c7;
       color:var(--accent-bright);
       font-size:12px;
       font-weight:800;
@@ -61,6 +63,8 @@
       margin:14px 0 8px;
       font-size:clamp(2rem,4vw,3rem);
       line-height:1.05;
+      font-family:var(--font-serif);
+      color:#724016;
     }
     p{
       margin:0;
@@ -97,14 +101,15 @@
       padding:0 18px;
       border-radius:14px;
       border:1px solid var(--accent);
-      background:var(--accent);
-      color:#fff;
+      background:linear-gradient(180deg,#49da7b 0%,#22c55e 100%);
+      color:#08331d;
       text-decoration:none;
       font-weight:800;
       cursor:pointer;
+      border-color:#2bbf67;
     }
     .btn.secondary{
-      background:#fff;
+      background:#fffdf8;
       color:var(--accent);
       border-color:#cbd5e1;
     }
@@ -123,7 +128,7 @@
     }
     .card.is-coming-soon{
       border-color:#f6d88e;
-      background:linear-gradient(180deg, rgba(255,251,235,0.96), rgba(255,255,255,0.98));
+      background:linear-gradient(180deg, rgba(255,248,226,0.96), rgba(255,253,248,0.98));
     }
     .card-head{
       display:flex;
@@ -238,6 +243,70 @@
       accent-color:var(--accent-bright);
       flex:0 0 auto;
     }
+    .item-detail{
+      display:grid;
+      gap:10px;
+      margin-top:10px;
+      padding:12px;
+      border:1px dashed #cbd5e1;
+      border-radius:14px;
+      background:#fff;
+    }
+    .item-detail.is-hidden{
+      display:none;
+    }
+    .item-detail-copy{
+      font-size:14px;
+      color:#475569;
+      line-height:1.55;
+    }
+    .item-detail-list{
+      margin:0;
+      padding-left:18px;
+      color:#334155;
+      font-size:14px;
+      line-height:1.55;
+    }
+    .item-detail-label{
+      font-size:13px;
+      font-weight:800;
+      color:#0f172a;
+      letter-spacing:.01em;
+      text-transform:none;
+    }
+    .item-detail-actions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+    }
+    .mini-btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:38px;
+      padding:0 14px;
+      border-radius:12px;
+      border:1px solid #cbd5e1;
+      background:#fff;
+      color:#0f172a;
+      font-weight:700;
+      cursor:pointer;
+    }
+    .mini-btn.primary{
+      border-color:#0f172a;
+      background:#0f172a;
+      color:#fff;
+    }
+    .item-detail textarea{
+      width:100%;
+      min-height:84px;
+      border:1px solid #cbd5e1;
+      border-radius:12px;
+      padding:10px 12px;
+      font:inherit;
+      resize:vertical;
+    }
     .toolbar{
       display:flex;
       align-items:center;
@@ -283,7 +352,7 @@
       <div id="setupStatus" class="status" role="status" aria-live="polite"></div>
       <div class="actions">
         <button id="saveBtn" type="button" class="btn">Save Caregiver Setup</button>
-        <a class="btn secondary" href="/customize-your-app">Back to Customize Your App</a>
+        <a id="previewCheckinBtn" class="btn secondary" href="/caregiver-checkin.html">Preview Caregiver Check-In</a>
       </div>
     </section>
 
@@ -360,11 +429,15 @@
             label: 'Mental Health / Internal State',
             objective: 'Observable indicators of anxiety, withdrawal, mood instability, or distress that affect participation',
             behaviors: [
+              { key: 'behavior_prn_used', label: 'PRN used for behavior / mental health support' },
               { key: 'anxiety_signs_present', label: 'Anxiety signs present' },
               { key: 'withdrawal_present', label: 'Withdrawal present' },
               { key: 'perseveration_present', label: 'Gets stuck on the same topic or idea' },
+              { key: 'compulsive_checking_repeating', label: 'Repeats routines or actions over and over' },
               { key: 'low_mood_indicators', label: 'Low mood indicators' },
               { key: 'elevated_mood_indicators', label: 'Elevated mood indicators' },
+              { key: 'pressured_speech_present', label: 'Rapid / pressured speech' },
+              { key: 'grandiose_statements_present', label: 'Unrealistic or exaggerated beliefs about self' },
               { key: 'distress_impacts_participation', label: 'Distress impacts participation' },
             ],
             fields: [],
@@ -382,6 +455,7 @@
           ['energy_level', 'Energy Level'],
           ['pain_discomfort', 'Pain / Discomfort'],
           ['illness_symptoms', 'Illness Symptoms'],
+          ['menstrual_tracking', 'Menstrual Cycle Tracking'],
         ],
       },
       {
@@ -521,6 +595,7 @@
     const setupStatusEl = document.getElementById('setupStatus');
     const setupGridEl = document.getElementById('setupGrid');
     const saveBtn = document.getElementById('saveBtn');
+    const previewCheckinBtn = document.getElementById('previewCheckinBtn');
 
     const state = {
       groupId: null,
@@ -529,12 +604,299 @@
       configRowId: null,
       categoryEls: new Map(),
       itemEls: new Map(),
+      itemDescriptions: {},
+    };
+
+    const DEFAULT_ITEM_DESCRIPTIONS = {
+      identifies_feelings: 'Names or points to a feeling without staff guessing for them.',
+      tolerates_frustration: 'Stays regulated enough to keep going when something is hard or disappointing.',
+      uses_coping_strategy: 'Uses a coping tool or calming strategy when upset.',
+      accepts_redirection: 'Shifts back to the task or expectation after caregiver guidance.',
+      requests_break: 'Asks for a break before becoming overwhelmed.',
+      recovers_after_distress: 'Returns to baseline after being upset.',
+      tolerates_waiting: 'Waits without escalating when asked to pause.',
+      tolerates_denial: 'Handles being told no without major dysregulation.',
+      tolerates_change: 'Adjusts when plans, routines, or expectations change.',
+      tolerates_nonpreferred_tasks: 'Participates in a task they do not prefer.',
+      accepts_limits: 'Accepts boundaries or limits set by caregivers.',
+      transitions_with_support: 'Moves from one activity to the next with caregiver support.',
+      responds_to_staff_direction: 'Follows caregiver direction after being told what to do, with support documented if prompts were needed.',
+      responds_to_peer_interaction: 'Responds appropriately when peers interact.',
+      maintains_group_expectations: 'Keeps expected behavior in shared settings.',
+      reduces_verbal_outbursts: 'Uses a calmer voice and fewer verbal escalations.',
+      uses_repair_after_conflict: 'Repairs after conflict through apology, calm return, or problem solving.',
+      returns_to_activity: 'Returns to the planned activity after interruption or upset.',
+      behavior_prn_used: 'Use this when a PRN was given for anxiety, agitation, escalation, dysregulation, or another behavior / mental health reason during the shift.',
+      anxiety_signs_present: 'Shows worry, tension, reassurance seeking, or other anxiety signs.',
+      withdrawal_present: 'Pulls away from people, tasks, leisure activities, or participation more than usual.',
+      perseveration_present: 'Gets stuck on one topic, thought, concern, or activity and has trouble shifting away from it.',
+      compulsive_checking_repeating: 'Repeats the same routine, action, checking pattern, or ritual over and over and has difficulty stopping or shifting away from it.',
+      low_mood_indicators: 'Shows sadness, low energy, tearfulness, reduced motivation, or decreased interest in usual activities.',
+      elevated_mood_indicators: 'Shows unusually high energy, silliness, agitation, or overly elevated mood.',
+      pressured_speech_present: 'Talks very fast, talks over others, or is hard to interrupt because speech is coming out so quickly.',
+      grandiose_statements_present: 'Makes unrealistic or exaggerated statements about self, abilities, plans, or power that are outside usual presentation.',
+      distress_impacts_participation: 'Emotional distress makes it harder to join, stay, or finish activities.',
+      sleep: 'Includes hours slept, falling asleep, waking overnight, sleep disturbance, or bedtime difficulty.',
+      appetite: 'Includes eating less, eating more, refusing meals, asking for extra food, or noticeable appetite shifts.',
+      medication_taken: 'Includes medication changes, missed meds, new meds, stopped meds, or PRN medication details.',
+      prn_used: 'Includes when a PRN was given and what it was used for during the shift.',
+      energy_level: 'Includes tiredness, low energy, sluggishness, or unusual fatigue during the day.',
+      pain_discomfort: 'Appears inside the Illness Symptoms / Discomfort panel and includes body pain, headache, stomach discomfort, shakiness, or other physical discomfort.',
+      illness_symptoms: 'Appears inside the Illness Symptoms / Discomfort panel and includes temperature, congestion, cough, runny nose, stomach upset, rash, pain, or other signs of illness or discomfort.',
+      menstrual_tracking: 'Tracks menstrual-cycle symptoms such as bleeding, spotting, cramps, bloating, fatigue, or mood changes when they are relevant that day.',
+      community_outing: 'Includes going to a store, park, restaurant, library, walk, errand, or other outing in the community.',
+      social_interaction: 'Includes greeting people, answering questions, small talk, asking for help, or respectful interaction in the community.',
+      transportation: 'Includes riding in the car, public transit practice, loading into the vehicle, seatbelt routine, or travel support.',
+      safety_in_community: 'Includes staying with the group, following safety directions, using safe body, or awareness in public places.',
+      recreation_participation: 'Includes recreation center activities, playground time, group games, exercise, or leisure outings.',
+      hygiene: 'Includes brushing teeth, washing face, showering, combing hair, clipping nails, haircuts, toileting routines, or related hygiene tasks.',
+      dressing: 'Includes choosing clothes, dressing, shoes, buttons, zippers, and getting ready routines.',
+      food_preparation: 'Participates in preparing a meal, snack, or drink.',
+      clean_up: 'Includes bringing dishes to the sink, loading or unloading the dishwasher, putting dishes away, wiping the table, putting toys away, clearing materials, or cleaning up after activities.',
+      laundry: 'Includes starting the washer, moving clothes to the dryer, folding laundry, putting laundry away, or sorting clothes.',
+      toileting: 'Includes using the bathroom, hygiene after toileting, changing clothes if needed, or toileting routine steps.',
+      following_routine: 'Includes following the expected sequence of the day, moving through routines, and completing usual steps with support as needed.',
+      attended_work_program: 'Includes showing up for work/program time, joining the task area, and staying present for vocational activities.',
+      task_completion: 'Includes starting assigned work, finishing steps, completing jobs, or following through on expected tasks.',
+      prompting_needed: 'Includes how much staff support was needed to start, stay with, or finish vocational tasks.',
+      workplace_behavior: 'Includes using expected behavior during work time, staying respectful, safe, and on-task in the work setting.',
+      independence: 'Includes doing work tasks on their own, with fewer prompts, or showing more self-direction during vocational activities.',
+      requests_needs: 'Clearly asks for wants or needs instead of relying on caregiver guessing.',
+      uses_communication_method: 'Uses their communication system in a functional way.',
+      responds_to_questions: 'Answers or responds when asked a question.',
+      initiates_communication: 'Starts communication without waiting for someone else first.',
+      makes_choices: 'Chooses between options when given the chance.',
+      expresses_emotions: 'Communicates feelings in a way others can understand.',
+      engages_1to1: 'Participates appropriately in a one-to-one interaction.',
+      responds_to_peer: 'Responds when a peer talks, gestures, or engages.',
+      initiates_interaction: 'Starts an interaction with another person.',
+      takes_turns: 'Waits for and takes a turn during an activity or conversation.',
+      shares_materials: 'Shares materials or space with support as needed.',
+      maintains_interaction: 'Stays in the interaction for more than a brief exchange.',
+      participates_small_group: 'Joins a small group activity appropriately.',
+      participates_group: 'Participates in a larger group activity appropriately.',
+      uses_coping_strategies: 'Uses regulation tools when frustrated or overwhelmed.',
+      recovers_from_frustration: 'Returns to baseline after frustration.',
+      tolerates_nonpreferred: 'Participates in a non-preferred task with support as needed.',
+      maintains_safe_behavior: 'Keeps body and behavior safe during activities.',
+      eating: 'Participates in eating or meal routines.',
+      cleanup: 'Helps clean up after activities or meals.',
+      follows_routine: 'Follows the expected daily routine.',
+      uses_materials: 'Uses materials appropriately for the task.',
+      attends_to_task: 'Stays oriented to the task.',
+      starts_task: 'Begins the task within a reasonable time.',
+      completes_task: 'Finishes the task or expected portion of it.',
+      follows_directions: 'Follows caregiver or teacher directions.',
+      transitions_between_tasks: 'Moves from one task to the next with support as needed.',
+      stays_on_task: 'Remains engaged without frequent drifting away.',
+      participates_community: 'Participates appropriately in community-based learning or outings.',
+      engages_vocational: 'Participates in work or pre-vocational activities.',
+      follows_expectations: 'Follows the expectations of the setting.',
+      interacts_appropriately: 'Uses appropriate behavior during interactions.',
+      completes_role: 'Completes the expected role or responsibility.',
+      transitions_activities: 'Transitions between activities with support as needed',
+    };
+    const DEFAULT_ITEM_TRACKING_OPTIONS = {
+      identifies_feelings: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      tolerates_frustration: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      uses_coping_strategy: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      accepts_redirection: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      requests_break: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      recovers_after_distress: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      maintains_safe_body: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      maintains_safe_space: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      reduces_aggression: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      reduces_self_injury: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      reduces_property_disruption: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      responds_to_safety_support: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      tolerates_waiting: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      tolerates_denial: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      tolerates_change: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      tolerates_nonpreferred_tasks: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      accepts_limits: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      transitions_with_support: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      responds_to_staff_direction: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      responds_to_peer_interaction: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      maintains_group_expectations: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      reduces_verbal_outbursts: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      uses_repair_after_conflict: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      returns_to_activity: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      behavior_prn_used: ['PRN used today?', 'When used: AM / Afternoon / Evening / Night', 'Reason / target behavior', 'Medication or support note'],
+      anxiety_signs_present: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Intensity', 'Notes'],
+      withdrawal_present: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Intensity', 'Notes'],
+      perseveration_present: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Intensity', 'Notes'],
+      compulsive_checking_repeating: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Intensity', 'Notes'],
+      low_mood_indicators: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Intensity', 'Notes'],
+      elevated_mood_indicators: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Intensity', 'Notes'],
+      pressured_speech_present: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Intensity', 'Notes'],
+      grandiose_statements_present: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Intensity', 'Notes'],
+      distress_impacts_participation: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Intensity', 'Notes'],
+      sleep: ['Hours of sleep', 'Time fell asleep', 'Difficulty falling asleep', 'Woke during the night', 'PRN used for sleep disturbance'],
+      appetite: ['Change in appetite?', 'Appetite shift', 'Notes'],
+      medication_taken: ['Medication change?', 'Change type', 'Time / window', 'Medication name', 'Dose / change details', 'Notes'],
+      prn_used: ['PRN used for sleep / pain / illness or other configured reason', 'Time / notes when relevant'],
+      energy_level: ['Appears tired?', 'Notes'],
+      pain_discomfort: ['Uses the same Illness Symptoms / Discomfort panel', 'Symptoms / concerns checklist', 'PRN used for symptoms / discomfort', 'Notes'],
+      illness_symptoms: ['Symptoms or discomfort today?', 'Temperature if taken', 'How measured', 'Symptoms / concerns checklist', 'PRN used for symptoms / discomfort', 'Notes'],
+      menstrual_tracking: ['Menstrual symptoms today?', 'Symptoms such as bleeding, spotting, cramps, bloating, fatigue, or mood changes', 'Notes'],
+      hygiene: ['Brushed teeth', 'Flossed teeth', 'Washed face', 'Showered', 'Toileting routine', 'Combed hair', 'Clipped nails', 'Got a haircut'],
+      dressing: ['Chose clothes', 'Dressed self', 'Zipped / Buttoned', 'Tied shoes', 'Wore hat / sunglasses / jacket'],
+      food_preparation: ['Prepared snack', 'Prepared drink', 'Made sandwich', 'Helped cook', 'Used microwave', 'Helped bake'],
+      clean_up: ['Wiped table', 'Brought dishes to sink', 'Loaded dishwasher', 'Unloaded dishwasher', 'Put dishes away', 'Put toys or materials away', 'Swept / vacuumed', 'Cleaned up after activity'],
+      laundry: ['Sorted laundry', 'Started washer', 'Moved clothes to dryer', 'Folded laundry', 'Put laundry away', 'Laundry assist'],
+      toileting: ['BM / toileting routine', 'Hygiene after toileting', 'Clothing change if needed', 'Notes'],
+      following_routine: ['Followed usual routine steps', 'Completed expected transitions', 'Prompting / independence', 'Notes'],
+      community_outing: ['Engaged in a community-at-large activity?', 'Time spent', 'Prompting level', 'Community activity type', 'Community activity note'],
+      social_interaction: ['Engaged with a community member appropriately?', 'Interaction type', 'Prompting level', 'Interaction note'],
+      transportation: ['Transportation-related participation can be noted in community activity type and notes'],
+      safety_in_community: ['Community participation', 'Interaction support', 'Community notes for safety / awareness'],
+      recreation_participation: ['Community activity type examples like park, recreation center, sports event, class, walk / stroll', 'Time spent', 'Prompting', 'Notes'],
+      attended_work_program: ['Participated in vocational activity?', 'Time in vocational activity', 'Prompting level', 'Vocational notes'],
+      task_completion: ['Participated in vocational activity?', 'Time in vocational activity', 'Prompting level', 'Vocational notes'],
+      prompting_needed: ['Participated in vocational activity?', 'Time in vocational activity', 'Prompting level', 'Vocational notes'],
+      workplace_behavior: ['Participated in vocational activity?', 'Time in vocational activity', 'Prompting level', 'Vocational notes'],
+      independence: ['Participated in vocational activity?', 'Time in vocational activity', 'Prompting level', 'Vocational notes'],
+      requests_needs: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      uses_communication_method: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      responds_to_questions: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      initiates_communication: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      makes_choices: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      expresses_emotions: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      engages_1to1: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      responds_to_peer: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      initiates_interaction: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      takes_turns: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      shares_materials: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      maintains_interaction: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      participates_small_group: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      participates_group: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      uses_coping_strategies: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      recovers_from_frustration: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      tolerates_nonpreferred: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      maintains_safe_behavior: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      eating: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      cleanup: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      follows_routine: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      uses_materials: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      attends_to_task: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      starts_task: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      completes_task: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      follows_directions: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      transitions_between_tasks: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      stays_on_task: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      participates_community: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      engages_vocational: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      follows_expectations: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      interacts_appropriately: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      completes_role: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
+      transitions_activities: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
     };
 
     const setStatus = (text, type = '') => {
       setupStatusEl.textContent = text || '';
       setupStatusEl.className = `status${type ? ` ${type}` : ''}`;
     };
+
+    function getItemDescription(itemKey, itemLabel) {
+      const custom = String(state.itemDescriptions?.[itemKey] || '').trim();
+      if (custom) return custom;
+      return DEFAULT_ITEM_DESCRIPTIONS[itemKey] || `Define what caregivers should count for ${itemLabel}.`;
+    }
+
+    function getItemTrackingOptions(itemKey) {
+      return Array.isArray(DEFAULT_ITEM_TRACKING_OPTIONS[itemKey]) ? DEFAULT_ITEM_TRACKING_OPTIONS[itemKey] : [];
+    }
+
+    function syncItemDetail(input, detailWrap) {
+      if (!input || !detailWrap) return;
+      detailWrap.classList.toggle('is-hidden', !input.checked);
+    }
+
+    function buildItemDetail(input, itemKey, itemLabel) {
+      const detail = document.createElement('div');
+      detail.className = 'item-detail is-hidden';
+      detail.dataset.itemDetail = itemKey;
+
+      const copy = document.createElement('div');
+      copy.className = 'item-detail-copy';
+      copy.dataset.itemDetailCopy = itemKey;
+      copy.textContent = getItemDescription(itemKey, itemLabel);
+
+      const optionLabel = document.createElement('div');
+      optionLabel.className = 'item-detail-label';
+      optionLabel.textContent = 'Caregiver will be able to track:';
+
+      const optionList = document.createElement('ul');
+      optionList.className = 'item-detail-list';
+      getItemTrackingOptions(itemKey).forEach((entry) => {
+        const li = document.createElement('li');
+        li.textContent = entry;
+        optionList.appendChild(li);
+      });
+
+      const actions = document.createElement('div');
+      actions.className = 'item-detail-actions';
+
+      const editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'mini-btn';
+      editBtn.textContent = 'Edit definition';
+
+      const editor = document.createElement('div');
+      editor.className = 'item-detail is-hidden';
+      editor.style.marginTop = '0';
+      editor.style.background = '#f8fbff';
+
+      const textarea = document.createElement('textarea');
+      textarea.value = getItemDescription(itemKey, itemLabel);
+      textarea.placeholder = `Describe exactly what caregivers should count for ${itemLabel}`;
+
+      const editorActions = document.createElement('div');
+      editorActions.className = 'item-detail-actions';
+
+      const saveBtn = document.createElement('button');
+      saveBtn.type = 'button';
+      saveBtn.className = 'mini-btn primary';
+      saveBtn.textContent = 'Update definition';
+
+      const cancelBtn = document.createElement('button');
+      cancelBtn.type = 'button';
+      cancelBtn.className = 'mini-btn';
+      cancelBtn.textContent = 'Cancel';
+
+      editBtn.addEventListener('click', () => {
+        textarea.value = getItemDescription(itemKey, itemLabel);
+        editor.classList.toggle('is-hidden');
+      });
+      saveBtn.addEventListener('click', () => {
+        const next = String(textarea.value || '').trim();
+        if (next) state.itemDescriptions[itemKey] = next;
+        else delete state.itemDescriptions[itemKey];
+        copy.textContent = getItemDescription(itemKey, itemLabel);
+        editor.classList.add('is-hidden');
+      });
+      cancelBtn.addEventListener('click', () => {
+        textarea.value = getItemDescription(itemKey, itemLabel);
+        editor.classList.add('is-hidden');
+      });
+
+      editorActions.appendChild(saveBtn);
+      editorActions.appendChild(cancelBtn);
+      editor.appendChild(textarea);
+      editor.appendChild(editorActions);
+      actions.appendChild(editBtn);
+      detail.appendChild(copy);
+      if (optionList.childElementCount) {
+        detail.appendChild(optionLabel);
+        detail.appendChild(optionList);
+      }
+      detail.appendChild(actions);
+      detail.appendChild(editor);
+
+      input.addEventListener('change', () => syncItemDetail(input, detail));
+      syncItemDetail(input, detail);
+      return detail;
+    }
 
     function getCompositeKey(category, itemKey) {
       return `${category}::${itemKey}`;
@@ -652,6 +1014,7 @@
             label.appendChild(input);
             label.appendChild(text);
             li.appendChild(label);
+            li.appendChild(buildItemDetail(input, itemKey, itemLabel));
             itemList.appendChild(li);
 
             input.addEventListener('change', () => {
@@ -700,6 +1063,7 @@
             label.appendChild(input);
             label.appendChild(text);
             behaviorList.appendChild(label);
+            behaviorList.appendChild(buildItemDetail(input, behavior.key, behavior.label));
 
             input.addEventListener('change', () => {
               syncCategoryState(category.key);
@@ -718,7 +1082,10 @@
           if (!categoryInput.checked) {
             getCategoryItems(category).forEach(({ key: itemKey }) => {
               const itemInput = state.itemEls.get(getCompositeKey(category.key, itemKey));
-              if (itemInput) itemInput.checked = false;
+              if (itemInput) {
+                itemInput.checked = false;
+                syncItemDetail(itemInput, itemInput.closest('.item-label')?.nextElementSibling);
+              }
             });
           }
           syncCategoryState(category.key);
@@ -757,7 +1124,9 @@
         return Object.fromEntries(
           Object.entries(value).map(([categoryKey, items]) => [
             categoryKey,
-            Array.isArray(items)
+            categoryKey.startsWith('__')
+              ? items
+              : Array.isArray(items)
               ? items.map((entry) => String(entry || '').trim()).filter(Boolean)
               : [],
           ])
@@ -771,6 +1140,15 @@
         }
       }
       return {};
+    }
+
+    function normalizeItemDescriptions(value) {
+      if (!value || typeof value !== 'object') return {};
+      return Object.fromEntries(
+        Object.entries(value)
+          .map(([key, text]) => [String(key || '').trim(), String(text || '').trim()])
+          .filter(([key, text]) => key && text)
+      );
     }
 
     function buildSelectedCategories() {
@@ -789,6 +1167,9 @@
           selectedItems[category.key] = items;
         }
       });
+      if (Object.keys(state.itemDescriptions || {}).length) {
+        selectedItems.__item_descriptions__ = state.itemDescriptions;
+      }
       selectedItems.__custom_mode__ = true;
       return selectedItems;
     }
@@ -835,6 +1216,7 @@
       state.configRowId = config?.id || null;
       const selectedCategories = new Set(normalizeCategoryArray(config?.selected_categories));
       const selectedItems = normalizeSelectedItems(config?.selected_items);
+      state.itemDescriptions = normalizeItemDescriptions(selectedItems.__item_descriptions__);
 
       CATEGORY_DEFS.forEach((category) => {
         getCategoryItems(category).forEach(({ key: itemKey }) => {
@@ -844,6 +1226,7 @@
               !!selectedCategories.has(category.key) &&
               Array.isArray(selectedItems[category.key]) &&
               selectedItems[category.key].includes(itemKey);
+            syncItemDetail(input, input.closest('.item-label')?.nextElementSibling);
           }
         });
         syncCategoryState(category.key);
@@ -893,7 +1276,10 @@
         }
 
         await loadConfig();
-        setStatus('Caregiver setup saved.', 'success');
+        setStatus('Caregiver setup saved. Opening caregiver check-in preview…', 'success');
+        setTimeout(() => {
+          window.location.href = '/caregiver-checkin.html';
+        }, 450);
       } catch (error) {
         console.error('[cg-setup] save failed', error);
         setStatus(error?.message || 'Could not save caregiver setup.', 'error');
@@ -905,6 +1291,9 @@
 
     renderCategories();
     saveBtn.addEventListener('click', saveConfig);
+    previewCheckinBtn?.addEventListener('click', () => {
+      setStatus('Opening caregiver check-in preview…', 'success');
+    });
 
     loadConfig().catch((error) => {
       console.error('[cg-setup] load failed', error);

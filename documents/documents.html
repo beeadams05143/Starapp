@@ -5,13 +5,29 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Documents</title>
   <style>
-    :root{ --ink:#1f2937; --accent:#f59e0b; --paper:#fffdfa; --rule:#e5e7eb; --punch:#d1d5db; }
+    :root{
+      --ink:#24314a;
+      --accent:#d9a441;
+      --paper:#fffdfa;
+      --rule:#e7dcc5;
+      --punch:#d1d5db;
+      --sans:"Avenir Next","Segoe UI","Helvetica Neue",Arial,sans-serif;
+      --serif:Georgia,"Iowan Old Style","Palatino Linotype","Book Antiqua",serif;
+    }
     *{box-sizing:border-box}
-    body{margin:0; padding:24px; font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial; background:#fafaf9; color:var(--ink);}
+    body{
+      margin:0;
+      padding:24px;
+      font-family:var(--sans);
+      background:
+        radial-gradient(circle at top, rgba(242, 221, 176, .34), transparent 32%),
+        linear-gradient(180deg, #fffefb 0%, #fbf5e8 100%);
+      color:var(--ink);
+    }
     .page{max-width:1200px; margin:0 auto;}
 
     /* Notebook */
-    .notebook{position:relative; border-radius:18px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,.08); display:grid; grid-template-columns:1fr 110px; background:var(--paper)}
+    .notebook{position:relative; border-radius:18px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,.08); display:block; background:var(--paper)}
     .paper{
       padding:24px 24px 28px 42px; position:relative;
       background:
@@ -20,9 +36,16 @@
     }
     .paper:before{content:""; position:absolute; left:14px; top:24px; bottom:24px; width:8px;
       background:radial-gradient(var(--punch) 60%, transparent 62%) 0 0/100% 48px repeat-y; border-radius:8px;}
-    .rail{display:flex; align-items:center; justify-content:center; background:linear-gradient(180deg,#fff,#f8fafc); border-left:1px solid #e5e7eb}
-    .pencil{width:56px; height:320px; filter:drop-shadow(0 8px 18px rgba(0,0,0,.15))}
-    h1{margin:0 0 12px}
+    .rail{display:none}
+    .pencil{display:none}
+    h1{
+      margin:0 0 12px;
+      font-family:var(--serif);
+      font-size:clamp(2.2rem, 4vw, 3.2rem);
+      font-weight:700;
+      color:#73441b;
+      letter-spacing:.01em;
+    }
     label{display:block; font-weight:600; margin:6px 0 6px}
     input[type="text"], input[type="datetime-local"], select, textarea{
       width:100%; padding:10px 12px; border:1px solid #e5e7eb; border-radius:10px; font-size:16px; background:#fff; outline:none;
@@ -32,13 +55,20 @@
     }
     .grid2{display:grid; gap:12px; grid-template-columns:1fr 1fr}
     .divider{height:1px; background:#f1f5f9; margin:16px 0}
-    .btn{appearance:none; border:1px solid #e5e7eb; background:#111; color:#fff; padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:600}
+    .btn{appearance:none; border:1px solid #e2d5ba; background:#8a6b44; color:#fff; padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:600}
     .btn.secondary{background:#fff; color:#111}
     .muted{color:#6b7280; font-size:13px}
     .card{border:1px solid #e5e7eb; border-radius:12px; padding:12px; margin-top:10px; background:#fff}
     .row{display:flex; gap:8px; align-items:center; justify-content:space-between}
     .doc-header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-top:22px}
-    .doc-header h2{margin:0}
+    .doc-header h2{
+      margin:0;
+      font-family:var(--serif);
+      font-size:clamp(1.8rem, 3vw, 2.4rem);
+      font-weight:700;
+      color:#73441b;
+    }
+    .doc-page-note{margin:6px 0 0;color:#6b7280;font-size:14px;font-style:italic}
     .doc-attachment-preview{
       margin-top:10px;
       border:1px solid #e5e7eb;
@@ -128,48 +158,33 @@
     /* Hide Group switcher (navbar) on docs pages */
     #group-switcher, label[for="group-switcher"], #groupSwitcherStatus { display:none !important; }
 
-    .dictation-toolbar{
+    .isa-only{display:none}
+    .isa-only.is-visible{display:block}
+    .isa-links.is-visible,
+    .btn.isa-only.is-visible{display:inline-flex}
+    .isa-helper{
+      margin:8px 0 0;
+      color:#6b7280;
+      font-size:13px;
+      line-height:1.45;
+      font-style:italic;
+    }
+    .isa-links{
       display:flex;
       flex-wrap:wrap;
-      gap:6px;
+      gap:10px;
+      margin-top:12px;
+    }
+    .upload-chooser{
+      display:flex;
       align-items:center;
-      margin:6px 0 8px;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:8px;
     }
-    .dictation-toolbar .label{
-      font-size:12px;
+    .upload-file-name{
       color:#6b7280;
-      margin-right:4px;
-      font-weight:600;
-    }
-    .dictation-toolbar .chip-btn,
-    .dictation-toolbar .mic-btn{
-      appearance:none;
-      border:1px solid #e5e7eb;
-      background:#fff;
-      color:#111;
-      padding:6px 10px;
-      border-radius:999px;
-      cursor:pointer;
-      font-weight:600;
-      font-size:13px;
-    }
-    .dictation-toolbar .mic-btn{
-      background:#111;
-      color:#fff;
-      border-color:#111;
-    }
-    .dictation-toolbar .mic-btn.is-active{
-      background:#ef4444;
-      border-color:#ef4444;
-    }
-    .dictation-toolbar .status{
-      font-size:12px;
-      color:#6b7280;
-      margin-left:6px;
-    }
-    .dictation-toolbar .status.error{
-      color:#b91c1c;
-      font-weight:600;
+      font-size:14px;
     }
   </style>
 </head>
@@ -183,7 +198,7 @@
     <a href="/documents/documents.html?cat=Medical" data-cat="Medical" title="Medical">🩺</a>
     <a href="/documents/documents.html?cat=HR" data-cat="HR" title="HR">🏢</a>
     <a href="/documents/documents.html?cat=Caregiving" data-cat="Caregiving" title="Caregiving">🧩</a>
-    <a href="/documents/documents.html?cat=ISA" data-cat="ISA" title="ISA / IEP">📚</a>
+    <a href="/documents/documents.html?cat=ISA" data-cat="ISA" title="ISA/IEP">📚</a>
     <a href="/documents/documents.html?cat=Year%20End%20Paperwork" data-cat="Year End Paperwork" title="Year End">📦</a>
     <a href="/documents/documents.html?cat=Guardianship" data-cat="Guardianship" title="Guardianship">🛡️</a>
     <a href="/documents/minutes-form.html" data-doc-page="minutes" title="Meeting Minutes">📝</a>
@@ -195,6 +210,7 @@
       <div class="notebook">
         <div class="paper">
           <h1 id="formHeading">Add Document — <span id="catLabel">Finance</span></h1>
+          <p id="formSubheading" class="doc-page-note"></p>
           <p id="editNotice" class="muted" style="display:none;margin:6px 0 0;">
             Editing this document. Uploading a new file will replace the current attachment.
           </p>
@@ -233,8 +249,10 @@
             <div class="divider"></div>
 
             <label for="docDescription">Description / Notes</label>
-            <div class="dictation-toolbar" data-dictation-for="docDescription"></div>
             <textarea id="docDescription" placeholder="Short description or notes…"></textarea>
+            <div id="isaMeetingLinks" class="isa-links">
+              <a class="btn secondary" href="/documents/minutes-form.html">Add Meeting Minutes</a>
+            </div>
 
             <!-- Medical-only extras (shows when the Medical tab is active) -->
             <div id="medicalExtras" style="display:none">
@@ -253,39 +271,32 @@
               </div>
 
               <label for="medicalNotes" style="margin-top:8px">Appointment Notes / Instructions</label>
-              <div class="dictation-toolbar" data-dictation-for="medicalNotes"></div>
               <textarea id="medicalNotes" placeholder="e.g., No allergy medication two weeks prior; bring ID & insurance card…"></textarea>
             </div>
 
             <label for="docFile" class="section" style="margin-top:8px">Attach File (optional)</label>
-            <input id="docFile" type="file" accept=".pdf,.jpg,.jpeg" />
+            <div class="upload-chooser">
+              <input id="docFile" type="file" accept=".pdf,.jpg,.jpeg" hidden />
+              <span id="docFileName" class="upload-file-name">No file chosen yet.</span>
+            </div>
             <div class="muted">Upload JPG or PDF only. Files are private; the app uses time-limited links for viewing.</div>
 
             <div style="margin-top:14px">
               <button class="btn" type="submit" id="docSubmitBtn">Save Document</button>
-              <button class="btn secondary" type="reset" id="docResetBtn">Clear</button>
               <button class="btn secondary" type="button" id="docCancelEdit" style="display:none">Cancel Edit</button>
             </div>
           </form>
         </div>
 
-        <div class="rail" aria-hidden="true">
-          <!-- Pencil -->
-          <svg class="pencil" viewBox="0 0 80 460" xmlns="http://www.w3.org/2000/svg">
-            <defs><linearGradient id="wood" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#f5deb3"/><stop offset="1" stop-color="#e9c999"/></linearGradient></defs>
-            <rect x="10" y="0" width="60" height="70" rx="8" fill="#fca5a5"/>
-            <rect x="10" y="68" width="60" height="10" fill="#9ca3af"/>
-            <rect x="10" y="78" width="60" height="310" fill="#f59e0b"/>
-            <rect x="18" y="78" width="44" height="310" fill="#fbbf24" opacity=".6"/>
-            <polygon points="10,388 70,388 40,458" fill="url(#wood)"/>
-            <polygon points="26,420 54,420 40,458" fill="#111"/>
-          </svg>
-        </div>
       </div>
 
       <div class="doc-header">
-        <h2><span id="catListLabel">Finance</span> Documents</h2>
+        <div>
+          <h2><span id="catListLabel">Finance Documents</span></h2>
+          <p id="docListSubheading" class="doc-page-note"></p>
+        </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn secondary" type="button" id="docsMeetingMinutesBtn">View Meeting Minutes</button>
           <button class="btn secondary" type="button" id="docsNotesBtn">View Notes</button>
           <button class="btn secondary" type="button" id="docsPrintBtn">View / Print</button>
           <button class="btn secondary" type="button" id="docsSharePinBtn">Set Share PIN</button>
@@ -314,167 +325,6 @@
         link.setAttribute('aria-current', 'page');
       }
     });
-  })();
-</script>
-<script>
-  (function(){
-    const RecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const supportsSpeech = !!RecognitionCtor;
-    const speakerLabels = ['Doctor', 'Mom', 'Dad', 'Caregiver', 'Case Manager', 'Other'];
-    let activeSession = null;
-
-    const insertAtCursor = (el, text) => {
-      const start = el.selectionStart ?? el.value.length;
-      const end = el.selectionEnd ?? el.value.length;
-      const before = el.value.slice(0, start);
-      const after = el.value.slice(end);
-      el.value = `${before}${text}${after}`;
-      const nextPos = start + text.length;
-      el.selectionStart = el.selectionEnd = nextPos;
-      el.focus();
-    };
-
-    const addSpeakerLabel = (el, label) => {
-      const prefix = el.value && !el.value.endsWith('\n') ? '\n' : '';
-      insertAtCursor(el, `${prefix}${label}: `);
-    };
-
-    const stopActive = () => {
-      if (!activeSession) return;
-      activeSession.isRunning = false;
-      if (activeSession.recognition) {
-        try { activeSession.recognition.stop(); } catch (err) {}
-      }
-      if (activeSession.micBtn) {
-        activeSession.micBtn.classList.remove('is-active');
-        activeSession.micBtn.textContent = 'Start dictation';
-      }
-      if (activeSession.statusEl) {
-        activeSession.statusEl.textContent = '';
-      }
-      activeSession = null;
-    };
-
-    const startDictation = (el, micBtn, statusEl) => {
-      if (!supportsSpeech) {
-        statusEl.textContent = 'Dictation not supported in this browser.';
-        statusEl.classList.add('error');
-        return;
-      }
-
-      if (activeSession && activeSession.target !== el) {
-        stopActive();
-      }
-
-      const recognition = new RecognitionCtor();
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = 'en-US';
-
-      const session = { recognition, target: el, micBtn, statusEl, isRunning: true };
-      activeSession = session;
-
-      micBtn.classList.add('is-active');
-      micBtn.textContent = 'Stop dictation';
-      statusEl.textContent = 'Listening…';
-      statusEl.classList.remove('error');
-
-      recognition.onresult = (event) => {
-        let transcript = '';
-        for (let i = event.resultIndex; i < event.results.length; i += 1) {
-          const result = event.results[i];
-          if (result.isFinal) {
-            transcript += result[0].transcript;
-          }
-        }
-        if (transcript.trim()) {
-          const spacer = el.value && !el.value.endsWith(' ') ? ' ' : '';
-          insertAtCursor(el, `${spacer}${transcript.trim()}`);
-        }
-      };
-
-      recognition.onerror = () => {
-        statusEl.textContent = 'Dictation stopped. Tap to try again.';
-        statusEl.classList.add('error');
-        micBtn.classList.remove('is-active');
-        micBtn.textContent = 'Start dictation';
-        session.isRunning = false;
-      };
-
-      recognition.onend = () => {
-        if (session.isRunning) {
-          try { recognition.start(); } catch (err) {}
-        } else {
-          statusEl.textContent = '';
-        }
-      };
-
-      try {
-        recognition.start();
-      } catch (err) {
-        statusEl.textContent = 'Dictation not available. Tap to retry.';
-        statusEl.classList.add('error');
-        micBtn.classList.remove('is-active');
-        micBtn.textContent = 'Start dictation';
-        session.isRunning = false;
-      }
-    };
-
-    document.querySelectorAll('.dictation-toolbar[data-dictation-for]').forEach((toolbar) => {
-      const targetId = toolbar.dataset.dictationFor;
-      const target = document.getElementById(targetId);
-      if (!target) return;
-
-      toolbar.innerHTML = '';
-      const label = document.createElement('span');
-      label.className = 'label';
-      label.textContent = 'Talk to text:';
-      toolbar.appendChild(label);
-
-      const micBtn = document.createElement('button');
-      micBtn.type = 'button';
-      micBtn.className = 'mic-btn';
-      micBtn.textContent = 'Start dictation';
-      toolbar.appendChild(micBtn);
-
-      const status = document.createElement('span');
-      status.className = 'status';
-      toolbar.appendChild(status);
-
-      speakerLabels.forEach((labelText) => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'chip-btn';
-        btn.textContent = labelText;
-        btn.addEventListener('click', () => {
-          if (labelText === 'Other') {
-            const name = window.prompt('Speaker name?');
-            if (name && name.trim()) {
-              addSpeakerLabel(target, name.trim());
-            }
-            return;
-          }
-          addSpeakerLabel(target, labelText);
-        });
-        toolbar.appendChild(btn);
-      });
-
-      if (!supportsSpeech) {
-        micBtn.disabled = true;
-        status.textContent = 'Dictation not supported on this browser (iOS Safari often blocks it).';
-        status.classList.add('error');
-      }
-
-      micBtn.addEventListener('click', () => {
-        if (activeSession && activeSession.target === target) {
-          stopActive();
-          return;
-        }
-        startDictation(target, micBtn, status);
-      });
-    });
-
-    window.addEventListener('beforeunload', stopActive);
   })();
 </script>
 </body>

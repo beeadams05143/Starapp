@@ -1100,16 +1100,64 @@ const catListLabel = document.getElementById("catListLabel");
 const medicalExtrasEl = document.getElementById("medicalExtras");
 const formHeading = document.getElementById("formHeading");
 const docSubmitBtn = document.getElementById("docSubmitBtn");
-const docResetBtn = document.getElementById("docResetBtn");
 const docCancelEdit = document.getElementById("docCancelEdit");
 const editNotice = document.getElementById("editNotice");
+const docFileInput = document.getElementById("docFile");
+const docFileName = document.getElementById("docFileName");
 let editingDocId = null;
+const CATEGORY_DISPLAY = {
+  ISA: {
+    form: "ISA/IEP",
+    list: "ISA/IEP Documents Saved",
+    subtitle: "Store the actual ISA paperwork here and use Meeting Minutes for the full discussion record.",
+    listSubtitle: "Saved here: example ISA review, completed ISA, and meeting minutes saved to ISA/IEP.",
+    emptyText: "No documents yet in this category. Example: ISA review or completed ISA.",
+    titlePlaceholder: "e.g., Current ISA / Six Month Review / Annual Review",
+    descriptionPlaceholder: "e.g., Current ISA, annual review, six month review, eligibility update, or service change",
+    tagsPlaceholder: "ISA, school, review",
+    submitLabel: "Add ISA/IEP",
+  },
+};
+
+function submitLabelForCategory(category = activeCategory) {
+  const config = CATEGORY_DISPLAY[category] || null;
+  if (config?.submitLabel) return config.submitLabel;
+  return `Add ${category} Document`;
+}
+
+function updateSelectedFileName() {
+  if (!docFileName || !docFileInput) return;
+  const file = docFileInput.files?.[0];
+  docFileName.textContent = file?.name || "No file chosen yet.";
+}
 
 function updateFormHeading() {
+  const config = CATEGORY_DISPLAY[activeCategory] || null;
+  const categoryLabel = config?.form || activeCategory;
   if (formHeading?.firstChild) {
-    formHeading.firstChild.nodeValue = editingDocId ? "Edit Document — " : "Add Document — ";
+    formHeading.firstChild.nodeValue = editingDocId
+      ? (config ? "Edit " : "Edit Document — ")
+      : (config ? "Add " : "Add Document — ");
   }
-  if (catLabel) catLabel.textContent = activeCategory;
+  if (catLabel) catLabel.textContent = categoryLabel;
+  if (catListLabel) catListLabel.textContent = config?.list || `${activeCategory} Documents`;
+  const formSubheading = document.getElementById("formSubheading");
+  if (formSubheading) formSubheading.textContent = config?.subtitle || "";
+  const docListSubheading = document.getElementById("docListSubheading");
+  if (docListSubheading) docListSubheading.textContent = config?.listSubtitle || config?.subtitle || "";
+  const titleInput = document.getElementById("docTitle");
+  if (titleInput && !editingDocId) {
+    titleInput.placeholder = config?.titlePlaceholder || "e.g., Invoice 1032 / Guardianship Renewal";
+  }
+  const descriptionInput = document.getElementById("docDescription");
+  if (descriptionInput && !editingDocId) {
+    descriptionInput.placeholder = `Short description or notes...\n\nIf you click Add Meeting Minutes, you will be directed to the Meeting Minutes page where the full meeting can be documented or transcribed, then attached back to this ${categoryLabel} page.`;
+  }
+  const tagsInput = document.getElementById("docTags");
+  if (tagsInput && !editingDocId) {
+    tagsInput.placeholder = config?.tagsPlaceholder || "medical, school, ISA";
+  }
+  if (docSubmitBtn) docSubmitBtn.textContent = editingDocId ? "Save Changes" : submitLabelForCategory(activeCategory);
 }
 
 function formatLocalInputValue(value) {
@@ -1148,12 +1196,18 @@ function enterEditMode(doc) {
   if (medNotes) medNotes.value = meta.medical_notes || "";
 
   if (docSubmitBtn) docSubmitBtn.textContent = "Save Changes";
-  if (docResetBtn) docResetBtn.style.display = "none";
   if (docCancelEdit) docCancelEdit.style.display = "inline-block";
   if (editNotice) editNotice.style.display = "block";
+  if (docFileName) {
+    docFileName.textContent = existingDocFileName(doc) || "Current file will stay unless you choose a new one.";
+  }
   updateFormHeading();
   updateExtrasVisibility();
   document.getElementById("doc-form-pretty")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function existingDocFileName(doc) {
+  return doc?.content_json?.file_name || doc?.content_json?.inline_file?.name || "Current file attached";
 }
 
 function exitEditMode({ keepForm = false } = {}) {
@@ -1162,9 +1216,9 @@ function exitEditMode({ keepForm = false } = {}) {
     const form = document.getElementById("doc-form-pretty");
     form?.reset();
     if (catInput) catInput.value = activeCategory;
+    updateSelectedFileName();
   }
-  if (docSubmitBtn) docSubmitBtn.textContent = "Save Document";
-  if (docResetBtn) docResetBtn.style.display = "inline-block";
+  if (docSubmitBtn) docSubmitBtn.textContent = submitLabelForCategory(activeCategory);
   if (docCancelEdit) docCancelEdit.style.display = "none";
   if (editNotice) editNotice.style.display = "none";
   updateFormHeading();
@@ -1183,6 +1237,11 @@ if (catListLabel) catListLabel.textContent = activeCategory;
 tabs.forEach(btn => btn.classList.toggle("active", btn.dataset.cat === activeCategory));
 updateExtrasVisibility();
 updateFormHeading();
+updateSelectedFileName();
+
+document.getElementById("docsMeetingMinutesBtn")?.addEventListener("click", () => {
+  window.location.href = `/documents/minutes-form.html?related=${encodeURIComponent(activeCategory)}`;
+});
 
 tabs.forEach(btn => {
   btn.addEventListener("click", async () => {
@@ -1208,6 +1267,28 @@ tabs.forEach(btn => {
 /* ------------ form submit ------------ */
 const prettyForm = document.getElementById("doc-form-pretty");
 if (prettyForm) {
+  docSubmitBtn?.addEventListener("click", (event) => {
+    if (editingDocId) return;
+    if (!docFileInput?.files?.length) {
+      event.preventDefault();
+      docFileInput?.click();
+    }
+  });
+
+  docFileInput?.addEventListener("change", () => {
+    updateSelectedFileName();
+    if (!editingDocId && docFileInput?.files?.length) {
+      const title = document.getElementById("docTitle").value.trim();
+      if (!title) {
+        alert("Please add a title first.");
+        docFileInput.value = "";
+        updateSelectedFileName();
+        return;
+      }
+      prettyForm.requestSubmit();
+    }
+  });
+
   prettyForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     try {
@@ -1358,6 +1439,7 @@ if (prettyForm) {
       alert("Saved!");
       prettyForm.reset();
       if (catInput) catInput.value = activeCategory; // keep tab label
+      updateSelectedFileName();
       updateFormHeading();
       await loadDocuments();
     } catch (err) {
@@ -1369,13 +1451,12 @@ if (prettyForm) {
 
 if (prettyForm) {
   prettyForm.addEventListener("reset", () => {
-    if (!editingDocId) {
-      setTimeout(() => {
-        if (catInput) catInput.value = activeCategory;
-        updateFormHeading();
-        updateExtrasVisibility();
-      }, 0);
-    }
+    setTimeout(() => {
+      if (!editingDocId && catInput) catInput.value = activeCategory;
+      updateSelectedFileName();
+      updateFormHeading();
+      updateExtrasVisibility();
+    }, 0);
   });
 }
 
@@ -1407,16 +1488,20 @@ export async function saveMinutesRich(payload = {}, attachment = {}) {
   await ensureDocsStore();
 
   const { storagePath, inlineFile } = normalizeAttachmentResult(attachment);
-  const category = payload.primary_category || payload.category || "Minutes";
+  const relatedCategories = Array.isArray(payload.related_categories)
+    ? payload.related_categories.map((item) => (item || "").toString().trim()).filter(Boolean)
+    : [];
+  const category = payload.primary_category || payload.category || relatedCategories[0] || "Minutes";
   const docDate = payload.datetime || payload.dateTime || null;
   const content_json = {
     primary_category: category,
+    related_categories: relatedCategories,
     document_date: docDate,
     minutes_payload: payload,
   };
   if (inlineFile) content_json.inline_file = inlineFile;
 
-  const tags = [category, "Minutes", payload.facilitator ? `Facilitator: ${payload.facilitator}` : null]
+  const tags = [category, ...relatedCategories, "Minutes", payload.facilitator ? `Facilitator: ${payload.facilitator}` : null]
     .filter(Boolean);
   const record = {
     title: payload.title || "Meeting Minutes",
@@ -1600,7 +1685,7 @@ async function renderDocuments(list, docs) {
   if (!filtered.length) {
     const empty = document.createElement("div");
     empty.className = "card";
-    empty.textContent = "No documents yet in this category.";
+    empty.textContent = CATEGORY_DISPLAY[activeCategory]?.emptyText || "No documents yet in this category.";
     list.appendChild(empty);
   }
 }

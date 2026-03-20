@@ -64,18 +64,45 @@
 `;
 
 
-  // ----- BOTTOM BAR (includes Emergency) -----
-  bottom.innerHTML = `
-    <nav class="tabbar" aria-label="Primary">
-      <div class="tabbar__inner">
-        <a href="/dashboard.html"class="tab"><span class="icon">🏠</span><span class="label">Home</span></a>
-     <a href="/calendar.html"class="tab"><span class="icon">📅</span><span class="label">Calendar</span></a>
-        <a href="/caregiver-report.html"class="tab"><span class="icon">📊</span><span class="label">Reports</span></a>
-        <a href="/documents/index.html"class="tab"><span class="icon">📂</span><span class="label">Docs</span></a>
-        <a href="/emergency-medical.html"class="tab"><span class="icon">🚑</span><span class="label">Emergency</span></a>
-      </div>
-    </nav>
-  `;
+  const MODE_KEY = 'star_menu_mode';
+  const getMenuMode = () => {
+    try {
+      const stored = localStorage.getItem(MODE_KEY);
+      return stored === 'individual' ? 'individual' : 'caregiver';
+    } catch {
+      return 'caregiver';
+    }
+  };
+
+  function renderBottomBar(){
+    const mode = getMenuMode();
+    const tabs = mode === 'individual'
+      ? [
+          { href: '/dashboard.html', icon: '🏠', label: 'Home' },
+          { href: '/calendar.html', icon: '📅', label: 'Calendar' },
+          { href: '/home.html', icon: '😊', label: 'Mood' },
+          { href: '/my-star-voice.html', icon: '🗣️', label: 'Voice' },
+          { href: '/emergency-medical.html', icon: '🚑', label: 'Emergency' },
+        ]
+      : [
+          { href: '/dashboard.html', icon: '🏠', label: 'Home' },
+          { href: '/calendar.html', icon: '📅', label: 'Calendar' },
+          { href: '/caregiver-report.html', icon: '📊', label: 'Reports' },
+          { href: '/documents/index.html', icon: '📂', label: 'Docs' },
+          { href: '/emergency-medical.html', icon: '🚑', label: 'Emergency' },
+        ];
+    bottom.innerHTML = `
+      <nav class="tabbar" aria-label="Primary">
+        <div class="tabbar__inner">
+          ${tabs.map((tab) => `<a href="${tab.href}" class="tab"><span class="icon">${tab.icon}</span><span class="label">${tab.label}</span></a>`).join('')}
+        </div>
+      </nav>
+    `;
+  }
+  renderBottomBar();
+  window.addEventListener('storage', (event) => {
+    if (event.key === MODE_KEY) renderBottomBar();
+  });
 
 
   // ----- build version footer -----

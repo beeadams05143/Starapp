@@ -5,13 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Onboarding - STAR</title>
   <style>
-    :root { color-scheme: light; }
+    :root {
+      color-scheme: light;
+      --font-sans:"Avenir Next","Segoe UI","Helvetica Neue",Arial,sans-serif;
+      --font-serif:"Iowan Old Style","Palatino Linotype","Book Antiqua",Georgia,serif;
+      --page-bg:
+        radial-gradient(circle at top center, rgba(251,230,194,0.78), transparent 34%),
+        linear-gradient(180deg, #fff8ea 0%, #f7ead0 100%);
+      --panel:#fffdf8;
+      --panel-border:#ead7ab;
+      --panel-shadow:0 18px 36px rgba(125,89,34,0.12);
+      --text:#243047;
+      --muted:#667188;
+      --navy:#20324f;
+    }
     body {
       margin: 0;
       min-height: 100vh;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-      background: linear-gradient(180deg, #f6f7fb 0%, #eef2ff 100%);
-      color: #111827;
+      font-family: var(--font-sans);
+      background: var(--page-bg);
+      color: var(--text);
       display: grid;
       place-items: center;
       padding: 24px 16px;
@@ -19,46 +32,49 @@
     }
     .shell {
       width: min(760px, 100%);
-      background: rgba(255, 255, 255, 0.96);
-      border-radius: 18px;
-      box-shadow: 0 20px 50px rgba(15, 23, 42, 0.12);
+      background: var(--panel);
+      border-radius: 28px;
+      border:1px solid var(--panel-border);
+      box-shadow: var(--panel-shadow);
       padding: 28px 22px;
     }
-    h1 { margin: 0 0 8px; font-size: 30px; }
-    .sub { margin: 0 0 22px; color: #4b5563; }
+    h1 { margin: 0 0 8px; font-size: 30px; font-family:var(--font-serif); color:#724016; }
+    .sub { margin: 0 0 22px; color: var(--muted); font-style:italic; }
     .card {
-      border: 1px solid #e5e7eb;
-      border-radius: 14px;
+      border: 1px solid var(--panel-border);
+      border-radius: 22px;
       padding: 18px;
       margin-top: 16px;
-      background: #fff;
+      background: #fffef9;
+      box-shadow: 0 12px 24px rgba(125,89,34,0.08);
     }
-    .card h2 { margin: 0 0 12px; font-size: 20px; }
-    label { display: block; font-size: 14px; font-weight: 600; margin: 12px 0 6px; }
+    .card h2 { margin: 0 0 12px; font-size: 20px; font-family:var(--font-serif); color:var(--navy); text-align:left; }
+    label { display: block; font-size: 14px; font-weight: 600; margin: 12px 0 6px; color:var(--navy); }
     input, select, button {
       width: 100%;
       box-sizing: border-box;
-      border-radius: 10px;
+      border-radius: 16px;
       font-size: 15px;
     }
     input, select {
-      border: 1px solid #d1d5db;
-      padding: 11px 12px;
+      border: 1.5px solid #cfd8e6;
+      padding: 13px 14px;
       background: #fff;
     }
     button {
-      border: 0;
-      background: #111827;
-      color: #fff;
+      border: 1px solid #2bbf67;
+      background: linear-gradient(180deg,#49da7b 0%,#22c55e 100%);
+      color: #08331d;
       font-weight: 700;
       padding: 12px 14px;
       cursor: pointer;
       margin-top: 14px;
     }
     button.secondary {
-      background: #fff;
-      color: #111827;
+      background: #fffdf8;
+      color: var(--navy);
       border: 1px solid #d1d5db;
+      box-shadow: 0 10px 22px rgba(36,48,71,.08);
     }
     button:disabled { opacity: 0.6; cursor: not-allowed; }
     .grid {
@@ -74,13 +90,13 @@
       white-space: pre-line;
     }
     .message.ok { color: #0f766e; }
-    .muted { color: #6b7280; font-size: 13px; }
+    .muted { color: var(--muted); font-size: 13px; font-style:italic; }
     .success-box {
       margin-top: 16px;
       padding: 16px;
       border-radius: 14px;
       border: 1px solid #a7f3d0;
-      background: #ecfdf5;
+      background: linear-gradient(180deg, #fffdf6 0%, #f7f3df 100%);
       color: #065f46;
       display: none;
     }
@@ -102,9 +118,9 @@
       min-height: 44px;
       padding: 0 14px;
       border-radius: 999px;
-      background: #d1fae5;
+      background: #fff2c7;
       border: 1px solid #6ee7b7;
-      color: #065f46;
+      color: #724016;
       font-size: 18px;
       font-weight: 800;
       letter-spacing: 0.08em;
@@ -136,14 +152,14 @@
       padding: 14px;
       border-radius: 14px;
       border: 1px solid #a7f3d0;
-      background: rgba(255,255,255,0.82);
+      background: rgba(255,253,248,0.92);
       color: #065f46;
-      box-shadow: 0 10px 22px rgba(16, 185, 129, 0.08);
+      box-shadow: 0 10px 22px rgba(125,89,34,0.08);
     }
     .welcome-card h4 {
       margin: 0 0 8px;
       font-size: 16px;
-      color: #064e3b;
+      color: #724016;
     }
     .welcome-card p {
       margin: 0;
@@ -166,7 +182,7 @@
       font-weight: 700;
       letter-spacing: 0.04em;
       text-transform: uppercase;
-      color: #4338ca;
+      color: #724016;
       margin-bottom: 8px;
     }
     @media (max-width: 720px) {
@@ -235,11 +251,11 @@
         </article>
         <article class="welcome-card">
           <h4 id="howToCardTitle">How To Use The App</h4>
-          <p id="howToCardBody">Start by checking your profile, then explore Home, Calendar, Reports, Docs, and Emergency so you know where to log updates and find what your group needs.</p>
+          <p id="howToCardBody">Next, set up your caregiver check-in so your group sees the right tracking sections. After that, explore Home, Calendar, Reports, Docs, and Emergency.</p>
         </article>
       </div>
       <div class="success-actions">
-        <button id="continueToDashboardBtn" type="button">Go to Dashboard</button>
+        <button id="continueToDashboardBtn" type="button">Go to Caregiver Check-In Setup</button>
       </div>
     </section>
   </main>
@@ -507,7 +523,7 @@
     });
 
     continueToDashboardBtn.addEventListener('click', () => {
-      window.location.replace('dashboard.html');
+      window.location.replace('caregiver-checkin-setup/');
     });
 
     hydrate().catch((error) => {

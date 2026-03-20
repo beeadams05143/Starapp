@@ -5,17 +5,35 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Documents</title>
   <style>
-    :root{ --ink:#1f2937; --muted:#6b7280; --bg:#fafaf9; --card:#ffffff; --border:#e5e7eb; --accent:#111; }
+    :root{
+      --ink:#24314a;
+      --muted:#6b7280;
+      --bg:#fafaf9;
+      --card:#fffdfa;
+      --border:#e8dcc3;
+      --accent:#8a6b44;
+      --sans:"Avenir Next","Segoe UI","Helvetica Neue",Arial,sans-serif;
+      --serif:Georgia,"Iowan Old Style","Palatino Linotype","Book Antiqua",serif;
+    }
     *{ box-sizing:border-box; }
     body{
       margin:0;
       padding:24px;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      background:var(--bg);
+      font-family: var(--sans);
+      background:
+        radial-gradient(circle at top, rgba(242, 221, 176, .34), transparent 30%),
+        linear-gradient(180deg, #fffefb 0%, #fbf5e8 100%);
       color:var(--ink);
     }
     .page{ max-width:1100px; margin:0 auto; }
-    h1{ margin:0 0 8px; letter-spacing:.2px; }
+    h1{
+      margin:0 0 8px;
+      letter-spacing:.2px;
+      font-family:var(--serif);
+      font-size:clamp(2.2rem, 4vw, 3rem);
+      font-weight:700;
+      color:#73441b;
+    }
     p.lead{ margin:0 0 18px; color:var(--muted); }
     .grid{
       display:grid;
@@ -30,7 +48,7 @@
       display:flex;
       flex-direction:column;
       gap:10px;
-      box-shadow:0 6px 18px rgba(15,23,42,.06);
+      box-shadow:0 12px 28px rgba(15,23,42,.08);
     }
     .card .top{
       display:flex;
@@ -43,11 +61,17 @@
       border-radius:12px;
       display:grid;
       place-items:center;
-      background:#111;
+      background:#8a6b44;
       color:#fff;
       font-size:20px;
     }
-    .card h3{ margin:0; font-size:18px; }
+    .card h3{
+      margin:0;
+      font-size:20px;
+      font-family:var(--serif);
+      font-weight:700;
+      color:#73441b;
+    }
     .card p{ margin:0; color:var(--muted); line-height:1.35; }
     .card a{
       margin-top:auto;
@@ -59,7 +83,7 @@
       background:var(--accent);
       padding:10px 14px;
       border-radius:12px;
-      font-weight:700;
+      font-weight:600;
       width:fit-content;
     }
     @media (max-width: 720px){
@@ -115,10 +139,10 @@
       <div class="card">
         <div class="top">
           <div class="icon">📚</div>
-          <h3>ISA / IEP</h3>
+          <h3>ISA/IEP</h3>
         </div>
-        <p>School plans, evaluations, meeting notes, and educational records.</p>
-        <a href="/documents/documents.html?cat=ISA">Open ISA / IEP</a>
+        <p>Current ISA/IEP paperwork, review cycles, educational records, and linked meeting follow-up.</p>
+        <a href="/documents/documents.html?cat=ISA">Open ISA/IEP</a>
       </div>
 
       <div class="card">

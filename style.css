@@ -14,7 +14,12 @@ img, video, canvas, svg, iframe { display: block; max-width: 100%; height: auto;
 *, *::before, *::after { box-sizing: border-box; }
 
 /* safe bottom for iOS tab bar / home indicator */
-:root { --tabbar-h: 64px; --safe-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--tabbar-h)); }
+:root {
+  --tabbar-h: 64px;
+  --safe-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--tabbar-h));
+  --font-sans: "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+}
 
 /* =========================
    PAGE LAYOUT VARIANTS
@@ -58,13 +63,19 @@ body {
   overflow-y: auto;
   overflow-x: clip;
   background-color: #fbe6c2; /* Clean beige background */
+  font-family: var(--font-sans);
+  color: #243047;
 }
 
 
 /* =========================
    TYPOGRAPHY & COMMON ELEMENTS
    ========================= */
-h1, h2 { text-align: center; color: #333; }
+h1, h2, h3, h4, h5, h6 {
+  text-align: center;
+  color: #333;
+  font-family: var(--font-serif);
+}
 
 form {
   display: flex;
@@ -78,7 +89,7 @@ form {
 }
 
 label { font-weight: bold; }
-input, button { padding: 0.5rem; font-size: 1rem; }
+input, button, select, textarea { padding: 0.5rem; font-size: 1rem; font-family: inherit; }
 
 button {
   background: #007acc;

@@ -31,6 +31,18 @@
     label,.label{font-family:var(--font-sans);}
     h1{margin:0 0 6px;font-size:clamp(2.2rem,5vw,3.4rem);letter-spacing:.2px;text-align:left;}
     .sub{font-size:15px;opacity:1;margin-bottom:14px;color:#6a768d;font-style:italic;}
+    .orientation-note{
+      display:none;
+      margin-bottom:8px;
+      padding:10px 14px;
+      border-radius:14px;
+      background:rgba(255, 239, 196, .92);
+      border:1px solid rgba(202,161,58,.45);
+      color:#73441b;
+      font-size:14px;
+      font-weight:600;
+      box-shadow:0 10px 20px rgba(125,89,34,.08);
+    }
 
     .grid{display:grid;gap:12px;}
     .grid-2{grid-template-columns:repeat(2,minmax(0,1fr));}
@@ -73,6 +85,12 @@
     .pill input{accent-color:#222;transform:scale(.95);}
 
     .goal{border:1px solid #e4cf9c;border-radius:20px;padding:14px;background:rgba(255,253,248,.84);box-shadow:0 12px 24px rgba(125,89,34,.08);}
+    .goal-layout{
+      display:grid;
+      gap:16px;
+      grid-template-columns:minmax(0,1.45fr) minmax(170px,220px) minmax(0,1fr);
+      align-items:start;
+    }
     .goal h3{margin:6px 0 8px;font-size:18px;}
     .goal-title{
       display:block;
@@ -91,17 +109,14 @@
       background:#ffe18a;
     }
     .goal-prompt{
-      max-width:260px;
+      max-width:220px;
       min-height:50px;
       padding:8px 12px;
-      font-size:15px;
+      font-size:14px;
     }
     .checklist{display:grid;gap:8px;}
     .checklist input[type="text"]{width:100%;}
     .support-select{display:grid;gap:6px;grid-template-columns:repeat(3,minmax(0,1fr));}
-
-    .week-grid{width:100%;border-collapse:collapse;}
-    .week-grid th,.week-grid td{border:1px solid rgba(0,0,0,.2);padding:8px;text-align:center;background:rgba(255,255,255,.6);}
 
     .btns{display:flex;gap:10px;flex-wrap:wrap;}
     .btn{border:1px solid #d8c7a4;background:#fffdf8;padding:10px 16px;border-radius:18px;cursor:pointer;font-weight:700;
@@ -161,15 +176,18 @@
       .clipboard{padding:16px;}
       .sheet{padding:18px 14px 22px 24px;}
       .sheet::before{left:18px;}
+      .orientation-note{display:block;}
       h1{font-size:22px;}
+      .sub{font-size:14px;margin-bottom:10px;}
       .grid-2,.grid-3{grid-template-columns:1fr;}
       .row{grid-template-columns:1fr;gap:4px;}
+      .topline .row{grid-template-columns:1fr;gap:6px;}
+      .input-chip{font-size:16px;padding:9px 12px;}
+      .goal-layout{grid-template-columns:1fr;}
+      .goal-prompt{max-width:100%;}
       .section-header{flex-direction:column;align-items:flex-start;gap:6px;}
       .btns{flex-direction:column;}
       .btns .btn{width:100%;}
-      .week-grid{display:block;overflow-x:auto;width:100%;max-width:100%;min-width:0;}
-      .week-grid thead, .week-grid tbody{display:table;width:100%;}
-      .week-grid th,.week-grid td{padding:6px;font-size:12px;white-space:normal;word-break:break-word;}
       textarea{min-height:120px;}
     }
   </style>
@@ -182,6 +200,7 @@
       <div class="clip" aria-hidden="true"></div>
       <div class="sheet">
         <header class="grid" style="gap:6px;">
+          <div class="orientation-note">For the best fit on a phone, turn your phone to landscape.</div>
           <h1>✏️ Focus of the Week</h1>
           <div class="sub" id="weekRangeText">Week of —</div>
           <div class="row" style="max-width:360px;">
@@ -270,7 +289,7 @@
   <template id="goalTemplate">
     <div class="goal">
       <h3 contenteditable="true" class="goal-title" data-placeholder="Type goal statement here…">Goal title</h3>
-      <div class="grid grid-3">
+      <div class="goal-layout">
         <div>
           <div class="label">Action Steps (checklist)</div>
           <div class="checklist">

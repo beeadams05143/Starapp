@@ -260,18 +260,29 @@
     }
     @media print { .edge-tabs, .save-bar { display: none !important; } }
     @media (max-width: 720px) {
-      body{padding:16px 12px 220px}
+      body{padding:16px 12px calc(var(--tabbar-h,72px) + 24px)}
       body[data-doc-page="minutes"]{
         padding-top: calc(var(--appbar-h,56px) + 16px) !important;
-        padding-bottom: calc(var(--tabbar-h,72px) + 280px) !important;
+        padding-bottom: calc(var(--tabbar-h,72px) + 24px) !important;
       }
       .notebook{grid-template-columns:1fr}
-      .paper{padding:18px 16px 250px 30px}
+      .paper{padding:18px 16px 28px 30px}
       .paper:before{left:8px}
       .grid2{grid-template-columns:1fr}
       .rail{display:none}
-      .save-bar{bottom:calc(var(--tabbar-h,72px) + 12px);padding:10px 12px}
-      .save-bar .btn{width:100%}
+      .edge-tabs{display:none}
+      .save-bar{
+        position:static;
+        margin:16px 0 calc(var(--tabbar-h,72px) + 12px);
+        padding:0 12px;
+        border-top:none;
+        background:transparent;
+        z-index:auto;
+      }
+      .save-bar .btn{
+        width:100%;
+        max-width:none;
+      }
       textarea{min-height:140px;line-height:24px}
     }
   </style>

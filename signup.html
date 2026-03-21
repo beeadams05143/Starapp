@@ -236,6 +236,7 @@
           location.replace(destination);
           return;
         }
+        form.reset();
         setMessage('Check your email to confirm your account, then log in.', true);
       } catch (error) {
         setMessage(error?.message || 'Signup failed.');

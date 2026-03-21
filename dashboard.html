@@ -26,13 +26,19 @@
     .wrap{
       min-height: 100%;
       display: grid;
-      place-items: center;
+      place-items: start center;
       padding: 72px 16px 40px;
+    }
+
+    .dashboard-stack{
+      width:100%;
+      max-width:720px;
+      display:grid;
+      gap:18px;
     }
 
     .card{
       width:100%;
-      max-width:560px;
       background: var(--panel);
       border-radius:16px;
       box-shadow: 0 10px 30px rgba(0,0,0,.08);
@@ -55,6 +61,113 @@
     .btn:hover{ filter:brightness(.97); }
 
     .help{ margin-top:12px; font-size:.9rem; color:var(--muted); }
+    .getting-started-card{
+      text-align:left;
+      background:rgba(255,255,255,.82);
+    }
+    .getting-started-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+      margin-bottom:14px;
+      flex-wrap:wrap;
+    }
+    .getting-started-head h2{
+      margin:0;
+      font-size:1.35rem;
+    }
+    .getting-started-head p{
+      margin:6px 0 0;
+      color:#4b5563;
+    }
+    .getting-started-pill{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:110px;
+      min-height:36px;
+      padding:0 12px;
+      border-radius:999px;
+      background:#eff6ff;
+      color:#1d4ed8;
+      font-weight:800;
+      font-size:.92rem;
+    }
+    .getting-started-list{
+      list-style:none;
+      padding:0;
+      margin:0;
+      display:grid;
+      gap:12px;
+    }
+    .getting-started-item{
+      display:grid;
+      grid-template-columns:auto 1fr auto;
+      gap:12px;
+      align-items:center;
+      padding:14px 16px;
+      border:1px solid #dbe4ee;
+      border-radius:14px;
+      background:rgba(255,255,255,.86);
+    }
+    .getting-started-item.is-done{
+      border-color:#bbf7d0;
+      background:#f0fdf4;
+    }
+    .getting-started-check{
+      width:28px;
+      height:28px;
+      border-radius:999px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      font-weight:900;
+      border:2px solid #cbd5e1;
+      color:#94a3b8;
+      background:#fff;
+      flex:0 0 auto;
+    }
+    .getting-started-item.is-done .getting-started-check{
+      border-color:#22c55e;
+      color:#15803d;
+      background:#dcfce7;
+    }
+    .getting-started-copy strong{
+      display:block;
+      font-size:1rem;
+      margin-bottom:2px;
+    }
+    .getting-started-copy span{
+      color:#6b7280;
+      font-size:.92rem;
+      line-height:1.45;
+    }
+    .getting-started-link{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:10px 14px;
+      border-radius:10px;
+      background:#111827;
+      color:#fff;
+      text-decoration:none;
+      font-weight:800;
+      white-space:nowrap;
+    }
+    .getting-started-item.is-done .getting-started-link{
+      background:#e5e7eb;
+      color:#374151;
+    }
+    @media (max-width:640px){
+      .getting-started-item{
+        grid-template-columns:auto 1fr;
+      }
+      .getting-started-link{
+        grid-column:1 / -1;
+        width:100%;
+      }
+    }
   </style>
 </head>
 
@@ -66,22 +179,35 @@
   <div id="activityBannerHost" class="activity-banner-host is-hidden" role="region" aria-live="polite" aria-label="Recent updates"></div>
 
   <main class="wrap">
-   <section class="card" 
-         style="background: rgba(255,255,255,0.45); border-radius: 20px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+    <div class="dashboard-stack">
+      <section class="card" 
+            style="background: rgba(255,255,255,0.45); border-radius: 20px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
 
-      <h1>🌟 STAR</h1>
-      <div class="sub">Support Tool for Autonomy and Reflection</div>
-      <p class="tagline"><em>Guided by the North Star, supporting progress, engagement, and satisfaction.</em></p>
+        <h1>🌟 STAR</h1>
+        <div class="sub">Support Tool for Autonomy and Reflection</div>
+        <p class="tagline"><em>Guided by the North Star, supporting progress, engagement, and satisfaction.</em></p>
 
-      <div class="welcome"><strong>Welcome!</strong></div>
-      <p id="user-email" class="user"></p>
+        <div class="welcome"><strong>Welcome!</strong></div>
+        <p id="user-email" class="user"></p>
 
-      <div class="row">
-        <button id="logoutBtn" class="btn">Log Out</button>
-      </div>
+        <div class="row">
+          <button id="logoutBtn" class="btn">Log Out</button>
+        </div>
 
-      <p class="help">Use the menu (☰) or the bottom bar to navigate.</p>
-    </section>
+        <p class="help">Use the menu (☰) or the bottom bar to navigate.</p>
+      </section>
+
+      <section class="card getting-started-card" id="gettingStartedCard">
+        <div class="getting-started-head">
+          <div>
+            <h2 id="gettingStartedTitle">Getting Started</h2>
+            <p id="gettingStartedIntro">Use this checklist to set up STAR the first time and help your group start smoothly.</p>
+          </div>
+          <div class="getting-started-pill" id="gettingStartedProgress">0 of 5 done</div>
+        </div>
+        <ul class="getting-started-list" id="gettingStartedList"></ul>
+      </section>
+    </div>
   </main>
 
 <!-- Page logic that populates #user-email etc. -->
@@ -90,13 +216,16 @@
 <script type="module" src="./home-activity.js?v=2025.01.09E"></script>
 
 <script type="module">
+  import { rest } from './restClient.js?v=2026.03.16B';
   import {
     SUPABASE_URL,
     SUPABASE_ANON_KEY,
     getSessionFromStorage,
     clearSavedSession,
   } from './supabaseClient.js?v=2025.01.09E';
-  import { fetchCurrentProfile, profileNeedsOnboarding } from './onboarding-flow.js?v=2026.03.16B';
+  import { fetchCurrentProfile, fetchCurrentMemberships, profileNeedsOnboarding } from './onboarding-flow.js?v=2026.03.16B';
+  import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
+  import { fetchFocusByGroup } from './focus-data.js?v=2026.03.16B';
 
   const clearLocalIdentityState = () => {
     const keys = ['user_id', 'currentGroupId', 'currentGroupName'];
@@ -106,6 +235,285 @@
   };
 
   const logoutBtn = document.getElementById('logoutBtn');
+  const gettingStartedList = document.getElementById('gettingStartedList');
+  const gettingStartedProgress = document.getElementById('gettingStartedProgress');
+  const gettingStartedCard = document.getElementById('gettingStartedCard');
+  const gettingStartedTitle = document.getElementById('gettingStartedTitle');
+  const gettingStartedIntro = document.getElementById('gettingStartedIntro');
+  const userEmailEl = document.getElementById('user-email');
+  const MENU_MODE_KEY = 'star_menu_mode';
+
+  function parseConfigObject(value) {
+    if (value && typeof value === 'object') return value;
+    if (typeof value === 'string') {
+      try { return JSON.parse(value); } catch { return null; }
+    }
+    return null;
+  }
+
+  function renderGettingStarted(items = []) {
+    if (!gettingStartedList || !gettingStartedProgress || !gettingStartedCard) return;
+    if (!items.length) {
+      gettingStartedCard.style.display = 'none';
+      return;
+    }
+    gettingStartedCard.style.display = '';
+    const completed = items.filter((item) => item.done).length;
+    gettingStartedProgress.textContent = `${completed} of ${items.length} done`;
+    gettingStartedList.innerHTML = '';
+    items.forEach((item) => {
+      const li = document.createElement('li');
+      li.className = `getting-started-item${item.done ? ' is-done' : ''}`;
+      li.innerHTML = `
+        <span class="getting-started-check" aria-hidden="true">${item.done ? '✓' : item.step}</span>
+        <div class="getting-started-copy">
+          <strong>${item.title}</strong>
+          <span>${item.description}</span>
+        </div>
+        <a class="getting-started-link" href="${item.href}">${item.done ? 'Review' : item.action}</a>
+      `;
+      gettingStartedList.appendChild(li);
+    });
+  }
+
+  function setGettingStartedCopy(mode = 'caregiver') {
+    if (!gettingStartedTitle || !gettingStartedIntro) return;
+    if (mode === 'individual') {
+      gettingStartedTitle.textContent = 'Your STAR Start';
+      gettingStartedIntro.textContent = 'Use this checklist to set up the individual side of STAR and get comfortable with your daily tools.';
+      return;
+    }
+    gettingStartedTitle.textContent = 'Getting Started';
+    gettingStartedIntro.textContent = 'Use this checklist to set up STAR the first time and help your group start smoothly.';
+  }
+
+  function getDashboardMode() {
+    try {
+      return localStorage.getItem(MENU_MODE_KEY) === 'individual' ? 'individual' : 'caregiver';
+    } catch {
+      return 'caregiver';
+    }
+  }
+
+  async function loadGettingStartedCard(userId, profile) {
+    try {
+      const dashboardMode = getDashboardMode();
+      const [memberships, groupId] = await Promise.all([
+        fetchCurrentMemberships(userId),
+        ensureActiveGroupId(userId),
+      ]);
+      const hasProfile = !!(
+        profile?.id &&
+        (profile?.display_name || profile?.public_name || profile?.full_name)
+      );
+      const hasGroup = !!groupId || memberships.length > 0;
+
+      let hasCaregiverSetup = false;
+      let hasFocusPlan = false;
+      let hasCheckin = false;
+      let hasMoodCheckin = false;
+
+      if (groupId) {
+        const [configs, focusPlan, checkins, moodEntries] = await Promise.all([
+          rest(`caregiver_checkin_configs?group_id=eq.${encodeURIComponent(groupId)}&select=id,selected_items&limit=1`),
+          fetchFocusByGroup(groupId),
+          rest(`caregiver_checkins?group_id=eq.${encodeURIComponent(groupId)}&select=id&limit=1`),
+          rest(`mood_entries?group_id=eq.${encodeURIComponent(groupId)}&select=id&limit=1`),
+        ]);
+        const config = configs?.[0] || null;
+        const selectedItems = parseConfigObject(config?.selected_items);
+        hasCaregiverSetup = !!config && (
+          selectedItems?.__custom_mode__ === true ||
+          Object.keys(selectedItems || {}).some((key) => key !== '__custom_mode__')
+        );
+        hasFocusPlan = !!focusPlan;
+        hasCheckin = Array.isArray(checkins) && checkins.length > 0;
+        hasMoodCheckin = Array.isArray(moodEntries) && moodEntries.length > 0;
+      }
+
+      if (dashboardMode === 'individual') {
+        setGettingStartedCopy('individual');
+        renderGettingStarted([
+          {
+            step: 1,
+            title: 'Finish your profile',
+            description: 'Update the name people should see and add a profile photo if you want one.',
+            href: '/profile.html',
+            action: 'Open Profile',
+            done: hasProfile,
+          },
+          {
+            step: 2,
+            title: 'Create or join your group',
+            description: 'Connect STAR to the right group so your supports, calendar, and tools stay in sync.',
+            href: '/group-settings.html',
+            action: 'Open Group Settings',
+            done: hasGroup,
+          },
+          {
+            step: 3,
+            title: 'Try your first mood check-in',
+            description: 'Log one mood check-in so your daily tracking starts filling in.',
+            href: '/home.html',
+            action: 'Open Mood Check-In',
+            done: hasMoodCheckin,
+          },
+          {
+            step: 4,
+            title: 'Set up My STAR Voice',
+            description: 'Open your voice board and start personalizing phrases you want available every day.',
+            href: '/my-star-voice.html',
+            action: 'Open My STAR Voice',
+            done: false,
+          },
+          {
+            step: 5,
+            title: 'Explore your tools',
+            description: 'Try Would You Rather and check your calendar so the app feels familiar right away.',
+            href: '/wouldyourather.html',
+            action: 'Open Would You Rather',
+            done: false,
+          },
+        ]);
+        return;
+      }
+
+      setGettingStartedCopy('caregiver');
+      renderGettingStarted([
+        {
+          step: 1,
+          title: 'Finish your profile',
+          description: 'Your name is usually already filled in. Add a profile photo if you want, then save and continue.',
+          href: '/profile.html?flow=getting-started&next=caregiver-checkin-setup/',
+          action: 'Continue',
+          done: hasProfile,
+        },
+        {
+          step: 2,
+          title: 'Create or join your group',
+          description: 'Set the active group so STAR can connect your caregiver tools and shared planning.',
+          href: '/group-settings.html',
+          action: 'Open Group Settings',
+          done: hasGroup,
+        },
+        {
+          step: 3,
+          title: 'Set up caregiver check-in',
+          description: 'Choose the tracking sections your group wants caregivers to use.',
+          href: '/caregiver-checkin-setup/',
+          action: 'Open Setup',
+          done: hasCaregiverSetup,
+        },
+        {
+          step: 4,
+          title: 'Add a weekly focus',
+          description: 'Create one focus area or routine so caregivers can support the same goals all week.',
+          href: '/focus-week.html',
+          action: 'Open Focus Planner',
+          done: hasFocusPlan,
+        },
+        {
+          step: 5,
+          title: 'Review your caregiver report',
+          description: 'Open the caregiver report to see the check-in data displayed in graphs, summaries, and trends.',
+          href: '/caregiver-report.html',
+          action: 'Open Caregiver Report',
+          done: hasCheckin,
+        },
+      ]);
+    } catch (error) {
+      console.warn('[DASHBOARD] getting started load failed', error);
+      if (getDashboardMode() === 'individual') {
+        setGettingStartedCopy('individual');
+        renderGettingStarted([
+          {
+            step: 1,
+            title: 'Finish your profile',
+            description: 'Update the name people should see and add a profile photo if you want one.',
+            href: '/profile.html',
+            action: 'Open Profile',
+            done: false,
+          },
+          {
+            step: 2,
+            title: 'Create or join your group',
+            description: 'Connect STAR to the right group.',
+            href: '/group-settings.html',
+            action: 'Open Group Settings',
+            done: false,
+          },
+          {
+            step: 3,
+            title: 'Try your first mood check-in',
+            description: 'Log one mood check-in so your daily tracking starts filling in.',
+            href: '/home.html',
+            action: 'Open Mood Check-In',
+            done: false,
+          },
+          {
+            step: 4,
+            title: 'Set up My STAR Voice',
+            description: 'Open your voice board and start personalizing phrases you want available every day.',
+            href: '/my-star-voice.html',
+            action: 'Open My STAR Voice',
+            done: false,
+          },
+          {
+            step: 5,
+            title: 'Explore your tools',
+            description: 'Try Would You Rather and check your calendar so the app feels familiar right away.',
+            href: '/wouldyourather.html',
+            action: 'Open Would You Rather',
+            done: false,
+          },
+        ]);
+        return;
+      }
+      setGettingStartedCopy('caregiver');
+      renderGettingStarted([
+        {
+          step: 1,
+          title: 'Finish your profile',
+          description: 'Your name is usually already filled in. Add a profile photo if you want, then save and continue.',
+          href: '/profile.html?flow=getting-started&next=caregiver-checkin-setup/',
+          action: 'Continue',
+          done: false,
+        },
+        {
+          step: 2,
+          title: 'Create or join your group',
+          description: 'Connect STAR to your group.',
+          href: '/group-settings.html',
+          action: 'Open Group Settings',
+          done: false,
+        },
+        {
+          step: 3,
+          title: 'Set up caregiver check-in',
+          description: 'Choose what caregivers should track.',
+          href: '/caregiver-checkin-setup/',
+          action: 'Open Setup',
+          done: false,
+        },
+        {
+          step: 4,
+          title: 'Add a weekly focus',
+          description: 'Create a shared focus or routine.',
+          href: '/focus-week.html',
+          action: 'Open Focus Planner',
+          done: false,
+        },
+        {
+          step: 5,
+          title: 'Review your caregiver report',
+          description: 'See the caregiver data displayed in one report view.',
+          href: '/caregiver-report.html',
+          action: 'Open Caregiver Report',
+          done: false,
+        },
+      ]);
+    }
+  }
 
   (async () => {
     const session = getSessionFromStorage();
@@ -115,11 +523,23 @@
     }
     try {
       const profile = await fetchCurrentProfile(session.user.id);
+      if (userEmailEl) {
+        userEmailEl.textContent =
+          profile?.display_name ||
+          profile?.public_name ||
+          profile?.full_name ||
+          session.user.email ||
+          '';
+      }
       if (profileNeedsOnboarding(profile)) {
         window.location.replace('onboarding.html');
+        return;
       }
+      await loadGettingStartedCard(session.user.id, profile);
     } catch (error) {
       console.warn('[DASHBOARD] onboarding check failed', error);
+      if (userEmailEl) userEmailEl.textContent = session.user.email || '';
+      await loadGettingStartedCard(session.user.id, null);
     }
   })();
 

@@ -14,22 +14,31 @@ const DEFAULT_SETTINGS = {
 };
 
 const STARTER_LIBRARY = [
-  { id: 'core_yes', category: 'Core Words', label: 'Yes', phrase: 'Yes', emoji: '✅', sort: 10 },
-  { id: 'core_no', category: 'Core Words', label: 'No', phrase: 'No', emoji: '❌', sort: 20 },
-  { id: 'core_more', category: 'Core Words', label: 'More', phrase: 'More', emoji: '➕', sort: 30 },
-  { id: 'core_stop', category: 'Core Words', label: 'Stop', phrase: 'Stop', emoji: '🛑', sort: 40 },
-  { id: 'core_help', category: 'Core Words', label: 'Help', phrase: 'Help', emoji: '🆘', sort: 50 },
-  { id: 'core_go', category: 'Core Words', label: 'Go', phrase: 'Go', emoji: '➡️', sort: 60 },
-  { id: 'core_wait', category: 'Core Words', label: 'Wait', phrase: 'Wait', emoji: '✋', sort: 70 },
-  { id: 'core_all_done', category: 'Core Words', label: 'All done', phrase: 'All done', emoji: '✅', sort: 80 },
-  { id: 'core_open', category: 'Core Words', label: 'Open', phrase: 'Open', emoji: '🔓', sort: 90 },
-  { id: 'core_close', category: 'Core Words', label: 'Close', phrase: 'Close', emoji: '🔒', sort: 100 },
-  { id: 'core_in', category: 'Core Words', label: 'In', phrase: 'In', emoji: '📥', sort: 110 },
-  { id: 'core_out', category: 'Core Words', label: 'Out', phrase: 'Out', emoji: '📤', sort: 120 },
-  { id: 'core_up', category: 'Core Words', label: 'Up', phrase: 'Up', emoji: '⬆️', sort: 130 },
-  { id: 'core_down', category: 'Core Words', label: 'Down', phrase: 'Down', emoji: '⬇️', sort: 140 },
-  { id: 'core_like', category: 'Core Words', label: 'Like', phrase: 'I like that', emoji: '👍', sort: 150 },
-  { id: 'core_dont_like', category: 'Core Words', label: "Don't like", phrase: "I don't like that", emoji: '👎', sort: 160 },
+  { id: 'core_i', category: 'Core Words', label: 'I', phrase: 'I', emoji: '🧍', sort: 10 },
+  { id: 'core_want', category: 'Core Words', label: 'Want', phrase: 'Want', emoji: '💬', sort: 20 },
+  { id: 'core_need', category: 'Core Words', label: 'Need', phrase: 'Need', emoji: '🧩', sort: 30 },
+  { id: 'core_feel', category: 'Core Words', label: 'Feel', phrase: 'Feel', emoji: '🙂', sort: 40 },
+  { id: 'core_my', category: 'Core Words', label: 'My', phrase: 'My', emoji: '💛', sort: 50 },
+  { id: 'core_with', category: 'Core Words', label: 'With', phrase: 'With', emoji: '🤝', sort: 60 },
+  { id: 'core_to', category: 'Core Words', label: 'To', phrase: 'To', emoji: '➡️', sort: 70 },
+  { id: 'core_please', category: 'Core Words', label: 'Please', phrase: 'Please', emoji: '🙏', sort: 80 },
+  { id: 'core_thank_you', category: 'Core Words', label: 'Thank you', phrase: 'Thank you', emoji: '💛', sort: 90 },
+  { id: 'core_yes', category: 'Core Words', label: 'Yes', phrase: 'Yes', emoji: '✅', sort: 100 },
+  { id: 'core_no', category: 'Core Words', label: 'No', phrase: 'No', emoji: '❌', sort: 110 },
+  { id: 'core_more', category: 'Core Words', label: 'More', phrase: 'More', emoji: '➕', sort: 120 },
+  { id: 'core_stop', category: 'Core Words', label: 'Stop', phrase: 'Stop', emoji: '🛑', sort: 130 },
+  { id: 'core_help', category: 'Core Words', label: 'Help', phrase: 'Help', emoji: '🆘', sort: 140 },
+  { id: 'core_go', category: 'Core Words', label: 'Go', phrase: 'Go', emoji: '➡️', sort: 150 },
+  { id: 'core_wait', category: 'Core Words', label: 'Wait', phrase: 'Wait', emoji: '✋', sort: 160 },
+  { id: 'core_all_done', category: 'Core Words', label: 'All done', phrase: 'All done', emoji: '✅', sort: 170 },
+  { id: 'core_open', category: 'Core Words', label: 'Open', phrase: 'Open', emoji: '🔓', sort: 180 },
+  { id: 'core_close', category: 'Core Words', label: 'Close', phrase: 'Close', emoji: '🔒', sort: 190 },
+  { id: 'core_in', category: 'Core Words', label: 'In', phrase: 'In', emoji: '📥', sort: 200 },
+  { id: 'core_out', category: 'Core Words', label: 'Out', phrase: 'Out', emoji: '📤', sort: 210 },
+  { id: 'core_up', category: 'Core Words', label: 'Up', phrase: 'Up', emoji: '⬆️', sort: 220 },
+  { id: 'core_down', category: 'Core Words', label: 'Down', phrase: 'Down', emoji: '⬇️', sort: 230 },
+  { id: 'core_like', category: 'Core Words', label: 'Like', phrase: 'I like that', emoji: '👍', sort: 240 },
+  { id: 'core_dont_like', category: 'Core Words', label: "Don't like", phrase: "I don't like that", emoji: '👎', sort: 250 },
 
   { id: 'feelings_happy', category: 'Feelings', label: 'Happy', phrase: 'I feel happy', emoji: '😊', sort: 10 },
   { id: 'feelings_sad', category: 'Feelings', label: 'Sad', phrase: 'I feel sad', emoji: '😢', sort: 20 },
@@ -70,18 +79,30 @@ const STARTER_LIBRARY = [
   { id: 'drinks_soup', category: 'Drinks', label: 'Soup', phrase: 'Soup', emoji: '🥣', sort: 110 },
   { id: 'drinks_ice', category: 'Drinks', label: 'Ice', phrase: 'Ice', emoji: '🧊', sort: 120 },
 
-  { id: 'people_mom', category: 'People', label: 'Mom', phrase: 'Mom', emoji: '👩', sort: 10 },
-  { id: 'people_dad', category: 'People', label: 'Dad', phrase: 'Dad', emoji: '👨', sort: 20 },
-  { id: 'people_caregiver', category: 'People', label: 'Caregiver', phrase: 'Caregiver', emoji: '🧑‍⚕️', sort: 30 },
-  { id: 'people_teacher', category: 'People', label: 'Teacher', phrase: 'Teacher', emoji: '👩‍🏫', sort: 40 },
-  { id: 'people_friend', category: 'People', label: 'Friend', phrase: 'Friend', emoji: '🧑‍🤝‍🧑', sort: 50 },
-  { id: 'people_doctor', category: 'People', label: 'Doctor', phrase: 'Doctor', emoji: '🧑‍⚕️', sort: 60 },
-  { id: 'people_nurse', category: 'People', label: 'Nurse', phrase: 'Nurse', emoji: '🧑‍⚕️', sort: 70 },
-  { id: 'people_brother', category: 'People', label: 'Brother', phrase: 'Brother', emoji: '👦', sort: 80 },
-  { id: 'people_sister', category: 'People', label: 'Sister', phrase: 'Sister', emoji: '👧', sort: 90 },
-  { id: 'people_grandma', category: 'People', label: 'Grandma', phrase: 'Grandma', emoji: '👵', sort: 100 },
-  { id: 'people_grandpa', category: 'People', label: 'Grandpa', phrase: 'Grandpa', emoji: '👴', sort: 110 },
-  { id: 'people_coach', category: 'People', label: 'Coach', phrase: 'Coach', emoji: '🧑‍🏫', sort: 120 },
+  { id: 'people_mom', category: 'People', subcategory: 'Family & Friends', label: 'Mom', phrase: 'Mom', emoji: '👩', sort: 10 },
+  { id: 'people_dad', category: 'People', subcategory: 'Family & Friends', label: 'Dad', phrase: 'Dad', emoji: '👨', sort: 20 },
+  { id: 'people_friend', category: 'People', subcategory: 'Family & Friends', label: 'Friend', phrase: 'Friend', emoji: '🧑‍🤝‍🧑', sort: 30 },
+  { id: 'people_brother', category: 'People', subcategory: 'Family & Friends', label: 'Brother', phrase: 'Brother', emoji: '👦', sort: 40 },
+  { id: 'people_sister', category: 'People', subcategory: 'Family & Friends', label: 'Sister', phrase: 'Sister', emoji: '👧', sort: 50 },
+  { id: 'people_grandma', category: 'People', subcategory: 'Family & Friends', label: 'Grandma', phrase: 'Grandma', emoji: '👵', sort: 60 },
+  { id: 'people_grandpa', category: 'People', subcategory: 'Family & Friends', label: 'Grandpa', phrase: 'Grandpa', emoji: '👴', sort: 70 },
+  { id: 'people_aunt', category: 'People', subcategory: 'Family & Friends', label: 'Aunt', phrase: 'Aunt', emoji: '👩', sort: 80 },
+  { id: 'people_uncle', category: 'People', subcategory: 'Family & Friends', label: 'Uncle', phrase: 'Uncle', emoji: '👨', sort: 90 },
+  { id: 'people_cousin', category: 'People', subcategory: 'Family & Friends', label: 'Cousin', phrase: 'Cousin', emoji: '🧑', sort: 100 },
+  { id: 'people_pet_dog', category: 'People', subcategory: 'Family & Friends', label: 'Dog', phrase: 'Dog', emoji: '🐶', sort: 110 },
+  { id: 'people_pet_cat', category: 'People', subcategory: 'Family & Friends', label: 'Cat', phrase: 'Cat', emoji: '🐱', sort: 120 },
+  { id: 'people_teacher', category: 'People', subcategory: 'School People', label: 'Teacher', phrase: 'Teacher', emoji: '👩‍🏫', sort: 130 },
+  { id: 'people_coach', category: 'People', subcategory: 'School People', label: 'Coach', phrase: 'Coach', emoji: '🧑‍🏫', sort: 140 },
+  { id: 'people_classmate', category: 'People', subcategory: 'School People', label: 'Classmate', phrase: 'Classmate', emoji: '🧑', sort: 150 },
+  { id: 'people_principal', category: 'People', subcategory: 'School People', label: 'Principal', phrase: 'Principal', emoji: '🧑‍💼', sort: 160 },
+  { id: 'people_aide', category: 'People', subcategory: 'School People', label: 'Aide', phrase: 'Aide', emoji: '🧑‍🏫', sort: 170 },
+  { id: 'people_bus_driver', category: 'People', subcategory: 'School People', label: 'Bus driver', phrase: 'Bus driver', emoji: '🚌', sort: 180 },
+  { id: 'people_caregiver', category: 'People', subcategory: 'Work People', label: 'Caregiver', phrase: 'Caregiver', emoji: '🧑‍⚕️', sort: 190 },
+  { id: 'people_doctor', category: 'People', subcategory: 'Work People', label: 'Doctor', phrase: 'Doctor', emoji: '🧑‍⚕️', sort: 200 },
+  { id: 'people_nurse', category: 'People', subcategory: 'Work People', label: 'Nurse', phrase: 'Nurse', emoji: '🧑‍⚕️', sort: 210 },
+  { id: 'people_coworker', category: 'People', subcategory: 'Work People', label: 'Coworker', phrase: 'Coworker', emoji: '🧑‍💼', sort: 220 },
+  { id: 'people_manager', category: 'People', subcategory: 'Work People', label: 'Manager', phrase: 'Manager', emoji: '🧑‍💼', sort: 230 },
+  { id: 'people_therapist', category: 'People', subcategory: 'Work People', label: 'Therapist', phrase: 'Therapist', emoji: '🧑‍⚕️', sort: 240 },
 
   { id: 'places_home', category: 'Places', label: 'Home', phrase: 'Home', emoji: '🏠', sort: 10 },
   { id: 'places_school', category: 'Places', label: 'School', phrase: 'School', emoji: '🏫', sort: 20 },
@@ -108,6 +129,32 @@ const STARTER_LIBRARY = [
   { id: 'actions_watch', category: 'Actions', label: 'Watch', phrase: 'Watch', emoji: '👀', sort: 100 },
   { id: 'actions_rest', category: 'Actions', label: 'Rest', phrase: 'Rest', emoji: '🛌', sort: 110 },
   { id: 'actions_breathe', category: 'Actions', label: 'Breathe', phrase: 'Breathe', emoji: '🌬️', sort: 120 },
+
+  { id: 'things_phone', category: 'Things', label: 'Phone', phrase: 'Phone', emoji: '📱', sort: 10 },
+  { id: 'things_tablet', category: 'Things', label: 'Tablet', phrase: 'Tablet', emoji: '📱', sort: 20 },
+  { id: 'things_book', category: 'Things', label: 'Book', phrase: 'Book', emoji: '📚', sort: 30 },
+  { id: 'things_toy', category: 'Things', label: 'Toy', phrase: 'Toy', emoji: '🧸', sort: 40 },
+  { id: 'things_blanket', category: 'Things', label: 'Blanket', phrase: 'Blanket', emoji: '🛏️', sort: 50 },
+  { id: 'things_headphones', category: 'Things', label: 'Headphones', phrase: 'Headphones', emoji: '🎧', sort: 60 },
+  { id: 'things_glasses', category: 'Things', label: 'Glasses', phrase: 'Glasses', emoji: '👓', sort: 70 },
+  { id: 'things_backpack', category: 'Things', label: 'Backpack', phrase: 'Backpack', emoji: '🎒', sort: 80 },
+  { id: 'things_ball', category: 'Things', label: 'Ball', phrase: 'Ball', emoji: '⚽', sort: 90 },
+  { id: 'things_computer', category: 'Things', label: 'Computer', phrase: 'Computer', emoji: '💻', sort: 100 },
+  { id: 'things_music', category: 'Things', label: 'Music', phrase: 'Music', emoji: '🎵', sort: 110 },
+  { id: 'things_tv', category: 'Things', label: 'TV', phrase: 'TV', emoji: '📺', sort: 120 },
+
+  { id: 'adjectives_big', category: 'Adjectives', label: 'Big', phrase: 'Big', emoji: '⬆️', sort: 10 },
+  { id: 'adjectives_little', category: 'Adjectives', label: 'Little', phrase: 'Little', emoji: '⬇️', sort: 20 },
+  { id: 'adjectives_hot', category: 'Adjectives', label: 'Hot', phrase: 'Hot', emoji: '🌡️', sort: 30 },
+  { id: 'adjectives_cold', category: 'Adjectives', label: 'Cold', phrase: 'Cold', emoji: '🧊', sort: 40 },
+  { id: 'adjectives_good', category: 'Adjectives', label: 'Good', phrase: 'Good', emoji: '👍', sort: 50 },
+  { id: 'adjectives_bad', category: 'Adjectives', label: 'Bad', phrase: 'Bad', emoji: '👎', sort: 60 },
+  { id: 'adjectives_fast', category: 'Adjectives', label: 'Fast', phrase: 'Fast', emoji: '💨', sort: 70 },
+  { id: 'adjectives_slow', category: 'Adjectives', label: 'Slow', phrase: 'Slow', emoji: '🐢', sort: 80 },
+  { id: 'adjectives_loud', category: 'Adjectives', label: 'Loud', phrase: 'Loud', emoji: '🔊', sort: 90 },
+  { id: 'adjectives_quiet', category: 'Adjectives', label: 'Quiet', phrase: 'Quiet', emoji: '🤫', sort: 100 },
+  { id: 'adjectives_clean', category: 'Adjectives', label: 'Clean', phrase: 'Clean', emoji: '✨', sort: 110 },
+  { id: 'adjectives_dirty', category: 'Adjectives', label: 'Dirty', phrase: 'Dirty', emoji: '🧼', sort: 120 },
 
   { id: 'questions_what', category: 'Questions', label: 'What?', phrase: 'What?', emoji: '❓', sort: 10 },
   { id: 'questions_where', category: 'Questions', label: 'Where?', phrase: 'Where?', emoji: '🧭', sort: 20 },
@@ -152,11 +199,11 @@ const STARTER_LIBRARY = [
 const STARTER_SENTENCE_STARTERS = [
   { id: 'starter_i', label: 'I', phrase: 'I', emoji: '🧍', sort: 10 },
   { id: 'starter_i_want', label: 'I want', phrase: 'I want', emoji: '💬', sort: 20 },
-  { id: 'starter_i_need', label: 'I need', phrase: 'I need', emoji: '🧩', sort: 30 },
-  { id: 'starter_i_feel', label: 'I feel', phrase: 'I feel', emoji: '🙂', sort: 40 },
-  { id: 'starter_please', label: 'Please', phrase: 'Please', emoji: '🙏', sort: 50 },
-  { id: 'starter_help', label: 'Help me', phrase: 'Help me', emoji: '🆘', sort: 60 },
-  { id: 'starter_dont_want', label: "I don't want", phrase: "I don't want", emoji: '🚫', sort: 70 },
+  { id: 'starter_dont_want', label: "I don't want", phrase: "I don't want", emoji: '🚫', sort: 30 },
+  { id: 'starter_i_need', label: 'I need', phrase: 'I need', emoji: '🧩', sort: 40 },
+  { id: 'starter_i_feel', label: 'I feel', phrase: 'I feel', emoji: '🙂', sort: 50 },
+  { id: 'starter_please', label: 'Please', phrase: 'Please', emoji: '🙏', sort: 60 },
+  { id: 'starter_help', label: 'Help me', phrase: 'Help me', emoji: '🆘', sort: 70 },
   { id: 'starter_all_done', label: 'All done', phrase: 'All done', emoji: '✅', sort: 80 },
   { id: 'starter_bathroom', label: 'I need the bathroom', phrase: 'I need the bathroom', emoji: '🚽', sort: 90 },
   { id: 'starter_break', label: 'I need a break', phrase: 'I need a break', emoji: '⏸️', sort: 100 }
@@ -178,13 +225,16 @@ const addBtn = document.getElementById('addCardBtn');
 const grid = document.getElementById('voiceGrid');
 const emptyEl = document.getElementById('voiceEmpty');
 const tabRow = document.getElementById('categoryTabs');
+const favoritesHelp = document.getElementById('favoritesHelp');
+const folderNav = document.getElementById('folderNav');
+const folderPath = document.getElementById('folderPath');
+const folderBackBtn = document.getElementById('folderBackBtn');
 const chipsEl = document.getElementById('sentenceChips');
 const speakBtn = document.getElementById('speakSentence');
 const backBtn = document.getElementById('backspaceSentence');
 const clearBtn = document.getElementById('clearSentence');
 const toast = document.getElementById('toast');
 const starterRow = document.getElementById('starterRow');
-const searchToggle = document.getElementById('searchToggle');
 const searchInput = document.getElementById('searchInput');
 const settingsToggle = document.getElementById('settingsToggle');
 const settingsDrawer = document.getElementById('settingsDrawer');
@@ -209,6 +259,8 @@ const dialogTitle = document.getElementById('cardDialogTitle');
 const cardForm = document.getElementById('cardForm');
 const cardLabel = document.getElementById('cardLabel');
 const cardCategory = document.getElementById('cardCategory');
+const cardSubcategory = document.getElementById('cardSubcategory');
+const cardSubcategoryWrap = document.getElementById('cardSubcategoryWrap');
 const cardPhoto = document.getElementById('cardPhoto');
 const cardSave = document.getElementById('cardSave');
 const cardCancel = document.getElementById('cardCancel');
@@ -224,6 +276,7 @@ const starterCancel = document.getElementById('starterCancel');
 
 let items = [];
 let activeTab = 'all';
+let activeSubtab = 'all';
 let sentence = [];
 let editMode = false;
 let editId = null;
@@ -234,19 +287,52 @@ let starterEditId = null;
 let cardVoiceOn = true;
 let favorites = new Set();
 let usageCounts = {};
+let addCardContext = null;
+
+const subTabRow = document.getElementById('subCategoryTabs');
 
 const baseCategories = [
   { value: 'core-words', label: 'Core Words', icon: '🧠' },
-  { value: 'feelings', label: 'Feelings', icon: '🙂' },
+  { value: 'people', label: 'People', icon: '👥' },
+  { value: 'places', label: 'Places', icon: '📍' },
   { value: 'food', label: 'Food', icon: '🍎' },
   { value: 'drinks', label: 'Drinks', icon: '🥤' },
-  { value: 'people', label: 'People', icon: '👤' },
-  { value: 'places', label: 'Places', icon: '📍' },
-  { value: 'actions', label: 'Actions', icon: '⚡' },
+  { value: 'things', label: 'Things', icon: '🎒' },
+  { value: 'emotions', label: 'Emotions', icon: '🙂' },
+  { value: 'adjectives', label: 'Describing Words', icon: '✨' },
+  { value: 'actions', label: 'Verbs / Actions', icon: '⚡' },
   { value: 'questions', label: 'Questions', icon: '❓' },
   { value: 'quick-phrases', label: 'Quick Phrases', icon: '💬' },
   { value: 'time-words', label: 'Time Words', icon: '⏱' }
 ];
+
+const peopleSubcategories = [
+  { value: 'family-friends', label: 'Family & Friends', icon: '🏡' },
+  { value: 'school-people', label: 'School People', icon: '🏫' },
+  { value: 'work-people', label: 'Work People', icon: '💼' }
+];
+
+const categoryAliases = {
+  'core words': 'core-words',
+  'feelings': 'emotions',
+  'emotions': 'emotions',
+  'food': 'food',
+  'drink': 'drinks',
+  'drinks': 'drinks',
+  'people': 'people',
+  'places': 'places',
+  'things': 'things',
+  'adjectives': 'adjectives',
+  'descriptive words': 'adjectives',
+  'describing words': 'adjectives',
+  'verbs': 'actions',
+  'verb': 'actions',
+  'actions': 'actions',
+  'verbs / actions': 'actions',
+  'questions': 'questions',
+  'quick phrases': 'quick-phrases',
+  'time words': 'time-words'
+};
 
 function normalizeCategory(value) {
   if (!value) return '';
@@ -255,9 +341,45 @@ function normalizeCategory(value) {
   if (exact) return exact.value;
   if (trimmed.toLowerCase() === 'favorites') return 'favorites';
   const lower = trimmed.toLowerCase();
+  if (categoryAliases[lower]) return categoryAliases[lower];
   const match = baseCategories.find(c => c.label.toLowerCase() === lower);
   if (match) return match.value;
   return lower.replace(/\s+/g, '-');
+}
+
+function normalizeSubcategory(value) {
+  if (!value) return '';
+  const lower = value.trim().toLowerCase();
+  if (lower === 'family and friends') return 'family-friends';
+  if (lower === 'school people') return 'school-people';
+  if (lower === 'work people') return 'work-people';
+  return lower.replace(/\s+/g, '-');
+}
+
+function inferPeopleSubcategory(item) {
+  const explicit = normalizeSubcategory(item?.subcategory);
+  if (explicit) return explicit;
+  const needle = `${item?.id || ''} ${item?.label || ''}`.toLowerCase();
+  if (/(teacher|classmate|principal|student|school|coach|aide)/.test(needle)) return 'school-people';
+  if (/(caregiver|doctor|nurse|therap|boss|coworker|manager|job|work)/.test(needle)) return 'work-people';
+  return 'family-friends';
+}
+
+function getItemSubcategory(item) {
+  if (normalizeCategory(item?.category) !== 'people') return '';
+  return inferPeopleSubcategory(item);
+}
+
+function getCategoryCatalog() {
+  const set = new Set(baseCategories.map(c => c.value));
+  items.forEach(item => {
+    const category = normalizeCategory(item.category);
+    if (category) set.add(category);
+  });
+  const custom = Array.from(set)
+    .filter(cat => !baseCategories.find(entry => entry.value === cat))
+    .sort();
+  return baseCategories.concat(custom.map(c => ({ value: c, label: slugToLabel(c), icon: '⭐' })));
 }
 
 class SpeechController {
@@ -362,7 +484,8 @@ function loadCardVoiceSetting() {
 
 function updateCardVoiceToggle() {
   if (!soundToggle) return;
-  soundToggle.textContent = cardVoiceOn ? '🔊 Card voice ON' : '🔇 Card voice OFF';
+  soundToggle.textContent = cardVoiceOn ? '🔊' : '🔇';
+  soundToggle.title = cardVoiceOn ? 'Card voice on' : 'Card voice off';
 }
 
 function setCardVoiceOn(value) {
@@ -423,17 +546,11 @@ function truncateLabel(label) {
 }
 
 function ensureCategories() {
-  const set = new Set(baseCategories.map(c => c.value));
-  items.forEach(item => {
-    if (item.category) set.add(item.category);
-  });
-  const custom = Array.from(set)
-    .filter(cat => !baseCategories.find(b => b.value === cat))
-    .sort();
-  const all = baseCategories.concat(custom.map(c => ({ value: c, label: slugToLabel(c) })));
+  const all = getCategoryCatalog();
 
   const validTabs = new Set(['all', ...all.map(c => c.value)]);
   if (!validTabs.has(activeTab)) activeTab = 'all';
+  if (activeTab !== 'people') activeSubtab = 'all';
 
   cardCategory.innerHTML = '';
   all.forEach(cat => {
@@ -443,7 +560,8 @@ function ensureCategories() {
     cardCategory.appendChild(opt);
   });
 
-  renderTabs(['favorites', 'all', ...all.map(c => c.value)], all);
+  renderTabs(['favorites'], all);
+  syncCardSubcategoryOptions();
 }
 
 function renderTabs(values, catalog) {
@@ -463,17 +581,80 @@ function renderTabs(values, catalog) {
     if (value === 'all') {
       btn.textContent = 'All';
     } else if (value === 'favorites') {
-      btn.innerHTML = `⭐ ${label}`;
+      btn.innerHTML = `⭐ My Favorites`;
     } else {
       const icon = entry?.icon || '⭐';
       btn.innerHTML = `${icon} ${label}`;
     }
     btn.addEventListener('click', () => {
-      activeTab = value;
+      if (value === 'favorites') {
+        activeTab = activeTab === 'favorites' ? 'all' : 'favorites';
+      } else {
+        activeTab = value;
+      }
+      activeSubtab = 'all';
       render();
     });
     tabRow.appendChild(btn);
   });
+
+  renderSubtabs();
+}
+
+function renderSubtabs() {
+  if (!subTabRow) return;
+  subTabRow.classList.remove('is-active');
+  subTabRow.innerHTML = '';
+}
+
+function getFolderPathLabel() {
+  if (activeTab === 'people' && activeSubtab !== 'all') {
+    const sub = peopleSubcategories.find(entry => entry.value === activeSubtab);
+    return `People / ${sub?.label || slugToLabel(activeSubtab)}`;
+  }
+  if (activeTab !== 'all' && activeTab !== 'favorites') {
+    const cat = getCategoryCatalog().find(entry => entry.value === activeTab);
+    return cat?.label || slugToLabel(activeTab);
+  }
+  if (activeTab === 'favorites') return 'My Favorites';
+  return '';
+}
+
+function renderFolderNav() {
+  if (!folderNav || !folderPath || !folderBackBtn) return;
+  const inFolder = activeTab !== 'all';
+  folderNav.classList.toggle('is-active', inFolder);
+  folderPath.textContent = getFolderPathLabel();
+  folderBackBtn.textContent = activeTab === 'people' && activeSubtab !== 'all'
+    ? '← Back to People folders'
+    : '← Back to folders';
+}
+
+function renderFavoritesHelp() {
+  if (!favoritesHelp) return;
+  favoritesHelp.innerHTML = activeTab === 'favorites'
+    ? '<strong>My Favorites is on.</strong> You are only seeing the Favorites folder and your starred cards below. Tap My Favorites again to return to the full library.'
+    : '<strong>My Favorites:</strong> Tap to show only your Favorites folder and starred cards below. Tap it again to return to the full library.';
+}
+
+function syncCardSubcategoryOptions(category = cardCategory?.value, selected = '') {
+  if (!cardSubcategory || !cardSubcategoryWrap) return;
+  const normalized = normalizeCategory(category);
+  if (normalized !== 'people') {
+    cardSubcategoryWrap.style.display = 'none';
+    cardSubcategory.innerHTML = '';
+    return;
+  }
+
+  cardSubcategoryWrap.style.display = '';
+  cardSubcategory.innerHTML = '';
+  peopleSubcategories.forEach(entry => {
+    const opt = document.createElement('option');
+    opt.value = entry.value;
+    opt.textContent = entry.label;
+    cardSubcategory.appendChild(opt);
+  });
+  cardSubcategory.value = normalizeSubcategory(selected) || 'family-friends';
 }
 
 function renderSentence() {
@@ -583,7 +764,7 @@ function renderStarters() {
   }
 }
 
-function handleCardTap(entry, { allowSpeak = true } = {}) {
+function handleCardTap(entry, { allowSpeak = true, returnToFolders = false } = {}) {
   const payload = {
     text: entry.text,
     emoji: entry.emoji || '',
@@ -597,6 +778,13 @@ function handleCardTap(entry, { allowSpeak = true } = {}) {
     speech.speak(payload.phrase, settings);
   }
   sentence.push(payload);
+  showToast(`Added: ${payload.text}`);
+  if (returnToFolders) {
+    activeTab = 'all';
+    activeSubtab = 'all';
+    render();
+    return;
+  }
   renderSentence();
 }
 
@@ -714,7 +902,10 @@ function createCard(item, { showUsageBadge = false } = {}) {
   button.addEventListener('touchmove', () => clearTimeout(pressTimer));
 
   button.addEventListener('click', () => {
-    handleCardTap({ id: item.id, text: item.label, emoji: item.emoji, phrase: item.phrase || item.label }, { allowSpeak: true });
+    handleCardTap(
+      { id: item.id, text: item.label, emoji: item.emoji, phrase: item.phrase || item.label },
+      { allowSpeak: true, returnToFolders: true }
+    );
   });
   button.addEventListener('keydown', (event) => {
     if (event.key === 'Enter' || event.key === ' ') {
@@ -724,6 +915,112 @@ function createCard(item, { showUsageBadge = false } = {}) {
   });
 
   return button;
+}
+
+function createFolderCard({ label, icon, meta, onClick }) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'aac-card folder-card';
+  button.setAttribute('aria-label', label);
+
+  const media = document.createElement('div');
+  media.className = 'aac-media';
+  media.textContent = icon || '📁';
+
+  const title = document.createElement('div');
+  title.className = 'aac-label';
+  title.textContent = label;
+
+  const metaEl = document.createElement('div');
+  metaEl.className = 'folder-meta';
+  metaEl.textContent = meta || 'Open folder';
+
+  button.appendChild(media);
+  button.appendChild(title);
+  button.appendChild(metaEl);
+  button.addEventListener('click', onClick);
+  button.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      button.click();
+    }
+  });
+  return button;
+}
+
+function createAddYourOwnCard({ label = 'Add your own', category = activeTab, subcategory = activeSubtab === 'all' ? '' : activeSubtab } = {}) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'aac-card folder-card';
+  button.setAttribute('aria-label', label);
+
+  const media = document.createElement('div');
+  media.className = 'aac-media';
+  media.textContent = '📷';
+
+  const title = document.createElement('div');
+  title.className = 'aac-label';
+  title.textContent = label;
+
+  const metaEl = document.createElement('div');
+  metaEl.className = 'folder-meta';
+  metaEl.textContent = 'Add photo or custom icon';
+
+  button.appendChild(media);
+  button.appendChild(title);
+  button.appendChild(metaEl);
+  button.addEventListener('click', () => openDialog(null, { category, subcategory }));
+  return button;
+}
+
+function buildFolderCards() {
+  if ((searchInput?.value || '').trim()) return null;
+
+  if (activeTab === 'favorites') {
+    const board = buildFavoritesBoard();
+    return [
+      createFolderCard({
+        label: 'Favorites',
+        icon: '⭐',
+        meta: board.list.length ? `${board.list.length} starred cards` : 'No favorites yet',
+        onClick: () => {}
+      })
+    ];
+  }
+
+  if (activeTab === 'all') {
+    const catalog = getCategoryCatalog().filter(entry => entry.value !== 'favorites');
+    return catalog.map(entry => {
+      const count = items.filter(item => normalizeCategory(item.category) === entry.value).length;
+      return createFolderCard({
+        label: entry.label,
+        icon: entry.icon || '📁',
+        meta: count ? `${count} icons` : 'Open folder',
+        onClick: () => {
+          activeTab = entry.value;
+          activeSubtab = 'all';
+          render();
+        }
+      });
+    }).concat(createAddYourOwnCard({ label: 'Add your own card', category: 'core-words' }));
+  }
+
+  if (activeTab === 'people' && activeSubtab === 'all') {
+    return peopleSubcategories.map(entry => {
+      const count = items.filter(item => getItemSubcategory(item) === entry.value).length;
+      return createFolderCard({
+        label: entry.label,
+        icon: entry.icon || '📁',
+        meta: count ? `${count} people icons` : 'Open folder',
+        onClick: () => {
+          activeSubtab = entry.value;
+          render();
+        }
+      });
+    }).concat(createAddYourOwnCard({ label: 'Add your own person', category: 'people', subcategory: 'family-friends' }));
+  }
+
+  return null;
 }
 
 function buildFavoritesBoard() {
@@ -760,9 +1057,20 @@ function buildFavoritesBoard() {
 
 function render() {
   ensureCategories();
+  renderFolderNav();
+  renderFavoritesHelp();
   renderStarters();
   grid.innerHTML = '';
   grid.classList.toggle('favorites-mobile', activeTab === 'favorites' && window.innerWidth < 600);
+  const folderCards = buildFolderCards();
+  if (folderCards?.length) {
+    folderCards.forEach(card => grid.appendChild(card));
+    if (activeTab !== 'favorites') {
+      emptyEl.style.display = 'none';
+      renderSentence();
+      return;
+    }
+  }
   const term = (searchInput?.value || '').trim().toLowerCase();
   let filtered = [];
   let usageBadgeIds = new Set();
@@ -773,9 +1081,12 @@ function render() {
     usageBadgeIds = board.usageBadgeIds;
   } else {
     filtered = items.filter(item => {
-      const matchesTab = activeTab === 'all' || item.category === activeTab;
+      const itemCategory = normalizeCategory(item.category);
+      const itemSubcategory = getItemSubcategory(item);
+      const matchesTab = activeTab === 'all' || itemCategory === activeTab;
+      const matchesSubtab = activeTab !== 'people' || activeSubtab === 'all' || itemSubcategory === activeSubtab;
       const matchesSearch = !term || item.label.toLowerCase().includes(term);
-      return matchesTab && matchesSearch;
+      return matchesTab && matchesSubtab && matchesSearch;
     });
   }
 
@@ -793,27 +1104,39 @@ function render() {
   }
 
   listToRender.forEach(item => grid.appendChild(createCard(item, { showUsageBadge: usageBadgeIds.has(item.id) })));
+  if (activeTab !== 'favorites') {
+    const addLabel = activeTab === 'people'
+      ? 'Add your own person'
+      : 'Add your own card';
+    const addSubcategory = activeTab === 'people' && activeSubtab !== 'all' ? activeSubtab : '';
+    grid.appendChild(createAddYourOwnCard({ label: addLabel, category: activeTab, subcategory: addSubcategory }));
+  }
   if (activeTab === 'favorites' && !filtered.length) {
     emptyEl.textContent = 'Tap the ♥ on cards to add them to Favorites.';
   } else {
-    emptyEl.textContent = 'No cards yet. Turn on Edit Mode to add one.';
+    emptyEl.textContent = 'No cards yet. Turn on Edit Cards to add one.';
   }
   emptyEl.style.display = filtered.length ? 'none' : '';
   renderSentence();
 }
 
-function openDialog(item = null) {
+function openDialog(item = null, defaults = {}) {
   editId = item?.id || null;
   dialogTitle.textContent = editId ? 'Edit Card' : 'Add Card';
   cardForm.reset();
+  addCardContext = item ? null : defaults;
   cardLabel.value = item?.label || '';
-  if (item?.category) cardCategory.value = item.category;
+  const defaultCategory = item?.category || defaults.category || 'core-words';
+  cardCategory.value = normalizeCategory(defaultCategory);
+  const defaultSubcategory = item ? getItemSubcategory(item) : defaults.subcategory;
+  syncCardSubcategoryOptions(defaultCategory, defaultSubcategory);
   if (dialog?.showModal) dialog.showModal();
 }
 
 function closeDialog() {
   dialog?.close();
   editId = null;
+  addCardContext = null;
   cardForm.reset();
 }
 
@@ -859,6 +1182,7 @@ function seedDefaults(existing = []) {
   const byId = new Map(existing.map(item => [item.id, item]));
   STARTER_LIBRARY.forEach(entry => {
     const slug = normalizeCategory(entry.category);
+    const subcategory = slug === 'people' ? inferPeopleSubcategory(entry) : normalizeSubcategory(entry.subcategory);
     const id = entry.id || `lib_${slug}_${entry.label.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`;
     if (hiddenDefaults.has(id)) return;
     const existingItem = byId.get(id);
@@ -867,6 +1191,7 @@ function seedDefaults(existing = []) {
       existingItem.emoji = entry.emoji;
       existingItem.phrase = entry.phrase || existingItem.label;
       existingItem.category = slug;
+      existingItem.subcategory = subcategory;
       existingItem.sort = entry.sort;
       existingItem.isDefault = true;
       byId.set(id, existingItem);
@@ -878,6 +1203,7 @@ function seedDefaults(existing = []) {
       phrase: entry.phrase || entry.label,
       emoji: entry.emoji,
       category: slug,
+      subcategory,
       imageUrl: buildEmojiTile(entry.emoji, slug),
       imagePath: '',
       sort: entry.sort,
@@ -892,13 +1218,15 @@ function buildEmojiTile(emoji, category) {
   const bgMap = {
     'quick-phrases': '#fff7ed',
     'core-words': '#eff6ff',
-    'feelings': '#fef3c7',
+    'emotions': '#fef3c7',
     'places': '#ecfccb',
     'people': '#f3e8ff',
     'actions': '#ffe4e6',
     'questions': '#e0f2fe',
     'food': '#fef2f2',
     'drinks': '#ecfeff',
+    'things': '#f1f5f9',
+    'adjectives': '#fef9c3',
     'time-words': '#ede9fe'
   };
   const bg = bgMap[category] || '#f8fafc';
@@ -918,6 +1246,7 @@ async function loadItems() {
     items = items.map(item => ({
       ...item,
       category: normalizeCategory(item.category),
+      subcategory: getItemSubcategory(item),
       phrase: item.phrase || item.label
     }));
     seedDefaults(items);
@@ -962,6 +1291,7 @@ editToggle?.addEventListener('change', () => {
 });
 
 addBtn?.addEventListener('click', () => openDialog());
+cardCategory?.addEventListener('change', () => syncCardSubcategoryOptions(cardCategory.value));
 cardCancel?.addEventListener('click', () => closeDialog());
 dialog?.addEventListener('click', (event) => {
   if (event.target === dialog) closeDialog();
@@ -970,7 +1300,8 @@ dialog?.addEventListener('click', (event) => {
 cardForm?.addEventListener('submit', async (event) => {
   event.preventDefault();
   const label = (cardLabel.value || '').trim();
-  const category = cardCategory.value || 'food';
+  const category = normalizeCategory(cardCategory.value || 'food');
+  const subcategory = category === 'people' ? normalizeSubcategory(cardSubcategory?.value || 'family-friends') : '';
   if (!label) return;
   const file = cardPhoto?.files?.[0] || null;
 
@@ -1006,6 +1337,7 @@ cardForm?.addEventListener('submit', async (event) => {
           ...items[idx],
           label,
           category,
+          subcategory,
           imageUrl: imageUrl || items[idx].imageUrl,
           imagePath: imagePath || items[idx].imagePath,
           updatedAt: new Date().toISOString()
@@ -1019,6 +1351,7 @@ cardForm?.addEventListener('submit', async (event) => {
         id,
         label,
         category,
+        subcategory,
         imageUrl,
         imagePath,
         createdAt: new Date().toISOString()
@@ -1037,16 +1370,16 @@ cardForm?.addEventListener('submit', async (event) => {
   }
 });
 
-searchToggle?.addEventListener('click', () => {
-  searchInput.classList.toggle('is-active');
-  if (searchInput.classList.contains('is-active')) {
-    searchInput.focus();
-  } else {
-    searchInput.value = '';
-    render();
-  }
-});
 searchInput?.addEventListener('input', () => render());
+folderBackBtn?.addEventListener('click', () => {
+  if (activeTab === 'people' && activeSubtab !== 'all') {
+    activeSubtab = 'all';
+  } else {
+    activeTab = 'all';
+    activeSubtab = 'all';
+  }
+  render();
+});
 
 settingsToggle?.addEventListener('click', () => toggleSettings());
 settingsOverlay?.addEventListener('click', () => toggleSettings(false));
@@ -1072,7 +1405,7 @@ coreBar?.addEventListener('click', (event) => {
   }
   if (key === 'feel') {
     handleCardTap({ text: 'feel', emoji: '🙂', phrase: 'feel' }, { allowSpeak: false });
-    activeTab = 'feelings';
+    activeTab = 'emotions';
     render();
   }
 });

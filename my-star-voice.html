@@ -328,25 +328,26 @@
       justify-content:space-between;
       gap:10px;
       flex-wrap:wrap;
-      padding:8px 0 2px;
+      padding:0 0 12px;
     }
     .folder-nav.is-active{ display:flex; }
     .folder-path{
-      font-size:13px;
+      font-size:18px;
       font-weight:800;
-      color:var(--muted);
+      color:#5c3514;
       font-family:var(--font-serif);
     }
     .folder-back{
       border:1px solid var(--line);
-      background:#fff;
-      color:#111827;
+      background:linear-gradient(180deg,#fff4d6 0%,#f8dd95 100%);
+      color:#6f3d11;
       border-radius:999px;
-      padding:8px 12px;
+      padding:10px 14px;
       font-weight:800;
-      font-size:13px;
+      font-size:14px;
       cursor:pointer;
       white-space:nowrap;
+      box-shadow:0 6px 14px rgba(180,134,44,.12);
     }
     .favorites-help{
       font-size:14px;
@@ -685,16 +686,16 @@
       <div class="favorites-help" id="favoritesHelp">
         <strong>My Favorites:</strong> Tap to show only your Favorites folder and any starred cards below. Tap it again to return to the full library.
       </div>
-      <div class="folder-nav" id="folderNav">
-        <div class="folder-path" id="folderPath"></div>
-        <button class="folder-back" id="folderBackBtn" type="button">← Back to folders</button>
-      </div>
       <div class="subtabs" id="subCategoryTabs" aria-label="Subcategories"></div>
 
       <div class="starter-row" id="starterRow" aria-label="Sentence starters"></div>
     </header>
 
     <section class="grid-wrap" aria-label="AAC cards">
+      <div class="folder-nav" id="folderNav">
+        <div class="folder-path" id="folderPath"></div>
+        <button class="folder-back" id="folderBackBtn" type="button">← Back to folders</button>
+      </div>
       <div id="voiceGrid" class="aac-grid"></div>
       <p id="voiceEmpty" class="empty">No cards yet. Turn on Edit Mode to add one.</p>
     </section>

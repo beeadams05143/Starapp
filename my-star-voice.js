@@ -1061,7 +1061,9 @@ function render() {
   renderFavoritesHelp();
   renderStarters();
   grid.innerHTML = '';
-  grid.classList.toggle('favorites-mobile', activeTab === 'favorites' && window.innerWidth < 600);
+  const term = (searchInput?.value || '').trim().toLowerCase();
+  const searchActive = !!term;
+  grid.classList.toggle('favorites-mobile', activeTab === 'favorites' && !searchActive && window.innerWidth < 600);
   const folderCards = buildFolderCards();
   if (folderCards?.length) {
     folderCards.forEach(card => grid.appendChild(card));
@@ -1071,11 +1073,15 @@ function render() {
       return;
     }
   }
-  const term = (searchInput?.value || '').trim().toLowerCase();
   let filtered = [];
   let usageBadgeIds = new Set();
 
-  if (activeTab === 'favorites') {
+  if (searchActive) {
+    filtered = items.filter(item => {
+      const haystack = `${item.label || ''} ${item.phrase || ''}`.toLowerCase();
+      return haystack.includes(term);
+    });
+  } else if (activeTab === 'favorites') {
     const board = buildFavoritesBoard();
     filtered = board.list;
     usageBadgeIds = board.usageBadgeIds;
@@ -1099,7 +1105,7 @@ function render() {
         return a.label.localeCompare(b.label);
       });
 
-  if (activeTab === 'favorites' && window.innerWidth < 600) {
+  if (activeTab === 'favorites' && !searchActive && window.innerWidth < 600) {
     listToRender = listToRender.slice(0, 8);
   }
 
@@ -1111,7 +1117,9 @@ function render() {
     const addSubcategory = activeTab === 'people' && activeSubtab !== 'all' ? activeSubtab : '';
     grid.appendChild(createAddYourOwnCard({ label: addLabel, category: activeTab, subcategory: addSubcategory }));
   }
-  if (activeTab === 'favorites' && !filtered.length) {
+  if (searchActive && !filtered.length) {
+    emptyEl.textContent = 'No cards matched your search.';
+  } else if (activeTab === 'favorites' && !filtered.length) {
     emptyEl.textContent = 'Tap the ♥ on cards to add them to Favorites.';
   } else {
     emptyEl.textContent = 'No cards yet. Turn on Edit Cards to add one.';

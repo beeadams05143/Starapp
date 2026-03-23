@@ -811,6 +811,48 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.16B';
         <label>Caregiver notes
           <textarea id="cgEditNotes" name="caregiver_notes" placeholder="Add notes about the day…"></textarea>
         </label>
+        <div class="cg-edit-prn-section">
+          <h4 style="margin:0 0 8px">PRN Documentation</h4>
+          <p class="muted" style="margin:0 0 10px">Use this when you need to add or correct a PRN after the original caregiver check-in was submitted.</p>
+          <div class="cg-edit-grid">
+            <label style="display:flex;align-items:center;gap:8px;margin:0">
+              <input type="checkbox" id="cgEditPrnSleep" name="prn_used_for_sleep_disturbance" style="width:auto">
+              <span>PRN used for sleep disturbance</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;margin:0">
+              <input type="checkbox" id="cgEditPrnAggression" name="prn_used_for_aggression" style="width:auto">
+              <span>PRN used for aggression</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;margin:0">
+              <input type="checkbox" id="cgEditPrnMania" name="prn_used_for_mania" style="width:auto">
+              <span>PRN used for mania</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;margin:0">
+              <input type="checkbox" id="cgEditPrnAnxiety" name="prn_used_for_anxiety" style="width:auto">
+              <span>PRN used for anxiety</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;margin:0">
+              <input type="checkbox" id="cgEditPrnPain" name="prn_used_for_pain" style="width:auto">
+              <span>PRN used for pain or discomfort</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;margin:0">
+              <input type="checkbox" id="cgEditPrnHeadache" name="prn_used_for_headache" style="width:auto">
+              <span>PRN used for headache or illness symptoms</span>
+            </label>
+            <label>Sleep PRN: what was used?
+              <input type="text" id="cgEditSleepPrnName" name="sleep_prn_name" placeholder="Medication or support used">
+            </label>
+            <label>Sleep PRN: time given
+              <input type="time" id="cgEditSleepPrnTime" name="sleep_prn_time" step="60">
+            </label>
+            <label>Symptom PRN: what was used?
+              <input type="text" id="cgEditTempPrnName" name="temp_prn_name" placeholder="Medication or support used">
+            </label>
+            <label>Symptom PRN: time given
+              <input type="time" id="cgEditTempPrnTime" name="temp_prn_time" step="60">
+            </label>
+          </div>
+        </div>
         <label>Attachment
           <input type="file" id="cgEditFile" name="file" accept="image/*,.pdf,.doc,.docx,.txt">
           <span id="cgEditFileNote" class="cg-edit-file-note">No file uploaded for this entry.</span>
@@ -1866,6 +1908,16 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.16B';
       community: document.getElementById('cgEditCommunity'),
       skill: document.getElementById('cgEditSkill'),
       notes: document.getElementById('cgEditNotes'),
+      prnSleep: document.getElementById('cgEditPrnSleep'),
+      prnAggression: document.getElementById('cgEditPrnAggression'),
+      prnMania: document.getElementById('cgEditPrnMania'),
+      prnAnxiety: document.getElementById('cgEditPrnAnxiety'),
+      prnPain: document.getElementById('cgEditPrnPain'),
+      prnHeadache: document.getElementById('cgEditPrnHeadache'),
+      sleepPrnName: document.getElementById('cgEditSleepPrnName'),
+      sleepPrnTime: document.getElementById('cgEditSleepPrnTime'),
+      tempPrnName: document.getElementById('cgEditTempPrnName'),
+      tempPrnTime: document.getElementById('cgEditTempPrnTime'),
       file: document.getElementById('cgEditFile'),
       fileNote: document.getElementById('cgEditFileNote'),
       idInput: document.getElementById('cgEditId'),
@@ -3727,6 +3779,11 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.16B';
       const num = Number(value);
       return Number.isFinite(num) ? num : null;
     };
+    const trimOrNull = (value) => {
+      if (value === null || value === undefined) return null;
+      const text = String(value).trim();
+      return text ? text : null;
+    };
     const parseLooseBoolean = (value) => {
       if (value === true || value === false) return value;
       if (typeof value === 'number') {
@@ -3740,6 +3797,11 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.16B';
         if (['false','f','no','n','0'].includes(norm)) return false;
       }
       return null;
+    };
+    const hasValue = (value) => {
+      if (value === null || value === undefined) return false;
+      if (typeof value === 'string') return value.trim() !== '';
+      return true;
     };
     const parseRecordTimestamp = (record) => {
       if (!record) return null;
@@ -3829,6 +3891,51 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.16B';
       editUi.community.value = checkinData.community_time ?? '';
       editUi.skill.value = checkinData.new_skill_score ?? '';
       editUi.notes.value = checkinData.caregiver_notes || '';
+      if (editUi.prnSleep) {
+        editUi.prnSleep.checked = parseLooseBoolean(
+          payload.prn_used_for_sleep_disturbance ??
+          payload.prn_reason_sleep ??
+          checkinData.prn_given ??
+          checkinData.prn_sleep
+        ) === true;
+      }
+      if (editUi.prnAggression) {
+        editUi.prnAggression.checked = parseLooseBoolean(
+          payload.prn_used_for_aggression ??
+          payload.prn_reason_aggression ??
+          checkinData.prn_aggression_given ??
+          checkinData.prn_aggr
+        ) === true;
+      }
+      if (editUi.prnMania) {
+        editUi.prnMania.checked = parseLooseBoolean(
+          payload.prn_used_for_mania ??
+          payload.prn_reason_mania ??
+          checkinData.prn_mania_given ??
+          checkinData.prn_mania
+        ) === true;
+      }
+      if (editUi.prnAnxiety) {
+        editUi.prnAnxiety.checked = parseLooseBoolean(payload.prn_used_for_anxiety) === true;
+      }
+      if (editUi.prnPain) {
+        editUi.prnPain.checked = parseLooseBoolean(payload.prn_used_for_pain) === true;
+      }
+      if (editUi.prnHeadache) {
+        editUi.prnHeadache.checked = parseLooseBoolean(payload.prn_used_for_headache) === true;
+      }
+      if (editUi.sleepPrnName) {
+        editUi.sleepPrnName.value = payload.sleep_prn_name ?? payload.prn_name ?? '';
+      }
+      if (editUi.sleepPrnTime) {
+        editUi.sleepPrnTime.value = payload.sleep_prn_time ?? payload.prn_time ?? '';
+      }
+      if (editUi.tempPrnName) {
+        editUi.tempPrnName.value = payload.temp_prn_name ?? '';
+      }
+      if (editUi.tempPrnTime) {
+        editUi.tempPrnTime.value = payload.temp_prn_time ?? '';
+      }
       if (editUi.file) editUi.file.value = '';
       if (editUi.fileNote) {
         editUi.fileNote.textContent = checkinData.file_url
@@ -3971,6 +4078,18 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.16B';
           updates.submitted_at = timestampIso;
         }
         const sleepTimeValue = editUi.sleepTime?.value || '';
+        const prnSleep = !!editUi.prnSleep?.checked;
+        const prnAggression = !!editUi.prnAggression?.checked;
+        const prnMania = !!editUi.prnMania?.checked;
+        const prnAnxiety = !!editUi.prnAnxiety?.checked;
+        const prnPain = !!editUi.prnPain?.checked;
+        const prnHeadache = !!editUi.prnHeadache?.checked;
+        const sleepPrnName = trimOrNull(editUi.sleepPrnName?.value || '');
+        const sleepPrnTime = trimOrNull(editUi.sleepPrnTime?.value || '');
+        const tempPrnName = trimOrNull(editUi.tempPrnName?.value || '');
+        const tempPrnTime = trimOrNull(editUi.tempPrnTime?.value || '');
+        const prnAdministered = prnSleep || prnAggression || prnMania || prnAnxiety || prnPain || prnHeadache
+          || hasValue(sleepPrnName) || hasValue(sleepPrnTime) || hasValue(tempPrnName) || hasValue(tempPrnTime);
         const payloadClone = { ...(editState.record?.payload || {}) };
         if (dateValue) {
           payloadClone.entry_date = dateValue;
@@ -4001,6 +4120,55 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.16B';
         } else {
           delete payloadClone.anomaly_flag;
           delete payloadClone.anomaly;
+        }
+        payloadClone.prn_used_for_sleep_disturbance = prnSleep;
+        payloadClone.prn_used_for_aggression = prnAggression;
+        payloadClone.prn_used_for_mania = prnMania;
+        payloadClone.prn_used_for_anxiety = prnAnxiety;
+        payloadClone.prn_used_for_pain = prnPain;
+        payloadClone.prn_used_for_headache = prnHeadache;
+        payloadClone.prn_administered = prnAdministered ? 'yes' : 'no';
+        payloadClone.prn_reason_sleep = prnSleep;
+        payloadClone.prn_reason_aggression = prnAggression;
+        payloadClone.prn_reason_mania = prnMania;
+        if (sleepPrnName) {
+          payloadClone.sleep_prn_name = sleepPrnName;
+        } else {
+          delete payloadClone.sleep_prn_name;
+        }
+        if (sleepPrnTime) {
+          payloadClone.sleep_prn_time = sleepPrnTime;
+        } else {
+          delete payloadClone.sleep_prn_time;
+        }
+        if (tempPrnName) {
+          payloadClone.temp_prn_name = tempPrnName;
+        } else {
+          delete payloadClone.temp_prn_name;
+        }
+        if (tempPrnTime) {
+          payloadClone.temp_prn_time = tempPrnTime;
+        } else {
+          delete payloadClone.temp_prn_time;
+        }
+        if (prnSleep) {
+          payloadClone.prn_name = sleepPrnName;
+          payloadClone.prn_time = sleepPrnTime;
+          payloadClone.prn_given = 'yes';
+        } else {
+          delete payloadClone.prn_name;
+          delete payloadClone.prn_time;
+          payloadClone.prn_given = 'no';
+        }
+        payloadClone.prn_mania_given = prnMania ? 'yes' : 'no';
+        payloadClone.prn_aggression_given = prnAggression ? 'yes' : 'no';
+        if (!prnMania) {
+          delete payloadClone.prn_mania_name;
+          delete payloadClone.prn_mania_time;
+        }
+        if (!prnAggression) {
+          delete payloadClone.prn_aggression_name;
+          delete payloadClone.prn_aggression_time;
         }
 
         const file = editUi.file?.files?.[0] || null;

@@ -34,9 +34,22 @@ export async function rest(path, { method = 'GET', headers = {}, body } = {}) {
     body,
   });
 
-  const text = await response.text();
   if (!response.ok) {
-    throw new Error(text || `Supabase REST error ${response.status}`);
+    let errBody = {};
+    try {
+      errBody = await response.json();
+    } catch (e) {
+      console.error('Could not parse error body');
+    }
+
+    console.error('SUPABASE ERROR BODY:', errBody);
+
+    const error = new Error(errBody.message || 'Request failed');
+    error.details = errBody.details;
+    error.hint = errBody.hint;
+
+    throw error;
   }
+  const text = await response.text();
   return text ? JSON.parse(text) : null;
 }

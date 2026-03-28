@@ -1856,6 +1856,26 @@
     'Cooking / Food': ['Prepared snack','Prepared drink','Made sandwich','Helped cook','Used microwave','Helped bake'],
     'Community / Errands': ['Brought trash out','Sorted recycling','Carried grocery bag']
   };
+  const normalizeAdlCategoryKey = (value) =>
+    String(value || '')
+      .toLowerCase()
+      .replace(/&/g, 'and')
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim();
+  const ADL_CATEGORY_FLAGS = {
+    hygiene: ['hygiene toileting', 'hygiene', 'toileting'],
+    food_prep: ['cooking food', 'food prep', 'food preparation', 'cooking', 'food'],
+    cleanup: ['cleaning household', 'cleaning', 'household']
+  };
+  const adlCategoryMatchesFlag = (category, flag) => {
+    const normalized = normalizeAdlCategoryKey(category);
+    const aliases = ADL_CATEGORY_FLAGS[flag] || [];
+    return aliases.some((alias) =>
+      normalized === alias
+      || normalized.includes(alias)
+      || alias.includes(normalized)
+    );
+  };
 
   const BEHAVIOR_LABEL_OVERRIDES = {
     aggression: 'Aggression',
@@ -3976,7 +3996,7 @@
       entryDateInput.value = todayISO();
     }
     hydratePromptingSelects();
-    steps.forEach((step, idx) => restore(step, idx));
+    applyDraftToForm();
     updateSavedButtons();
     updateProgress();
     syncAggressionControls();
@@ -4220,18 +4240,8 @@
     // Draft resume
     resumeDraftBtn?.addEventListener('click', () => {
       draft = loadDraft() || { data: {}, savedAt: {} };
-      steps.forEach((s, i) => restore(s, i));
       hydratePromptingSelects();
-      syncAggressionControls();
-      syncManiaControls();
-      syncAppetiteControls();
-      syncFixationControls();
-      hydrateMovementFromData(draft.data[movementStepIndex] || {});
-      hydrateTempFromData(draft.data[movementStepIndex] || {});
-      hydrateMenstrualFromData(draft.data[movementStepIndex] || {});
-      applyConditionalSections();
-      applyCaregiverSetupVisibility();
-      syncEducationalQuestionStates();
+      applyDraftToForm();
       toast('Draft restored');
     });
 
@@ -4701,7 +4711,29 @@
         hydrateHomeCommunityFromData(draft.data[idx] || {});
       }
     }
-    function loadDraft(){ try{ const raw=localStorage.getItem(DRAFT_KEY); return raw?JSON.parse(raw):null; }catch{ return null; } }
+    function applyDraftToForm(){
+      steps.forEach((step, idx) => restore(step, idx));
+      syncAggressionControls();
+      syncManiaControls();
+      syncAppetiteControls();
+      syncFixationControls();
+      applyConditionalSections();
+      applyCaregiverSetupVisibility();
+      syncEducationalQuestionStates();
+    }
+    function loadDraft(){
+      try{
+        const raw=localStorage.getItem(DRAFT_KEY);
+        if(!raw) return null;
+        const parsed = JSON.parse(raw);
+        return {
+          data: parsed?.data && typeof parsed.data === 'object' ? parsed.data : {},
+          savedAt: parsed?.savedAt && typeof parsed.savedAt === 'object' ? parsed.savedAt : {},
+        };
+      }catch{
+        return null;
+      }
+    }
     function updateSavedAt(step,idx){
       const el=step.querySelector('[data-savedat]'); const ts=draft.savedAt[idx];
       if(el) el.textContent = ts ? `Last saved: ${new Date(ts).toLocaleString()}` : '';
@@ -5016,9 +5048,10 @@
         if (!adlCategorySet.size && payload.adl_category) {
           parseMultiValue(payload.adl_category).forEach((cat) => adlCategorySet.add(cat));
         }
-        const hygiene = adlCategorySet.has('Hygiene / Toileting');
-        const foodPrep = adlCategorySet.has('Cooking / Food');
-        const cleanup = adlCategorySet.has('Cleaning / Household');
+        const adlCategories = Array.from(adlCategorySet);
+        const hygiene = adlCategories.some((category) => adlCategoryMatchesFlag(category, 'hygiene'));
+        const foodPrep = adlCategories.some((category) => adlCategoryMatchesFlag(category, 'food_prep'));
+        const cleanup = adlCategories.some((category) => adlCategoryMatchesFlag(category, 'cleanup'));
 
         const vocationalMinutes = durationToMinutes(payload.vocational_time);
         const homeMinutes = durationToMinutes(payload.home_activity_time);
@@ -5026,7 +5059,7 @@
         const communityMinutes = [homeMinutes, publicMinutes]
           .filter((n) => Number.isFinite(n))
           .reduce((sum, n) => sum + n, 0);
-        const community_time = Number.isFinite(communityMinutes) && communityMinutes > 0 ? communityMinutes : null;
+        const community_time = Number.isFinite(communityMinutes) ? communityMinutes : null;
 
         const newSkillScore = Number.isFinite(Number(payload.prompting_level))
           ? Number(payload.prompting_level)
@@ -5060,7 +5093,7 @@
         ]
           .map((note) => trimOrNull(note))
           .filter(Boolean)
-          .join('\n\n') || null;
+          .join('\n\n');
 
         const focusLogs = collectFocusLogs();
         payload.focus_goal_logs = focusLogs;
@@ -5091,7 +5124,9 @@
           movement_present: movementData.movement_present,
           movement_main_type: movementData.movement_main_type,
           movement_severity: movementData.movement_severity,
-          movement_times: movementData.movement_times,
+          movement_times: Array.isArray(movementData.movement_times)
+            ? null
+            : Number(movementData.movement_times) || null,
           movement_notes: movementData.movement_notes,
           movement_body_map: movementData.movement_body_map,
           movement_frequency: movementData.movement_frequency,
@@ -5107,45 +5142,21 @@
 
         let inserted = null;
         try {
+          console.log('[cg] final row before save:', row);
           inserted = await rest('caregiver_checkins', {
             method: 'POST',
             headers: { Prefer: 'return=representation' },
             body: JSON.stringify([row]),
           });
         } catch (error) {
-          const msg = String(error?.message || '');
-          if (/column .*movement_|schema cache/i.test(msg)) {
-            const {
-              movement_present,
-              movement_main_type,
-              movement_severity,
-              movement_times,
-              movement_notes,
-              movement_body_map,
-              movement_frequency,
-              movement_triggers,
-              movement_other_text,
-              movement_trigger_other,
-              movement_interfered,
-              movement_interfered_notes,
-              movement_awareness,
-              movement_safety_risk,
-              movement_safety_notes,
-              pet_interaction_flag,
-              pet_activity_type,
-              pet_activity_note,
-              pet_activity_notes,
-              ...fallbackRow
-            } = row;
-            inserted = await rest('caregiver_checkins', {
-              method: 'POST',
-              headers: { Prefer: 'return=representation' },
-              body: JSON.stringify([fallbackRow]),
-            });
-          } else {
-            throw error;
-          }
+          console.log('ROW SENT TO SUPABASE:', row);
+          console.error('PRIMARY INSERT ERROR FULL:', error);
+          console.error('MESSAGE:', error?.message);
+          console.error('DETAILS:', error?.details);
+          console.error('HINT:', error?.hint);
+          throw error;
         }
+        console.log('[cg] save result:', inserted);
         const data = Array.isArray(inserted) ? inserted[0] : inserted;
 
         const when = new Date(data?.submitted_at || row.submitted_at).toLocaleString();

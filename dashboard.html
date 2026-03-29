@@ -5,8 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
  <title>Dashboard – STAR</title>
 <link rel="icon" type="image/png" href="images/STAR1.png">
+  <script>
+    (function enforceDashboardOnboardingGate() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem('star_onboarding_status_v1') || '{}');
+        if (parsed?.complete !== true) {
+          window.location.replace('/onboarding.html');
+        }
+      } catch {
+        window.location.replace('/onboarding.html');
+      }
+    })();
+  </script>
 
-  <link rel="stylesheet" href="/style.css?v=2025.01.09E" />
+  <link rel="stylesheet" href="/style.css?v=2026.03.29A" />
 
   <style>
     /* --- Card layout (matches Login vibe) --- */
@@ -192,7 +204,9 @@
 
         <div class="row">
           <button id="logoutBtn" class="btn">Log Out</button>
+          <button id="restartOnboardingBtn" class="btn" type="button">Restart Onboarding (DEV)</button>
         </div>
+        <p id="onboardingDebugStatus" class="help" style="margin-top:10px;"></p>
 
         <p class="help">Use the menu (☰) or the bottom bar to navigate.</p>
       </section>
@@ -211,21 +225,27 @@
   </main>
 
 <!-- Page logic that populates #user-email etc. -->
-<script type="module" src="./script.js?v=2025.01.09E"></script>
-<script type="module" src="./avatar-float.js?v=2025.01.09E"></script>
-<script type="module" src="./home-activity.js?v=2025.01.09E"></script>
+<script type="module" src="./script.js?v=2026.03.29A"></script>
+<script type="module" src="./avatar-float.js?v=2026.03.29A"></script>
+<script type="module" src="./home-activity.js?v=2026.03.29A"></script>
 
 <script type="module">
-  import { rest } from './restClient.js?v=2026.03.16B';
+  import { rest } from './restClient.js?v=2026.03.29A';
   import {
     SUPABASE_URL,
     SUPABASE_ANON_KEY,
     getSessionFromStorage,
     clearSavedSession,
-  } from './supabaseClient.js?v=2025.01.09E';
-  import { fetchCurrentProfile, fetchCurrentMemberships, profileNeedsOnboarding } from './onboarding-flow.js?v=2026.03.16B';
-  import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
-  import { fetchFocusByGroup } from './focus-data.js?v=2026.03.16B';
+  } from './supabaseClient.js?v=2026.03.29A';
+  import {
+    clearGuidedOnboarding,
+    fetchCurrentProfile,
+    fetchCurrentMemberships,
+    getOnboardingCompletionState,
+    resolvePostAuthDestination,
+  } from './onboarding-flow.js?v=2026.03.29A';
+  import { ensureActiveGroupId } from './active-group.js?v=2026.03.29A';
+  import { fetchFocusByGroup } from './focus-data.js?v=2026.03.29A';
 
   const clearLocalIdentityState = () => {
     const keys = ['user_id', 'currentGroupId', 'currentGroupName'];
@@ -235,6 +255,8 @@
   };
 
   const logoutBtn = document.getElementById('logoutBtn');
+  const restartOnboardingBtn = document.getElementById('restartOnboardingBtn');
+  const onboardingDebugStatus = document.getElementById('onboardingDebugStatus');
   const gettingStartedList = document.getElementById('gettingStartedList');
   const gettingStartedProgress = document.getElementById('gettingStartedProgress');
   const gettingStartedCard = document.getElementById('gettingStartedCard');
@@ -293,6 +315,11 @@
     } catch {
       return 'caregiver';
     }
+  }
+
+  function renderOnboardingDebugStatus() {
+    if (!onboardingDebugStatus) return;
+    onboardingDebugStatus.textContent = `Onboarding complete: ${getOnboardingCompletionState() ? 'true' : 'false'}`;
   }
 
   async function loadGettingStartedCard(userId, profile) {
@@ -384,7 +411,7 @@
           step: 1,
           title: 'Finish your profile',
           description: 'Your name is usually already filled in. Add a profile photo if you want, then save and continue.',
-          href: '/profile.html?flow=getting-started&next=caregiver-checkin-setup/',
+          href: '/profile.html?flow=getting-started&next=caregiver-setup-wizard.html',
           action: 'Continue',
           done: hasProfile,
         },
@@ -400,7 +427,7 @@
           step: 3,
           title: 'Set up caregiver check-in',
           description: 'Choose the tracking sections your group wants caregivers to use.',
-          href: '/caregiver-checkin-setup/',
+          href: '/caregiver-setup-wizard.html',
           action: 'Open Setup',
           done: hasCaregiverSetup,
         },
@@ -475,7 +502,7 @@
           step: 1,
           title: 'Finish your profile',
           description: 'Your name is usually already filled in. Add a profile photo if you want, then save and continue.',
-          href: '/profile.html?flow=getting-started&next=caregiver-checkin-setup/',
+          href: '/profile.html?flow=getting-started&next=caregiver-setup-wizard.html',
           action: 'Continue',
           done: false,
         },
@@ -491,7 +518,7 @@
           step: 3,
           title: 'Set up caregiver check-in',
           description: 'Choose what caregivers should track.',
-          href: '/caregiver-checkin-setup/',
+          href: '/caregiver-setup-wizard.html',
           action: 'Open Setup',
           done: false,
         },
@@ -531,14 +558,21 @@
           session.user.email ||
           '';
       }
-      if (profileNeedsOnboarding(profile)) {
+      renderOnboardingDebugStatus();
+      if (!getOnboardingCompletionState()) {
         window.location.replace('onboarding.html');
+        return;
+      }
+      const destination = await resolvePostAuthDestination({ userId: session.user.id });
+      if (destination !== 'dashboard.html') {
+        window.location.replace(destination);
         return;
       }
       await loadGettingStartedCard(session.user.id, profile);
     } catch (error) {
       console.warn('[DASHBOARD] onboarding check failed', error);
       if (userEmailEl) userEmailEl.textContent = session.user.email || '';
+      renderOnboardingDebugStatus();
       await loadGettingStartedCard(session.user.id, null);
     }
   })();
@@ -567,11 +601,31 @@
       window.location.href = 'login.html';
     });
   }
+
+  if (restartOnboardingBtn) {
+    restartOnboardingBtn.addEventListener('click', async () => {
+      const session = getSessionFromStorage();
+      if (!session?.user?.id) return;
+
+      restartOnboardingBtn.disabled = true;
+      restartOnboardingBtn.textContent = 'Restarting…';
+
+      try {
+        localStorage.setItem('star_onboarding_status_v1', JSON.stringify({ complete: false }));
+        clearGuidedOnboarding(session.user.id);
+        window.location.href = '/onboarding.html';
+      } catch (error) {
+        console.warn('[DASHBOARD] restart onboarding failed', error);
+        restartOnboardingBtn.disabled = false;
+        restartOnboardingBtn.textContent = 'Restart Onboarding (DEV)';
+      }
+    });
+  }
 </script>
 
 <!-- ✅ Restore original hamburger menu + bottom tabbar -->
-<script defer src="./ui-shell.js?v=2026.03.16B"></script>
-<script defer src="./scripts/appbar-drawer.js?v=2026.03.16B"></script>
+<script defer src="./ui-shell.js?v=2026.03.29A"></script>
+<script defer src="./scripts/appbar-drawer.js?v=2026.03.29A"></script>
 
 
 

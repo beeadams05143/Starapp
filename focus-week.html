@@ -325,6 +325,7 @@
       clearLocalFocusDraft
     } from './focus-data.js?v=2025.01.09E';
     import { getSessionFromStorage } from './restClient.js?v=2025.01.09E';
+    import { advanceGuidedOnboarding } from './onboarding-flow.js?v=2026.03.16B';
     // optional navbar loader
     (function(){
       if(!document.getElementById('navbar')) return;
@@ -342,6 +343,7 @@
     const clearBtn      = document.getElementById('clearBtn');
     const saveNextPrompt = document.getElementById('saveNextPrompt');
     const weekFreqEl    = document.getElementById('weekFreq');
+    const onboardingActive = new URLSearchParams(window.location.search).get('onboarding') === '1';
 
     const makeGoalId = () =>
       (typeof crypto !== 'undefined' && crypto.randomUUID)
@@ -492,6 +494,13 @@
         if (!silent && saveNextPrompt) {
           saveNextPrompt.classList.add('is-visible');
           saveNextPrompt.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          if (onboardingActive) {
+            const session = getSessionFromStorage();
+            advanceGuidedOnboarding(session?.user?.id || null, 'view_report');
+            setTimeout(() => {
+              window.location.replace('caregiver-report.html?onboarding=1');
+            }, 900);
+          }
         }
       }catch(e){
         console.error('Save failed', e);

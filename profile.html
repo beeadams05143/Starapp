@@ -265,13 +265,14 @@
   </div>
 
 <button id="saveBtn" type="button">Save Profile</button>
-<button id="nextStepBtn" type="button" class="next-step-btn">Next: Caregiver Check-In Setup</button>
+<button id="nextStepBtn" type="button" class="next-step-btn">Next: Choose App Features</button>
 <div id="profileMessage" role="status" aria-live="polite"></div>
 
 <script type="module">
-  import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabaseClient.js?v=2025.01.09E';
-  import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
-  import { resolveActiveGroup } from './active-group.js?v=2026.03.12A';
+  import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabaseClient.js?v=2026.03.29A';
+  import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
+  import { resolveActiveGroup } from './active-group.js?v=2026.03.29A';
+  import { advanceGuidedOnboarding } from './onboarding-flow.js?v=2026.03.29A';
 
   const defaultAvatar     = 'IMG/default-avatar.png';
   const avatarPreview     = document.getElementById('avatarPreview');
@@ -298,10 +299,11 @@
   const setupChecklist = document.getElementById('setupChecklist');
   const searchParams = new URLSearchParams(window.location.search);
   const nextPathRaw = searchParams.get('next') || '';
+  const onboardingActive = searchParams.get('onboarding') === '1';
   const nextPath = nextPathRaw && !nextPathRaw.includes('://') && !nextPathRaw.startsWith('//')
     ? nextPathRaw.replace(/^\/+/, '')
     : '';
-  const fallbackNextPath = 'caregiver-checkin-setup/';
+  const fallbackNextPath = 'caregiver-setup-wizard.html';
 
   function showSetupNote() {
     if (!setupNote) return;
@@ -563,6 +565,11 @@
   nextStepBtn?.addEventListener('click', () => {
     const target = getNextStepTarget();
     if (!target) return;
+    if (onboardingActive && target.includes('feature-setup.html')) {
+      advanceGuidedOnboarding(currentUser?.id || null, 'feature_setup');
+    } else if (onboardingActive && target.includes('caregiver-setup-wizard.html')) {
+      advanceGuidedOnboarding(currentUser?.id || null, 'caregiver_setup');
+    }
     window.location.href = target;
   });
 
@@ -579,11 +586,11 @@
   });
 </script>
 <!-- page logic(s) ... -->
-<script defer src="./scripts/appbar-drawer.js?v=2026.03.16B"></script>
-<script defer src="./ui-shell.js?v=2026.03.16B"></script>
+<script defer src="./scripts/appbar-drawer.js?v=2026.03.29A"></script>
+<script defer src="./ui-shell.js?v=2026.03.29A"></script>
 
 <!-- Floating avatar (optional) -->
-<script type="module" src="./avatar-float.js?v=2025.01.09E"></script>
+<script type="module" src="./avatar-float.js?v=2026.03.29A"></script>
 
 
 

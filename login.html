@@ -72,8 +72,8 @@
       saveSession,
       clearSavedSession,
       getSessionFromStorage,
-    } from './supabaseClient.js?v=2026.03.16B';
-    import { resolvePostAuthDestination } from './onboarding-flow.js?v=2026.03.16B';
+    } from './supabaseClient.js?v=2026.03.29A';
+    import { resolvePostAuthDestination } from './onboarding-flow.js?v=2026.03.29A';
 
     const params   = new URLSearchParams(location.search);
     const normalizeRedirect = (value) => {
@@ -119,6 +119,42 @@
     };
     const show = (el, on) => { if (el) el.style.display = on ? '' : 'none'; };
     const setBusy = (on) => { [loginBtn, signupBtn, forgotBtn, logoutBtn].forEach(b => b && (b.disabled = on)); };
+    const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    function readOnboardingComplete() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem('star_onboarding_status_v1') || '{}');
+        return parsed?.complete === true;
+      } catch {
+        return false;
+      }
+    }
+
+    function validateEmail(email) {
+      if (!EMAIL_REGEX.test(email || '')) {
+        return 'Please enter a valid email address';
+      }
+      return '';
+    }
+
+    function validatePassword(password) {
+      if ((password || '').length < 8) {
+        return 'Password must be at least 8 characters';
+      }
+      const hasNumberOrSymbol = /[0-9!@#$%^&*]/.test(password || '');
+      if (!hasNumberOrSymbol) {
+        return 'Password must include at least one number or special character';
+      }
+      return '';
+    }
+
+    function validateCredentials(email, password) {
+      const emailError = validateEmail(email);
+      if (emailError) return emailError;
+      const passwordError = validatePassword(password);
+      if (passwordError) return passwordError;
+      return '';
+    }
 
     const authHeaders = (includeToken = false) => {
       const headers = {
@@ -228,6 +264,10 @@
         showMsg('');
         const session = currentSession();
         if (session?.user?.id) {
+          if (!readOnboardingComplete()) {
+            window.location.replace('onboarding.html');
+            return;
+          }
           const destination = await resolvePostAuthDestination({
             userId: session.user.id,
             redirect,
@@ -251,8 +291,22 @@
               return;
             }
 
+            const validationError = validateCredentials(email, password);
+            if (validationError) {
+              showMsg(validationError);
+              setBusy(false);
+              return;
+            }
+
             await handleLogin(email, password);
             const session = currentSession();
+            if (!readOnboardingComplete()) {
+              showMsg('Redirecting to onboarding…', true);
+              setTimeout(() => {
+                window.location.assign('onboarding.html');
+              }, 120);
+              return;
+            }
             const destination = await resolvePostAuthDestination({
               userId: session?.user?.id || null,
               redirect,
@@ -283,6 +337,11 @@
           const email = (emailEl.value || '').trim();
           if (!email) {
             showMsg('Enter your email first.');
+            return;
+          }
+          const emailError = validateEmail(email);
+          if (emailError) {
+            showMsg(emailError);
             return;
           }
           setBusy(true);

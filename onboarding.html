@@ -4,6 +4,16 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Onboarding - STAR</title>
+  <script>
+    (function enforceOnboardingEntry() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem('star_onboarding_status_v1') || '{}');
+        if (parsed?.complete === true) {
+          window.location.replace('/dashboard.html');
+        }
+      } catch {}
+    })();
+  </script>
   <style>
     :root {
       color-scheme: light;
@@ -185,6 +195,47 @@
       color: #724016;
       margin-bottom: 8px;
     }
+    .config-card {
+      margin-top: 16px;
+      padding: 16px;
+      border-radius: 16px;
+      border: 1px solid #d9e6d6;
+      background: rgba(255,255,255,0.82);
+      box-shadow: 0 10px 22px rgba(125,89,34,0.06);
+    }
+    .config-card h4 {
+      margin: 0 0 8px;
+      font-size: 18px;
+      color: #724016;
+      font-family: var(--font-serif);
+    }
+    .config-card p {
+      margin: 0 0 12px;
+      font-size: 14px;
+      line-height: 1.45;
+      color: #516074;
+    }
+    .config-options {
+      display: grid;
+      gap: 10px;
+    }
+    .config-option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      background: #fffef9;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--navy);
+    }
+    .config-option input {
+      width: auto;
+      margin: 0;
+      accent-color: #22c55e;
+    }
     @media (max-width: 720px) {
       .grid { grid-template-columns: 1fr; }
       .welcome-grid { grid-template-columns: 1fr; }
@@ -195,7 +246,7 @@
 <body>
   <main class="shell">
     <h1>Finish Setting Up STAR</h1>
-    <p class="sub">Create your profile, then create or join the group you want to use in the app.</p>
+    <p class="sub">Set up your profile, connect your group, and then we’ll guide you through the core caregiver workflow without sending you back to the dashboard.</p>
 
     <section class="card">
       <div class="step-note">Step 1</div>
@@ -254,14 +305,19 @@
           <p id="howToCardBody">Next, set up your caregiver check-in so your group sees the right tracking sections. After that, explore Home, Calendar, Reports, Docs, and Emergency.</p>
         </article>
       </div>
+      <section class="config-card" aria-labelledby="caregiverConfigTitle">
+        <div class="step-note">Step 3</div>
+        <h4 id="caregiverConfigTitle">Guided Caregiver Setup</h4>
+        <p>Next, STAR will guide you straight into caregiver setup, a practice caregiver check-in, a weekly focus, and the caregiver report so you learn the workflow by doing it.</p>
+      </section>
       <div class="success-actions">
-        <button id="continueToDashboardBtn" type="button">Go to Caregiver Check-In Setup</button>
+        <button id="continueToDashboardBtn" type="button">Continue Guided Setup</button>
       </div>
     </section>
   </main>
 
   <script type="module">
-    import { getSessionFromStorage } from './supabaseClient.js?v=2026.03.16B';
+    import { getSessionFromStorage } from './supabaseClient.js?v=2026.03.29A';
     import {
       fetchCurrentMemberships,
       fetchCurrentProfile,
@@ -273,7 +329,9 @@
       buildInviteMessage,
       deriveInviterContact,
       resolveInviteCodeValue,
-    } from './onboarding-flow.js?v=2026.03.16B';
+      resolvePostAuthDestination,
+      startGuidedOnboarding,
+    } from './onboarding-flow.js?v=2026.03.29A';
 
     const profileForm = document.getElementById('profileForm');
     const createGroupForm = document.getElementById('createGroupForm');
@@ -302,7 +360,6 @@
     const howToCardTitleEl = document.getElementById('howToCardTitle');
     const howToCardBodyEl = document.getElementById('howToCardBody');
     const continueToDashboardBtn = document.getElementById('continueToDashboardBtn');
-
     let currentUser = null;
     let savedProfile = null;
     let lastCreatedGroup = null;
@@ -416,8 +473,11 @@
 
     async function finishWithGroup(group, mode = 'create') {
       await saveProfileDefaultGroup(currentUser.id, group.id);
-      setStatus(mode === 'join' ? 'Group joined successfully.' : 'Group created successfully.', true);
-      showGroupSuccess(group, mode);
+      startGuidedOnboarding(currentUser?.id || null, {
+        current_step: 'profile_setup',
+        group_name: group?.name || '',
+      });
+      window.location.href = '/profile.html?next=feature-setup.html%3Fonboarding%3D1&onboarding=1';
     }
 
     async function hydrate() {
@@ -449,7 +509,10 @@
       }
 
       if (profile && memberships && memberships.length > 0) {
-        window.location.replace('dashboard.html');
+        const destination = await resolvePostAuthDestination({ userId: currentUser.id });
+        if (destination && destination !== 'onboarding.html') {
+          window.location.replace(destination);
+        }
       }
     }
 
@@ -523,7 +586,11 @@
     });
 
     continueToDashboardBtn.addEventListener('click', () => {
-      window.location.replace('caregiver-checkin-setup/');
+      startGuidedOnboarding(currentUser?.id || null, {
+        current_step: 'profile_setup',
+        group_name: lastCreatedGroup?.name || '',
+      });
+      window.location.href = '/profile.html?next=feature-setup.html%3Fonboarding%3D1&onboarding=1';
     });
 
     hydrate().catch((error) => {

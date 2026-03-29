@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Choose App Features - STAR</title>
+  <style>
+    :root{
+      --font-sans:"Avenir Next","Segoe UI","Helvetica Neue",Arial,sans-serif;
+      --font-serif:"Iowan Old Style","Palatino Linotype","Book Antiqua",Georgia,serif;
+      --page-bg:
+        radial-gradient(circle at top center, rgba(251,230,194,0.78), transparent 34%),
+        linear-gradient(180deg, #fff8ea 0%, #f7ead0 100%);
+      --panel:#fffdf8;
+      --panel-border:#ead7ab;
+      --panel-shadow:0 18px 36px rgba(125,89,34,0.12);
+      --text:#243047;
+      --muted:#667188;
+      --navy:#20324f;
+    }
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family:var(--font-sans);
+      background:var(--page-bg);
+      color:var(--text);
+      display:grid;
+      place-items:center;
+      padding:24px 16px;
+      box-sizing:border-box;
+    }
+    .shell{
+      width:min(760px,100%);
+      background:var(--panel);
+      border-radius:28px;
+      border:1px solid var(--panel-border);
+      box-shadow:var(--panel-shadow);
+      padding:28px 22px;
+    }
+    h1{margin:0 0 8px;font-size:30px;font-family:var(--font-serif);color:#724016;}
+    .sub{margin:0 0 22px;color:var(--muted);font-style:italic;line-height:1.55;}
+    .progress{display:inline-block;margin-bottom:10px;font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#724016;}
+    .card{
+      border:1px solid var(--panel-border);
+      border-radius:22px;
+      padding:18px;
+      background:#fffef9;
+      box-shadow:0 12px 24px rgba(125,89,34,0.08);
+    }
+    .card h2{margin:0 0 10px;font-size:22px;font-family:var(--font-serif);color:var(--navy);}
+    .card p{margin:0 0 14px;color:#516074;line-height:1.5;}
+    .option-grid{display:grid;gap:12px;grid-template-columns:repeat(2,minmax(0,1fr));}
+    .option{
+      display:flex;
+      align-items:flex-start;
+      gap:10px;
+      padding:14px 14px;
+      border-radius:14px;
+      border:1px solid #e5e7eb;
+      background:#fffef9;
+    }
+    .option input{margin-top:2px;accent-color:#22c55e;}
+    .option strong{display:block;color:var(--navy);margin-bottom:4px;}
+    .option span{display:block;color:var(--muted);font-size:14px;line-height:1.45;}
+    .actions{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:16px;}
+    button{
+      border:1px solid #2bbf67;
+      background:linear-gradient(180deg,#49da7b 0%,#22c55e 100%);
+      color:#08331d;
+      font-weight:700;
+      padding:12px 18px;
+      border-radius:16px;
+      cursor:pointer;
+      font-size:15px;
+    }
+    button.secondary{
+      border:1px solid #d1d5db;
+      background:#fffdf8;
+      color:var(--navy);
+      box-shadow:0 10px 22px rgba(36,48,71,.08);
+    }
+    .message{min-height:20px;margin-top:12px;font-size:14px;color:#b91c1c;}
+    .hidden{display:none !important;}
+    @media (max-width: 720px) {
+      .option-grid{grid-template-columns:1fr;}
+      .actions{flex-direction:column-reverse;}
+      button{width:100%;}
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <div class="progress" id="progressLabel">Step 3 of 7</div>
+    <h1>Choose App Features</h1>
+    <p class="sub">Choose which shared STAR tools your group wants available. You can keep the app focused by only turning on the features you plan to use.</p>
+
+    <section class="card" id="featuresStep">
+      <h2>Choose what your group will use</h2>
+      <p>Select every feature your group wants in the app. Dashboard, Caregiver Check-In, and Caregiver Report stay available automatically.</p>
+      <div class="option-grid">
+        <label class="option"><input id="featureChat" type="checkbox" /><span><strong>Group Chat</strong><span>Secure group conversation and quick updates.</span></span></label>
+        <label class="option"><input id="featureCalendar" type="checkbox" /><span><strong>Calendar</strong><span>Shared scheduling, appointments, and reminders.</span></span></label>
+        <label class="option"><input id="featureFocus" type="checkbox" /><span><strong>Focus of the Week</strong><span>Shared weekly goals and caregiver focus planning.</span></span></label>
+        <label class="option"><input id="featureDocuments" type="checkbox" /><span><strong>Documents</strong><span>Important shared records and reference documents.</span></span></label>
+      </div>
+    </section>
+
+    <section class="card hidden" id="documentsStep">
+      <h2>Select document categories</h2>
+      <p>Choose the document areas your group wants visible in the Documents section.</p>
+      <div class="option-grid">
+        <label class="option"><input data-doc-type="emergency" type="checkbox" /><span><strong>Emergency Info</strong><span>Emergency sheet and urgent support information.</span></span></label>
+        <label class="option"><input data-doc-type="isa_iep" type="checkbox" /><span><strong>IEP / ISA</strong><span>Support plans, goals, and school/service plans.</span></span></label>
+        <label class="option"><input data-doc-type="medical" type="checkbox" /><span><strong>Medical</strong><span>Medical records, medication info, and health notes.</span></span></label>
+        <label class="option"><input data-doc-type="hr_finance" type="checkbox" /><span><strong>HR / Finance</strong><span>Staffing, payroll, and finance-related documents.</span></span></label>
+        <label class="option"><input data-doc-type="guardianship" type="checkbox" /><span><strong>Guardianship</strong><span>Guardianship records and legal paperwork.</span></span></label>
+        <label class="option"><input data-doc-type="year_end" type="checkbox" /><span><strong>Year-End Documents</strong><span>Annual filing and year-end paperwork.</span></span></label>
+      </div>
+    </section>
+
+    <div class="actions">
+      <button id="backBtn" type="button" class="secondary">Back</button>
+      <button id="nextBtn" type="button">Next</button>
+    </div>
+    <div id="status" class="message" role="status" aria-live="polite"></div>
+  </main>
+
+  <script type="module">
+    import { getSessionFromStorage } from './supabaseClient.js?v=2026.03.29A';
+    import { advanceGuidedOnboarding } from './onboarding-flow.js?v=2026.03.29A';
+
+    const APP_CONFIG_KEY = 'star_app_config';
+    const featuresStep = document.getElementById('featuresStep');
+    const documentsStep = document.getElementById('documentsStep');
+    const progressLabel = document.getElementById('progressLabel');
+    const statusEl = document.getElementById('status');
+    const backBtn = document.getElementById('backBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const featureChat = document.getElementById('featureChat');
+    const featureCalendar = document.getElementById('featureCalendar');
+    const featureFocus = document.getElementById('featureFocus');
+    const featureDocuments = document.getElementById('featureDocuments');
+    const documentInputs = Array.from(document.querySelectorAll('[data-doc-type]'));
+
+    const DEFAULT_FEATURES = {
+      chat: true,
+      calendar: true,
+      focus: true,
+      documents: true,
+    };
+    const DEFAULT_DOCUMENT_TYPES = ['emergency', 'isa_iep', 'medical', 'hr_finance', 'guardianship', 'year_end'];
+
+    let currentStep = 'features';
+
+    function setStatus(text = '') {
+      statusEl.textContent = text;
+    }
+
+    function readAppConfig() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(APP_CONFIG_KEY) || 'null');
+        if (!parsed || typeof parsed !== 'object') {
+          return { appFeatures: { ...DEFAULT_FEATURES }, documentTypes: [...DEFAULT_DOCUMENT_TYPES] };
+        }
+        return {
+          appFeatures: {
+            chat: parsed.appFeatures?.chat !== false,
+            calendar: parsed.appFeatures?.calendar !== false,
+            focus: parsed.appFeatures?.focus !== false,
+            documents: parsed.appFeatures?.documents !== false,
+          },
+          documentTypes: Array.isArray(parsed.documentTypes) && parsed.documentTypes.length
+            ? [...parsed.documentTypes]
+            : [...DEFAULT_DOCUMENT_TYPES],
+        };
+      } catch {
+        return { appFeatures: { ...DEFAULT_FEATURES }, documentTypes: [...DEFAULT_DOCUMENT_TYPES] };
+      }
+    }
+
+    function saveAppConfig() {
+      const appFeatures = {
+        chat: !!featureChat.checked,
+        calendar: !!featureCalendar.checked,
+        focus: !!featureFocus.checked,
+        documents: !!featureDocuments.checked,
+      };
+      const documentTypes = documentInputs.filter((input) => input.checked).map((input) => input.dataset.docType);
+      localStorage.setItem(APP_CONFIG_KEY, JSON.stringify({ appFeatures, documentTypes }));
+      return { appFeatures, documentTypes };
+    }
+
+    function hydrateForm() {
+      const config = readAppConfig();
+      featureChat.checked = config.appFeatures.chat;
+      featureCalendar.checked = config.appFeatures.calendar;
+      featureFocus.checked = config.appFeatures.focus;
+      featureDocuments.checked = config.appFeatures.documents;
+      documentInputs.forEach((input) => {
+        input.checked = config.documentTypes.includes(input.dataset.docType);
+      });
+    }
+
+    function renderStep() {
+      const onDocuments = currentStep === 'documents';
+      featuresStep.classList.toggle('hidden', onDocuments);
+      documentsStep.classList.toggle('hidden', !onDocuments);
+      progressLabel.textContent = onDocuments ? 'Step 4 of 7' : 'Step 3 of 7';
+      backBtn.textContent = onDocuments ? 'Back' : 'Back to Profile';
+      nextBtn.textContent = onDocuments ? 'Continue to Caregiver Setup' : 'Next';
+      setStatus('');
+    }
+
+    function goToCaregiverSetup() {
+      const session = getSessionFromStorage();
+      advanceGuidedOnboarding(session?.user?.id || null, 'caregiver_setup');
+      window.location.replace('caregiver-setup-wizard.html?onboarding=1');
+    }
+
+    featureDocuments.addEventListener('change', () => {
+      if (!featureDocuments.checked) {
+        documentInputs.forEach((input) => { input.checked = false; });
+      }
+    });
+
+    backBtn.addEventListener('click', () => {
+      if (currentStep === 'documents') {
+        currentStep = 'features';
+        renderStep();
+        return;
+      }
+      window.location.href = '/profile.html?next=feature-setup.html%3Fonboarding%3D1&onboarding=1';
+    });
+
+    nextBtn.addEventListener('click', () => {
+      const selectedFeatures = [featureChat, featureCalendar, featureFocus, featureDocuments].filter((input) => input.checked);
+      if (!selectedFeatures.length) {
+        setStatus('Choose at least one optional feature for your group.');
+        return;
+      }
+
+      if (currentStep === 'features' && featureDocuments.checked) {
+        currentStep = 'documents';
+        renderStep();
+        return;
+      }
+
+      if (featureDocuments.checked) {
+        const selectedDocumentTypes = documentInputs.filter((input) => input.checked);
+        if (!selectedDocumentTypes.length) {
+          setStatus('Choose at least one document category.');
+          return;
+        }
+      }
+
+      saveAppConfig();
+      goToCaregiverSetup();
+    });
+
+    hydrateForm();
+    renderStep();
+  </script>
+</body>
+</html>

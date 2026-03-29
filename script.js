@@ -206,6 +206,65 @@ window.goToMoodPage = goToMoodPage;
 
 
 window.addEventListener('DOMContentLoaded', () => {
+  const readOnboardingComplete = () => {
+    try {
+      const parsed = JSON.parse(localStorage.getItem('star_onboarding_status_v1') || '{}');
+      return parsed?.complete === true;
+    } catch {
+      return false;
+    }
+  };
+
+  const ensureDashboardDevControls = () => {
+    const path = window.location.pathname || '';
+    if (!(path === '/dashboard.html' || path.endsWith('/dashboard.html'))) return;
+
+    const primaryCard = document.querySelector('.dashboard-stack .card');
+    if (!primaryCard) return;
+
+    let restartBtn = document.getElementById('restartOnboardingBtn');
+    let debugLine = document.getElementById('onboardingDebugStatus');
+
+    if (!restartBtn) {
+      const row = primaryCard.querySelector('.row');
+      if (row) {
+        restartBtn = document.createElement('button');
+        restartBtn.id = 'restartOnboardingBtn';
+        restartBtn.className = 'btn';
+        restartBtn.type = 'button';
+        restartBtn.textContent = 'Restart Onboarding (DEV)';
+        row.appendChild(restartBtn);
+      }
+    }
+
+    if (!debugLine) {
+      debugLine = document.createElement('p');
+      debugLine.id = 'onboardingDebugStatus';
+      debugLine.className = 'help';
+      debugLine.style.marginTop = '10px';
+      const navHelp = primaryCard.querySelector('.help');
+      if (navHelp?.parentNode) {
+        navHelp.parentNode.insertBefore(debugLine, navHelp);
+      } else {
+        primaryCard.appendChild(debugLine);
+      }
+    }
+
+    if (debugLine) {
+      debugLine.textContent = `Onboarding complete: ${readOnboardingComplete() ? 'true' : 'false'}`;
+    }
+
+    if (restartBtn && !restartBtn.dataset.devBound) {
+      restartBtn.dataset.devBound = '1';
+      restartBtn.addEventListener('click', () => {
+        localStorage.setItem('star_onboarding_status_v1', JSON.stringify({ complete: false }));
+        window.location.href = '/onboarding.html';
+      });
+    }
+  };
+
+  ensureDashboardDevControls();
+
   const logoutButtons = document.querySelectorAll('#logoutBtn, [data-logout], button[data-action="logout"]');
   logoutButtons.forEach(btn => {
     btn.addEventListener('click', (event) => {

@@ -542,7 +542,7 @@
 </div>
 
 <script type="module">
-import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.16B';
+import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 
 (function(){
   const Status = document.getElementById('cg-status');
@@ -587,10 +587,41 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.16B';
   Run.addEventListener('click', smoke);
 })();
 </script>
+<script type="module">
+  import { getSessionFromStorage } from './restClient.js?v=2026.03.29A';
+  import { completeGuidedOnboarding } from './onboarding-flow.js?v=2026.03.29A';
+
+  const onboardingActive = new URLSearchParams(window.location.search).get('onboarding') === '1';
+
+  if (onboardingActive) {
+    const session = getSessionFromStorage();
+    localStorage.setItem('star_onboarding_status_v1', JSON.stringify({ complete: true }));
+    completeGuidedOnboarding(session?.user?.id || null);
+
+    const banner = document.createElement('div');
+    banner.style.maxWidth = '1200px';
+    banner.style.margin = '16px auto 0';
+    banner.style.padding = '16px 18px';
+    banner.style.border = '1px solid #a7f3d0';
+    banner.style.borderRadius = '18px';
+    banner.style.background = 'linear-gradient(180deg, #fffdf6 0%, #f7f3df 100%)';
+    banner.style.boxShadow = '0 12px 24px rgba(125,89,34,0.08)';
+    banner.innerHTML = `
+      <strong style="display:block;font-size:18px;color:#065f46;margin-bottom:6px;">Onboarding complete</strong>
+      <span style="display:block;color:#516074;line-height:1.5;margin-bottom:12px;">You’ve finished the guided STAR caregiver onboarding. Redirecting to the dashboard…</span>
+      <a href="/dashboard.html" style="display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:0 18px;border-radius:14px;border:1px solid #2bbf67;background:linear-gradient(180deg,#49da7b 0%,#22c55e 100%);color:#08331d;text-decoration:none;font-weight:800;">Go to Dashboard</a>
+    `;
+    const main = document.querySelector('main.page');
+    if (main?.parentNode) main.parentNode.insertBefore(banner, main);
+    window.setTimeout(() => {
+      window.location.replace('/dashboard.html');
+    }, 1200);
+  }
+</script>
 
 <!-- Shared navigation shell -->
-<script defer src="./ui-shell.js?v=2026.03.16B"></script>
-<script defer src="./scripts/appbar-drawer.js?v=2026.03.16B"></script>
+<script defer src="./ui-shell.js?v=2026.03.29A"></script>
+<script defer src="./scripts/appbar-drawer.js?v=2026.03.29A"></script>
 
 <body>
   <div id="navbar"></div>
@@ -1190,17 +1221,17 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.16B';
 
   <!-- Single, clean module script -->
   <script type="module">
-    import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.16B';
-    import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabaseClient.js?v=2026.03.16B';
-    import { loadFocusForCurrentUser, readLocalFocusDraft } from './focus-data.js?v=2026.03.16B';
-    import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
+    import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
+    import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabaseClient.js?v=2026.03.29A';
+    import { loadFocusForCurrentUser, readLocalFocusDraft } from './focus-data.js?v=2026.03.29A';
+    import { ensureActiveGroupId } from './active-group.js?v=2026.03.29A';
     import { CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-shared.js?v=2026.03.13A';
 
     /* =============== Optional live data =============== */
     let loadFromSupabase = null;
     let formatEntryForList = null;
     try {
-      const mod = await import('./caregiver-report-supabase.js?v=2026.03.16B');
+      const mod = await import('./caregiver-report-supabase.js?v=2026.03.29A');
       loadFromSupabase = mod.loadCaregiverCheckins;
       formatEntryForList = mod.formatEntryForList;
     } catch (err) {
@@ -5846,8 +5877,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.16B';
 </script>
 
 <script type="module">
-import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.16B';
-import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
+import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
+import { ensureActiveGroupId } from './active-group.js?v=2026.03.29A';
 import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-shared.js?v=2026.03.13A';
 
 (() => {

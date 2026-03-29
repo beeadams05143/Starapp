@@ -1,0 +1,1465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Caregiver Setup Wizard - STAR</title>
+  <style>
+    :root{
+      --ink:#172033;
+      --muted:#5c667a;
+      --line:#d8e0ef;
+      --panel:rgba(255,253,248,0.96);
+      --accent:#20324f;
+      --accent-soft:#fff2c7;
+      --glow:0 18px 38px rgba(125,89,34,0.12);
+      --font-sans:"Avenir Next","Segoe UI","Helvetica Neue",Arial,sans-serif;
+      --font-serif:"Iowan Old Style","Palatino Linotype","Book Antiqua",Georgia,serif;
+      --green:#22c55e;
+      --green-dark:#08331d;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:var(--font-sans);
+      color:var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(251,230,194,0.78), transparent 34%),
+        linear-gradient(180deg, #fff8ea 0%, #f7ead0 100%);
+      min-height:100vh;
+    }
+    main{
+      max-width:920px;
+      margin:0 auto;
+      padding:32px 18px 96px;
+    }
+    .hero,
+    .wizard{
+      background:var(--panel);
+      border:1px solid rgba(216,224,239,0.95);
+      border-radius:28px;
+      box-shadow:var(--glow);
+    }
+    .hero{
+      padding:30px 24px;
+      margin-bottom:18px;
+    }
+    .eyebrow{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 12px;
+      border-radius:999px;
+      background:var(--accent-soft);
+      color:#724016;
+      font-size:12px;
+      font-weight:800;
+      letter-spacing:.05em;
+      text-transform:uppercase;
+    }
+    h1{
+      margin:14px 0 10px;
+      font-size:clamp(2rem,4vw,3rem);
+      line-height:1.05;
+      font-family:var(--font-serif);
+      color:#724016;
+    }
+    .sub{
+      max-width:720px;
+      margin:0;
+      color:var(--muted);
+      font-size:1rem;
+      line-height:1.6;
+    }
+    .wizard{
+      padding:24px;
+    }
+    .progress-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      margin-bottom:18px;
+      flex-wrap:wrap;
+    }
+    .progress-text{
+      font-size:13px;
+      font-weight:800;
+      letter-spacing:.04em;
+      text-transform:uppercase;
+      color:#724016;
+    }
+    .progress-bar{
+      flex:1;
+      min-width:220px;
+      height:10px;
+      border-radius:999px;
+      background:#efe6d4;
+      overflow:hidden;
+    }
+    .progress-fill{
+      height:100%;
+      width:25%;
+      border-radius:999px;
+      background:linear-gradient(90deg,#49da7b 0%,#22c55e 100%);
+      transition:width .2s ease;
+    }
+    .step{
+      display:none;
+    }
+    .step.active{
+      display:block;
+    }
+    .step h2{
+      margin:0 0 10px;
+      font-size:clamp(1.6rem,3vw,2.1rem);
+      color:var(--accent);
+      font-family:var(--font-serif);
+    }
+    .step p{
+      margin:0 0 20px;
+      color:var(--muted);
+      line-height:1.6;
+      max-width:700px;
+    }
+    .option-grid{
+      display:grid;
+      gap:14px;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+    .choice-card{
+      border:1px solid #dfdfdf;
+      border-radius:20px;
+      background:#fffef9;
+      padding:18px 16px;
+      font-size:16px;
+      font-weight:800;
+      color:var(--accent);
+      cursor:pointer;
+      transition:border-color .18s ease, transform .18s ease, box-shadow .18s ease, background .18s ease;
+      text-align:left;
+    }
+    .choice-card:hover{
+      transform:translateY(-1px);
+      box-shadow:0 12px 22px rgba(125,89,34,0.08);
+    }
+    .choice-card.active{
+      border-color:#2bbf67;
+      background:linear-gradient(180deg,#f2fff6 0%,#e2fbe9 100%);
+      box-shadow:0 14px 28px rgba(34,197,94,0.12);
+    }
+    .choice-card[disabled]{
+      cursor:not-allowed;
+      opacity:.52;
+      transform:none;
+      box-shadow:none;
+    }
+    .track-card{
+      min-height:110px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      gap:8px;
+    }
+    .track-label{
+      font-size:18px;
+      font-weight:900;
+    }
+    .track-description{
+      font-size:14px;
+      line-height:1.55;
+      color:var(--muted);
+      font-weight:600;
+    }
+    .track-status{
+      font-size:13px;
+      font-weight:700;
+      color:#64748b;
+    }
+    .section-status{
+      display:inline-flex;
+      align-items:center;
+      width:max-content;
+      padding:6px 10px;
+      border-radius:999px;
+      background:#f5efe0;
+      color:#724016;
+      font-size:12px;
+      font-weight:800;
+      letter-spacing:.03em;
+      text-transform:uppercase;
+    }
+    .section-summary{
+      font-size:13px;
+      font-weight:700;
+      color:#475569;
+      line-height:1.5;
+    }
+    .picker-grid{
+      display:grid;
+      gap:12px;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+    .picker-card{
+      border:1px solid #dfdfdf;
+      border-radius:18px;
+      background:#fffef9;
+      padding:16px;
+      font-size:15px;
+      font-weight:800;
+      color:var(--accent);
+      cursor:pointer;
+      text-align:left;
+      transition:border-color .18s ease, transform .18s ease, box-shadow .18s ease, background .18s ease;
+    }
+    .picker-card.active{
+      border-color:#2bbf67;
+      background:linear-gradient(180deg,#f2fff6 0%,#e2fbe9 100%);
+      box-shadow:0 14px 28px rgba(34,197,94,0.12);
+    }
+    .picker-card .picker-check{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:22px;
+      height:22px;
+      border-radius:999px;
+      border:1px solid #cbd5e1;
+      background:#fff;
+      color:#fff;
+      font-size:13px;
+      font-weight:900;
+      margin-right:10px;
+      vertical-align:middle;
+    }
+    .picker-card.active .picker-check{
+      border-color:#22c55e;
+      background:#22c55e;
+      color:#08331d;
+    }
+    .picker-card .picker-text{
+      display:inline-block;
+      vertical-align:middle;
+      max-width:calc(100% - 38px);
+    }
+    .setup-meta{
+      margin-top:6px;
+      font-size:13px;
+      color:#64748b;
+      line-height:1.5;
+    }
+    .field-groups{
+      display:grid;
+      gap:16px;
+      margin-top:16px;
+    }
+    .field-group{
+      border:1px solid #e5e7eb;
+      border-radius:18px;
+      background:#fffef9;
+      padding:16px;
+    }
+    .field-group h4{
+      margin:0 0 8px;
+      font-size:18px;
+      color:#724016;
+      font-family:var(--font-serif);
+    }
+    .field-group p{
+      margin:0 0 12px;
+      color:#64748b;
+      line-height:1.55;
+      font-size:14px;
+    }
+    .setup-preview{
+      margin:8px 0 0 32px;
+      padding:0;
+      color:#64748b;
+      font-size:13px;
+      line-height:1.55;
+      text-align:left;
+    }
+    .setup-preview li{
+      margin:0 0 3px;
+    }
+    .health-groups{
+      display:grid;
+      gap:14px;
+      margin-top:16px;
+    }
+    .health-group{
+      border:1px solid #e5e7eb;
+      border-radius:18px;
+      background:#fffef9;
+      padding:16px;
+    }
+    .health-group h4{
+      margin:0 0 8px;
+      font-size:18px;
+      color:#724016;
+      font-family:var(--font-serif);
+    }
+    .health-group p{
+      margin:0 0 10px;
+      color:#64748b;
+      line-height:1.55;
+      font-size:14px;
+    }
+    .health-group ul{
+      margin:0;
+      padding-left:22px;
+      color:var(--accent);
+      font-weight:700;
+      line-height:1.8;
+    }
+    .health-group li::marker{
+      color:#22c55e;
+    }
+    .summary-box,
+    .done-box{
+      border:1px solid #e5e7eb;
+      border-radius:20px;
+      background:#fffef9;
+      padding:18px 18px 16px;
+    }
+    .summary-box h3,
+    .done-box h3{
+      margin:0 0 10px;
+      font-size:20px;
+      color:#724016;
+      font-family:var(--font-serif);
+    }
+    .summary-list{
+      margin:0;
+      padding-left:22px;
+      color:var(--accent);
+      font-weight:700;
+      line-height:1.8;
+    }
+    .summary-list li::marker{
+      color:#22c55e;
+    }
+    .done-box p{
+      margin:0;
+      color:var(--muted);
+      line-height:1.6;
+    }
+    .actions{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      margin-top:24px;
+      flex-wrap:wrap;
+    }
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:50px;
+      padding:0 20px;
+      border-radius:16px;
+      border:1px solid #2bbf67;
+      background:linear-gradient(180deg,#49da7b 0%,#22c55e 100%);
+      color:var(--green-dark);
+      text-decoration:none;
+      font-weight:800;
+      box-shadow:0 10px 24px rgba(34,197,94,0.18);
+      cursor:pointer;
+      min-width:148px;
+    }
+    .btn.secondary{
+      border-color:#cbd5e1;
+      background:#fffdf8;
+      color:var(--accent);
+      box-shadow:none;
+    }
+    .btn[disabled]{
+      opacity:.55;
+      cursor:not-allowed;
+    }
+    .message{
+      min-height:20px;
+      margin-top:14px;
+      font-size:14px;
+      color:#0f766e;
+      font-weight:700;
+    }
+    @media (max-width:720px){
+      .option-grid{
+        grid-template-columns:1fr;
+      }
+      .wizard,
+      .hero{
+        padding:20px 16px;
+        border-radius:22px;
+      }
+      .actions{
+        flex-direction:column-reverse;
+      }
+      .btn{
+        width:100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <div class="eyebrow">Guided Setup</div>
+      <h1>Caregiver Setup Wizard</h1>
+      <p class="sub">
+        We’ll walk through a few quick steps to choose the caregiver check-in sections that fit best for your person and your team.
+      </p>
+    </section>
+
+    <section class="wizard" aria-labelledby="wizardTitle">
+      <div class="progress-row">
+        <div class="progress-text" id="progressText">Step 1 of 4</div>
+        <div class="progress-bar" aria-hidden="true">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+      </div>
+
+      <div class="step active" data-step="0">
+        <h2 id="wizardTitle">Who is this for?</h2>
+        <p>Choose the person this caregiver check-in is being set up for. This helps keep the setup relevant and uncluttered.</p>
+        <div class="option-grid" id="profileOptions">
+          <button class="choice-card" type="button" data-profile="male_adult">Male Adult</button>
+          <button class="choice-card" type="button" data-profile="female_adult">Female Adult</button>
+          <button class="choice-card" type="button" data-profile="male_child">Male Child</button>
+          <button class="choice-card" type="button" data-profile="female_child">Female Child</button>
+        </div>
+      </div>
+
+      <div class="step" data-step="1">
+        <h2>What do you want to track?</h2>
+        <p>Select all of the sections you want to include. After that, we’ll guide you through each selected section one-by-one in a continuous setup flow.</p>
+        <div class="option-grid" id="trackingOptions">
+          <button class="choice-card track-card" type="button" data-track="dailyLiving">
+            <span class="track-label">Daily Living</span>
+            <span class="track-description">Daily routines like hygiene, meals, sleep, and personal care.</span>
+            <span class="section-status" data-status-for="dailyLiving">Not started</span>
+            <span class="section-summary" data-summary-for="dailyLiving"></span>
+          </button>
+          <button class="choice-card track-card" type="button" data-track="behavior">
+            <span class="track-label">Behavior / Mental Health</span>
+            <span class="track-description">Mood, behaviors, emotional regulation, and responses to daily situations.</span>
+            <span class="section-status" data-status-for="behavior">Not started</span>
+            <span class="section-summary" data-summary-for="behavior"></span>
+          </button>
+          <button class="choice-card track-card" type="button" data-track="movement">
+            <span class="track-label">Movement / Physical Status</span>
+            <span class="track-description">Mobility, coordination, and physical functioning.</span>
+            <span class="section-status" data-status-for="movement">Not started</span>
+            <span class="section-summary" data-summary-for="movement"></span>
+          </button>
+          <button class="choice-card track-card" type="button" data-track="health">
+            <span class="track-label">Health Tracking</span>
+            <span class="track-description">Medication, sleep, symptoms, and overall physical well-being.</span>
+            <span class="section-status" data-status-for="health">Not started</span>
+            <span class="section-summary" data-summary-for="health"></span>
+          </button>
+          <button class="choice-card track-card" type="button" data-track="community">
+            <span class="track-label">Community</span>
+            <span class="track-description">Participation in outings, social engagement, and community involvement.</span>
+            <span class="section-status" data-status-for="community">Not started</span>
+            <span class="section-summary" data-summary-for="community"></span>
+          </button>
+          <button class="choice-card track-card" type="button" data-track="vocational">
+            <span class="track-label">Vocational</span>
+            <span class="track-description">Work skills, job participation, and task completion.</span>
+            <span class="section-status" data-status-for="vocational">Not started</span>
+            <span class="section-summary" data-summary-for="vocational"></span>
+          </button>
+          <button class="choice-card track-card" type="button" data-track="educational">
+            <span class="track-label">Educational</span>
+            <span class="track-description">Learning goals and skill development.</span>
+            <span class="section-status" data-status-for="educational">Not started</span>
+            <span class="section-summary" data-summary-for="educational"></span>
+          </button>
+          <button class="choice-card track-card" type="button" data-track="menstrual">
+            <span class="track-label">Menstrual Tracking</span>
+            <span class="track-description">Cycle-related symptoms, discomfort, and menstrual health details when relevant.</span>
+            <span class="section-status" data-status-for="menstrual">Not started</span>
+            <span class="section-summary" data-summary-for="menstrual"></span>
+          </button>
+        </div>
+      </div>
+
+      <div class="step" data-step="behavior-setup">
+        <h2 id="behaviorSetupTitle">Behavior Setup</h2>
+        <p id="behaviorSetupIntro">Choose what behavior details should be available in the caregiver check-in.</p>
+        <div class="summary-box">
+          <h3 id="behaviorSubstepTitle">Track these behaviors</h3>
+          <p id="behaviorSubstepCopy" class="setup-meta"></p>
+          <div class="picker-grid" id="behaviorPickerGrid"></div>
+        </div>
+      </div>
+
+      <div class="step" data-step="section-setup">
+        <h2 id="sectionSetupTitle">Section Setup</h2>
+        <p id="sectionSetupIntro">Choose the items that should appear in this section of the caregiver check-in.</p>
+        <div class="summary-box">
+          <h3 id="sectionSetupHeading">Choose fields for this section</h3>
+          <p class="setup-meta" id="sectionSetupMeta"></p>
+        </div>
+        <div class="field-groups" id="sectionFieldGroups"></div>
+      </div>
+
+      <div class="step" data-step="2">
+        <h2>Check-In Setup Summary</h2>
+        <p>Review the sections you selected and the fields configured for each one before saving.</p>
+        <div class="summary-box">
+          <h3>Sections selected</h3>
+          <ul class="summary-list" id="summaryList"></ul>
+        </div>
+        <div class="summary-box" style="margin-top:16px">
+          <h3>Fields selected per section</h3>
+          <ul class="summary-list" id="summaryDetailsList"></ul>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn secondary" id="backBtn" type="button">Back</button>
+        <button class="btn" id="nextBtn" type="button">Next</button>
+      </div>
+      <div id="message" class="message" role="status" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <script>
+    const GUIDED_ONBOARDING_KEY = 'star_guided_onboarding_v1';
+    const onboardingParams = new URLSearchParams(window.location.search);
+    const onboardingActive = onboardingParams.get('onboarding') === '1';
+
+    function readGuidedOnboardingStore() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(GUIDED_ONBOARDING_KEY) || '{}');
+        return parsed && typeof parsed === 'object' ? parsed : {};
+      } catch {
+        return {};
+      }
+    }
+
+    function writeGuidedOnboardingStep(step) {
+      if (!onboardingActive) return;
+      try {
+        const session = JSON.parse(localStorage.getItem('sb-session') || 'null');
+        const userId = session?.user?.id || localStorage.getItem('user_id') || '';
+        if (!userId) return;
+        const store = readGuidedOnboardingStore();
+        const existing = store[userId] && typeof store[userId] === 'object' ? store[userId] : {};
+        store[userId] = {
+          ...existing,
+          active: true,
+          completed: false,
+          current_step: step,
+          started_at: existing.started_at || new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          completed_at: null,
+        };
+        localStorage.setItem(GUIDED_ONBOARDING_KEY, JSON.stringify(store));
+      } catch {
+        // ignore storage failures
+      }
+    }
+
+    const MAIN_VIEWS = ['profile', 'sections', 'done'];
+    const VIEW_TO_STEP_ID = {
+      profile: '0',
+      sections: '1',
+      behaviorSetup: 'behavior-setup',
+      sectionSetup: 'section-setup',
+      done: '2',
+    };
+    const SECTION_CONFIG_MAP = {
+      dailyLiving: { configKey: 'show_daily_living', label: 'Daily Living' },
+      behavior: { configKey: 'show_behavior', label: 'Behavior / Mental Health' },
+      movement: { configKey: 'show_movement', label: 'Movement / Physical Status' },
+      health: { configKey: 'show_health', label: 'Health Tracking' },
+      menstrual: { configKey: 'show_menstrual', label: 'Menstrual Tracking' },
+      community: { configKey: 'show_community', label: 'Community' },
+      vocational: { configKey: 'show_vocational', label: 'Vocational' },
+      educational: { configKey: 'show_educational', label: 'Educational' },
+    };
+    const SECTION_FIELD_DEFINITIONS = {
+      dailyLiving: {
+        configKey: 'daily_living_fields',
+        groups: [
+          {
+            title: 'Daily Living Items',
+            type: 'items',
+            fields: [
+              {
+                key: 'hygiene',
+                label: 'Hygiene',
+                trackTimeDefault: true,
+                preview: ['Hygiene completed (yes/no)', 'Assistance needed (optional)', 'Notes'],
+              },
+              {
+                key: 'meals',
+                label: 'Meals / Food Prep',
+                trackTimeDefault: true,
+                preview: ['Meals completed', 'Food prep participation', 'Appetite'],
+              },
+              {
+                key: 'sleep',
+                label: 'Sleep',
+                trackTimeDefault: true,
+                preview: ['Hours of sleep', 'Time fell asleep', 'Night waking', 'Sleep disturbances', 'PRN usage for sleep'],
+              },
+              {
+                key: 'personal_care',
+                label: 'Personal care',
+                trackTimeDefault: true,
+                preview: ['Grooming', 'Dressing', 'Toileting support'],
+              },
+            ],
+          },
+          {
+            title: 'Occasional Tracking',
+            type: 'occasional',
+            fields: [
+              {
+                key: 'pain',
+                label: 'Pain / discomfort',
+                preview: ['Presence of pain', 'Type (optional)', 'Notes', 'PRN usage (if enabled)'],
+              },
+              {
+                key: 'illness_symptoms',
+                label: 'Illness symptoms',
+                preview: ['Symptoms present', 'Type of symptoms', 'Notes'],
+              },
+              {
+                key: 'medication_changes',
+                label: 'Medication changes',
+                preview: ['Any medication updates', 'Notes'],
+              },
+              {
+                key: 'prn',
+                label: 'PRN usage',
+                preview: ['PRN given', 'What was given', 'Time given'],
+              },
+            ],
+          },
+        ],
+      },
+      movement: {
+        configKey: 'movement_fields',
+        groups: [
+          {
+            title: 'Movement / Physical Status Items',
+            fields: [
+              { key: 'mobility', label: 'Mobility', preview: ['Walking or transferring', 'Support needed', 'Notes'] },
+              { key: 'coordination', label: 'Coordination', preview: ['Coordination concerns', 'When it happened', 'Notes'] },
+              { key: 'balance', label: 'Balance', preview: ['Balance concerns', 'Safety issues', 'Notes'] },
+              { key: 'physical_functioning', label: 'Physical functioning', preview: ['Overall physical functioning', 'Observed changes', 'Notes'] },
+            ],
+          },
+        ],
+      },
+      health: {
+        configKey: 'health_fields',
+        groups: [
+          {
+            title: 'Daily Tracking',
+            fields: [
+              { key: 'good_health', label: 'Appears in good health', preview: ['General wellness check', 'Visible signs of illness', 'Notes if concerns arise'] },
+              { key: 'tired', label: 'Appears tired', preview: ['Energy level', 'Signs of fatigue', 'Notes'] },
+              { key: 'appetite', label: 'Appetite', preview: ['Change in appetite', 'Eating more or less', 'Notes'] },
+            ],
+          },
+          {
+            title: 'Occasional Tracking',
+            helper: 'These may not happen every day, but are important to track when they occur.',
+            fields: [
+              { key: 'pain', label: 'Pain / discomfort', preview: ['Presence of pain', 'Type (optional)', 'Notes', 'PRN usage (if enabled)'] },
+              { key: 'illness_symptoms', label: 'Illness symptoms', preview: ['Symptoms present', 'Type of symptoms', 'Notes'] },
+              { key: 'medication_changes', label: 'Medication changes', preview: ['Any medication updates', 'Notes'] },
+              { key: 'prn', label: 'PRN usage', preview: ['PRN given', 'What was given', 'Time given'] },
+            ],
+          },
+        ],
+      },
+      community: {
+        configKey: 'community_fields',
+        groups: [
+          {
+            title: 'Community Items',
+            fields: [
+              {
+                key: 'outings',
+                label: 'Outings',
+                trackTimeDefault: true,
+                preview: ['Where they went', 'Level of participation', 'Time in community'],
+              },
+              {
+                key: 'social_engagement',
+                label: 'Social engagement',
+                trackTimeDefault: true,
+                preview: ['Interactions with others', 'Prompting needed', 'Time engaged'],
+              },
+              {
+                key: 'community_participation',
+                label: 'Community involvement',
+                preview: ['Participation in planned activities', 'Engagement level', 'Notes'],
+              },
+            ],
+          },
+        ],
+      },
+      vocational: {
+        configKey: 'vocational_fields',
+        groups: [
+          {
+            title: 'Vocational Items',
+            fields: [
+              {
+                key: 'job_participation',
+                label: 'Job participation',
+                trackTimeDefault: true,
+                preview: ['Attended work or program', 'Time participating', 'Prompting/support needed'],
+              },
+              {
+                key: 'work_skills',
+                label: 'Work skills',
+                preview: ['Skill practiced', 'Independence level', 'Notes'],
+              },
+              {
+                key: 'task_completion',
+                label: 'Task completion',
+                trackTimeDefault: true,
+                preview: ['Tasks completed', 'Time on task', 'Quality or follow-through'],
+              },
+            ],
+          },
+        ],
+      },
+      educational: {
+        configKey: 'educational_fields',
+        groups: [
+          {
+            title: 'Educational Items',
+            fields: [
+              { key: 'learning_goals', label: 'Learning goals', preview: ['Goals targeted', 'Prompting level', 'Notes'] },
+              { key: 'skill_development', label: 'Skill development', preview: ['Skills practiced', 'Support needed', 'Notes'] },
+              { key: 'academic_progress', label: 'Academic progress', preview: ['Work completed', 'Participation', 'Notes'] },
+            ],
+          },
+        ],
+      },
+      menstrual: {
+        configKey: 'menstrual_fields',
+        groups: [
+          {
+            title: 'Menstrual Tracking Items',
+            fields: [
+              { key: 'cycle_status', label: 'Cycle status', preview: ['Cycle started or ongoing', 'Flow or timing notes', 'General observations'] },
+              { key: 'cramps', label: 'Cramps / discomfort', preview: ['Cramps present', 'Severity or impact', 'Notes'] },
+              { key: 'menstrual_notes', label: 'Menstrual notes', preview: ['Additional menstrual observations', 'Supports used', 'Notes'] },
+            ],
+          },
+        ],
+      },
+    };
+    const BEHAVIOR_CHOICES = ['Mood', 'Anxiety', 'Aggression', 'Irritability', 'Social Interaction'];
+    const BEHAVIOR_SUPPORT_CHOICES = ['Triggers', 'Coping Skills', 'Self-Regulation'];
+
+    const DEFAULT_CONFIG = {
+      show_daily_living: true,
+      show_behavior: true,
+      show_movement: true,
+      show_health: false,
+      show_menstrual: false,
+      show_community: false,
+      show_vocational: false,
+      show_educational: false,
+    };
+
+    const state = {
+      currentView: 'profile',
+      selectedProfile: '',
+      activeSection: '',
+      selectedSections: [],
+      currentSectionIndex: 0,
+      behaviorSubstep: 0,
+      selected: {
+        dailyLiving: true,
+        behavior: true,
+        movement: true,
+        health: false,
+        menstrual: false,
+        community: false,
+        vocational: false,
+        educational: false,
+      },
+      sectionStates: {
+        dailyLiving: 'not_started',
+        behavior: 'not_started',
+        movement: 'not_started',
+        health: 'not_started',
+        menstrual: 'not_started',
+        community: 'not_started',
+        vocational: 'not_started',
+        educational: 'not_started',
+      },
+      behaviorSetup: {
+        enabled: true,
+        behaviors: [],
+        supports: [],
+        notes_enabled: false,
+      },
+      sectionFields: {
+        dailyLiving: {},
+        movement: {},
+        health: {},
+        community: {},
+        vocational: {},
+        educational: {},
+        menstrual: {},
+      },
+      sectionFieldSettings: {
+        dailyLiving: {},
+        movement: {},
+        health: {},
+        community: {},
+        vocational: {},
+        educational: {},
+        menstrual: {},
+      },
+      dailyLiving: {
+        items: [],
+        occasional: [],
+      },
+    };
+
+    const steps = Array.from(document.querySelectorAll('.step'));
+    const progressText = document.getElementById('progressText');
+    const progressFill = document.getElementById('progressFill');
+    const backBtn = document.getElementById('backBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const summaryList = document.getElementById('summaryList');
+    const summaryDetailsList = document.getElementById('summaryDetailsList');
+    const messageEl = document.getElementById('message');
+    const profileButtons = Array.from(document.querySelectorAll('[data-profile]'));
+    const sectionCards = Array.from(document.querySelectorAll('[data-track]'));
+    const behaviorPickerGrid = document.getElementById('behaviorPickerGrid');
+    const behaviorSubstepTitle = document.getElementById('behaviorSubstepTitle');
+    const behaviorSubstepCopy = document.getElementById('behaviorSubstepCopy');
+    const sectionSetupTitle = document.getElementById('sectionSetupTitle');
+    const sectionSetupHeading = document.getElementById('sectionSetupHeading');
+    const sectionSetupMeta = document.getElementById('sectionSetupMeta');
+    const sectionFieldGroups = document.getElementById('sectionFieldGroups');
+
+    function setMessage(text) {
+      messageEl.textContent = text || '';
+    }
+
+    function readExistingConfig() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem('caregiver_config') || 'null');
+        if (!parsed || typeof parsed !== 'object') return { ...DEFAULT_CONFIG };
+        return {
+          show_daily_living: parsed.show_daily_living !== false,
+          show_behavior: parsed.show_behavior !== false,
+          show_movement: parsed.show_movement !== false,
+          show_health: parsed.show_health === true,
+          show_menstrual: parsed.show_menstrual === true,
+          show_community: parsed.show_community === true,
+          show_vocational: parsed.show_vocational === true,
+          show_educational: parsed.show_educational === true,
+          behavior_fields: parsed.behavior_fields && typeof parsed.behavior_fields === 'object'
+            ? parsed.behavior_fields
+            : null,
+          daily_living_fields: parsed.daily_living_fields && typeof parsed.daily_living_fields === 'object'
+            ? parsed.daily_living_fields
+            : null,
+          daily_living_field_settings: parsed.daily_living_field_settings && typeof parsed.daily_living_field_settings === 'object'
+            ? parsed.daily_living_field_settings
+            : null,
+          daily_living: parsed.daily_living && typeof parsed.daily_living === 'object'
+            ? parsed.daily_living
+            : null,
+          movement_fields: parsed.movement_fields && typeof parsed.movement_fields === 'object'
+            ? parsed.movement_fields
+            : null,
+          movement_field_settings: parsed.movement_field_settings && typeof parsed.movement_field_settings === 'object'
+            ? parsed.movement_field_settings
+            : null,
+          health_fields: parsed.health_fields && typeof parsed.health_fields === 'object'
+            ? parsed.health_fields
+            : null,
+          health_field_settings: parsed.health_field_settings && typeof parsed.health_field_settings === 'object'
+            ? parsed.health_field_settings
+            : null,
+          community_fields: parsed.community_fields && typeof parsed.community_fields === 'object'
+            ? parsed.community_fields
+            : null,
+          community_field_settings: parsed.community_field_settings && typeof parsed.community_field_settings === 'object'
+            ? parsed.community_field_settings
+            : null,
+          vocational_fields: parsed.vocational_fields && typeof parsed.vocational_fields === 'object'
+            ? parsed.vocational_fields
+            : null,
+          vocational_field_settings: parsed.vocational_field_settings && typeof parsed.vocational_field_settings === 'object'
+            ? parsed.vocational_field_settings
+            : null,
+          educational_fields: parsed.educational_fields && typeof parsed.educational_fields === 'object'
+            ? parsed.educational_fields
+            : null,
+          educational_field_settings: parsed.educational_field_settings && typeof parsed.educational_field_settings === 'object'
+            ? parsed.educational_field_settings
+            : null,
+          menstrual_fields: parsed.menstrual_fields && typeof parsed.menstrual_fields === 'object'
+            ? parsed.menstrual_fields
+            : null,
+          menstrual_field_settings: parsed.menstrual_field_settings && typeof parsed.menstrual_field_settings === 'object'
+            ? parsed.menstrual_field_settings
+            : null,
+        };
+      } catch {
+        return { ...DEFAULT_CONFIG };
+      }
+    }
+
+    function buildDefaultFieldSetting(field, enabled = false) {
+      return {
+        enabled,
+        track_time: field?.trackTimeDefault === true,
+        track_notes: true,
+        track_prompt_level: false,
+      };
+    }
+
+    function getFieldBySectionAndKey(sectionKey, fieldKey) {
+      return SECTION_FIELD_DEFINITIONS[sectionKey]?.groups
+        ?.flatMap((group) => group.fields)
+        ?.find((field) => field.key === fieldKey) || null;
+    }
+
+    function syncFieldSettingsFromEnabledState(sectionKey) {
+      const fields = SECTION_FIELD_DEFINITIONS[sectionKey]?.groups?.flatMap((group) => group.fields) || [];
+      const settings = { ...(state.sectionFieldSettings[sectionKey] || {}) };
+      fields.forEach((field) => {
+        const enabled = state.sectionFields[sectionKey]?.[field.key] === true;
+        const existing = settings[field.key];
+        settings[field.key] = existing && typeof existing === 'object'
+          ? {
+              enabled,
+              track_time: existing.track_time === true,
+              track_notes: existing.track_notes !== false,
+              track_prompt_level: existing.track_prompt_level === true,
+            }
+          : buildDefaultFieldSetting(field, enabled);
+      });
+      state.sectionFieldSettings[sectionKey] = settings;
+    }
+
+    function hydrateStateFromConfig() {
+      const config = readExistingConfig();
+      state.selected.dailyLiving = config.show_daily_living;
+      state.selected.behavior = config.show_behavior;
+      state.selected.movement = config.show_movement;
+      state.selected.health = config.show_health;
+      state.selected.menstrual = config.show_menstrual;
+      state.selected.community = config.show_community;
+      state.selected.vocational = config.show_vocational;
+      state.selected.educational = config.show_educational;
+      const behaviorFields = config.behavior_fields || {};
+      state.behaviorSetup.enabled = config.show_behavior;
+      state.behaviorSetup.behaviors = Array.isArray(behaviorFields.behaviors) ? behaviorFields.behaviors : [];
+      state.behaviorSetup.supports = Array.isArray(behaviorFields.supports) ? behaviorFields.supports : [];
+      state.behaviorSetup.notes_enabled = behaviorFields.notes_enabled === true;
+      const dailyLivingConfig = config.daily_living && typeof config.daily_living === 'object' ? config.daily_living : {};
+      state.dailyLiving.items = Array.isArray(dailyLivingConfig.items) ? [...dailyLivingConfig.items] : [];
+      state.dailyLiving.occasional = Array.isArray(dailyLivingConfig.occasional) ? [...dailyLivingConfig.occasional] : [];
+      Object.keys(state.sectionFields).forEach((sectionKey) => {
+        const configKey = SECTION_FIELD_DEFINITIONS[sectionKey]?.configKey;
+        state.sectionFields[sectionKey] = configKey && config[configKey] && typeof config[configKey] === 'object'
+          ? { ...config[configKey] }
+          : {};
+        const settingsKey = `${configKey.replace(/_fields$/, '')}_field_settings`;
+        state.sectionFieldSettings[sectionKey] = config[settingsKey] && typeof config[settingsKey] === 'object'
+          ? { ...config[settingsKey] }
+          : {};
+      });
+      if (!state.dailyLiving.items.length && !state.dailyLiving.occasional.length) {
+        const dailyLivingFieldConfig = config.daily_living_fields && typeof config.daily_living_fields === 'object'
+          ? config.daily_living_fields
+          : {};
+        state.dailyLiving.items = SECTION_FIELD_DEFINITIONS.dailyLiving.groups[0].fields
+          .filter((field) => dailyLivingFieldConfig[field.key] === true)
+          .map((field) => field.key);
+        state.dailyLiving.occasional = SECTION_FIELD_DEFINITIONS.dailyLiving.groups[1].fields
+          .filter((field) => dailyLivingFieldConfig[field.key] === true)
+          .map((field) => field.key);
+      }
+      state.sectionFields.dailyLiving = {
+        ...state.sectionFields.dailyLiving,
+        ...Object.fromEntries(state.dailyLiving.items.map((key) => [key, true])),
+        ...Object.fromEntries(state.dailyLiving.occasional.map((key) => [key, true])),
+      };
+      Object.keys(state.sectionFields).forEach((sectionKey) => {
+        syncFieldSettingsFromEnabledState(sectionKey);
+      });
+      Object.keys(state.sectionStates).forEach((key) => {
+        state.sectionStates[key] = state.selected[key] ? 'configured' : 'not_started';
+      });
+      state.selectedSections = Object.keys(SECTION_CONFIG_MAP).filter((key) => state.selected[key]);
+    }
+
+    function selectedTrackLabels() {
+      return state.selectedSections.map((key) => SECTION_CONFIG_MAP[key]?.label || key);
+    }
+
+    function toggleDailyLivingItem(type, value) {
+      const list = Array.isArray(state.dailyLiving[type]) ? state.dailyLiving[type] : [];
+      if (list.includes(value)) {
+        state.dailyLiving[type] = list.filter((entry) => entry !== value);
+        delete state.sectionFields.dailyLiving[value];
+      } else {
+        state.dailyLiving[type] = [...list, value];
+        state.sectionFields.dailyLiving[value] = true;
+      }
+      syncFieldSettingsFromEnabledState('dailyLiving');
+    }
+
+    function updateProfileButtons() {
+      profileButtons.forEach((button) => {
+        button.classList.toggle('active', button.dataset.profile === state.selectedProfile);
+      });
+    }
+
+    function syncMenstrualAvailability() {
+      const menstrualButton = sectionCards.find((button) => button.dataset.track === 'menstrual');
+      const hideMenstrual = state.selectedProfile.includes('male');
+      if (!menstrualButton) return;
+
+      if (hideMenstrual) {
+        state.selected.menstrual = false;
+        const idx = state.selectedSections.indexOf('menstrual');
+        if (idx >= 0) state.selectedSections.splice(idx, 1);
+        state.sectionStates.menstrual = 'not_started';
+        menstrualButton.disabled = true;
+        menstrualButton.style.display = 'none';
+      } else {
+        menstrualButton.disabled = false;
+        menstrualButton.style.display = '';
+      }
+    }
+
+    function sectionSummaryText(sectionKey) {
+      if (!state.selectedSections.includes(sectionKey)) return 'Not selected';
+      if (sectionKey === 'behavior') {
+        const parts = [];
+        if (state.behaviorSetup.behaviors.length) parts.push(`${state.behaviorSetup.behaviors.length} behaviors`);
+        if (state.behaviorSetup.supports.length) parts.push(`${state.behaviorSetup.supports.length} supports`);
+        if (state.behaviorSetup.notes_enabled) parts.push('notes on');
+        return parts.length ? `Selected · ${parts.join(' · ')}` : 'Selected';
+      }
+      if (sectionKey === 'dailyLiving') {
+        const total = state.dailyLiving.items.length + state.dailyLiving.occasional.length;
+        return total ? `Selected · ${total} items` : 'Selected for setup';
+      }
+      const selectedCount = Object.values(state.sectionFields[sectionKey] || {}).filter(Boolean).length;
+      return selectedCount ? `Selected · ${selectedCount} items` : 'Selected for setup';
+    }
+
+    function sectionDetailText(sectionKey) {
+      if (sectionKey === 'behavior') {
+        const details = [];
+        if (state.behaviorSetup.behaviors.length) details.push(`Behaviors: ${state.behaviorSetup.behaviors.join(', ')}`);
+        if (state.behaviorSetup.supports.length) details.push(`Supports: ${state.behaviorSetup.supports.join(', ')}`);
+        details.push(`Notes: ${state.behaviorSetup.notes_enabled ? 'Enabled' : 'Disabled'}`);
+        return details.join(' | ');
+      }
+      if (sectionKey === 'dailyLiving') {
+        const labelByKey = new Map(
+          SECTION_FIELD_DEFINITIONS.dailyLiving.groups.flatMap((group) => group.fields).map((field) => [field.key, field.label])
+        );
+        const parts = [];
+        if (state.dailyLiving.items.length) {
+          parts.push(`Items: ${state.dailyLiving.items.map((key) => labelByKey.get(key) || key).join(', ')}`);
+        }
+        if (state.dailyLiving.occasional.length) {
+          parts.push(`Occasional: ${state.dailyLiving.occasional.map((key) => labelByKey.get(key) || key).join(', ')}`);
+        }
+        return parts.length ? parts.join(' | ') : 'No specific items selected yet';
+      }
+      const fieldDefinition = SECTION_FIELD_DEFINITIONS[sectionKey];
+      if (!fieldDefinition) return state.selected[sectionKey] ? 'Included in caregiver check-in' : 'Skipped';
+      const labels = fieldDefinition.groups
+        .flatMap((group) => group.fields)
+        .filter((field) => state.sectionFields[sectionKey]?.[field.key])
+        .map((field) => {
+          const settings = state.sectionFieldSettings[sectionKey]?.[field.key];
+          return settings?.track_time ? `${field.label} (time tracking)` : field.label;
+        });
+      return labels.length ? labels.join(', ') : 'No specific items selected yet';
+    }
+
+    function statusLabel(status) {
+      if (status === 'configured') return 'Configured';
+      if (status === 'in_progress') return 'In progress';
+      return 'Not started';
+    }
+
+    function updateSectionCards() {
+      sectionCards.forEach((button) => {
+        const key = button.dataset.track;
+        const statusEl = button.querySelector(`[data-status-for="${key}"]`);
+        const summaryEl = button.querySelector(`[data-summary-for="${key}"]`);
+        button.classList.toggle('active', state.selectedSections.includes(key));
+        if (statusEl) statusEl.textContent = statusLabel(state.sectionStates[key]);
+        if (summaryEl) summaryEl.textContent = sectionSummaryText(key);
+      });
+      syncMenstrualAvailability();
+    }
+
+    function renderBehaviorSubstep() {
+      if (state.currentView !== 'behaviorSetup') return;
+      const choiceSource = state.behaviorSubstep === 0
+        ? BEHAVIOR_CHOICES
+        : state.behaviorSubstep === 1
+          ? BEHAVIOR_SUPPORT_CHOICES
+          : ['Enable notes field', 'Disable notes field'];
+      behaviorSubstepTitle.textContent =
+        state.behaviorSubstep === 0 ? 'Select behaviors to track' :
+        state.behaviorSubstep === 1 ? 'Select supports / context' :
+        'Optional notes';
+      behaviorSubstepCopy.textContent =
+        state.behaviorSubstep === 0 ? 'Choose the behavior items that should show up in caregiver check-ins.' :
+        state.behaviorSubstep === 1 ? 'Choose the support/context details that should appear when behavior is tracked.' :
+        'Decide whether caregivers should see a notes field inside the behavior section.';
+
+      behaviorPickerGrid.innerHTML = choiceSource.map((label) => {
+        let active = false;
+        if (state.behaviorSubstep === 0) active = state.behaviorSetup.behaviors.includes(label);
+        if (state.behaviorSubstep === 1) active = state.behaviorSetup.supports.includes(label);
+        if (state.behaviorSubstep === 2) active = (label === 'Enable notes field' && state.behaviorSetup.notes_enabled) || (label === 'Disable notes field' && !state.behaviorSetup.notes_enabled);
+        return `<button class="picker-card${active ? ' active' : ''}" type="button" data-behavior-choice="${label}">${label}</button>`;
+      }).join('');
+
+      behaviorPickerGrid.querySelectorAll('[data-behavior-choice]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const value = button.dataset.behaviorChoice;
+          if (state.behaviorSubstep === 0) {
+            const index = state.behaviorSetup.behaviors.indexOf(value);
+            if (index >= 0) state.behaviorSetup.behaviors.splice(index, 1);
+            else state.behaviorSetup.behaviors.push(value);
+          } else if (state.behaviorSubstep === 1) {
+            const index = state.behaviorSetup.supports.indexOf(value);
+            if (index >= 0) state.behaviorSetup.supports.splice(index, 1);
+            else state.behaviorSetup.supports.push(value);
+          } else {
+            state.behaviorSetup.notes_enabled = value === 'Enable notes field';
+          }
+          setMessage('');
+          persistCaregiverConfigDraft();
+          renderBehaviorSubstep();
+        });
+      });
+    }
+
+    function renderSectionSetup() {
+      if (state.currentView !== 'sectionSetup') return;
+      const info = SECTION_CONFIG_MAP[state.activeSection];
+      const fieldDefinition = SECTION_FIELD_DEFINITIONS[state.activeSection];
+      if (!info || state.activeSection === 'behavior' || !fieldDefinition) return;
+      sectionSetupTitle.textContent = `${info.label} Setup`;
+      sectionSetupHeading.textContent = `Choose what to include in "${info.label}"`;
+      if (state.activeSection === 'health') {
+        sectionSetupMeta.textContent = 'Includes anything from temporary illness (colds, toothaches) to chronic pain. Pain can significantly impact behavior, mood, sleep, and learning — even if it doesn’t occur every day.';
+      } else if (state.activeSection === 'dailyLiving') {
+        sectionSetupMeta.textContent = 'Choose the daily living items and occasional issues you want caregivers to track.';
+      } else {
+        sectionSetupMeta.textContent = `Select the items that should appear when caregivers open the ${info.label.toLowerCase()} section.`;
+      }
+      sectionFieldGroups.innerHTML = fieldDefinition.groups.map((group) => `
+        <div class="field-group">
+          <h4>${group.title}</h4>
+          ${group.helper ? `<p>${group.helper}</p>` : ''}
+          <div class="picker-grid">
+            ${group.fields.map((field) => {
+              const active = state.activeSection === 'dailyLiving'
+                ? (Array.isArray(state.dailyLiving[group.type]) && state.dailyLiving[group.type].includes(field.key))
+                : state.sectionFields[state.activeSection]?.[field.key] === true;
+              return `
+                <button class="picker-card${active ? ' active' : ''}" type="button" data-section-field="${field.key}" ${group.type ? `data-section-field-type="${group.type}"` : ''}>
+                  <span class="picker-check">${active ? '✓' : ''}</span>
+                  <span class="picker-text">
+                    ${field.label}
+                    ${field.trackTimeDefault ? '<br><span class="setup-meta">Includes time tracking</span>' : ''}
+                    ${Array.isArray(field.preview) && field.preview.length ? `<ul class="setup-preview">${field.preview.map((item) => `<li>${item}</li>`).join('')}</ul>` : ''}
+                  </span>
+                </button>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `).join('');
+
+      sectionFieldGroups.querySelectorAll('[data-section-field]').forEach((button) => {
+        button.addEventListener('click', () => {
+          if (!state.activeSection) return;
+          const fieldKey = button.dataset.sectionField;
+          if (state.activeSection === 'dailyLiving') {
+            const fieldType = button.dataset.sectionFieldType;
+            if (!fieldType) return;
+            toggleDailyLivingItem(fieldType, fieldKey);
+          } else {
+            const currentValue = state.sectionFields[state.activeSection]?.[fieldKey] === true;
+            state.sectionFields[state.activeSection] = {
+              ...state.sectionFields[state.activeSection],
+              [fieldKey]: !currentValue,
+            };
+            syncFieldSettingsFromEnabledState(state.activeSection);
+          }
+          setMessage('');
+          persistCaregiverConfigDraft();
+          renderSectionSetup();
+          updateSectionCards();
+          updateSummary();
+        });
+      });
+    }
+
+    function updateSummary() {
+      summaryList.innerHTML = selectedTrackLabels().map((label) => `<li>${label}</li>`).join('');
+      summaryDetailsList.innerHTML = state.selectedSections
+        .map((key) => `<li>${SECTION_CONFIG_MAP[key]?.label || key}: ${sectionDetailText(key)}</li>`)
+        .join('');
+    }
+
+    function validateCurrentStep() {
+      if (state.currentView === 'profile' && !state.selectedProfile) {
+        setMessage('Choose who this setup is for before continuing.');
+        return false;
+      }
+      if (state.currentView === 'sections' && state.selectedSections.length === 0) {
+        setMessage('Choose at least one section to track.');
+        return false;
+      }
+      if (state.currentView === 'behaviorSetup' && state.behaviorSubstep === 0 && state.behaviorSetup.behaviors.length === 0) {
+        setMessage('Choose at least one behavior to track before continuing.');
+        return false;
+      }
+      setMessage('');
+      return true;
+    }
+
+    function openCurrentSectionSetup() {
+      state.activeSection = state.selectedSections[state.currentSectionIndex] || '';
+      if (!state.activeSection) {
+        state.currentView = 'done';
+        return;
+      }
+      state.sectionStates[state.activeSection] = state.sectionStates[state.activeSection] === 'configured' ? 'configured' : 'in_progress';
+      if (state.activeSection === 'behavior') {
+        state.behaviorSetup.enabled = true;
+        state.currentView = 'behaviorSetup';
+        state.behaviorSubstep = 0;
+      } else {
+        state.currentView = 'sectionSetup';
+      }
+    }
+
+    function updateWizard() {
+      steps.forEach((step) => {
+        step.classList.toggle('active', step.dataset.step === VIEW_TO_STEP_ID[state.currentView]);
+      });
+
+      const mainIndex = MAIN_VIEWS.indexOf(state.currentView);
+      if (state.currentView === 'behaviorSetup') {
+        const sectionTotal = Math.max(state.selectedSections.length, 1);
+        progressText.textContent = `Section ${state.currentSectionIndex + 1} of ${sectionTotal} · Behavior setup ${state.behaviorSubstep + 1} of 3`;
+        progressFill.style.width = `${((state.currentSectionIndex + 1) / (sectionTotal + 1)) * 100}%`;
+      } else if (state.currentView === 'sectionSetup') {
+        const sectionTotal = Math.max(state.selectedSections.length, 1);
+        progressText.textContent = `Section ${state.currentSectionIndex + 1} of ${sectionTotal}`;
+        progressFill.style.width = `${((state.currentSectionIndex + 1) / (sectionTotal + 1)) * 100}%`;
+      } else {
+        progressText.textContent = `Step ${mainIndex + 1} of ${MAIN_VIEWS.length}`;
+        progressFill.style.width = `${((mainIndex + 1) / MAIN_VIEWS.length) * 100}%`;
+      }
+
+      backBtn.disabled = state.currentView === 'profile';
+      nextBtn.textContent = state.currentView === 'done' ? 'Save Check-In Setup' : 'Next';
+
+      updateProfileButtons();
+      updateSectionCards();
+      updateSummary();
+      renderBehaviorSubstep();
+      renderSectionSetup();
+    }
+
+    function buildCaregiverConfig() {
+      return {
+        show_daily_living: state.selectedSections.includes('dailyLiving') && state.selected.dailyLiving,
+        show_behavior: state.selectedSections.includes('behavior') && state.selected.behavior,
+        show_movement: state.selectedSections.includes('movement') && state.selected.movement,
+        show_health: state.selectedSections.includes('health') && state.selected.health,
+        show_menstrual: state.selectedSections.includes('menstrual') && state.selected.menstrual,
+        show_community: state.selectedSections.includes('community') && state.selected.community,
+        show_vocational: state.selectedSections.includes('vocational') && state.selected.vocational,
+        show_educational: state.selectedSections.includes('educational') && state.selected.educational,
+        behavior_fields: {
+          behaviors: [...state.behaviorSetup.behaviors],
+          supports: [...state.behaviorSetup.supports],
+          notes_enabled: state.behaviorSetup.notes_enabled,
+        },
+        daily_living: {
+          items: [...state.dailyLiving.items],
+          occasional: [...state.dailyLiving.occasional],
+        },
+        daily_living_fields: { ...state.sectionFields.dailyLiving },
+        daily_living_field_settings: { ...state.sectionFieldSettings.dailyLiving },
+        movement_fields: { ...state.sectionFields.movement },
+        movement_field_settings: { ...state.sectionFieldSettings.movement },
+        health_fields: { ...state.sectionFields.health },
+        health_field_settings: { ...state.sectionFieldSettings.health },
+        community_fields: { ...state.sectionFields.community },
+        community_field_settings: { ...state.sectionFieldSettings.community },
+        vocational_fields: { ...state.sectionFields.vocational },
+        vocational_field_settings: { ...state.sectionFieldSettings.vocational },
+        educational_fields: { ...state.sectionFields.educational },
+        educational_field_settings: { ...state.sectionFieldSettings.educational },
+        menstrual_fields: { ...state.sectionFields.menstrual },
+        menstrual_field_settings: { ...state.sectionFieldSettings.menstrual },
+      };
+    }
+
+    function persistCaregiverConfigDraft() {
+      localStorage.setItem('caregiver_config', JSON.stringify(buildCaregiverConfig()));
+    }
+
+    function saveConfigAndContinue() {
+      const config = buildCaregiverConfig();
+      localStorage.setItem('caregiver_config', JSON.stringify(config));
+      if (onboardingActive) {
+        writeGuidedOnboardingStep('practice_checkin');
+        window.location.replace('caregiver-checkin.html?onboarding=1');
+        return;
+      }
+      window.location.replace('dashboard.html');
+    }
+
+    profileButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        state.selectedProfile = button.dataset.profile || '';
+        if (state.selectedProfile.includes('male')) {
+          state.selected.menstrual = false;
+        }
+        setMessage('');
+        persistCaregiverConfigDraft();
+        updateWizard();
+      });
+    });
+
+    sectionCards.forEach((button) => {
+      button.addEventListener('click', () => {
+        const key = button.dataset.track;
+        if (!key || button.disabled) return;
+        const index = state.selectedSections.indexOf(key);
+        if (index >= 0) {
+          state.selectedSections.splice(index, 1);
+          state.selected[key] = false;
+          state.sectionStates[key] = 'not_started';
+        } else {
+          state.selectedSections.push(key);
+          state.selected[key] = true;
+        }
+        setMessage('');
+        persistCaregiverConfigDraft();
+        updateWizard();
+      });
+    });
+
+    backBtn.addEventListener('click', () => {
+      if (state.currentView === 'profile') return;
+
+      if (state.currentView === 'done') {
+        if (state.selectedSections.length > 0) {
+          state.currentSectionIndex = state.selectedSections.length - 1;
+          openCurrentSectionSetup();
+          if (state.currentView === 'behaviorSetup') {
+            state.behaviorSubstep = 2;
+          }
+        } else {
+          state.currentView = 'sections';
+        }
+      } else if (state.currentView === 'behaviorSetup') {
+        if (state.behaviorSubstep > 0) {
+          state.behaviorSubstep -= 1;
+        } else if (state.currentSectionIndex > 0) {
+          state.currentSectionIndex -= 1;
+          openCurrentSectionSetup();
+        } else {
+          state.currentView = 'sections';
+        }
+      } else if (state.currentView === 'sectionSetup') {
+        if (state.currentSectionIndex > 0) {
+          state.currentSectionIndex -= 1;
+          openCurrentSectionSetup();
+        } else {
+          state.currentView = 'sections';
+        }
+      } else {
+        const index = MAIN_VIEWS.indexOf(state.currentView);
+        state.currentView = MAIN_VIEWS[Math.max(0, index - 1)];
+      }
+
+      setMessage('');
+      updateWizard();
+    });
+
+    nextBtn.addEventListener('click', () => {
+      if (!validateCurrentStep()) return;
+
+      if (state.currentView === 'done') {
+        saveConfigAndContinue();
+        return;
+      }
+
+      if (state.currentView === 'behaviorSetup') {
+        if (state.behaviorSubstep < 2) {
+          state.behaviorSubstep += 1;
+        } else {
+          state.selected.behavior = true;
+          state.sectionStates.behavior = 'configured';
+          persistCaregiverConfigDraft();
+          if (state.currentSectionIndex < state.selectedSections.length - 1) {
+            state.currentSectionIndex += 1;
+            openCurrentSectionSetup();
+          } else {
+            state.currentView = 'done';
+          }
+        }
+      } else if (state.currentView === 'sectionSetup') {
+        if (state.activeSection) state.sectionStates[state.activeSection] = 'configured';
+        persistCaregiverConfigDraft();
+        if (state.currentSectionIndex < state.selectedSections.length - 1) {
+          state.currentSectionIndex += 1;
+          openCurrentSectionSetup();
+        } else {
+          state.currentView = 'done';
+        }
+      } else if (state.currentView === 'sections') {
+        state.currentSectionIndex = 0;
+        openCurrentSectionSetup();
+      } else {
+        const index = MAIN_VIEWS.indexOf(state.currentView);
+        state.currentView = MAIN_VIEWS[Math.min(MAIN_VIEWS.length - 1, index + 1)];
+      }
+
+      updateWizard();
+    });
+
+    hydrateStateFromConfig();
+    updateWizard();
+  </script>
+
+  <script defer src="/ui-shell.js?v=2026.03.16B"></script>
+  <script defer src="/scripts/appbar-drawer.js?v=2026.03.16B"></script>
+</body>
+</html>

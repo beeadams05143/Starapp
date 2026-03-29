@@ -910,8 +910,8 @@
           <div class="movement-panel" id="movementSymptomsPanel">
             <div class="movement-head">
               <div>
-                <div class="movement-title">Pain / Discomfort</div>
-                <p class="movement-desc">Track pain, physical discomfort, shakiness, or other body-based symptoms when they come up.</p>
+                <div class="movement-title">Movement / Physical Status</div>
+                <p class="movement-desc">Track pain, physical discomfort, movement concerns, shakiness, or other body-based symptoms when they come up.</p>
               </div>
             </div>
             <div id="question-prn-pain" class="question-block" style="margin-bottom:8px">
@@ -1634,6 +1634,7 @@
   import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
   import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
   import { loadFocusForCurrentUser, readLocalFocusDraft } from './focus-data.js?v=2025.01.09E';
+  import { advanceGuidedOnboarding } from './onboarding-flow.js?v=2026.03.16B';
 
   // 2) Optional: expose for console debugging
   window.rest = rest;
@@ -1685,6 +1686,7 @@
   const DRAFT_KEY = 'cg-checkin-draft-v1';
   const GROUP_KEY = 'currentGroupId';
   const MOVEMENT_LAST_KEY = 'cg-movement-last-v1';
+  const onboardingActive = new URLSearchParams(window.location.search).get('onboarding') === '1';
   const caregiverSetupState = {
     groupId: null,
     configRowId: null,
@@ -1694,6 +1696,127 @@
     selectedItems: {},
     itemDescriptions: {},
   };
+  const CHECKIN_FIELD_CATEGORY_MAP = {
+    sleep: ['hours_sleep', 'sleep_fell_asleep_time', 'sleep_onset_difficulty', 'night_wake_flag', 'night_wake_count', 'prn_used_for_sleep_disturbance', 'sleep_prn_name', 'sleep_prn_time'],
+    hygiene: ['adl_entries', 'adl_note', 'prompting_level'],
+    meals: ['appetite_change_flag', 'appetite_change_direction', 'adl_entries'],
+    pain: ['movement_present', 'movement_main_type', 'movement_notes', 'prn_used_for_pain'],
+    illness: ['temp_present', 'temp_symptoms', 'temp_notes', 'prn_used_for_headache'],
+    medication_changes: ['med_change_flag', 'med_change_name', 'med_change_note'],
+    prn: ['sleep_prn_name', 'sleep_prn_time', 'temp_prn_name', 'temp_prn_time', 'prn_used_for_pain', 'prn_used_for_sleep_disturbance', 'prn_used_for_headache'],
+    bm_tracking: ['had_bm'],
+    appetite: ['appetite_change_flag', 'appetite_change_direction'],
+  };
+  const caregiverConfig = (() => {
+    const stored = parseConfigObject(localStorage.getItem('caregiver_config')) || {
+      show_menstrual: false,
+      show_movement: true,
+    };
+    return {
+      show_menstrual: stored.show_menstrual === true,
+      show_movement: stored.show_movement !== false,
+    };
+  })();
+
+  function getWizardSelectedList(config, sectionKey, fieldKey){
+    const direct = parseConfigObject(config?.[`${sectionKey}_fields`]);
+    if (direct && typeof direct[fieldKey] === 'boolean') return direct[fieldKey] === true;
+    const dailyLiving = parseConfigObject(config?.daily_living);
+    if (sectionKey === 'daily_living') {
+      if (fieldKey === 'sleep') return Array.isArray(dailyLiving?.items) && dailyLiving.items.includes('sleep');
+      if (fieldKey === 'hygiene') return Array.isArray(dailyLiving?.items) && dailyLiving.items.includes('hygiene');
+      if (fieldKey === 'food_preparation') return Array.isArray(dailyLiving?.items) && dailyLiving.items.includes('meals');
+      if (fieldKey === 'dressing' || fieldKey === 'toileting') return Array.isArray(dailyLiving?.items) && dailyLiving.items.includes('personal_care');
+      if (fieldKey === 'pain_discomfort') return Array.isArray(dailyLiving?.occasional) && dailyLiving.occasional.includes('pain');
+      if (fieldKey === 'illness_symptoms') return Array.isArray(dailyLiving?.occasional) && dailyLiving.occasional.includes('illness_symptoms');
+      if (fieldKey === 'medication_taken') return Array.isArray(dailyLiving?.occasional) && dailyLiving.occasional.includes('medication_changes');
+      if (fieldKey === 'prn_used') return Array.isArray(dailyLiving?.occasional) && dailyLiving.occasional.includes('prn');
+    }
+    return false;
+  }
+
+  function applyLocalWizardConfigToSetupState(config){
+    if (!config || typeof config !== 'object') return false;
+
+    const selectedCategories = new Set();
+    const selectedItems = {};
+
+    if (config.show_daily_living) {
+      selectedCategories.add('daily_living');
+      selectedItems.daily_living = [];
+      if (getWizardSelectedList(config, 'daily_living', 'hygiene')) selectedItems.daily_living.push('hygiene');
+      if (getWizardSelectedList(config, 'daily_living', 'food_preparation')) selectedItems.daily_living.push('food_preparation');
+      if (getWizardSelectedList(config, 'daily_living', 'dressing')) selectedItems.daily_living.push('dressing');
+      if (getWizardSelectedList(config, 'daily_living', 'toileting')) selectedItems.daily_living.push('toileting');
+    }
+
+    const physicalItems = [];
+    if (getWizardSelectedList(config, 'daily_living', 'sleep')) physicalItems.push('sleep');
+    if (config.health_fields?.appetite === true || getWizardSelectedList(config, 'daily_living', 'food_preparation')) physicalItems.push('appetite');
+    if (config.health_fields?.tired === true || getWizardSelectedList(config, 'daily_living', 'sleep')) physicalItems.push('energy_level');
+    if (config.health_fields?.good_health === true) physicalItems.push('good_health');
+    if (getWizardSelectedList(config, 'daily_living', 'illness_symptoms') || config.health_fields?.illness_symptoms === true) physicalItems.push('illness_symptoms');
+    if (getWizardSelectedList(config, 'daily_living', 'pain_discomfort') || config.health_fields?.pain === true) physicalItems.push('pain_discomfort');
+    if (getWizardSelectedList(config, 'daily_living', 'medication_taken') || config.health_fields?.medication_changes === true) physicalItems.push('medication_taken');
+    if (getWizardSelectedList(config, 'daily_living', 'prn_used') || config.health_fields?.prn === true) physicalItems.push('prn_used');
+    if (config.show_menstrual) physicalItems.push('menstrual_tracking');
+    if (physicalItems.length || config.show_movement || config.show_health || config.show_menstrual) {
+      selectedCategories.add('physical_health');
+      selectedItems.physical_health = Array.from(new Set(physicalItems));
+    }
+
+    if (config.show_behavior) {
+      selectedCategories.add('behavior_mental_health');
+      selectedItems.behavior_mental_health = ['mood'];
+    }
+    if (config.show_community) {
+      selectedCategories.add('community');
+      selectedItems.community = [];
+      if (config.community_fields?.outings) selectedItems.community.push('community_outing');
+      if (config.community_fields?.community_participation) selectedItems.community.push('recreation_participation');
+      if (config.community_fields?.social_engagement) selectedItems.community.push('social_interaction');
+    }
+    if (config.show_vocational) {
+      selectedCategories.add('vocational');
+      selectedItems.vocational = [];
+      if (config.vocational_fields?.job_participation) selectedItems.vocational.push('attended_work_program');
+      if (config.vocational_fields?.task_completion) selectedItems.vocational.push('task_completion');
+      if (config.vocational_fields?.work_skills) selectedItems.vocational.push('independence');
+    }
+    if (config.show_educational) {
+      selectedCategories.add('educational');
+      selectedItems.educational = ['learning_goals'];
+    }
+
+    if (!selectedCategories.size) return false;
+
+    caregiverSetupState.hasConfig = true;
+    caregiverSetupState.selectedCategories = selectedCategories;
+    caregiverSetupState.selectedItems = selectedItems;
+    caregiverSetupState.itemDescriptions = caregiverSetupState.itemDescriptions || {};
+    return true;
+  }
+
+  function getCheckinVisibilityFlags(){
+    const localConfig = parseConfigObject(localStorage.getItem('caregiver_config')) || {};
+    return {
+      sleep: configItemEnabled('physical_health', 'sleep'),
+      hygiene: configItemEnabled('daily_living', 'hygiene'),
+      meals: configItemEnabled('daily_living', 'food_preparation'),
+      personalCare: anyConfigItemEnabled('daily_living', ['dressing', 'toileting']),
+      pain: configItemEnabled('physical_health', 'pain_discomfort'),
+      illness: configItemEnabled('physical_health', 'illness_symptoms'),
+      medicationChanges: configItemEnabled('physical_health', 'medication_taken'),
+      prn: configItemEnabled('physical_health', 'prn_used'),
+      appetite: configItemEnabled('physical_health', 'appetite'),
+      goodHealth: configItemEnabled('physical_health', 'good_health'),
+      tired: configItemEnabled('physical_health', 'energy_level'),
+      bmTracking: false,
+      movement: caregiverConfig.show_movement,
+      menstrual: configItemEnabled('physical_health', 'menstrual_tracking') && caregiverConfig.show_menstrual,
+      wizardConfig: localConfig,
+    };
+  }
 
   function parseConfigObject(value){
     if (value && typeof value === 'object') return value;
@@ -3063,13 +3186,18 @@
       );
       config = rows?.[0] || null;
     }
-    if (!config) return;
-    if (!isCustomCaregiverSetupEnabled(config)) return;
-    caregiverSetupState.configRowId = config.id || null;
-    caregiverSetupState.hasConfig = true;
-    caregiverSetupState.selectedCategories = new Set(normalizeConfigCategories(config.selected_categories));
-    caregiverSetupState.selectedItems = normalizeConfigItems(config.selected_items);
-    caregiverSetupState.itemDescriptions = normalizeItemDescriptions(parseConfigObject(config.selected_items)?.__item_descriptions__);
+    if (config && isCustomCaregiverSetupEnabled(config)) {
+      caregiverSetupState.configRowId = config.id || null;
+      caregiverSetupState.hasConfig = true;
+      caregiverSetupState.selectedCategories = new Set(normalizeConfigCategories(config.selected_categories));
+      caregiverSetupState.selectedItems = normalizeConfigItems(config.selected_items);
+      caregiverSetupState.itemDescriptions = normalizeItemDescriptions(parseConfigObject(config.selected_items)?.__item_descriptions__);
+    }
+
+    const localWizardConfig = parseConfigObject(localStorage.getItem('caregiver_config'));
+    if (localWizardConfig) {
+      applyLocalWizardConfigToSetupState(localWizardConfig);
+    }
   }
 
   function applyLegacyCheckinVisibility(){
@@ -3111,6 +3239,13 @@
     ], true);
     setConfigHidden([behaviorQuestionsWrap], true);
     setConfigHidden([document.getElementById('legacyBehaviorQuestions')], false);
+    setConfigHidden([
+      document.getElementById('movementSymptomsPanel'),
+      document.getElementById('question-prn-pain'),
+    ], !caregiverConfig.show_movement);
+    setConfigHidden([
+      document.getElementById('menstrualPanel'),
+    ], !caregiverConfig.show_menstrual);
 
     renderAdlCategoryChips();
     renderAdlActivityChips();
@@ -3168,15 +3303,17 @@
     const educationalVisible = caregiverSetupState.selectedCategories.has('educational');
     const educationalItemsVisible = getConfiguredEducationalOptions().length > 0;
 
-    const sleepEnabled = configItemEnabled('physical_health', 'sleep');
-    const appetiteEnabled = configItemEnabled('physical_health', 'appetite');
-    const energyEnabled = configItemEnabled('physical_health', 'energy_level');
-    const illnessEnabled = configItemEnabled('physical_health', 'illness_symptoms');
-    const painEnabled = configItemEnabled('physical_health', 'pain_discomfort');
+    const visibility = getCheckinVisibilityFlags();
+    const sleepEnabled = visibility.sleep;
+    const appetiteEnabled = visibility.appetite;
+    const energyEnabled = visibility.tired;
+    const illnessEnabled = visibility.illness;
+    const painEnabled = visibility.pain;
     const symptomPanelEnabled = illnessEnabled || painEnabled;
-    const menstrualEnabled = configItemEnabled('physical_health', 'menstrual_tracking');
-    const medicationEnabled = configItemEnabled('physical_health', 'medication_taken');
-    const prnEnabled = configItemEnabled('physical_health', 'prn_used');
+    const menstrualEnabled = visibility.menstrual;
+    const medicationEnabled = visibility.medicationChanges;
+    const prnEnabled = visibility.prn;
+    const movementEnabled = visibility.movement;
 
     setStepAndNavHidden(physicalStep, progressItems.physical, !physicalVisible);
     setStepAndNavHidden(behaviorStep, progressItems.behavior, !behaviorVisible);
@@ -3209,6 +3346,9 @@
 
     setConfigHidden([
       document.getElementById('question-appears-good-health'),
+    ], !visibility.goodHealth);
+
+    setConfigHidden([
       document.getElementById('tempPanel'),
     ], !symptomPanelEnabled);
 
@@ -3218,11 +3358,11 @@
 
     setConfigHidden([
       document.getElementById('movementSymptomsPanel'),
-    ], true);
+    ], !movementEnabled);
 
     setConfigHidden([
       document.getElementById('question-prn-pain'),
-    ], true);
+    ], !(movementEnabled && prnEnabled));
 
     setConfigHidden([
       document.getElementById('menstrualPanel'),
@@ -3234,7 +3374,7 @@
 
     setConfigHidden([
       document.getElementById('question-had-bm'),
-    ], !configItemEnabled('daily_living', 'toileting'));
+    ], !visibility.bmTracking);
 
     setConfigHidden([
       document.getElementById('question-caregiver-name'),
@@ -3277,7 +3417,7 @@
 
     setConfigHidden([
       labelForName('daily_living_notes'),
-    ], !anyConfigItemEnabled('daily_living', ['following_routine', 'hygiene', 'dressing', 'food_preparation', 'clean_up', 'laundry', 'toileting']));
+    ], !(visibility.hygiene || visibility.meals || visibility.personalCare || anyConfigItemEnabled('daily_living', ['following_routine', 'clean_up', 'laundry'])));
 
     renderAdlCategoryChips();
     renderAdlActivityChips();
@@ -4868,9 +5008,10 @@
           : todayISO();
         payload.entry_date = entryDate;
         const normalizeMovement = () => {
-          if (caregiverSetupState.hasConfig && caregiverSetupState.selectedCategories.has('physical_health')) {
+          if (!caregiverConfig.show_movement) {
             const cleared = {
               movement_present: false,
+              movement_type: null,
               movement_main_type: null,
               movement_severity: null,
               movement_times: [],
@@ -4897,6 +5038,7 @@
           const triggers = parseJsonArray(payload.movement_triggers);
           const cleaned = {
             movement_present: movementPresent,
+            movement_type: trimOrNull(payload.movement_main_type),
             movement_main_type: trimOrNull(payload.movement_main_type),
             movement_severity: Number.isFinite(severityVal) ? severityVal : null,
             movement_times: times,
@@ -4947,6 +5089,16 @@
         };
         normalizeTemp();
         const normalizeMenstrual = () => {
+          if (!caregiverConfig.show_menstrual) {
+            const cleared = {
+              menstrual_present: false,
+              menstrual_symptoms: [],
+              menstrual_symptom_other: null,
+              menstrual_notes: null,
+            };
+            Object.assign(payload, cleared);
+            return cleared;
+          }
           const presentRaw = String(payload.menstrual_present || '').toLowerCase();
           const present = presentRaw === 'yes' || presentRaw === 'true';
           const symptoms = parseJsonArray(payload.menstrual_symptoms);
@@ -5167,6 +5319,12 @@
         resetFormValues();
         showSuccessBanner();
         showPostSubmitPrompt();
+        if (onboardingActive) {
+          advanceGuidedOnboarding(user_id, 'practice_focus');
+          setTimeout(() => {
+            window.location.replace('focus-week.html?onboarding=1');
+          }, 900);
+        }
       } catch (err) {
         console.error('[cg] submit error:', err);
         alert('Could not submit. ' + (err?.message || 'Check your connection and try again.'));

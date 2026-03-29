@@ -3,6 +3,17 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.16B';
 const GROUP_KEY_ID = 'currentGroupId';
 const GROUP_KEY_NAME = 'currentGroupName';
 const DEFAULT_APP_NAME = 'STAR App';
+const GUIDED_ONBOARDING_KEY = 'star_guided_onboarding_v1';
+const ONBOARDING_STATUS_KEY = 'star_onboarding_status_v1';
+const GUIDED_STEP_PATHS = {
+  profile_setup: 'profile.html?next=feature-setup.html%3Fonboarding%3D1&onboarding=1',
+  feature_setup: 'feature-setup.html?onboarding=1',
+  caregiver_setup: 'caregiver-setup-wizard.html?onboarding=1',
+  practice_checkin: 'caregiver-checkin.html?onboarding=1',
+  practice_focus: 'focus-week.html?onboarding=1',
+  view_report: 'caregiver-report.html?onboarding=1',
+  complete: 'dashboard.html',
+};
 
 export function normalizeRedirect(value, fallback = 'dashboard.html') {
   if (!value) return fallback;
@@ -11,6 +22,169 @@ export function normalizeRedirect(value, fallback = 'dashboard.html') {
     return fallback;
   }
   return trimmed || fallback;
+}
+
+function readGuidedOnboardingStore() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(GUIDED_ONBOARDING_KEY) || '{}');
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function readOnboardingStatusStore() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(ONBOARDING_STATUS_KEY) || '{}');
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeOnboardingStatusStore(store) {
+  try {
+    localStorage.setItem(ONBOARDING_STATUS_KEY, JSON.stringify(store || {}));
+  } catch {
+    // ignore storage failures
+  }
+}
+
+function writeOnboardingCompletionState(userId = null, completed = false) {
+  const next = { complete: !!completed };
+  writeOnboardingStatusStore(next);
+  return next;
+}
+
+async function persistOnboardingCompletion(userId = null, completed = false) {
+  const session = getSessionFromStorage();
+  const resolvedUserId = userId || session?.user?.id || null;
+  if (!resolvedUserId) return null;
+  try {
+    const rows = await rest(`profiles?id=eq.${encodeURIComponent(resolvedUserId)}`, {
+      method: 'PATCH',
+      headers: { Prefer: 'return=representation' },
+      body: JSON.stringify({
+        onboarding_complete: !!completed,
+        updated_at: new Date().toISOString(),
+      }),
+    });
+    return rows?.[0] || null;
+  } catch (error) {
+    console.warn('[ONBOARDING] could not persist onboarding_complete', error);
+    return null;
+  }
+}
+
+export function setOnboardingCompletionState(userId = null, completed = false) {
+  writeOnboardingCompletionState(userId, completed);
+  persistOnboardingCompletion(userId, completed);
+}
+
+export function getOnboardingCompletionState(userId = null) {
+  const store = readOnboardingStatusStore();
+  return store?.complete === true;
+}
+
+export function isOnboardingComplete({ userId = null, profile = null, memberships = [], guidedProgress = null } = {}) {
+  return getOnboardingCompletionState(userId) === true;
+}
+
+function writeGuidedOnboardingStore(store) {
+  try {
+    localStorage.setItem(GUIDED_ONBOARDING_KEY, JSON.stringify(store || {}));
+  } catch {
+    // ignore storage failures
+  }
+}
+
+export function getGuidedOnboardingProgress(userId = null) {
+  const session = getSessionFromStorage();
+  const resolvedUserId = userId || session?.user?.id || null;
+  if (!resolvedUserId) return null;
+  const store = readGuidedOnboardingStore();
+  const progress = store[resolvedUserId];
+  return progress && typeof progress === 'object' ? progress : null;
+}
+
+export function guidedOnboardingPathForStep(step = '') {
+  return GUIDED_STEP_PATHS[step] || 'dashboard.html';
+}
+
+export function startGuidedOnboarding(userId = null, options = {}) {
+  const session = getSessionFromStorage();
+  const resolvedUserId = userId || session?.user?.id || null;
+  if (!resolvedUserId) return null;
+  const store = readGuidedOnboardingStore();
+  const now = new Date().toISOString();
+  const existing = store[resolvedUserId] && typeof store[resolvedUserId] === 'object' ? store[resolvedUserId] : {};
+  const next = {
+    active: true,
+    completed: false,
+    current_step: options.current_step || existing.current_step || 'caregiver_setup',
+    started_at: existing.started_at || now,
+    updated_at: now,
+    completed_at: null,
+  };
+  if (options.group_name) next.group_name = options.group_name;
+  store[resolvedUserId] = { ...existing, ...next };
+  writeGuidedOnboardingStore(store);
+  writeOnboardingCompletionState(resolvedUserId, false);
+  persistOnboardingCompletion(resolvedUserId, false);
+  return store[resolvedUserId];
+}
+
+export function advanceGuidedOnboarding(userId = null, step = 'caregiver_setup') {
+  const session = getSessionFromStorage();
+  const resolvedUserId = userId || session?.user?.id || null;
+  if (!resolvedUserId) return null;
+  const store = readGuidedOnboardingStore();
+  const now = new Date().toISOString();
+  const existing = store[resolvedUserId] && typeof store[resolvedUserId] === 'object' ? store[resolvedUserId] : {};
+  store[resolvedUserId] = {
+    ...existing,
+    active: true,
+    completed: false,
+    current_step: step,
+    started_at: existing.started_at || now,
+    updated_at: now,
+    completed_at: null,
+  };
+  writeGuidedOnboardingStore(store);
+  writeOnboardingCompletionState(resolvedUserId, false);
+  persistOnboardingCompletion(resolvedUserId, false);
+  return store[resolvedUserId];
+}
+
+export function completeGuidedOnboarding(userId = null) {
+  const session = getSessionFromStorage();
+  const resolvedUserId = userId || session?.user?.id || null;
+  if (!resolvedUserId) return null;
+  const store = readGuidedOnboardingStore();
+  const now = new Date().toISOString();
+  const existing = store[resolvedUserId] && typeof store[resolvedUserId] === 'object' ? store[resolvedUserId] : {};
+  store[resolvedUserId] = {
+    ...existing,
+    active: false,
+    completed: true,
+    current_step: 'complete',
+    started_at: existing.started_at || now,
+    updated_at: now,
+    completed_at: now,
+  };
+  writeGuidedOnboardingStore(store);
+  writeOnboardingCompletionState(resolvedUserId, true);
+  persistOnboardingCompletion(resolvedUserId, true);
+  return store[resolvedUserId];
+}
+
+export function clearGuidedOnboarding(userId = null) {
+  const session = getSessionFromStorage();
+  const resolvedUserId = userId || session?.user?.id || null;
+  if (!resolvedUserId) return;
+  const store = readGuidedOnboardingStore();
+  delete store[resolvedUserId];
+  writeGuidedOnboardingStore(store);
 }
 
 export async function fetchCurrentProfile(userId = null) {
@@ -37,20 +211,15 @@ export async function fetchCurrentMemberships(userId = null) {
   return Array.isArray(rows) ? rows : [];
 }
 
-export function profileNeedsOnboarding(profile) {
-  return !profile?.id;
+export function profileNeedsOnboarding(profile, options = {}) {
+  return !isOnboardingComplete();
 }
 
 export async function resolvePostAuthDestination({ userId = null, redirect = 'dashboard.html' } = {}) {
-  const profile = await fetchCurrentProfile(userId);
-  const memberships = await fetchCurrentMemberships(userId);
-  if (!profile) {
+  if (!isOnboardingComplete({ userId })) {
     return 'onboarding.html';
   }
-  if (!memberships || memberships.length === 0) {
-    return 'onboarding.html';
-  }
-  return 'dashboard.html';
+  return normalizeRedirect(redirect, 'dashboard.html');
 }
 
 export function cacheActiveGroup(groupId, groupName = '') {

@@ -7,8 +7,237 @@
     getSessionFromStorage,
     clearSavedSession,
   } = supaGlobals;
+  const APP_CONFIG_KEY = 'star_app_config';
+  const ONBOARDING_STATUS_KEY = 'star_onboarding_status_v1';
+  const LOGIN_URL = '/login.html';
+  const INACTIVITY_WARNING_DELAY_MS = 14 * 60 * 1000; // Production: show warning after 14 minutes of inactivity
+  const INACTIVITY_LOGOUT_TIMEOUT_MS = 15 * 60 * 1000; // Production: log out after 15 minutes total inactivity
+  const WARNING_COUNTDOWN_SECONDS = 60;
+
+  let inactivityWarningTimeout = null;
+  let inactivityLogoutTimeout = null;
+  let warningCountdownInterval = null;
+  let warningCountdownRemaining = WARNING_COUNTDOWN_SECONDS;
+
+  function ensureInactivityWarningStyles() {
+    if (document.getElementById('inactivity-warning-css')) return;
+
+    const style = document.createElement('style');
+    style.id = 'inactivity-warning-css';
+    style.textContent = `
+      #inactivityWarningBanner {
+        position: fixed;
+        left: 50%;
+        bottom: calc(var(--tabbar-h, 56px) + 20px);
+        transform: translateX(-50%);
+        z-index: 6000;
+        width: min(520px, calc(100vw - 32px));
+        background: #fff7ed;
+        color: #7c2d12;
+        border: 1px solid #fdba74;
+        border-radius: 14px;
+        box-shadow: 0 14px 32px rgba(0, 0, 0, 0.18);
+        padding: 14px 16px;
+        font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      }
+
+      #inactivityWarningBanner[hidden] {
+        display: none;
+      }
+
+      .inactivity-warning__title {
+        font-size: 16px;
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+
+      .inactivity-warning__countdown {
+        font-size: 14px;
+        font-weight: 600;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function getInactivityWarningBanner() {
+    let banner = document.getElementById('inactivityWarningBanner');
+    if (banner) return banner;
+
+    ensureInactivityWarningStyles();
+
+    banner = document.createElement('div');
+    banner.id = 'inactivityWarningBanner';
+    banner.hidden = true;
+    banner.setAttribute('role', 'alert');
+    banner.setAttribute('aria-live', 'assertive');
+    banner.innerHTML = `
+      <div class="inactivity-warning__title">You will be logged out in 60 seconds due to inactivity</div>
+      <div class="inactivity-warning__countdown">60 seconds remaining</div>
+    `;
+    document.body.appendChild(banner);
+    return banner;
+  }
+
+  function updateWarningCountdownText() {
+    const banner = document.getElementById('inactivityWarningBanner');
+    if (!banner) return;
+
+    const title = banner.querySelector('.inactivity-warning__title');
+    const countdown = banner.querySelector('.inactivity-warning__countdown');
+    if (title) {
+      title.textContent = 'You will be logged out in 60 seconds due to inactivity';
+    }
+    if (countdown) {
+      countdown.textContent = `${warningCountdownRemaining} seconds remaining`;
+    }
+  }
+
+  function hideInactivityWarning() {
+    const banner = document.getElementById('inactivityWarningBanner');
+    if (banner) banner.hidden = true;
+  }
+
+  function clearWarningCountdownInterval() {
+    if (warningCountdownInterval) {
+      clearInterval(warningCountdownInterval);
+      warningCountdownInterval = null;
+    }
+  }
+
+  function clearInactivityTimers() {
+    if (inactivityWarningTimeout) {
+      clearTimeout(inactivityWarningTimeout);
+      inactivityWarningTimeout = null;
+    }
+    if (inactivityLogoutTimeout) {
+      clearTimeout(inactivityLogoutTimeout);
+      inactivityLogoutTimeout = null;
+    }
+    clearWarningCountdownInterval();
+    warningCountdownRemaining = WARNING_COUNTDOWN_SECONDS;
+    hideInactivityWarning();
+  }
+
+  function showInactivityWarning() {
+    const banner = getInactivityWarningBanner();
+    warningCountdownRemaining = WARNING_COUNTDOWN_SECONDS;
+    updateWarningCountdownText();
+    banner.hidden = false;
+
+    clearWarningCountdownInterval();
+    warningCountdownInterval = window.setInterval(() => {
+      warningCountdownRemaining -= 1;
+
+      if (warningCountdownRemaining <= 0) {
+        clearWarningCountdownInterval();
+        warningCountdownRemaining = 0;
+      }
+
+      updateWarningCountdownText();
+    }, 1000);
+  }
+
+  function clearLocalIdentityState() {
+    const keys = ['user_id', 'currentGroupId', 'currentGroupName'];
+    for (const key of keys) {
+      try { localStorage.removeItem(key); } catch {}
+    }
+  }
+
+  async function performProtectedLogout() {
+    clearInactivityTimers();
+
+    try {
+      if (window.supabase?.auth?.signOut) {
+        await window.supabase.auth.signOut();
+      } else {
+        const session = typeof getSessionFromStorage === 'function' ? getSessionFromStorage() : null;
+        if (session?.access_token && SUPABASE_URL) {
+          await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
+            method: 'POST',
+            headers: buildAuthHeaders(session.access_token),
+            body: JSON.stringify({ scope: 'global' }),
+          });
+        }
+        if (typeof clearSavedSession === 'function') clearSavedSession();
+      }
+    } catch (err) {
+      console.warn('[drawer] logout request failed', err);
+      if (typeof clearSavedSession === 'function') clearSavedSession();
+    }
+
+    clearLocalIdentityState();
+    window.location.href = LOGIN_URL;
+  }
+
+  function resetInactivityLogoutTimer() {
+    const session = typeof getSessionFromStorage === 'function' ? getSessionFromStorage() : null;
+    if (!session?.user?.id) {
+      clearInactivityTimers();
+      return;
+    }
+
+    clearInactivityTimers();
+
+    inactivityWarningTimeout = window.setTimeout(() => {
+      showInactivityWarning();
+    }, INACTIVITY_WARNING_DELAY_MS);
+    inactivityLogoutTimeout = window.setTimeout(() => {
+      performProtectedLogout();
+    }, INACTIVITY_LOGOUT_TIMEOUT_MS);
+  }
+
+  function setupInactivityAutoLogout() {
+    if (window.__STAR_INACTIVITY_LOGOUT_BOUND__) return;
+    window.__STAR_INACTIVITY_LOGOUT_BOUND__ = true;
+
+    window.addEventListener('mousemove', resetInactivityLogoutTimer, { passive: true });
+    window.addEventListener('click', resetInactivityLogoutTimer, { passive: true });
+    window.addEventListener('keydown', resetInactivityLogoutTimer);
+
+    resetInactivityLogoutTimer();
+  }
+
+  function readStoredJson(key) {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(key) || '{}');
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch {
+      return {};
+    }
+  }
+
+  function readOnboardingCompletion() {
+    const store = readStoredJson(ONBOARDING_STATUS_KEY);
+    return store?.complete === true;
+  }
+
+  function isAllowedOnboardingPath() {
+    const path = window.location.pathname || '';
+    const onboardingActive = new URLSearchParams(window.location.search).get('onboarding') === '1';
+    if (path === '/onboarding.html') return true;
+    if (path === '/profile.html') return true;
+    if (path === '/feature-setup.html') return true;
+    if (path === '/caregiver-setup-wizard.html') return true;
+    if (!onboardingActive) return false;
+    return [
+      '/caregiver-checkin.html',
+      '/focus-week.html',
+      '/caregiver-report.html',
+    ].includes(path);
+  }
+
+  async function enforceOnboardingGate() {
+    const session = typeof getSessionFromStorage === 'function' ? getSessionFromStorage() : null;
+    if (!session?.user?.id) return;
+    if (isAllowedOnboardingPath()) return;
+    if (!readOnboardingCompletion()) {
+      window.location.replace('/onboarding.html');
+    }
+  }
   // If we've already injected, don't do it again
   if (document.getElementById('drawerOverlay')) return;
+  enforceOnboardingGate();
   const isDocsFamilyPage = (() => {
     const path = window.location.pathname || '';
     return path.startsWith('/documents/')
@@ -174,7 +403,7 @@
           <div class="detail-body-inner">
             <div class="sub">
               <a href="/group-settings.html">Group Settings</a>
-              <a href="/caregiver-checkin-setup/">Custom Caregiver Check-In Setup</a>
+              <a href="/customize-checkin.html" data-caregiver-edit-link>Edit Caregiver Check-In</a>
             </div>
           </div>
         </div>
@@ -201,30 +430,30 @@
         <a href="/caregiver-report.html"><span class="nav-icon">📊</span><span class="nav-text">Caregiver Report</span></a>
       </div>
       <div class="drawer-item" data-role="shared">
-        <a href="/chat.html"><span class="nav-icon">💬</span><span class="nav-text">Group Chat</span></a>
+        <a href="/chat.html" data-feature="chat"><span class="nav-icon">💬</span><span class="nav-text">Group Chat</span></a>
       </div>
       <div class="drawer-item" data-role="shared">
-        <a href="/calendar.html"><span class="nav-icon">📅</span><span class="nav-text">Calendar</span></a>
+        <a href="/calendar.html" data-feature="calendar"><span class="nav-icon">📅</span><span class="nav-text">Calendar</span></a>
       </div>
       <div class="drawer-item" data-role="caregiver">
-        <a href="/focus-week.html"><span class="nav-icon">⭐</span><span class="nav-text">Focus of the Week</span></a>
+        <a href="/focus-week.html" data-feature="focus"><span class="nav-icon">⭐</span><span class="nav-text">Focus of the Week</span></a>
       </div>
-      <details data-role="caregiver">
+      <details data-role="caregiver" data-feature="documents">
         <summary><span class="nav-icon">📂</span><span class="nav-text">Documents</span></summary>
         <div class="detail-body">
           <div class="detail-body-inner">
             <div class="helper">Access important records, ISA/IEP plans, meeting notes, medical details, finance, caregiving, HR, year end paperwork, guardianship, and uploaded files.</div>
             <div class="sub">
-              <a href="/emergency-medical.html">Emergency Sheet</a>
-              <a href="/documents/documents.html?cat=ISA">ISA / IEP</a>
-              <a href="/documents/minutes-form.html">Meeting Minutes</a>
-              <a href="/documents/documents.html?cat=Medical">Medical</a>
-              <a href="/documents/documents.html?cat=Caregiving">Caregiving</a>
-              <a href="/documents/documents.html?cat=HR">HR</a>
-              <a href="/documents/documents.html?cat=Finance">Finance</a>
-              <a href="/documents/documents.html?cat=Year%20End%20Paperwork">Year End Paperwork</a>
-              <a href="/documents/documents.html?cat=Guardianship">Guardianship</a>
-              <a href="/documents/documents.html?cat=Uploaded%20Files">Uploaded Files</a>
+              <a href="/emergency-medical.html" data-doc-type="emergency">Emergency Sheet</a>
+              <a href="/documents/documents.html?cat=ISA" data-doc-type="isa_iep">ISA / IEP</a>
+              <a href="/documents/minutes-form.html" data-doc-type="isa_iep">Meeting Minutes</a>
+              <a href="/documents/documents.html?cat=Medical" data-doc-type="medical">Medical</a>
+              <a href="/documents/documents.html?cat=Caregiving" data-doc-type="caregiving">Caregiving</a>
+              <a href="/documents/documents.html?cat=HR" data-doc-type="hr_finance">HR</a>
+              <a href="/documents/documents.html?cat=Finance" data-doc-type="hr_finance">Finance</a>
+              <a href="/documents/documents.html?cat=Year%20End%20Paperwork" data-doc-type="year_end">Year End Paperwork</a>
+              <a href="/documents/documents.html?cat=Guardianship" data-doc-type="guardianship">Guardianship</a>
+              <a href="/documents/documents.html?cat=Uploaded%20Files" data-doc-type="uploaded_files">Uploaded Files</a>
             </div>
           </div>
         </div>
@@ -248,6 +477,67 @@
     return headers;
   }
 
+  function hasCompletedCaregiverSetup() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem('caregiver_config') || 'null');
+      if (!parsed || typeof parsed !== 'object') return false;
+      return [
+        'show_daily_living',
+        'show_behavior',
+        'show_movement',
+        'show_health',
+        'show_menstrual',
+        'show_community',
+        'show_vocational',
+        'show_educational',
+        'daily_living',
+        'behavior_fields',
+        'health_fields',
+      ].some((key) => key in parsed);
+    } catch {
+      return false;
+    }
+  }
+
+  function getAppConfig() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(APP_CONFIG_KEY) || 'null');
+      return {
+        appFeatures: {
+          chat: parsed?.appFeatures?.chat !== false,
+          calendar: parsed?.appFeatures?.calendar !== false,
+          focus: parsed?.appFeatures?.focus !== false,
+          documents: parsed?.appFeatures?.documents !== false,
+        },
+        documentTypes: Array.isArray(parsed?.documentTypes) && parsed.documentTypes.length
+          ? parsed.documentTypes
+          : ['emergency', 'isa_iep', 'medical', 'hr_finance', 'guardianship', 'year_end', 'uploaded_files', 'caregiving'],
+      };
+    } catch {
+      return {
+        appFeatures: { chat: true, calendar: true, focus: true, documents: true },
+        documentTypes: ['emergency', 'isa_iep', 'medical', 'hr_finance', 'guardianship', 'year_end', 'uploaded_files', 'caregiving'],
+      };
+    }
+  }
+
+  function applyFeatureVisibility(role) {
+    const config = getAppConfig();
+    overlay.querySelectorAll('[data-feature]').forEach((node) => {
+      const feature = node.dataset.feature;
+      const featureEnabled = feature ? config.appFeatures[feature] !== false : true;
+      if (!featureEnabled) node.style.display = 'none';
+    });
+    overlay.querySelectorAll('[data-doc-type]').forEach((node) => {
+      node.style.display = config.documentTypes.includes(node.dataset.docType) ? '' : 'none';
+    });
+    const documentsDetails = overlay.querySelector('details[data-feature="documents"]');
+    if (documentsDetails && documentsDetails.style.display !== 'none') {
+      const visibleDocLinks = Array.from(documentsDetails.querySelectorAll('[data-doc-type]')).some((node) => node.style.display !== 'none');
+      documentsDetails.style.display = visibleDocLinks ? '' : 'none';
+    }
+  }
+
   async function updateAuthLink() {
     const el = overlay.querySelector('#auth-dash-link');
     if (!el) return;
@@ -260,13 +550,25 @@
       if (textEl) textEl.textContent = 'Log In';
       el.setAttribute('href', '/login.html');
     }
+
+    const editLink = overlay.querySelector('[data-caregiver-edit-link]');
+    if (editLink) {
+      editLink.style.display = hasCompletedCaregiverSetup() ? '' : 'none';
+    }
   }
   updateAuthLink();
-  window.addEventListener('storage', updateAuthLink);
+  window.addEventListener('storage', () => {
+    updateAuthLink();
+    applyFeatureVisibility(storedMode === 'caregiver' ? 'caregiver' : 'individual');
+    resetInactivityLogoutTimer();
+  });
+  setupInactivityAutoLogout();
 
   const MODE_KEY = 'star_menu_mode';
+  let storedMode = 'caregiver';
   function applyMenuMode(mode){
     const role = mode === 'caregiver' ? 'caregiver' : 'individual';
+    storedMode = role;
     try { localStorage.setItem(MODE_KEY, role); } catch {}
     overlay.querySelectorAll('[data-role-btn]').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.roleBtn === role);
@@ -275,8 +577,8 @@
       const roles = (node.dataset.role || '').split(/\s+/).filter(Boolean);
       node.style.display = (roles.includes('shared') || roles.includes(role)) ? '' : 'none';
     });
+    applyFeatureVisibility(role);
   }
-  let storedMode = 'caregiver';
   try { storedMode = localStorage.getItem(MODE_KEY) || storedMode; } catch {}
   if (storedMode !== 'caregiver' && storedMode !== 'individual') storedMode = 'caregiver';
   applyMenuMode(storedMode);
@@ -312,21 +614,8 @@
 
     if (a.id === 'auth-dash-link' && a.getAttribute('href') === '#logout') {
       e.preventDefault();
-      const session = typeof getSessionFromStorage === 'function' ? getSessionFromStorage() : null;
-      if (session?.access_token && SUPABASE_URL) {
-        try {
-          await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
-            method: 'POST',
-            headers: buildAuthHeaders(session.access_token),
-            body: JSON.stringify({ scope: 'global' }),
-          });
-        } catch (err) {
-          console.warn('[drawer] logout request failed', err);
-        }
-      }
-      if (typeof clearSavedSession === 'function') clearSavedSession();
       close();
-      location.href = '/login.html';
+      await performProtectedLogout();
       return;
     }
 

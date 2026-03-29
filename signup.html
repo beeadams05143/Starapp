@@ -180,6 +180,33 @@
         if (btn) btn.disabled = on;
       });
     };
+    const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    function validateEmail(email) {
+      if (!EMAIL_REGEX.test(email || '')) {
+        return 'Please enter a valid email address';
+      }
+      return '';
+    }
+
+    function validatePassword(password) {
+      if ((password || '').length < 8) {
+        return 'Password must be at least 8 characters';
+      }
+      const hasNumberOrSymbol = /[0-9!@#$%^&*]/.test(password || '');
+      if (!hasNumberOrSymbol) {
+        return 'Password must include at least one number or special character';
+      }
+      return '';
+    }
+
+    function validateCredentials(email, password) {
+      const emailError = validateEmail(email);
+      if (emailError) return emailError;
+      const passwordError = validatePassword(password);
+      if (passwordError) return passwordError;
+      return '';
+    }
 
     function normalizeSession(payload) {
       if (!payload || typeof payload !== 'object') return null;
@@ -223,7 +250,17 @@
       try {
         const email = (emailEl.value || '').trim();
         const password = passwordEl.value || '';
-        if (!email || !password) throw new Error('Enter email and password.');
+        if (!email || !password) {
+          setMessage('Enter email and password.');
+          setBusy(false);
+          return;
+        }
+        const validationError = validateCredentials(email, password);
+        if (validationError) {
+          setMessage(validationError);
+          setBusy(false);
+          return;
+        }
 
         await signUp(email, password);
         const session = getSessionFromStorage();

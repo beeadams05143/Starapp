@@ -65,6 +65,7 @@
 
 
   const MODE_KEY = 'star_menu_mode';
+  const APP_CONFIG_KEY = 'star_app_config';
   const getMenuMode = () => {
     try {
       const stored = localStorage.getItem(MODE_KEY);
@@ -74,21 +75,40 @@
     }
   };
 
+  const getAppFeatures = () => {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(APP_CONFIG_KEY) || 'null');
+      return {
+        chat: parsed?.appFeatures?.chat !== false,
+        calendar: parsed?.appFeatures?.calendar !== false,
+        focus: parsed?.appFeatures?.focus !== false,
+        documents: parsed?.appFeatures?.documents !== false,
+      };
+    } catch {
+      return { chat: true, calendar: true, focus: true, documents: true };
+    }
+  };
+
   function renderBottomBar(){
     const mode = getMenuMode();
+    const features = getAppFeatures();
     const tabs = mode === 'individual'
       ? [
           { href: '/dashboard.html', icon: '🏠', label: 'Home' },
-          { href: '/calendar.html', icon: '📅', label: 'Calendar' },
+          ...(features.calendar ? [{ href: '/calendar.html', icon: '📅', label: 'Calendar' }] : []),
           { href: '/home.html', icon: '😊', label: 'Mood' },
           { href: '/my-star-voice.html', icon: '🗣️', label: 'Voice' },
+          ...(features.chat ? [{ href: '/chat.html', icon: '💬', label: 'Chat' }] : []),
           { href: '/emergency-medical.html', icon: '🚑', label: 'Emergency' },
         ]
       : [
           { href: '/dashboard.html', icon: '🏠', label: 'Home' },
-          { href: '/calendar.html', icon: '📅', label: 'Calendar' },
+          { href: '/caregiver-checkin.html', icon: '👥', label: 'Check-In' },
           { href: '/caregiver-report.html', icon: '📊', label: 'Reports' },
-          { href: '/documents/index.html', icon: '📂', label: 'Docs' },
+          ...(features.calendar ? [{ href: '/calendar.html', icon: '📅', label: 'Calendar' }] : []),
+          ...(features.focus ? [{ href: '/focus-week.html', icon: '⭐', label: 'Focus' }] : []),
+          ...(features.documents ? [{ href: '/documents/index.html', icon: '📂', label: 'Docs' }] : []),
+          ...(features.chat ? [{ href: '/chat.html', icon: '💬', label: 'Chat' }] : []),
           { href: '/emergency-medical.html', icon: '🚑', label: 'Emergency' },
         ];
     bottom.innerHTML = `
@@ -101,7 +121,7 @@
   }
   renderBottomBar();
   window.addEventListener('storage', (event) => {
-    if (event.key === MODE_KEY) renderBottomBar();
+    if (event.key === MODE_KEY || event.key === APP_CONFIG_KEY) renderBottomBar();
   });
 
 

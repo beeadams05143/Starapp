@@ -1257,6 +1257,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     const dayKey = d => new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString().slice(0,10);
     const axisTitle = text => ({ title:{display:true,text} });
     const RANGE_LIMITS = { day: 1, week: 7, month: 30, year: 365, all: Infinity };
+    const APP_CONFIG_KEY = 'star_app_config';
     const CAREGIVER_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
     const parseCaregiverDate = (value) => {
       if (!value && value !== 0) return null;
@@ -1271,6 +1272,19 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       }
       const dt = new Date(str);
       return Number.isNaN(dt.getTime()) ? null : dt;
+    };
+    const getAppFeatures = () => {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(APP_CONFIG_KEY) || 'null');
+        return {
+          chat: parsed?.appFeatures?.chat !== false,
+          calendar: parsed?.appFeatures?.calendar !== false,
+          focus: parsed?.appFeatures?.focus !== false,
+          documents: parsed?.appFeatures?.documents !== false,
+        };
+      } catch {
+        return { chat: true, calendar: true, focus: true, documents: true };
+      }
     };
     // Converts Supabase timestamps (stored in UTC) into concise local strings so dates don't appear one day ahead.
     const formatLocalDate = (value) => {
@@ -1659,11 +1673,25 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       const maniaInstanceTrend = behaviorComparison?.mania
         ? formatDelta(behaviorComparison.mania.instances_delta, 'optional instance(s)')
         : 'trend unavailable for optional instances';
+      const maniaSignalDetails = [
+        { count: mania.pressured_speech_days, label: 'rapid speech' },
+        { count: mania.grandiosity_days, label: 'grandiose beliefs or statements' },
+        { count: mania.fixation_days, label: 'fixation / perseveration' },
+        { count: mania.repetitive_days, label: 'repetitive behavior' },
+        { count: mania.late_sleep_onset_days, label: 'late sleep onset' },
+        { count: mania.sleep_disruption_days, label: 'sleep disruption' },
+        { count: mania.appetite_days, label: 'appetite change' },
+      ]
+        .filter((item) => Number(item.count || 0) > 0)
+        .map((item) => `${item.label} on ${item.count} day(s)`);
+      const maniaSignalExplanation = maniaSignalDetails.length
+        ? `Signals logged in this range included ${maniaSignalDetails.join(', ')}. These patterns do not confirm a manic cycle on their own, but they can help caregivers spot trends to review.`
+        : 'No specific elevated-cycle signal details were logged in this range.';
       const aggressionInstanceTrend = behaviorComparison?.aggression
         ? formatDelta(behaviorComparison.aggression.instances_delta, 'optional instance(s)')
         : 'trend unavailable for optional instances';
       if (visibility.mania) {
-        lines.push(`Mania signal was present on ${mania.days ?? 0} day(s), ${maniaInstancesText}, average intensity ${avgLabel(mania.avg_intensity)}, peak intensity ${mania.max_intensity ?? '—'}; ${maniaTrend}, and ${maniaInstanceTrend} versus the prior comparable period.`);
+        lines.push(`Possible elevated-cycle signals were logged on ${mania.days ?? 0} day(s), ${maniaInstancesText}, average intensity ${avgLabel(mania.avg_intensity)}, peak intensity ${mania.max_intensity ?? '—'}; ${maniaTrend}, and ${maniaInstanceTrend} versus the prior comparable period. ${maniaSignalExplanation}`);
         const statusParts = [];
         if ((mania.status_counts?.active ?? 0) > 0) statusParts.push(`${mania.status_counts.active} active`);
         if ((mania.status_counts?.suspected ?? 0) > 0) statusParts.push(`${mania.status_counts.suspected} suspected`);
@@ -1672,7 +1700,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         const cycleRange = mania.current_cycle_start
           ? `possible onset ${humanDate(mania.current_cycle_start)} through ${humanDate(mania.current_cycle_end || mania.current_cycle_start)}`
           : 'cycle onset not clear yet';
-        lines.push(`Mania pattern: current cycle ${mania.current_streak ?? 0} day(s), longest cycle ${mania.longest_streak ?? 0} day(s), severe days ${mania.severe_days ?? 0}, PRN mania days ${mania.prn_days ?? 0}, late sleep onset days ${mania.late_sleep_onset_days ?? 0}, sleep-disruption days ${mania.sleep_disruption_days ?? 0}, appetite-change days ${mania.appetite_days ?? 0}, fixation days ${mania.fixation_days ?? 0}, repetitive-behavior days ${mania.repetitive_days ?? 0}, pressured-speech days ${mania.pressured_speech_days ?? 0}, grandiosity days ${mania.grandiosity_days ?? 0}; ${cycleRange}; status mix: ${statusText}.`);
+        lines.push(`Elevated-cycle pattern summary: current cycle ${mania.current_streak ?? 0} day(s), longest cycle ${mania.longest_streak ?? 0} day(s), severe-signal days ${mania.severe_days ?? 0}, PRN-for-elevated-mood days ${mania.prn_days ?? 0}, late sleep onset days ${mania.late_sleep_onset_days ?? 0}, sleep-disruption days ${mania.sleep_disruption_days ?? 0}, appetite-change days ${mania.appetite_days ?? 0}, fixation days ${mania.fixation_days ?? 0}, repetitive-behavior days ${mania.repetitive_days ?? 0}, rapid-speech days ${mania.pressured_speech_days ?? 0}, grandiosity days ${mania.grandiosity_days ?? 0}; ${cycleRange}; status mix: ${statusText}.`);
       }
       if (visibility.aggression) {
         lines.push(`Aggression occurred on ${aggression.days ?? 0} day(s), ${aggressionInstancesText}, average intensity ${avgLabel(aggression.avg_intensity)}, peak intensity ${aggression.max_intensity ?? '—'}; ${aggressionTrend}, and ${aggressionInstanceTrend} versus the prior comparable period.`);
@@ -3362,6 +3390,12 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 
     async function loadFocusPanel(){
       if (!focusUi.summary) return;
+      const appFeatures = getAppFeatures();
+      if (!appFeatures.focus) {
+        focusUi.panel?.classList.add('is-hidden');
+        return;
+      }
+      focusUi.panel?.classList.remove('is-hidden');
       try{
         let focus = null;
         let localFallback = false;

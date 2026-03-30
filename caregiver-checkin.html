@@ -910,8 +910,8 @@
           <div class="movement-panel" id="movementSymptomsPanel">
             <div class="movement-head">
               <div>
-                <div class="movement-title">Movement / Physical Status</div>
-                <p class="movement-desc">Track pain, physical discomfort, movement concerns, shakiness, or other body-based symptoms when they come up.</p>
+                <div class="movement-title">Observed Movement Changes</div>
+                <p class="movement-desc">Track involuntary movements, body-area changes, vocalizations, restlessness, or other noticeable movement patterns when they come up.</p>
               </div>
             </div>
             <div id="question-prn-pain" class="question-block" style="margin-bottom:8px">
@@ -921,8 +921,8 @@
               </label>
             </div>
 
-            <div class="movement-yn" role="group" aria-label="Pain or discomfort today">
-              <strong>Pain or discomfort today?</strong>
+            <div class="movement-yn" role="group" aria-label="Any involuntary movements or vocalizations today">
+              <strong>Any involuntary movements or vocalizations today?</strong>
               <label class="movement-pill"><input type="radio" name="movement_present" value="no" checked> No</label>
               <label class="movement-pill"><input type="radio" name="movement_present" value="yes"> Yes</label>
             </div>
@@ -932,10 +932,10 @@
                 <div>
                   <div class="movement-label">Main symptom</div>
                   <div class="movement-chips">
-                    <label class="movement-chip"><input type="radio" name="movement_main_type" value="pain">Pain</label>
-                    <label class="movement-chip"><input type="radio" name="movement_main_type" value="headache">Headache</label>
-                    <label class="movement-chip"><input type="radio" name="movement_main_type" value="stomach">Stomach discomfort</label>
-                    <label class="movement-chip"><input type="radio" name="movement_main_type" value="shaking">Shaking / restlessness</label>
+                    <label class="movement-chip"><input type="radio" name="movement_main_type" value="face_mouth">Face / mouth movements</label>
+                    <label class="movement-chip"><input type="radio" name="movement_main_type" value="hand_finger">Hand / finger movements</label>
+                    <label class="movement-chip"><input type="radio" name="movement_main_type" value="body_restlessness">Body movements / restlessness</label>
+                    <label class="movement-chip"><input type="radio" name="movement_main_type" value="vocalizations">Vocalizations</label>
                     <label class="movement-chip"><input type="radio" name="movement_main_type" value="other">Other</label>
                   </div>
                 </div>
@@ -963,13 +963,13 @@
                 </div>
                 <div>
                   <label class="movement-label" for="movement_notes">Notes (optional)</label>
-                  <input type="text" name="movement_notes" id="movement_notes" placeholder="Short note, e.g. headache after lunch"/>
+                  <input type="text" name="movement_notes" id="movement_notes" placeholder="Short note, e.g. lip smacking after lunch"/>
                 </div>
               </div>
 
               <div class="movement-actions">
                 <button class="btn" type="button" id="movementSameBtn">Same as last check-in</button>
-                <button class="btn" type="button" id="movementDetailsToggle" aria-expanded="false" aria-controls="movementDetails">Show optional symptom details</button>
+                <button class="btn" type="button" id="movementDetailsToggle" aria-expanded="false" aria-controls="movementDetails">Show body areas, frequency &amp; triggers</button>
               </div>
 
               <div class="movement-details is-hidden" id="movementDetails">
@@ -1687,7 +1687,19 @@
   const GROUP_KEY = 'currentGroupId';
   const MOVEMENT_LAST_KEY = 'cg-movement-last-v1';
   const APP_CONFIG_KEY = 'star_app_config';
-  const onboardingActive = new URLSearchParams(window.location.search).get('onboarding') === '1';
+  const GUIDED_ONBOARDING_KEY = 'star_guided_onboarding_v1';
+  const onboardingActive = (() => {
+    if (new URLSearchParams(window.location.search).get('onboarding') === '1') return true;
+    try {
+      const session = getSessionFromStorage();
+      const userId = session?.user?.id;
+      const store = JSON.parse(localStorage.getItem(GUIDED_ONBOARDING_KEY) || '{}');
+      const current = userId ? store?.[userId] : null;
+      return current?.active === true && current?.current_step === 'practice_checkin';
+    } catch {
+      return false;
+    }
+  })();
   const caregiverSetupState = {
     groupId: null,
     configRowId: null,

@@ -403,7 +403,7 @@
           <div class="detail-body-inner">
             <div class="sub">
               <a href="/group-settings.html">Group Settings</a>
-              <a href="/customize-checkin.html" data-caregiver-edit-link>Edit Caregiver Check-In</a>
+              <a href="/caregiver-setup-wizard.html" data-caregiver-edit-link>Edit Caregiver Check-In</a>
             </div>
           </div>
         </div>

@@ -1760,6 +1760,7 @@
     repetitive_behaviors: 'compulsive_checking_repeating',
     fixations_perseveration: 'perseveration_present',
     rapid_speech: 'pressured_speech_present',
+    delusions_of_grandeur_grandiose_beliefs: 'grandiose_statements_present',
     impulsivity: 'maintains_safe_body',
     hyperactivity: 'distress_impacts_participation',
     inattention_distractibility: 'distress_impacts_participation',
@@ -1798,8 +1799,9 @@
 
     const physicalItems = [];
     if (getWizardSelectedList(config, 'daily_living', 'sleep')) physicalItems.push('sleep');
+    if (config.health_fields?.sleep === true || getWizardSelectedList(config, 'daily_living', 'sleep')) physicalItems.push('sleep');
     if (config.health_fields?.appetite === true || getWizardSelectedList(config, 'daily_living', 'food_preparation')) physicalItems.push('appetite');
-    if (config.health_fields?.tired === true || getWizardSelectedList(config, 'daily_living', 'sleep')) physicalItems.push('energy_level');
+    if (config.health_fields?.tired === true || config.health_fields?.sleep === true || getWizardSelectedList(config, 'daily_living', 'sleep')) physicalItems.push('energy_level');
     if (config.health_fields?.good_health === true) physicalItems.push('good_health');
     if (getWizardSelectedList(config, 'daily_living', 'illness_symptoms') || config.health_fields?.illness_symptoms === true) physicalItems.push('illness_symptoms');
     if (getWizardSelectedList(config, 'daily_living', 'pain_discomfort') || config.health_fields?.pain === true) physicalItems.push('pain_discomfort');
@@ -3440,7 +3442,7 @@
 
     setConfigHidden([
       document.getElementById('question-prn-pain'),
-    ], !(movementEnabled && prnEnabled));
+    ], true);
 
     setConfigHidden([
       document.getElementById('menstrualPanel'),

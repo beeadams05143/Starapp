@@ -608,14 +608,11 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     banner.style.boxShadow = '0 12px 24px rgba(125,89,34,0.08)';
     banner.innerHTML = `
       <strong style="display:block;font-size:18px;color:#065f46;margin-bottom:6px;">Onboarding complete</strong>
-      <span style="display:block;color:#516074;line-height:1.5;margin-bottom:12px;">You’ve finished the guided STAR caregiver onboarding. Redirecting to the dashboard…</span>
+      <span style="display:block;color:#516074;line-height:1.5;margin-bottom:12px;">You’ve finished the guided STAR caregiver onboarding. You can review the caregiver report here or head to the dashboard when you’re ready.</span>
       <a href="/dashboard.html" style="display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:0 18px;border-radius:14px;border:1px solid #2bbf67;background:linear-gradient(180deg,#49da7b 0%,#22c55e 100%);color:#08331d;text-decoration:none;font-weight:800;">Go to Dashboard</a>
     `;
     const main = document.querySelector('main.page');
     if (main?.parentNode) main.parentNode.insertBefore(banner, main);
-    window.setTimeout(() => {
-      window.location.replace('/dashboard.html');
-    }, 1200);
   }
 </script>
 

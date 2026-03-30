@@ -818,10 +818,10 @@
             </label>
           </div>
           <div class="row cols-2" style="margin:0 0 10px">
-            <label>What was used? (optional)
-              <input type="text" name="sleep_prn_name" id="sleep_prn_name" placeholder="Enter medication or support used"/>
+            <label>PRN or support used (optional)
+              <input type="text" name="sleep_prn_name" id="sleep_prn_name" placeholder="Enter PRN, medication, or support used"/>
             </label>
-            <label>Time given (optional)
+            <label>PRN time given (optional)
               <input type="time" name="sleep_prn_time" id="sleep_prn_time"/>
             </label>
           </div>
@@ -1091,10 +1091,10 @@
             </div>
 
             <div class="temp-row" style="margin-bottom:8px">
-              <label>What was used? (optional)
-                <input type="text" name="temp_prn_name" id="temp_prn_name" placeholder="Enter medication or support used"/>
+              <label>PRN or support used (optional)
+                <input type="text" name="temp_prn_name" id="temp_prn_name" placeholder="Enter PRN, medication, or support used"/>
               </label>
-              <label>Time given (optional)
+              <label>PRN time given (optional)
                 <input type="time" name="temp_prn_time" id="temp_prn_time"/>
               </label>
             </div>
@@ -1686,6 +1686,7 @@
   const DRAFT_KEY = 'cg-checkin-draft-v1';
   const GROUP_KEY = 'currentGroupId';
   const MOVEMENT_LAST_KEY = 'cg-movement-last-v1';
+  const APP_CONFIG_KEY = 'star_app_config';
   const onboardingActive = new URLSearchParams(window.location.search).get('onboarding') === '1';
   const caregiverSetupState = {
     groupId: null,
@@ -1718,6 +1719,20 @@
     };
   })();
 
+  function getAppFeatures(){
+    try {
+      const parsed = JSON.parse(localStorage.getItem(APP_CONFIG_KEY) || 'null');
+      return {
+        chat: parsed?.appFeatures?.chat !== false,
+        calendar: parsed?.appFeatures?.calendar !== false,
+        focus: parsed?.appFeatures?.focus !== false,
+        documents: parsed?.appFeatures?.documents !== false,
+      };
+    } catch {
+      return { chat: true, calendar: true, focus: true, documents: true };
+    }
+  }
+
   function getWizardSelectedList(config, sectionKey, fieldKey){
     const direct = parseConfigObject(config?.[`${sectionKey}_fields`]);
     if (direct && typeof direct[fieldKey] === 'boolean') return direct[fieldKey] === true;
@@ -1733,6 +1748,37 @@
       if (fieldKey === 'prn_used') return Array.isArray(dailyLiving?.occasional) && dailyLiving.occasional.includes('prn');
     }
     return false;
+  }
+
+  const WIZARD_BEHAVIOR_KEY_MAP = {
+    mood: 'mood',
+    mood_shifts: 'mood',
+    anxiety: 'anxiety_signs_present',
+    aggression: 'maintains_safe_body',
+    irritability: 'distress_impacts_participation',
+    social_interaction: 'responds_to_peer_interaction',
+    repetitive_behaviors: 'compulsive_checking_repeating',
+    fixations_perseveration: 'perseveration_present',
+    rapid_speech: 'pressured_speech_present',
+    impulsivity: 'maintains_safe_body',
+    hyperactivity: 'distress_impacts_participation',
+    inattention_distractibility: 'distress_impacts_participation',
+    compulsive_behaviors: 'compulsive_checking_repeating',
+    rigid_thinking_difficulty_with_transitions: 'tolerates_change',
+    sleep_related_behavior_changes: 'distress_impacts_participation',
+    self_injury_self_harm_concerns: 'maintains_safe_body',
+    elopement_leaving_area: 'maintains_safe_space',
+    sensory_seeking_behavior: 'distress_impacts_participation',
+    sensory_avoidance: 'withdrawal_present',
+  };
+
+  function getWizardBehaviorSelections(config){
+    const raw = Array.isArray(config?.behavior_fields?.behaviors) ? config.behavior_fields.behaviors : [];
+    const mapped = raw
+      .map((entry) => WIZARD_BEHAVIOR_KEY_MAP[toBehaviorKey(entry)] || toBehaviorKey(entry))
+      .filter(Boolean);
+    if (!mapped.length && config?.show_behavior) return ['mood'];
+    return Array.from(new Set(mapped));
   }
 
   function applyLocalWizardConfigToSetupState(config){
@@ -1767,7 +1813,7 @@
 
     if (config.show_behavior) {
       selectedCategories.add('behavior_mental_health');
-      selectedItems.behavior_mental_health = ['mood'];
+      selectedItems.behavior_mental_health = getWizardBehaviorSelections(config);
     }
     if (config.show_community) {
       selectedCategories.add('community');
@@ -1953,6 +1999,7 @@
   const setConfigHidden = (elements, hidden) => {
     elements.filter(Boolean).forEach((el) => el.classList.toggle('config-hidden', !!hidden));
   };
+  const isStepHidden = (stepEl) => !stepEl || stepEl.classList.contains('config-hidden') || stepEl.hidden;
   const setStepAndNavHidden = (stepEl, navEl, hidden) => {
     setConfigHidden([stepEl, navEl], hidden);
     [stepEl, navEl].filter(Boolean).forEach((el) => {
@@ -2001,6 +2048,7 @@
   };
 
   const BEHAVIOR_LABEL_OVERRIDES = {
+    mood: 'Mood check-in completed',
     aggression: 'Aggression',
     anxiety: 'Anxiety',
     mania: 'Mania',
@@ -2050,6 +2098,7 @@
     distress_impacts_participation: 'Distress impacts participation',
   };
   const BEHAVIOR_DESCRIPTION_OVERRIDES = {
+    mood: 'Use this to track whether the caregiver supported the individual in completing the STAR mood check-in during the shift.',
     identifies_feelings: 'Names or points to a feeling without staff guessing for them.',
     tolerates_frustration: 'Stays regulated enough to keep going when something is hard or disappointing.',
     uses_coping_strategy: 'Uses a coping tool or calming strategy when upset.',
@@ -2593,21 +2642,44 @@
     return 'prompt_skill';
   }
 
+  function getPromptFieldLabels(itemKey){
+    if (itemKey === 'mood') {
+      return {
+        typeLabel: 'How was the mood check-in supported?:',
+        levelLabel: 'Support level used:',
+        levelPlaceholder: 'Select support level',
+      };
+    }
+    return {
+      typeLabel: 'Prompt type:',
+      levelLabel: 'Prompt level:',
+      levelPlaceholder: 'Select prompt level',
+    };
+  }
+
   function renderPromptSkillFields(prefix, itemKey){
+    const labels = getPromptFieldLabels(itemKey);
+    const notesLabel = itemKey === 'mood' ? 'Mood check-in notes:' : 'Notes:';
+    const notesPlaceholder = itemKey === 'mood'
+      ? 'Optional notes about using the mood check-in app'
+      : `Optional notes for ${toBehaviorLabel(itemKey).toLowerCase()}`;
     return `
       <div class="behavior-followup-grid">
-        <label class="behavior-choice-field">Prompt type:
+        <label class="behavior-choice-field">${escapeHtml(labels.typeLabel)}
           <select class="behavior-inline-select" name="${prefix}_prompt_type__${escapeHtml(itemKey)}">
             ${PROMPT_TYPE_OPTIONS.map((option) => `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`).join('')}
           </select>
         </label>
-        <label class="behavior-choice-field">Prompt level:
+        <label class="behavior-choice-field">${escapeHtml(labels.levelLabel)}
           <select class="behavior-inline-select" name="${prefix}_prompt_level__${escapeHtml(itemKey)}">
-            <option value="">Select prompt level</option>
+            <option value="">${escapeHtml(labels.levelPlaceholder)}</option>
             ${BEHAVIOR_PROMPT_LEVELS.map((option) => `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`).join('')}
           </select>
         </label>
       </div>
+      <label class="behavior-card-notes">${escapeHtml(notesLabel)}
+        <textarea name="${prefix}_notes__${escapeHtml(itemKey)}" placeholder="${escapeHtml(notesPlaceholder)}"></textarea>
+      </label>
     `;
   }
 
@@ -2871,13 +2943,16 @@
                 </div>
                 <div class="behavior-followups is-hidden" data-behavior-followups>
                   ${getBehaviorTrackingType(key) === 'symptom_intensity'
-                    ? renderSymptomFields('behavior', key)
-                    : getBehaviorTrackingType(key) === 'prn_usage'
-                      ? renderPrnUsageFields('behavior', key)
-                      : renderPromptSkillFields('behavior', key)}
+                    ? `${renderSymptomFields('behavior', key)}
                   <label class="behavior-card-notes">Notes:
                     <textarea name="behavior_notes__${escapeHtml(key)}" placeholder="Optional notes for ${escapeHtml(label).toLowerCase()}"></textarea>
-                  </label>
+                  </label>`
+                    : getBehaviorTrackingType(key) === 'prn_usage'
+                      ? `${renderPrnUsageFields('behavior', key)}
+                  <label class="behavior-card-notes">Notes:
+                    <textarea name="behavior_notes__${escapeHtml(key)}" placeholder="Optional notes for ${escapeHtml(label).toLowerCase()}"></textarea>
+                  </label>`
+                      : renderPromptSkillFields('behavior', key)}
                 </div>
               </article>
             `).join('')}
@@ -2919,13 +2994,16 @@
               </div>
               <div class="behavior-followups is-hidden" data-behavior-followups>
                 ${getBehaviorTrackingType(key) === 'symptom_intensity'
-                  ? renderSymptomFields('behavior', key)
-                  : getBehaviorTrackingType(key) === 'prn_usage'
-                    ? renderPrnUsageFields('behavior', key)
-                    : renderPromptSkillFields('behavior', key)}
+                  ? `${renderSymptomFields('behavior', key)}
                 <label class="behavior-card-notes">Notes:
                   <textarea name="behavior_notes__${escapeHtml(key)}" placeholder="Optional notes for ${escapeHtml(label).toLowerCase()}"></textarea>
-                </label>
+                </label>`
+                  : getBehaviorTrackingType(key) === 'prn_usage'
+                    ? `${renderPrnUsageFields('behavior', key)}
+                <label class="behavior-card-notes">Notes:
+                  <textarea name="behavior_notes__${escapeHtml(key)}" placeholder="Optional notes for ${escapeHtml(label).toLowerCase()}"></textarea>
+                </label>`
+                    : renderPromptSkillFields('behavior', key)}
               </div>
             </article>
           `).join('')}
@@ -3539,6 +3617,20 @@
 
   async function loadFocusSummary(){
     if (!focusSummaryEl) return;
+    const appFeatures = getAppFeatures();
+    if (!appFeatures.focus) {
+      if (focusPanel) {
+        focusPanel.classList.add('config-hidden');
+        focusPanel.hidden = true;
+        focusPanel.setAttribute('aria-hidden', 'true');
+      }
+      return;
+    }
+    if (focusPanel) {
+      focusPanel.classList.remove('config-hidden');
+      focusPanel.hidden = false;
+      focusPanel.setAttribute('aria-hidden', 'false');
+    }
     try{
       let focus = null;
       let localFallback = false;
@@ -4784,13 +4876,13 @@
     function normalizeStepIndex(target){
       if (!steps.length) return 0;
       const clamped = Math.max(0, Math.min(target, steps.length - 1));
-      if (!steps[clamped]?.classList.contains('config-hidden')) return clamped;
+      if (!isStepHidden(steps[clamped])) return clamped;
 
       for (let offset = 1; offset < steps.length; offset += 1) {
         const forward = clamped + offset;
-        if (forward < steps.length && !steps[forward].classList.contains('config-hidden')) return forward;
+        if (forward < steps.length && !isStepHidden(steps[forward])) return forward;
         const backward = clamped - offset;
-        if (backward >= 0 && !steps[backward].classList.contains('config-hidden')) return backward;
+        if (backward >= 0 && !isStepHidden(steps[backward])) return backward;
       }
       return clamped;
     }
@@ -4885,7 +4977,7 @@
     }
     function updateProgress(){
       segs.forEach((seg,idx)=>{
-        const hidden = steps[idx]?.classList.contains('config-hidden');
+        const hidden = isStepHidden(steps[idx]);
         seg.parentElement?.classList.toggle('config-hidden', !!hidden);
         if (hidden) {
           seg.classList.remove('active', 'done');
@@ -4899,7 +4991,7 @@
     function syncWizardView({ scroll = false } = {}){
       current = normalizeStepIndex(current);
       steps.forEach((step, idx) => {
-        const isVisible = !step.classList.contains('config-hidden');
+        const isVisible = !isStepHidden(step);
         const shouldShow = isVisible && idx === current;
         step.classList.toggle('active', shouldShow);
       });
@@ -5320,9 +5412,9 @@
         showSuccessBanner();
         showPostSubmitPrompt();
         if (onboardingActive) {
-          advanceGuidedOnboarding(user_id, 'practice_focus');
+          advanceGuidedOnboarding(user_id, 'view_report');
           setTimeout(() => {
-            window.location.replace('focus-week.html?onboarding=1');
+            window.location.replace('caregiver-report.html?onboarding=1');
           }, 900);
         }
       } catch (err) {

@@ -384,6 +384,39 @@
       color:#0f766e;
       font-weight:700;
     }
+    .behavior-add-wrap{
+      margin-top:14px;
+      padding-top:14px;
+      border-top:1px solid #e5e7eb;
+    }
+    .behavior-add-label{
+      display:block;
+      font-size:14px;
+      font-weight:700;
+      color:var(--accent);
+      margin-bottom:8px;
+    }
+    .behavior-add-row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .behavior-add-input{
+      flex:1 1 240px;
+      min-height:50px;
+      border-radius:16px;
+      border:1px solid #cbd5e1;
+      background:#fff;
+      color:var(--text);
+      font:inherit;
+      padding:12px 14px;
+    }
+    .behavior-helper{
+      margin:10px 0 0;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.5;
+    }
     @media (max-width:720px){
       .option-grid{
         grid-template-columns:1fr;
@@ -493,6 +526,14 @@
           <h3 id="behaviorSubstepTitle">Track these behaviors</h3>
           <p id="behaviorSubstepCopy" class="setup-meta"></p>
           <div class="picker-grid" id="behaviorPickerGrid"></div>
+          <div class="behavior-add-wrap" id="behaviorAddWrap">
+            <label class="behavior-add-label" for="behaviorCustomInput">Add another behavior to track</label>
+            <div class="behavior-add-row">
+              <input id="behaviorCustomInput" class="behavior-add-input" type="text" placeholder="Example: Rapid speech, Fixation, Repetitive behaviors" />
+              <button class="btn" id="behaviorAddBtn" type="button">Add Behavior</button>
+            </div>
+            <p class="behavior-helper">Use this when your team starts noticing new patterns and wants to track them without waiting for a new app update.</p>
+          </div>
         </div>
       </div>
 
@@ -656,6 +697,52 @@
               { key: 'physical_functioning', label: 'Physical functioning', preview: ['Overall physical functioning', 'Observed changes', 'Notes'] },
             ],
           },
+          {
+            title: 'Observed Movement Changes',
+            helper: 'Include these if you want to watch for unusual movement patterns, restlessness, or new physical changes that may be important to notice over time, including after medication changes.',
+            fields: [
+              {
+                key: 'unusual_movements',
+                label: 'Unusual movements',
+                preview: ['Unexpected body or facial movements', 'When it was noticed', 'Notes'],
+              },
+              {
+                key: 'face_mouth_movements',
+                label: 'Face or mouth movements',
+                preview: ['Lip, jaw, tongue, or facial movement changes', 'When it showed up', 'Notes'],
+              },
+              {
+                key: 'hand_finger_movements',
+                label: 'Hand or finger movements',
+                preview: ['Finger, hand, or wrist movement changes', 'How often it happened', 'Notes'],
+              },
+              {
+                key: 'body_area_tracking',
+                label: 'Track body area involved',
+                preview: ['Mouth, face, hands, arms, legs, or full body', 'Where it was noticed', 'Notes'],
+              },
+              {
+                key: 'motor_restlessness',
+                label: 'Motor restlessness',
+                preview: ['Pacing, inability to stay still, frequent shifting', 'Severity or duration', 'Notes'],
+              },
+              {
+                key: 'repetitive_body_movements',
+                label: 'Repetitive body movements',
+                preview: ['Repeated body movements or postures', 'How often it happened', 'Notes'],
+              },
+              {
+                key: 'sudden_small_movements',
+                label: 'Sudden small movements or sounds',
+                preview: ['Brief repeated movements or sounds', 'When it occurred', 'Notes'],
+              },
+              {
+                key: 'unusual_vocalizations',
+                label: 'Unusual vocalizations',
+                preview: ['Unexpected sounds, throat noises, or repeated vocal patterns', 'When it occurred', 'Notes'],
+              },
+            ],
+          },
         ],
       },
       health: {
@@ -762,7 +849,26 @@
         ],
       },
     };
-    const BEHAVIOR_CHOICES = ['Mood', 'Anxiety', 'Aggression', 'Irritability', 'Social Interaction'];
+    const BEHAVIOR_CHOICES = [
+      'Mood shifts',
+      'Anxiety',
+      'Aggression',
+      'Irritability',
+      'Social interaction',
+      'Repetitive behaviors',
+      'Fixations / perseveration',
+      'Rapid speech',
+      'Impulsivity',
+      'Hyperactivity',
+      'Inattention / distractibility',
+      'Compulsive behaviors',
+      'Rigid thinking / difficulty with transitions',
+      'Sleep-related behavior changes',
+      'Self-injury / self-harm concerns',
+      'Elopement / leaving area',
+      'Sensory-seeking behavior',
+      'Sensory avoidance',
+    ];
     const BEHAVIOR_SUPPORT_CHOICES = ['Triggers', 'Coping Skills', 'Self-Regulation'];
 
     const DEFAULT_CONFIG = {
@@ -806,6 +912,7 @@
       behaviorSetup: {
         enabled: true,
         behaviors: [],
+        custom_behaviors: [],
         supports: [],
         notes_enabled: false,
       },
@@ -846,6 +953,9 @@
     const behaviorPickerGrid = document.getElementById('behaviorPickerGrid');
     const behaviorSubstepTitle = document.getElementById('behaviorSubstepTitle');
     const behaviorSubstepCopy = document.getElementById('behaviorSubstepCopy');
+    const behaviorAddWrap = document.getElementById('behaviorAddWrap');
+    const behaviorCustomInput = document.getElementById('behaviorCustomInput');
+    const behaviorAddBtn = document.getElementById('behaviorAddBtn');
     const sectionSetupTitle = document.getElementById('sectionSetupTitle');
     const sectionSetupHeading = document.getElementById('sectionSetupHeading');
     const sectionSetupMeta = document.getElementById('sectionSetupMeta');
@@ -968,6 +1078,7 @@
       const behaviorFields = config.behavior_fields || {};
       state.behaviorSetup.enabled = config.show_behavior;
       state.behaviorSetup.behaviors = Array.isArray(behaviorFields.behaviors) ? behaviorFields.behaviors : [];
+      state.behaviorSetup.custom_behaviors = Array.isArray(behaviorFields.custom_behaviors) ? behaviorFields.custom_behaviors : [];
       state.behaviorSetup.supports = Array.isArray(behaviorFields.supports) ? behaviorFields.supports : [];
       state.behaviorSetup.notes_enabled = behaviorFields.notes_enabled === true;
       const dailyLivingConfig = config.daily_living && typeof config.daily_living === 'object' ? config.daily_living : {};
@@ -1119,7 +1230,7 @@
     function renderBehaviorSubstep() {
       if (state.currentView !== 'behaviorSetup') return;
       const choiceSource = state.behaviorSubstep === 0
-        ? BEHAVIOR_CHOICES
+        ? [...BEHAVIOR_CHOICES, ...state.behaviorSetup.custom_behaviors]
         : state.behaviorSubstep === 1
           ? BEHAVIOR_SUPPORT_CHOICES
           : ['Enable notes field', 'Disable notes field'];
@@ -1128,9 +1239,12 @@
         state.behaviorSubstep === 1 ? 'Select supports / context' :
         'Optional notes';
       behaviorSubstepCopy.textContent =
-        state.behaviorSubstep === 0 ? 'Choose the behavior items that should show up in caregiver check-ins.' :
+        state.behaviorSubstep === 0 ? 'Choose the behavior items your team wants to observe now. You can also add custom behaviors when new patterns start to stand out.' :
         state.behaviorSubstep === 1 ? 'Choose the support/context details that should appear when behavior is tracked.' :
         'Decide whether caregivers should see a notes field inside the behavior section.';
+      if (behaviorAddWrap) {
+        behaviorAddWrap.style.display = state.behaviorSubstep === 0 ? '' : 'none';
+      }
 
       behaviorPickerGrid.innerHTML = choiceSource.map((label) => {
         let active = false;
@@ -1159,6 +1273,25 @@
           renderBehaviorSubstep();
         });
       });
+    }
+
+    function addCustomBehavior() {
+      const value = (behaviorCustomInput?.value || '').trim();
+      if (!value) {
+        setMessage('Enter a behavior label before adding it.');
+        return;
+      }
+      const existing = [...BEHAVIOR_CHOICES, ...state.behaviorSetup.custom_behaviors].map((item) => item.toLowerCase());
+      if (existing.includes(value.toLowerCase())) {
+        setMessage('That behavior is already available to select.');
+        return;
+      }
+      state.behaviorSetup.custom_behaviors.push(value);
+      state.behaviorSetup.behaviors.push(value);
+      if (behaviorCustomInput) behaviorCustomInput.value = '';
+      setMessage('');
+      persistCaregiverConfigDraft();
+      renderBehaviorSubstep();
     }
 
     function renderSectionSetup() {
@@ -1305,6 +1438,7 @@
         show_educational: state.selectedSections.includes('educational') && state.selected.educational,
         behavior_fields: {
           behaviors: [...state.behaviorSetup.behaviors],
+          custom_behaviors: [...state.behaviorSetup.custom_behaviors],
           supports: [...state.behaviorSetup.supports],
           notes_enabled: state.behaviorSetup.notes_enabled,
         },
@@ -1354,6 +1488,14 @@
         persistCaregiverConfigDraft();
         updateWizard();
       });
+    });
+
+    behaviorAddBtn?.addEventListener('click', addCustomBehavior);
+    behaviorCustomInput?.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        addCustomBehavior();
+      }
     });
 
     sectionCards.forEach((button) => {

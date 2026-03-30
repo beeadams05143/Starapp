@@ -62,6 +62,26 @@
     .option input{margin-top:2px;accent-color:#22c55e;}
     .option strong{display:block;color:var(--navy);margin-bottom:4px;}
     .option span{display:block;color:var(--muted);font-size:14px;line-height:1.45;}
+    .option.core{
+      border-color:#cfe8d4;
+      background:linear-gradient(180deg, #f7fff8 0%, #eefaf1 100%);
+    }
+    .option-badge{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:92px;
+      padding:4px 10px;
+      border-radius:999px;
+      background:#dcfce7;
+      color:#166534;
+      font-size:12px;
+      font-weight:800;
+      letter-spacing:.03em;
+      text-transform:uppercase;
+      white-space:nowrap;
+      margin-top:2px;
+    }
     .actions{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:16px;}
     button{
       border:1px solid #2bbf67;
@@ -96,7 +116,22 @@
 
     <section class="card" id="featuresStep">
       <h2>Choose what your group will use</h2>
-      <p>Select every feature your group wants in the app. Dashboard, Caregiver Check-In, and Caregiver Report stay available automatically.</p>
+      <p>Select every feature your group wants in the app. Core STAR tools stay available automatically so every group can complete check-ins and review reports.</p>
+      <div class="option-grid" style="margin-bottom:14px;">
+        <div class="option core">
+          <span class="option-badge">Always On</span>
+          <span><strong>Dashboard</strong><span>Your group’s home base for navigation, progress, and setup.</span></span>
+        </div>
+        <div class="option core">
+          <span class="option-badge">Always On</span>
+          <span><strong>Caregiver Check-In</strong><span>Daily caregiver tracking, routines, support notes, and guided check-in workflow.</span></span>
+        </div>
+        <div class="option core">
+          <span class="option-badge">Always On</span>
+          <span><strong>Caregiver Report</strong><span>Shared report view for check-in trends, summaries, and caregiver data review.</span></span>
+        </div>
+      </div>
+      <p>Choose the additional shared features your group wants available.</p>
       <div class="option-grid">
         <label class="option"><input id="featureChat" type="checkbox" /><span><strong>Group Chat</strong><span>Secure group conversation and quick updates.</span></span></label>
         <label class="option"><input id="featureCalendar" type="checkbox" /><span><strong>Calendar</strong><span>Shared scheduling, appointments, and reminders.</span></span></label>

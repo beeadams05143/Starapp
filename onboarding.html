@@ -4,16 +4,6 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Onboarding - STAR</title>
-  <script>
-    (function enforceOnboardingEntry() {
-      try {
-        const parsed = JSON.parse(localStorage.getItem('star_onboarding_status_v1') || '{}');
-        if (parsed?.complete === true) {
-          window.location.replace('/dashboard.html');
-        }
-      } catch {}
-    })();
-  </script>
   <style>
     :root {
       color-scheme: light;
@@ -131,7 +121,7 @@
       background: #fff2c7;
       border: 1px solid #6ee7b7;
       color: #724016;
-      font-size: 18px;
+      font-size: 24px;
       font-weight: 800;
       letter-spacing: 0.08em;
     }
@@ -236,10 +226,59 @@
       margin: 0;
       accent-color: #22c55e;
     }
+    .invite-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(17, 24, 39, 0.46);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 1000;
+    }
+    .invite-modal-overlay.visible {
+      display: flex;
+    }
+    .invite-modal {
+      width: min(460px, 100%);
+      background: #fffdf8;
+      border: 1px solid #ead7ab;
+      border-radius: 24px;
+      box-shadow: 0 24px 60px rgba(36,48,71,.24);
+      padding: 24px 22px;
+      text-align: center;
+    }
+    .invite-modal h3 {
+      margin: 0 0 10px;
+      color: #724016;
+      font-family: var(--font-serif);
+      font-size: 28px;
+    }
+    .invite-modal p {
+      margin: 0 0 16px;
+      color: #516074;
+      line-height: 1.5;
+    }
+    .invite-modal .invite-code-pill {
+      justify-content: center;
+      width: 100%;
+      margin: 8px 0 18px;
+      font-size: 26px;
+      min-height: 56px;
+    }
+    .invite-modal-actions {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .invite-modal-actions button {
+      margin-top: 0;
+    }
     @media (max-width: 720px) {
       .grid { grid-template-columns: 1fr; }
       .welcome-grid { grid-template-columns: 1fr; }
       .shell { padding: 22px 16px; }
+      .invite-modal-actions { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -267,7 +306,7 @@
           <label for="groupName">Create Group</label>
           <input id="groupName" type="text" placeholder="Enter group name" />
           <p class="muted">You will be added as the owner.</p>
-          <button id="createGroupBtn" type="submit">Create Group</button>
+          <button id="createGroupBtn" type="submit" class="secondary">Create Group</button>
         </form>
 
         <form id="joinGroupForm" novalidate>
@@ -277,6 +316,7 @@
           <button id="joinGroupBtn" type="submit" class="secondary">Join Group</button>
         </form>
       </div>
+      <button id="continueAsIndividualBtn" type="button">Continue as Individual</button>
     </section>
 
     <div id="status" class="message" role="status" aria-live="polite"></div>
@@ -311,10 +351,22 @@
         <p>Next, STAR will guide you straight into caregiver setup, a practice caregiver check-in, a weekly focus, and the caregiver report so you learn the workflow by doing it.</p>
       </section>
       <div class="success-actions">
-        <button id="continueToDashboardBtn" type="button">Continue Guided Setup</button>
+        <button id="continueToDashboardBtn" type="button">Continue</button>
       </div>
     </section>
   </main>
+
+  <div id="inviteCodeModal" class="invite-modal-overlay" aria-hidden="true">
+    <div class="invite-modal" role="dialog" aria-modal="true" aria-labelledby="inviteModalTitle">
+      <h3 id="inviteModalTitle">Group Created!</h3>
+      <p>Your group is ready. Share this invite code with caregivers so they can join the correct STAR group.</p>
+      <div id="inviteModalCode" class="invite-code-pill"></div>
+      <div class="invite-modal-actions">
+        <button id="inviteModalCopyBtn" type="button" class="secondary">Copy Code</button>
+        <button id="inviteModalContinueBtn" type="button">Continue</button>
+      </div>
+    </div>
+  </div>
 
   <script type="module">
     import { getSessionFromStorage } from './supabaseClient.js?v=2026.03.29A';
@@ -342,6 +394,7 @@
     const saveProfileBtn = document.getElementById('saveProfileBtn');
     const createGroupBtn = document.getElementById('createGroupBtn');
     const joinGroupBtn = document.getElementById('joinGroupBtn');
+    const continueAsIndividualBtn = document.getElementById('continueAsIndividualBtn');
     const statusEl = document.getElementById('status');
     const groupSuccessBox = document.getElementById('groupSuccessBox');
     const groupSuccessTitleEl = document.getElementById('groupSuccessTitle');
@@ -360,15 +413,54 @@
     const howToCardTitleEl = document.getElementById('howToCardTitle');
     const howToCardBodyEl = document.getElementById('howToCardBody');
     const continueToDashboardBtn = document.getElementById('continueToDashboardBtn');
+    const inviteCodeModal = document.getElementById('inviteCodeModal');
+    const inviteModalCodeEl = document.getElementById('inviteModalCode');
+    const inviteModalCopyBtn = document.getElementById('inviteModalCopyBtn');
+    const inviteModalContinueBtn = document.getElementById('inviteModalContinueBtn');
+    const pendingInviteStorageKey = 'star.pending-group-invite';
     let currentUser = null;
     let savedProfile = null;
     let lastCreatedGroup = null;
     let successMode = 'create';
+    let pendingContinueHref = '';
 
     const setStatus = (text, ok = false) => {
       statusEl.textContent = text || '';
       statusEl.classList.toggle('ok', !!ok);
     };
+
+    function readPendingInvite() {
+      try {
+        const raw = window.localStorage.getItem(pendingInviteStorageKey);
+        return raw ? JSON.parse(raw) : null;
+      } catch {
+        return null;
+      }
+    }
+
+    function storePendingInvite({ inviteCode = '', groupName = '', nextHref = '' } = {}) {
+      try {
+        window.localStorage.setItem(
+          pendingInviteStorageKey,
+          JSON.stringify({
+            inviteCode: String(inviteCode || '').trim(),
+            groupName: String(groupName || '').trim(),
+            nextHref: String(nextHref || '').trim(),
+            savedAt: new Date().toISOString(),
+          }),
+        );
+      } catch {
+        // Non-fatal: the current page state still shows the invite code.
+      }
+    }
+
+    function clearPendingInvite() {
+      try {
+        window.localStorage.removeItem(pendingInviteStorageKey);
+      } catch {
+        // Ignore storage cleanup failures.
+      }
+    }
 
     const hideGroupSuccess = () => {
       groupSuccessBox.classList.remove('visible');
@@ -376,7 +468,22 @@
       if (inviteMessagePreviewEl) inviteMessagePreviewEl.textContent = '';
       lastCreatedGroup = null;
       successMode = 'create';
+      pendingContinueHref = '';
+      clearPendingInvite();
     };
+
+    function closeInviteCodeModal() {
+      if (!inviteCodeModal) return;
+      inviteCodeModal.classList.remove('visible');
+      inviteCodeModal.setAttribute('aria-hidden', 'true');
+    }
+
+    function openInviteCodeModal(inviteCode = '') {
+      if (!inviteCodeModal || !inviteModalCodeEl) return;
+      inviteModalCodeEl.textContent = inviteCode || '';
+      inviteCodeModal.classList.add('visible');
+      inviteCodeModal.setAttribute('aria-hidden', 'false');
+    }
 
     function configureSuccessContent(mode, group) {
       const groupName = group?.name || 'your group';
@@ -387,7 +494,7 @@
       if (groupSuccessIntroEl) {
         groupSuccessIntroEl.textContent = isJoin
           ? `You joined ${groupName}. Here is what to do next so your account is ready to use.`
-          : 'Your group is ready. Here is your invite code:';
+          : 'Your Invite Code:';
       }
       if (inviteToolsEl) inviteToolsEl.style.display = isJoin ? 'none' : '';
       if (invitePreviewLabelEl) invitePreviewLabelEl.style.display = isJoin ? 'none' : '';
@@ -430,13 +537,23 @@
         }
       }
       groupSuccessBox.classList.add('visible');
+      groupSuccessBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
 
     const setBusy = (on) => {
-      [saveProfileBtn, createGroupBtn, joinGroupBtn].forEach((btn) => {
+      [saveProfileBtn, createGroupBtn, joinGroupBtn, continueAsIndividualBtn].forEach((btn) => {
         if (btn) btn.disabled = on;
       });
     };
+
+    function syncRoleButtons() {
+      if (createGroupBtn) {
+        createGroupBtn.classList.toggle('secondary', !(groupNameEl.value || '').trim());
+      }
+      if (joinGroupBtn) {
+        joinGroupBtn.classList.toggle('secondary', !(joinCodeEl.value || '').trim());
+      }
+    }
 
     function profilePayload() {
       return {
@@ -449,7 +566,7 @@
     }
 
     function getJoinLink() {
-      return new URL('signup.html', window.location.href).toString();
+      return new URL('auth.html', window.location.href).toString();
     }
 
     function getInviterContact() {
@@ -477,14 +594,20 @@
         current_step: 'profile_setup',
         group_name: group?.name || '',
       });
-      window.location.href = '/profile.html?next=feature-setup.html%3Fonboarding%3D1&onboarding=1';
+      const nextHref = '/profile.html';
+      if (mode === 'create') {
+        pendingContinueHref = nextHref;
+        return nextHref;
+      }
+      window.location.href = nextHref;
+      return nextHref;
     }
 
     async function hydrate() {
       const session = getSessionFromStorage();
       currentUser = session?.user || null;
       if (!currentUser?.id) {
-        window.location.replace('login.html');
+        window.location.replace('auth.html');
         return;
       }
 
@@ -506,6 +629,22 @@
           currentUser.user_metadata?.name ||
           currentUser.email ||
           '';
+      }
+
+      const pendingInvite = readPendingInvite();
+      if (pendingInvite?.inviteCode) {
+        pendingContinueHref =
+          pendingInvite.nextHref ||
+          '/profile.html';
+        showGroupSuccess(
+          {
+            name: pendingInvite.groupName || 'your group',
+            invite_code: pendingInvite.inviteCode,
+          },
+          'create',
+        );
+        setStatus('Group created. Copy your invite code, then continue when you are ready.', true);
+        return;
       }
 
       if (profile && memberships && memberships.length > 0) {
@@ -536,11 +675,24 @@
       event.preventDefault();
       setStatus('');
       hideGroupSuccess();
+      closeInviteCodeModal();
       setBusy(true);
       try {
         ensureProfileSaved();
         const group = await createGroupForUser(currentUser.id, groupNameEl.value);
-        await finishWithGroup(group, 'create');
+        lastCreatedGroup = group;
+        const inviteCode = resolveInviteCodeValue(group);
+        console.log('Invite Code:', inviteCode);
+        localStorage.setItem('userRole', 'admin');
+        const nextHref = await finishWithGroup(group, 'create');
+        pendingContinueHref = nextHref;
+        storePendingInvite({
+          inviteCode,
+          groupName: group?.name || '',
+          nextHref,
+        });
+        showGroupSuccess(group, 'create');
+        setStatus('Group created. Copy your invite code, then continue when you are ready.', true);
       } catch (error) {
         setStatus(error?.message || 'Could not create group.');
       } finally {
@@ -552,16 +704,28 @@
       event.preventDefault();
       setStatus('');
         hideGroupSuccess();
+        closeInviteCodeModal();
         setBusy(true);
       try {
         ensureProfileSaved();
         const group = await joinGroupForUser(currentUser.id, joinCodeEl.value);
-        await finishWithGroup(group, 'join');
+        localStorage.setItem('userRole', 'member');
+        console.log('JOIN GROUP → redirecting to caregiver check-in');
+        window.location.href = 'caregiver-checkin.html?firstTime=1';
+        return false;
       } catch (error) {
         setStatus(error?.message || 'Could not join group.');
       } finally {
         setBusy(false);
       }
+    });
+
+    continueAsIndividualBtn?.addEventListener('click', (event) => {
+      event.preventDefault();
+      localStorage.setItem('userRole', 'individual');
+      console.log('INDIVIDUAL → redirecting to mood check-in');
+      window.location.href = 'moodchecker_with_other_moods.html?firstTime=1';
+      return false;
     });
 
     copyInviteMessageBtn.addEventListener('click', async () => {
@@ -590,8 +754,37 @@
         current_step: 'profile_setup',
         group_name: lastCreatedGroup?.name || '',
       });
-      window.location.href = '/profile.html?next=feature-setup.html%3Fonboarding%3D1&onboarding=1';
+      const pendingInvite = readPendingInvite();
+      const nextHref =
+        pendingContinueHref ||
+        pendingInvite?.nextHref ||
+        '/profile.html';
+      clearPendingInvite();
+      window.location.href = nextHref;
     });
+
+    inviteModalCopyBtn?.addEventListener('click', async () => {
+      const inviteCode = inviteModalCodeEl?.textContent || resolveInviteCodeValue(lastCreatedGroup) || '';
+      if (!inviteCode) return;
+      try {
+        await navigator.clipboard.writeText(inviteCode);
+        setStatus('Invite code copied to clipboard.', true);
+      } catch {
+        setStatus('Could not copy the invite code automatically. Please copy it manually.');
+      }
+    });
+
+    inviteModalContinueBtn?.addEventListener('click', () => {
+      closeInviteCodeModal();
+      if (pendingContinueHref) {
+        clearPendingInvite();
+        window.location.href = pendingContinueHref;
+      }
+    });
+
+    groupNameEl?.addEventListener('input', syncRoleButtons);
+    joinCodeEl?.addEventListener('input', syncRoleButtons);
+    syncRoleButtons();
 
     hydrate().catch((error) => {
       console.error('[ONBOARDING] boot failed', error);

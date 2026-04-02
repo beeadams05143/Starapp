@@ -211,9 +211,10 @@ import { ensureActiveGroupId } from "../active-group.js?v=2026.03.12A";
 
 const session = getSessionFromStorage();
 const currentUser = session?.user || null;
-if (!currentUser?.id) {
+const isPublicPage = window.location.pathname.includes('start.html') ||
+                     window.location.pathname.includes('moodchecker_with_other_moods.html');
+if (!isPublicPage && !currentUser?.id) {
   alert("Please sign in to manage documents.");
-  window.location.href = "/login.html";
   throw new Error("Not logged in.");
 }
 const USER_ID = currentUser.id;

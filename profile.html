@@ -265,15 +265,12 @@
   </div>
 
 <button id="saveBtn" type="button">Save Profile</button>
-<button id="nextStepBtn" type="button" class="next-step-btn">Next: Choose App Features</button>
 <div id="profileMessage" role="status" aria-live="polite"></div>
 
 <script type="module">
   import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabaseClient.js?v=2026.03.29A';
   import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
   import { resolveActiveGroup } from './active-group.js?v=2026.03.29A';
-  import { advanceGuidedOnboarding } from './onboarding-flow.js?v=2026.03.29A';
-
   const defaultAvatar     = 'IMG/default-avatar.png';
   const avatarPreview     = document.getElementById('avatarPreview');
   const editAvatarBtn     = document.getElementById('editAvatarBtn');
@@ -281,7 +278,6 @@
   const displayNameEl     = document.getElementById('displayName');
   const groupSelectEl     = document.getElementById('profile-group-select');
   const saveBtn           = document.getElementById('saveBtn');
-  const nextStepBtn       = document.getElementById('nextStepBtn');
   const profileMessage    = document.getElementById('profileMessage');
   let messageTimer        = null;
 
@@ -289,21 +285,12 @@
   const GROUP_KEY_ID      = 'currentGroupId';
   const GROUP_KEY_NAME    = 'currentGroupName';
 
-  const SESSION_REDIRECT_DELAY = 1500;
-
   let session = null;
   let accessToken = null;
   let currentUser = null;
   let currentAvatarUrl = null;
   const setupNote = document.getElementById('setupNote');
   const setupChecklist = document.getElementById('setupChecklist');
-  const searchParams = new URLSearchParams(window.location.search);
-  const nextPathRaw = searchParams.get('next') || '';
-  const onboardingActive = searchParams.get('onboarding') === '1';
-  const nextPath = nextPathRaw && !nextPathRaw.includes('://') && !nextPathRaw.startsWith('//')
-    ? nextPathRaw.replace(/^\/+/, '')
-    : '';
-  const fallbackNextPath = 'caregiver-setup-wizard.html';
 
   function showSetupNote() {
     if (!setupNote) return;
@@ -312,27 +299,10 @@
     setupChecklist?.classList.add('is-visible');
   }
 
-  function getNextStepTarget() {
-    return nextPath || (groupSelectEl.value ? fallbackNextPath : '');
-  }
-
-  function syncNextStepButton() {
-    if (!nextStepBtn) return;
-    const target = getNextStepTarget();
-    const show = !!target;
-    nextStepBtn.classList.toggle('is-visible', show);
-    nextStepBtn.disabled = !show;
-  }
-
-  function ensureSession(redirect = true) {
+  function ensureSession() {
     session = getSessionFromStorage();
     if (!session?.access_token || !session?.user?.id) {
-      if (redirect) {
-        showMessage('Session expired. Redirecting to login…', false);
-        setTimeout(() => {
-          window.location.href = 'login.html?redirect=profile.html';
-        }, SESSION_REDIRECT_DELAY);
-      }
+      showMessage('Please sign in before editing your profile.', false);
       throw new Error('No Supabase session available');
     }
     accessToken = session.access_token;
@@ -400,7 +370,6 @@
     if (!groups.length) {
       groupSelectEl.innerHTML = '<option value="">(no groups yet)</option>';
       groupSelectEl.disabled = true;
-      syncNextStepButton();
       return;
     }
 
@@ -410,7 +379,6 @@
     groupSelectEl.value = match ? match.id : groups[0].id;
     groupSelectEl.disabled = false;
     cacheSelectedGroup();
-    syncNextStepButton();
   }
 
   async function fetchProfile({ silent = false } = {}) {
@@ -453,7 +421,7 @@
 
   async function uploadAvatar(file) {
     if (!file) return currentAvatarUrl;
-    ensureSession(false);
+    ensureSession();
     const safeName = `${Date.now()}-${file.name}`.replace(/[^a-zA-Z0-9.\-_]/g, '_');
     const objectPath = `${currentUser.id}/${safeName}`;
     const storageUrl = `${SUPABASE_URL}/storage/v1/object/${STORAGE_BUCKET}/${objectPath}`;
@@ -516,13 +484,24 @@
         body: JSON.stringify([payload])
       });
 
-      const saved = rows?.[0] || payload;
-      const savedAt = saved.updated_at ? new Date(saved.updated_at).toLocaleString() : new Date().toLocaleString();
-      showMessage(`Profile saved! ✅ ${savedAt}`, true);
-      avatarFile.value = '';
-      await fetchProfile({ silent: true });
-      syncNextStepButton();
-    } catch (err) {
+	      const saved = rows?.[0] || payload;
+	      const savedAt = saved.updated_at ? new Date(saved.updated_at).toLocaleString() : new Date().toLocaleString();
+	      showMessage(`Profile saved! ✅ ${savedAt}`, true);
+	      avatarFile.value = '';
+	      await fetchProfile({ silent: true });
+	      const session = getSessionFromStorage();
+	      const stepRows = await rest(`profiles?id=eq.${encodeURIComponent(session.user.id)}&select=role,onboarding_step&limit=1`);
+	      const profile = stepRows?.[0];
+	      const nextStep = (profile?.role === 'caregiver' && profile?.onboarding_step === 'caregiver-setup')
+	        ? 'caregiver-setup'
+	        : 'welcome';
+	      await rest(`profiles?id=eq.${encodeURIComponent(session.user.id)}`, {
+	        method: 'PATCH',
+	        headers: { Prefer: 'return=representation' },
+	        body: JSON.stringify({ onboarding_step: nextStep }),
+	      });
+	      import('./router.js').then(m => m.next());
+	    } catch (err) {
       console.error('[PROFILE] save failed', err);
       showMessage(err?.message || 'Could not save profile. Please try again.', false);
     } finally {
@@ -561,17 +540,6 @@
 
   saveBtn.addEventListener('click', saveProfile);
   groupSelectEl.addEventListener('change', cacheSelectedGroup);
-  groupSelectEl.addEventListener('change', syncNextStepButton);
-  nextStepBtn?.addEventListener('click', () => {
-    const target = getNextStepTarget();
-    if (!target) return;
-    if (onboardingActive && target.includes('feature-setup.html')) {
-      advanceGuidedOnboarding(currentUser?.id || null, 'feature_setup');
-    } else if (onboardingActive && target.includes('caregiver-setup-wizard.html')) {
-      advanceGuidedOnboarding(currentUser?.id || null, 'caregiver_setup');
-    }
-    window.location.href = target;
-  });
 
   document.addEventListener('DOMContentLoaded', async () => {
     try {
@@ -579,7 +547,6 @@
       showSetupNote();
       await loadGroups();
       await fetchProfile();
-      syncNextStepButton();
     } catch (err) {
       console.error('[PROFILE] init failed', err);
     }

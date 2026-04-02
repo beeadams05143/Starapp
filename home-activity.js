@@ -201,6 +201,14 @@ function boot(){
     return runQuery({ ...source, query });
   }
 
+  async function ensureGroupId(userId, storageKey) {
+    const gid = await ensureActiveGroupId(userId);
+    if (gid) {
+      try { localStorage.setItem(storageKey, gid); } catch {}
+    }
+    return gid || null;
+  }
+
   async function fetchStorageTimestamp(source, groupId) {
     const path = typeof source.path === 'function' ? source.path(groupId) : source.path;
     if (!path) return { key: source.key, label: source.label, ts: 0, detail: null };
@@ -260,15 +268,6 @@ function boot(){
     }
     return [...map.values()];
   }
-
-  async function ensureGroupId(userId, storageKey) {
-    const gid = await ensureActiveGroupId(userId);
-    if (gid) {
-      try { localStorage.setItem(storageKey, gid); } catch {}
-    }
-    return gid || null;
-  }
-
   function readSeenMap() {
     try {
       const raw = localStorage.getItem(SEEN_KEY);

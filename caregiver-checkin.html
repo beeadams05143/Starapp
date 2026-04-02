@@ -1720,7 +1720,7 @@
     bm_tracking: ['had_bm'],
     appetite: ['appetite_change_flag', 'appetite_change_direction'],
   };
-  const caregiverConfig = (() => {
+  const legacyCaregiverConfig = (() => {
     const stored = parseConfigObject(localStorage.getItem('caregiver_config')) || {
       show_menstrual: false,
       show_movement: true,
@@ -1730,6 +1730,18 @@
       show_movement: stored.show_movement !== false,
     };
   })();
+
+  const shouldUseCustomCaregiverSetup = () => caregiverSetupState.hasConfig === true;
+  const shouldShowMovementSection = () => (
+    shouldUseCustomCaregiverSetup()
+      ? caregiverSetupState.selectedCategories.has('physical_health')
+      : legacyCaregiverConfig.show_movement
+  );
+  const shouldShowMenstrualSection = () => (
+    shouldUseCustomCaregiverSetup()
+      ? configItemEnabled('physical_health', 'menstrual_tracking')
+      : legacyCaregiverConfig.show_menstrual
+  );
 
   function getAppFeatures(){
     try {
@@ -1858,7 +1870,6 @@
   }
 
   function getCheckinVisibilityFlags(){
-    const localConfig = parseConfigObject(localStorage.getItem('caregiver_config')) || {};
     return {
       sleep: configItemEnabled('physical_health', 'sleep'),
       hygiene: configItemEnabled('daily_living', 'hygiene'),
@@ -1872,9 +1883,8 @@
       goodHealth: configItemEnabled('physical_health', 'good_health'),
       tired: configItemEnabled('physical_health', 'energy_level'),
       bmTracking: false,
-      movement: caregiverConfig.show_movement,
-      menstrual: configItemEnabled('physical_health', 'menstrual_tracking') && caregiverConfig.show_menstrual,
-      wizardConfig: localConfig,
+      movement: shouldShowMovementSection(),
+      menstrual: shouldShowMenstrualSection(),
     };
   }
 
@@ -3265,10 +3275,15 @@
   async function loadGroupCaregiverSetup(userId){
     const groupId = await ensureGroupId(userId);
     caregiverSetupState.groupId = groupId || null;
+    caregiverSetupState.configRowId = null;
+    caregiverSetupState.hasConfig = false;
+    caregiverSetupState.selectedCategories = new Set();
+    caregiverSetupState.selectedItems = {};
+    caregiverSetupState.itemDescriptions = {};
     let config = null;
     if (groupId) {
       const rows = await rest(
-        `caregiver_checkin_configs?group_id=eq.${encodeURIComponent(groupId)}&select=id,group_id,selected_categories,selected_items,updated_at&limit=1`
+        `caregiver_checkin_configs?group_id=eq.${encodeURIComponent(groupId)}&select=id,group_id,individual_id,selected_categories,selected_items,updated_at&order=updated_at.desc.nullslast&limit=1`
       );
       config = rows?.[0] || null;
     }
@@ -3287,7 +3302,7 @@
     }
 
     const localWizardConfig = parseConfigObject(localStorage.getItem('caregiver_config'));
-    if (localWizardConfig) {
+    if (!caregiverSetupState.hasConfig && localWizardConfig) {
       applyLocalWizardConfigToSetupState(localWizardConfig);
     }
   }
@@ -3334,10 +3349,10 @@
     setConfigHidden([
       document.getElementById('movementSymptomsPanel'),
       document.getElementById('question-prn-pain'),
-    ], !caregiverConfig.show_movement);
+    ], !shouldShowMovementSection());
     setConfigHidden([
       document.getElementById('menstrualPanel'),
-    ], !caregiverConfig.show_menstrual);
+    ], !shouldShowMenstrualSection());
 
     renderAdlCategoryChips();
     renderAdlActivityChips();
@@ -5114,7 +5129,7 @@
           : todayISO();
         payload.entry_date = entryDate;
         const normalizeMovement = () => {
-          if (!caregiverConfig.show_movement) {
+          if (!shouldShowMovementSection()) {
             const cleared = {
               movement_present: false,
               movement_type: null,
@@ -5195,7 +5210,7 @@
         };
         normalizeTemp();
         const normalizeMenstrual = () => {
-          if (!caregiverConfig.show_menstrual) {
+          if (!shouldShowMenstrualSection()) {
             const cleared = {
               menstrual_present: false,
               menstrual_symptoms: [],
@@ -5427,10 +5442,10 @@
         showPostSubmitPrompt();
         if (onboardingActive) {
           advanceGuidedOnboarding(user_id, 'view_report');
-          setTimeout(() => {
-            window.location.replace('caregiver-report.html?onboarding=1');
-          }, 900);
         }
+        setTimeout(() => {
+          window.location.href = 'caregiver-report.html';
+        }, 900);
       } catch (err) {
         console.error('[cg] submit error:', err);
         alert('Could not submit. ' + (err?.message || 'Check your connection and try again.'));

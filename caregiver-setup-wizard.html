@@ -1472,12 +1472,13 @@
     function saveConfigAndContinue() {
       const config = buildCaregiverConfig();
       localStorage.setItem('caregiver_config', JSON.stringify(config));
+      setMessage('Caregiver setup saved! Taking you to your check-in...');
       if (onboardingActive) {
         writeGuidedOnboardingStep('practice_checkin');
-        window.location.replace('caregiver-checkin.html?onboarding=1');
-        return;
       }
-      window.location.replace('dashboard.html');
+      window.setTimeout(() => {
+        window.location.href = 'caregiver-checkin.html';
+      }, 900);
     }
 
     profileButtons.forEach((button) => {

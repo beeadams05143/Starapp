@@ -9,13 +9,7 @@
 (function () {
   const params = new URLSearchParams(window.location.search);
   // try URL first, then sessionStorage (from home.html)
-  let cat = params.get('category') || sessionStorage.getItem('checkinCategory');
-
-  // if user came here directly, send them to pick a category
-  if (!cat) {
-    window.location.replace('home.html');
-    return; // stop loading the page
-  }
+  let cat = params.get('category') || sessionStorage.getItem('checkinCategory') || 'feelings';
 
   // remember selection for this tab/session
   sessionStorage.setItem('checkinCategory', cat);

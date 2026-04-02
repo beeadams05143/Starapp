@@ -589,14 +589,23 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 </script>
 <script type="module">
   import { getSessionFromStorage } from './restClient.js?v=2026.03.29A';
-  import { completeGuidedOnboarding } from './onboarding-flow.js?v=2026.03.29A';
+  import { completeGuidedOnboarding, getGuidedOnboardingProgress } from './onboarding-flow.js?v=2026.03.29A';
 
-  const onboardingActive = new URLSearchParams(window.location.search).get('onboarding') === '1';
+  const session = getSessionFromStorage();
+  const guidedProgress = getGuidedOnboardingProgress(session?.user?.id || null);
+  const onboardingActive =
+    new URLSearchParams(window.location.search).get('onboarding') === '1' ||
+    (guidedProgress?.active === true && guidedProgress?.current_step === 'view_report');
 
   if (onboardingActive) {
-    const session = getSessionFromStorage();
-    localStorage.setItem('star_onboarding_status_v1', JSON.stringify({ complete: true }));
-    completeGuidedOnboarding(session?.user?.id || null);
+    (async () => {
+      await completeGuidedOnboarding(session?.user?.id || null);
+      setTimeout(() => {
+        window.location.href = 'dashboard.html';
+      }, 100);
+    })().catch((error) => {
+      console.warn('[ONBOARDING] completion redirect failed', error);
+    });
 
     const banner = document.createElement('div');
     banner.style.maxWidth = '1200px';
@@ -1237,7 +1246,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 
     // Supabase client + session gate
     const session = getSessionFromStorage();
-    if (!session?.user?.id) { window.location.href = 'login.html'; throw new Error('No session'); }
+    if (!session?.user?.id) { window.location.href = 'auth.html'; throw new Error('No session'); }
     const USER_ID = session.user.id;
     window.rest = rest;
 

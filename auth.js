@@ -6,7 +6,6 @@ import {
   clearSavedSession,
   getSessionFromStorage,
 } from './supabaseClient.js?v=2025.01.09E';
-import { resolvePostAuthDestination } from './onboarding-flow.js?v=2026.03.16B';
 
 function normalizeSession(payload) {
   if (!payload || typeof payload !== 'object') return null;
@@ -51,8 +50,8 @@ async function postAuth(path, body, { withToken = false } = {}) {
 }
 // Centralized URLs (use your real paths)
 const DASHBOARD_URL = 'dashboard.html';
-const LOGIN_URL = 'login.html';
-const SIGNUP_URL = 'signup.html';
+const LOGIN_URL = 'auth.html';
+const SIGNUP_URL = 'auth.html';
 
 /* Expose functions to buttons */
 window.signUp = signUp;
@@ -73,8 +72,7 @@ async function signUp() {
       try { localStorage.setItem('user_id', user.id); } catch {}
     }
     if (session?.access_token) {
-      const destination = await resolvePostAuthDestination({ userId: user?.id || null });
-      window.location.assign(destination);
+      window.location.assign(DASHBOARD_URL);
     } else if (msg) {
       msg.textContent = 'Check your email to confirm!';
     }
@@ -104,8 +102,7 @@ async function logIn() {
     const user = session?.user;
     if (user?.id) {
       try { localStorage.setItem('user_id', user.id); } catch {}
-      const destination = await resolvePostAuthDestination({ userId: user.id });
-      window.location.assign(destination);
+      window.location.assign(DASHBOARD_URL);
     } else if (msg) {
       msg.textContent = 'Signed in, but no user session returned. Try again.';
       return;
@@ -150,28 +147,24 @@ async function logOut() {
 /* --------- ROUTE / SESSION GUARDS --------- */
 const sessionGuard = async () => {
   const session = getSessionFromStorage();
+  const authed = !!(session?.user?.id && session?.access_token);
   const path = window.location.pathname.toLowerCase();
+  const isPublicPage = window.location.pathname.includes('start.html') ||
+                       window.location.pathname.includes('moodchecker_with_other_moods.html');
 
-  const onLogin  = path.endsWith('/login.html');
-  const onSignup = path.endsWith('/signup.html');
-  const onOnboarding = path.endsWith('/onboarding.html');
+  const onLogin  = path.endsWith('/auth.html');
+  const onSignup = path.endsWith('/auth.html');
   const onDash   = path.endsWith('/dashboard.html');
 
-  // If on dashboard but not authenticated → go to login
-  if (!session && onDash) {
-    window.location.href = 'login.html';
-    return;
-  }
-
-  // If already authenticated and on login/signup → go to dashboard
-  if (session && (onLogin || onSignup) && !onOnboarding) {
-    const destination = await resolvePostAuthDestination({ userId: session.user?.id || null });
-    window.location.href = destination;
-    return;
+  if (!isPublicPage) {
+    // Existing auth checks can remain here if needed.
+    if (!authed && onDash) {
+      return;
+    }
   }
 
   // Optional: show email anywhere that has #user-email
-  if (session) {
+  if (authed) {
     const el = document.getElementById('user-email');
     if (el) el.textContent = `Logged in as: ${session.user.email}`;
   }

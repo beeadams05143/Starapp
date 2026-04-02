@@ -264,10 +264,11 @@
         renderStep();
         return;
       }
-      window.location.href = '/profile.html?next=feature-setup.html%3Fonboarding%3D1&onboarding=1';
+      window.location.href = '/profile.html';
     });
 
     nextBtn.addEventListener('click', () => {
+      if (localStorage.getItem('userRole') !== 'admin') return;
       const selectedFeatures = [featureChat, featureCalendar, featureFocus, featureDocuments].filter((input) => input.checked);
       if (!selectedFeatures.length) {
         setStatus('Choose at least one optional feature for your group.');

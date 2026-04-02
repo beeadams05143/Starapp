@@ -142,7 +142,7 @@
 
     async function requireSession(){
       const session = getSessionFromStorage();
-      if (!session?.user?.id) { alert('Please log in first.'); location.href = './login.html'; throw new Error('no session'); }
+      if (!session?.user?.id) { alert('Please log in first.'); location.href = './auth.html'; throw new Error('no session'); }
       return session;
     }
 
@@ -174,7 +174,7 @@
     }
 
     function getInviteJoinLink() {
-      return new URL('signup.html', window.location.href).toString();
+      return new URL('auth.html', window.location.href).toString();
     }
 
     async function copyToClipboard(text) {

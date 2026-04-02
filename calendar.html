@@ -312,7 +312,7 @@
   // ✅ Require login (redirect if not)
   const session = getSessionFromStorage();
   if (!session?.user?.id) {
-    location.href = `/login.html?redirect=${encodeURIComponent(location.pathname)}`;
+    location.href = '/auth.html';
     throw new Error("Not signed in");
   }
   const currentUserId = session.user.id;

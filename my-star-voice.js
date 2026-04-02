@@ -210,8 +210,9 @@ const STARTER_SENTENCE_STARTERS = [
 ];
 
 const session = getSessionFromStorage();
-if (!session?.user?.id) {
-  location.href = `/login.html?redirect=${encodeURIComponent(location.pathname)}`;
+const isPublicPage = window.location.pathname.includes('start.html') ||
+                     window.location.pathname.includes('moodchecker_with_other_moods.html');
+if (!isPublicPage && !session?.user?.id) {
   throw new Error('Not signed in');
 }
 const USER_ID = session.user.id;

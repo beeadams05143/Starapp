@@ -7,9 +7,9 @@ import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
 
 // ---------- Require login ----------
 const session = getSessionFromStorage();
-if (!session?.user?.id || !session?.access_token) {
-  const ret = encodeURIComponent('chat.html');
-  window.location.href = `login.html?redirect=${ret}`;
+const isPublicPage = window.location.pathname.includes('start.html') ||
+                     window.location.pathname.includes('moodchecker_with_other_moods.html');
+if (!isPublicPage && (!session?.user?.id || !session?.access_token)) {
   throw new Error('No session');
 }
 const currentUserId = session.user.id;

@@ -37,7 +37,7 @@ async function completeLogout() {
     localStorage.removeItem('user_id');
   } catch {}
 
-  location.href = 'login.html';
+  location.href = 'auth.html';
 }
 
 window.logOut = () => completeLogout();
@@ -56,12 +56,12 @@ window.updateAuthLink = async function updateAuthLink() {
       };
     } else {
       a.textContent = 'Log In';
-      a.href = 'login.html';
+      a.href = 'auth.html';
       a.onclick = null;
     }
   } catch {
     a.textContent = 'Log In';
-    a.href = 'login.html';
+    a.href = 'auth.html';
     a.onclick = null;
   }
 };
@@ -95,7 +95,7 @@ async function updateAuthLink() {
   } else {
     // Logged out → show Log In
     link.textContent = 'Log In';
-    link.href = 'login.html';
+    link.href = 'auth.html';
     link.onclick = null;
   }
 }
@@ -206,15 +206,6 @@ window.goToMoodPage = goToMoodPage;
 
 
 window.addEventListener('DOMContentLoaded', () => {
-  const readOnboardingComplete = () => {
-    try {
-      const parsed = JSON.parse(localStorage.getItem('star_onboarding_status_v1') || '{}');
-      return parsed?.complete === true;
-    } catch {
-      return false;
-    }
-  };
-
   const ensureDashboardDevControls = () => {
     const path = window.location.pathname || '';
     if (!(path === '/dashboard.html' || path.endsWith('/dashboard.html'))) return;
@@ -251,15 +242,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     if (debugLine) {
-      debugLine.textContent = `Onboarding complete: ${readOnboardingComplete() ? 'true' : 'false'}`;
-    }
-
-    if (restartBtn && !restartBtn.dataset.devBound) {
-      restartBtn.dataset.devBound = '1';
-      restartBtn.addEventListener('click', () => {
-        localStorage.setItem('star_onboarding_status_v1', JSON.stringify({ complete: false }));
-        window.location.href = '/onboarding.html';
-      });
+      debugLine.textContent = 'Onboarding status is verified from Supabase on page load.';
     }
   };
 

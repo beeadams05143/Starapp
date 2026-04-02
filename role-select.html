@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Select Your Role - STAR</title>
+  <style>
+    :root{
+      --font-sans:"Avenir Next","Segoe UI","Helvetica Neue",Arial,sans-serif;
+      --font-serif:"Iowan Old Style","Palatino Linotype","Book Antiqua",Georgia,serif;
+      --page-bg:
+        radial-gradient(circle at top center, rgba(251,230,194,0.78), transparent 34%),
+        linear-gradient(180deg, #fff8ea 0%, #f7ead0 100%);
+      --panel:#fffdf8;
+      --panel-border:#ead7ab;
+      --panel-shadow:0 18px 36px rgba(125,89,34,0.12);
+      --text:#243047;
+      --muted:#667188;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background: var(--page-bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+    }
+    main {
+      width: min(100%, 640px);
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 30px;
+      box-shadow: var(--panel-shadow);
+      padding: 40px 28px;
+      text-align: center;
+    }
+    h1 {
+      margin: 0 0 10px;
+      font-family: var(--font-serif);
+      font-size: clamp(2rem, 5vw, 3rem);
+      color: #724016;
+    }
+    p {
+      margin: 0 0 24px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+    .actions {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    button {
+      border: 1px solid #d1d5db;
+      background: #fffdf8;
+      color: var(--text);
+      font-size: 1.08rem;
+      font-weight: 800;
+      padding: 22px 20px;
+      border-radius: 20px;
+      cursor: pointer;
+      box-shadow: 0 10px 22px rgba(36,48,71,0.08);
+    }
+    button:hover {
+      border-color: #2bbf67;
+      background: linear-gradient(180deg,#f7fff8 0%,#eefaf1 100%);
+    }
+    @media (max-width: 700px) {
+      .actions { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Choose Your Role</h1>
+    <p>Select how you’ll use STAR, then continue to group setup.</p>
+    <div class="actions">
+      <button id="caregiverBtn" type="button">I am a Caregiver</button>
+      <button id="individualBtn" type="button">I am an Individual</button>
+    </div>
+  </main>
+  <script type="module">
+    import { rest, getSessionFromStorage } from './restClient.js';
+
+    const caregiverBtn = document.getElementById('caregiverBtn');
+    const individualBtn = document.getElementById('individualBtn');
+
+    caregiverBtn.addEventListener('click', async () => {
+      const session = getSessionFromStorage();
+      if (!session?.user?.id) return;
+      await rest(`profiles?id=eq.${encodeURIComponent(session.user.id)}`, {
+        method: 'PATCH',
+        headers: { Prefer: 'return=representation' },
+        body: JSON.stringify({
+          role: 'caregiver',
+          onboarding_step: 'group',
+        }),
+      });
+      import('./router.js').then(m => m.next());
+    });
+
+    individualBtn.addEventListener('click', async () => {
+      const session = getSessionFromStorage();
+      if (!session?.user?.id) return;
+      await rest(`profiles?id=eq.${encodeURIComponent(session.user.id)}`, {
+        method: 'PATCH',
+        headers: { Prefer: 'return=representation' },
+        body: JSON.stringify({
+          role: 'individual',
+          onboarding_step: 'group',
+        }),
+      });
+      import('./router.js').then(m => m.next());
+    });
+  </script>
+</body>
+</html>

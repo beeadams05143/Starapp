@@ -15,9 +15,9 @@ const token = new URLSearchParams(window.location.search).get("token");
 
 function ensureLoggedIn() {
   const session = getSessionFromStorage();
-  if (!session?.access_token) {
-    const redirect = encodeURIComponent(window.location.pathname + window.location.search);
-    window.location.href = `/login.html?redirect=${redirect}`;
+  const isPublicPage = window.location.pathname.includes('start.html') ||
+                       window.location.pathname.includes('moodchecker_with_other_moods.html');
+  if (!isPublicPage && !session?.access_token) {
     throw new Error("Login required.");
   }
   return session;

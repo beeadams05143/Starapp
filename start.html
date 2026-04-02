@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome to STAR</title>
+  <style>
+    :root {
+      --bg:
+        radial-gradient(circle at top, rgba(251, 230, 194, 0.78), transparent 34%),
+        linear-gradient(180deg, #fff8ea 0%, #f7ead0 100%);
+      --panel: rgba(255, 253, 248, 0.96);
+      --panel-border: #ead7ab;
+      --text: #243047;
+      --muted: #667188;
+      --caregiver-start: #49da7b;
+      --caregiver-end: #22c55e;
+      --individual-start: #76c7ff;
+      --individual-end: #3b82f6;
+      --shadow: 0 18px 36px rgba(125, 89, 34, 0.12);
+      --font-sans: "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      --font-serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      font-family: var(--font-sans);
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    main {
+      width: min(100%, 520px);
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 32px;
+      box-shadow: var(--shadow);
+      padding: 40px 28px;
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-family: var(--font-serif);
+      font-size: clamp(2.2rem, 5vw, 3.4rem);
+      color: #724016;
+    }
+
+    p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 1rem;
+    }
+
+    .actions {
+      display: grid;
+      gap: 16px;
+      margin-top: 32px;
+    }
+
+    button {
+      width: 100%;
+      border: 0;
+      border-radius: 22px;
+      padding: 20px 24px;
+      font-size: 1.2rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease;
+      color: #08331d;
+      box-shadow: 0 14px 28px rgba(36, 48, 71, 0.14);
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    button:active {
+      transform: translateY(0);
+      opacity: 0.96;
+    }
+
+    .caregiver-btn {
+      background: linear-gradient(180deg, var(--caregiver-start) 0%, var(--caregiver-end) 100%);
+    }
+
+    .individual-btn {
+      background: linear-gradient(180deg, var(--individual-start) 0%, var(--individual-end) 100%);
+      color: #082848;
+    }
+
+    .note {
+      margin-top: 20px;
+      font-size: 0.95rem;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Welcome to STAR</h1>
+    <p>Select how you want to enter the app.</p>
+
+    <div class="actions">
+      <button id="caregiverBtn" class="caregiver-btn" type="button">I am a Caregiver</button>
+      <button id="individualBtn" class="individual-btn" type="button">I am an Individual</button>
+    </div>
+
+    <p class="note">You can change this later in settings.</p>
+  </main>
+
+  <script>
+    const caregiverBtn = document.getElementById('caregiverBtn');
+    const individualBtn = document.getElementById('individualBtn');
+
+    caregiverBtn.addEventListener('click', () => {
+      localStorage.setItem('user_type', 'caregiver');
+      window.location.href = 'profile.html';
+    });
+
+    individualBtn.addEventListener('click', () => {
+      localStorage.setItem('user_type', 'individual');
+      window.location.href = 'moodchecker_with_other_moods.html';
+    });
+  </script>
+</body>
+</html>

@@ -4,9 +4,10 @@ import { setupAvatarUpload } from './src/components/AvatarUpload.js?v=2025.01.09
 
 document.addEventListener('DOMContentLoaded', async () => {
   const session = getSessionFromStorage();
-  if (!session?.user?.id) {
+  const isPublicPage = window.location.pathname.includes('start.html') ||
+                       window.location.pathname.includes('moodchecker_with_other_moods.html');
+  if (!isPublicPage && !session?.user?.id) {
     alert('Please log in first.');
-    location.href = './login.html';
     return;
   }
   const user = session.user;

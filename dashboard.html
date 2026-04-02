@@ -5,19 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
  <title>Dashboard – STAR</title>
 <link rel="icon" type="image/png" href="images/STAR1.png">
-  <script>
-    (function enforceDashboardOnboardingGate() {
-      try {
-        const parsed = JSON.parse(localStorage.getItem('star_onboarding_status_v1') || '{}');
-        if (parsed?.complete !== true) {
-          window.location.replace('/onboarding.html');
-        }
-      } catch {
-        window.location.replace('/onboarding.html');
-      }
-    })();
-  </script>
-
   <link rel="stylesheet" href="/style.css?v=2026.03.29A" />
 
   <style>
@@ -241,8 +228,7 @@
     clearGuidedOnboarding,
     fetchCurrentProfile,
     fetchCurrentMemberships,
-    getOnboardingCompletionState,
-    resolvePostAuthDestination,
+    setOnboardingCompletionState,
   } from './onboarding-flow.js?v=2026.03.29A';
   import { ensureActiveGroupId } from './active-group.js?v=2026.03.29A';
   import { fetchFocusByGroup } from './focus-data.js?v=2026.03.29A';
@@ -317,9 +303,9 @@
     }
   }
 
-  function renderOnboardingDebugStatus() {
+  function renderOnboardingDebugStatus(onboardingComplete) {
     if (!onboardingDebugStatus) return;
-    onboardingDebugStatus.textContent = `Onboarding complete: ${getOnboardingCompletionState() ? 'true' : 'false'}`;
+    onboardingDebugStatus.textContent = `Onboarding complete: ${onboardingComplete === true ? 'true' : 'false'}`;
   }
 
   async function loadGettingStartedCard(userId, profile) {
@@ -411,7 +397,7 @@
           step: 1,
           title: 'Finish your profile',
           description: 'Your name is usually already filled in. Add a profile photo if you want, then save and continue.',
-          href: '/profile.html?flow=getting-started&next=caregiver-setup-wizard.html',
+          href: '/profile.html',
           action: 'Continue',
           done: hasProfile,
         },
@@ -502,7 +488,7 @@
           step: 1,
           title: 'Finish your profile',
           description: 'Your name is usually already filled in. Add a profile photo if you want, then save and continue.',
-          href: '/profile.html?flow=getting-started&next=caregiver-setup-wizard.html',
+          href: '/profile.html',
           action: 'Continue',
           done: false,
         },
@@ -544,8 +530,8 @@
 
   (async () => {
     const session = getSessionFromStorage();
-    if (!session?.user?.id) {
-      window.location.replace('login.html');
+    if (!session?.user?.id || !session?.access_token) {
+      window.location.replace('auth.html');
       return;
     }
     try {
@@ -558,22 +544,11 @@
           session.user.email ||
           '';
       }
-      renderOnboardingDebugStatus();
-      if (!getOnboardingCompletionState()) {
-        window.location.replace('onboarding.html');
-        return;
-      }
-      const destination = await resolvePostAuthDestination({ userId: session.user.id });
-      if (destination !== 'dashboard.html') {
-        window.location.replace(destination);
-        return;
-      }
+      const onboardingComplete = profile?.onboarding_complete === true;
+      renderOnboardingDebugStatus(onboardingComplete);
       await loadGettingStartedCard(session.user.id, profile);
     } catch (error) {
       console.warn('[DASHBOARD] onboarding check failed', error);
-      if (userEmailEl) userEmailEl.textContent = session.user.email || '';
-      renderOnboardingDebugStatus();
-      await loadGettingStartedCard(session.user.id, null);
     }
   })();
 
@@ -598,7 +573,7 @@
       }
       clearSavedSession();
       clearLocalIdentityState();
-      window.location.href = 'login.html';
+      window.location.href = 'auth.html';
     });
   }
 
@@ -611,9 +586,9 @@
       restartOnboardingBtn.textContent = 'Restarting…';
 
       try {
-        localStorage.setItem('star_onboarding_status_v1', JSON.stringify({ complete: false }));
         clearGuidedOnboarding(session.user.id);
-        window.location.href = '/onboarding.html';
+        await setOnboardingCompletionState(session.user.id, false);
+        window.location.href = '/role-select.html';
       } catch (error) {
         console.warn('[DASHBOARD] restart onboarding failed', error);
         restartOnboardingBtn.disabled = false;

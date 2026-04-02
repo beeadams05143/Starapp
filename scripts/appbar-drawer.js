@@ -8,8 +8,7 @@
     clearSavedSession,
   } = supaGlobals;
   const APP_CONFIG_KEY = 'star_app_config';
-  const ONBOARDING_STATUS_KEY = 'star_onboarding_status_v1';
-  const LOGIN_URL = '/login.html';
+  const LOGIN_URL = '/auth.html';
   const INACTIVITY_WARNING_DELAY_MS = 14 * 60 * 1000; // Production: show warning after 14 minutes of inactivity
   const INACTIVITY_LOGOUT_TIMEOUT_MS = 15 * 60 * 1000; // Production: log out after 15 minutes total inactivity
   const WARNING_COUNTDOWN_SECONDS = 60;
@@ -198,46 +197,48 @@
     resetInactivityLogoutTimer();
   }
 
-  function readStoredJson(key) {
-    try {
-      const parsed = JSON.parse(localStorage.getItem(key) || '{}');
-      return parsed && typeof parsed === 'object' ? parsed : {};
-    } catch {
-      return {};
-    }
-  }
-
-  function readOnboardingCompletion() {
-    const store = readStoredJson(ONBOARDING_STATUS_KEY);
-    return store?.complete === true;
-  }
-
   function isAllowedOnboardingPath() {
     const path = window.location.pathname || '';
     const onboardingActive = new URLSearchParams(window.location.search).get('onboarding') === '1';
-    if (path === '/onboarding.html') return true;
+    if (path === '/role-select.html') return true;
     if (path === '/profile.html') return true;
     if (path === '/feature-setup.html') return true;
     if (path === '/caregiver-setup-wizard.html') return true;
+    if (path === '/caregiver-report.html') return true;
+    if (path === '/auth.html') return true;
     if (!onboardingActive) return false;
-    return [
+    const allowedPages = [
       '/caregiver-checkin.html',
       '/focus-week.html',
-      '/caregiver-report.html',
-    ].includes(path);
+    ];
+    return allowedPages.includes(path);
   }
 
-  async function enforceOnboardingGate() {
+  async function fetchOnboardingCompletion(userId) {
+    if (!userId || !SUPABASE_URL) return undefined;
     const session = typeof getSessionFromStorage === 'function' ? getSessionFromStorage() : null;
-    if (!session?.user?.id) return;
-    if (isAllowedOnboardingPath()) return;
-    if (!readOnboardingCompletion()) {
-      window.location.replace('/onboarding.html');
+    if (!session?.access_token) return undefined;
+    try {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=onboarding_complete&limit=1`,
+        {
+          headers: buildAuthHeaders(session.access_token),
+        }
+      );
+      if (!res.ok) {
+        throw new Error(`Profile lookup failed (${res.status})`);
+      }
+      const rows = await res.json();
+      const profile = Array.isArray(rows) ? rows[0] : null;
+      return profile?.onboarding_complete === true;
+    } catch (error) {
+      console.warn('[drawer] onboarding lookup failed', error);
+      return undefined;
     }
   }
+
   // If we've already injected, don't do it again
   if (document.getElementById('drawerOverlay')) return;
-  enforceOnboardingGate();
   const isDocsFamilyPage = (() => {
     const path = window.location.pathname || '';
     return path.startsWith('/documents/')
@@ -412,7 +413,7 @@
         <a href="/dashboard.html"><span class="nav-icon">🏠</span><span class="nav-text">Dashboard</span></a>
       </div>
       <div class="drawer-item" data-role="shared">
-        <a id="auth-dash-link" href="/login.html"><span class="nav-icon">🔐</span><span class="nav-text">Log In</span></a>
+        <a id="auth-dash-link" href="/auth.html"><span class="nav-icon">🔐</span><span class="nav-text">Log In</span></a>
       </div>
       <div class="drawer-item" data-role="individual">
         <a href="/home.html"><span class="nav-icon">😊</span><span class="nav-text">Mood Check-In</span></a>
@@ -548,7 +549,7 @@
       el.setAttribute('href', '#logout');
     } else {
       if (textEl) textEl.textContent = 'Log In';
-      el.setAttribute('href', '/login.html');
+      el.setAttribute('href', '/auth.html');
     }
 
     const editLink = overlay.querySelector('[data-caregiver-edit-link]');

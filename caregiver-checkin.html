@@ -5017,17 +5017,26 @@
         seg.classList.toggle('done', hasData && idx<current);
       });
     }
-    function syncWizardView({ scroll = false } = {}){
-      current = normalizeStepIndex(current);
-      steps.forEach((step, idx) => {
-        const isVisible = !isStepHidden(step);
-        const shouldShow = isVisible && idx === current;
-        step.classList.toggle('active', shouldShow);
-      });
-      if (scroll && steps[current]) {
-        steps[current].scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }
+	    function syncWizardView({ scroll = false } = {}){
+	      current = normalizeStepIndex(current);
+	      const lastVisibleStepIndex = (() => {
+	        for (let idx = steps.length - 1; idx >= 0; idx -= 1) {
+	          if (!isStepHidden(steps[idx])) return idx;
+	        }
+	        return -1;
+	      })();
+	      steps.forEach((step, idx) => {
+	        const isVisible = !isStepHidden(step);
+	        const shouldShow = isVisible && idx === current;
+	        step.classList.toggle('active', shouldShow);
+	        step.querySelectorAll('button[type="submit"]').forEach((button) => {
+	          button.style.display = idx === lastVisibleStepIndex ? '' : 'none';
+	        });
+	      });
+	      if (scroll && steps[current]) {
+	        steps[current].scrollIntoView({ behavior: 'smooth', block: 'start' });
+	      }
+	    }
     function go(i){
       current = normalizeStepIndex(i);
       syncWizardView({ scroll: true });

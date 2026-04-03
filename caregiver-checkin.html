@@ -811,6 +811,12 @@
             </label>
           </div>
           <div class="muted" style="margin:-4px 0 8px">Record hours of sleep or time fell asleep — either one is fine, or both.</div>
+          <div id="question-prn-pain" class="question-block" style="margin-bottom:8px">
+            <label class="prn-option">
+              <input type="checkbox" name="prn_used_for_pain">
+              PRN used for pain or discomfort
+            </label>
+          </div>
           <div id="question-prn-sleep-disturbance" class="question-block" style="margin:0 0 10px">
             <label class="prn-option">
               <input type="checkbox" name="prn_used_for_sleep_disturbance">
@@ -914,13 +920,6 @@
                 <p class="movement-desc">Track involuntary movements, body-area changes, vocalizations, restlessness, or other noticeable movement patterns when they come up.</p>
               </div>
             </div>
-            <div id="question-prn-pain" class="question-block" style="margin-bottom:8px">
-              <label class="prn-option">
-                <input type="checkbox" name="prn_used_for_pain">
-                PRN used for pain or discomfort
-              </label>
-            </div>
-
             <div class="movement-yn" role="group" aria-label="Any involuntary movements or vocalizations today">
               <strong>Any involuntary movements or vocalizations today?</strong>
               <label class="movement-pill"><input type="radio" name="movement_present" value="no" checked> No</label>
@@ -3469,7 +3468,7 @@
 
     setConfigHidden([
       document.getElementById('question-prn-pain'),
-    ], true);
+    ], !prnEnabled);
 
     setConfigHidden([
       document.getElementById('menstrualPanel'),

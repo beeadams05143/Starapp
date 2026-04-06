@@ -162,7 +162,7 @@
 
   <script type="module">
     import { getSessionFromStorage } from './supabaseClient.js?v=2026.03.29A';
-    import { advanceGuidedOnboarding } from './onboarding-flow.js?v=2026.03.29A';
+    import { advanceGuidedOnboarding, findExistingCaregiverConfig } from './onboarding-flow.js?v=2026.03.29A';
 
     const APP_CONFIG_KEY = 'star_app_config';
     const featuresStep = document.getElementById('featuresStep');
@@ -246,9 +246,22 @@
       setStatus('');
     }
 
-    function goToCaregiverSetup() {
+    async function goToCaregiverSetup() {
       const session = getSessionFromStorage();
-      advanceGuidedOnboarding(session?.user?.id || null, 'caregiver_setup');
+      const userId = session?.user?.id || null;
+
+      try {
+        const existingConfig = await findExistingCaregiverConfig(userId);
+        if (existingConfig) {
+          advanceGuidedOnboarding(userId, 'practice_checkin');
+          window.location.replace('caregiver-checkin.html?onboarding=1');
+          return;
+        }
+      } catch (error) {
+        console.warn('[feature-setup] caregiver config lookup failed', error?.message || error);
+      }
+
+      advanceGuidedOnboarding(userId, 'caregiver_setup');
       window.location.replace('caregiver-setup-wizard.html?onboarding=1');
     }
 
@@ -267,7 +280,7 @@
       window.location.href = '/profile.html';
     });
 
-    nextBtn.addEventListener('click', () => {
+    nextBtn.addEventListener('click', async () => {
       if (localStorage.getItem('userRole') !== 'admin') return;
       const selectedFeatures = [featureChat, featureCalendar, featureFocus, featureDocuments].filter((input) => input.checked);
       if (!selectedFeatures.length) {
@@ -290,7 +303,7 @@
       }
 
       saveAppConfig();
-      goToCaregiverSetup();
+      await goToCaregiverSetup();
     });
 
     hydrateForm();

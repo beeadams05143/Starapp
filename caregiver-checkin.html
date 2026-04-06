@@ -168,10 +168,10 @@
     }
     textarea{min-height:84px;resize:vertical}
     input[type="range"]{width:100%}
-    .row{display:grid;gap:12px}
-    .cols-3{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
-    .cols-2{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
-    .compact{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+    .row{display:grid;gap:12px;grid-template-columns:minmax(0,1fr)}
+    .cols-3{grid-template-columns:minmax(0,1fr)}
+    .cols-2{grid-template-columns:minmax(0,1fr)}
+    .compact{grid-template-columns:minmax(0,1fr)}
     .yn{width:min(100%,200px)}
     .controls{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;flex-wrap:wrap}
     .left-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -311,6 +311,36 @@
     .entry-date-row label{margin:0;font-weight:700;font-family:var(--font-sans);font-size:17px}
     .entry-date-row input[type="date"]{padding:8px 10px;border:1px solid #d1d5db;border-radius:10px;font-size:15px}
     .entry-date-row .muted{font-size:13px}
+    .physical-top-row,
+    .physical-general-row,
+    .physical-sleep-row,
+    .physical-prn-row,
+    .physical-final-row{display:grid;gap:12px;margin-bottom:12px}
+    .physical-spacer{display:none}
+    .physical-checkbox-card{
+      display:grid;
+      gap:8px;
+      align-content:start;
+      padding-top:10px;
+    }
+    .physical-checkbox-stack{
+      display:grid;
+      gap:8px;
+      align-content:start;
+      padding-top:10px;
+    }
+    .physical-checkbox-stack .prn-option,
+    .physical-checkbox-card .prn-option{
+      margin:0;
+    }
+    @media (min-width: 900px){
+      .physical-top-row{grid-template-columns:minmax(0,.75fr) minmax(0,1.1fr) minmax(0,1fr)}
+      .physical-general-row{grid-template-columns:repeat(4,minmax(0,1fr))}
+      .physical-sleep-row{grid-template-columns:repeat(3,minmax(0,1fr))}
+      .physical-prn-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .physical-final-row{grid-template-columns:repeat(3,minmax(0,1fr))}
+      .physical-spacer{display:block}
+    }
     .movement-panel,.temp-panel,.med-panel{
       background:linear-gradient(180deg,#fffefb 0%,#fff5e5 100%);
       border:1px solid #ecdab3;
@@ -341,14 +371,14 @@
     .med-type-grid{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
     .med-type-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid #cbd5f5;border-radius:10px;padding:6px 8px;background:#fff;font-weight:700;font-size:12.5px}
     .med-type-chip input{width:auto}
-    .med-row{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+    .med-row{display:grid;gap:8px;grid-template-columns:minmax(0,1fr)}
     .med-input-note{font-size:12px;color:#6b7280;margin-top:-4px}
     .med-body label{font-weight:700;color:#1f2937;font-size:13px}
     .med-body input[type="text"],
     .med-body textarea,
     .med-body select{width:100%}
     .med-body textarea{min-height:72px}
-    .movement-row,.temp-row{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));align-items:end}
+    .movement-row,.temp-row{display:grid;gap:8px;grid-template-columns:minmax(0,1fr);align-items:end}
     .movement-label,.temp-label,.med-label{
       font-weight:650;
       color:#1f2937;
@@ -380,7 +410,7 @@
       background:linear-gradient(180deg,#fffefb 0%,#fff8ec 100%);
       box-shadow:0 8px 16px rgba(120,92,44,.05);
     }
-    .movement-grid,.temp-grid{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+    .movement-grid,.temp-grid{display:grid;gap:8px;grid-template-columns:minmax(0,1fr)}
     .movement-inline-input,.temp-inline-input{display:flex;gap:8px;align-items:center}
     .movement-inline-input input[type="text"],.temp-inline-input input[type="text"]{flex:1}
     .yn-pill-group{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
@@ -548,7 +578,7 @@
     }
     .behavior-choice-group,
     .educational-choice-group{display:flex;flex-wrap:wrap;gap:8px}
-    .behavior-followup-grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+    .behavior-followup-grid{display:grid;gap:12px;grid-template-columns:minmax(0,1fr)}
     .behavior-compact-label{font-weight:700;color:#111827;font-family:var(--font-serif)}
     .behavior-inline-select,
     .behavior-inline-time,
@@ -762,13 +792,20 @@
       <!-- STEP 1: Physical -->
       <div class="step active" data-step="0">
         <fieldset class="panel">
-          <div class="entry-date-row">
-            <label for="entryDateInput">Date of shift:</label>
-            <input type="date" id="entryDateInput" name="entry_date"/>
-            <span class="muted">Pick another day if you missed logging it.</span>
+          <div class="physical-top-row">
+            <label for="entryDateInput">Date of shift:
+              <input type="date" id="entryDateInput" name="entry_date"/>
+              <span class="muted">Pick another day if you missed logging it.</span>
+            </label>
+            <div id="question-caregiver-name" class="question-block">
+              <label for="caregiver_name">Caregiver Name:
+                <input id="caregiver_name" name="caregiver_name" type="text" placeholder="Enter your name" required />
+              </label>
+            </div>
+            <div class="physical-spacer" aria-hidden="true"></div>
           </div>
           <div class="section-title">Physical Health</div>
-          <div class="row cols-3 compact">
+          <div class="physical-general-row">
             <div id="question-appears-good-health" class="question-block">
               <div class="movement-label">Appears in good health?</div>
               <div class="yn-pill-group" role="group" aria-label="Appears in good health">
@@ -789,7 +826,9 @@
             <label>Time fell asleep:
               <input type="time" name="sleep_fell_asleep_time"/>
             </label>
-            <label style="display:flex;align-items:center;gap:8px;margin-top:28px">
+          </div>
+          <div class="physical-sleep-row">
+            <label class="physical-checkbox-card" style="display:flex;align-items:center;gap:8px">
               <input type="checkbox" name="sleep_onset_difficulty" style="width:auto"/>
               <span>Difficulty falling asleep (took ~2+ hours)</span>
             </label>
@@ -800,49 +839,46 @@
                 <label class="yn-pill"><input type="radio" name="night_wake_flag" id="night_wake_flag_no" value="no" checked> No</label>
               </div>
             </div>
-            <label id="nightWakeCountWrap" style="display:none">How many times?
-              <select name="night_wake_count" id="night_wake_count" class="yn">
-                <option value="">Select</option>
-                <option>1</option>
-                <option>2</option>
-                <option>3</option>
-                <option>4+</option>
-              </select>
-            </label>
+            <div class="physical-checkbox-stack">
+              <div id="question-prn-sleep-disturbance" class="question-block">
+                <label class="prn-option">
+                  <input type="checkbox" name="prn_used_for_sleep_disturbance">
+                  PRN used for sleep disturbance
+                </label>
+              </div>
+              <div id="question-prn-pain" class="question-block">
+                <label class="prn-option">
+                  <input type="checkbox" name="prn_used_for_pain">
+                  PRN used for pain or discomfort
+                </label>
+              </div>
+            </div>
           </div>
+          <label id="nightWakeCountWrap" style="display:none">How many times?
+            <select name="night_wake_count" id="night_wake_count" class="yn">
+              <option value="">Select</option>
+              <option>1</option>
+              <option>2</option>
+              <option>3</option>
+              <option>4+</option>
+            </select>
+          </label>
           <div class="muted" style="margin:-4px 0 8px">Record hours of sleep or time fell asleep — either one is fine, or both.</div>
-          <div id="question-prn-pain" class="question-block" style="margin-bottom:8px">
-            <label class="prn-option">
-              <input type="checkbox" name="prn_used_for_pain">
-              PRN used for pain or discomfort
-            </label>
-          </div>
-          <div id="question-prn-sleep-disturbance" class="question-block" style="margin:0 0 10px">
-            <label class="prn-option">
-              <input type="checkbox" name="prn_used_for_sleep_disturbance">
-              PRN used for sleep disturbance
-            </label>
-          </div>
-          <div class="row cols-2" style="margin:0 0 10px">
+          <div class="physical-prn-row">
             <label>PRN or support used (optional)
-              <input type="text" name="sleep_prn_name" id="sleep_prn_name" placeholder="Enter PRN, medication, or support used"/>
+              <input type="text" name="prn_name" id="prn_name" placeholder="Enter PRN, medication, or support used"/>
             </label>
             <label>PRN time given (optional)
-              <input type="time" name="sleep_prn_time" id="sleep_prn_time"/>
+              <input type="time" name="prn_time" id="prn_time"/>
             </label>
           </div>
-          <div class="row cols-3 compact">
+          <div class="physical-final-row">
             <div id="question-had-bm" class="question-block">
               <div class="movement-label">Had a BM today?</div>
               <div class="yn-pill-group" role="group" aria-label="Had a BM today">
                 <label class="yn-pill"><input type="radio" name="had_bm" id="had_bm_yes" value="yes"> Yes</label>
                 <label class="yn-pill"><input type="radio" name="had_bm" id="had_bm_no" value="no" checked> No</label>
               </div>
-            </div>
-            <div id="question-caregiver-name" class="question-block">
-              <label for="caregiver_name">Caregiver Name:
-                <input id="caregiver_name" name="caregiver_name" type="text" placeholder="Enter your name" required />
-              </label>
             </div>
             <div id="question-appetite-change-flag" class="question-block">
               <div class="movement-label">Change in appetite?</div>
@@ -859,6 +895,7 @@
                 <option value="unclear">Unclear / mixed</option>
               </select>
             </label>
+            <div class="physical-spacer" aria-hidden="true"></div>
           </div>
           <div class="med-panel" id="medChangePanel">
             <div class="med-head">
@@ -878,7 +915,6 @@
                   <label class="med-type-chip"><input type="checkbox" name="med_change_type_new" /> New medication</label>
                   <label class="med-type-chip"><input type="checkbox" name="med_change_type_dose" /> Dose change</label>
                   <label class="med-type-chip"><input type="checkbox" name="med_change_type_stopped" /> Stopped medication</label>
-                  <label class="med-type-chip"><input type="checkbox" name="med_change_type_prn" /> PRN given</label>
                   <label class="med-type-chip"><input type="checkbox" name="med_change_type_other" /> Other</label>
                 </div>
               </div>
@@ -1041,11 +1077,8 @@
                 </div>
 
                 <div class="movement-collapse" style="margin-top:10px">
-                  <button class="movement-collapse-toggle" type="button" id="movementAwarenessToggle" aria-expanded="false" aria-controls="movementAwarenessBody">
-                    Awareness / impact (optional)
-                    <span class="movement-toggle-hint">Show</span>
-                  </button>
-                  <div class="movement-collapse-body is-hidden" id="movementAwarenessBody">
+                  <div class="movement-label">Awareness / impact (optional)</div>
+                  <div class="movement-collapse-body" id="movementAwarenessBody">
                     <div class="movement-chips" style="margin-top:8px">
                       <label class="movement-chip"><input type="radio" name="movement_awareness" value="unaware">Unaware</label>
                       <label class="movement-chip"><input type="radio" name="movement_awareness" value="aware_not_bothered">Aware not bothered</label>
@@ -1081,14 +1114,12 @@
               <label class="temp-pill"><input type="radio" name="temp_present" value="no" checked> No</label>
               <label class="temp-pill"><input type="radio" name="temp_present" value="yes"> Yes</label>
             </div>
-
-            <div id="question-prn-headache" class="question-block" style="margin:8px 0 8px">
+            <div id="question-prn-symptoms-discomfort" class="question-block" style="margin:8px 0 8px">
               <label class="prn-option">
-                <input type="checkbox" name="prn_used_for_headache">
+                <input type="checkbox" name="prn_used_for_symptoms_discomfort">
                 PRN used for symptoms / discomfort (e.g., ibuprofen or acetaminophen)
               </label>
             </div>
-
             <div class="temp-row" style="margin-bottom:8px">
               <label>PRN or support used (optional)
                 <input type="text" name="temp_prn_name" id="temp_prn_name" placeholder="Enter PRN, medication, or support used"/>
@@ -1687,7 +1718,12 @@
   const MOVEMENT_LAST_KEY = 'cg-movement-last-v1';
   const APP_CONFIG_KEY = 'star_app_config';
   const GUIDED_ONBOARDING_KEY = 'star_guided_onboarding_v1';
-  const onboardingActive = (() => {
+  const LEGACY_PROTECTED_USER_IDS = new Set([
+    'e3785c5e-6560-4a6c-b136-31a4ebfbcb8f',
+    'b588c31a-7b90-40f3-adc6-d5a65eb5c59d',
+    '87a1e858-0887-48b7-959b-bd272521150a',
+  ]);
+  let onboardingActive = (() => {
     if (new URLSearchParams(window.location.search).get('onboarding') === '1') return true;
     try {
       const session = getSessionFromStorage();
@@ -1703,19 +1739,20 @@
     groupId: null,
     configRowId: null,
     groupName: '',
+    forceLegacyMode: false,
     hasConfig: false,
     selectedCategories: new Set(),
     selectedItems: {},
     itemDescriptions: {},
   };
   const CHECKIN_FIELD_CATEGORY_MAP = {
-    sleep: ['hours_sleep', 'sleep_fell_asleep_time', 'sleep_onset_difficulty', 'night_wake_flag', 'night_wake_count', 'prn_used_for_sleep_disturbance', 'sleep_prn_name', 'sleep_prn_time'],
+    sleep: ['hours_sleep', 'sleep_fell_asleep_time', 'sleep_onset_difficulty', 'night_wake_flag', 'night_wake_count', 'prn_used_for_sleep_disturbance'],
     hygiene: ['adl_entries', 'adl_note', 'prompting_level'],
     meals: ['appetite_change_flag', 'appetite_change_direction', 'adl_entries'],
     pain: ['movement_present', 'movement_main_type', 'movement_notes', 'prn_used_for_pain'],
-    illness: ['temp_present', 'temp_symptoms', 'temp_notes', 'prn_used_for_headache'],
+    illness: ['temp_present', 'temp_symptoms', 'temp_notes', 'prn_used_for_symptoms_discomfort'],
     medication_changes: ['med_change_flag', 'med_change_name', 'med_change_note'],
-    prn: ['sleep_prn_name', 'sleep_prn_time', 'temp_prn_name', 'temp_prn_time', 'prn_used_for_pain', 'prn_used_for_sleep_disturbance', 'prn_used_for_headache'],
+    prn: ['prn_name', 'prn_time', 'prn_used_for_pain', 'prn_used_for_sleep_disturbance', 'prn_used_for_symptoms_discomfort'],
     bm_tracking: ['had_bm'],
     appetite: ['appetite_change_flag', 'appetite_change_direction'],
   };
@@ -1933,6 +1970,15 @@
       try { localStorage.setItem(GROUP_KEY, groupId); } catch {}
     }
     return groupId || null;
+  }
+
+  async function userHasLegacyCaregiverCheckins(userId){
+    if (!userId) return false;
+    if (LEGACY_PROTECTED_USER_IDS.has(userId)) return true;
+    const rows = await rest(
+      `caregiver_checkins?user_id=eq.${encodeURIComponent(userId)}&select=id&limit=1`
+    );
+    return Array.isArray(rows) && rows.length > 0;
   }
 
   const durationToMinutes = (value) => {
@@ -3272,6 +3318,15 @@
   }
 
   async function loadGroupCaregiverSetup(userId){
+    if (caregiverSetupState.forceLegacyMode) {
+      caregiverSetupState.groupId = await ensureGroupId(userId);
+      caregiverSetupState.configRowId = null;
+      caregiverSetupState.hasConfig = false;
+      caregiverSetupState.selectedCategories = new Set();
+      caregiverSetupState.selectedItems = {};
+      caregiverSetupState.itemDescriptions = {};
+      return;
+    }
     const groupId = await ensureGroupId(userId);
     caregiverSetupState.groupId = groupId || null;
     caregiverSetupState.configRowId = null;
@@ -3301,7 +3356,7 @@
     }
 
     const localWizardConfig = parseConfigObject(localStorage.getItem('caregiver_config'));
-    if (!caregiverSetupState.hasConfig && localWizardConfig) {
+    if (!caregiverSetupState.forceLegacyMode && !caregiverSetupState.hasConfig && localWizardConfig) {
       applyLocalWizardConfigToSetupState(localWizardConfig);
     }
   }
@@ -3347,11 +3402,13 @@
     setConfigHidden([document.getElementById('legacyBehaviorQuestions')], false);
     setConfigHidden([
       document.getElementById('movementSymptomsPanel'),
-      document.getElementById('question-prn-pain'),
     ], !shouldShowMovementSection());
     setConfigHidden([
       document.getElementById('menstrualPanel'),
     ], !shouldShowMenstrualSection());
+    setConfigHidden([
+      document.getElementById('prnPanel'),
+    ], false);
 
     renderAdlCategoryChips();
     renderAdlActivityChips();
@@ -3365,7 +3422,7 @@
     if (subtitle && caregiverSetupState.groupName) {
       subtitle.innerHTML = `This check-in autosaves while you type. <strong>Save</strong> saves your progress so far so you can come back later. <strong>Save &amp; Next</strong> saves the current section and moves you to the next one. Configured for ${caregiverSetupState.groupName}.`;
     }
-    if (!caregiverSetupState.hasConfig) {
+    if (caregiverSetupState.forceLegacyMode || !caregiverSetupState.hasConfig) {
       applyLegacyCheckinVisibility();
       return;
     }
@@ -3438,10 +3495,6 @@
     ], !sleepEnabled);
 
     setConfigHidden([
-      document.getElementById('question-prn-sleep-disturbance'),
-    ], !(sleepEnabled && prnEnabled));
-
-    setConfigHidden([
       document.getElementById('question-appetite-change-flag'),
       document.getElementById('appetiteDirectionWrap'),
     ], !appetiteEnabled);
@@ -3459,15 +3512,11 @@
     ], !symptomPanelEnabled);
 
     setConfigHidden([
-      document.getElementById('question-prn-headache'),
-    ], !(symptomPanelEnabled && prnEnabled));
-
-    setConfigHidden([
       document.getElementById('movementSymptomsPanel'),
     ], !movementEnabled);
 
     setConfigHidden([
-      document.getElementById('question-prn-pain'),
+      document.getElementById('prnPanel'),
     ], !prnEnabled);
 
     setConfigHidden([
@@ -3865,8 +3914,9 @@
   };
 
   const setAwarenessExpanded = (expanded) => {
-    if (!movementEls.awarenessBody || !movementEls.awarenessToggle) return;
-    movementEls.awarenessBody.classList.toggle('is-hidden', !expanded);
+    if (!movementEls.awarenessBody) return;
+    movementEls.awarenessBody.classList.remove('is-hidden');
+    if (!movementEls.awarenessToggle) return;
     movementEls.awarenessToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
     const hint = movementEls.awarenessToggle.querySelector('.movement-toggle-hint');
     if (hint) hint.textContent = expanded ? 'Hide' : 'Show';
@@ -3993,7 +4043,6 @@
       'med_change_type_new',
       'med_change_type_dose',
       'med_change_type_stopped',
-      'med_change_type_prn',
       'med_change_type_other'
     ];
     checkboxNames.forEach((name) => {
@@ -4029,7 +4078,7 @@
         document.querySelectorAll(`input[name="${name}"]`).forEach((el) => (el.checked = false));
       });
     setKnownTriggers(false);
-    setAwarenessExpanded(false);
+    setAwarenessExpanded(true);
     syncMovementArrays();
   };
 
@@ -4211,6 +4260,12 @@
 
     console.log('✅ Form assets ready:', { formEl, submitBtn, steps });
     const session = getSessionFromStorage();
+    try {
+      caregiverSetupState.forceLegacyMode = await userHasLegacyCaregiverCheckins(session?.user?.id || null);
+      if (caregiverSetupState.forceLegacyMode) onboardingActive = false;
+    } catch (error) {
+      console.warn('[cg] legacy caregiver checkin lookup failed', error?.message || error);
+    }
     try {
       caregiverSetupState.groupId = await ensureGroupId(session?.user?.id || null);
       const storedGroupName = localStorage.getItem('currentGroupName') || '';
@@ -4432,10 +4487,6 @@
         setKnownTriggers(btn.dataset.knownTrigger === 'yes');
         save(steps[movementStepIndex], movementStepIndex, true);
       });
-    });
-    movementEls.awarenessToggle?.addEventListener('click', () => {
-      const isHidden = movementEls.awarenessBody?.classList.contains('is-hidden');
-      setAwarenessExpanded(isHidden);
     });
     document.addEventListener('change', (event) => {
       if (event.target?.matches('[data-movement-time],[data-movement-body],[data-movement-trigger]')) {
@@ -5280,27 +5331,20 @@
           const reasonMania = !!payload.prn_used_for_mania;
           const reasonAnxiety = !!payload.prn_used_for_anxiety;
           const reasonPain = !!payload.prn_used_for_pain;
-          const reasonHeadache = !!payload.prn_used_for_headache;
-          const administered = reasonSleep || reasonAggression || reasonMania || reasonAnxiety || reasonPain || reasonHeadache;
+          const reasonSymptomsDiscomfort = !!payload.prn_used_for_symptoms_discomfort;
+          const administered = reasonSleep || reasonAggression || reasonMania || reasonAnxiety || reasonPain || reasonSymptomsDiscomfort;
           const cleaned = {
             prn_administered: administered ? 'yes' : 'no',
-            prn_name: reasonSleep
-              ? trimOrNull(payload.sleep_prn_name)
-              : reasonHeadache
-                ? trimOrNull(payload.temp_prn_name)
-                : null,
-            prn_time: reasonSleep
-              ? trimOrNull(payload.sleep_prn_time)
-              : reasonHeadache
-                ? trimOrNull(payload.temp_prn_time)
-                : null,
+            prn_name: administered ? trimOrNull(payload.prn_name) : null,
+            prn_time: administered ? trimOrNull(payload.prn_time) : null,
             prn_reason_sleep: reasonSleep,
             prn_reason_aggression: reasonAggression,
             prn_reason_mania: reasonMania,
             prn_used_for_anxiety: reasonAnxiety,
             prn_used_for_pain: reasonPain,
-            prn_used_for_headache: reasonHeadache,
-            prn_given: reasonSleep ? 'yes' : 'no',
+            prn_used_for_headache: reasonSymptomsDiscomfort,
+            prn_used_for_symptoms_discomfort: reasonSymptomsDiscomfort,
+            prn_given: administered ? 'yes' : 'no',
             prn_mania_given: reasonMania ? 'yes' : 'no',
             prn_aggression_given: reasonAggression ? 'yes' : 'no',
             prn_mania_name: null,

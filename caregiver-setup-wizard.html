@@ -568,7 +568,10 @@
     </section>
   </main>
 
-  <script>
+  <script type="module">
+    import { getSessionFromStorage } from './supabaseClient.js?v=2026.03.29A';
+    import { findExistingCaregiverConfig } from './onboarding-flow.js?v=2026.03.29A';
+
     const GUIDED_ONBOARDING_KEY = 'star_guided_onboarding_v1';
     const onboardingParams = new URLSearchParams(window.location.search);
     const onboardingActive = onboardingParams.get('onboarding') === '1';
@@ -585,7 +588,7 @@
     function writeGuidedOnboardingStep(step) {
       if (!onboardingActive) return;
       try {
-        const session = JSON.parse(localStorage.getItem('sb-session') || 'null');
+        const session = getSessionFromStorage();
         const userId = session?.user?.id || localStorage.getItem('user_id') || '';
         if (!userId) return;
         const store = readGuidedOnboardingStore();
@@ -1600,8 +1603,31 @@
       updateWizard();
     });
 
-    hydrateStateFromConfig();
-    updateWizard();
+    async function maybeBypassOnboardingForExistingConfig() {
+      if (!onboardingActive) return false;
+      try {
+        const session = getSessionFromStorage();
+        const existingConfig = await findExistingCaregiverConfig(session?.user?.id || null);
+        if (!existingConfig) return false;
+        setMessage('Existing caregiver setup found. Opening your saved check-in...');
+        writeGuidedOnboardingStep('practice_checkin');
+        window.setTimeout(() => {
+          window.location.replace('caregiver-checkin.html?onboarding=1');
+        }, 150);
+        return true;
+      } catch (error) {
+        console.warn('[cg-setup-wizard] caregiver config lookup failed', error?.message || error);
+        return false;
+      }
+    }
+
+    async function initWizard() {
+      if (await maybeBypassOnboardingForExistingConfig()) return;
+      hydrateStateFromConfig();
+      updateWizard();
+    }
+
+    initWizard();
   </script>
 
   <script defer src="/ui-shell.js?v=2026.03.16B"></script>

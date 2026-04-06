@@ -1,4 +1,5 @@
 import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.16B';
+import { ensureActiveGroupId } from './active-group.js?v=2025.01.09E';
 
 const GROUP_KEY_ID = 'currentGroupId';
 const GROUP_KEY_NAME = 'currentGroupName';
@@ -94,6 +95,67 @@ export function getGuidedOnboardingProgress(userId = null) {
 
 export function guidedOnboardingPathForStep(step = '') {
   return GUIDED_STEP_PATHS[step] || 'dashboard.html';
+}
+
+function parseConfigObject(value) {
+  if (value && typeof value === 'object') return value;
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return parsed && typeof parsed === 'object' ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+function normalizeConfigCategories(value) {
+  if (Array.isArray(value)) return value.filter(Boolean);
+  if (typeof value === 'string') {
+    try {
+      return normalizeConfigCategories(JSON.parse(value));
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+export function caregiverConfigHasSavedSetup(config = null) {
+  const selectedItems = parseConfigObject(config?.selected_items);
+  const selectedCategories = normalizeConfigCategories(config?.selected_categories);
+  const meaningfulItemKeys = Object.keys(selectedItems || {}).filter((key) => (
+    key !== '__custom_mode__' && key !== '__item_descriptions__'
+  ));
+
+  return selectedItems?.__custom_mode__ === true ||
+    selectedCategories.length > 0 ||
+    meaningfulItemKeys.length > 0;
+}
+
+export async function findExistingCaregiverConfig(userId = null) {
+  const session = getSessionFromStorage();
+  const resolvedUserId = userId || session?.user?.id || null;
+  if (!resolvedUserId) return null;
+
+  let config = null;
+  const groupId = await ensureActiveGroupId(resolvedUserId);
+  if (groupId) {
+    const rows = await rest(
+      `caregiver_checkin_configs?group_id=eq.${encodeURIComponent(groupId)}&select=id,group_id,individual_id,selected_categories,selected_items,updated_at&order=updated_at.desc.nullslast&limit=1`
+    );
+    config = rows?.[0] || null;
+  }
+
+  if (!config) {
+    const rows = await rest(
+      `caregiver_checkin_configs?individual_id=eq.${encodeURIComponent(resolvedUserId)}&select=id,group_id,individual_id,selected_categories,selected_items,updated_at&order=updated_at.desc.nullslast&limit=1`
+    );
+    config = rows?.[0] || null;
+  }
+
+  return config && caregiverConfigHasSavedSetup(config) ? config : null;
 }
 
 export function startGuidedOnboarding(userId = null, options = {}) {

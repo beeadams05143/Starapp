@@ -413,6 +413,18 @@
     .movement-grid,.temp-grid{display:grid;gap:8px;grid-template-columns:minmax(0,1fr)}
     .temp-row--illness{grid-template-columns:repeat(2,minmax(0,1fr))}
     .temp-grid--illness{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .temp-prn-inline{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .temp-prn-inline .prn-option{margin:0}
+    .temp-prn-inline input[type="text"]{
+      width:200px;
+      min-width:160px;
+      max-width:100%;
+    }
     @media (min-width: 900px){
       .temp-grid--illness{grid-template-columns:repeat(4,minmax(0,1fr))}
     }
@@ -1112,6 +1124,13 @@
               <strong>Symptoms or discomfort today?</strong>
               <label class="temp-pill"><input type="radio" name="temp_present" value="no" checked> No</label>
               <label class="temp-pill"><input type="radio" name="temp_present" value="yes"> Yes</label>
+              <div id="question-prn-symptoms-discomfort" class="temp-prn-inline">
+                <label class="prn-option">
+                  <input type="checkbox" name="prn_used_for_symptoms_discomfort">
+                  PRN used for illness or discomfort
+                </label>
+                <input type="text" name="temp_prn_name" id="temp_prn_name" placeholder="What was administered?" />
+              </div>
             </div>
             <div class="temp-body is-collapsed" data-temp-body-wrap>
               <div class="temp-row temp-row--illness">

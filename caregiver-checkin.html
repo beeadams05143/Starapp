@@ -870,10 +870,10 @@
           </label>
           <div class="muted" style="margin:-4px 0 8px">Record hours of sleep or time fell asleep — either one is fine, or both.</div>
           <div class="physical-prn-row">
-            <label>PRN or support used (optional)
+            <label>If PRN was given - record medication name and time:
               <input type="text" name="prn_name" id="prn_name" placeholder="Enter PRN, medication, or support used"/>
             </label>
-            <label>PRN time given (optional)
+            <label>Time
               <input type="time" name="prn_time" id="prn_time"/>
             </label>
           </div>
@@ -1119,21 +1119,6 @@
               <label class="temp-pill"><input type="radio" name="temp_present" value="no" checked> No</label>
               <label class="temp-pill"><input type="radio" name="temp_present" value="yes"> Yes</label>
             </div>
-            <div id="question-prn-symptoms-discomfort" class="question-block" style="margin:8px 0 8px">
-              <label class="prn-option">
-                <input type="checkbox" name="prn_used_for_symptoms_discomfort">
-                PRN used for symptoms / discomfort (e.g., ibuprofen or acetaminophen)
-              </label>
-            </div>
-            <div class="temp-row temp-row--illness" style="margin-bottom:8px">
-              <label>Medication used for symptoms (optional)
-                <input type="text" name="temp_prn_name" id="temp_prn_name" placeholder="Enter PRN, medication, or support used"/>
-              </label>
-              <label>Symptom medication time given (optional)
-                <input type="time" name="temp_prn_time" id="temp_prn_time"/>
-              </label>
-            </div>
-
             <div class="temp-body is-collapsed" data-temp-body-wrap>
               <div class="temp-row temp-row--illness">
                 <div>
@@ -1231,7 +1216,6 @@
               <input type="text" name="menstrual_notes" id="menstrual_notes" placeholder="Short note for the next caregiver"/>
             </div>
           </div>
-          <label>Physical health notes:<textarea name="physical_notes" placeholder="Optional notes..."></textarea></label>
           <div class="controls">
             <div class="left-actions"><button class="btn" type="button" data-save>Save</button><span class="action-note">Saves your progress so far so you can come back later.</span><span class="savedAt" data-savedat></span></div>
             <div class="left-actions"><span class="action-note">Saves this section and opens the next one.</span><button class="btn primary" type="button" data-next>Save &amp; Next →</button></div>

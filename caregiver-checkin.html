@@ -718,6 +718,64 @@
       font-family:var(--font-sans);
     }
     .behavior-followup-span-2{grid-column:span 2}
+    #legacyBehaviorQuestions{
+      display:grid;
+      gap:18px;
+    }
+    #legacyBehaviorQuestions .behavior-legacy-section{
+      display:grid;
+      gap:12px;
+    }
+    #legacyBehaviorQuestions .behavior-legacy-question-line{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+      margin:0;
+    }
+    #legacyBehaviorQuestions .behavior-legacy-question-line .yn-pill-group{
+      margin:0;
+      flex-wrap:nowrap;
+    }
+    #legacyBehaviorQuestions .behavior-legacy-paired-row{
+      display:grid;
+      gap:12px;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      align-items:end;
+    }
+    #legacyBehaviorQuestions .behavior-legacy-check-grid{
+      display:grid;
+      gap:12px;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+    }
+    #legacyBehaviorQuestions .behavior-legacy-check{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      min-height:44px;
+      margin:0;
+      font-weight:700;
+      color:#111827;
+    }
+    #legacyBehaviorQuestions .behavior-legacy-check input{width:auto}
+    #legacyBehaviorQuestions .behavior-legacy-subtext{
+      margin:-4px 0 0;
+      color:#6b7280;
+      font-size:14px;
+    }
+    #legacyBehaviorQuestions .behavior-legacy-small-input{
+      width:100%;
+      max-width:260px;
+    }
+    @media (max-width: 600px){
+      #legacyBehaviorQuestions .behavior-legacy-check-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+      #legacyBehaviorQuestions .behavior-legacy-paired-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+    }
+    @media (max-width: 380px){
+      #legacyBehaviorQuestions .behavior-legacy-check-grid,
+      #legacyBehaviorQuestions .behavior-legacy-paired-row{grid-template-columns:minmax(0,1fr)}
+    }
     button[data-behavior-desc-edit],
     button[data-educational-desc-edit],
     button[data-behavior-desc-cancel],
@@ -1244,23 +1302,20 @@
           <input type="hidden" name="behavior_tracking" id="behavior_tracking" value=""/>
           <div id="behaviorQuestionsWrap" class="row"></div>
           <div id="legacyBehaviorQuestions" class="config-hidden" aria-hidden="true">
-            <div class="row cols-3 compact">
-              <div id="question-aggression-flag" class="question-block">
+            <div class="behavior-legacy-section">
+              <div id="question-aggression-flag" class="behavior-legacy-question-line">
                 <div class="movement-label">Did the individual display any aggression?</div>
                 <div class="yn-pill-group" role="group" aria-label="Aggression observed">
                   <label class="yn-pill"><input type="radio" name="aggression_flag" value="yes"> Yes</label>
                   <label class="yn-pill"><input type="radio" name="aggression_flag" value="no" checked> No</label>
                 </div>
               </div>
-              <div id="aggressionDetails" class="row cols-3 compact" style="margin:0">
+              <div id="aggressionDetails" class="behavior-legacy-paired-row" style="display:none">
                 <label>Aggression type:
                   <select name="aggression_type" id="aggression_type" disabled>
                     <option value="">Select type</option>
                     <option>Posturing</option><option>Physical</option><option>Verbal</option><option>Self-harm</option>
                   </select>
-                </label>
-                <label>Aggression instances from tally sheet <span class="muted">(optional)</span>:
-                  <input type="number" min="0" step="1" name="aggression_instances_today" id="aggression_instances_today" disabled placeholder="e.g., 3"/>
                 </label>
                 <label>Intensity (0–5):
                   <input type="range" min="0" max="5" step="1" value="0" name="aggression_intensity" id="aggression_intensity" disabled/>
@@ -1268,47 +1323,37 @@
                 </label>
               </div>
             </div>
-            <div id="question-prn-aggression" class="question-block" style="margin:0 0 8px">
-              <label class="prn-option">
-                <input type="checkbox" name="prn_used_for_aggression">
-                PRN used for this behavior
-              </label>
-            </div>
             <label id="aggressionNotesWrap">Aggression notes:
               <textarea name="aggression_notes" placeholder="What happened, what helped"></textarea>
             </label>
             <hr class="soft"/>
             <div class="section-subtitle">Mood / Regulation</div>
-            <div class="row cols-3 compact">
-              <div id="question-manic-flag" class="question-block">
+            <div class="behavior-legacy-section">
+              <div id="question-manic-flag" class="behavior-legacy-question-line">
                 <div class="movement-label">Did the individual seem manic?</div>
                 <div class="yn-pill-group" role="group" aria-label="Seemed manic">
                   <label class="yn-pill"><input type="radio" name="manic_flag" value="yes"> Yes</label>
                   <label class="yn-pill"><input type="radio" name="manic_flag" value="no" checked> No</label>
                 </div>
               </div>
-              <label id="maniaIntensityWrap">Mania intensity (0–5):
-                <input type="range" min="0" max="5" step="1" value="0" name="manic_intensity" id="manic_intensity" disabled/>
-                <div class="savedAt"><span id="manicIntensityVal">0</span></div>
-              </label>
-              <label id="maniaEpisodeStatusWrap" style="display:none">Episode status:
-                <select name="mania_episode_status" id="mania_episode_status">
-                  <option value="">Select</option>
-                  <option value="suspected">Suspected</option>
-                  <option value="active">Active</option>
-                  <option value="improving">Improving</option>
-                </select>
-              </label>
-            </div>
-            <div id="question-prn-mania" class="question-block" style="margin:0 0 8px">
-              <label class="prn-option">
-                <input type="checkbox" name="prn_used_for_mania">
-                PRN used for this behavior
-              </label>
+              <div class="behavior-legacy-paired-row">
+                <label id="maniaIntensityWrap" style="display:none">Mania intensity (0–5):
+                  <input type="range" min="0" max="5" step="1" value="0" name="manic_intensity" id="manic_intensity" disabled/>
+                  <div class="savedAt"><span id="manicIntensityVal">0</span></div>
+                </label>
+                <label id="maniaEpisodeStatusWrap" style="display:none">Episode status:
+                  <select name="mania_episode_status" id="mania_episode_status">
+                    <option value="">Select</option>
+                    <option value="suspected">Suspected</option>
+                    <option value="active">Active</option>
+                    <option value="improving">Improving</option>
+                  </select>
+                </label>
+              </div>
             </div>
             <div class="section-subtitle">Attention / Engagement</div>
-            <div class="row cols-3 compact">
-              <div id="question-focus-trouble-flag" class="question-block">
+            <div class="behavior-legacy-section">
+              <div id="question-focus-trouble-flag" class="behavior-legacy-question-line">
                 <div class="movement-label">Trouble focusing?</div>
                 <div class="yn-pill-group" role="group" aria-label="Trouble focusing">
                   <label class="yn-pill"><input type="radio" name="focus_trouble_flag" value="yes"> Yes</label>
@@ -1316,39 +1361,59 @@
                 </div>
               </div>
             </div>
-            <div class="row cols-3 compact" id="maniaSymptomsWrap" style="display:none;margin-top:6px">
-              <label style="display:flex;align-items:center;gap:8px;margin-top:28px">
+            <div class="behavior-legacy-check-grid" id="maniaSymptomsWrap" style="display:none">
+              <label class="behavior-legacy-check">
+                <input type="checkbox" name="daydreaming_zoning_out_present" id="daydreaming_zoning_out_present" style="width:auto"/>
+                <span>Daydreaming / zoning out</span>
+              </label>
+              <label class="behavior-legacy-check">
+                <input type="checkbox" name="easily_distracted_environment_present" id="easily_distracted_environment_present" style="width:auto"/>
+                <span>Easily distracted by environment</span>
+              </label>
+              <label class="behavior-legacy-check">
+                <input type="checkbox" name="difficulty_staying_on_task_present" id="difficulty_staying_on_task_present" style="width:auto"/>
+                <span>Difficulty staying on task</span>
+              </label>
+              <label class="behavior-legacy-check">
+                <input type="checkbox" name="short_attention_span_present" id="short_attention_span_present" style="width:auto"/>
+                <span>Short attention span</span>
+              </label>
+              <label class="behavior-legacy-check">
                 <input type="checkbox" name="fixation_present" id="fixation_present" style="width:auto"/>
                 <span>Fixation / perseveration</span>
               </label>
-              <label id="fixationCategoryWrap" style="display:none">Fixation category:
-                <select name="fixation_category" id="fixation_category">
-                  <option value="">Select</option>
-                  <option value="person">Person</option>
-                  <option value="topic">Topic</option>
-                  <option value="object">Object / item</option>
-                  <option value="routine">Routine / schedule</option>
-                  <option value="food">Food</option>
-                  <option value="activity">Activity / goal</option>
-                  <option value="other">Other</option>
-                </select>
-              </label>
-              <label style="display:flex;align-items:center;gap:8px;margin-top:28px">
+              <label class="behavior-legacy-check">
                 <input type="checkbox" name="repetitive_behavior_present" id="repetitive_behavior_present" style="width:auto"/>
                 <span>Repetitive behavior</span>
               </label>
-              <label style="display:flex;align-items:center;gap:8px;margin-top:28px">
+              <label class="behavior-legacy-check">
                 <input type="checkbox" name="pressured_speech_present" id="pressured_speech_present" style="width:auto"/>
                 <span>Pressured / rapid speech</span>
               </label>
-              <label style="display:flex;align-items:center;gap:8px;margin-top:28px">
+              <label class="behavior-legacy-check">
                 <input type="checkbox" name="grandiosity_present" id="grandiosity_present" style="width:auto"/>
                 <span>Grandiosity</span>
               </label>
+              <label class="behavior-legacy-check">
+                <input type="checkbox" name="difficulty_following_instructions_present" id="difficulty_following_instructions_present" style="width:auto"/>
+                <span>Difficulty following instructions</span>
+              </label>
+              <label class="behavior-legacy-check">
+                <input type="checkbox" name="needs_frequent_redirection_present" id="needs_frequent_redirection_present" style="width:auto"/>
+                <span>Needs frequent redirection</span>
+              </label>
+              <label class="behavior-legacy-check">
+                <input type="checkbox" name="hyperactive_restless_present" id="hyperactive_restless_present" style="width:auto"/>
+                <span>Hyperactive / restless</span>
+              </label>
+              <label class="behavior-legacy-check">
+                <input type="checkbox" name="disengaged_low_motivation_present" id="disengaged_low_motivation_present" style="width:auto"/>
+                <span>Disengaged / low motivation</span>
+              </label>
             </div>
             <div class="subcap">Anomalies <span class="muted">(unexpected behaviors, mood shifts, or unusual reactions)</span></div>
-            <div class="row cols-2">
-              <div id="question-behavior-anomaly-flag" class="question-block">
+            <div class="behavior-legacy-paired-row">
+              <div id="question-behavior-anomaly-flag" class="behavior-legacy-question-line">
                 <div class="movement-label">Noticed anything unusual in mood or behavior?</div>
                 <div class="yn-pill-group" role="group" aria-label="Noticed anything unusual in mood or behavior">
                   <label class="yn-pill"><input type="radio" name="behavior_anomaly_flag" value="yes"> Yes</label>
@@ -1359,14 +1424,44 @@
                 <input type="text" name="behavior_anomaly_trigger" placeholder="e.g., loud noise, new staff, schedule change"/>
               </label>
             </div>
-            <div id="question-prn-anxiety" class="question-block" style="margin:0 0 8px">
-              <label class="prn-option">
-                <input type="checkbox" name="prn_used_for_anxiety">
-                PRN used for this behavior
+            <label id="anomalyNotesWrap" style="display:none">Anomaly details:<textarea name="behavior_anomaly_notes" placeholder="Describe what felt off, how long it lasted, what helped"></textarea></label>
+            <hr class="soft"/>
+            <div class="section-subtitle">PRN used for behavioral / mental health support</div>
+            <p class="behavior-legacy-subtext">Check all reasons this PRN was given</p>
+            <div class="behavior-legacy-check-grid" role="group" aria-label="Behavioral PRN reasons">
+              <label class="behavior-legacy-check">
+                <input type="checkbox" name="prn_used_for_aggression" style="width:auto"/>
+                <span>Aggression</span>
+              </label>
+              <label class="behavior-legacy-check">
+                <input type="checkbox" name="prn_used_for_anxiety" style="width:auto"/>
+                <span>Anxiety</span>
+              </label>
+              <label class="behavior-legacy-check">
+                <input type="checkbox" name="prn_used_for_mania" style="width:auto"/>
+                <span>Mania / mood episode</span>
+              </label>
+              <label class="behavior-legacy-check">
+                <input type="checkbox" name="prn_used_for_attention" style="width:auto"/>
+                <span>Attention / focus</span>
+              </label>
+              <label class="behavior-legacy-check">
+                <input type="checkbox" name="prn_used_for_anomalous_behavior" style="width:auto"/>
+                <span>Anomalous behavior</span>
+              </label>
+              <label class="behavior-legacy-check">
+                <input type="checkbox" name="prn_used_for_behavior_other" style="width:auto"/>
+                <span>Other</span>
               </label>
             </div>
-            <label id="anomalyNotesWrap" style="display:none">Anomaly details:<textarea name="behavior_anomaly_notes" placeholder="Describe what felt off, how long it lasted, what helped"></textarea></label>
-            <label>Behavior notes:<textarea name="behavior_notes" placeholder="What happened, what helped"></textarea></label>
+            <div class="behavior-legacy-paired-row">
+              <label>Medication used (optional):
+                <input class="behavior-legacy-small-input" type="text" name="behavior_support_prn_name" placeholder="e.g., hydroxyzine"/>
+              </label>
+              <label>Time given (optional):
+                <input type="time" name="behavior_support_prn_time"/>
+              </label>
+            </div>
           </div>
           <div class="controls">
             <div class="left-actions"><button class="btn" type="button" data-save>Save</button><span class="action-note">Saves your progress so far so you can come back later.</span><span class="savedAt" data-savedat></span></div>
@@ -4652,7 +4747,20 @@
       if (maniaSymptomsWrap) maniaSymptomsWrap.style.display = focusYes ? '' : 'none';
       if (fixationCategoryWrap) fixationCategoryWrap.style.display = focusYes && fixationYes ? '' : 'none';
       if (!focusYes) {
-        ['fixation_present','repetitive_behavior_present','pressured_speech_present','grandiosity_present'].forEach((id) => {
+        [
+          'daydreaming_zoning_out_present',
+          'easily_distracted_environment_present',
+          'difficulty_staying_on_task_present',
+          'short_attention_span_present',
+          'fixation_present',
+          'repetitive_behavior_present',
+          'pressured_speech_present',
+          'grandiosity_present',
+          'difficulty_following_instructions_present',
+          'needs_frequent_redirection_present',
+          'hyperactive_restless_present',
+          'disengaged_low_motivation_present'
+        ].forEach((id) => {
           const input = document.getElementById(id);
           if (input) input.checked = false;
         });

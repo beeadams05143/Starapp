@@ -411,6 +411,11 @@
       box-shadow:0 8px 16px rgba(120,92,44,.05);
     }
     .movement-grid,.temp-grid{display:grid;gap:8px;grid-template-columns:minmax(0,1fr)}
+    .temp-row--illness{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .temp-grid--illness{grid-template-columns:repeat(2,minmax(0,1fr))}
+    @media (min-width: 900px){
+      .temp-grid--illness{grid-template-columns:repeat(4,minmax(0,1fr))}
+    }
     .movement-inline-input,.temp-inline-input{display:flex;gap:8px;align-items:center}
     .movement-inline-input input[type="text"],.temp-inline-input input[type="text"]{flex:1}
     .yn-pill-group{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
@@ -1120,17 +1125,17 @@
                 PRN used for symptoms / discomfort (e.g., ibuprofen or acetaminophen)
               </label>
             </div>
-            <div class="temp-row" style="margin-bottom:8px">
-              <label>PRN or support used (optional)
+            <div class="temp-row temp-row--illness" style="margin-bottom:8px">
+              <label>Medication used for symptoms (optional)
                 <input type="text" name="temp_prn_name" id="temp_prn_name" placeholder="Enter PRN, medication, or support used"/>
               </label>
-              <label>PRN time given (optional)
+              <label>Symptom medication time given (optional)
                 <input type="time" name="temp_prn_time" id="temp_prn_time"/>
               </label>
             </div>
 
             <div class="temp-body is-collapsed" data-temp-body-wrap>
-              <div class="temp-row">
+              <div class="temp-row temp-row--illness">
                 <div>
                   <label class="temp-label" for="temp_value">Temperature (if taken)</label>
                   <select name="temp_value" id="temp_value">
@@ -1167,7 +1172,7 @@
               </div>
 
               <div class="temp-label" style="margin-top:12px">Symptoms / concerns</div>
-              <div class="temp-grid">
+              <div class="temp-grid temp-grid--illness">
                 <label class="temp-chip"><input type="checkbox" data-temp-symptom value="pain_discomfort">Pain / discomfort</label>
                 <label class="temp-chip"><input type="checkbox" data-temp-symptom value="runny_nose">Runny nose</label>
                 <label class="temp-chip"><input type="checkbox" data-temp-symptom value="cough">Cough</label>

@@ -1811,6 +1811,7 @@
   };
 
   const DRAFT_KEY = 'cg-checkin-draft-v1';
+  const SUBMISSION_COMPLETE_KEY = 'submission_complete';
   const GROUP_KEY = 'currentGroupId';
   const MOVEMENT_LAST_KEY = 'cg-movement-last-v1';
   const APP_CONFIG_KEY = 'star_app_config';
@@ -4423,6 +4424,10 @@
     syncPublicActivityTypes();
     syncInteractionTypes();
     syncAdlMultiFields({ silent: true });
+    if (wasSubmissionCompleted()) {
+      resetForm();
+      clearSubmissionCompleteFlag();
+    }
     const movementCached = localStorage.getItem(MOVEMENT_LAST_KEY);
     if (movementEls.sameBtn) {
       movementEls.sameBtn.disabled = !movementCached;
@@ -5101,6 +5106,7 @@
       draft.savedAt[idx]=new Date().toISOString();
       try {
         localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+        localStorage.setItem(SUBMISSION_COMPLETE_KEY, 'false');
       } catch (err) {
         console.warn('[Caregiver Check-In] Draft save failed', err);
       }
@@ -5211,9 +5217,26 @@
     }
     function resetFormValues(){
       formEl.reset();
+      formEl.querySelectorAll('input[type="checkbox"]').forEach((el) => {
+        el.checked = false;
+      });
+      formEl.querySelectorAll('input[type="radio"]').forEach((el) => {
+        el.checked = el.value === 'no';
+      });
+      formEl.querySelectorAll('input[type="text"], input[type="time"], input[type="number"], textarea').forEach((el) => {
+        el.value = '';
+      });
+      formEl.querySelectorAll('select').forEach((el) => {
+        el.selectedIndex = 0;
+      });
+      formEl.querySelectorAll('input[type="range"]').forEach((el) => {
+        el.value = '0';
+      });
       if (entryDateInput) entryDateInput.value = todayISO();
       const iv=document.getElementById('intensityVal');
       if(iv) iv.textContent='0';
+      const manicIv=document.getElementById('manicIntensityVal');
+      if(manicIv) manicIv.textContent='0';
       resetAdlEntries();
       hydratePromptingSelects();
       clearFocusTrackingFields();
@@ -5228,9 +5251,18 @@
       setMedChangePresent(false);
       clearHomeCommunityAdlFields();
       renderAdlActivityChips();
+      if (behaviorTrackingField) behaviorTrackingField.value = '';
+      if (educationalTrackingField) educationalTrackingField.value = '';
       syncManiaControls();
       syncAppetiteControls();
       syncFixationControls();
+      applyConditionalSections();
+      applyCaregiverSetupVisibility();
+    }
+    function resetForm(){
+      clearDraftUI();
+      resetFormValues();
+      go(0);
     }
     function clearDraftUI(){
       draft={ data:{}, savedAt:{} };
@@ -5247,6 +5279,18 @@
       syncManiaControls();
       syncAppetiteControls();
       syncFixationControls();
+    }
+    function wasSubmissionCompleted(){
+      try {
+        return localStorage.getItem(SUBMISSION_COMPLETE_KEY) === 'true';
+      } catch {
+        return false;
+      }
+    }
+    function clearSubmissionCompleteFlag(){
+      try {
+        localStorage.removeItem(SUBMISSION_COMPLETE_KEY);
+      } catch {}
     }
     function toast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.style.opacity='1'; clearTimeout(el._t); el._t=setTimeout(()=>el.style.opacity='0',1400); }
     function showSuccessBanner(msg = 'Check-in submitted successfully'){
@@ -5598,8 +5642,10 @@
         const slot = document.getElementById('finalSubmittedAt');
         if (slot) slot.textContent = `SUBMITTED: ${when}`;
 
-        clearDraftUI();
-        resetFormValues();
+        try {
+          localStorage.setItem(SUBMISSION_COMPLETE_KEY, 'true');
+        } catch {}
+        resetForm();
         showSuccessBanner();
         showPostSubmitPrompt();
         if (onboardingActive) {

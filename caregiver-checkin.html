@@ -5097,7 +5097,10 @@
       step.querySelectorAll('input,select,textarea').forEach(el=>{
         const v = data[el.name]; if(v===undefined) return;
         if(el.type==='checkbox') el.checked = !!v;
-        else if(el.type==='radio') el.checked = (el.value===v);
+        else if(el.type==='radio'){
+          if (el.name === 'movement_present' || el.name === 'temp_present' || el.name === 'menstrual_present') return;
+          el.checked = (el.value===v);
+        }
         else el.value = v;
       });
     }

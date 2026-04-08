@@ -222,7 +222,8 @@ let userRole = "member";
 const userRolePromise = (async () => {
   try {
     const rows = await rest(`profiles?user_id=eq.${encodeURIComponent(USER_ID)}&select=role&limit=1`);
-    userRole = rows?.[0]?.role || "member";
+    const profile = rows?.[0] || null;
+    userRole = profile?.is_admin === true || profile?.role?.toLowerCase() === "admin" ? "admin" : "member";
   } catch (error) {
     console.warn("profile role load failed", error?.message || error);
   }

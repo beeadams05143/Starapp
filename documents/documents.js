@@ -218,6 +218,16 @@ if (!isPublicPage && !currentUser?.id) {
   throw new Error("Not logged in.");
 }
 const USER_ID = currentUser.id;
+let userRole = "member";
+const userRolePromise = (async () => {
+  try {
+    const rows = await rest(`profiles?user_id=eq.${encodeURIComponent(USER_ID)}&select=role&limit=1`);
+    userRole = rows?.[0]?.role || "member";
+  } catch (error) {
+    console.warn("profile role load failed", error?.message || error);
+  }
+  return userRole;
+})();
 const USER_NAME = currentUser.user_metadata?.full_name || currentUser.email || "Caregiver";
 
 const SHARE_PIN_KEY = "star_docs_share_pin";
@@ -1471,6 +1481,7 @@ async function loadDocuments() {
   if (!list) return;
   list.innerHTML = "";
   try {
+    await userRolePromise;
     const store = await ensureDocsStore();
     await renderDocuments(list, store.documents || []);
   } catch (error) {
@@ -1550,9 +1561,18 @@ function filterDocsByCategory(docs = []) {
 
 async function renderDocuments(list, docs) {
   const filtered = filterDocsByCategory(docs);
+  const visibleDocs = [];
+  const restrictedDocs = [];
+  filtered.forEach((doc) => {
+    if (userRole !== "admin" && doc.sensitivity_level === "restricted") {
+      restrictedDocs.push(doc);
+      return;
+    }
+    visibleDocs.push(doc);
+  });
 
   list.innerHTML = "";
-  for (const doc of filtered) {
+  for (const doc of visibleDocs) {
     const docId = doc.id || doc.storage_path || `doc-${Date.now()}-${Math.random().toString(16).slice(2)}`;
     if (!doc.id) doc.id = docId;
 
@@ -1683,7 +1703,14 @@ async function renderDocuments(list, docs) {
     list.appendChild(card);
   }
 
-  if (!filtered.length) {
+  restrictedDocs.forEach(() => {
+    const lockedCard = document.createElement("div");
+    lockedCard.className = "card";
+    lockedCard.textContent = "🔒 This document is restricted. Please contact your administrator.";
+    list.appendChild(lockedCard);
+  });
+
+  if (!visibleDocs.length && !restrictedDocs.length) {
     const empty = document.createElement("div");
     empty.className = "card";
     empty.textContent = CATEGORY_DISPLAY[activeCategory]?.emptyText || "No documents yet in this category.";

@@ -1700,6 +1700,53 @@ async function renderDocuments(list, docs) {
     shareBtn.setAttribute("aria-label", `Create a one-time share link for ${doc.title}`);
     linksHolder.appendChild(shareBtn);
 
+    if (userRole === "admin") {
+      const sensitivityWrap = document.createElement("div");
+      sensitivityWrap.style.display = "inline-flex";
+      sensitivityWrap.style.alignItems = "center";
+      sensitivityWrap.style.gap = "8px";
+
+      const sensitivitySelect = document.createElement("select");
+      sensitivitySelect.className = "input";
+      sensitivitySelect.style.width = "auto";
+      sensitivitySelect.style.minWidth = "140px";
+      sensitivitySelect.innerHTML = `
+        <option value="general">🔓 General</option>
+        <option value="restricted">🔒 Restricted</option>
+      `;
+      sensitivitySelect.value = doc.sensitivity_level || "general";
+
+      const savedNote = document.createElement("span");
+      savedNote.className = "muted";
+      savedNote.style.fontSize = "12px";
+      savedNote.style.opacity = "0";
+      savedNote.style.transition = "opacity 0.2s ease";
+      savedNote.textContent = "Saved";
+
+      let savedTimer = null;
+      sensitivitySelect.addEventListener("change", async () => {
+        const newValue = sensitivitySelect.value;
+        await rest(`documents?id=eq.${encodeURIComponent(docId)}`, {
+          method: "PATCH",
+          headers: { Prefer: "return=minimal" },
+          body: JSON.stringify({ sensitivity_level: newValue })
+        });
+        doc.sensitivity_level = newValue;
+        docsStore.documents = (docsStore.documents || []).map((item) =>
+          item.id === docId ? { ...item, sensitivity_level: newValue } : item
+        );
+        savedNote.style.opacity = "1";
+        clearTimeout(savedTimer);
+        savedTimer = setTimeout(() => {
+          savedNote.style.opacity = "0";
+        }, 2000);
+      });
+
+      sensitivityWrap.appendChild(sensitivitySelect);
+      sensitivityWrap.appendChild(savedNote);
+      linksHolder.appendChild(sensitivityWrap);
+    }
+
     list.appendChild(card);
   }
 

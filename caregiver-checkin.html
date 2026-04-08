@@ -4158,7 +4158,7 @@
   const clearMovementFields = ({ keepPresent = false } = {}) => {
     if (!keepPresent) {
       document.querySelectorAll('input[name="movement_present"]').forEach((el) => {
-        el.checked = el.value === 'no';
+        el.checked = false;
       });
     }
     document.querySelectorAll('input[name="movement_main_type"]').forEach((el) => (el.checked = false));
@@ -4183,7 +4183,7 @@
   const clearTempFields = ({ keepPresent = false } = {}) => {
     if (!keepPresent) {
       document.querySelectorAll('input[name="temp_present"]').forEach((el) => {
-        el.checked = el.value === 'no';
+        el.checked = false;
       });
     }
     ['temp_value', 'temp_method', 'temp_prn_name', 'temp_prn_time', 'temp_symptom_other', 'temp_notes']
@@ -4198,7 +4198,7 @@
   const clearMenstrualFields = ({ keepPresent = false } = {}) => {
     if (!keepPresent) {
       document.querySelectorAll('input[name="menstrual_present"]').forEach((el) => {
-        el.checked = el.value === 'no';
+        el.checked = false;
       });
     }
     ['menstrual_symptom_other', 'menstrual_notes']
@@ -4214,7 +4214,7 @@
     const present = String(data.movement_present || '').toLowerCase() === 'yes'
       || data.movement_present === true;
     document.querySelectorAll('input[name="movement_present"]').forEach((el) => {
-      el.checked = present ? el.value === 'yes' : el.value === 'no';
+      el.checked = present ? el.value === 'yes' : false;
     });
     setMovementPresent(present);
     if (!present) return;
@@ -4262,7 +4262,7 @@
     const present = String(data.temp_present || '').toLowerCase() === 'yes'
       || data.temp_present === true;
     document.querySelectorAll('input[name="temp_present"]').forEach((el) => {
-      el.checked = present ? el.value === 'yes' : el.value === 'no';
+      el.checked = present ? el.value === 'yes' : false;
     });
     setTempPresent(present);
     if (!present) return;
@@ -4289,7 +4289,7 @@
     const present = String(data.menstrual_present || '').toLowerCase() === 'yes'
       || data.menstrual_present === true;
     document.querySelectorAll('input[name="menstrual_present"]').forEach((el) => {
-      el.checked = present ? el.value === 'yes' : el.value === 'no';
+      el.checked = present ? el.value === 'yes' : false;
     });
     setMenstrualPresent(present);
     if (!present) return;

@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Privacy Policy — STAR App</title>
+  <style>
+    :root {
+      --page-bg: #fffefb;
+      --text: #243047;
+      --muted: #667188;
+      --border: #e6dcc7;
+      --panel: #ffffff;
+      --shadow: 0 14px 30px rgba(36, 48, 71, 0.08);
+      --font-sans: "Avenir Next","Segoe UI","Helvetica Neue",Arial,sans-serif;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      background: var(--page-bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+    }
+    .page {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 32px;
+    }
+    .back-btn {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 10px 16px;
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+    }
+    h1 {
+      margin: 20px 0 8px;
+      font-size: clamp(2rem, 4vw, 2.6rem);
+      line-height: 1.15;
+    }
+    .updated {
+      margin: 0 0 28px;
+      color: var(--muted);
+      font-size: 0.98rem;
+    }
+    section {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 22px 22px 20px;
+      margin-bottom: 18px;
+      box-shadow: var(--shadow);
+    }
+    h2 {
+      margin: 0 0 12px;
+      font-size: 1.2rem;
+      line-height: 1.3;
+    }
+    p {
+      margin: 0;
+      line-height: 1.65;
+      font-size: 1rem;
+    }
+    @media (max-width: 640px) {
+      .page {
+        padding: 20px;
+      }
+      section {
+        padding: 18px 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <button type="button" class="back-btn" onclick="history.back()">Back</button>
+
+    <h1>Privacy Policy — STAR App</h1>
+    <p class="updated">Last updated: April 2026</p>
+
+    <section>
+      <p>STAR (Support Tool for Autonomy and Reflection) is a caregiving support platform built for families, caregivers, and support teams. We take privacy seriously, especially because the data stored in this app includes sensitive health and caregiving information.</p>
+    </section>
+
+    <section>
+      <h2>What We Collect</h2>
+      <p>We collect the following information when you use STAR: your email address and display name when you create an account, caregiver check-in data including daily health observations, behavioral notes, medication tracking, sleep data, and activity logs, emergency medical information including diagnoses, medications, allergies, emergency contacts, preferred hospital, and insurance information, group membership information including which group you belong to and your role within that group, calendar events and meeting minutes created within the app, documents and files you upload including medical records, ISA paperwork, and other caregiving documents, chat messages sent within your group, and mood and focus tracking entries.</p>
+    </section>
+
+    <section>
+      <h2>How We Store It</h2>
+      <p>All data is stored securely using Supabase, a cloud database provider with industry-standard encryption. Files and attachments are stored in Supabase Storage with authenticated access only — no files are publicly accessible without a valid login. Data is associated with your group and is not shared across groups.</p>
+    </section>
+
+    <section>
+      <h2>Who Can See Your Data</h2>
+      <p>Only authenticated members of your group can access your group's data. Administrators within your group can see all data including documents marked as restricted. Caregiver members can see general documents and check-in data but cannot access documents marked as restricted by an administrator. We do not sell your data. We do not share your data with third parties except as required to operate the app (Supabase for storage, Netlify for hosting). No advertising is shown in this app and no data is used for advertising purposes.</p>
+    </section>
+
+    <section>
+      <h2>Sensitive Health Data</h2>
+      <p>STAR stores health-related information including diagnoses, medications, and behavioral observations. This data is visible only to members of your group. We recommend that group administrators regularly review which members have access and remove anyone who should no longer be part of the group.</p>
+    </section>
+
+    <section>
+      <h2>Data Retention</h2>
+      <p>Your data is retained as long as your account and group exist. If you wish to delete your data, contact your group administrator or reach out to us at the contact information below.</p>
+    </section>
+
+    <section>
+      <h2>How To Request Deletion</h2>
+      <p>To request deletion of your account and associated data, contact your group administrator or email us directly. We will process deletion requests within 30 days.</p>
+    </section>
+
+    <section>
+      <h2>Children's Privacy</h2>
+      <p>STAR is not intended for use by children under 13. If you believe a child under 13 has created an account, please contact us immediately.</p>
+    </section>
+
+    <section>
+      <h2>Changes To This Policy</h2>
+      <p>This privacy policy will be updated before the full public release of the STAR app. We will notify users of significant changes through the app.</p>
+    </section>
+
+    <section>
+      <h2>Contact</h2>
+      <p>For privacy questions or data deletion requests, contact North Star Systems through the app or via the contact information provided during onboarding.</p>
+    </section>
+  </main>
+
+  <script defer src="/scripts/appbar-drawer.js?v=2026.03.16B"></script>
+  <script defer src="/ui-shell.js?v=2026.03.16B"></script>
+</body>
+</html>

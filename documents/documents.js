@@ -1752,10 +1752,19 @@ async function renderDocuments(list, docs) {
     list.appendChild(card);
   }
 
-  restrictedDocs.forEach(() => {
+  restrictedDocs.forEach((doc) => {
     const lockedCard = document.createElement("div");
     lockedCard.className = "card";
-    lockedCard.textContent = "🔒 This document is restricted. Please contact your administrator.";
+    const dateStr = doc.content_json?.document_date
+      ? new Date(doc.content_json.document_date).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" })
+      : new Date(doc.created_at).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" });
+    lockedCard.innerHTML = `
+      <div class="row">
+        <div><strong>${doc.title}</strong> <span class="muted">(${doc.doc_type})</span></div>
+        <div class="muted">${dateStr}</div>
+      </div>
+      <div class="muted" style="margin-top:6px">🔒 This document is restricted. Please contact your administrator.</div>
+    `;
     list.appendChild(lockedCard);
   });
 

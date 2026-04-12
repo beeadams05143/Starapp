@@ -91,6 +91,30 @@
     }
     .message.ok { color: #0f766e; }
     .muted { color: var(--muted); font-size: 13px; font-style:italic; }
+    .consent-wrap {
+      margin-top: 14px;
+    }
+    .consent-check {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin: 0;
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 1.5;
+      color: var(--navy);
+    }
+    .consent-check input[type="checkbox"] {
+      width: auto;
+      margin: 3px 0 0;
+      flex: 0 0 auto;
+    }
+    .consent-check a {
+      color: #2563eb;
+    }
+    .consent-note {
+      margin: 8px 0 0 30px;
+    }
     .success-box {
       margin-top: 16px;
       padding: 16px;
@@ -294,7 +318,15 @@
         <label for="displayName">Name</label>
         <input id="displayName" type="text" autocomplete="name" placeholder="Your name" required />
 
-        <button id="saveProfileBtn" type="submit">Save Profile</button>
+        <div class="consent-wrap">
+          <label class="consent-check" for="profileConsent">
+            <input id="profileConsent" type="checkbox" required />
+            <span>I agree to the <a href="/privacy-policy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a> and <a href="/terms.html" target="_blank" rel="noopener noreferrer">Terms of Service</a>. I understand that this app stores personal health and caregiving information securely.</span>
+          </label>
+          <p class="muted consent-note">Your data is stored securely and is only accessible to members of your group.</p>
+        </div>
+
+        <button id="saveProfileBtn" type="submit" disabled>Save Profile</button>
       </form>
     </section>
 
@@ -389,6 +421,7 @@
     const createGroupForm = document.getElementById('createGroupForm');
     const joinGroupForm = document.getElementById('joinGroupForm');
     const displayNameEl = document.getElementById('displayName');
+    const profileConsentEl = document.getElementById('profileConsent');
     const groupNameEl = document.getElementById('groupName');
     const joinCodeEl = document.getElementById('joinCode');
     const saveProfileBtn = document.getElementById('saveProfileBtn');
@@ -427,6 +460,11 @@
     const setStatus = (text, ok = false) => {
       statusEl.textContent = text || '';
       statusEl.classList.toggle('ok', !!ok);
+    };
+
+    const syncProfileConsentState = () => {
+      if (!saveProfileBtn) return;
+      saveProfileBtn.disabled = !profileConsentEl?.checked;
     };
 
     function readPendingInvite() {
@@ -541,7 +579,8 @@
     };
 
     const setBusy = (on) => {
-      [saveProfileBtn, createGroupBtn, joinGroupBtn, continueAsIndividualBtn].forEach((btn) => {
+      if (saveProfileBtn) saveProfileBtn.disabled = on || !profileConsentEl?.checked;
+      [createGroupBtn, joinGroupBtn, continueAsIndividualBtn].forEach((btn) => {
         if (btn) btn.disabled = on;
       });
     };
@@ -606,6 +645,7 @@
     async function hydrate() {
       const session = getSessionFromStorage();
       currentUser = session?.user || null;
+      syncProfileConsentState();
       if (!currentUser?.id) {
         window.location.replace('auth.html');
         return;
@@ -658,6 +698,11 @@
     profileForm.addEventListener('submit', async (event) => {
       event.preventDefault();
       setStatus('');
+      if (!profileConsentEl?.checked) {
+        setStatus('Please agree to the Privacy Policy and Terms of Service before saving your profile.');
+        syncProfileConsentState();
+        return;
+      }
       setBusy(true);
       try {
         const payload = profilePayload();
@@ -670,6 +715,8 @@
         setBusy(false);
       }
     });
+
+    profileConsentEl?.addEventListener('change', syncProfileConsentState);
 
     createGroupForm.addEventListener('submit', async (event) => {
       event.preventDefault();

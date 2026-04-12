@@ -167,6 +167,31 @@
         width:100%;
       }
     }
+    .dashboard-legal-footer{
+      text-align:center;
+      padding: 8px 16px 20px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .dashboard-legal-links{
+      display:flex;
+      justify-content:center;
+      gap:14px;
+      flex-wrap:wrap;
+      margin-bottom:6px;
+    }
+    .dashboard-legal-links a{
+      color: var(--muted);
+      text-decoration:none;
+    }
+    .dashboard-legal-links a:hover{
+      text-decoration:underline;
+    }
+    .dashboard-legal-copy{
+      margin:0;
+      color: var(--muted);
+      font-size: 12px;
+    }
   </style>
 </head>
 
@@ -602,7 +627,13 @@
 <script defer src="./ui-shell.js?v=2026.03.29A"></script>
 <script defer src="./scripts/appbar-drawer.js?v=2026.03.29A"></script>
 
-
+<footer class="dashboard-legal-footer">
+  <div class="dashboard-legal-links">
+    <a href="/privacy-policy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
+    <a href="/terms.html" target="_blank" rel="noopener noreferrer">Terms of Service</a>
+  </div>
+  <p class="dashboard-legal-copy">© 2026 North Star Systems</p>
+</footer>
 
 </body>
 </html>

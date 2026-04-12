@@ -462,6 +462,17 @@
       <div class="drawer-item" data-role="shared">
         <a href="/emergency-medical.html"><span class="nav-icon">🚨</span><span class="nav-text">Emergency</span></a>
       </div>
+      <details data-role="shared">
+        <summary><span class="nav-icon">⚖️</span><span class="nav-text">Legal</span></summary>
+        <div class="detail-body">
+          <div class="detail-body-inner">
+            <div class="sub">
+              <a href="/privacy-policy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
+              <a href="/terms.html" target="_blank" rel="noopener noreferrer">Terms of Service</a>
+            </div>
+          </div>
+        </div>
+      </details>
     </nav>
   `;
 

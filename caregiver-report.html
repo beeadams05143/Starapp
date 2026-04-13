@@ -636,6 +636,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     <button id="fullShareBtn">📤 Share Full Report (PDF)</button>
     <button id="fullPrintBtn">🖨️ Print</button>
     <button id="calendarPrintBtn">🗓️ Print Calendar Only</button>
+    <button id="parentLetterBtn">💌 Parent Letter</button>
   </div>
 
   <main class="page">
@@ -1026,6 +1027,22 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       <p class="muted chart-range-label" id="reportSummaryRange">Range: Month</p>
       <p class="muted" id="reportSummaryEmpty">Summary will appear after data loads.</p>
       <ul id="reportSummaryList" aria-live="polite"></ul>
+    </div>
+    <div class="chart report-summary-inline" id="parentLetterCard" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <h4>Parent Letter</h4>
+        <div style="display:flex;gap:8px">
+          <button id="parentLetterPrint" class="btn" style="font-size:13px">🖨️ Print</button>
+          <button id="parentLetterClose" class="btn" style="font-size:13px">✕ Close</button>
+        </div>
+      </div>
+      <p class="muted" id="parentLetterRange"></p>
+      <div id="parentLetterBody" style="font-size:15px;line-height:1.7;color:#1a1a2e;white-space:pre-wrap;font-family:Georgia,serif"></div>
+      <p style="margin-top:16px;font-size:12px;color:#9ca3af;font-style:italic">
+        This letter was generated from caregiver check-in data recorded
+        in the STAR app. It is intended as a communication tool for
+        families and support teams, not a clinical document.
+      </p>
     </div>
     <div class="chart kpi-summary-inline" id="calendarQuickLook">
       <h4>Calendar Quick Look</h4>
@@ -1765,6 +1782,333 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       emptyEl.textContent = '';
     }
 
+    function generateParentLetter({
+      caregiverEntries = [],
+      moodEntries = [],
+      range = null,
+      rangeKey = 'month',
+      summary = null,
+      movementInsights = null,
+      profile = null
+    } = {}){
+      const safeSummary = summary || summarizeEntries(caregiverEntries);
+      const safeProfile = profile || reportConfigState.individual_profile || reportConfigState.individualProfile || null;
+      const name = safeProfile?.preferred_name || 'your person';
+      const pronouns = safeProfile?.pronouns || 'they';
+      const [subj, obj, poss] = {
+        he: ['He', 'him', 'his'],
+        she: ['She', 'her', 'her'],
+        they: ['They', 'them', 'their'],
+        name_only: [name, name, `${name}'s`]
+      }[pronouns] || ['They', 'them', 'their'];
+      const rangeLabel = range?.label || 'this period';
+      const paragraphs = [];
+      const entryCount = caregiverEntries.length;
+      const caregiverNames = [...new Set(
+        caregiverEntries.map((entry) => caregiverNameFromEntry(entry)).filter(Boolean)
+      )];
+      const caregiverText = caregiverNames.length ? caregiverNames.join(', ') : 'the support team';
+      const dateKeyFor = (entry = {}) => {
+        const dt = parseEntryDate(entry);
+        return dt ? dt.toISOString().slice(0, 10) : null;
+      };
+      const parseJsonishArray = (value) => {
+        if (Array.isArray(value)) return value;
+        if (!value) return [];
+        if (typeof value === 'string') {
+          try {
+            const parsed = JSON.parse(value);
+            return Array.isArray(parsed) ? parsed : [];
+          } catch {
+            return [];
+          }
+        }
+        return [];
+      };
+      const parseBehaviorTracking = (entry = {}) => parseJsonishArray(
+        entry?.payload?.behavior_tracking ?? entry?.behavior_tracking
+      );
+      const parseAdlEntriesLocal = (value) => parseJsonishArray(value).map((item) => {
+        if (!item || typeof item !== 'object') return null;
+        return {
+          category: item.category || item.name || item.label || item.skill || '',
+          ...item
+        };
+      }).filter(Boolean);
+      const formatCount = (count, singular, plural = `${singular}s`) => `${count} ${count === 1 ? singular : plural}`;
+      const joinList = (items = []) => {
+        const values = items.filter(Boolean);
+        if (values.length <= 1) return values[0] || '';
+        if (values.length === 2) return `${values[0]} and ${values[1]}`;
+        return `${values.slice(0, -1).join(', ')}, and ${values[values.length - 1]}`;
+      };
+      const supportSentence = (label, pct) => {
+        if (!Number.isFinite(pct)) return '';
+        if (pct === 100) return `${label} was completed on every logged shift.`;
+        if (pct >= 75) return `${label} was completed on most shifts.`;
+        if (pct > 0) return `${label} was completed on some shifts (${pct}% of check-ins).`;
+        return '';
+      };
+      const uniqueDaysForBehavior = (keys = []) => {
+        const daySet = new Set();
+        caregiverEntries.forEach((entry) => {
+          const dayKey = dateKeyFor(entry);
+          if (!dayKey) return;
+          const items = parseBehaviorTracking(entry);
+          if (items.some((item) => keys.includes(item?.key) && item?.occurred === true)) {
+            daySet.add(dayKey);
+          }
+        });
+        return daySet;
+      };
+      const positiveBehaviorLabels = {
+        identifies_feelings: 'naming feelings',
+        tolerates_frustration: 'working through frustration',
+        uses_coping_strategy: 'using coping strategies',
+        accepts_redirection: 'accepting redirection',
+        requests_break: 'asking for a break',
+        recovers_after_distress: 'recovering after hard moments',
+        tolerates_waiting: 'waiting with support',
+        tolerates_denial: 'handling "no" more calmly',
+        tolerates_change: 'adjusting to change',
+        responds_to_staff_direction: 'responding to caregiver direction',
+        returns_to_activity: 'returning to activities after a pause'
+      };
+      const positiveBehaviorKeys = Object.keys(positiveBehaviorLabels);
+      const concerningBehaviorLabels = {
+        anxiety_signs_present: 'worry or tension',
+        withdrawal_present: 'pulling back or disengaging',
+        distress_impacts_participation: 'distress affecting participation',
+        elevated_mood_indicators: 'elevated energy',
+        low_mood_indicators: 'lower mood',
+        pressured_speech_present: 'talking very quickly or being hard to redirect',
+        grandiose_statements_present: 'expressing some very big ideas or plans',
+        perseveration_present: 'getting stuck on certain topics or ideas',
+        compulsive_checking_repeating: 'a strong need to repeat certain routines'
+      };
+      const positiveSkillDays = uniqueDaysForBehavior(positiveBehaviorKeys);
+      const concernDaySets = Object.fromEntries(
+        Object.keys(concerningBehaviorLabels).map((key) => [key, uniqueDaysForBehavior([key])])
+      );
+      const allConcernDays = new Set(
+        Object.values(concernDaySets).flatMap((set) => Array.from(set))
+      );
+
+      paragraphs.push(`Dear Family,\n\nThis report covers ${rangeLabel} and includes ${entryCount} caregiver check-in${entryCount !== 1 ? 's' : ''} logged by ${caregiverText}.`);
+
+      const aggDays = safeSummary.behavior?.aggression?.days ?? 0;
+      const prnBehaviorDays = caregiverEntries.filter((entry) => {
+        const payload = entry?.payload || {};
+        return String(payload.prn_administered || '').toLowerCase() === 'yes'
+          || isAffirmative(payload.prn_used_for_aggression)
+          || isAffirmative(payload.prn_used_for_behavior_other)
+          || Boolean(payload.behavior_support_prn_name);
+      }).length;
+      const anomalyDays = caregiverEntries.filter((entry) => isAffirmative(entry?.payload?.anomaly_flag)).length;
+      const safetyLines = [];
+      if (aggDays > 0) {
+        safetyLines.push(`Caregivers noted some challenging behaviors toward others on ${formatCount(aggDays, 'day')}.`);
+      }
+      if (prnBehaviorDays > 0) {
+        safetyLines.push(`A support medication was used for behavioral reasons on ${formatCount(prnBehaviorDays, 'occasion')}.`);
+      }
+      if (anomalyDays > 0) {
+        safetyLines.push(`Caregivers flagged something unexpected on ${formatCount(anomalyDays, 'day')}.`);
+      }
+      if (!safetyLines.length) {
+        safetyLines.push('No safety concerns were flagged during this period.');
+      }
+      safetyLines.push('If you have questions about any specific incident, please reach out to your support team.');
+      paragraphs.push(safetyLines.join(' '));
+
+      const sleepValues = caregiverEntries
+        .map((entry) => pickNumber(entry?.hours_sleep, entry?.payload?.hours_sleep))
+        .filter((value) => Number.isFinite(value));
+      const avgSleep = sleepValues.length
+        ? Math.round((sleepValues.reduce((sum, value) => sum + value, 0) / sleepValues.length) * 10) / 10
+        : null;
+      const illnessDays = caregiverEntries.filter((entry) => {
+        const payload = entry?.payload || {};
+        return payload.temp_present === true
+          || /yes|true/i.test(String(payload.temp_present || ''))
+          || Boolean(payload.temp_value)
+          || isAffirmative(payload.sick_flag)
+          || isAffirmative(payload.appears_sick)
+          || ((payload.appears_good_health === false) || /no/i.test(String(payload.appears_good_health || '')));
+      }).length;
+      const appetiteDays = caregiverEntries.filter((entry) => hasAppetiteChange(entry) || hasAppetiteChange(entry?.payload)).length;
+      const prnMedicalDays = caregiverEntries.filter((entry) => {
+        const payload = entry?.payload || {};
+        return isAffirmative(payload.prn_used_for_sleep_disturbance)
+          || isAffirmative(payload.prn_used_for_symptoms_discomfort);
+      }).length;
+      const nightWakingDays = caregiverEntries.filter((entry) => {
+        const payload = entry?.payload || {};
+        return isAffirmative(payload.night_wake_flag)
+          || isAffirmative(payload.night_waking)
+          || pickNumber(payload.night_wake_count) > 0;
+      }).length;
+      const physicalLines = [];
+      if (avgSleep != null) physicalLines.push(`Sleep averaged around ${avgSleep} hours this period.`);
+      if (nightWakingDays > 0) physicalLines.push(`Night waking was noted on ${formatCount(nightWakingDays, 'day')}.`);
+      if (illnessDays > 0) physicalLines.push(`${subj} was not feeling well on ${formatCount(illnessDays, 'day')}.`);
+      if (appetiteDays > 0) physicalLines.push(`Caregivers noted a change in appetite on ${formatCount(appetiteDays, 'day')}.`);
+      if (prnMedicalDays > 0) physicalLines.push(`A support medication was used for physical comfort on ${formatCount(prnMedicalDays, 'occasion')}.`);
+      if (physicalLines.length) paragraphs.push(physicalLines.join(' '));
+
+      const hygienePct = safeSummary?.percents?.hygiene_yes;
+      const foodPct = safeSummary?.percents?.food_prep_yes;
+      const cleanupPct = safeSummary?.percents?.cleanup_yes;
+      const adlCounts = {};
+      caregiverEntries.forEach((entry) => {
+        const adlEntries = parseAdlEntriesLocal(entry?.adl_entries || entry?.payload?.adl_entries);
+        adlEntries.forEach((adl) => {
+          if (!adl.category) return;
+          adlCounts[adl.category] = (adlCounts[adl.category] || 0) + 1;
+        });
+      });
+      const sortedAdl = Object.entries(adlCounts).sort((a, b) => b[1] - a[1]);
+      const dailyLines = [];
+      const hygieneSentence = supportSentence('Personal hygiene', hygienePct);
+      const foodSentence = supportSentence('Food preparation', foodPct);
+      const cleanupSentence = supportSentence('Clean-up routines', cleanupPct);
+      if (hygieneSentence || foodSentence || cleanupSentence || sortedAdl.length) {
+        dailyLines.push('Daily living skills were supported throughout this period.');
+        if (hygieneSentence) dailyLines.push(hygieneSentence);
+        if (foodSentence) dailyLines.push(foodSentence);
+        if (cleanupSentence) dailyLines.push(cleanupSentence);
+        if (sortedAdl.length) {
+          dailyLines.push(`The most frequently supported daily living activity was ${sortedAdl[0][0]} (${formatCount(sortedAdl[0][1], 'time')}).`);
+          if (sortedAdl.length > 1) {
+            dailyLines.push(`Note for caregivers: ${sortedAdl[sortedAdl.length - 1][0]} was the least frequently practiced skill this period, so it may be worth focusing on next.`);
+          }
+        }
+      }
+      if (dailyLines.length) paragraphs.push(dailyLines.join(' '));
+
+      const positiveCounts = {};
+      caregiverEntries.forEach((entry) => {
+        parseBehaviorTracking(entry).forEach((item) => {
+          if (item?.occurred === true && positiveBehaviorLabels[item?.key]) {
+            positiveCounts[item.key] = (positiveCounts[item.key] || 0) + 1;
+          }
+        });
+      });
+      const topPositiveSkills = Object.entries(positiveCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 2)
+        .map(([key]) => positiveBehaviorLabels[key]);
+      const emotionalLines = [];
+      if (positiveSkillDays.size) {
+        emotionalLines.push(`${subj} showed some great regulation skills this period, including ${joinList(topPositiveSkills)}.`);
+      }
+      const anxietyDays = concernDaySets.anxiety_signs_present?.size || 0;
+      const elevatedEnergyDays = new Set([
+        ...Array.from(concernDaySets.elevated_mood_indicators || []),
+        ...Array.from(concernDaySets.pressured_speech_present || []),
+        ...Array.from(concernDaySets.grandiose_statements_present || [])
+      ]).size;
+      const withdrawalDays = concernDaySets.withdrawal_present?.size || 0;
+      const lowMoodDays = concernDaySets.low_mood_indicators?.size || 0;
+      const distressDays = concernDaySets.distress_impacts_participation?.size || 0;
+      const fastSpeechDays = concernDaySets.pressured_speech_present?.size || 0;
+      const bigIdeasDays = concernDaySets.grandiose_statements_present?.size || 0;
+      const stuckTopicDays = concernDaySets.perseveration_present?.size || 0;
+      const repeatingRoutineDays = concernDaySets.compulsive_checking_repeating?.size || 0;
+      if (anxietyDays > 0) emotionalLines.push(`Signs of worry or tension were noted on ${formatCount(anxietyDays, 'day')}.`);
+      if (elevatedEnergyDays > 0) {
+        const details = [];
+        if (fastSpeechDays > 0) details.push('talking very quickly');
+        if (bigIdeasDays > 0) details.push('expressing some very big ideas or plans');
+        if (stuckTopicDays > 0) details.push('getting stuck on certain topics or ideas');
+        if (repeatingRoutineDays > 0) details.push('showing a strong need to repeat routines');
+        emotionalLines.push(`Caregivers noticed some elevated energy patterns on ${formatCount(elevatedEnergyDays, 'day')}${details.length ? `, including ${joinList(details)}.` : '.'}`);
+      }
+      if (withdrawalDays > 0) emotionalLines.push(`${subj} seemed to pull back or disengage on ${formatCount(withdrawalDays, 'day')}.`);
+      if (lowMoodDays > 0 && !withdrawalDays) emotionalLines.push(`Lower-energy or down moments were noted on ${formatCount(lowMoodDays, 'day')}.`);
+      if (distressDays > 0) emotionalLines.push(`There were ${formatCount(distressDays, 'day')} when hard feelings affected participation in activities.`);
+      if (emotionalLines.length) paragraphs.push(emotionalLines.join(' '));
+
+      const focusAreas = Array.isArray(safeProfile?.focus_areas)
+        ? safeProfile.focus_areas.map((item) => String(item || '').trim()).filter(Boolean).slice(0, 3)
+        : [];
+      const positivePromptValues = caregiverEntries
+        .filter((entry) => parseBehaviorTracking(entry).some((item) => positiveBehaviorKeys.includes(item?.key) && item?.occurred === true))
+        .map((entry) => getPromptValue(entry))
+        .filter((value) => Number.isFinite(value));
+      const promptAvg = positivePromptValues.length
+        ? positivePromptValues.reduce((sum, value) => sum + value, 0) / positivePromptValues.length
+        : null;
+      const promptLabel = {
+        0: 'independently',
+        1: 'with minimal support',
+        2: 'with some support',
+        3: 'with frequent support',
+        4: 'with full support'
+      }[Math.round(promptAvg)] || 'with support';
+      const previousRange = getPreviousRangeWindow(range);
+      const caregiverSource = (cgState.filtered && cgState.filtered.length) ? cgState.filtered : (cgState.entries || []);
+      const previousEntries = previousRange ? filterEntriesByRange(caregiverSource, previousRange) : [];
+      const previousPositivePromptValues = previousEntries
+        .filter((entry) => parseBehaviorTracking(entry).some((item) => positiveBehaviorKeys.includes(item?.key) && item?.occurred === true))
+        .map((entry) => getPromptValue(entry))
+        .filter((value) => Number.isFinite(value));
+      const previousPromptAvg = previousPositivePromptValues.length
+        ? previousPositivePromptValues.reduce((sum, value) => sum + value, 0) / previousPositivePromptValues.length
+        : null;
+      const goalLines = [];
+      if (focusAreas.length) {
+        goalLines.push(`Current focus areas for ${name} include ${joinList(focusAreas)}.`);
+      }
+      if (promptAvg != null) {
+        goalLines.push(`Skills were practiced ${promptLabel} on average this period.`);
+        if (previousPromptAvg != null && promptAvg < previousPromptAvg - 0.25) {
+          goalLines.push('The level of support needed has been decreasing, which is a great sign of growing independence.');
+        }
+      }
+      if (goalLines.length) paragraphs.push(goalLines.join(' '));
+
+      const totalVoc = caregiverEntries.reduce((sum, entry) => sum + (pickNumber(entry?.vocational_time, entry?.vocational_minutes, entry?.payload?.vocational_time, entry?.payload?.vocational_minutes) || 0), 0);
+      const totalCom = caregiverEntries.reduce((sum, entry) => sum + (pickNumber(entry?.community_time, entry?.community_minutes, entry?.payload?.community_time, entry?.payload?.community_minutes) || 0), 0);
+      const communityActivities = [...new Set(caregiverEntries.flatMap((entry) => parseMultiValue(entry?.payload?.public_activity_type ?? entry?.public_activity_type)).filter(Boolean))];
+      const vocationalLines = [];
+      if (totalCom > 0) {
+        vocationalLines.push(`Community time this period totaled ${totalCom} minutes${communityActivities.length ? ` and included activities like ${joinList(communityActivities.slice(0, 3))}.` : '.'}`);
+      }
+      if (totalVoc > 0) {
+        vocationalLines.push(`Vocational activities were supported for ${totalVoc} minutes.`);
+      }
+      if (vocationalLines.length) paragraphs.push(vocationalLines.join(' '));
+
+      const poorSleepDays = new Set(
+        caregiverEntries
+          .filter((entry) => {
+            const hours = pickNumber(entry?.hours_sleep, entry?.payload?.hours_sleep);
+            return (Number.isFinite(hours) && hours < 8)
+              || isAffirmative(entry?.payload?.night_wake_flag)
+              || isAffirmative(entry?.payload?.night_waking)
+              || pickNumber(entry?.payload?.night_wake_count) > 0;
+          })
+          .map((entry) => dateKeyFor(entry))
+          .filter(Boolean)
+      );
+      const sleepOverlapDays = Array.from(poorSleepDays).filter((dayKey) => allConcernDays.has(dayKey)).length;
+      const noSafetyFlags = aggDays === 0 && prnBehaviorDays === 0 && anomalyDays === 0;
+      let patternParagraph = '';
+      if (sleepOverlapDays > 2 && allConcernDays.size > 2) {
+        patternParagraph = 'Something worth noting: sleep disruption and some behavioral patterns appeared to overlap during this period. This may be worth discussing with your support team or doctor.';
+      } else if (promptAvg != null && previousPromptAvg != null && promptAvg >= 3 && previousPromptAvg >= 3) {
+        patternParagraph = 'The level of support needed for daily skills has remained high for a few check-in periods. It may be helpful to review the current support approach with your team.';
+      } else if (noSafetyFlags && allConcernDays.size === 0 && promptAvg != null && promptAvg <= 2) {
+        patternParagraph = 'This was a strong period with no safety concerns, steady daily living skills, and good engagement with goals.';
+      }
+      if (patternParagraph) paragraphs.push(patternParagraph);
+
+      paragraphs.push(`Thank you for trusting the STAR team to support ${name}. Please don't hesitate to reach out with any questions about this report.\n\nWith care,\n${caregiverText}`);
+
+      return paragraphs.filter(Boolean).join('\n\n');
+    }
+
     function applyChartRange(){
       const rangeKey = document.getElementById('chartRangeSelect')?.value || 'month';
       const caregiverSource = (cgState.filtered && cgState.filtered.length) ? cgState.filtered : (cgState.entries || []);
@@ -2065,6 +2409,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       selectedItems: {},
       selectedCategories: new Set(),
       individualProfile: null,
+      individual_profile: null,
     };
     window.caregiverReportConfigState = reportConfigState;
 
@@ -2085,7 +2430,11 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     function setReportConfigState(configRow = null, groupId = null){
       const selectedItems = parseConfigObject(configRow?.selected_items);
       const isCustom = selectedItems?.__custom_mode__ === true;
-      const individualProfile = parseConfigObject(selectedItems?.__individual_profile);
+      const individualProfileRaw = configRow?.individual_profile
+        || selectedItems?.__individual_profile
+        || selectedItems?.__individual_profile__
+        || null;
+      const individualProfile = parseConfigObject(individualProfileRaw);
       const selectedCategories = new Set(
         Object.entries(selectedItems || {})
           .filter(([key, value]) => !String(key).startsWith('__') && Array.isArray(value) && value.length > 0)
@@ -2095,7 +2444,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       reportConfigState.isCustom = isCustom;
       reportConfigState.selectedItems = selectedItems || {};
       reportConfigState.selectedCategories = selectedCategories;
-      reportConfigState.individualProfile = individualProfile || null;
+      reportConfigState.individualProfile = Object.keys(individualProfile || {}).length ? individualProfile : null;
+      reportConfigState.individual_profile = Object.keys(individualProfile || {}).length ? individualProfile : null;
       window.caregiverReportConfigState = reportConfigState;
     }
 
@@ -2105,7 +2455,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         return null;
       }
       try {
-        const rows = await rest(`caregiver_checkin_configs?select=id,group_id,selected_items,updated_at&group_id=eq.${encodeURIComponent(groupId)}&order=updated_at.desc&limit=1`);
+        const rows = await rest(`caregiver_checkin_configs?select=id,group_id,selected_items,individual_profile,updated_at&group_id=eq.${encodeURIComponent(groupId)}&order=updated_at.desc&limit=1`);
         const configRow = Array.isArray(rows) ? rows[0] : rows;
         setReportConfigState(configRow || null, groupId);
         return configRow || null;
@@ -5800,6 +6150,37 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
   document.getElementById('fullShareBtn')?.addEventListener('click', shareFullReportPdf);
   document.getElementById('fullPrintBtn')?.addEventListener('click', printFullReport);
   document.getElementById('calendarPrintBtn')?.addEventListener('click', printCalendarOnly);
+  document.getElementById('parentLetterBtn')?.addEventListener('click', () => {
+    const rangeKey = document.getElementById('chartRangeSelect')?.value || 'month';
+    const source = (cgState.filtered && cgState.filtered.length) ? cgState.filtered : (cgState.entries || []);
+    const range = getChartRangeWindow(rangeKey, source);
+    const filtered = filterEntriesByRange(source, range);
+    const summary = summarizeEntries(filtered);
+    const movementInsights = buildMovementInsights(filtered);
+    const profile = reportConfigState.individual_profile || null;
+    const letter = generateParentLetter({
+      caregiverEntries: filtered,
+      moodEntries: window.latestMoodEntries || [],
+      range,
+      rangeKey,
+      summary,
+      movementInsights,
+      profile
+    });
+    const rangeEl = document.getElementById('parentLetterRange');
+    const bodyEl = document.getElementById('parentLetterBody');
+    const cardEl = document.getElementById('parentLetterCard');
+    if (!rangeEl || !bodyEl || !cardEl) return;
+    rangeEl.textContent = `Range: ${range?.label || rangeKey}`;
+    bodyEl.textContent = letter;
+    cardEl.style.display = '';
+    cardEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  document.getElementById('parentLetterClose')?.addEventListener('click', () => {
+    const cardEl = document.getElementById('parentLetterCard');
+    if (cardEl) cardEl.style.display = 'none';
+  });
+  document.getElementById('parentLetterPrint')?.addEventListener('click', () => window.print());
   document.getElementById('hcPrintBtn')?.addEventListener('click', printCalendarOnly);
   document.getElementById('hcShareBtn')?.addEventListener('click', () => exportCalendarPdf(true));
 

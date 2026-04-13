@@ -417,8 +417,57 @@
       font-size:13px;
       line-height:1.5;
     }
+    .wizard-label{
+      display:block;
+      margin:0 0 8px;
+      font-size:15px;
+      font-weight:800;
+      color:var(--accent);
+    }
+    .wizard-helper{
+      margin:0 0 12px;
+      color:#64748b;
+      line-height:1.55;
+      font-size:14px;
+    }
+    .wizard-input,
+    .wizard-textarea{
+      width:100%;
+      border:1px solid #cbd5e1;
+      border-radius:16px;
+      background:#fff;
+      color:var(--ink);
+      font:inherit;
+      padding:14px 16px;
+    }
+    .wizard-textarea{
+      min-height:110px;
+      resize:vertical;
+    }
+    .wizard-input:focus,
+    .wizard-textarea:focus{
+      outline:none;
+      border-color:#22c55e;
+      box-shadow:0 0 0 3px rgba(34,197,94,0.12);
+    }
+    .focus-area-list{
+      display:grid;
+      gap:10px;
+    }
+    .focus-area-actions{
+      margin-top:12px;
+    }
+    .chip-grid{
+      display:grid;
+      gap:12px;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+    }
     @media (max-width:720px){
       .option-grid{
+        grid-template-columns:1fr;
+      }
+      .chip-grid,
+      .picker-grid{
         grid-template-columns:1fr;
       }
       .wizard,
@@ -465,6 +514,64 @@
       </div>
 
       <div class="step" data-step="1">
+        <h2>Tell us about the person you support</h2>
+        <p>This helps personalize reports and the caregiver check-in experience.</p>
+        <div class="field-groups">
+          <div class="field-group">
+            <label class="wizard-label" for="individualPreferredName">What name should we use in reports?</label>
+            <input id="individualPreferredName" class="wizard-input" type="text" placeholder="e.g. Marcus, Sam, Ben" />
+          </div>
+
+          <div class="field-group">
+            <label class="wizard-label">Preferred pronouns</label>
+            <div class="picker-grid" id="pronounOptions">
+              <button class="picker-card" type="button" data-pronouns="he"><span class="picker-check"></span><span class="picker-text">He / Him</span></button>
+              <button class="picker-card" type="button" data-pronouns="she"><span class="picker-check"></span><span class="picker-text">She / Her</span></button>
+              <button class="picker-card" type="button" data-pronouns="they"><span class="picker-check"></span><span class="picker-text">They / Them</span></button>
+              <button class="picker-card" type="button" data-pronouns="name_only"><span class="picker-check"></span><span class="picker-text">Use name only</span></button>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label class="wizard-label">Age range</label>
+            <div class="picker-grid" id="ageRangeOptions">
+              <button class="picker-card" type="button" data-age-range="child"><span class="picker-check"></span><span class="picker-text">Child (under 13)</span></button>
+              <button class="picker-card" type="button" data-age-range="teen"><span class="picker-check"></span><span class="picker-text">Teen (13–17)</span></button>
+              <button class="picker-card" type="button" data-age-range="young_adult"><span class="picker-check"></span><span class="picker-text">Young Adult (18–25)</span></button>
+              <button class="picker-card" type="button" data-age-range="adult"><span class="picker-check"></span><span class="picker-text">Adult (26+)</span></button>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label class="wizard-label">Where does support happen? (select all that apply)</label>
+            <div class="chip-grid" id="supportSettingOptions">
+              <button class="picker-card" type="button" data-support-setting="Home / Family setting"><span class="picker-check"></span><span class="picker-text">Home / Family setting</span></button>
+              <button class="picker-card" type="button" data-support-setting="Residential / Group home"><span class="picker-check"></span><span class="picker-text">Residential / Group home</span></button>
+              <button class="picker-card" type="button" data-support-setting="School / Educational program"><span class="picker-check"></span><span class="picker-text">School / Educational program</span></button>
+              <button class="picker-card" type="button" data-support-setting="Day program"><span class="picker-check"></span><span class="picker-text">Day program</span></button>
+              <button class="picker-card" type="button" data-support-setting="Supported employment"><span class="picker-check"></span><span class="picker-text">Supported employment</span></button>
+              <button class="picker-card" type="button" data-support-setting="Independent living"><span class="picker-check"></span><span class="picker-text">Independent living</span></button>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label class="wizard-label">What are the most important things being worked on right now?</label>
+            <p class="wizard-helper">Keep it simple — these appear in the parent letter.</p>
+            <div class="focus-area-list" id="focusAreasWrap"></div>
+            <div class="focus-area-actions">
+              <button class="btn secondary" id="addFocusAreaBtn" type="button">+ Add another focus area</button>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label class="wizard-label" for="importantContextInput">Anything caregivers should always know?</label>
+            <p class="wizard-helper">This appears as a reminder in check-ins and reports.</p>
+            <textarea id="importantContextInput" class="wizard-textarea" maxlength="300" placeholder="e.g. Uses an AAC device, has a seizure disorder, does not like unexpected touch"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="step" data-step="2">
         <h2>What do you want to track?</h2>
         <p>Select all of the sections you want to include. After that, we’ll guide you through each selected section one-by-one in a continuous setup flow.</p>
         <div class="option-grid" id="trackingOptions">
@@ -547,7 +654,7 @@
         <div class="field-groups" id="sectionFieldGroups"></div>
       </div>
 
-      <div class="step" data-step="2">
+      <div class="step" data-step="3">
         <h2>Check-In Setup Summary</h2>
         <p>Review the sections you selected and the fields configured for each one before saving.</p>
         <div class="summary-box">
@@ -570,6 +677,8 @@
 
   <script type="module">
     import { getSessionFromStorage } from './supabaseClient.js?v=2026.03.29A';
+    import { rest } from './restClient.js?v=2026.03.29A';
+    import { ensureActiveGroupId } from './active-group.js?v=2026.03.29A';
     import { findExistingCaregiverConfig } from './onboarding-flow.js?v=2026.03.29A';
 
     const GUIDED_ONBOARDING_KEY = 'star_guided_onboarding_v1';
@@ -608,13 +717,14 @@
       }
     }
 
-    const MAIN_VIEWS = ['profile', 'sections', 'done'];
+    const MAIN_VIEWS = ['profile', 'individualProfile', 'sections', 'done'];
     const VIEW_TO_STEP_ID = {
       profile: '0',
-      sections: '1',
+      individualProfile: '1',
+      sections: '2',
       behaviorSetup: 'behavior-setup',
       sectionSetup: 'section-setup',
-      done: '2',
+      done: '3',
     };
     const SECTION_CONFIG_MAP = {
       dailyLiving: { configKey: 'show_daily_living', label: 'Daily Living' },
@@ -943,6 +1053,14 @@
         items: [],
         occasional: [],
       },
+      individualProfile: {
+        preferred_name: '',
+        pronouns: '',
+        age_range: '',
+        support_settings: [],
+        focus_areas: [''],
+        important_context: '',
+      },
     };
 
     const steps = Array.from(document.querySelectorAll('.step'));
@@ -965,6 +1083,13 @@
     const sectionSetupHeading = document.getElementById('sectionSetupHeading');
     const sectionSetupMeta = document.getElementById('sectionSetupMeta');
     const sectionFieldGroups = document.getElementById('sectionFieldGroups');
+    const individualPreferredNameInput = document.getElementById('individualPreferredName');
+    const pronounButtons = Array.from(document.querySelectorAll('[data-pronouns]'));
+    const ageRangeButtons = Array.from(document.querySelectorAll('[data-age-range]'));
+    const supportSettingButtons = Array.from(document.querySelectorAll('[data-support-setting]'));
+    const focusAreasWrap = document.getElementById('focusAreasWrap');
+    const addFocusAreaBtn = document.getElementById('addFocusAreaBtn');
+    const importantContextInput = document.getElementById('importantContextInput');
 
     function setMessage(text) {
       messageEl.textContent = text || '';
@@ -1031,9 +1156,154 @@
           menstrual_field_settings: parsed.menstrual_field_settings && typeof parsed.menstrual_field_settings === 'object'
             ? parsed.menstrual_field_settings
             : null,
+          individual_profile: parsed.individual_profile && typeof parsed.individual_profile === 'object'
+            ? parsed.individual_profile
+            : null,
         };
       } catch {
         return { ...DEFAULT_CONFIG };
+      }
+    }
+
+    function defaultAgeRangeForProfile(profile = '') {
+      if (String(profile || '').includes('child')) return 'child';
+      if (String(profile || '').includes('adult')) return 'adult';
+      return '';
+    }
+
+    function normalizeIndividualProfile(raw = {}) {
+      const focusAreas = Array.isArray(raw?.focus_areas)
+        ? raw.focus_areas.map((entry) => String(entry || '')).slice(0, 3)
+        : [];
+      return {
+        preferred_name: typeof raw?.preferred_name === 'string' ? raw.preferred_name : '',
+        pronouns: ['he', 'she', 'they', 'name_only'].includes(raw?.pronouns) ? raw.pronouns : '',
+        age_range: ['child', 'teen', 'young_adult', 'adult'].includes(raw?.age_range) ? raw.age_range : '',
+        support_settings: Array.isArray(raw?.support_settings)
+          ? raw.support_settings.map((entry) => String(entry || '').trim()).filter(Boolean)
+          : [],
+        focus_areas: focusAreas.length ? focusAreas : [''],
+        important_context: typeof raw?.important_context === 'string' ? raw.important_context : '',
+      };
+    }
+
+    function buildIndividualProfilePayload() {
+      const importantContext = String(state.individualProfile.important_context || '').trim();
+      return {
+        preferred_name: String(state.individualProfile.preferred_name || '').trim(),
+        pronouns: state.individualProfile.pronouns,
+        age_range: state.individualProfile.age_range,
+        support_settings: Array.isArray(state.individualProfile.support_settings)
+          ? state.individualProfile.support_settings.filter(Boolean)
+          : [],
+        focus_areas: Array.isArray(state.individualProfile.focus_areas)
+          ? state.individualProfile.focus_areas.map((entry) => String(entry || '').trim()).filter(Boolean)
+          : [],
+        important_context: importantContext || null,
+      };
+    }
+
+    function buildSupabaseSelectedItems() {
+      const config = buildCaregiverConfig();
+      const selectedItems = {
+        __custom_mode__: true,
+        __individual_profile: buildIndividualProfilePayload(),
+      };
+      const selectedCategories = [];
+
+      if (config.show_daily_living) {
+        selectedCategories.push('daily_living');
+        selectedItems.daily_living = [];
+        if (state.dailyLiving.items.includes('hygiene')) selectedItems.daily_living.push('hygiene');
+        if (state.dailyLiving.items.includes('meals')) selectedItems.daily_living.push('food_preparation');
+        if (state.dailyLiving.items.includes('personal_care')) {
+          selectedItems.daily_living.push('dressing', 'toileting');
+        }
+      }
+
+      const physicalItems = [];
+      if (state.dailyLiving.items.includes('sleep') || config.health_fields?.sleep === true) physicalItems.push('sleep');
+      if (config.health_fields?.appetite === true || state.dailyLiving.items.includes('meals')) physicalItems.push('appetite');
+      if (config.health_fields?.tired === true || config.health_fields?.sleep === true || state.dailyLiving.items.includes('sleep')) physicalItems.push('energy_level');
+      if (config.health_fields?.good_health === true) physicalItems.push('good_health');
+      if (state.dailyLiving.occasional.includes('illness_symptoms') || config.health_fields?.illness_symptoms === true) physicalItems.push('illness_symptoms');
+      if (state.dailyLiving.occasional.includes('pain') || config.health_fields?.pain === true) physicalItems.push('pain_discomfort');
+      if (state.dailyLiving.occasional.includes('medication_changes') || config.health_fields?.medication_changes === true) physicalItems.push('medication_taken');
+      if (state.dailyLiving.occasional.includes('prn') || config.health_fields?.prn === true) physicalItems.push('prn_used');
+      if (config.show_menstrual) physicalItems.push('menstrual_tracking');
+      if (physicalItems.length || config.show_movement || config.show_health || config.show_menstrual) {
+        selectedCategories.push('physical_health');
+        selectedItems.physical_health = Array.from(new Set(physicalItems));
+      }
+
+      if (config.show_behavior) {
+        selectedCategories.push('behavior_mental_health');
+        selectedItems.behavior_mental_health = [...state.behaviorSetup.behaviors];
+      }
+      if (config.show_community) {
+        selectedCategories.push('community');
+        selectedItems.community = [];
+        if (config.community_fields?.outings) selectedItems.community.push('community_outing');
+        if (config.community_fields?.community_participation) selectedItems.community.push('recreation_participation');
+        if (config.community_fields?.social_engagement) selectedItems.community.push('social_interaction');
+      }
+      if (config.show_vocational) {
+        selectedCategories.push('vocational');
+        selectedItems.vocational = [];
+        if (config.vocational_fields?.job_participation) selectedItems.vocational.push('attended_work_program');
+        if (config.vocational_fields?.task_completion) selectedItems.vocational.push('task_completion');
+        if (config.vocational_fields?.work_skills) selectedItems.vocational.push('independence');
+      }
+      if (config.show_educational) {
+        selectedCategories.push('educational');
+        selectedItems.educational = ['learning_goals'];
+      }
+
+      return {
+        selected_categories: Array.from(new Set(selectedCategories)),
+        selected_items: selectedItems,
+      };
+    }
+
+    async function persistCaregiverConfigToSupabase(config) {
+      const session = getSessionFromStorage();
+      const userId = session?.user?.id || null;
+      if (!userId) return null;
+      const groupId = await ensureActiveGroupId(userId);
+      const payload = {
+        group_id: groupId || null,
+        individual_id: userId,
+        ...buildSupabaseSelectedItems(),
+        updated_at: new Date().toISOString(),
+      };
+
+      let existing = null;
+      try {
+        if (groupId) {
+          const rows = await rest(`caregiver_checkin_configs?group_id=eq.${encodeURIComponent(groupId)}&select=id&order=updated_at.desc.nullslast&limit=1`);
+          existing = rows?.[0] || null;
+        }
+        if (!existing) {
+          const rows = await rest(`caregiver_checkin_configs?individual_id=eq.${encodeURIComponent(userId)}&select=id&order=updated_at.desc.nullslast&limit=1`);
+          existing = rows?.[0] || null;
+        }
+        if (existing?.id) {
+          const rows = await rest(`caregiver_checkin_configs?id=eq.${encodeURIComponent(existing.id)}`, {
+            method: 'PATCH',
+            headers: { Prefer: 'return=representation' },
+            body: JSON.stringify(payload),
+          });
+          return rows?.[0] || null;
+        }
+        const rows = await rest('caregiver_checkin_configs', {
+          method: 'POST',
+          headers: { Prefer: 'return=representation' },
+          body: JSON.stringify([payload]),
+        });
+        return rows?.[0] || null;
+      } catch (error) {
+        console.warn('[cg-setup-wizard] caregiver config save failed', error?.message || error);
+        return null;
       }
     }
 
@@ -1086,6 +1356,10 @@
       state.behaviorSetup.custom_behaviors = Array.isArray(behaviorFields.custom_behaviors) ? behaviorFields.custom_behaviors : [];
       state.behaviorSetup.supports = Array.isArray(behaviorFields.supports) ? behaviorFields.supports : [];
       state.behaviorSetup.notes_enabled = behaviorFields.notes_enabled === true;
+      state.individualProfile = normalizeIndividualProfile(config.individual_profile || {});
+      if (!state.individualProfile.age_range) {
+        state.individualProfile.age_range = defaultAgeRangeForProfile(state.selectedProfile);
+      }
       const dailyLivingConfig = config.daily_living && typeof config.daily_living === 'object' ? config.daily_living : {};
       state.dailyLiving.items = Array.isArray(dailyLivingConfig.items) ? [...dailyLivingConfig.items] : [];
       state.dailyLiving.occasional = Array.isArray(dailyLivingConfig.occasional) ? [...dailyLivingConfig.occasional] : [];
@@ -1144,6 +1418,60 @@
       profileButtons.forEach((button) => {
         button.classList.toggle('active', button.dataset.profile === state.selectedProfile);
       });
+    }
+
+    function updateIndividualProfileButtons() {
+      pronounButtons.forEach((button) => {
+        const active = button.dataset.pronouns === state.individualProfile.pronouns;
+        button.classList.toggle('active', active);
+        const check = button.querySelector('.picker-check');
+        if (check) check.textContent = active ? '✓' : '';
+      });
+      ageRangeButtons.forEach((button) => {
+        const active = button.dataset.ageRange === state.individualProfile.age_range;
+        button.classList.toggle('active', active);
+        const check = button.querySelector('.picker-check');
+        if (check) check.textContent = active ? '✓' : '';
+      });
+      supportSettingButtons.forEach((button) => {
+        const active = state.individualProfile.support_settings.includes(button.dataset.supportSetting || '');
+        button.classList.toggle('active', active);
+        const check = button.querySelector('.picker-check');
+        if (check) check.textContent = active ? '✓' : '';
+      });
+      if (individualPreferredNameInput && individualPreferredNameInput.value !== state.individualProfile.preferred_name) {
+        individualPreferredNameInput.value = state.individualProfile.preferred_name;
+      }
+      if (importantContextInput && importantContextInput.value !== state.individualProfile.important_context) {
+        importantContextInput.value = state.individualProfile.important_context;
+      }
+    }
+
+    function renderFocusAreas() {
+      if (!focusAreasWrap) return;
+      const currentFocusAreas = Array.isArray(state.individualProfile.focus_areas) && state.individualProfile.focus_areas.length
+        ? state.individualProfile.focus_areas.slice(0, 3)
+        : [''];
+      state.individualProfile.focus_areas = currentFocusAreas;
+      focusAreasWrap.innerHTML = currentFocusAreas.map((value, index) => `
+        <input
+          class="wizard-input"
+          type="text"
+          data-focus-area-index="${index}"
+          value="${String(value || '').replace(/"/g, '&quot;')}"
+          placeholder="${index === 0 ? 'e.g. Learning to request breaks independently' : index === 1 ? 'e.g. Building community connections' : 'e.g. Managing anxiety in new situations'}"
+        />
+      `).join('');
+      focusAreasWrap.querySelectorAll('[data-focus-area-index]').forEach((input) => {
+        input.addEventListener('input', (event) => {
+          const index = Number(event.target.dataset.focusAreaIndex);
+          state.individualProfile.focus_areas[index] = event.target.value || '';
+          persistCaregiverConfigDraft();
+        });
+      });
+      if (addFocusAreaBtn) {
+        addFocusAreaBtn.style.display = currentFocusAreas.length >= 3 ? 'none' : '';
+      }
     }
 
     function syncMenstrualAvailability() {
@@ -1374,6 +1702,24 @@
         setMessage('Choose who this setup is for before continuing.');
         return false;
       }
+      if (state.currentView === 'individualProfile') {
+        if (!String(state.individualProfile.preferred_name || '').trim()) {
+          setMessage('Enter the preferred name to use in reports.');
+          return false;
+        }
+        if (!state.individualProfile.pronouns) {
+          setMessage('Choose preferred pronouns before continuing.');
+          return false;
+        }
+        if (!state.individualProfile.age_range) {
+          setMessage('Choose an age range before continuing.');
+          return false;
+        }
+        if (!Array.isArray(state.individualProfile.support_settings) || !state.individualProfile.support_settings.length) {
+          setMessage('Choose at least one support setting before continuing.');
+          return false;
+        }
+      }
       if (state.currentView === 'sections' && state.selectedSections.length === 0) {
         setMessage('Choose at least one section to track.');
         return false;
@@ -1425,14 +1771,17 @@
       nextBtn.textContent = state.currentView === 'done' ? 'Save Check-In Setup' : 'Next';
 
       updateProfileButtons();
+      updateIndividualProfileButtons();
       updateSectionCards();
       updateSummary();
+      renderFocusAreas();
       renderBehaviorSubstep();
       renderSectionSetup();
     }
 
     function buildCaregiverConfig() {
       return {
+        individual_profile: buildIndividualProfilePayload(),
         show_daily_living: state.selectedSections.includes('dailyLiving') && state.selected.dailyLiving,
         show_behavior: state.selectedSections.includes('behavior') && state.selected.behavior,
         show_movement: state.selectedSections.includes('movement') && state.selected.movement,
@@ -1472,9 +1821,10 @@
       localStorage.setItem('caregiver_config', JSON.stringify(buildCaregiverConfig()));
     }
 
-    function saveConfigAndContinue() {
+    async function saveConfigAndContinue() {
       const config = buildCaregiverConfig();
       localStorage.setItem('caregiver_config', JSON.stringify(config));
+      await persistCaregiverConfigToSupabase(config);
       setMessage('Caregiver setup saved! Taking you to your check-in...');
       if (onboardingActive) {
         writeGuidedOnboardingStep('practice_checkin');
@@ -1487,6 +1837,9 @@
     profileButtons.forEach((button) => {
       button.addEventListener('click', () => {
         state.selectedProfile = button.dataset.profile || '';
+        if (!state.individualProfile.age_range) {
+          state.individualProfile.age_range = defaultAgeRangeForProfile(state.selectedProfile);
+        }
         if (state.selectedProfile.includes('male')) {
           state.selected.menstrual = false;
         }
@@ -1494,6 +1847,55 @@
         persistCaregiverConfigDraft();
         updateWizard();
       });
+    });
+
+    pronounButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        state.individualProfile.pronouns = button.dataset.pronouns || '';
+        setMessage('');
+        persistCaregiverConfigDraft();
+        updateWizard();
+      });
+    });
+
+    ageRangeButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        state.individualProfile.age_range = button.dataset.ageRange || '';
+        setMessage('');
+        persistCaregiverConfigDraft();
+        updateWizard();
+      });
+    });
+
+    supportSettingButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        const value = button.dataset.supportSetting || '';
+        const list = Array.isArray(state.individualProfile.support_settings) ? state.individualProfile.support_settings : [];
+        state.individualProfile.support_settings = list.includes(value)
+          ? list.filter((entry) => entry !== value)
+          : [...list, value];
+        setMessage('');
+        persistCaregiverConfigDraft();
+        updateWizard();
+      });
+    });
+
+    individualPreferredNameInput?.addEventListener('input', (event) => {
+      state.individualProfile.preferred_name = event.target.value || '';
+      persistCaregiverConfigDraft();
+    });
+
+    importantContextInput?.addEventListener('input', (event) => {
+      state.individualProfile.important_context = String(event.target.value || '').slice(0, 300);
+      persistCaregiverConfigDraft();
+    });
+
+    addFocusAreaBtn?.addEventListener('click', () => {
+      const focusAreas = Array.isArray(state.individualProfile.focus_areas) ? state.individualProfile.focus_areas : [''];
+      if (focusAreas.length >= 3) return;
+      state.individualProfile.focus_areas = [...focusAreas, ''];
+      persistCaregiverConfigDraft();
+      updateWizard();
     });
 
     behaviorAddBtn?.addEventListener('click', addCustomBehavior);

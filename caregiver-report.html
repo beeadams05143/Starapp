@@ -2064,6 +2064,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       isCustom: false,
       selectedItems: {},
       selectedCategories: new Set(),
+      individualProfile: null,
     };
     window.caregiverReportConfigState = reportConfigState;
 
@@ -2084,6 +2085,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     function setReportConfigState(configRow = null, groupId = null){
       const selectedItems = parseConfigObject(configRow?.selected_items);
       const isCustom = selectedItems?.__custom_mode__ === true;
+      const individualProfile = parseConfigObject(selectedItems?.__individual_profile);
       const selectedCategories = new Set(
         Object.entries(selectedItems || {})
           .filter(([key, value]) => !String(key).startsWith('__') && Array.isArray(value) && value.length > 0)
@@ -2093,6 +2095,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       reportConfigState.isCustom = isCustom;
       reportConfigState.selectedItems = selectedItems || {};
       reportConfigState.selectedCategories = selectedCategories;
+      reportConfigState.individualProfile = individualProfile || null;
       window.caregiverReportConfigState = reportConfigState;
     }
 

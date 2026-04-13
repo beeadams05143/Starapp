@@ -4498,11 +4498,11 @@
     steps.forEach((step, idx) => {
       step.querySelector('[data-next]')?.addEventListener('click', () => {
         save(step, idx);
-        go(idx + 1);
+        go(idx + 1, true);
       });
       step.querySelector('[data-prev]')?.addEventListener('click', () => {
         save(step, idx, true);
-        go(idx - 1);
+        go(idx - 1, false);
       });
       step.querySelector('[data-save]')?.addEventListener('click', () => save(step, idx));
       let t;
@@ -4703,7 +4703,9 @@
     clearDadOnlySections();
 
     // Progress nav + show all
-    progItems.forEach((pi) => pi.addEventListener('click', () => go(Number(pi.dataset.step))));
+    progItems.forEach((pi) => pi.addEventListener('click', () =>
+      go(Number(pi.dataset.step), Number(pi.dataset.step) >= current)
+    ));
     toggleAllBtn?.addEventListener('click', () => {
       isExpanded = !isExpanded;
       syncWizardView({ scroll: true });
@@ -5127,16 +5129,25 @@
         el.classList.remove('is-dad-active');
       });
     }
-    function normalizeStepIndex(target){
+    function normalizeStepIndex(target, preferForward = true){
       if (!steps.length) return 0;
       const clamped = Math.max(0, Math.min(target, steps.length - 1));
       if (!isStepHidden(steps[clamped])) return clamped;
 
-      for (let offset = 1; offset < steps.length; offset += 1) {
-        const forward = clamped + offset;
-        if (forward < steps.length && !isStepHidden(steps[forward])) return forward;
-        const backward = clamped - offset;
-        if (backward >= 0 && !isStepHidden(steps[backward])) return backward;
+      if (preferForward) {
+        for (let i = clamped + 1; i < steps.length; i++) {
+          if (!isStepHidden(steps[i])) return i;
+        }
+        for (let i = clamped - 1; i >= 0; i--) {
+          if (!isStepHidden(steps[i])) return i;
+        }
+      } else {
+        for (let i = clamped - 1; i >= 0; i--) {
+          if (!isStepHidden(steps[i])) return i;
+        }
+        for (let i = clamped + 1; i < steps.length; i++) {
+          if (!isStepHidden(steps[i])) return i;
+        }
       }
       return clamped;
     }
@@ -5266,8 +5277,8 @@
 	        steps[current].scrollIntoView({ behavior: 'smooth', block: 'start' });
 	      }
 	    }
-    function go(i){
-      current = normalizeStepIndex(i);
+    function go(i, preferForward = true){
+      current = normalizeStepIndex(i, preferForward);
       syncWizardView({ scroll: true });
       updateProgress();
     }

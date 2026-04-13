@@ -3515,7 +3515,7 @@
     }
   }
 
-  function applyLegacyCheckinVisibility(){
+  function applyLegacyCheckinVisibility({ updateView = true } = {}){
     const subtitle = document.querySelector('.sub');
     if (subtitle) {
       subtitle.innerHTML = 'This check-in autosaves while you type. <strong>Save</strong> saves your progress so far so you can come back later. <strong>Save &amp; Next</strong> saves the current section and moves you to the next one.';
@@ -3566,18 +3566,20 @@
 
     renderAdlCategoryChips();
     renderAdlActivityChips();
-    current = normalizeStepIndex(current);
-    syncWizardView();
-    updateProgress();
+    if (updateView) {
+      current = normalizeStepIndex(current);
+      syncWizardView();
+      updateProgress();
+    }
   }
 
-  function applyCaregiverSetupVisibility(){
+  function applyCaregiverSetupVisibility({ updateView = true } = {}){
     const subtitle = document.querySelector('.sub');
     if (subtitle && caregiverSetupState.groupName) {
       subtitle.innerHTML = `This check-in autosaves while you type. <strong>Save</strong> saves your progress so far so you can come back later. <strong>Save &amp; Next</strong> saves the current section and moves you to the next one. Configured for ${caregiverSetupState.groupName}.`;
     }
     if (caregiverSetupState.forceLegacyMode || !caregiverSetupState.hasConfig) {
-      applyLegacyCheckinVisibility();
+      applyLegacyCheckinVisibility({ updateView });
       return;
     }
 
@@ -3730,9 +3732,11 @@
 
     renderAdlCategoryChips();
     renderAdlActivityChips();
-    current = normalizeStepIndex(current);
-    syncWizardView();
-    updateProgress();
+    if (updateView) {
+      current = normalizeStepIndex(current);
+      syncWizardView();
+      updateProgress();
+    }
   }
 
   const parseAdlEntries = (value) => {
@@ -4911,7 +4915,7 @@
       if (nightWrap) nightWrap.style.display = nightChecked ? '' : 'none';
       if (!nightChecked && nightCount) nightCount.value = '';
 
-      applyCaregiverSetupVisibility();
+      applyCaregiverSetupVisibility({ updateView: false });
     };
 
     // ADL activity options

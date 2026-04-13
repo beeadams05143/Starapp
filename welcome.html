@@ -68,6 +68,7 @@
   </main>
   <script type="module">
     import { rest, getSessionFromStorage } from './restClient.js';
+    import { setOnboardingCompletionState } from './onboarding-flow.js?v=2026.03.16B';
 
     const continueBtn = document.getElementById('continueBtn');
 
@@ -79,6 +80,11 @@
         headers: { Prefer: 'return=representation' },
         body: JSON.stringify({ onboarding_step: 'checkin' }),
       });
+      try {
+        await setOnboardingCompletionState(session.user.id, true);
+      } catch (error) {
+        console.warn('[WELCOME] could not persist onboarding_complete', error);
+      }
       import('./router.js').then(m => m.next());
     });
   </script>

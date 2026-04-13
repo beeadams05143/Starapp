@@ -5,6 +5,7 @@ const GROUP_KEY_ID = 'currentGroupId';
 const GROUP_KEY_NAME = 'currentGroupName';
 const DEFAULT_APP_NAME = 'STAR App';
 const GUIDED_ONBOARDING_KEY = 'star_guided_onboarding_v1';
+const ONBOARDING_COMPLETE_CACHE_KEY = 'star_onboarding_complete_cache_v1';
 const GUIDED_STEP_PATHS = {
   profile_setup: 'profile.html',
   feature_setup: 'feature-setup.html?onboarding=1',
@@ -33,10 +34,50 @@ function readGuidedOnboardingStore() {
   }
 }
 
+function readOnboardingCompletionCacheStore() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(ONBOARDING_COMPLETE_CACHE_KEY) || '{}');
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeOnboardingCompletionCache(userId = null, completed = false) {
+  if (!userId) return;
+  try {
+    const store = readOnboardingCompletionCacheStore();
+    store[userId] = !!completed;
+    localStorage.setItem(ONBOARDING_COMPLETE_CACHE_KEY, JSON.stringify(store));
+    localStorage.setItem('onboarding_complete', completed ? 'true' : 'false');
+  } catch {
+    // ignore storage failures
+  }
+}
+
+export function readCachedOnboardingCompletion(userId = null) {
+  const session = getSessionFromStorage();
+  const resolvedUserId = userId || session?.user?.id || null;
+  const directFallback = (() => {
+    try {
+      return localStorage.getItem('onboarding_complete');
+    } catch {
+      return null;
+    }
+  })();
+  if (!resolvedUserId) return directFallback === 'true' ? true : directFallback === 'false' ? false : undefined;
+  const store = readOnboardingCompletionCacheStore();
+  if (Object.prototype.hasOwnProperty.call(store, resolvedUserId)) {
+    return store[resolvedUserId] === true;
+  }
+  return directFallback === 'true' ? true : directFallback === 'false' ? false : undefined;
+}
+
 async function persistOnboardingCompletion(userId = null, completed = false) {
   const session = getSessionFromStorage();
   const resolvedUserId = userId || session?.user?.id || null;
   if (!resolvedUserId) return null;
+  writeOnboardingCompletionCache(resolvedUserId, completed);
   try {
     const rows = await rest(`profiles?id=eq.${encodeURIComponent(resolvedUserId)}`, {
       method: 'PATCH',
@@ -64,7 +105,7 @@ export async function getOnboardingCompletionState(userId = null) {
 export function resolveOnboardingCompletion(profile = null) {
   if (profile?.onboarding_complete === true) return true;
   if (profile && Object.prototype.hasOwnProperty.call(profile, 'onboarding_complete')) return false;
-  return undefined;
+  return readCachedOnboardingCompletion(profile?.id || null);
 }
 
 export async function fetchOnboardingCompletion(userId = null, profile = null) {

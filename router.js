@@ -1,4 +1,5 @@
 import { rest, getSessionFromStorage } from './restClient.js';
+import { readCachedOnboardingCompletion } from './onboarding-flow.js';
 
 export async function next() {
   const session = getSessionFromStorage();
@@ -7,10 +8,23 @@ export async function next() {
     return;
   }
 
-  const rows = await rest(
-    `profiles?id=eq.${encodeURIComponent(session.user.id)}&select=id,role,group_id,onboarding_step&limit=1`
-  );
-  const profile = Array.isArray(rows) ? rows[0] || null : null;
+  let profile = null;
+  try {
+    const rows = await rest(
+      `profiles?id=eq.${encodeURIComponent(session.user.id)}&select=id,role,group_id,onboarding_complete,onboarding_step&limit=1`
+    );
+    profile = Array.isArray(rows) ? rows[0] || null : null;
+  } catch (error) {
+    console.warn('[ROUTER] profile fetch failed, using onboarding cache fallback when available', error);
+  }
+  const onboardingComplete = profile && Object.prototype.hasOwnProperty.call(profile, 'onboarding_complete')
+    ? profile.onboarding_complete === true
+    : readCachedOnboardingCompletion(session.user.id);
+
+  if (onboardingComplete === true) {
+    window.location.href = 'dashboard.html';
+    return;
+  }
 
   if (!profile?.role) {
     window.location.href = 'role-select.html';

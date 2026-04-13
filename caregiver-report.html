@@ -2430,11 +2430,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     function setReportConfigState(configRow = null, groupId = null){
       const selectedItems = parseConfigObject(configRow?.selected_items);
       const isCustom = selectedItems?.__custom_mode__ === true;
-      const individualProfileRaw = configRow?.individual_profile
-        || selectedItems?.__individual_profile
-        || selectedItems?.__individual_profile__
-        || null;
-      const individualProfile = parseConfigObject(individualProfileRaw);
+      const individualProfile = parseConfigObject(configRow?.selected_items)?.__individual_profile__ || null;
       const selectedCategories = new Set(
         Object.entries(selectedItems || {})
           .filter(([key, value]) => !String(key).startsWith('__') && Array.isArray(value) && value.length > 0)
@@ -2444,8 +2440,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       reportConfigState.isCustom = isCustom;
       reportConfigState.selectedItems = selectedItems || {};
       reportConfigState.selectedCategories = selectedCategories;
-      reportConfigState.individualProfile = Object.keys(individualProfile || {}).length ? individualProfile : null;
-      reportConfigState.individual_profile = Object.keys(individualProfile || {}).length ? individualProfile : null;
+      reportConfigState.individualProfile = individualProfile;
+      reportConfigState.individual_profile = individualProfile;
       window.caregiverReportConfigState = reportConfigState;
     }
 
@@ -2455,7 +2451,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         return null;
       }
       try {
-        const rows = await rest(`caregiver_checkin_configs?select=id,group_id,selected_items,individual_profile,updated_at&group_id=eq.${encodeURIComponent(groupId)}&order=updated_at.desc&limit=1`);
+        const rows = await rest(`caregiver_checkin_configs?select=id,group_id,selected_items,updated_at&group_id=eq.${encodeURIComponent(groupId)}&order=updated_at.desc&limit=1`);
         const configRow = Array.isArray(rows) ? rows[0] : rows;
         setReportConfigState(configRow || null, groupId);
         return configRow || null;
@@ -5836,6 +5832,37 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     cgInputs.csv?.addEventListener('click', exportCaregiverCsv);
     cgInputs.pdf?.addEventListener('click', exportCaregiverPdf);
     cgInputs.sharePdf?.addEventListener('click', shareCaregiverPdf);
+    document.getElementById('parentLetterBtn')?.addEventListener('click', () => {
+      const rangeKey = document.getElementById('chartRangeSelect')?.value || 'month';
+      const source = (cgState.filtered && cgState.filtered.length) ? cgState.filtered : (cgState.entries || []);
+      const range = getChartRangeWindow(rangeKey, source);
+      const filtered = filterEntriesByRange(source, range);
+      const summary = summarizeEntries(filtered);
+      const movementInsights = buildMovementInsights(filtered);
+      const profile = reportConfigState.individual_profile || null;
+      const letter = generateParentLetter({
+        caregiverEntries: filtered,
+        moodEntries: window.latestMoodEntries || [],
+        range,
+        rangeKey,
+        summary,
+        movementInsights,
+        profile
+      });
+      const rangeEl = document.getElementById('parentLetterRange');
+      const bodyEl = document.getElementById('parentLetterBody');
+      const cardEl = document.getElementById('parentLetterCard');
+      if (!rangeEl || !bodyEl || !cardEl) return;
+      rangeEl.textContent = `Range: ${range?.label || rangeKey}`;
+      bodyEl.textContent = letter;
+      cardEl.style.display = '';
+      cardEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    document.getElementById('parentLetterClose')?.addEventListener('click', () => {
+      const cardEl = document.getElementById('parentLetterCard');
+      if (cardEl) cardEl.style.display = 'none';
+    });
+    document.getElementById('parentLetterPrint')?.addEventListener('click', () => window.print());
     quickLookUi.toggle?.addEventListener('click', () => toggleQuickLook());
     quickLookUi.close?.addEventListener('click', () => toggleQuickLook(false));
 
@@ -6150,37 +6177,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
   document.getElementById('fullShareBtn')?.addEventListener('click', shareFullReportPdf);
   document.getElementById('fullPrintBtn')?.addEventListener('click', printFullReport);
   document.getElementById('calendarPrintBtn')?.addEventListener('click', printCalendarOnly);
-  document.getElementById('parentLetterBtn')?.addEventListener('click', () => {
-    const rangeKey = document.getElementById('chartRangeSelect')?.value || 'month';
-    const source = (cgState.filtered && cgState.filtered.length) ? cgState.filtered : (cgState.entries || []);
-    const range = getChartRangeWindow(rangeKey, source);
-    const filtered = filterEntriesByRange(source, range);
-    const summary = summarizeEntries(filtered);
-    const movementInsights = buildMovementInsights(filtered);
-    const profile = reportConfigState.individual_profile || null;
-    const letter = generateParentLetter({
-      caregiverEntries: filtered,
-      moodEntries: window.latestMoodEntries || [],
-      range,
-      rangeKey,
-      summary,
-      movementInsights,
-      profile
-    });
-    const rangeEl = document.getElementById('parentLetterRange');
-    const bodyEl = document.getElementById('parentLetterBody');
-    const cardEl = document.getElementById('parentLetterCard');
-    if (!rangeEl || !bodyEl || !cardEl) return;
-    rangeEl.textContent = `Range: ${range?.label || rangeKey}`;
-    bodyEl.textContent = letter;
-    cardEl.style.display = '';
-    cardEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  });
-  document.getElementById('parentLetterClose')?.addEventListener('click', () => {
-    const cardEl = document.getElementById('parentLetterCard');
-    if (cardEl) cardEl.style.display = 'none';
-  });
-  document.getElementById('parentLetterPrint')?.addEventListener('click', () => window.print());
   document.getElementById('hcPrintBtn')?.addEventListener('click', printCalendarOnly);
   document.getElementById('hcShareBtn')?.addEventListener('click', () => exportCalendarPdf(true));
 

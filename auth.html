@@ -99,6 +99,16 @@
       <label for="password">Password</label>
       <input id="password" type="password" autocomplete="current-password" placeholder="Your password" required />
 
+      <div id="consentRow" style="margin-top:14px; display:flex; align-items:flex-start; gap:10px;">
+        <input id="consentCheck" type="checkbox" style="width:18px;height:18px;margin-top:2px;flex-shrink:0;accent-color:#22c55e;cursor:pointer;" />
+        <label for="consentCheck" style="font-weight:400;color:#667188;font-size:0.9rem;margin:0;cursor:pointer;">
+          I agree to the
+          <a href="/privacy-policy.html" target="_blank" style="color:#724016;">Privacy Policy</a>
+          and
+          <a href="/terms.html" target="_blank" style="color:#724016;">Terms of Service</a>
+        </label>
+      </div>
+
       <button id="continueBtn" type="submit">Continue</button>
     </form>
     <div id="message" role="status" aria-live="polite"></div>
@@ -226,6 +236,12 @@
       setMessage('');
       setBusy(true);
       try {
+        const consentCheck = document.getElementById('consentCheck');
+        if (!consentCheck.checked) {
+          setBusy(false);
+          setMessage('Please agree to the Privacy Policy and Terms of Service to continue.');
+          return;
+        }
         const email = (emailEl.value || '').trim();
         const password = passwordEl.value || '';
         const emailError = validateEmail(email);

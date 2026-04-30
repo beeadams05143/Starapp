@@ -1408,6 +1408,153 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       return `${y}-${m}-${d}`;
     };
 
+    function entryValue(entry = {}, key) {
+      const payload = entry.payload || {};
+      return entry[key] ?? payload[key] ?? null;
+    }
+
+    function hasProvidedValue(value) {
+      if (value === null || value === undefined) return false;
+      if (typeof value === 'string') return value.trim() !== '';
+      if (Array.isArray(value)) return value.length > 0;
+      return true;
+    }
+
+    function isYesValue(value) {
+      if (value === true) return true;
+      if (typeof value === 'number') return value > 0;
+      if (typeof value === 'string') {
+        return ['yes', 'y', 'true', '1', 'done', 'complete', 'completed'].includes(value.trim().toLowerCase());
+      }
+      return false;
+    }
+
+    function parseAdlEntriesForSummary(value) {
+      if (!value) return [];
+      if (Array.isArray(value)) return value.filter((item) => item && typeof item === 'object');
+      if (typeof value !== 'string') return [];
+      try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed.filter((item) => item && typeof item === 'object') : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function labelFromAdlEntry(item = {}) {
+      return String(
+        item.category ||
+        item.activity ||
+        item.label ||
+        item.name ||
+        item.skill ||
+        item.task ||
+        ''
+      ).trim();
+    }
+
+    function rowsFromCounts(counts) {
+      return Array.from(counts.entries())
+        .map(([label, count]) => ({ label, count }))
+        .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
+        .slice(0, 5);
+    }
+
+    function buildParticipationSummary(entries = []) {
+      const vocationalDays = new Set();
+      const homeDays = new Set();
+      const publicDays = new Set();
+      const adlDays = new Set();
+      const homeCounts = new Map();
+      const publicCounts = new Map();
+      const adlCounts = new Map();
+      let vocationalSessions = 0;
+      let homeSessions = 0;
+      let publicSessions = 0;
+      let vocationalMinutes = 0;
+      let homeMinutes = 0;
+      let publicMinutes = 0;
+      let adlTaskCount = 0;
+
+      entries.forEach((entry) => {
+        const dayKey = dayKeyFor(entry);
+        const vocationalFlag = entryValue(entry, 'vocational_participation');
+        const vocationalTimeRaw = entryValue(entry, 'vocational_time') ?? entryValue(entry, 'vocational_minutes');
+        const vocationalTime = pickMinutes(vocationalTimeRaw) || 0;
+        const vocationalProvided = hasProvidedValue(vocationalFlag) || hasProvidedValue(vocationalTimeRaw);
+        if (vocationalProvided) vocationalSessions += 1;
+        if (vocationalTime > 0 || isYesValue(vocationalFlag)) {
+          if (dayKey) vocationalDays.add(dayKey);
+        }
+        vocationalMinutes += vocationalTime;
+
+        const homeFlag = entryValue(entry, 'home_activity_flag');
+        const homeTimeRaw = entryValue(entry, 'home_activity_time') ?? entryValue(entry, 'home_time') ?? entryValue(entry, 'home_minutes');
+        const homeTime = pickMinutes(homeTimeRaw) || 0;
+        const homeTypes = parseMultiValue(entryValue(entry, 'home_activity_type'));
+        const homeProvided = hasProvidedValue(homeFlag) || hasProvidedValue(homeTimeRaw) || homeTypes.length > 0;
+        if (homeProvided) homeSessions += 1;
+        if (homeTime > 0 || isYesValue(homeFlag)) {
+          if (dayKey) homeDays.add(dayKey);
+        }
+        homeMinutes += homeTime;
+        homeTypes.forEach((type) => {
+          const label = normalizeActivityLabel(type);
+          if (label) homeCounts.set(label, (homeCounts.get(label) || 0) + 1);
+        });
+
+        const publicFlag = entryValue(entry, 'public_activity_flag');
+        const publicTimeRaw = entryValue(entry, 'public_activity_time') ?? entryValue(entry, 'public_time') ?? entryValue(entry, 'public_minutes');
+        const publicTime = pickMinutes(publicTimeRaw) || 0;
+        const publicTypes = parseMultiValue(entryValue(entry, 'public_activity_type'));
+        const publicProvided = hasProvidedValue(publicFlag) || hasProvidedValue(publicTimeRaw) || publicTypes.length > 0;
+        if (publicProvided) publicSessions += 1;
+        if (publicTime > 0 || isYesValue(publicFlag)) {
+          if (dayKey) publicDays.add(dayKey);
+        }
+        publicMinutes += publicTime;
+        publicTypes.forEach((type) => {
+          const label = normalizeActivityLabel(type);
+          if (label) publicCounts.set(label, (publicCounts.get(label) || 0) + 1);
+        });
+
+        const adlEntries = parseAdlEntriesForSummary(entryValue(entry, 'adl_entries'));
+        if (adlEntries.length) {
+          if (dayKey) adlDays.add(dayKey);
+          adlTaskCount += adlEntries.length;
+          adlEntries.forEach((adl) => {
+            const label = labelFromAdlEntry(adl);
+            if (label) adlCounts.set(label, (adlCounts.get(label) || 0) + 1);
+          });
+        }
+      });
+
+      return {
+        vocational: {
+          days: vocationalDays.size,
+          sessions: vocationalSessions,
+          minutes: vocationalMinutes
+        },
+        homeCommunity: {
+          days: homeDays.size,
+          sessions: homeSessions,
+          minutes: homeMinutes,
+          topActivities: rowsFromCounts(homeCounts)
+        },
+        communityAtLarge: {
+          days: publicDays.size,
+          sessions: publicSessions,
+          minutes: publicMinutes,
+          topActivities: rowsFromCounts(publicCounts)
+        },
+        homeSupports: {
+          days: adlDays.size,
+          taskCount: adlTaskCount,
+          topTasks: rowsFromCounts(adlCounts)
+        }
+      };
+    }
+
     function summarizeEntries(entries){
       const yesNo = key => {
         const vals = entries.map(e => e[key]).filter(v => v === true || v === false);
@@ -1438,6 +1585,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         ? Math.max(...movementSeverities)
         : null;
       const behavior = buildBehaviorInsights(entries);
+      const participation = buildParticipationSummary(entries);
 
       return {
         counts: { entries: entries.length },
@@ -1458,7 +1606,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
           days: movementDays.size,
           max_severity: movementMax,
         },
-        behavior
+        behavior,
+        ...participation
       };
     }
 
@@ -2725,6 +2874,53 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       for (const value of values) {
         if (value === null || value === undefined || value === '') continue;
         const num = Number(value);
+        if (Number.isFinite(num)) return num;
+      }
+      return null;
+    }
+
+    function pickMinutes(...values) {
+      const durationMap = {
+        '0': 0,
+        '0 min': 0,
+        '0 mins': 0,
+        '0 minutes': 0,
+        '15-30 min': 30,
+        '15–30 min': 30,
+        '15 to 30 min': 30,
+        '30-60 min': 60,
+        '30–60 min': 60,
+        '30 to 60 min': 60,
+        '1-2 hrs': 120,
+        '1–2 hrs': 120,
+        '1 to 2 hrs': 120,
+        '1 hr': 60,
+        '1 hour': 60,
+        '1 hrs': 60,
+        '2 hrs': 120,
+        '2 hours': 120,
+        '2+ hrs': 150,
+        '2+ hours': 150,
+        '2 hrs+': 150,
+        'over 2 hrs': 150,
+        'over 2 hours': 150
+      };
+      for (const value of values) {
+        if (value === null || value === undefined || value === '') continue;
+        if (typeof value === 'number' && Number.isFinite(value)) return value;
+        const key = String(value).replace(/\u2013/g, '-').toLowerCase().replace(/\s+/g, ' ').trim();
+        if (!key) continue;
+        if (durationMap[key] !== undefined) return durationMap[key];
+        const rangeMatch = key.match(/(\d+(?:\.\d+)?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)/);
+        if (rangeMatch) {
+          const upper = parseFloat(rangeMatch[2]);
+          if (Number.isFinite(upper)) return key.includes('hr') ? Math.round(upper * 60) : Math.round(upper);
+        }
+        const hoursMatch = key.match(/(\d+(?:\.\d+)?)\s*(?:hr|hour|hrs|hours)\b/);
+        if (hoursMatch) return Math.round(parseFloat(hoursMatch[1]) * 60);
+        const minutesMatch = key.match(/(\d+(?:\.\d+)?)\s*(?:min|minute|minutes)\b/);
+        if (minutesMatch) return Math.round(parseFloat(minutesMatch[1]));
+        const num = Number(key);
         if (Number.isFinite(num)) return num;
       }
       return null;
@@ -5167,7 +5363,11 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
             counts:{entries:0},
             percents:{hygiene_yes:0,food_prep_yes:0,cleanup_yes:0},
             totals:{vocational_minutes:0,community_minutes:0},
-            averages:{new_skill_score:'—'}
+            averages:{new_skill_score:'—'},
+            vocational:{days:0,sessions:0,minutes:0},
+            homeCommunity:{days:0,sessions:0,minutes:0,topActivities:[]},
+            communityAtLarge:{days:0,sessions:0,minutes:0,topActivities:[]},
+            homeSupports:{days:0,taskCount:0,topTasks:[]}
           },
           charts:{ monthly: [], promptDaily: [] }
         };

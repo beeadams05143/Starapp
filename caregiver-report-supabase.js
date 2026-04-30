@@ -145,6 +145,158 @@ const parseArrayField = (value) => {
   return [];
 };
 
+const valueFromEntry = (entry = {}, key) => {
+  const payload = ensurePayload(entry);
+  return entry[key] ?? payload[key] ?? null;
+};
+
+const hasProvidedValue = (value) => {
+  if (value === null || value === undefined) return false;
+  if (typeof value === 'string') return value.trim() !== '';
+  if (Array.isArray(value)) return value.length > 0;
+  return true;
+};
+
+const isYesValue = (value) => parseBoolean(value) === true;
+
+const dayKeyFromEntry = (entry = {}) => {
+  const ts = normTs(entry);
+  return Number.isNaN(ts.getTime()) ? null : ts.toISOString().slice(0, 10);
+};
+
+const normalizeActivityLabel = (label) => {
+  const trimmed = String(label || '').trim();
+  if (!trimmed) return '';
+  return trimmed
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
+const labelFromAdlEntry = (item = {}) =>
+  String(
+    item.category ||
+    item.activity ||
+    item.label ||
+    item.name ||
+    item.skill ||
+    item.task ||
+    ''
+  ).trim();
+
+const rowsFromCounts = (counts) =>
+  Array.from(counts.entries())
+    .map(([label, count]) => ({ label, count }))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
+    .slice(0, 5);
+
+const buildParticipationSummary = (entries = []) => {
+  const vocationalDays = new Set();
+  const homeDays = new Set();
+  const publicDays = new Set();
+  const adlDays = new Set();
+  const homeCounts = new Map();
+  const publicCounts = new Map();
+  const adlCounts = new Map();
+  let vocationalSessions = 0;
+  let homeSessions = 0;
+  let publicSessions = 0;
+  let vocationalMinutes = 0;
+  let homeMinutes = 0;
+  let publicMinutes = 0;
+  let adlTaskCount = 0;
+
+  entries.forEach((entry) => {
+    const dayKey = dayKeyFromEntry(entry);
+    const vocationalFlag = valueFromEntry(entry, 'vocational_participation');
+    const vocationalTimeRaw =
+      valueFromEntry(entry, 'vocational_time') ??
+      valueFromEntry(entry, 'vocational_minutes');
+    const vocationalTime = minutesFrom(vocationalTimeRaw) || 0;
+    if (hasProvidedValue(vocationalFlag) || hasProvidedValue(vocationalTimeRaw)) {
+      vocationalSessions += 1;
+    }
+    if (vocationalTime > 0 || isYesValue(vocationalFlag)) {
+      if (dayKey) vocationalDays.add(dayKey);
+    }
+    vocationalMinutes += vocationalTime;
+
+    const homeFlag = valueFromEntry(entry, 'home_activity_flag');
+    const homeTimeRaw =
+      valueFromEntry(entry, 'home_activity_time') ??
+      valueFromEntry(entry, 'home_time') ??
+      valueFromEntry(entry, 'home_minutes');
+    const homeTime = minutesFrom(homeTimeRaw) || 0;
+    const homeTypes = parseArrayField(valueFromEntry(entry, 'home_activity_type'));
+    if (hasProvidedValue(homeFlag) || hasProvidedValue(homeTimeRaw) || homeTypes.length) {
+      homeSessions += 1;
+    }
+    if (homeTime > 0 || isYesValue(homeFlag)) {
+      if (dayKey) homeDays.add(dayKey);
+    }
+    homeMinutes += homeTime;
+    homeTypes.forEach((type) => {
+      const label = normalizeActivityLabel(type);
+      if (label) homeCounts.set(label, (homeCounts.get(label) || 0) + 1);
+    });
+
+    const publicFlag = valueFromEntry(entry, 'public_activity_flag');
+    const publicTimeRaw =
+      valueFromEntry(entry, 'public_activity_time') ??
+      valueFromEntry(entry, 'public_time') ??
+      valueFromEntry(entry, 'public_minutes');
+    const publicTime = minutesFrom(publicTimeRaw) || 0;
+    const publicTypes = parseArrayField(valueFromEntry(entry, 'public_activity_type'));
+    if (hasProvidedValue(publicFlag) || hasProvidedValue(publicTimeRaw) || publicTypes.length) {
+      publicSessions += 1;
+    }
+    if (publicTime > 0 || isYesValue(publicFlag)) {
+      if (dayKey) publicDays.add(dayKey);
+    }
+    publicMinutes += publicTime;
+    publicTypes.forEach((type) => {
+      const label = normalizeActivityLabel(type);
+      if (label) publicCounts.set(label, (publicCounts.get(label) || 0) + 1);
+    });
+
+    const adlEntries = parseArrayField(valueFromEntry(entry, 'adl_entries'))
+      .filter((item) => item && typeof item === 'object');
+    if (adlEntries.length) {
+      if (dayKey) adlDays.add(dayKey);
+      adlTaskCount += adlEntries.length;
+      adlEntries.forEach((adl) => {
+        const label = labelFromAdlEntry(adl);
+        if (label) adlCounts.set(label, (adlCounts.get(label) || 0) + 1);
+      });
+    }
+  });
+
+  return {
+    vocational: {
+      days: vocationalDays.size,
+      sessions: vocationalSessions,
+      minutes: vocationalMinutes,
+    },
+    homeCommunity: {
+      days: homeDays.size,
+      sessions: homeSessions,
+      minutes: homeMinutes,
+      topActivities: rowsFromCounts(homeCounts),
+    },
+    communityAtLarge: {
+      days: publicDays.size,
+      sessions: publicSessions,
+      minutes: publicMinutes,
+      topActivities: rowsFromCounts(publicCounts),
+    },
+    homeSupports: {
+      days: adlDays.size,
+      taskCount: adlTaskCount,
+      topTasks: rowsFromCounts(adlCounts),
+    },
+  };
+};
+
 const gleanAdlFlag = (payload, substrings) => {
   if (!payload) return null;
   const rawCategory =
@@ -379,6 +531,7 @@ const summarize = (entries) => {
         promptVals.reduce((total, value) => total + value, 0) / promptVals.length
       ).toFixed(2)
     : null;
+  const participation = buildParticipationSummary(entries);
 
   return {
     counts: { entries: entries.length },
@@ -393,6 +546,7 @@ const summarize = (entries) => {
       community_minutes: sum('community_time'),
     },
     averages: { new_skill_score: promptAvg },
+    ...participation,
   };
 };
 

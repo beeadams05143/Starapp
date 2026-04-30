@@ -1576,7 +1576,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       let adlTaskCount = 0;
 
       entries.forEach((entry) => {
-        const dayKey = dayKeyFor(entry);
+        const dt = parseEntryDate(entry);
+        const dayKey = dt ? localDateKey(dt) : null;
         const vocationalFlag = entryValue(entry, 'vocational_participation');
         const vocationalTimeRaw = entryValue(entry, 'vocational_time') ?? entryValue(entry, 'vocational_minutes');
         const vocationalTime = pickMinutes(vocationalTimeRaw) || 0;
@@ -1617,12 +1618,18 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
           if (label) publicCounts.set(label, (publicCounts.get(label) || 0) + 1);
         });
 
-        const adlEntries = parseAdlEntriesForSummary(entryValue(entry, 'adl_entries'));
-        if (adlEntries.length) {
+        const rawAdl = entry.adl_entries ?? entry.payload?.adl_entries ?? null;
+        let adlList = [];
+        if (Array.isArray(rawAdl)) {
+          adlList = rawAdl;
+        } else if (typeof rawAdl === 'string' && rawAdl.trim()) {
+          try { adlList = JSON.parse(rawAdl); } catch { adlList = []; }
+        }
+        if (adlList.length) {
           if (dayKey) adlDays.add(dayKey);
-          adlTaskCount += adlEntries.length;
-          adlEntries.forEach((adl) => {
-            const label = labelFromAdlEntry(adl);
+          adlTaskCount += adlList.length;
+          adlList.forEach((task) => {
+            const label = task?.activity || task?.category || task?.label || task?.name || '';
             if (label) adlCounts.set(label, (adlCounts.get(label) || 0) + 1);
           });
         }

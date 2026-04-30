@@ -1560,25 +1560,19 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     }
 
     function buildParticipationSummary(entries = []) {
-      const seen = new Map();
+      const seen = new Set();
       const deduped = entries.filter((entry) => {
-        const p = entry.payload || {};
-        const ts = new Date(entry.created_at || entry.submitted_at || 0).getTime();
-        const userId = entry.user_id || p.user_id || '';
-        const caregiverName = String(p.caregiver_name || '').trim();
-        const minutes = pickMinutes(
-          p.vocational_time || p.home_activity_time || p.public_activity_time
-        ) || 0;
-        const activity = String(
-          p.home_activity_type || p.public_activity_type || p.vocational_time || ''
-        ).trim().toLowerCase();
-
-        const key = `${userId}|${caregiverName}|${minutes}|${activity}`;
-        const lastSeen = seen.get(key);
-        if (lastSeen && Math.abs(ts - lastSeen) < 2 * 60 * 1000) {
-          return false;
+        const id = entry.id || entry.uuid || null;
+        if (id) {
+          if (seen.has(String(id))) return false;
+          seen.add(String(id));
+          return true;
         }
-        seen.set(key, ts);
+        const ts = entry.created_at || entry.submitted_at || entry.timestamp || '';
+        const userId = entry.user_id || '';
+        const fallbackKey = `${userId}|${ts}`;
+        if (fallbackKey !== '|' && seen.has(fallbackKey)) return false;
+        if (fallbackKey !== '|') seen.add(fallbackKey);
         return true;
       });
 

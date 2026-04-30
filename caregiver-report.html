@@ -1602,10 +1602,24 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 
       for (const entry of deduped) {
         const p = entry.payload || {};
-        const rawDate = entry.date || p.date || entry.created_at || entry.submitted_at || null;
-        const dt = rawDate ? new Date(rawDate) : null;
-        if (!dt || isNaN(dt.getTime())) continue;
-        const dateKey = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+        const rawDate = entry.date || entry.payload?.date || null;
+        let dateKey = null;
+        if (rawDate) {
+          const trimmed = String(rawDate).trim().slice(0, 10);
+          if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+            dateKey = trimmed;
+          }
+        }
+        if (!dateKey) {
+          const fallback = entry.created_at || entry.submitted_at || null;
+          if (fallback) {
+            const dt = new Date(fallback);
+            if (!isNaN(dt.getTime())) {
+              dateKey = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+            }
+          }
+        }
+        if (!dateKey) continue;
 
         if (String(p.vocational_participation || '').trim().toLowerCase() === 'yes') {
           vocSessions += 1;

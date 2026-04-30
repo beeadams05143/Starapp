@@ -510,6 +510,60 @@
 
     body.export-wide{min-width:1200px}
     body.export-wide main.page{max-width:1200px;width:1200px}
+
+    /* ===== Services Summary ===== */
+    .services-summary-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+      gap:14px;
+      margin:10px 0;
+    }
+    .service-card{
+      background:#fff;
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:14px;
+      box-shadow:0 8px 20px rgba(125,89,34,.08);
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .service-card-title{
+      font-weight:800;
+      font-size:15px;
+      color:#20324f;
+    }
+    .service-card-stats{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    .svc-stat{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      font-size:13px;
+      border-bottom:1px dashed #e5e7eb;
+      padding:4px 0;
+    }
+    .svc-stat:last-child{border-bottom:0}
+    .svc-stat-label{color:#6b7280}
+    .svc-stat-value{font-weight:700;color:#111}
+    .service-top-activities{
+      font-size:12px;
+      color:#475569;
+      display:flex;
+      flex-direction:column;
+      gap:3px;
+      margin-top:4px;
+    }
+    .svc-activity-row{
+      display:flex;
+      justify-content:space-between;
+      border-bottom:1px dashed #f1f5f9;
+      padding:3px 0;
+    }
+    .svc-activity-row:last-child{border-bottom:0}
   </style>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
@@ -643,6 +697,51 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     <h1>Reports</h1>
 
     <div data-print-section="Caregiver Overview">
+    <section class="panel" id="services-summary-panel" data-print-section="Services Summary">
+      <h2>Services Summary</h2>
+      <p class="muted" id="servicesSummaryRange">Range: Month</p>
+      <div class="services-summary-grid" id="servicesSummaryGrid">
+
+        <div class="service-card">
+          <div class="service-card-title">🔧 Vocational</div>
+          <div class="service-card-stats">
+            <div class="svc-stat"><span class="svc-stat-label">Days</span><span class="svc-stat-value" id="svcVocDays">—</span></div>
+            <div class="svc-stat"><span class="svc-stat-label">Sessions</span><span class="svc-stat-value" id="svcVocSessions">—</span></div>
+            <div class="svc-stat"><span class="svc-stat-label">Total Minutes</span><span class="svc-stat-value" id="svcVocMinutes">—</span></div>
+          </div>
+        </div>
+
+        <div class="service-card">
+          <div class="service-card-title">🏠 Home Community</div>
+          <div class="service-card-stats">
+            <div class="svc-stat"><span class="svc-stat-label">Days</span><span class="svc-stat-value" id="svcHomeDays">—</span></div>
+            <div class="svc-stat"><span class="svc-stat-label">Sessions</span><span class="svc-stat-value" id="svcHomeSessions">—</span></div>
+            <div class="svc-stat"><span class="svc-stat-label">Total Minutes</span><span class="svc-stat-value" id="svcHomeMinutes">—</span></div>
+          </div>
+          <div class="service-top-activities" id="svcHomeActivities"></div>
+        </div>
+
+        <div class="service-card">
+          <div class="service-card-title">🌍 Community-at-Large</div>
+          <div class="service-card-stats">
+            <div class="svc-stat"><span class="svc-stat-label">Days</span><span class="svc-stat-value" id="svcCommDays">—</span></div>
+            <div class="svc-stat"><span class="svc-stat-label">Sessions</span><span class="svc-stat-value" id="svcCommSessions">—</span></div>
+            <div class="svc-stat"><span class="svc-stat-label">Total Minutes</span><span class="svc-stat-value" id="svcCommMinutes">—</span></div>
+          </div>
+          <div class="service-top-activities" id="svcCommActivities"></div>
+        </div>
+
+        <div class="service-card">
+          <div class="service-card-title">🤝 Home Supports (ADL)</div>
+          <div class="service-card-stats">
+            <div class="svc-stat"><span class="svc-stat-label">Days</span><span class="svc-stat-value" id="svcAdlDays">—</span></div>
+            <div class="svc-stat"><span class="svc-stat-label">Total Tasks Logged</span><span class="svc-stat-value" id="svcAdlTasks">—</span></div>
+          </div>
+          <div class="service-top-activities" id="svcAdlActivities"></div>
+        </div>
+
+      </div>
+    </section>
     <section class="panel focus-board" id="reportFocusPanel">
       <h2>Weekly Focus</h2>
       <p id="reportFocusSummary" class="muted">Loading weekly focus…</p>
@@ -1785,6 +1884,53 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       return buckets;
     }
 
+    function renderServicesSummary(summary, rangeDisplay) {
+      const svc = summary?.services || (
+        summary?.vocational ||
+        summary?.homeCommunity ||
+        summary?.communityAtLarge ||
+        summary?.homeSupports
+          ? summary
+          : null
+      );
+      const rangeEl = document.getElementById('servicesSummaryRange');
+      if (rangeEl) rangeEl.textContent = `Range: ${rangeDisplay || 'All time'}`;
+      if (!svc) return;
+
+      const set = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = (value !== null && value !== undefined) ? value : '—';
+      };
+
+      set('svcVocDays',      svc.vocational?.days ?? '—');
+      set('svcVocSessions',  svc.vocational?.sessions ?? '—');
+      set('svcVocMinutes',   svc.vocational?.minutes ?? '—');
+
+      set('svcHomeDays',     svc.homeCommunity?.days ?? '—');
+      set('svcHomeSessions', svc.homeCommunity?.sessions ?? '—');
+      set('svcHomeMinutes',  svc.homeCommunity?.minutes ?? '—');
+
+      set('svcCommDays',     svc.communityAtLarge?.days ?? '—');
+      set('svcCommSessions', svc.communityAtLarge?.sessions ?? '—');
+      set('svcCommMinutes',  svc.communityAtLarge?.minutes ?? '—');
+
+      set('svcAdlDays',      svc.homeSupports?.days ?? '—');
+      set('svcAdlTasks',     svc.homeSupports?.taskCount ?? '—');
+
+      const renderActivities = (containerId, items = []) => {
+        const el = document.getElementById(containerId);
+        if (!el) return;
+        if (!items.length) { el.innerHTML = ''; return; }
+        el.innerHTML = items.slice(0, 5).map(item =>
+          `<div class="svc-activity-row"><span>${item.label}</span><span>${item.count}</span></div>`
+        ).join('');
+      };
+
+      renderActivities('svcHomeActivities', svc.homeCommunity?.topActivities || []);
+      renderActivities('svcCommActivities', svc.communityAtLarge?.topActivities || []);
+      renderActivities('svcAdlActivities',  svc.homeSupports?.topTasks || []);
+    }
+
     function renderReportSummary({
       rangeKey,
       range,
@@ -2326,6 +2472,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
             }
           };
         }
+        renderServicesSummary(summary, formatRangeDisplay(rangeKey, range?.label || ''));
         renderReportSummary({
           rangeKey,
           range,

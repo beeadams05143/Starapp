@@ -706,6 +706,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
           <div class="service-card-title">🔧 Vocational</div>
           <div class="service-card-stats">
             <div class="svc-stat"><span class="svc-stat-label">Days</span><span class="svc-stat-value" id="svcVocDays">—</span></div>
+            <div class="svc-stat"><span class="svc-stat-label">Sessions</span><span class="svc-stat-value" id="svcVocSessions">—</span></div>
             <div class="svc-stat"><span class="svc-stat-label">Total Minutes</span><span class="svc-stat-value" id="svcVocMinutes">—</span></div>
           </div>
         </div>
@@ -714,6 +715,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
           <div class="service-card-title">🏠 Home Community</div>
           <div class="service-card-stats">
             <div class="svc-stat"><span class="svc-stat-label">Days</span><span class="svc-stat-value" id="svcHomeDays">—</span></div>
+            <div class="svc-stat"><span class="svc-stat-label">Sessions</span><span class="svc-stat-value" id="svcHomeSessions">—</span></div>
             <div class="svc-stat"><span class="svc-stat-label">Total Minutes</span><span class="svc-stat-value" id="svcHomeMinutes">—</span></div>
           </div>
           <div class="service-top-activities" id="svcHomeActivities"></div>
@@ -723,6 +725,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
           <div class="service-card-title">🌍 Community-at-Large</div>
           <div class="service-card-stats">
             <div class="svc-stat"><span class="svc-stat-label">Days</span><span class="svc-stat-value" id="svcCommDays">—</span></div>
+            <div class="svc-stat"><span class="svc-stat-label">Sessions</span><span class="svc-stat-value" id="svcCommSessions">—</span></div>
             <div class="svc-stat"><span class="svc-stat-label">Total Minutes</span><span class="svc-stat-value" id="svcCommMinutes">—</span></div>
           </div>
           <div class="service-top-activities" id="svcCommActivities"></div>
@@ -1557,53 +1560,78 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     }
 
     function buildParticipationSummary(entries = []) {
-      const vocationalDays = new Set();
+      const seen = new Map();
+      const deduped = entries.filter((entry) => {
+        const p = entry.payload || {};
+        const ts = new Date(entry.created_at || entry.submitted_at || 0).getTime();
+        const userId = entry.user_id || p.user_id || '';
+        const caregiverName = String(p.caregiver_name || '').trim();
+        const minutes = pickMinutes(
+          p.vocational_time || p.home_activity_time || p.public_activity_time
+        ) || 0;
+        const activity = String(
+          p.home_activity_type || p.public_activity_type || p.vocational_time || ''
+        ).trim().toLowerCase();
+
+        const key = `${userId}|${caregiverName}|${minutes}|${activity}`;
+        const lastSeen = seen.get(key);
+        if (lastSeen && Math.abs(ts - lastSeen) < 2 * 60 * 1000) {
+          return false;
+        }
+        seen.set(key, ts);
+        return true;
+      });
+
+      const vocDays = new Set();
       const homeDays = new Set();
       const publicDays = new Set();
       const adlDays = new Set();
+
+      let vocSessions = 0;
+      let homeSessions = 0;
+      let publicSessions = 0;
+
+      let vocMinutes = 0;
+      let homeMinutes = 0;
+      let publicMinutes = 0;
+
       const homeCounts = new Map();
       const publicCounts = new Map();
       const adlCounts = new Map();
-      let vocationalMinutes = 0;
-      let homeMinutes = 0;
-      let publicMinutes = 0;
       let adlTaskCount = 0;
 
-      entries.forEach((entry) => {
-        const dt = parseEntryDate(entry);
-        const dayKey = dt ? localDateKey(dt) : null;
+      for (const entry of deduped) {
         const p = entry.payload || {};
+        const rawDate = entry.date || p.date || entry.created_at || entry.submitted_at || null;
+        const dt = rawDate ? new Date(rawDate) : null;
+        if (!dt || isNaN(dt.getTime())) continue;
+        const dateKey = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
 
-        const vocFlag = String(p.vocational_participation ?? entry.vocational_participation ?? '').trim().toLowerCase();
-        const vocTime = pickMinutes(p.vocational_time ?? entry.vocational_time) || 0;
-        if (vocFlag === 'yes') {
-          if (dayKey) vocationalDays.add(dayKey);
+        if (String(p.vocational_participation || '').trim().toLowerCase() === 'yes') {
+          vocSessions += 1;
+          vocDays.add(dateKey);
         }
-        vocationalMinutes += vocTime;
+        vocMinutes += pickMinutes(p.vocational_time) || 0;
 
-        const homeFlag = String(p.home_activity_flag ?? entry.home_activity_flag ?? '').trim().toLowerCase();
-        const homeTime = pickMinutes(p.home_activity_time ?? entry.home_activity_time) || 0;
-        const homeTypes = parseMultiValue(p.home_activity_type ?? entry.home_activity_type);
-        if (homeFlag === 'yes') {
-          if (dayKey) homeDays.add(dayKey);
+        if (String(p.home_activity_flag || '').trim().toLowerCase() === 'yes') {
+          homeSessions += 1;
+          homeDays.add(dateKey);
         }
-        homeMinutes += homeTime;
-        homeTypes.forEach((type) => {
+        homeMinutes += pickMinutes(p.home_activity_time) || 0;
+        for (const type of parseMultiValue(p.home_activity_type)) {
           const label = normalizeActivityLabel(type);
           if (label) homeCounts.set(label, (homeCounts.get(label) || 0) + 1);
-        });
-
-        const publicFlag = String(p.public_activity_flag ?? entry.public_activity_flag ?? '').trim().toLowerCase();
-        const publicTime = pickMinutes(p.public_activity_time ?? entry.public_activity_time) || 0;
-        const publicTypes = parseMultiValue(p.public_activity_type ?? entry.public_activity_type);
-        if (publicFlag === 'yes') {
-          if (dayKey) publicDays.add(dayKey);
         }
-        publicMinutes += publicTime;
-        publicTypes.forEach((type) => {
+
+        if (String(p.public_activity_flag || '').trim().toLowerCase() === 'yes') {
+          publicSessions += 1;
+          publicDays.add(dateKey);
+        }
+        publicMinutes += pickMinutes(p.public_activity_time) || 0;
+        for (const type of parseMultiValue(p.public_activity_type)) {
           const label = normalizeActivityLabel(type);
           if (label) publicCounts.set(label, (publicCounts.get(label) || 0) + 1);
-        });
+        }
 
         const rawAdl = entry.adl_entries ?? p.adl_entries ?? null;
         let adlList = [];
@@ -1612,36 +1640,54 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         } else if (typeof rawAdl === 'string' && rawAdl.trim()) {
           try { adlList = JSON.parse(rawAdl); } catch { adlList = []; }
         }
-        if (!Array.isArray(adlList)) adlList = [];
-        if (adlList.length) {
-          if (dayKey) adlDays.add(dayKey);
+        if (adlList.length > 0) {
+          adlDays.add(dateKey);
           adlTaskCount += adlList.length;
-          adlList.forEach((task) => {
-            const label = String(task?.activity || task?.category || task?.label || task?.name || '').trim();
+          for (const task of adlList) {
+            const label = String(
+              task?.activity || task?.category || task?.label || task?.name || ''
+            ).trim();
             if (label) adlCounts.set(label, (adlCounts.get(label) || 0) + 1);
-          });
+          }
         }
+      }
+
+      const topN = (map) => Array.from(map.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([label, count]) => ({ label, count }));
+
+      console.log('[Services Summary Debug]', {
+        totalEntries: entries.length,
+        afterDedup: deduped.length,
+        vocational:  { sessions: vocSessions, days: vocDays.size, minutes: vocMinutes },
+        home:        { sessions: homeSessions, days: homeDays.size, minutes: homeMinutes },
+        community:   { sessions: publicSessions, days: publicDays.size, minutes: publicMinutes },
+        adl:         { days: adlDays.size, tasks: adlTaskCount }
       });
 
       return {
         vocational: {
-          days: vocationalDays.size,
-          minutes: vocationalMinutes
+          days: vocDays.size,
+          sessions: vocSessions,
+          minutes: vocMinutes
         },
         homeCommunity: {
           days: homeDays.size,
+          sessions: homeSessions,
           minutes: homeMinutes,
-          topActivities: rowsFromCounts(homeCounts)
+          topActivities: topN(homeCounts)
         },
         communityAtLarge: {
           days: publicDays.size,
+          sessions: publicSessions,
           minutes: publicMinutes,
-          topActivities: rowsFromCounts(publicCounts)
+          topActivities: topN(publicCounts)
         },
         homeSupports: {
           days: adlDays.size,
           taskCount: adlTaskCount,
-          topTasks: rowsFromCounts(adlCounts)
+          topTasks: topN(adlCounts)
         }
       };
     }
@@ -1895,12 +1941,15 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       };
 
       set('svcVocDays',      svc.vocational?.days ?? '—');
+      set('svcVocSessions',  svc.vocational?.sessions ?? '—');
       set('svcVocMinutes',   svc.vocational?.minutes ?? '—');
 
       set('svcHomeDays',     svc.homeCommunity?.days ?? '—');
+      set('svcHomeSessions', svc.homeCommunity?.sessions ?? '—');
       set('svcHomeMinutes',  svc.homeCommunity?.minutes ?? '—');
 
       set('svcCommDays',     svc.communityAtLarge?.days ?? '—');
+      set('svcCommSessions', svc.communityAtLarge?.sessions ?? '—');
       set('svcCommMinutes',  svc.communityAtLarge?.minutes ?? '—');
 
       set('svcAdlDays',      svc.homeSupports?.days ?? '—');
@@ -5500,9 +5549,9 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
             percents:{hygiene_yes:0,food_prep_yes:0,cleanup_yes:0},
             totals:{vocational_minutes:0,community_minutes:0},
             averages:{new_skill_score:'—'},
-            vocational:{days:0,minutes:0},
-            homeCommunity:{days:0,minutes:0,topActivities:[]},
-            communityAtLarge:{days:0,minutes:0,topActivities:[]},
+            vocational:{days:0,sessions:0,minutes:0},
+            homeCommunity:{days:0,sessions:0,minutes:0,topActivities:[]},
+            communityAtLarge:{days:0,sessions:0,minutes:0,topActivities:[]},
             homeSupports:{days:0,taskCount:0,topTasks:[]}
           },
           charts:{ monthly: [], promptDaily: [] }

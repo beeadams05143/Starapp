@@ -1578,40 +1578,35 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       entries.forEach((entry) => {
         const dt = parseEntryDate(entry);
         const dayKey = dt ? localDateKey(dt) : null;
-        const vocationalFlag = entryValue(entry, 'vocational_participation');
-        const vocationalTimeRaw = entryValue(entry, 'vocational_time') ?? entryValue(entry, 'vocational_minutes');
-        const vocationalTime = pickMinutes(vocationalTimeRaw) || 0;
-        const vocationalProvided = hasProvidedValue(vocationalFlag) || hasProvidedValue(vocationalTimeRaw);
-        if (vocationalProvided) vocationalSessions += 1;
-        if (vocationalTime > 0 || isYesValue(vocationalFlag)) {
-          if (dayKey) vocationalDays.add(dayKey);
-        }
-        vocationalMinutes += vocationalTime;
 
-        const homeFlag = entryValue(entry, 'home_activity_flag');
-        const homeTimeRaw = entryValue(entry, 'home_activity_time') ?? entryValue(entry, 'home_time') ?? entryValue(entry, 'home_minutes');
-        const homeTime = pickMinutes(homeTimeRaw) || 0;
-        const homeTypes = parseMultiValue(entryValue(entry, 'home_activity_type'));
-        const homeProvided = hasProvidedValue(homeFlag) || hasProvidedValue(homeTimeRaw) || homeTypes.length > 0;
-        if (homeProvided) homeSessions += 1;
-        if (homeTime > 0 || isYesValue(homeFlag)) {
-          if (dayKey) homeDays.add(dayKey);
-        }
+        const vocParticipation = entry.payload?.vocational_participation ?? entry.vocational_participation ?? null;
+        const vocTime = pickMinutes(entry.payload?.vocational_time ?? entry.vocational_time ?? null) || 0;
+        const isVocDay = isYesValue(vocParticipation) || vocTime > 0;
+        if (isVocDay && dayKey) vocationalDays.add(dayKey);
+        const vocAnswered = vocParticipation !== null && vocParticipation !== undefined && vocParticipation !== '';
+        if (vocAnswered) vocationalSessions += 1;
+        vocationalMinutes += vocTime;
+
+        const homeFlag = entry.payload?.home_activity_flag ?? entry.home_activity_flag ?? null;
+        const homeTime = pickMinutes(entry.payload?.home_activity_time ?? entry.home_activity_time ?? null) || 0;
+        const homeTypes = parseMultiValue(entry.payload?.home_activity_type ?? entry.home_activity_type ?? null);
+        const isHomeDay = isYesValue(homeFlag) || homeTime > 0 || homeTypes.length > 0;
+        if (isHomeDay && dayKey) homeDays.add(dayKey);
+        const homeAnswered = homeFlag !== null && homeFlag !== undefined && homeFlag !== '';
+        if (homeAnswered) homeSessions += 1;
         homeMinutes += homeTime;
         homeTypes.forEach((type) => {
           const label = normalizeActivityLabel(type);
           if (label) homeCounts.set(label, (homeCounts.get(label) || 0) + 1);
         });
 
-        const publicFlag = entryValue(entry, 'public_activity_flag');
-        const publicTimeRaw = entryValue(entry, 'public_activity_time') ?? entryValue(entry, 'public_time') ?? entryValue(entry, 'public_minutes');
-        const publicTime = pickMinutes(publicTimeRaw) || 0;
-        const publicTypes = parseMultiValue(entryValue(entry, 'public_activity_type'));
-        const publicProvided = hasProvidedValue(publicFlag) || hasProvidedValue(publicTimeRaw) || publicTypes.length > 0;
-        if (publicProvided) publicSessions += 1;
-        if (publicTime > 0 || isYesValue(publicFlag)) {
-          if (dayKey) publicDays.add(dayKey);
-        }
+        const publicFlag = entry.payload?.public_activity_flag ?? entry.public_activity_flag ?? null;
+        const publicTime = pickMinutes(entry.payload?.public_activity_time ?? entry.public_activity_time ?? null) || 0;
+        const publicTypes = parseMultiValue(entry.payload?.public_activity_type ?? entry.public_activity_type ?? null);
+        const isPublicDay = isYesValue(publicFlag) || publicTime > 0 || publicTypes.length > 0;
+        if (isPublicDay && dayKey) publicDays.add(dayKey);
+        const publicAnswered = publicFlag !== null && publicFlag !== undefined && publicFlag !== '';
+        if (publicAnswered) publicSessions += 1;
         publicMinutes += publicTime;
         publicTypes.forEach((type) => {
           const label = normalizeActivityLabel(type);
@@ -1625,11 +1620,12 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         } else if (typeof rawAdl === 'string' && rawAdl.trim()) {
           try { adlList = JSON.parse(rawAdl); } catch { adlList = []; }
         }
+        if (!Array.isArray(adlList)) adlList = [];
         if (adlList.length) {
           if (dayKey) adlDays.add(dayKey);
           adlTaskCount += adlList.length;
           adlList.forEach((task) => {
-            const label = task?.activity || task?.category || task?.label || task?.name || '';
+            const label = String(task?.activity || task?.category || task?.label || task?.name || '').trim();
             if (label) adlCounts.set(label, (adlCounts.get(label) || 0) + 1);
           });
         }

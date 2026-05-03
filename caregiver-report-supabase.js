@@ -1,5 +1,5 @@
-// caregiver-report-supabase.js — PRODUCTION SAFE (client-side filtering)
-import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
+// caregiver-report-supabase.js — PRODUCTION SAFE (client-side filtering) v=2026.05.03C
+import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 
 /* ---------- shared helpers ---------- */
 const TRUE_VALUES = new Set(['true', 't', 'yes', 'y', '1', 'on', 'done', 'complete', 'present']);
@@ -495,6 +495,10 @@ const normalizeSupabaseEntry = (row = {}) => {
     movement_awareness: row.movement_awareness ?? payload.movement_awareness ?? null,
     movement_safety_risk: row.movement_safety_risk ?? payload.movement_safety_risk ?? null,
     movement_safety_notes: row.movement_safety_notes ?? payload.movement_safety_notes ?? null,
+    vocational_participation: payload.vocational_participation ?? null,
+    home_activity_flag: payload.home_activity_flag ?? null,
+    public_activity_flag: payload.public_activity_flag ?? null,
+    adl_entries: Array.isArray(payload.adl_entries) ? payload.adl_entries : [],
     pet_interaction_flag:
       row.pet_interaction_flag ?? payload.pet_interaction_flag ?? null,
     pet_activity_type:

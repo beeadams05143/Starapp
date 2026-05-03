@@ -1367,9 +1367,9 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     }
 
     // Supabase client + session gate
-    const session = getSessionFromStorage();
-    if (!session?.user?.id) { window.location.href = 'auth.html'; throw new Error('No session'); }
-    const USER_ID = session.user.id;
+    const USER_SESSION = getSessionFromStorage();
+    if (!USER_SESSION?.user?.id) { window.location.href = 'auth.html'; throw new Error('No session'); }
+    const USER_ID = USER_SESSION.user.id;
     window.rest = rest;
 
     async function ensureReportGroupContext() {

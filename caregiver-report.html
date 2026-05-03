@@ -1631,8 +1631,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         if (vocFlag === 'yes') {
           vocSessions += 1;
           vocDays.add(dateKey);
+          vocMinutes += vocTime;
         }
-        vocMinutes += vocTime;
 
         const homeFlag = String(
           entry.home_activity_flag ??
@@ -1644,11 +1644,11 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         if (homeFlag === 'yes') {
           homeSessions += 1;
           homeDays.add(dateKey);
-        }
-        homeMinutes += homeTime;
-        for (const type of parseMultiValue(p.home_activity_type)) {
-          const label = normalizeActivityLabel(type);
-          if (label) homeCounts.set(label, (homeCounts.get(label) || 0) + 1);
+          homeMinutes += homeTime;
+          for (const type of parseMultiValue(p.home_activity_type)) {
+            const label = normalizeActivityLabel(type);
+            if (label) homeCounts.set(label, (homeCounts.get(label) || 0) + 1);
+          }
         }
 
         const publicFlag = String(
@@ -1661,11 +1661,11 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         if (publicFlag === 'yes') {
           publicSessions += 1;
           publicDays.add(dateKey);
-        }
-        publicMinutes += publicTime;
-        for (const type of parseMultiValue(p.public_activity_type)) {
-          const label = normalizeActivityLabel(type);
-          if (label) publicCounts.set(label, (publicCounts.get(label) || 0) + 1);
+          publicMinutes += publicTime;
+          for (const type of parseMultiValue(p.public_activity_type)) {
+            const label = normalizeActivityLabel(type);
+            if (label) publicCounts.set(label, (publicCounts.get(label) || 0) + 1);
+          }
         }
 
         const rawAdl = entry.adl_entries ?? p.adl_entries ?? null;

@@ -700,6 +700,12 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     <section class="panel" id="services-summary-panel" data-print-section="Services Summary">
       <h2>Services Summary</h2>
       <p class="muted" id="servicesSummaryRange">Range: Month</p>
+      <div class="toolbar" style="justify-content:flex-start;margin:6px 0 10px;gap:10px;">
+        <label style="font-size:13px;font-weight:600;">From <input type="date" id="servicesSummaryStart"></label>
+        <label style="font-size:13px;font-weight:600;">To <input type="date" id="servicesSummaryEnd"></label>
+        <button id="servicesSummaryApply" type="button">Apply</button>
+        <button id="servicesSummaryReset" type="button">Reset</button>
+      </div>
       <div class="services-summary-grid" id="servicesSummaryGrid">
 
         <div class="service-card">
@@ -1951,6 +1957,23 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       return buckets;
     }
 
+    function getServicesSummaryEntries() {
+      const startInput = document.getElementById('servicesSummaryStart');
+      const endInput = document.getElementById('servicesSummaryEnd');
+      const source = (cgState.filtered && cgState.filtered.length)
+        ? cgState.filtered
+        : (cgState.entries || []);
+      if (!startInput?.value || !endInput?.value) return source;
+      const start = new Date(`${startInput.value}T00:00:00`);
+      const end = new Date(`${endInput.value}T23:59:59`);
+      if (isNaN(start) || isNaN(end)) return source;
+      return source.filter(entry => {
+        const dt = parseCaregiverDate(entry.date || entry.timestamp || entry.created_at);
+        if (!dt) return false;
+        return dt >= start && dt <= end;
+      });
+    }
+
     function renderServicesSummary(summary, rangeDisplay) {
       const svc = summary?.services || (
         summary?.vocational ||
@@ -2539,7 +2562,14 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
             }
           };
         }
-        renderServicesSummary(summary, formatRangeDisplay(rangeKey, range?.label || ''));
+        const serviceEntries = getServicesSummaryEntries();
+        const serviceSummary = buildParticipationSummary(serviceEntries);
+        const startEl = document.getElementById('servicesSummaryStart');
+        const endEl = document.getElementById('servicesSummaryEnd');
+        const serviceRangeLabel = (startEl?.value && endEl?.value)
+          ? `${startEl.value} to ${endEl.value}`
+          : formatRangeDisplay(rangeKey, range?.label || '');
+        renderServicesSummary(serviceSummary, serviceRangeLabel);
         renderReportSummary({
           rangeKey,
           range,
@@ -6164,6 +6194,23 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         try { applyChartRange(); } catch (err) { console.warn('[report] applyChartRange init failed', err); }
       }, 0);
     }
+    document.getElementById('servicesSummaryApply')?.addEventListener('click', () => {
+      const rangeKey = document.getElementById('chartRangeSelect')?.value || 'month';
+      const serviceEntries = getServicesSummaryEntries();
+      const serviceSummary = buildParticipationSummary(serviceEntries);
+      const startVal = document.getElementById('servicesSummaryStart')?.value;
+      const endVal = document.getElementById('servicesSummaryEnd')?.value;
+      const label = (startVal && endVal) ? `${startVal} to ${endVal}` : 'Custom range';
+      renderServicesSummary(serviceSummary, label);
+    });
+
+    document.getElementById('servicesSummaryReset')?.addEventListener('click', () => {
+      const startEl = document.getElementById('servicesSummaryStart');
+      const endEl = document.getElementById('servicesSummaryEnd');
+      if (startEl) startEl.value = '';
+      if (endEl) endEl.value = '';
+      applyChartRange();
+    });
     document.getElementById('movementRangeSelect')?.addEventListener('change', (event) => {
       const rangeKey = event.target.value || 'month';
       applyMovementRange(rangeKey);

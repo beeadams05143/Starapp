@@ -1538,6 +1538,7 @@
             <div id="question-vocational-participation" class="question-block">
               <div class="movement-label">Participated in vocational activity?</div>
               <div class="yn-pill-group" role="group" aria-label="Vocational participation">
+                <label class="yn-pill"><input type="radio" name="vocational_participation" value="" checked> Did not participate today / Skip</label>
                 <label class="yn-pill"><input type="radio" name="vocational_participation" value="yes"> Yes</label>
                 <label class="yn-pill"><input type="radio" name="vocational_participation" value="no"> No</label>
               </div>
@@ -1570,6 +1571,7 @@
             <div id="question-home-activity-flag" class="question-block">
               <div class="movement-label">Engaged in a home/community activity?</div>
               <div class="yn-pill-group" role="group" aria-label="Home activity">
+                <label class="yn-pill"><input type="radio" name="home_activity_flag" value="" checked> Did not participate today / Skip</label>
                 <label class="yn-pill"><input type="radio" name="home_activity_flag" value="yes"> Yes</label>
                 <label class="yn-pill"><input type="radio" name="home_activity_flag" value="no"> No</label>
               </div>
@@ -1657,6 +1659,7 @@
             <div id="question-public-activity-flag" class="question-block">
               <div class="movement-label">Engaged in a community-at-large activity?</div>
               <div class="yn-pill-group" role="group" aria-label="Community activity">
+                <label class="yn-pill"><input type="radio" name="public_activity_flag" value="" checked> Did not participate today / Skip</label>
                 <label class="yn-pill"><input type="radio" name="public_activity_flag" value="yes"> Yes</label>
                 <label class="yn-pill"><input type="radio" name="public_activity_flag" value="no"> No</label>
               </div>
@@ -5289,6 +5292,12 @@
       payload._submitted_at = new Date().toISOString();
       return payload;
     }
+    function resetParticipationRadiosToSkip(){
+      ['vocational_participation', 'home_activity_flag', 'public_activity_flag'].forEach((name) => {
+        const skip = formEl.querySelector(`input[type="radio"][name="${name}"][value=""]`);
+        if (skip) skip.checked = true;
+      });
+    }
     function resetFormValues(){
       formEl.reset();
       formEl.querySelectorAll('input[type="checkbox"]').forEach((el) => {
@@ -5297,6 +5306,7 @@
       formEl.querySelectorAll('input[type="radio"]').forEach((el) => {
         el.checked = false;
       });
+      resetParticipationRadiosToSkip();
       formEl.querySelectorAll('input[type="text"], input[type="time"], input[type="number"], textarea').forEach((el) => {
         el.value = '';
       });

@@ -1970,7 +1970,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
           : null
       );
       const rangeEl = document.getElementById('servicesSummaryRange');
-      if (rangeEl) rangeEl.textContent = `Range: ${rangeDisplay || 'All time'}`;
+      if (rangeEl) { const formatHuman = (str) => { if (!str) return ''; const dt = new Date(str + 'T00:00:00'); return isNaN(dt) ? str : dt.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }); }; const parts = (rangeDisplay || '').split(' to '); rangeEl.textContent = parts.length === 2 ? 'Range: ' + formatHuman(parts[0]) + ' to ' + formatHuman(parts[1]) : 'Range: ' + (rangeDisplay || 'All time'); }
       if (!svc) return;
 
       const set = (id, value) => {

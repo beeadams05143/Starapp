@@ -695,6 +695,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 
   <main class="page">
     <h1>Reports</h1>
+    <div class="panel" id="reportRangePanel" style="margin-bottom:0;padding:12px 16px;"><div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;"><strong style="font-size:15px;color:#20324f;">Report Range:</strong><label style="font-size:13px;font-weight:600;">From <input type="date" id="reportRangeStart"></label><label style="font-size:13px;font-weight:600;">To <input type="date" id="reportRangeEnd"></label><button id="reportRangeApply" type="button">Apply to Full Report</button><button id="reportRangeReset" type="button">Reset</button></div></div>
 
     <div data-print-section="Caregiver Overview">
     <section class="panel" id="services-summary-panel" data-print-section="Services Summary">
@@ -5633,6 +5634,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         renderFocusGoalList(currentFocusPlan.goals || []);
         renderFocusGoalChart(currentFocusPlan.goals || []);
       }
+      const now = new Date(); const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1); const lastOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0); const rStart = document.getElementById('reportRangeStart'); const rEnd = document.getElementById('reportRangeEnd'); if (rStart && !rStart.value) rStart.value = formatDateInputValue(firstOfMonth); if (rEnd && !rEnd.value) rEnd.value = formatDateInputValue(lastOfMonth); if (cgInputs.start && !cgInputs.start.value) cgInputs.start.value = formatDateInputValue(firstOfMonth); if (cgInputs.end && !cgInputs.end.value) cgInputs.end.value = formatDateInputValue(lastOfMonth); const sStart = document.getElementById('servicesSummaryStart'); const sEnd = document.getElementById('servicesSummaryEnd'); if (sStart && !sStart.value) sStart.value = formatDateInputValue(firstOfMonth); if (sEnd && !sEnd.value) sEnd.value = formatDateInputValue(lastOfMonth);
       window.dispatchEvent(new Event('caregiverDataReady'));
     }
 
@@ -6211,6 +6213,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       if (endEl) endEl.value = '';
       applyChartRange();
     });
+    document.getElementById('reportRangeApply')?.addEventListener('click', () => { const startVal = document.getElementById('reportRangeStart')?.value; const endVal = document.getElementById('reportRangeEnd')?.value; if (!startVal || !endVal) return; if (cgInputs.start) cgInputs.start.value = startVal; if (cgInputs.end) cgInputs.end.value = endVal; const sStart = document.getElementById('servicesSummaryStart'); const sEnd = document.getElementById('servicesSummaryEnd'); if (sStart) sStart.value = startVal; if (sEnd) sEnd.value = endVal; applyCaregiverFilters(); });
+    document.getElementById('reportRangeReset')?.addEventListener('click', () => { const now = new Date(); const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1); const lastOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0); const startVal = formatDateInputValue(firstOfMonth); const endVal = formatDateInputValue(lastOfMonth); const rStart = document.getElementById('reportRangeStart'); const rEnd = document.getElementById('reportRangeEnd'); if (rStart) rStart.value = startVal; if (rEnd) rEnd.value = endVal; if (cgInputs.start) cgInputs.start.value = startVal; if (cgInputs.end) cgInputs.end.value = endVal; const sStart = document.getElementById('servicesSummaryStart'); const sEnd = document.getElementById('servicesSummaryEnd'); if (sStart) sStart.value = startVal; if (sEnd) sEnd.value = endVal; applyCaregiverFilters(); });
     document.getElementById('movementRangeSelect')?.addEventListener('change', (event) => {
       const rangeKey = event.target.value || 'month';
       applyMovementRange(rangeKey);

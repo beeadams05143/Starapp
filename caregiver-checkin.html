@@ -963,6 +963,19 @@
             <div class="physical-spacer" aria-hidden="true"></div>
           </div>
           <div class="section-title">Physical Health</div>
+          <div id="allClearBox" style="
+            border: 1px solid #b7e4c7;
+            background: #e6f9ed;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            cursor: pointer;
+          ">
+            ✔ All clear — nothing to report
+            <div style="font-size: 12px; color: #2d6a4f;">
+              Tap to mark optional sections as “nothing to report”
+            </div>
+          </div>
           <div class="physical-general-row">
             <div id="question-appears-good-health" class="question-block">
               <div class="movement-label">Appears in good health?</div>
@@ -5781,6 +5794,19 @@
         if (submitBtn) { submitBtn.disabled=false; submitBtn.textContent='Submit Final'; }
       }
     }
+
+    document.getElementById('allClearBox')?.addEventListener('click', () => {
+      // Find all "nothing to report" checkboxes
+      document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+        if (cb.name && cb.name.toLowerCase().includes('nothing')) {
+          cb.checked = true;
+        }
+      });
+
+      // Optional: visual feedback
+      document.getElementById('allClearBox').style.opacity = '0.7';
+      document.getElementById('allClearBox').innerText = '✔ All clear applied';
+    });
 </script>
 <script>
   (function(){

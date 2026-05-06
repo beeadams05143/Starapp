@@ -510,3 +510,22 @@ export async function saveProfileDefaultGroup(userId, groupId) {
   });
   return rows?.[0] || null;
 }
+
+export async function saveCheckinConfig(groupId, selectedCategories = []) {
+  if (!groupId) throw new Error('saveCheckinConfig: groupId is required.');
+
+  const defaults = ['movements', 'medication', 'illness'];
+  const categories = selectedCategories.length > 0 ? selectedCategories : defaults;
+
+  const rows = await rest('caregiver_checkin_configs', {
+    method: 'POST',
+    headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
+    body: JSON.stringify([{
+      group_id: groupId,
+      selected_categories: categories,
+      updated_at: new Date().toISOString(),
+    }]),
+  });
+
+  return rows?.[0] || null;
+}

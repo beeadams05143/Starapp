@@ -758,7 +758,7 @@
         const group = await joinGroupForUser(currentUser.id, joinCodeEl.value);
         localStorage.setItem('userRole', 'member');
         console.log('JOIN GROUP → redirecting to caregiver check-in');
-        window.location.href = 'caregiver-checkin.html?firstTime=1';
+        window.location.href = 'caregiver-welcome.html?onboarding=1';
         return false;
       } catch (error) {
         setStatus(error?.message || 'Could not join group.');
@@ -805,7 +805,7 @@
       const nextHref =
         pendingContinueHref ||
         pendingInvite?.nextHref ||
-        '/profile.html';
+        'caregiver-setup-wizard.html?onboarding=1';
       clearPendingInvite();
       window.location.href = nextHref;
     });

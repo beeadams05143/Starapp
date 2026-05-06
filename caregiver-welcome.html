@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Welcome - STAR</title>
+  <style>
+    :root {
+      --font-sans: "Avenir Next","Segoe UI","Helvetica Neue",Arial,sans-serif;
+      --font-serif: "Iowan Old Style","Palatino Linotype","Book Antiqua",Georgia,serif;
+      --page-bg: radial-gradient(circle at top center, rgba(251,230,194,0.78), transparent 34%),
+                 linear-gradient(180deg, #fff8ea 0%, #f7ead0 100%);
+      --panel: #fffdf8;
+      --panel-border: #ead7ab;
+      --text: #243047;
+      --muted: #667188;
+      --navy: #20324f;
+      --green: #22c55e;
+      --green-dark: #14532d;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      font-family: var(--font-sans);
+      background: var(--page-bg);
+      color: var(--text);
+      display: grid;
+      place-items: center;
+      padding: 24px 16px;
+    }
+    .shell {
+      width: min(600px, 100%);
+      background: var(--panel);
+      border-radius: 28px;
+      border: 1px solid var(--panel-border);
+      box-shadow: 0 18px 36px rgba(125,89,34,0.12);
+      padding: 28px 22px;
+    }
+    .step-note {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #724016;
+      margin-bottom: 8px;
+    }
+    .progress {
+      display: flex;
+      margin-bottom: 24px;
+    }
+    .prog-step {
+      flex: 1;
+      padding: 8px 4px;
+      text-align: center;
+      font-size: 11px;
+      color: #9ca3af;
+      border-bottom: 2px solid #e5e7eb;
+    }
+    .prog-step.done { color: #16a34a; border-color: #16a34a; }
+    .prog-step.active { color: #724016; border-color: #724016; font-weight: 600; }
+    .hero {
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      border-radius: 16px;
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .hero-star { font-size: 32px; margin-bottom: 8px; }
+    .hero-group {
+      font-family: var(--font-serif);
+      font-size: 22px;
+      color: #14532d;
+      margin-bottom: 4px;
+    }
+    .hero-sub { font-size: 14px; color: #166534; }
+    h1 {
+      font-family: var(--font-serif);
+      font-size: 24px;
+      color: #724016;
+      margin-bottom: 6px;
+    }
+    .sub {
+      font-size: 14px;
+      color: var(--muted);
+      font-style: italic;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+    .expect-list { display: grid; gap: 10px; margin-bottom: 22px; }
+    .expect-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: #fffef9;
+      border: 1px solid var(--panel-border);
+    }
+    .expect-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #724016;
+      color: #fff9ed;
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .expect-text { font-size: 14px; color: var(--navy); line-height: 1.5; }
+    .expect-text strong { font-weight: 600; }
+    .sections-tracked {
+      background: #fffdf8;
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 20px;
+    }
+    .sections-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #724016;
+      margin-bottom: 10px;
+    }
+    .section-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .section-chip {
+      font-size: 12px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      border: 1px solid #a7d678;
+      background: #eaf3de;
+      color: #27500a;
+    }
+    .section-chip.required {
+      border-color: #c9b588;
+      background: #f5f0e8;
+      color: #4a3010;
+    }
+    .btn-primary {
+      width: 100%;
+      padding: 13px;
+      border-radius: 16px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1px solid #2bbf67;
+      background: linear-gradient(180deg, #49da7b 0%, #22c55e 100%);
+      color: #08331d;
+      margin-bottom: 10px;
+    }
+    .btn-secondary {
+      width: 100%;
+      padding: 11px;
+      border-radius: 16px;
+      font-size: 14px;
+      cursor: pointer;
+      border: 1px solid #d1d5db;
+      background: #fffdf8;
+      color: #20324f;
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <div class="step-note">Step 3 of 4 — You're almost in!</div>
+
+    <div class="progress">
+      <div class="prog-step done">1. Profile</div>
+      <div class="prog-step done">2. Joined group</div>
+      <div class="prog-step active">3. Welcome</div>
+      <div class="prog-step">4. Practice</div>
+    </div>
+
+    <div class="hero">
+      <div class="hero-star">⭐</div>
+      <div class="hero-group" id="groupName">Welcome to your group</div>
+      <div class="hero-sub">You've joined successfully</div>
+    </div>
+
+    <h1>Here's what to expect</h1>
+    <p class="sub">Your group admin has already set everything up. Here's what you'll be doing as a caregiver.</p>
+
+    <div class="expect-list">
+      <div class="expect-row">
+        <div class="expect-num">1</div>
+        <div class="expect-text"><strong>After every shift</strong> — complete a caregiver check-in. It takes about 2 minutes on a routine day.</div>
+      </div>
+      <div class="expect-row">
+        <div class="expect-num">2</div>
+        <div class="expect-text"><strong>Required every shift</strong> — sleep, bowel movements, and a quick appearance check are always at the top.</div>
+      </div>
+      <div class="expect-row">
+        <div class="expect-num">3</div>
+        <div class="expect-text"><strong>All clear button</strong> — if it was a routine shift with nothing to report, one tap handles everything else.</div>
+      </div>
+      <div class="expect-row">
+        <div class="expect-num">4</div>
+        <div class="expect-text"><strong>Right now</strong> — do a quick practice run so the real thing feels familiar. Nothing you enter will be saved.</div>
+      </div>
+    </div>
+
+    <div class="sections-tracked">
+      <div class="sections-label">Your group tracks</div>
+      <div class="section-chips" id="sectionChips">
+        <span class="section-chip required">Sleep</span>
+        <span class="section-chip required">Bowel movements</span>
+        <span class="section-chip required">Appearance</span>
+        <span class="section-chip required">Behavioral flags</span>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="startBtn">Start practice check-in →</button>
+    <button class="btn-secondary" id="skipBtn">Skip practice — go to dashboard</button>
+  </main>
+
+  <script type="module">
+    import { getSessionFromStorage } from './supabaseClient.js?v=2026.03.29A';
+    import { ensureActiveGroupId } from './onboarding-flow.js?v=2026.03.29A';
+    import { rest } from './restClient.js?v=2026.03.16B';
+
+    const SECTION_LABELS = {
+      movements: 'Observed movements',
+      medication: 'Medication tracking',
+      illness: 'Illness / discomfort',
+      vocational: 'Vocational',
+      home_family: 'Home / family',
+      community: 'Community',
+      daily_living: 'Daily living',
+    };
+
+    async function hydrate() {
+      // show group name
+      const groupName = localStorage.getItem('currentGroupName');
+      if (groupName) {
+        document.getElementById('groupName').textContent = `Welcome to ${groupName}`;
+      }
+
+      // load enabled sections from config
+      const session = getSessionFromStorage();
+      const userId = session?.user?.id;
+      if (!userId) return;
+      const groupId = await ensureActiveGroupId(userId);
+      if (!groupId) return;
+
+      const rows = await rest(
+        `caregiver_checkin_configs?group_id=eq.${encodeURIComponent(groupId)}&select=selected_categories&limit=1`
+      );
+      const config = rows?.[0];
+      const selected = config?.selected_categories || [];
+
+      if (selected.length > 0) {
+        const chipsEl = document.getElementById('sectionChips');
+        // keep required chips, add enabled optional ones
+        const optionalChips = selected.map(key => {
+          const label = SECTION_LABELS[key];
+          if (!label) return '';
+          return `<span class="section-chip">${label}</span>`;
+        }).join('');
+        chipsEl.innerHTML = `
+          <span class="section-chip required">Sleep</span>
+          <span class="section-chip required">Bowel movements</span>
+          <span class="section-chip required">Appearance</span>
+          <span class="section-chip required">Behavioral flags</span>
+          ${optionalChips}
+        `;
+      }
+    }
+
+    document.getElementById('startBtn').addEventListener('click', () => {
+      window.location.href = 'caregiver-checkin.html?onboarding=1';
+    });
+
+    document.getElementById('skipBtn').addEventListener('click', () => {
+      window.location.href = 'dashboard.html';
+    });
+
+    hydrate().catch(console.error);
+  </script>
+</body>
+</html>

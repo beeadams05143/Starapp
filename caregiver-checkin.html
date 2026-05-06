@@ -784,6 +784,8 @@
     const dateStr = today.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
     const el = document.getElementById('shiftDate');
     if (el) el.textContent = dateStr;
+    const shiftDateInput = document.querySelector('#shiftDate');
+    if (shiftDateInput) shiftDateInput.textContent = dateStr;
 
     // ── LOAD CONFIG ────────────────────────────────────────
     const OPTIONAL_SECTIONS = ['movements','medication','illness','vocational','home_family','community','daily_living'];
@@ -890,8 +892,11 @@
 
     document.getElementById('backBtn')?.addEventListener('click', () => {
       const active = document.querySelector('.screen.active');
-      if (active?.id === 'screen-physical') goToScreen('screen-overview');
-      else window.location.href = 'dashboard.html';
+      if (active?.id === 'screen-physical') {
+        goToScreen('screen-overview');
+      } else {
+        window.location.href = 'dashboard.html';
+      }
     });
 
     // ── ACCORDION ──────────────────────────────────────────

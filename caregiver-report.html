@@ -585,6 +585,7 @@
       background:#F5F2EC;
       color:#2C2C2A;
       font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      padding-top:var(--appbar-h,56px);
     }
     .star-page-header{
       position:relative;
@@ -777,8 +778,25 @@
     th,td{border-color:var(--color-border-tertiary)}
     .top-actions{
       max-width:1200px;
-      margin:12px auto 0 !important;
-      padding:0 16px;
+      margin:24px auto 18px !important;
+      padding:12px 16px 0;
+      position:relative;
+      z-index:3;
+      clear:both;
+    }
+    .cg-action-group .cg-edit-btn{
+      background:var(--color-background-secondary);
+      border:0.5px solid var(--color-border-tertiary);
+      border-radius:8px;
+      color:var(--color-text-primary);
+      box-shadow:none;
+    }
+    .cg-action-group .cg-delete-btn{
+      background:#FCEEEE;
+      border:0.5px solid #F2B8B5;
+      border-radius:8px;
+      color:#8A1C1C;
+      box-shadow:none;
     }
   </style>
 
@@ -1009,20 +1027,11 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     <section class="panel" id="cg-panel">
       <h2>Caregiver Check-Ins</h2>
 
-      <div class="toolbar">
-        <span style="flex:1"></span>
-        <button id="cgNotesToggle" type="button" class="no-export" aria-pressed="false">Expand notes</button>
-        <button id="cgQuickLookToggle" type="button" class="no-export" aria-controls="cgQuickLook" aria-expanded="false">⚡ Quick Look</button>
-        <button id="cgPdf"  class="no-export">📄 PDF</button>
-        <button id="cgSharePdf" class="no-export">📤 Share PDF</button>
-        <button id="cgCsv"  class="no-export">⬇️ CSV</button>
-      </div>
-
       <div id="cgQuickLook" class="quick-look is-hidden" role="region" aria-live="polite">
         <div class="quick-look-head">
           <div>
             <div class="quick-look-label">Quick Look</div>
-            <div class="quick-look-subtitle">Last five caregiver days</div>
+            <div class="quick-look-subtitle">Last seven caregiver days</div>
           </div>
           <button id="cgQuickLookClose" type="button" aria-label="Exit Quick Look" class="no-export">Exit</button>
         </div>
@@ -1031,23 +1040,16 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       </div>
       <div id="cgQuickLookPrint" class="quick-look-print-sheet is-hidden"></div>
 
-      <div class="cg-table-wrap cg-hide-when-quick-look" style="max-height:340px;overflow:auto;border-radius:8px">
+      <div class="cg-table-wrap cg-hide-when-quick-look" style="max-height:560px;overflow:auto;border-radius:8px">
         <table id="cgTable">
           <thead>
             <tr>
               <th>Timestamp</th>
               <th>Caregiver</th>
-              <th>Hygiene</th>
-              <th>Food</th>
-              <th>Clean-up</th>
-              <th>Voc (min)</th>
-              <th>Comm (min)</th>
-              <th>Prompt</th>
-              <th>Notes</th>
               <th>Actions</th>
             </tr>
           </thead>
-          <tbody id="cgTbody"><tr><td colspan="10">Loading…</td></tr></tbody>
+          <tbody id="cgTbody"><tr><td colspan="3">Loading…</td></tr></tbody>
         </table>
       </div>
 
@@ -3307,6 +3309,16 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       return null;
     }
 
+    function formatCaregiverTableTimestamp(entry = {}) {
+      const dt = parseEntryDate(entry);
+      if (!dt) return '—';
+      const dateLabel = dt
+        .toLocaleDateString(undefined, { month: 'long', day: '2-digit', year: 'numeric' })
+        .replace(/,/g, '');
+      const timeLabel = dt.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+      return `${dateLabel} at ${timeLabel}`;
+    }
+
     function extractEntryNotes(entry = {}) {
       const payload = entry.payload || {};
       const candidates = [
@@ -4838,24 +4850,19 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       body.innerHTML = '';
 
       if (!entries.length) {
-        body.innerHTML = `<tr><td colspan="10">No caregiver check-ins found for the selected range.</td></tr>`;
+        body.innerHTML = `<tr><td colspan="3">No caregiver check-ins found for the selected range.</td></tr>`;
         return;
       }
 
-      entries.forEach((entry, index) => {
+      entries.forEach((entry) => {
         const row = formatEntryForList ? formatEntryForList(entry) : fallbackFormat(entry);
         const tr = document.createElement('tr');
         const caregiverLabel = caregiverNameFromEntry(entry) || '—';
+        const timestamp = formatCaregiverTableTimestamp(entry);
 
         const cells = [
-          row.dateTime || '—',
-          caregiverLabel,
-          row.hygiene ?? '—',
-          row.food_prep ?? '—',
-          row.cleanup ?? '—',
-          row.vocational_time ?? '—',
-          row.community_time ?? '—',
-          row.new_skill_score ?? '—'
+          timestamp,
+          caregiverLabel
         ];
 
         cells.forEach(value => {
@@ -4864,30 +4871,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
           tr.appendChild(td);
         });
 
-        const notesTd = document.createElement('td');
-        notesTd.className = 'cg-notes-cell';
-        const notes = (extractEntryNotes(entry) || row.notes || '').trim();
-        const preview = document.createElement('div');
-        preview.className = 'cg-note-preview';
-        preview.textContent = notes ? truncateText(notes, 140) : '—';
-        notesTd.appendChild(preview);
-        if (notes) {
-          const viewBtn = document.createElement('button');
-          viewBtn.type = 'button';
-          viewBtn.className = 'cg-note-btn';
-          viewBtn.textContent = 'View full note';
-          if (entry.id || row.id) {
-            viewBtn.dataset.checkinId = entry.id || row.id;
-          } else {
-            viewBtn.dataset.rowIndex = String(index);
-          }
-          notesTd.appendChild(viewBtn);
-        }
-        const fullNotes = document.createElement('div');
-        fullNotes.className = 'cg-note-full';
-        fullNotes.textContent = notes || '—';
-        notesTd.appendChild(fullNotes);
-        tr.appendChild(notesTd);
         const actionTd = document.createElement('td');
         // Each Edit button carries the Supabase row id so the delegation handler can load it in the modal.
         const checkinId = entry.id || row.id;
@@ -5944,7 +5927,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         renderFocusGoalList(currentFocusPlan.goals || []);
         renderFocusGoalChart(currentFocusPlan.goals || []);
       }
-      const now = new Date(); const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1); const lastOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0); const rStart = document.getElementById('reportRangeStart'); const rEnd = document.getElementById('reportRangeEnd'); if (rStart && !rStart.value) rStart.value = formatDateInputValue(firstOfMonth); if (rEnd && !rEnd.value) rEnd.value = formatDateInputValue(lastOfMonth); if (cgInputs.start && !cgInputs.start.value) cgInputs.start.value = formatDateInputValue(firstOfMonth); if (cgInputs.end && !cgInputs.end.value) cgInputs.end.value = formatDateInputValue(lastOfMonth); const sStart = document.getElementById('servicesSummaryStart'); const sEnd = document.getElementById('servicesSummaryEnd'); if (sStart && !sStart.value) sStart.value = formatDateInputValue(firstOfMonth); if (sEnd && !sEnd.value) sEnd.value = formatDateInputValue(lastOfMonth);
+      const now = new Date(); const defaultRangeEnd = now; const defaultRangeStart = new Date(now); defaultRangeStart.setDate(defaultRangeStart.getDate() - 90); const rStart = document.getElementById('reportRangeStart'); const rEnd = document.getElementById('reportRangeEnd'); if (rStart && !rStart.value) rStart.value = formatDateInputValue(defaultRangeStart); if (rEnd && !rEnd.value) rEnd.value = formatDateInputValue(defaultRangeEnd); if (cgInputs.start && !cgInputs.start.value) cgInputs.start.value = formatDateInputValue(defaultRangeStart); if (cgInputs.end && !cgInputs.end.value) cgInputs.end.value = formatDateInputValue(defaultRangeEnd); const sStart = document.getElementById('servicesSummaryStart'); const sEnd = document.getElementById('servicesSummaryEnd'); if (sStart && !sStart.value) sStart.value = formatDateInputValue(defaultRangeStart); if (sEnd && !sEnd.value) sEnd.value = formatDateInputValue(defaultRangeEnd);
       window.dispatchEvent(new Event('caregiverDataReady'));
     }
 

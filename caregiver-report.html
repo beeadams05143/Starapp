@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <title>Caregiver Report</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 
   <style>
     :root{
@@ -564,6 +565,221 @@
       padding:3px 0;
     }
     .svc-activity-row:last-child{border-bottom:0}
+
+    /* ===== STAR branding refresh ===== */
+    :root{
+      --color-background-primary:#ffffff;
+      --color-background-secondary:#F1EFEA;
+      --color-border-secondary:#D8D2C8;
+      --color-border-tertiary:#E7E2D8;
+      --color-text-primary:#2C2C2A;
+      --star-cream:#F5F2EC;
+      --star-amber:#FAEEDA;
+      --star-amber-border:#FAC775;
+      --star-amber-text:#633806;
+      --card:#ffffff;
+      --border:var(--color-border-tertiary);
+      --page-bg:#F5F2EC;
+    }
+    body{
+      background:#F5F2EC;
+      color:#2C2C2A;
+      font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    }
+    .star-page-header{
+      position:relative;
+      max-width:1200px;
+      min-height:112px;
+      margin:16px auto 0;
+      padding:24px 16px 42px;
+      background:#F5F2EC;
+      border:0.5px solid var(--color-border-tertiary);
+      border-bottom:0;
+      border-radius:16px 16px 0 0;
+      overflow:hidden;
+      text-align:center;
+    }
+    .star-page-header .starfield{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      pointer-events:none;
+    }
+    .star-page-header-content{
+      position:relative;
+      z-index:1;
+      display:grid;
+      justify-items:center;
+      gap:8px;
+    }
+    .star-page-header h1{
+      margin:0;
+      color:#2C2C2A;
+      font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      font-size:17px;
+      font-weight:500;
+      text-align:center;
+    }
+    main.page{
+      max-width:1200px;
+      margin:-18px auto 0;
+      padding:20px 16px 32px;
+      background:#ffffff;
+      border:0.5px solid var(--color-border-tertiary);
+      border-top:0;
+      border-radius:16px 16px 0 0;
+      box-shadow:none;
+      position:relative;
+      z-index:1;
+    }
+    main.page > h1{display:none}
+    h1,h2,h3,
+    .hc-title,
+    .service-card-title,
+    .quick-look-label,
+    .focus-pdf-title,
+    .mood-summary-title{
+      font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      color:#633806;
+      font-size:15px;
+      font-weight:500;
+      text-align:left;
+    }
+    .panel,
+    .chart,
+    .movement-panel,
+    .hc-card,
+    .kpi,
+    .mood-summary-card,
+    .mood-summary-grid > div,
+    .cg-summary-card,
+    .quick-look,
+    .quick-look-card,
+    .quick-look-print-sheet,
+    .focus-pdf-summary,
+    .movement-card,
+    .hc-editor,
+    .cg-note-drawer,
+    .cg-edit-modal,
+    .export-range-modal{
+      background:#ffffff;
+      border:0.5px solid var(--color-border-tertiary);
+      border-radius:12px;
+      padding:14px 16px;
+      box-shadow:none;
+    }
+    .panel{margin:14px 0}
+    #services-summary-panel .service-card{
+      background:#ffffff;
+      border:0.5px solid #FAC775;
+      border-radius:12px;
+      padding:14px 16px;
+      box-shadow:none;
+    }
+    #reportFocusPanel,
+    #reportFocusSummary,
+    .focus-goal-list li{
+      background:#FAEEDA;
+      border:0.5px solid #FAC775;
+      border-radius:12px;
+      box-shadow:none;
+    }
+    #reportFocusPanel{padding:14px 16px}
+    #reportFocusSummary{
+      padding:12px;
+      color:#633806;
+      font-weight:500;
+      text-align:left;
+    }
+    .focus-board::after{display:none}
+    input,
+    select,
+    textarea{
+      background:var(--color-background-secondary);
+      border:0.5px solid var(--color-border-secondary);
+      border-radius:10px;
+      color:var(--color-text-primary);
+      padding:10px 12px;
+    }
+    button,
+    .hc-btn,
+    .cg-note-btn,
+    .quick-look-print,
+    .cg-edit-btn,
+    #cgNotesToggle,
+    #cgQuickLookToggle,
+    #cgCsv,
+    #reportRangeReset,
+    #exportRangeCancel,
+    #cgEditCancel,
+    #cgNoteClose,
+    #cgNoteCloseFooter,
+    #hcEditorCancel{
+      background:var(--color-background-secondary);
+      border:0.5px solid var(--color-border-tertiary);
+      border-radius:12px;
+      color:var(--color-text-primary);
+      box-shadow:none;
+      font-size:14px;
+      font-weight:500;
+    }
+    #fullExportBtn,
+    #fullShareBtn,
+    #fullPrintBtn,
+    #calendarPrintBtn,
+    #parentLetterBtn,
+    #reportRangeApply,
+    #cgPdf,
+    #cgSharePdf,
+    #exportMoodBtn,
+    #hcPrintBtn,
+    #exportRangeApply,
+    #cgEditSave,
+    #cgNoteEdit,
+    button.primary,
+    .primary{
+      background:#FAEEDA !important;
+      border:0.5px solid #FAC775 !important;
+      border-radius:12px !important;
+      color:#633806 !important;
+      box-shadow:none !important;
+      font-size:14px !important;
+      font-weight:500 !important;
+    }
+    button:hover,
+    .hc-btn:hover{
+      background:#ECE7DD;
+    }
+    #fullExportBtn:hover,
+    #fullShareBtn:hover,
+    #fullPrintBtn:hover,
+    #calendarPrintBtn:hover,
+    #parentLetterBtn:hover,
+    #reportRangeApply:hover,
+    #cgPdf:hover,
+    #cgSharePdf:hover,
+    #exportMoodBtn:hover,
+    #hcPrintBtn:hover,
+    #exportRangeApply:hover,
+    #cgEditSave:hover,
+    #cgNoteEdit:hover,
+    button.primary:hover,
+    .primary:hover{
+      background:#F6E3C2 !important;
+    }
+    thead th{
+      background:#FAEEDA;
+      color:#633806;
+      border-color:#FAC775;
+      font-weight:500;
+    }
+    th,td{border-color:var(--color-border-tertiary)}
+    .top-actions{
+      max-width:1200px;
+      margin:12px auto 0 !important;
+      padding:0 16px;
+    }
   </style>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
@@ -685,6 +901,29 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 <script defer src="./scripts/appbar-drawer.js?v=2026.03.29A"></script>
 
   <div id="navbar"></div>
+  <header class="star-page-header" aria-label="Reports">
+    <svg class="starfield" viewBox="0 0 420 110" preserveAspectRatio="none" aria-hidden="true">
+      <circle cx="28" cy="18" r="1" fill="#2C2C2A" opacity="0.15"></circle>
+      <circle cx="80" cy="10" r="0.7" fill="#2C2C2A" opacity="0.12"></circle>
+      <circle cx="130" cy="28" r="0.9" fill="#2C2C2A" opacity="0.1"></circle>
+      <circle cx="200" cy="8" r="0.7" fill="#2C2C2A" opacity="0.1"></circle>
+      <circle cx="260" cy="22" r="0.6" fill="#2C2C2A" opacity="0.1"></circle>
+      <circle cx="340" cy="14" r="0.8" fill="#2C2C2A" opacity="0.12"></circle>
+      <circle cx="390" cy="28" r="1" fill="#2C2C2A" opacity="0.15"></circle>
+      <circle cx="50" cy="55" r="0.7" fill="#2C2C2A" opacity="0.1"></circle>
+      <circle cx="150" cy="65" r="0.8" fill="#2C2C2A" opacity="0.1"></circle>
+      <circle cx="300" cy="50" r="0.8" fill="#2C2C2A" opacity="0.12"></circle>
+      <circle cx="400" cy="68" r="0.7" fill="#2C2C2A" opacity="0.1"></circle>
+      <polygon points="60,20 61.4,24.4 66,24.4 62.4,27 63.8,31.4 60,28.8 56.2,31.4 57.6,27 54,24.4 58.6,24.4" fill="#2C2C2A" opacity="0.25"></polygon>
+      <polygon points="365,10 366.2,13.8 370.2,13.8 367,16 368.2,19.8 365,17.6 361.8,19.8 363,16 359.8,13.8 363.8,13.8" fill="#2C2C2A" opacity="0.2"></polygon>
+    </svg>
+    <div class="star-page-header-content">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2C2C2A" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true">
+        <polygon points="12,2 14.9,9.3 22.6,9.3 16.4,14 18.8,21.5 12,17.2 5.2,21.5 7.6,14 1.4,9.3 9.1,9.3"></polygon>
+      </svg>
+      <h1>Reports</h1>
+    </div>
+  </header>
   <div class="top-actions no-export" style="display:flex;gap:8px;justify-content:center;margin:8px 0 14px;">
     <button id="fullExportBtn">📄 Export Full Report (PDF)</button>
     <button id="fullShareBtn">📤 Share Full Report (PDF)</button>

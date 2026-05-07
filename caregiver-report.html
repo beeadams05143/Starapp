@@ -4816,11 +4816,24 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     };
 
     function normalizeEntryDate(entry){
-      const raw = entry.timestamp || entry.created_at || entry.submitted_at || entry.date;
-      if (!raw) return null;
-      const dt = parseCaregiverDate(raw);
-      if (!dt) return null;
-      return new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+      const payload = entry?.payload || {};
+      const candidates = [
+        entry.timestamp,
+        entry.created_at,
+        entry.submitted_at,
+        entry.date,
+        payload.timestamp,
+        payload.created_at,
+        payload.submitted_at,
+        payload.date
+      ];
+      for (const raw of candidates) {
+        if (raw == null || raw === '') continue;
+        const dt = parseCaregiverDate(raw);
+        if (!dt) continue;
+        return new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+      }
+      return null;
     }
 
     function updateDateInputs(entries){
@@ -5397,9 +5410,22 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 
     function sortCaregiverEntriesNewestFirst(entries = []){
       const sortTimeMs = (entry = {}) => {
-        const raw = entry.timestamp || entry.created_at || entry.submitted_at || entry.date;
-        const primary = raw ? parseCaregiverDate(raw) : null;
-        if (primary) return primary.getTime();
+        const payload = entry.payload || {};
+        const candidates = [
+          entry.timestamp,
+          entry.created_at,
+          entry.submitted_at,
+          entry.date,
+          payload.timestamp,
+          payload.created_at,
+          payload.submitted_at,
+          payload.date
+        ];
+        for (const raw of candidates) {
+          if (raw == null || raw === '') continue;
+          const primary = parseCaregiverDate(raw);
+          if (primary) return primary.getTime();
+        }
         const fb = parseEntryDate(entry);
         return fb ? fb.getTime() : 0;
       };
@@ -5413,6 +5439,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       }
       updateCaregiverFilterBanner();
       if (!entries.length) {
+        console.log('[caregiver table] cgState.filtered.length', cgState.filtered?.length ?? 0);
         renderCaregiverCheckins([]);
         updateCgSummary([], 0);
         renderQuickLook([]);
@@ -5420,6 +5447,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       }
       const filtered = sortCaregiverEntriesNewestFirst(filterCaregiverEntries(entries));
       cgState.filtered = filtered;
+      console.log('[caregiver table] cgState.filtered.length', cgState.filtered.length);
       renderCaregiverCheckins(filtered);
       updateCgSummary(filtered, entries.length);
       renderQuickLook(filtered);

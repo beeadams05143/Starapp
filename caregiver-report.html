@@ -89,7 +89,7 @@
     .chart{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:12px;margin:16px auto;max-width:940px;box-shadow:0 12px 24px rgba(125,89,34,.08)}
     .chart.small{max-width:700px}
     canvas{display:block;max-width:100% !important;height:auto !important}
-    .movement-panel{background:var(--card);border:1px solid var(--border);border-radius:22px;padding:16px;margin:12px 0;box-shadow:0 12px 24px rgba(125,89,34,.08)}
+    .movement-panel{background:var(--card);border:1px solid var(--border);border-radius:22px;padding:16px;margin:12px 0 24px;box-shadow:0 12px 24px rgba(125,89,34,.08);position:relative}
     .movement-panel h3{margin:0 0 6px;text-align:left}
     .movement-sub{margin:0 0 10px;font-size:12px;color:var(--muted)}
     .movement-summary{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin-bottom:12px}
@@ -2770,24 +2770,13 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     const CAREGIVER_ID_PREFIX = 'id:';
     const CAREGIVER_NAME_PREFIX = 'name:';
 
-    const FRIENDLY_CAREGIVER_LABELS = {
-      'countrygirlinvt@gmail.com': 'Beth',
-      'bethadams05143@gmail.com': 'Beth',
-      'skr.tysonroad@gmail.com': 'Shirley',
-      'jcadams05143@gmail.com': 'Josh'
-    };
-    const friendlyNameFromEmail = (email) => {
-      if (!email) return null;
-      const normalized = String(email).trim().toLowerCase();
-      return FRIENDLY_CAREGIVER_LABELS[normalized] || null;
-    };
-
     const cgState = {
       entries: [],
       filtered: [],
       caregiverFilter: 'all', // Default is always all caregivers on fresh load.
       entryById: new Map(),
-      focusStats: new Map()
+      focusStats: new Map(),
+      memberProfileById: new Map()
     };
     const reportConfigState = {
       groupId: null,
@@ -2985,24 +2974,66 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       return '';
     };
 
+    const sanitizeCaregiverLabel = (value) => {
+      if (typeof value !== 'string') return '';
+      const trimmed = value.trim();
+      if (!trimmed) return '';
+      if (trimmed.includes('@')) return trimmed.split('@')[0].trim();
+      return trimmed;
+    };
+
+    const profileNameFromUserId = (userId) => {
+      const id = userId ? String(userId).trim() : '';
+      if (!id) return '';
+      const profile = cgState.memberProfileById.get(id);
+      if (profile) {
+        const candidates = [
+          profile.display_name,
+          profile.public_name,
+          profile.full_name,
+          profile.name
+        ];
+        for (const value of candidates) {
+          const label = sanitizeCaregiverLabel(value);
+          if (label) return label;
+        }
+      }
+      if (id === USER_ID) {
+        const meta = USER_SESSION?.user?.user_metadata || {};
+        const candidates = [
+          meta.full_name,
+          meta.name,
+          meta.display_name,
+          meta.public_name
+        ];
+        for (const value of candidates) {
+          const label = sanitizeCaregiverLabel(value);
+          if (label) return label;
+        }
+      }
+      return '';
+    };
+
     const caregiverNameFromEntry = (entry = {}) => {
       const payload = entry.payload || {};
       const candidates = [
-        entry.caregiver_name,
         payload.caregiver_name,
+        entry.caregiver_name,
         payload.caregiver,
         payload.submitted_by,
         payload.entered_by
       ];
       for (const value of candidates) {
-        if (typeof value !== 'string') continue;
-        const trimmed = value.trim();
-        if (trimmed) return trimmed;
+        const label = sanitizeCaregiverLabel(value);
+        if (label) return label;
       }
-      const friendly = friendlyNameFromEmail(emailFromEntry(entry));
-      if (friendly) return friendly;
+      const userId = caregiverIdFromEntry(entry);
+      const profileName = profileNameFromUserId(userId);
+      if (profileName) return profileName;
       const email = emailFromEntry(entry);
-      return email || '';
+      const emailLabel = sanitizeCaregiverLabel(email);
+      if (emailLabel) return emailLabel;
+      return userId ? `Caregiver ${userId.slice(-6)}` : '';
     };
 
     const matchesCaregiverFilter = (entry, filterValue) => {
@@ -3523,7 +3554,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       if (!value || value === 'all') return 'All caregivers';
       const option = cgInputs.caregiver?.querySelector(`option[value="${CSS.escape(value)}"]`);
       if (option?.textContent) return option.textContent;
-      if (value.startsWith(CAREGIVER_ID_PREFIX)) return `Caregiver ${value.slice(CAREGIVER_ID_PREFIX.length, CAREGIVER_ID_PREFIX.length + 6)}…`;
+      if (value.startsWith(CAREGIVER_ID_PREFIX)) return `Caregiver ${value.slice(-6)}`;
       if (value.startsWith(CAREGIVER_NAME_PREFIX)) return value.slice(CAREGIVER_NAME_PREFIX.length);
       return value;
     }
@@ -3791,7 +3822,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       });
     }
 
-    function collectRecentCaregiverDays(entries, limit = 5) {
+    function collectRecentCaregiverDays(entries, limit = 7) {
       const buckets = new Map();
       for (const entry of entries) {
         if (isCalendarOnlyEntry(entry)) continue;
@@ -4073,7 +4104,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       const entries = Array.isArray(sourceEntries)
         ? sourceEntries
         : (Array.isArray(cgState.filtered) ? cgState.filtered : cgState.entries);
-      const days = collectRecentCaregiverDays(entries || [], 5);
+      const days = collectRecentCaregiverDays(entries || [], 7);
       quickLookUi.content.innerHTML = '';
       if (!days.length) {
         quickLookUi.content.classList.add('is-hidden');
@@ -4405,6 +4436,32 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       }
     }
 
+    async function loadGroupMemberProfiles(groupId){
+      cgState.memberProfileById = new Map();
+      if (!groupId) return;
+      try {
+        const members = await rest(
+          `group_members?select=user_id&group_id=eq.${encodeURIComponent(groupId)}`
+        );
+        const userIds = Array.from(new Set(
+          (Array.isArray(members) ? members : [])
+            .map((row) => row?.user_id ? String(row.user_id).trim() : '')
+            .filter(Boolean)
+        ));
+        if (!userIds.includes(USER_ID)) userIds.push(USER_ID);
+        if (!userIds.length) return;
+        const idList = userIds.map((id) => encodeURIComponent(id)).join(',');
+        const profiles = await rest(
+          `profiles?select=id,display_name,public_name,full_name&id=in.(${idList})`
+        );
+        (Array.isArray(profiles) ? profiles : []).forEach((profile) => {
+          if (profile?.id) cgState.memberProfileById.set(String(profile.id), profile);
+        });
+      } catch (error) {
+        console.warn('[REPORT] group member profile load failed', error?.message || error);
+      }
+    }
+
     function populateCaregiverOptions(entries){
       const select = cgInputs.caregiver;
       if (!select) return;
@@ -4422,28 +4479,24 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 
       const session = getSessionFromStorage();
       const selfId = session?.user?.id ? String(session.user.id) : '';
-      const selfEmail = session?.user?.email?.toLowerCase() || '';
-      const friendlySelf = friendlyNameFromEmail(selfEmail);
-      const selfLabel = friendlySelf ||
+      const selfLabel = profileNameFromUserId(selfId) ||
         session?.user?.user_metadata?.full_name ||
         session?.user?.user_metadata?.name ||
-        (selfEmail ? selfEmail.split('@')[0] : '') ||
-        (selfId ? `Me (${selfId.slice(0,6)}…)` : '');
+        (selfId ? `Me (${selfId.slice(-6)})` : '');
       if (selfId) {
-        addOption(CAREGIVER_ID_PREFIX + selfId, selfLabel ? `${selfLabel} (Me)` : 'My check-ins');
+        const cleanSelfLabel = sanitizeCaregiverLabel(selfLabel);
+        addOption(CAREGIVER_ID_PREFIX + selfId, cleanSelfLabel ? `${cleanSelfLabel} (Me)` : 'My check-ins');
       }
 
       const optionMap = new Map();
       for (const entry of entries) {
         const id = caregiverIdFromEntry(entry);
         const name = caregiverNameFromEntry(entry);
-        const email = emailFromEntry(entry);
-        const friendly = friendlyNameFromEmail(email);
-        const fallbackName = friendly || name || (email ? email.split('@')[0] : '');
+        const fallbackName = sanitizeCaregiverLabel(name);
         if (id) {
           const key = CAREGIVER_ID_PREFIX + id;
           if (!optionMap.has(key)) {
-            optionMap.set(key, fallbackName || `Caregiver ${id.slice(0,6)}…`);
+            optionMap.set(key, fallbackName || `Caregiver ${id.slice(-6)}`);
           }
         } else if (fallbackName) {
           const key = CAREGIVER_NAME_PREFIX + fallbackName.toLowerCase();
@@ -5120,6 +5173,14 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       });
     }
 
+    function sortCaregiverEntriesNewestFirst(entries = []){
+      return entries.slice().sort((a, b) => {
+        const bDate = parseEntryDate(b)?.getTime?.() ?? 0;
+        const aDate = parseEntryDate(a)?.getTime?.() ?? 0;
+        return bDate - aDate;
+      });
+    }
+
     function applyCaregiverFilters(){
       const entries = cgState.entries.slice();
       if (cgInputs.caregiver) {
@@ -5132,7 +5193,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         renderQuickLook([]);
         return;
       }
-      const filtered = filterCaregiverEntries(entries);
+      const filtered = sortCaregiverEntriesNewestFirst(filterCaregiverEntries(entries));
       cgState.filtered = filtered;
       renderCaregiverCheckins(filtered);
       updateCgSummary(filtered, entries.length);
@@ -5594,6 +5655,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     async function loadCaregiverData(){
       let res = null;
       const groupId = await ensureReportGroupContext();
+      await loadGroupMemberProfiles(groupId);
       await loadReportConfig(groupId);
       updateReportSectionVisibility();
 

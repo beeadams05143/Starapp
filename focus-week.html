@@ -6,28 +6,33 @@
   <title>Focus of the Week • Planning Page</title>
   <style>
     :root{
-      --paper:#fffef8; --ink:#243047;
-      --accent:#ffd15b; --accent-2:#8ecae6;
-      --line:rgba(152,111,36,.11); --margin-line:rgba(214,88,88,.22);
-      --ring:#caa13a;
+      --paper:#FFFFFF; --ink:#2C2C2A;
+      --accent:#FAEEDA; --accent-2:#F4F1EA;
+      --line:#E7E2D8; --margin-line:#E7E2D8;
+      --ring:#FAC775;
+      --page-bg:#F5F2EC;
+      --soft:#F9F7F3;
+      --soft-border:#D8D2C8;
+      --amber:#FAEEDA;
+      --amber-border:#FAC775;
+      --amber-text:#633806;
       --font-sans:"Avenir Next","Segoe UI","Helvetica Neue",Arial,sans-serif;
       --font-serif:"Iowan Old Style","Palatino Linotype","Book Antiqua",Georgia,serif;
     }
-    html,body{height:100%;margin:0;background:#f4f1ea;color:var(--ink);
+    html,body{height:100%;margin:0;background:var(--page-bg);color:var(--ink);
       font-family:var(--font-sans);}
     #navbar{position:sticky;top:0;z-index:10;}
     #groupSelect, .group-select, [data-group-control], .nav-group, .group-dropdown { display:none !important; }
 
-    .wrapper{max-width:960px;margin:24px auto;padding:16px;}
-    .clipboard{position:relative;padding:24px 20px 28px;border-radius:16px;background:#e3d7c6;
-      box-shadow:0 6px 24px rgba(0,0,0,.15), inset 0 1px 0 rgba(255,255,255,.6);}
+    .wrapper{max-width:860px;margin:24px auto;padding:16px;}
+    .clipboard{position:relative;padding:0;border-radius:16px;background:transparent;box-shadow:none;}
     .clip{display:none;}
-    .sheet{position:relative;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.12);
-      padding:28px 22px 28px 46px;border:1px solid rgba(0,0,0,.08);
-      background:repeating-linear-gradient(to bottom,var(--paper),var(--paper) 28px,var(--line) 29px,var(--paper) 30px);}
-    .sheet::before{content:"";position:absolute;left:32px;top:0;bottom:0;width:2px;background:var(--margin-line);}
+    .sheet{position:relative;border-radius:16px;box-shadow:none;
+      padding:0 32px 32px;border:0.5px solid var(--line);
+      background:var(--paper);overflow:hidden;}
+    .sheet::before{display:none;}
 
-    h1,h2,h3{font-family:var(--font-serif);color:#724016;}
+    h1,h2,h3{font-family:var(--font-sans);color:var(--amber-text);}
     label,.label{font-family:var(--font-sans);}
     h1{margin:0 0 6px;font-size:clamp(2.2rem,5vw,3.4rem);letter-spacing:.2px;text-align:left;}
     .sub{font-size:15px;opacity:1;margin-bottom:14px;color:#6a768d;font-style:italic;}
@@ -36,12 +41,12 @@
       margin-bottom:8px;
       padding:10px 14px;
       border-radius:14px;
-      background:rgba(255, 239, 196, .92);
-      border:1px solid rgba(202,161,58,.45);
-      color:#73441b;
+      background:var(--amber);
+      border:0.5px solid var(--amber-border);
+      color:var(--amber-text);
       font-size:14px;
       font-weight:600;
-      box-shadow:0 10px 20px rgba(125,89,34,.08);
+      box-shadow:none;
     }
 
     .grid{display:grid;gap:12px;}
@@ -49,27 +54,34 @@
     .grid-3{grid-template-columns:repeat(3,minmax(0,1fr));}
 
     .row{display:grid;grid-template-columns:160px 1fr;gap:8px;align-items:center;}
-    .row .label{font-weight:600;white-space:nowrap;color:#20324f;}
+    .row .label{font-weight:600;white-space:nowrap;color:#2C2C2A;}
 
-    .card{background:rgba(255,253,248,.84);border:1px dashed rgba(202,161,58,.45);border-radius:20px;padding:16px;box-shadow:0 12px 26px rgba(125,89,34,.08);}
-    .sticky{background:#ffe18a;border:1px solid rgba(202,161,58,.55);transform:none;box-shadow:0 12px 26px rgba(125,89,34,.12);}
+    .card{background:#FFFFFF;border:0.5px solid var(--line);border-radius:16px;padding:16px;box-shadow:none;}
+    .topline{border-color:var(--amber-border);background:#FFFFFF;}
+    .sticky{background:var(--amber);border:0.5px solid var(--amber-border);transform:none;box-shadow:none;}
 
     .input, select, textarea{
       width:100%; box-sizing:border-box;
-      border:2px solid transparent; border-bottom:2px solid rgba(0,0,0,.2);
-      background:transparent; font-size:16px; padding:8px 6px; outline:none; font-family:var(--font-sans); color:var(--ink);
+      border:0.5px solid var(--soft-border);
+      border-radius:10px;
+      background:var(--soft);
+      font-size:16px;
+      padding:10px 12px;
+      outline:none;
+      font-family:var(--font-sans);
+      color:var(--ink);
     }
-    .input::placeholder, textarea::placeholder{color:#7a859b;}
-    .input:focus, select:focus, textarea:focus{border-color:var(--ring);border-radius:10px;background:rgba(255,255,255,.86);}
+    .input::placeholder, textarea::placeholder{color:#777;}
+    .input:focus, select:focus, textarea:focus{border-color:var(--ring);background:#fffdf8;}
 
     /* Compact “chip” controls */
     .input-chip{
-      border:1px solid rgba(207,216,230,.95) !important;
-      border-bottom-color:rgba(207,216,230,.95) !important;
-      background:rgba(255,255,255,.95);
-      border-radius:16px;
+      border:0.5px solid var(--soft-border) !important;
+      border-bottom-color:var(--soft-border) !important;
+      background:var(--soft);
+      border-radius:12px;
       padding:10px 14px;
-      box-shadow:0 8px 18px rgba(36,48,71,.08);
+      box-shadow:none;
       font-size:17px;
       line-height:1.2;
     }
@@ -84,7 +96,7 @@
     .pill{border:none;padding:0;background:transparent;display:inline-flex;gap:6px;align-items:center;font-size:14px;cursor:pointer;}
     .pill input{accent-color:#222;transform:scale(.95);}
 
-    .goal{border:1px solid #e4cf9c;border-radius:20px;padding:14px;background:rgba(255,253,248,.84);box-shadow:0 12px 24px rgba(125,89,34,.08);}
+    .goal{border:0.5px solid var(--amber-border);border-radius:16px;padding:18px;background:#FFFFFF;box-shadow:none;}
     .goal-layout{
       display:grid;
       gap:16px;
@@ -98,15 +110,15 @@
       overflow-wrap:anywhere;
     }
     .goal-notes{
-      background:var(--accent);
-      border:1px solid rgba(0,0,0,.15);
+      background:var(--soft);
+      border:0.5px solid var(--soft-border);
       border-radius:10px;
       padding:10px 12px;
-      box-shadow:0 3px 8px rgba(0,0,0,.15);
+      box-shadow:none;
     }
     .goal-notes:focus{
-      border-color:#222;
-      background:#ffe18a;
+      border-color:var(--ring);
+      background:#fffdf8;
     }
     .goal-prompt{
       max-width:220px;
@@ -119,48 +131,70 @@
     .support-select{display:grid;gap:6px;grid-template-columns:repeat(3,minmax(0,1fr));}
 
     .btns{display:flex;gap:10px;flex-wrap:wrap;}
-    .btn{border:1px solid #d8c7a4;background:#fffdf8;padding:10px 16px;border-radius:18px;cursor:pointer;font-weight:700;
-      box-shadow:0 10px 22px rgba(36,48,71,.08);transition:transform .05s ease;}
+    .btn{border:0.5px solid #D6D3CC;background:#F1EFEA;color:#2C2C2A;padding:12px 16px;border-radius:12px;cursor:pointer;font-weight:500;
+      box-shadow:none;transition:transform .05s ease, background .15s ease;}
+    .btn:hover{background:#ECE7DD;}
+    #addGoal,
+    #saveBtn,
+    .save-next-prompt .btn{
+      background:var(--amber);
+      border-color:var(--amber-border);
+      color:var(--amber-text);
+    }
+    #addGoal:hover,
+    #saveBtn:hover,
+    .save-next-prompt .btn:hover{background:#F6E4C7;}
     .btn:active{transform:translateY(1px);}
     .add-goal-wrap{margin-top:18px;}
     .save-next-prompt{
       display:none;
       margin-top:16px;
       padding:20px 22px;
-      border-radius:18px;
-      border:3px solid #1d4ed8;
-      background:linear-gradient(180deg,#eff6ff 0%,#dbeafe 100%);
-      box-shadow:0 10px 26px rgba(29,78,216,.18);
+      border-radius:16px;
+      border:0.5px solid var(--amber-border);
+      background:var(--amber);
+      box-shadow:none;
     }
     .save-next-prompt.is-visible{display:grid;gap:12px;}
     .save-next-prompt-title{
       margin:0;
       font-size:24px;
       line-height:1.2;
-      font-weight:900;
-      color:#1e3a8a;
+      font-weight:600;
+      color:var(--amber-text);
     }
-    .save-next-prompt p{margin:0;font-size:18px;line-height:1.55;font-weight:700;color:#1e3a8a;}
+    .save-next-prompt p{margin:0;font-size:16px;line-height:1.55;font-weight:500;color:#5F5E5A;}
     .save-next-prompt .btns{margin-top:4px}
     .save-next-prompt .btn{
       width:100%;
       justify-content:center;
       text-align:center;
-      padding:16px 18px;
-      font-size:22px;
-      font-weight:900;
-      border:2px solid #0f172a;
-      background:#22c55e;
-      color:#052e16;
-      box-shadow:3px 3px 0 #0f172a;
+      padding:12px 18px;
+      font-size:16px;
+      font-weight:500;
+      box-shadow:none;
     }
-    .save-next-prompt .btn:hover{background:#16a34a}
 
     .footer-hint{font-size:12px;opacity:.7;text-align:right;margin-top:8px;}
 
     .section-header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
     .section-header h2{margin:0;}
     .spacer{flex:1 1 auto;}
+    .starfield-page-header{
+      position:relative;
+      overflow:hidden;
+      text-align:center;
+      background:#F5F2EC;
+      color:#2C2C2A;
+      padding:32px 16px 28px;
+      border-radius:14px 14px 0 0;
+      margin:0 -32px 24px;
+    }
+    .starfield-bg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+    .starfield-header-content{position:relative;z-index:1;display:grid;justify-items:center;gap:6px;}
+    .header-star{width:22px;height:22px;display:block;}
+    .starfield-page-header h1{margin:0;color:#2C2C2A;font-family:var(--font-sans);font-size:17px;font-weight:500;line-height:1.25;letter-spacing:0;text-align:center;}
+    .starfield-page-header .sub{margin:0;color:#5F5E5A;font-size:12px;line-height:1.4;font-style:italic;}
 
     @media print{
       body{background:white;}
@@ -173,9 +207,9 @@
     @media (max-width:720px){
       body{overflow-x:hidden;}
       .wrapper{margin:12px auto;padding:10px;}
-      .clipboard{padding:16px;}
-      .sheet{padding:18px 14px 22px 24px;}
-      .sheet::before{left:18px;}
+      .clipboard{padding:0;}
+      .sheet{padding:0 16px 22px;}
+      .starfield-page-header{margin:0 -16px 18px;}
       .orientation-note{display:block;}
       h1{font-size:22px;}
       .sub{font-size:14px;margin-bottom:10px;}
@@ -199,10 +233,19 @@
     <div class="clipboard">
       <div class="clip" aria-hidden="true"></div>
       <div class="sheet">
-        <header class="grid" style="gap:6px;">
+        <header class="starfield-page-header">
+          <svg class="starfield-bg" viewBox="0 0 420 110" aria-hidden="true">
+            <circle cx="28" cy="18" r="1" fill="#2C2C2A" opacity="0.15"></circle><circle cx="80" cy="10" r="0.7" fill="#2C2C2A" opacity="0.12"></circle><circle cx="130" cy="28" r="0.9" fill="#2C2C2A" opacity="0.1"></circle><circle cx="200" cy="8" r="0.7" fill="#2C2C2A" opacity="0.1"></circle><circle cx="260" cy="22" r="0.6" fill="#2C2C2A" opacity="0.1"></circle><circle cx="340" cy="14" r="0.8" fill="#2C2C2A" opacity="0.12"></circle><circle cx="390" cy="28" r="1" fill="#2C2C2A" opacity="0.15"></circle><circle cx="50" cy="55" r="0.7" fill="#2C2C2A" opacity="0.1"></circle><circle cx="150" cy="65" r="0.8" fill="#2C2C2A" opacity="0.1"></circle><circle cx="300" cy="50" r="0.8" fill="#2C2C2A" opacity="0.12"></circle><circle cx="400" cy="68" r="0.7" fill="#2C2C2A" opacity="0.1"></circle>
+            <polygon points="60,20 61.4,24.4 66,24.4 62.4,27 63.8,31.4 60,28.8 56.2,31.4 57.6,27 54,24.4 58.6,24.4" fill="#2C2C2A" opacity="0.25"></polygon><polygon points="365,10 366.2,13.8 370.2,13.8 367,16 368.2,19.8 365,17.6 361.8,19.8 363,16 359.8,13.8 363.8,13.8" fill="#2C2C2A" opacity="0.2"></polygon>
+          </svg>
+          <div class="starfield-header-content">
+            <svg class="header-star" viewBox="0 0 24 24" fill="none" stroke="#2C2C2A" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><polygon points="12,2 14.9,9.3 22.6,9.3 16.4,14 18.8,21.5 12,17.2 5.2,21.5 7.6,14 1.4,9.3 9.1,9.3"></polygon></svg>
+            <h1>Focus of the week</h1>
+            <div class="sub" id="weekRangeText">Week of —</div>
+          </div>
+        </header>
+        <div class="grid" style="gap:6px;">
           <div class="orientation-note">For the best fit on a phone, turn your phone to landscape.</div>
-          <h1>✏️ Focus of the Week</h1>
-          <div class="sub" id="weekRangeText">Week of —</div>
           <div class="row" style="max-width:360px;">
             <div class="label">Week start</div>
             <input id="weekStartPicker" class="input input-chip" type="date" />
@@ -236,7 +279,7 @@
             <h3>Why this focus matters</h3>
             <textarea id="whyMatters" rows="3" placeholder="Short rationale…"></textarea>
           </section>
-        </header>
+        </div>
 
         <!-- Weekly Goals -->
         <section style="margin-top:14px;">
@@ -268,10 +311,10 @@
         </section>
 
         <div class="btns" style="margin-top:16px;">
-          <button class="btn" id="saveBtn">💾 Save</button>
-          <button class="btn" id="printBtn">🖨️ Print / PDF</button>
-          <button class="btn" id="copyNextBtn">➡️ Copy to Next Week</button>
-          <button class="btn" id="clearBtn">🧹 Clear</button>
+          <button class="btn" id="saveBtn">Save</button>
+          <button class="btn" id="printBtn">Print / PDF</button>
+          <button class="btn" id="copyNextBtn">Copy to Next week</button>
+          <button class="btn" id="clearBtn">Clear</button>
         </div>
         <div class="save-next-prompt" id="saveNextPrompt" role="status" aria-live="polite">
           <h3 class="save-next-prompt-title">Next Step: Open The Caregiver Report</h3>

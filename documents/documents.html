@@ -6,67 +6,65 @@
   <title>Documents</title>
   <style>
     :root{
-      --ink:#24314a;
-      --accent:#d9a441;
-      --paper:#fffdfa;
-      --rule:#e7dcc5;
+      --ink:#2C2C2A;
+      --accent:#FAEEDA;
+      --paper:#FFFFFF;
+      --rule:#E7E2D8;
       --punch:#d1d5db;
+      --color-background-primary:#FFFFFF;
+      --color-background-secondary:#F9F7F3;
+      --color-border-secondary:#D8D2C8;
+      --color-border-tertiary:#E7E2D8;
       --sans:"Avenir Next","Segoe UI","Helvetica Neue",Arial,sans-serif;
       --serif:Georgia,"Iowan Old Style","Palatino Linotype","Book Antiqua",serif;
     }
     *{box-sizing:border-box}
     body{
       margin:0;
-      padding:24px;
+      padding:0 24px 24px;
       font-family:var(--sans);
-      background:
-        radial-gradient(circle at top, rgba(242, 221, 176, .34), transparent 32%),
-        linear-gradient(180deg, #fffefb 0%, #fbf5e8 100%);
+      background:#F5F2EC;
       color:var(--ink);
     }
     .page{max-width:1200px; margin:0 auto;}
 
     /* Notebook */
-    .notebook{position:relative; border-radius:18px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,.08); display:block; background:var(--paper)}
+    .notebook{position:relative; border-radius:16px; overflow:hidden; box-shadow:none; display:block; background:var(--paper); border:0.5px solid var(--color-border-tertiary)}
     .paper{
-      padding:24px 24px 28px 42px; position:relative;
-      background:
-        linear-gradient(90deg,transparent 38px, rgba(239,68,68,.25) 39px, transparent 40px) 0 0/100% 100%,
-        repeating-linear-gradient(#0000, #0000 30px, var(--rule) 31px);
+      padding:0 24px 28px; position:relative;
+      background:#FFFFFF;
     }
-    .paper:before{content:""; position:absolute; left:14px; top:24px; bottom:24px; width:8px;
-      background:radial-gradient(var(--punch) 60%, transparent 62%) 0 0/100% 48px repeat-y; border-radius:8px;}
-    .rail{display:none}
+    .paper:before{display:none;}
     .pencil{display:none}
     h1{
-      margin:0 0 12px;
-      font-family:var(--serif);
-      font-size:clamp(2.2rem, 4vw, 3.2rem);
-      font-weight:700;
-      color:#73441b;
+      margin:0;
+      font-family:var(--sans);
+      font-size:17px;
+      font-weight:500;
+      color:#2C2C2A;
       letter-spacing:.01em;
     }
     label{display:block; font-weight:600; margin:6px 0 6px}
     input[type="text"], input[type="datetime-local"], select, textarea{
-      width:100%; padding:10px 12px; border:1px solid #e5e7eb; border-radius:10px; font-size:16px; background:#fff; outline:none;
+      width:100%; padding:10px 12px; border:0.5px solid var(--color-border-secondary); border-radius:10px; font-size:16px; background:var(--color-background-secondary); outline:none;
     }
     textarea{min-height:140px; line-height:30px;
-      background:linear-gradient(#0000, #0000 29px, rgba(37,99,235,.08) 30px) 0 0/100% 30px repeat-y;
+      background:var(--color-background-secondary);
     }
     .grid2{display:grid; gap:12px; grid-template-columns:1fr 1fr}
     .divider{height:1px; background:#f1f5f9; margin:16px 0}
-    .btn{appearance:none; border:1px solid #e2d5ba; background:#8a6b44; color:#fff; padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:600}
-    .btn.secondary{background:#fff; color:#111}
+    .btn{appearance:none; border:0.5px solid #FAC775; background:#FAEEDA; color:#633806; padding:12px 16px; border-radius:12px; cursor:pointer; font-size:14px; font-weight:500}
+    .btn.secondary{background:var(--color-background-secondary); color:var(--color-text-primary,#2C2C2A); border-color:var(--color-border-tertiary)}
     .muted{color:#6b7280; font-size:13px}
-    .card{border:1px solid #e5e7eb; border-radius:12px; padding:12px; margin-top:10px; background:#fff}
+    .card{border:0.5px solid var(--color-border-tertiary); border-radius:12px; padding:14px 16px; margin-top:10px; background:var(--color-background-primary)}
     .row{display:flex; gap:8px; align-items:center; justify-content:space-between}
     .doc-header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-top:22px}
     .doc-header h2{
       margin:0;
-      font-family:var(--serif);
+      font-family:var(--sans);
       font-size:clamp(1.8rem, 3vw, 2.4rem);
       font-weight:700;
-      color:#73441b;
+      color:#633806;
     }
     .doc-page-note{margin:6px 0 0;color:#6b7280;font-size:14px;font-style:italic}
     .doc-attachment-preview{
@@ -100,58 +98,14 @@
     }
     .doc-attachment-preview.has-image .preview-status{ display:none; }
 
-    /* Right-edge quick nav bubbles */
-    .edge-tabs {
-      position: fixed;
-      right: 12px;
-      top: 88px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      z-index: 1050;
-    }
-    .edge-tabs a {
-      width: 44px;
-      height: 44px;
-      border-radius: 12px;
-      display: grid;
-      place-items: center;
-      text-decoration: none;
-      background: #111;
-      color: #fff;
-      box-shadow: 0 8px 18px rgba(0,0,0,.22);
-      opacity: .92;
-      transition: transform .08s ease, opacity .08s ease;
-      font-size: 20px;
-    }
-    .edge-tabs a:hover { transform: translateY(-1px); opacity: 1; }
-    .edge-tabs a[aria-current="page"] {
-      outline: 3px solid #ffd166;
-      outline-offset: 2px;
-      background: #1b1b1b;
-    }
-    @media (max-width: 680px) {
-      .edge-tabs {
-        top: auto;
-        bottom: calc(var(--tabbar-h,72px) + 12px);
-        right: 10px;
-        flex-direction: row;
-      }
-      .edge-tabs a{width:36px;height:36px;font-size:16px;border-radius:10px}
-    }
-    @media print { .edge-tabs { display: none !important; } }
-
     @media (max-width: 720px) {
       body{padding:12px}
       .notebook{grid-template-columns:1fr}
-      .paper{padding:18px 16px 120px 30px}
-      .paper:before{left:8px}
-      .rail{display:none}
+      .paper{padding:0 16px 120px}
       .grid2{grid-template-columns:1fr}
       .doc-header{flex-direction:column;align-items:flex-start}
       .doc-header button{width:100%}
       textarea{min-height:120px;line-height:24px}
-      .edge-tabs{display:none}
     }
 
 
@@ -186,30 +140,31 @@
       color:#6b7280;
       font-size:14px;
     }
+    .starfield-page-header{position:relative;overflow:hidden;text-align:center;background:#F5F2EC;color:#2C2C2A;padding:32px 16px 22px;margin:0 -24px 18px;}
+    .starfield-bg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+    .starfield-header-content{position:relative;z-index:1;display:grid;justify-items:center;gap:6px;}
+    .header-star{width:22px;height:22px;display:block;}
   </style>
 </head>
 <body data-doc-page="docs">
   <!-- Shared navbar -->
   <div id="navbar"></div>
 
-  <nav class="edge-tabs" aria-label="Documents quick links">
-    <a href="/documents/index.html" data-doc-page="docs" title="Docs home">📁</a>
-    <a href="/documents/documents.html?cat=Finance" data-cat="Finance" title="Finance">💵</a>
-    <a href="/documents/documents.html?cat=Medical" data-cat="Medical" title="Medical">🩺</a>
-    <a href="/documents/documents.html?cat=HR" data-cat="HR" title="HR">🏢</a>
-    <a href="/documents/documents.html?cat=Caregiving" data-cat="Caregiving" title="Caregiving">🧩</a>
-    <a href="/documents/documents.html?cat=ISA" data-cat="ISA" title="ISA/IEP">📚</a>
-    <a href="/documents/documents.html?cat=Year%20End%20Paperwork" data-cat="Year End Paperwork" title="Year End">📦</a>
-    <a href="/documents/documents.html?cat=Guardianship" data-cat="Guardianship" title="Guardianship">🛡️</a>
-    <a href="/documents/minutes-form.html" data-doc-page="minutes" title="Meeting Minutes">📝</a>
-  </nav>
-
   <div class="page">
     <!-- Main content -->
     <div>
       <div class="notebook">
         <div class="paper">
-          <h1 id="formHeading">Add Document — <span id="catLabel">Finance</span></h1>
+          <section class="starfield-page-header">
+            <svg class="starfield-bg" viewBox="0 0 420 110" aria-hidden="true">
+              <circle cx="28" cy="18" r="1" fill="#2C2C2A" opacity="0.15"></circle><circle cx="80" cy="10" r="0.7" fill="#2C2C2A" opacity="0.12"></circle><circle cx="130" cy="28" r="0.9" fill="#2C2C2A" opacity="0.1"></circle><circle cx="200" cy="8" r="0.7" fill="#2C2C2A" opacity="0.1"></circle><circle cx="260" cy="22" r="0.6" fill="#2C2C2A" opacity="0.1"></circle><circle cx="340" cy="14" r="0.8" fill="#2C2C2A" opacity="0.12"></circle><circle cx="390" cy="28" r="1" fill="#2C2C2A" opacity="0.15"></circle><circle cx="50" cy="55" r="0.7" fill="#2C2C2A" opacity="0.1"></circle><circle cx="150" cy="65" r="0.8" fill="#2C2C2A" opacity="0.1"></circle><circle cx="300" cy="50" r="0.8" fill="#2C2C2A" opacity="0.12"></circle><circle cx="400" cy="68" r="0.7" fill="#2C2C2A" opacity="0.1"></circle>
+              <polygon points="60,20 61.4,24.4 66,24.4 62.4,27 63.8,31.4 60,28.8 56.2,31.4 57.6,27 54,24.4 58.6,24.4" fill="#2C2C2A" opacity="0.25"></polygon><polygon points="365,10 366.2,13.8 370.2,13.8 367,16 368.2,19.8 365,17.6 361.8,19.8 363,16 359.8,13.8 363.8,13.8" fill="#2C2C2A" opacity="0.2"></polygon>
+            </svg>
+            <div class="starfield-header-content">
+              <svg class="header-star" viewBox="0 0 24 24" fill="none" stroke="#2C2C2A" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><polygon points="12,2 14.9,9.3 22.6,9.3 16.4,14 18.8,21.5 12,17.2 5.2,21.5 7.6,14 1.4,9.3 9.1,9.3"></polygon></svg>
+              <h1 id="formHeading">Add Document — <span id="catLabel">Finance</span></h1>
+            </div>
+          </section>
           <p id="formSubheading" class="doc-page-note"></p>
           <p id="editNotice" class="muted" style="display:none;margin:6px 0 0;">
             Editing this document. Uploading a new file will replace the current attachment.
@@ -314,18 +269,5 @@
 <script defer src="/scripts/appbar-drawer.js?v=2026.03.16B"></script>
 <script defer src="/ui-shell.js?v=2026.03.16B"></script>
 <script type="module" src="/avatar-float.js?v=2026.03.16B"></script>
-<script>
-  (function(){
-    const cat = (document.body.dataset.docCat || '').toLowerCase();
-    const page = document.body.dataset.docPage || '';
-    document.querySelectorAll('.edge-tabs a').forEach(link => {
-      const linkCat = (link.dataset.cat || '').toLowerCase();
-      const linkPage = link.dataset.docPage || '';
-      if ((cat && linkCat === cat) || (page && linkPage === page)) {
-        link.setAttribute('aria-current', 'page');
-      }
-    });
-  })();
-</script>
 </body>
 </html>

@@ -14,25 +14,42 @@
         linear-gradient(180deg, #fff8ea 0%, #f8ecd0 100%);
       --panel:#fffdf8;
       --panel-border:#ead7ab;
-      --panel-shadow:0 18px 36px rgba(125,89,34,0.12);
-      --text:#243047;
-      --muted:#667188;
-      --navy:#20324f;
+      --panel-shadow:none;
+      --text:#2C2C2A;
+      --muted:#5F5E5A;
+      --navy:#2C2C2A;
+      --color-background-primary:#FFFFFF;
+      --color-background-secondary:#F9F7F3;
+      --color-border-secondary:#D8D2C8;
+      --color-border-tertiary:#E7E2D8;
     }
     body {
       font-family: var(--font-sans);
-      padding: 24px 16px calc(96px + env(safe-area-inset-bottom, 0px));
+      padding: 0 16px calc(96px + env(safe-area-inset-bottom, 0px));
       margin: 0;
       min-height: 100vh;
-      background: var(--page-bg);
+      background: #F5F2EC;
       color: var(--text);
     }
+    .starfield-page-header {
+      position: relative;
+      overflow: hidden;
+      text-align: center;
+      background: #F5F2EC;
+      color: #2C2C2A;
+      padding: 32px 16px 22px;
+      margin: 0 -16px 18px;
+    }
+    .starfield-bg { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+    .starfield-header-content { position:relative; z-index:1; display:grid; justify-items:center; gap:6px; }
+    .header-star { width:22px; height:22px; display:block; }
     h1 {
-      margin: 8px 0 18px;
-      font-family: var(--font-serif);
-      font-size: clamp(2.2rem, 5vw, 3.4rem);
-      color: #724016;
-      text-align: left;
+      margin: 0;
+      font-family: var(--font-sans);
+      font-size: 17px;
+      font-weight: 500;
+      color: #2C2C2A;
+      text-align: center;
     }
     .avatar-block {
       display: inline-flex;
@@ -45,17 +62,17 @@
       width: 96px; height: 96px;
       border-radius: 50%;
       object-fit: cover;
-      border: 2px solid #ead7ab;
+      border: 0.5px solid var(--color-border-tertiary);
       background: #f7f7f7;
-      box-shadow: 0 10px 22px rgba(125,89,34,0.12);
+      box-shadow: none;
     }
     .edit-avatar-btn {
       width: 32px; height: 32px;
       display: inline-flex; align-items: center; justify-content: center;
-      border: 1px solid #ead7ab; border-radius: 12px;
-      background: #fffdf8; cursor: pointer;
+      border: 0.5px solid var(--color-border-tertiary); border-radius: 12px;
+      background: var(--color-background-secondary); cursor: pointer;
       font-size: 16px;
-      box-shadow: 0 4px 10px rgba(36,48,71,0.08);
+      box-shadow: none;
     }
     .edit-avatar-btn:hover { background: #fff7e0; }
     .avatar-edit-row{
@@ -73,40 +90,40 @@
       display: grid;
       gap: 16px;
       max-width: 620px;
-      padding: 22px 22px 18px;
-      background: var(--panel);
-      border: 1px solid var(--panel-border);
-      border-radius: 28px;
+      padding: 14px 16px;
+      background: var(--color-background-primary);
+      border: 0.5px solid var(--color-border-tertiary);
+      border-radius: 12px;
       box-shadow: var(--panel-shadow);
     }
     label {
       display: block;
       margin-bottom: 8px;
-      font-family: var(--font-serif);
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: var(--navy);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
     }
     input[type="text"], select {
-      padding: 14px 18px;
-      border: 1.5px solid #cfd8e6;
-      border-radius: 18px;
+      padding: 10px 12px;
+      border: 0.5px solid var(--color-border-secondary);
+      border-radius: 10px;
       width: 100%;
-      background: rgba(255,255,255,0.94);
+      background: var(--color-background-secondary);
       color: var(--text);
-      font-size: 1.15rem;
+      font-size: 14px;
     }
     #saveBtn {
       padding: 14px 22px;
-      border: 1px solid #d8c7a4;
-      border-radius: 18px;
-      background: #fffdf8;
-      color: var(--navy);
+      border: 0.5px solid #FAC775;
+      border-radius: 12px;
+      background: #FAEEDA;
+      color: #633806;
       cursor: pointer;
       font-family: var(--font-sans);
-      font-size: 1.2rem;
-      font-weight: 700;
-      box-shadow: 0 10px 24px rgba(36,48,71,0.08);
+      font-size: 14px;
+      font-weight: 500;
+      box-shadow: none;
     }
     #saveBtn:disabled {
       opacity: 0.6;
@@ -141,20 +158,20 @@
     .next-step-btn{
       margin-left: 10px;
       padding: 14px 22px;
-      border: 1px solid #2bbf67;
-      border-radius: 18px;
-      background: linear-gradient(180deg, #49da7b 0%, #22c55e 100%);
-      color: #08331d;
+      border: 0.5px solid #FAC775;
+      border-radius: 12px;
+      background: #FAEEDA;
+      color: #633806;
       cursor: pointer;
-      font-weight: 700;
-      font-size: 1.2rem;
+      font-weight: 500;
+      font-size: 14px;
       display: none;
-      box-shadow: 0 14px 28px rgba(34,197,94,0.22);
+      box-shadow: none;
     }
     .next-step-btn.is-visible{
       display: inline-block;
     }
-    .next-step-btn:hover { background: linear-gradient(180deg, #42cf74 0%, #1fb656 100%); }
+    .next-step-btn:hover { background: #F6E4C7; }
     small {
       opacity: 1;
       display: block;
@@ -193,7 +210,7 @@
       display: none;
       line-height: 1.45;
       border-color: #efd089;
-      box-shadow: 0 10px 22px rgba(125,89,34,0.10);
+      box-shadow: none;
     }
     .setup-note.is-visible{
       display: block;
@@ -203,8 +220,8 @@
       margin: 0 0 18px;
       padding: 14px;
       border-radius: 12px;
-      border: 1px solid #d8e8c3;
-      background: linear-gradient(180deg, #fffdf6 0%, #f7f3df 100%);
+      border: 0.5px solid var(--color-border-tertiary);
+      background: var(--color-background-primary);
       display: none;
       box-shadow: var(--panel-shadow);
     }
@@ -213,10 +230,10 @@
     }
     .setup-checklist-title{
       margin: 0 0 10px;
-      font-family: var(--font-serif);
-      font-size: 1.45rem;
-      font-weight: 700;
-      color: #724016;
+      font-family: var(--font-sans);
+      font-size: 15px;
+      font-weight: 500;
+      color: #633806;
     }
     .setup-checklist ul{
       list-style: none;
@@ -236,8 +253,8 @@
       width: 20px;
       height: 20px;
       border-radius: 6px;
-      background: linear-gradient(180deg, #49da7b 0%, #22c55e 100%);
-      color: #fff;
+      background: #FAEEDA;
+      color: #633806;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -258,7 +275,16 @@
 <body>
   
 
-  <h1>Update Your Profile</h1>
+  <section class="starfield-page-header">
+    <svg class="starfield-bg" viewBox="0 0 420 110" aria-hidden="true">
+      <circle cx="28" cy="18" r="1" fill="#2C2C2A" opacity="0.15"></circle><circle cx="80" cy="10" r="0.7" fill="#2C2C2A" opacity="0.12"></circle><circle cx="130" cy="28" r="0.9" fill="#2C2C2A" opacity="0.1"></circle><circle cx="200" cy="8" r="0.7" fill="#2C2C2A" opacity="0.1"></circle><circle cx="260" cy="22" r="0.6" fill="#2C2C2A" opacity="0.1"></circle><circle cx="340" cy="14" r="0.8" fill="#2C2C2A" opacity="0.12"></circle><circle cx="390" cy="28" r="1" fill="#2C2C2A" opacity="0.15"></circle><circle cx="50" cy="55" r="0.7" fill="#2C2C2A" opacity="0.1"></circle><circle cx="150" cy="65" r="0.8" fill="#2C2C2A" opacity="0.1"></circle><circle cx="300" cy="50" r="0.8" fill="#2C2C2A" opacity="0.12"></circle><circle cx="400" cy="68" r="0.7" fill="#2C2C2A" opacity="0.1"></circle>
+      <polygon points="60,20 61.4,24.4 66,24.4 62.4,27 63.8,31.4 60,28.8 56.2,31.4 57.6,27 54,24.4 58.6,24.4" fill="#2C2C2A" opacity="0.25"></polygon><polygon points="365,10 366.2,13.8 370.2,13.8 367,16 368.2,19.8 365,17.6 361.8,19.8 363,16 359.8,13.8 363.8,13.8" fill="#2C2C2A" opacity="0.2"></polygon>
+    </svg>
+    <div class="starfield-header-content">
+      <svg class="header-star" viewBox="0 0 24 24" fill="none" stroke="#2C2C2A" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><polygon points="12,2 14.9,9.3 22.6,9.3 16.4,14 18.8,21.5 12,17.2 5.2,21.5 7.6,14 1.4,9.3 9.1,9.3"></polygon></svg>
+      <h1>Update your profile</h1>
+    </div>
+  </section>
   <div id="setupNote" class="setup-note" role="status" aria-live="polite"></div>
   <div id="setupChecklist" class="setup-checklist" aria-live="polite">
     <p class="setup-checklist-title">First-time setup on this page:</p>

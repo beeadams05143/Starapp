@@ -6,6 +6,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="stylesheet" href="style.css?v=2025.01.09E"/>
   <style>
+    :root {
+      --accent-purple: #7C6ACF;
+      --accent-green: #6BBF8A;
+    }
     html,body{height:auto!important;min-height:100%;overflow-y:auto!important;-webkit-overflow-scrolling:touch}
     body{
       margin:0;
@@ -897,20 +901,569 @@
         font-size: 16px;
       }
     }
+    body {
+      background: #f4efe9;
+      font-family: system-ui, -apple-system;
+    }
+
+    .main-container {
+      max-width: 520px;
+      margin: auto;
+      padding: 16px;
+    }
+
+    .section-card {
+      background: #ffffff;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      border: none;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 15px;
+      font-weight: 600;
+      color: #333;
+      cursor: pointer;
+    }
+
+    .section-content {
+      margin-top: 10px;
+    }
+
+    .section-detail {
+      display: none;
+    }
+
+    .section-card fieldset.panel {
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .old-section-title,
+    .section-title,
+    .section-title::before,
+    .section-title::after {
+      display: none !important;
+    }
+
+    body > .page-wrap.main-container > h1,
+    body > .page-wrap.main-container > .sub,
+    body > .page-wrap.main-container > .progress,
+    body > .page-wrap.main-container > .top-actions,
+    .start-helper {
+      display: none !important;
+    }
+
+    .top-card {
+      background: #ffffff;
+      border: none;
+      border-radius: 14px;
+      box-shadow: none;
+      display: grid;
+      gap: 10px;
+      margin-bottom: 12px;
+      padding: 0;
+    }
+
+    .physical-top-row {
+      display: block;
+      margin: 0 0 12px;
+    }
+
+    label {
+      font-size: 14px;
+      color: #666;
+    }
+
+    input, select {
+      background: #f7f7f7;
+      border-radius: 10px;
+      border: none;
+      padding: 10px;
+      font-size: 14px;
+      width: 100%;
+      box-shadow: none;
+      background-image: none;
+    }
+
+    textarea {
+      background: #f7f7f7;
+      border: none;
+      border-radius: 10px;
+      box-shadow: none;
+      background-image: none;
+    }
+
+    input[type="checkbox"],
+    input[type="radio"] {
+      width: auto;
+      padding: 0;
+    }
+
+    button {
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-weight: 600;
+      box-shadow: none;
+      background-image: none;
+    }
+
+    .primary-btn,
+    .btn.primary,
+    button[data-next],
+    button[type="submit"] {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: none;
+      background-image: none;
+    }
+
+    .secondary-btn,
+    .btn:not(.primary) {
+      background: #eee;
+      border-radius: 12px;
+      border: none;
+      box-shadow: none;
+      background-image: none;
+    }
+
+    .all-clear-box {
+      background: #E8F5ED;
+      border: 1px solid #CFE9D8;
+      border-radius: 10px;
+      color: #2F6F4F;
+      cursor: pointer;
+      font-size: 13px;
+      margin-bottom: 12px;
+      padding: 12px;
+    }
+
+    .section-list-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 14px;
+      border-bottom: 1px solid #eee;
+      font-size: 15px;
+      cursor: pointer;
+      background: #fff;
+    }
+
+    #sectionListView {
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+
+    .section-list-item:first-child {
+      border-radius: 14px 14px 0 0;
+    }
+
+    .section-list-item:last-child {
+      border-bottom: 0;
+      border-radius: 0 0 14px 14px;
+      margin-bottom: 12px;
+    }
+
+    .status,
+    .status-text {
+      color: var(--accent-purple);
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .back-btn {
+      background: #eee;
+      border: none;
+      border-radius: 12px;
+      color: #333;
+      margin-bottom: 12px;
+      padding: 10px 12px;
+    }
+
+    .section-card > .back-btn:first-of-type,
+    .section-detail > .back-btn:first-of-type,
+    .section-content > .back-btn:first-of-type {
+      display: none !important;
+    }
+
+    .med-panel,
+    .movement-panel,
+    .temp-panel,
+    .behavior-legacy-section,
+    .behavior-card,
+    .educational-card {
+      background: #ffffff;
+      border: none;
+      border-radius: 12px;
+      box-shadow: none;
+    }
+
+    .med-head,
+    .movement-head,
+    .temp-head,
+    .focus-title-pill,
+    .subcap {
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      color: #333;
+    }
+
+    .yn-pill,
+    .movement-pill,
+    .movement-chip,
+    .temp-pill,
+    .temp-chip,
+    .med-pill,
+    .med-type-chip,
+    .prn-option,
+    .physical-checkbox-card {
+      background: #f7f7f7;
+      border: none;
+      border-radius: 10px;
+      box-shadow: none;
+      color: #555;
+    }
+
+    hr.soft,
+    .soft {
+      border-color: #eee;
+      background: #eee;
+    }
+
+    .weekly-focus {
+      background: #F6EFE4;
+      border: 1px solid #E3D7C7;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px rgba(91,70,54,0.06);
+    }
+
+    .weekly-focus::after {
+      display: none;
+    }
+
+    .weekly-focus-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      justify-content: flex-start;
+      text-align: left;
+    }
+
+    .star-icon {
+      font-size: 20px;
+      line-height: 1;
+    }
+
+    .focus-title {
+      font-weight: 600;
+      color: #5B4636;
+    }
+
+    .focus-sub {
+      color: #7A6A58;
+      font-size: 14px;
+    }
+
+    .weekly-focus-title {
+      background: transparent;
+      border: 0;
+      border-radius: 0;
+      box-shadow: none;
+      color: #5B4636;
+      font-size: 14px;
+      font-weight: 600;
+      margin: 0;
+      padding: 0;
+    }
+
+    .weekly-focus-content,
+    .weekly-focus .focus-summary,
+    .weekly-focus .focus-summary .focus-title-text {
+      color: #2c2c2c;
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 0;
+    }
+
+    .weekly-focus .focus-summary {
+      justify-items: start;
+      text-align: left;
+    }
+
+    .weekly-focus .focus-chip,
+    .weekly-focus .focus-goals li,
+    .weekly-focus .focus-track-item {
+      background: #ffffff;
+      border: 1px solid #e3dccf;
+      box-shadow: none;
+    }
+
+    .weekly-focus button,
+    .weekly-focus .focus-link {
+      background: transparent;
+      border: 1px solid #d8d2c4;
+      color: var(--accent-purple);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 13px;
+      cursor: pointer;
+      box-shadow: none;
+      font-weight: 500;
+    }
+
+    .weekly-focus button:hover,
+    .weekly-focus .focus-link:hover {
+      background: #ece7dd;
+    }
+
+    a,
+    .focus-link {
+      color: var(--accent-purple);
+    }
+
+    .navbar,
+    #navbar,
+    .topbar,
+    .top-bar,
+    .appbar,
+    .app-bar,
+    [data-appbar],
+    header {
+      background: #f9f7f2 !important;
+      color: #2c2c2c !important;
+      border-bottom: 1px solid #e5dfd3 !important;
+      box-shadow: none !important;
+    }
+
+    .menu-btn,
+    .appbar .menu-btn,
+    #openMenu {
+      width: 40px !important;
+      height: 40px !important;
+      background: #F4F1EA !important;
+      border-radius: 10px !important;
+      border: 1px solid #E0D8CC !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: center !important;
+      align-items: center !important;
+      gap: 4px !important;
+      cursor: pointer !important;
+      box-shadow: none !important;
+      padding: 0 !important;
+    }
+
+    .menu-btn span,
+    .appbar .menu-btn span,
+    #openMenu span {
+      width: 18px;
+      height: 2px;
+      background: #3A3A3A;
+      display: block;
+      border-radius: 2px;
+    }
+
+    .menu-btn:hover,
+    .appbar .menu-btn:hover,
+    #openMenu:hover {
+      background: #EDE6DA !important;
+    }
+
+    .bottom-nav,
+    .bottomNav,
+    .nav-bar,
+    .tabbar,
+    #tabbar,
+    [data-tabbar] {
+      background: #f9f7f2 !important;
+      color: #2c2c2c !important;
+      border-top: 1px solid #e5dfd3 !important;
+      box-shadow: none !important;
+    }
+
+    .navbar *,
+    #navbar *,
+    .topbar *,
+    .top-bar *,
+    .appbar *,
+    .app-bar *,
+    [data-appbar] *,
+    header *,
+    .bottom-nav *,
+    .bottomNav *,
+    .nav-bar *,
+    .tabbar *,
+    #tabbar *,
+    [data-tabbar] * {
+      color: #2c2c2c !important;
+    }
+
+    .behavior-subheading,
+    .form-subheading,
+    .subsection-title,
+    .section-subtitle,
+    .subcap,
+    .behavior-section-header,
+    .educational-section-header {
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      color: #2c2c2c !important;
+      font-size: 16px !important;
+      font-weight: 700 !important;
+      margin: 20px 0 10px !important;
+      padding: 0 !important;
+      width: auto !important;
+      max-width: 100% !important;
+      font-family: system-ui, -apple-system, sans-serif !important;
+      display: block !important;
+    }
+
+    .behavior-section-header::before,
+    .behavior-section-header::after,
+    .educational-section-header::before,
+    .educational-section-header::after {
+      display: none !important;
+    }
+
+    .behavior-section,
+    .educational-section {
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      padding: 0 !important;
+      max-width: 100% !important;
+      overflow: hidden !important;
+    }
+
+    .section-card,
+    .section-detail,
+    .section-content,
+    .form-card {
+      overflow: hidden;
+      max-width: 100%;
+    }
+
+    .section-card * {
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+
+    .save-next-btn,
+    button.save-next-btn,
+    button[type="submit"].save-next-btn {
+      background: #f4f1ea !important;
+      color: #2c2c2c !important;
+      border: 1px solid #ddd6c9 !important;
+      border-radius: 10px !important;
+      padding: 10px 16px !important;
+      font-size: 14px !important;
+      font-weight: 500 !important;
+      box-shadow: none !important;
+    }
+
+    .checkbox-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+    }
+
+    .checkbox-card {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid #E0D8CC;
+      background: #F4F1EA;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .checkbox-card:hover {
+      background: #EDE6DA;
+    }
+
+    .checkbox-card input {
+      width: auto !important;
+      flex: 0 0 auto;
+    }
+
+    .checkbox-card input:checked + span {
+      font-weight: 600;
+    }
+
+    .checkbox-card:has(input:checked) {
+      background: #EDE6DA;
+      border-color: #CBBFAE;
+    }
+
+    @media (max-width: 700px) {
+      .form-row,
+      .grid,
+      .two-column,
+      .three-column,
+      .row,
+      .cols-2,
+      .cols-3,
+      .compact,
+      .behavior-legacy-paired-row,
+      .behavior-legacy-check-grid,
+      .movement-row,
+      .temp-row,
+      .med-row {
+        display: block !important;
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100% !important;
+      }
+    }
   </style>
 </head>
 <body>
-  <div class="page-wrap">
+  <section class="starfield-page-header">
+    <svg class="starfield-bg" viewBox="0 0 420 110" aria-hidden="true">
+      <circle cx="28" cy="18" r="1" fill="#2C2C2A" opacity="0.15"></circle><circle cx="80" cy="10" r="0.7" fill="#2C2C2A" opacity="0.12"></circle><circle cx="130" cy="28" r="0.9" fill="#2C2C2A" opacity="0.1"></circle><circle cx="200" cy="8" r="0.7" fill="#2C2C2A" opacity="0.1"></circle><circle cx="260" cy="22" r="0.6" fill="#2C2C2A" opacity="0.1"></circle><circle cx="340" cy="14" r="0.8" fill="#2C2C2A" opacity="0.12"></circle><circle cx="390" cy="28" r="1" fill="#2C2C2A" opacity="0.15"></circle><circle cx="50" cy="55" r="0.7" fill="#2C2C2A" opacity="0.1"></circle><circle cx="150" cy="65" r="0.8" fill="#2C2C2A" opacity="0.1"></circle><circle cx="300" cy="50" r="0.8" fill="#2C2C2A" opacity="0.12"></circle><circle cx="400" cy="68" r="0.7" fill="#2C2C2A" opacity="0.1"></circle>
+      <polygon points="60,20 61.4,24.4 66,24.4 62.4,27 63.8,31.4 60,28.8 56.2,31.4 57.6,27 54,24.4 58.6,24.4" fill="#2C2C2A" opacity="0.25"></polygon><polygon points="365,10 366.2,13.8 370.2,13.8 367,16 368.2,19.8 365,17.6 361.8,19.8 363,16 359.8,13.8 363.8,13.8" fill="#2C2C2A" opacity="0.2"></polygon>
+    </svg>
+    <div class="starfield-header-content">
+      <svg class="header-star" viewBox="0 0 24 24" fill="none" stroke="#2C2C2A" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><polygon points="12,2 14.9,9.3 22.6,9.3 16.4,14 18.8,21.5 12,17.2 5.2,21.5 7.6,14 1.4,9.3 9.1,9.3"></polygon></svg>
+      <h1>Caregiver check-in</h1>
+    </div>
+  </section>
+  <div class="page-wrap main-container">
     <div class="practice-banner" id="practiceBanner">
       ⚠️ Practice mode — nothing you enter here will be saved to real records.
     </div>
     <h1>Caregiver Check-In</h1>
     <div class="sub">This check-in autosaves while you type. <strong>Save</strong> saves your progress so far and lets you come back later. <strong>Save &amp; Next</strong> saves the current section and moves you to the next one.</div>
 
-    <section class="panel focus-panel" id="caregiver-focus-panel">
-      <div class="focus-title-pill">Weekly Focus</div>
-      <div class="focus-header">
-        <p class="focus-summary" id="focusSummary">Loading weekly focus…</p>
+    <section class="panel focus-panel weekly-focus" id="caregiver-focus-panel">
+      <div class="focus-header weekly-focus-header">
+        <span class="star-icon">⭐</span>
+        <div>
+          <div class="focus-title weekly-focus-title">Weekly focus</div>
+          <div class="focus-sub focus-summary weekly-focus-content" id="focusSummary">No focus set — open Focus Planner</div>
+        </div>
       </div>
       <p class="focus-details is-hidden" id="focusDetails"></p>
       <p class="focus-planner-stats is-hidden" id="focusPlannerStats"></p>
@@ -937,40 +1490,53 @@
 
     <form id="cg-form" novalidate>
       <!-- STEP 1: Physical -->
-      <div class="step active" data-step="0">
-        <fieldset class="panel">
-          <div class="physical-top-row">
-            <div class="start-helper" style="
-              background: #f8f4ff;
-              border: 1px solid #d6c7ff;
-              border-radius: 12px;
-              padding: 12px 16px;
-              margin-bottom: 12px;
-              font-size: 14px;
-              color: #3c3489;
-            ">
-              👉 Start here: enter your name, then tap <strong>Begin check-in</strong>
-            </div>
-            <label for="entryDateInput">Date of shift:
-              <input type="date" id="entryDateInput" name="entry_date"/>
-              <span class="muted">Pick another day if you missed logging it.</span>
+      <div id="physicalSection" class="step active" data-step="0">
+        <div class="top-card">
+          <label for="entryDateInput">Date of shift:
+            <input type="date" id="entryDateInput" name="entry_date"/>
+            <span class="muted">Pick another day if you missed logging it.</span>
+          </label>
+          <div id="question-caregiver-name" class="question-block">
+            <label for="caregiver_name">Caregiver Name:
+              <input id="caregiver_name" name="caregiver_name" type="text" placeholder="Enter your name" required />
             </label>
-            <div id="question-caregiver-name" class="question-block">
-              <label for="caregiver_name">Caregiver Name:
-                <input id="caregiver_name" name="caregiver_name" type="text" placeholder="Enter your name" required />
-              </label>
-            </div>
-            <div class="physical-spacer" aria-hidden="true"></div>
           </div>
+        </div>
+
+        <div id="sectionListView">
+          <div class="section-list-item" data-section="physical" data-target="physicalSection">
+            <span>Physical Health</span>
+            <span class="status">not started →</span>
+          </div>
+          <div class="section-list-item" data-section="behavior" data-target="behaviorSection">
+            <span>Behavior / Mental Health</span>
+            <span class="status">not started →</span>
+          </div>
+          <div class="section-list-item" data-section="vocational" data-target="vocationalSection">
+            <span>Vocational</span>
+            <span class="status">not started →</span>
+          </div>
+          <div class="section-list-item" data-section="homeFamily" data-target="homeFamilySection">
+            <span>Home / Family</span>
+            <span class="status">not started →</span>
+          </div>
+          <div class="section-list-item" data-section="community" data-target="communitySection">
+            <span>Community</span>
+            <span class="status">not started →</span>
+          </div>
+          <div class="section-list-item" data-section="dailyLiving" data-target="daily-living-step">
+            <span>Daily Living</span>
+            <span class="status">not started →</span>
+          </div>
+        </div>
+
+        <div class="section-card section-detail">
+          <div class="section-header">Physical Health <span>→</span></div>
+          <div class="section-content">
+          <button class="back-btn" type="button">← Back</button>
+        <fieldset class="panel">
           <div class="section-title">Physical Health</div>
-          <div id="allClearBox" style="
-            border: 1px solid #b7e4c7;
-            background: #e6f9ed;
-            padding: 12px;
-            border-radius: 10px;
-            margin-bottom: 12px;
-            cursor: pointer;
-          ">
+          <div id="allClearBox" class="all-clear-box">
             ✔ All clear — nothing to report
             <div style="font-size: 12px; color: #2d6a4f;">
               Tap to mark optional sections as “nothing to report”
@@ -1076,11 +1642,11 @@
             <div class="med-body is-collapsed" data-med-body-wrap>
               <div>
                 <div class="med-label">Change type</div>
-                <div class="med-type-grid" role="group" aria-label="Change type">
-                  <label class="med-type-chip"><input type="checkbox" name="med_change_type_new" /> New medication</label>
-                  <label class="med-type-chip"><input type="checkbox" name="med_change_type_dose" /> Dose change</label>
-                  <label class="med-type-chip"><input type="checkbox" name="med_change_type_stopped" /> Stopped medication</label>
-                  <label class="med-type-chip"><input type="checkbox" name="med_change_type_other" /> Other</label>
+                <div class="med-type-grid checkbox-grid" role="group" aria-label="Change type">
+                  <label class="med-type-chip checkbox-card"><input type="checkbox" name="med_change_type_new" /> New medication</label>
+                  <label class="med-type-chip checkbox-card"><input type="checkbox" name="med_change_type_dose" /> Dose change</label>
+                  <label class="med-type-chip checkbox-card"><input type="checkbox" name="med_change_type_stopped" /> Stopped medication</label>
+                  <label class="med-type-chip checkbox-card"><input type="checkbox" name="med_change_type_other" /> Other</label>
                 </div>
               </div>
               <div class="med-row">
@@ -1132,11 +1698,11 @@
                 <div>
                   <div class="movement-label">Main symptom</div>
                   <div class="movement-chips">
-                    <label class="movement-chip"><input type="radio" name="movement_main_type" value="face_mouth">Face / mouth movements</label>
-                    <label class="movement-chip"><input type="radio" name="movement_main_type" value="hand_finger">Hand / finger movements</label>
-                    <label class="movement-chip"><input type="radio" name="movement_main_type" value="body_restlessness">Body movements / restlessness</label>
-                    <label class="movement-chip"><input type="radio" name="movement_main_type" value="vocalizations">Vocalizations</label>
-                    <label class="movement-chip"><input type="radio" name="movement_main_type" value="other">Other</label>
+                    <label class="movement-chip checkbox-card"><input type="radio" name="movement_main_type" value="face_mouth">Face / mouth movements</label>
+                    <label class="movement-chip checkbox-card"><input type="radio" name="movement_main_type" value="hand_finger">Hand / finger movements</label>
+                    <label class="movement-chip checkbox-card"><input type="radio" name="movement_main_type" value="body_restlessness">Body movements / restlessness</label>
+                    <label class="movement-chip checkbox-card"><input type="radio" name="movement_main_type" value="vocalizations">Vocalizations</label>
+                    <label class="movement-chip checkbox-card"><input type="radio" name="movement_main_type" value="other">Other</label>
                   </div>
                 </div>
                 <div>
@@ -1156,8 +1722,8 @@
                 <div>
                   <div class="movement-label">Times</div>
                   <div class="movement-chips">
-                    <label class="movement-chip"><input type="checkbox" data-movement-time value="AM">AM</label>
-                    <label class="movement-chip"><input type="checkbox" data-movement-time value="PM">PM</label>
+                    <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-time value="AM">AM</label>
+                    <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-time value="PM">PM</label>
                   </div>
                   <input type="hidden" name="movement_times" id="movement_times" value=""/>
                 </div>
@@ -1174,18 +1740,18 @@
 
               <div class="movement-details is-hidden" id="movementDetails">
                 <div class="movement-label">Optional symptom details</div>
-                <div class="movement-grid">
-                  <label class="movement-chip"><input type="checkbox" data-movement-body value="eyes_blinking">Eyes blinking / eye movements</label>
-                  <label class="movement-chip"><input type="checkbox" data-movement-body value="face_grimacing">Face grimacing</label>
-                  <label class="movement-chip"><input type="checkbox" data-movement-body value="mouth_lips">Mouth / lips (smacking / chewing)</label>
-                  <label class="movement-chip"><input type="checkbox" data-movement-body value="tongue_movements">Tongue movements</label>
-                  <label class="movement-chip"><input type="checkbox" data-movement-body value="jaw_movements">Jaw movements</label>
-                  <label class="movement-chip"><input type="checkbox" data-movement-body value="hands_tremor">Hands tremor</label>
-                  <label class="movement-chip"><input type="checkbox" data-movement-body value="arms_jerks">Arms jerks / “air punching”</label>
-                  <label class="movement-chip"><input type="checkbox" data-movement-body value="legs_feet">Legs / feet tapping / kicking</label>
-                  <label class="movement-chip"><input type="checkbox" data-movement-body value="neck_trunk">Neck / trunk movements</label>
-                  <label class="movement-chip"><input type="checkbox" data-movement-body value="vocalizations">Vocalizations / humming / tics</label>
-                  <label class="movement-chip"><input type="checkbox" data-movement-body value="other_movement">Other movement</label>
+                <div class="movement-grid checkbox-grid">
+                  <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-body value="eyes_blinking">Eyes blinking / eye movements</label>
+                  <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-body value="face_grimacing">Face grimacing</label>
+                  <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-body value="mouth_lips">Mouth / lips (smacking / chewing)</label>
+                  <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-body value="tongue_movements">Tongue movements</label>
+                  <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-body value="jaw_movements">Jaw movements</label>
+                  <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-body value="hands_tremor">Hands tremor</label>
+                  <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-body value="arms_jerks">Arms jerks / “air punching”</label>
+                  <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-body value="legs_feet">Legs / feet tapping / kicking</label>
+                  <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-body value="neck_trunk">Neck / trunk movements</label>
+                  <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-body value="vocalizations">Vocalizations / humming / tics</label>
+                  <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-body value="other_movement">Other movement</label>
                 </div>
                 <div class="movement-inline-input" style="margin-top:8px">
                   <input type="text" name="movement_other_text" id="movement_other_text" placeholder="Other movement (optional)"/>
@@ -1196,10 +1762,10 @@
 
                 <div class="movement-label">Frequency</div>
                 <div class="movement-chips">
-                  <label class="movement-chip"><input type="radio" name="movement_frequency" value="once">Once</label>
-                  <label class="movement-chip"><input type="radio" name="movement_frequency" value="few_times">A few times</label>
-                  <label class="movement-chip"><input type="radio" name="movement_frequency" value="often">Often</label>
-                  <label class="movement-chip"><input type="radio" name="movement_frequency" value="nearly_constant">Nearly constant</label>
+                  <label class="movement-chip checkbox-card"><input type="radio" name="movement_frequency" value="once">Once</label>
+                  <label class="movement-chip checkbox-card"><input type="radio" name="movement_frequency" value="few_times">A few times</label>
+                  <label class="movement-chip checkbox-card"><input type="radio" name="movement_frequency" value="often">Often</label>
+                  <label class="movement-chip checkbox-card"><input type="radio" name="movement_frequency" value="nearly_constant">Nearly constant</label>
                 </div>
 
                 <div class="soft" style="margin:12px 0"></div>
@@ -1212,15 +1778,15 @@
 
                 <div class="movement-collapse-body is-hidden" id="movementTriggersBody">
                   <div class="movement-label" style="margin-top:10px">Triggers</div>
-                  <div class="movement-grid">
-                    <label class="movement-chip"><input type="checkbox" data-movement-trigger value="stress">Stress / anxiety</label>
-                    <label class="movement-chip"><input type="checkbox" data-movement-trigger value="around_meds">Around meds</label>
-                    <label class="movement-chip"><input type="checkbox" data-movement-trigger value="tired_sleep">Tired / poor sleep</label>
-                    <label class="movement-chip"><input type="checkbox" data-movement-trigger value="before_eating">Before eating</label>
-                    <label class="movement-chip"><input type="checkbox" data-movement-trigger value="after_eating">After eating</label>
-                    <label class="movement-chip"><input type="checkbox" data-movement-trigger value="excitement">Excited / overstimulated</label>
-                    <label class="movement-chip"><input type="checkbox" data-movement-trigger value="unknown">Unknown</label>
-                    <label class="movement-chip"><input type="checkbox" data-movement-trigger value="other">Other</label>
+                  <div class="movement-grid checkbox-grid">
+                    <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-trigger value="stress">Stress / anxiety</label>
+                    <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-trigger value="around_meds">Around meds</label>
+                    <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-trigger value="tired_sleep">Tired / poor sleep</label>
+                    <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-trigger value="before_eating">Before eating</label>
+                    <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-trigger value="after_eating">After eating</label>
+                    <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-trigger value="excitement">Excited / overstimulated</label>
+                    <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-trigger value="unknown">Unknown</label>
+                    <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-trigger value="other">Other</label>
                   </div>
                   <div class="movement-inline-input" style="margin-top:8px">
                     <input type="text" name="movement_trigger_other" id="movement_trigger_other" placeholder="Other trigger (optional)"/>
@@ -1234,8 +1800,8 @@
                   <div>
                     <div class="movement-label">Interfered with function?</div>
                     <div class="movement-chips">
-                      <label class="movement-chip"><input type="radio" name="movement_interfered" value="no">No</label>
-                      <label class="movement-chip"><input type="radio" name="movement_interfered" value="yes">Yes</label>
+                      <label class="movement-chip checkbox-card"><input type="radio" name="movement_interfered" value="no">No</label>
+                      <label class="movement-chip checkbox-card"><input type="radio" name="movement_interfered" value="yes">Yes</label>
                     </div>
                     <input type="text" name="movement_interfered_notes" placeholder="Notes (optional)" />
                   </div>
@@ -1245,10 +1811,10 @@
                   <div class="movement-label">Awareness / impact (optional)</div>
                   <div class="movement-collapse-body" id="movementAwarenessBody">
                     <div class="movement-chips" style="margin-top:8px">
-                      <label class="movement-chip"><input type="radio" name="movement_awareness" value="unaware">Unaware</label>
-                      <label class="movement-chip"><input type="radio" name="movement_awareness" value="aware_not_bothered">Aware not bothered</label>
-                      <label class="movement-chip"><input type="radio" name="movement_awareness" value="aware_bothered">Aware bothered</label>
-                      <label class="movement-chip"><input type="radio" name="movement_awareness" value="unknown">Unknown</label>
+                      <label class="movement-chip checkbox-card"><input type="radio" name="movement_awareness" value="unaware">Unaware</label>
+                      <label class="movement-chip checkbox-card"><input type="radio" name="movement_awareness" value="aware_not_bothered">Aware not bothered</label>
+                      <label class="movement-chip checkbox-card"><input type="radio" name="movement_awareness" value="aware_bothered">Aware bothered</label>
+                      <label class="movement-chip checkbox-card"><input type="radio" name="movement_awareness" value="unknown">Unknown</label>
                     </div>
                   </div>
                 </div>
@@ -1257,8 +1823,8 @@
                   <div>
                     <div class="movement-label">Safety risk?</div>
                     <div class="movement-chips">
-                      <label class="movement-chip"><input type="radio" name="movement_safety_risk" value="no">No</label>
-                      <label class="movement-chip"><input type="radio" name="movement_safety_risk" value="yes">Yes</label>
+                      <label class="movement-chip checkbox-card"><input type="radio" name="movement_safety_risk" value="no">No</label>
+                      <label class="movement-chip checkbox-card"><input type="radio" name="movement_safety_risk" value="yes">Yes</label>
                     </div>
                     <input type="text" name="movement_safety_notes" placeholder="Safety notes (optional)" />
                   </div>
@@ -1324,23 +1890,23 @@
               </div>
 
               <div class="temp-label" style="margin-top:12px">Symptoms / concerns</div>
-              <div class="temp-grid temp-grid--illness">
-                <label class="temp-chip"><input type="checkbox" data-temp-symptom value="pain_discomfort">Pain / discomfort</label>
-                <label class="temp-chip"><input type="checkbox" data-temp-symptom value="runny_nose">Runny nose</label>
-                <label class="temp-chip"><input type="checkbox" data-temp-symptom value="cough">Cough</label>
-                <label class="temp-chip"><input type="checkbox" data-temp-symptom value="congestion">Congestion</label>
-                <label class="temp-chip"><input type="checkbox" data-temp-symptom value="sore_throat">Sore throat</label>
-                <label class="temp-chip"><input type="checkbox" data-temp-symptom value="chills">Chills</label>
-                <label class="temp-chip"><input type="checkbox" data-temp-symptom value="headache">Headache</label>
-                <label class="temp-chip"><input type="checkbox" data-temp-symptom value="stomach_discomfort">Stomach discomfort</label>
-                <label class="temp-chip"><input type="checkbox" data-temp-symptom value="fatigue">Fatigue</label>
-                <label class="temp-chip"><input type="checkbox" data-temp-symptom value="body_aches">Body aches</label>
-                <label class="temp-chip"><input type="checkbox" data-temp-symptom value="shakiness_restlessness">Shakiness / restlessness</label>
-                <label class="temp-chip"><input type="checkbox" data-temp-symptom value="nausea">Nausea</label>
-                <label class="temp-chip"><input type="checkbox" data-temp-symptom value="vomiting">Vomiting</label>
-                <label class="temp-chip"><input type="checkbox" data-temp-symptom value="diarrhea">Diarrhea</label>
-                <label class="temp-chip"><input type="checkbox" data-temp-symptom value="rash">Rash</label>
-                <label class="temp-chip"><input type="checkbox" data-temp-symptom value="other">Other</label>
+              <div class="temp-grid temp-grid--illness checkbox-grid">
+                <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="pain_discomfort">Pain / discomfort</label>
+                <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="runny_nose">Runny nose</label>
+                <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="cough">Cough</label>
+                <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="congestion">Congestion</label>
+                <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="sore_throat">Sore throat</label>
+                <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="chills">Chills</label>
+                <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="headache">Headache</label>
+                <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="stomach_discomfort">Stomach discomfort</label>
+                <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="fatigue">Fatigue</label>
+                <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="body_aches">Body aches</label>
+                <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="shakiness_restlessness">Shakiness / restlessness</label>
+                <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="nausea">Nausea</label>
+                <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="vomiting">Vomiting</label>
+                <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="diarrhea">Diarrhea</label>
+                <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="rash">Rash</label>
+                <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="other">Other</label>
               </div>
               <div class="temp-inline-input" style="margin-top:8px">
                 <input type="text" name="temp_symptom_other" id="temp_symptom_other" placeholder="Other symptom (optional)"/>
@@ -1365,14 +1931,14 @@
             </div>
             <div class="temp-body is-collapsed" data-menstrual-body-wrap>
               <div class="temp-label" style="margin-top:12px">Symptoms</div>
-              <div class="temp-grid">
-                <label class="temp-chip"><input type="checkbox" data-menstrual-symptom value="bleeding">Bleeding / period started</label>
-                <label class="temp-chip"><input type="checkbox" data-menstrual-symptom value="spotting">Spotting</label>
-                <label class="temp-chip"><input type="checkbox" data-menstrual-symptom value="cramps">Cramps</label>
-                <label class="temp-chip"><input type="checkbox" data-menstrual-symptom value="bloating">Bloating</label>
-                <label class="temp-chip"><input type="checkbox" data-menstrual-symptom value="fatigue">Fatigue</label>
-                <label class="temp-chip"><input type="checkbox" data-menstrual-symptom value="mood_changes">Mood changes</label>
-                <label class="temp-chip"><input type="checkbox" data-menstrual-symptom value="other">Other</label>
+              <div class="temp-grid checkbox-grid">
+                <label class="temp-chip checkbox-card"><input type="checkbox" data-menstrual-symptom value="bleeding">Bleeding / period started</label>
+                <label class="temp-chip checkbox-card"><input type="checkbox" data-menstrual-symptom value="spotting">Spotting</label>
+                <label class="temp-chip checkbox-card"><input type="checkbox" data-menstrual-symptom value="cramps">Cramps</label>
+                <label class="temp-chip checkbox-card"><input type="checkbox" data-menstrual-symptom value="bloating">Bloating</label>
+                <label class="temp-chip checkbox-card"><input type="checkbox" data-menstrual-symptom value="fatigue">Fatigue</label>
+                <label class="temp-chip checkbox-card"><input type="checkbox" data-menstrual-symptom value="mood_changes">Mood changes</label>
+                <label class="temp-chip checkbox-card"><input type="checkbox" data-menstrual-symptom value="other">Other</label>
               </div>
               <div class="temp-inline-input" style="margin-top:8px">
                 <input type="text" name="menstrual_symptom_other" id="menstrual_symptom_other" placeholder="Other symptom (optional)"/>
@@ -1385,13 +1951,19 @@
           </div>
           <div class="controls">
             <div class="left-actions"><button class="btn" type="button" data-save>Save</button><span class="action-note">Saves your progress so far so you can come back later.</span><span class="savedAt" data-savedat></span></div>
-            <div class="left-actions"><span class="action-note">Saves this section and opens the next one.</span><button class="btn primary" type="button" data-next>Save &amp; Next →</button></div>
+            <div class="left-actions"><span class="action-note">Saves this section and opens the next one.</span><button class="btn primary save-next-btn" type="button" data-next>Save &amp; Next →</button></div>
           </div>
         </fieldset>
+          </div>
+        </div>
       </div>
 
       <!-- STEP 2: Behavior -->
-      <div class="step" data-step="1">
+      <div id="behaviorSection" class="step" data-step="1">
+        <div class="section-card section-detail">
+          <div class="section-header">Behavior / Mental Health <span>→</span></div>
+          <div class="section-content">
+          <button class="back-btn" type="button">← Back</button>
         <fieldset class="panel">
           <div class="section-title">Behavior / Mental Health</div>
           <p class="muted">Only the behaviors selected in caregiver setup will appear here.</p>
@@ -1457,52 +2029,52 @@
                 </div>
               </div>
             </div>
-            <div class="behavior-legacy-check-grid" id="maniaSymptomsWrap" style="display:none">
-              <label class="behavior-legacy-check">
+            <div class="behavior-legacy-check-grid checkbox-grid" id="maniaSymptomsWrap" style="display:none">
+              <label class="behavior-legacy-check checkbox-card">
                 <input type="checkbox" name="daydreaming_zoning_out_present" id="daydreaming_zoning_out_present" style="width:auto"/>
                 <span>Daydreaming / zoning out</span>
               </label>
-              <label class="behavior-legacy-check">
+              <label class="behavior-legacy-check checkbox-card">
                 <input type="checkbox" name="easily_distracted_environment_present" id="easily_distracted_environment_present" style="width:auto"/>
                 <span>Easily distracted by environment</span>
               </label>
-              <label class="behavior-legacy-check">
+              <label class="behavior-legacy-check checkbox-card">
                 <input type="checkbox" name="difficulty_staying_on_task_present" id="difficulty_staying_on_task_present" style="width:auto"/>
                 <span>Difficulty staying on task</span>
               </label>
-              <label class="behavior-legacy-check">
+              <label class="behavior-legacy-check checkbox-card">
                 <input type="checkbox" name="short_attention_span_present" id="short_attention_span_present" style="width:auto"/>
                 <span>Short attention span</span>
               </label>
-              <label class="behavior-legacy-check">
+              <label class="behavior-legacy-check checkbox-card">
                 <input type="checkbox" name="fixation_present" id="fixation_present" style="width:auto"/>
                 <span>Fixation / perseveration</span>
               </label>
-              <label class="behavior-legacy-check">
+              <label class="behavior-legacy-check checkbox-card">
                 <input type="checkbox" name="repetitive_behavior_present" id="repetitive_behavior_present" style="width:auto"/>
                 <span>Repetitive behavior</span>
               </label>
-              <label class="behavior-legacy-check">
+              <label class="behavior-legacy-check checkbox-card">
                 <input type="checkbox" name="pressured_speech_present" id="pressured_speech_present" style="width:auto"/>
                 <span>Pressured / rapid speech</span>
               </label>
-              <label class="behavior-legacy-check">
+              <label class="behavior-legacy-check checkbox-card">
                 <input type="checkbox" name="grandiosity_present" id="grandiosity_present" style="width:auto"/>
                 <span>Grandiosity</span>
               </label>
-              <label class="behavior-legacy-check">
+              <label class="behavior-legacy-check checkbox-card">
                 <input type="checkbox" name="difficulty_following_instructions_present" id="difficulty_following_instructions_present" style="width:auto"/>
                 <span>Difficulty following instructions</span>
               </label>
-              <label class="behavior-legacy-check">
+              <label class="behavior-legacy-check checkbox-card">
                 <input type="checkbox" name="needs_frequent_redirection_present" id="needs_frequent_redirection_present" style="width:auto"/>
                 <span>Needs frequent redirection</span>
               </label>
-              <label class="behavior-legacy-check">
+              <label class="behavior-legacy-check checkbox-card">
                 <input type="checkbox" name="hyperactive_restless_present" id="hyperactive_restless_present" style="width:auto"/>
                 <span>Hyperactive / restless</span>
               </label>
-              <label class="behavior-legacy-check">
+              <label class="behavior-legacy-check checkbox-card">
                 <input type="checkbox" name="disengaged_low_motivation_present" id="disengaged_low_motivation_present" style="width:auto"/>
                 <span>Disengaged / low motivation</span>
               </label>
@@ -1524,28 +2096,28 @@
             <hr class="soft"/>
             <div class="section-subtitle">PRN used for behavioral / mental health support</div>
             <p class="behavior-legacy-subtext">Check all reasons this PRN was given</p>
-            <div class="behavior-legacy-check-grid" role="group" aria-label="Behavioral PRN reasons">
-              <label class="behavior-legacy-check">
+            <div class="behavior-legacy-check-grid checkbox-grid" role="group" aria-label="Behavioral PRN reasons">
+              <label class="behavior-legacy-check checkbox-card">
                 <input type="checkbox" name="prn_used_for_aggression" style="width:auto"/>
                 <span>Aggression</span>
               </label>
-              <label class="behavior-legacy-check">
+              <label class="behavior-legacy-check checkbox-card">
                 <input type="checkbox" name="prn_used_for_anxiety" style="width:auto"/>
                 <span>Anxiety</span>
               </label>
-              <label class="behavior-legacy-check">
+              <label class="behavior-legacy-check checkbox-card">
                 <input type="checkbox" name="prn_used_for_mania" style="width:auto"/>
                 <span>Mania / mood episode</span>
               </label>
-              <label class="behavior-legacy-check">
+              <label class="behavior-legacy-check checkbox-card">
                 <input type="checkbox" name="prn_used_for_attention" style="width:auto"/>
                 <span>Attention / focus</span>
               </label>
-              <label class="behavior-legacy-check">
+              <label class="behavior-legacy-check checkbox-card">
                 <input type="checkbox" name="prn_used_for_anomalous_behavior" style="width:auto"/>
                 <span>Anomalous behavior</span>
               </label>
-              <label class="behavior-legacy-check">
+              <label class="behavior-legacy-check checkbox-card">
                 <input type="checkbox" name="prn_used_for_behavior_other" style="width:auto"/>
                 <span>Other</span>
               </label>
@@ -1564,21 +2136,27 @@
             <div>
               <button class="btn" type="button" data-prev>← Back</button>
               <span class="action-note">Saves this section and opens the next one.</span>
-              <button class="btn primary" type="button" data-next>Save &amp; Next →</button>
+              <button class="btn primary save-next-btn" type="button" data-next>Save &amp; Next →</button>
             </div>
           </div>
         </fieldset>
+          </div>
+        </div>
       </div>
 
       <!-- STEP 3: Vocational -->
-      <div class="step" data-step="2">
+      <div id="vocationalSection" class="step" data-step="2">
+        <div class="section-card section-detail">
+          <div class="section-header">Vocational <span>→</span></div>
+          <div class="section-content">
+          <button class="back-btn" type="button">← Back</button>
         <fieldset class="panel">
           <div class="section-title">Vocational Participation</div>
           <div class="row cols-3 compact">
             <div id="question-vocational-participation" class="question-block">
               <div class="movement-label">Participated in vocational activity?</div>
               <div class="yn-pill-group" role="group" aria-label="Vocational participation">
-                <label class="yn-pill"><input type="radio" name="vocational_participation" value="" checked> Did not participate today / Skip</label>
+                <label class="yn-pill"><input type="radio" name="vocational_participation" value="" data-skip> Did not participate today / Skip</label>
                 <label class="yn-pill"><input type="radio" name="vocational_participation" value="yes"> Yes</label>
                 <label class="yn-pill"><input type="radio" name="vocational_participation" value="no"> No</label>
               </div>
@@ -1598,20 +2176,26 @@
           <label id="vocationalNotesWrap" style="display:none">Vocational notes:<textarea name="vocational_notes" placeholder="Describe tasks, progress, or challenges during vocational time."></textarea></label>
           <div class="controls">
             <div class="left-actions"><button class="btn" type="button" data-save>Save</button><span class="action-note">Saves your progress so far so you can come back later.</span><span class="savedAt" data-savedat></span></div>
-            <div class="left-actions"><button class="btn" type="button" data-prev>← Back</button><span class="action-note">Saves this section and opens the next one.</span><button class="btn primary" type="button" data-next>Save &amp; Next →</button></div>
+            <div class="left-actions"><button class="btn" type="button" data-prev>← Back</button><span class="action-note">Saves this section and opens the next one.</span><button class="btn primary save-next-btn" type="button" data-next>Save &amp; Next →</button></div>
           </div>
         </fieldset>
+          </div>
+        </div>
       </div>
 
       <!-- STEP 4: Home / Family -->
-      <div class="step" data-step="3">
+      <div id="homeFamilySection" class="step" data-step="3">
+        <div class="section-card section-detail">
+          <div class="section-header">Home / Family <span>→</span></div>
+          <div class="section-content">
+          <button class="back-btn" type="button">← Back</button>
         <fieldset class="panel">
           <div class="section-title">Home / Family Community</div>
           <div class="row cols-3 compact">
             <div id="question-home-activity-flag" class="question-block">
               <div class="movement-label">Engaged in a home/community activity?</div>
               <div class="yn-pill-group" role="group" aria-label="Home activity">
-                <label class="yn-pill"><input type="radio" name="home_activity_flag" value="" checked> Did not participate today / Skip</label>
+                <label class="yn-pill"><input type="radio" name="home_activity_flag" value="" data-skip> Did not participate today / Skip</label>
                 <label class="yn-pill"><input type="radio" name="home_activity_flag" value="yes"> Yes</label>
                 <label class="yn-pill"><input type="radio" name="home_activity_flag" value="no"> No</label>
               </div>
@@ -1631,20 +2215,20 @@
           <div id="homeDetailsNotes" class="row cols-2" style="display:none">
             <div>
               <div class="movement-label">Home activity type</div>
-              <div class="movement-grid">
-                <label class="movement-chip"><input type="checkbox" data-home-type value="Listen to music with family">Listen to music with family</label>
-                <label class="movement-chip"><input type="checkbox" data-home-type value="Movie in living room">Movie in living room</label>
-                <label class="movement-chip"><input type="checkbox" data-home-type value="Played a game">Played a game</label>
-                <label class="movement-chip"><input type="checkbox" data-home-type value="Family celebration">Family celebration</label>
-                <label class="movement-chip"><input type="checkbox" data-home-type value="Art / craft project">Art / craft project</label>
-                <label class="movement-chip"><input type="checkbox" data-home-type value="Walk / Stroll">Walk / Stroll</label>
-                <label class="movement-chip"><input type="checkbox" data-home-type value="Outside time in yard / neighborhood">Outside time in yard / neighborhood</label>
-                <label class="movement-chip"><input type="checkbox" data-home-type value="Helped with meal prep">Helped with meal prep</label>
-                <label class="movement-chip"><input type="checkbox" data-home-type value="Household chore with family">Household chore with family</label>
-                <label class="movement-chip"><input type="checkbox" data-home-type value="Video game / screen time together">Video game / screen time together</label>
-                <label class="movement-chip"><input type="checkbox" data-home-type value="Meal in the common area">Meal in the common area</label>
-                <label class="movement-chip"><input type="checkbox" data-home-type value="Meal at the table with family">Meal at the table with family</label>
-                <label class="movement-chip"><input type="checkbox" data-home-type value="Other">Other</label>
+              <div class="movement-grid checkbox-grid">
+                <label class="movement-chip checkbox-card"><input type="checkbox" data-home-type value="Listen to music with family">Listen to music with family</label>
+                <label class="movement-chip checkbox-card"><input type="checkbox" data-home-type value="Movie in living room">Movie in living room</label>
+                <label class="movement-chip checkbox-card"><input type="checkbox" data-home-type value="Played a game">Played a game</label>
+                <label class="movement-chip checkbox-card"><input type="checkbox" data-home-type value="Family celebration">Family celebration</label>
+                <label class="movement-chip checkbox-card"><input type="checkbox" data-home-type value="Art / craft project">Art / craft project</label>
+                <label class="movement-chip checkbox-card"><input type="checkbox" data-home-type value="Walk / Stroll">Walk / Stroll</label>
+                <label class="movement-chip checkbox-card"><input type="checkbox" data-home-type value="Outside time in yard / neighborhood">Outside time in yard / neighborhood</label>
+                <label class="movement-chip checkbox-card"><input type="checkbox" data-home-type value="Helped with meal prep">Helped with meal prep</label>
+                <label class="movement-chip checkbox-card"><input type="checkbox" data-home-type value="Household chore with family">Household chore with family</label>
+                <label class="movement-chip checkbox-card"><input type="checkbox" data-home-type value="Video game / screen time together">Video game / screen time together</label>
+                <label class="movement-chip checkbox-card"><input type="checkbox" data-home-type value="Meal in the common area">Meal in the common area</label>
+                <label class="movement-chip checkbox-card"><input type="checkbox" data-home-type value="Meal at the table with family">Meal at the table with family</label>
+                <label class="movement-chip checkbox-card"><input type="checkbox" data-home-type value="Other">Other</label>
               </div>
               <input type="hidden" name="home_activity_type" id="home_activity_type" value=""/>
             </div>
@@ -1683,15 +2267,21 @@
             <div>
               <button class="btn" type="button" data-prev>← Back</button>
               <span class="action-note">Saves this section and opens the next one.</span>
-              <button class="btn primary" type="button" data-next>Save &amp; Next →</button>
+              <button class="btn primary save-next-btn" type="button" data-next>Save &amp; Next →</button>
               <button class="btn" type="submit">SUBMIT</button>
             </div>
           </div>
         </fieldset>
+          </div>
+        </div>
       </div>
 
       <!-- STEP 5: Community / Interaction -->
-      <div class="step" data-step="4">
+      <div id="communitySection" class="step" data-step="4">
+        <div class="section-card section-detail">
+          <div class="section-header">Community <span>→</span></div>
+          <div class="section-content">
+          <button class="back-btn" type="button">← Back</button>
         <fieldset class="panel">
           <div class="section-title">Community &amp; Social Interaction</div>
           <div class="subcap">Community at large</div>
@@ -1699,7 +2289,7 @@
             <div id="question-public-activity-flag" class="question-block">
               <div class="movement-label">Engaged in a community-at-large activity?</div>
               <div class="yn-pill-group" role="group" aria-label="Community activity">
-                <label class="yn-pill"><input type="radio" name="public_activity_flag" value="" checked> Did not participate today / Skip</label>
+                <label class="yn-pill"><input type="radio" name="public_activity_flag" value="" data-skip> Did not participate today / Skip</label>
                 <label class="yn-pill"><input type="radio" name="public_activity_flag" value="yes"> Yes</label>
                 <label class="yn-pill"><input type="radio" name="public_activity_flag" value="no"> No</label>
               </div>
@@ -1719,23 +2309,23 @@
           <div id="publicDetailsNotes" class="row cols-2" style="display:none">
             <div>
               <div class="movement-label">Community activity type</div>
-              <div class="movement-grid">
-                <label class="movement-chip"><input type="checkbox" data-public-type value="Shopping – grocery/retail">Shopping – grocery/retail</label>
-                <label class="movement-chip"><input type="checkbox" data-public-type value="Library">Library</label>
-                <label class="movement-chip"><input type="checkbox" data-public-type value="Museum">Museum</label>
-                <label class="movement-chip"><input type="checkbox" data-public-type value="Park/Playground">Park/Playground</label>
-                <label class="movement-chip"><input type="checkbox" data-public-type value="Restaurant/Café">Restaurant/Café</label>
-                <label class="movement-chip"><input type="checkbox" data-public-type value="Public transit practice">Public transit practice</label>
-                <label class="movement-chip"><input type="checkbox" data-public-type value="Recreation center / gym">Recreation center / gym</label>
-                <label class="movement-chip"><input type="checkbox" data-public-type value="Sports event">Sports event</label>
-                <label class="movement-chip"><input type="checkbox" data-public-type value="Volunteer shift">Volunteer shift</label>
-                <label class="movement-chip"><input type="checkbox" data-public-type value="Class / lesson">Class / lesson</label>
-                <label class="movement-chip"><input type="checkbox" data-public-type value="Camping">Camping</label>
-                <label class="movement-chip"><input type="checkbox" data-public-type value="Concert">Concert</label>
-                <label class="movement-chip"><input type="checkbox" data-public-type value="Walk / Stroll">Walk / Stroll</label>
-                <label class="movement-chip"><input type="checkbox" data-public-type value="Went to store">Went to store</label>
-                <label class="movement-chip"><input type="checkbox" data-public-type value="Went to recycling">Went to recycling</label>
-                <label class="movement-chip"><input type="checkbox" data-public-type value="Other">Other</label>
+              <div class="movement-grid checkbox-grid">
+                <label class="movement-chip checkbox-card"><input type="checkbox" data-public-type value="Shopping – grocery/retail">Shopping – grocery/retail</label>
+                <label class="movement-chip checkbox-card"><input type="checkbox" data-public-type value="Library">Library</label>
+                <label class="movement-chip checkbox-card"><input type="checkbox" data-public-type value="Museum">Museum</label>
+                <label class="movement-chip checkbox-card"><input type="checkbox" data-public-type value="Park/Playground">Park/Playground</label>
+                <label class="movement-chip checkbox-card"><input type="checkbox" data-public-type value="Restaurant/Café">Restaurant/Café</label>
+                <label class="movement-chip checkbox-card"><input type="checkbox" data-public-type value="Public transit practice">Public transit practice</label>
+                <label class="movement-chip checkbox-card"><input type="checkbox" data-public-type value="Recreation center / gym">Recreation center / gym</label>
+                <label class="movement-chip checkbox-card"><input type="checkbox" data-public-type value="Sports event">Sports event</label>
+                <label class="movement-chip checkbox-card"><input type="checkbox" data-public-type value="Volunteer shift">Volunteer shift</label>
+                <label class="movement-chip checkbox-card"><input type="checkbox" data-public-type value="Class / lesson">Class / lesson</label>
+                <label class="movement-chip checkbox-card"><input type="checkbox" data-public-type value="Camping">Camping</label>
+                <label class="movement-chip checkbox-card"><input type="checkbox" data-public-type value="Concert">Concert</label>
+                <label class="movement-chip checkbox-card"><input type="checkbox" data-public-type value="Walk / Stroll">Walk / Stroll</label>
+                <label class="movement-chip checkbox-card"><input type="checkbox" data-public-type value="Went to store">Went to store</label>
+                <label class="movement-chip checkbox-card"><input type="checkbox" data-public-type value="Went to recycling">Went to recycling</label>
+                <label class="movement-chip checkbox-card"><input type="checkbox" data-public-type value="Other">Other</label>
               </div>
               <input type="hidden" name="public_activity_type" id="public_activity_type" value=""/>
             </div>
@@ -1755,19 +2345,19 @@
           <div id="interactionDetails" class="row cols-3 compact" style="display:none">
             <div>
               <div class="movement-label">Interaction type</div>
-              <div class="movement-grid">
-                <label class="movement-chip"><input type="checkbox" data-interaction-type value="Greeting">Greeting</label>
-                <label class="movement-chip"><input type="checkbox" data-interaction-type value="Compliment">Compliment</label>
-                <label class="movement-chip"><input type="checkbox" data-interaction-type value="Introduced self/family">Introduced self/family</label>
-                <label class="movement-chip"><input type="checkbox" data-interaction-type value="Asked a question">Asked a question</label>
-                <label class="movement-chip"><input type="checkbox" data-interaction-type value="Shared space respectfully">Shared space respectfully</label>
-                <label class="movement-chip"><input type="checkbox" data-interaction-type value="Small talk">Small talk</label>
-                <label class="movement-chip"><input type="checkbox" data-interaction-type value="Requested help">Requested help</label>
-                <label class="movement-chip"><input type="checkbox" data-interaction-type value="Offered help">Offered help</label>
-                <label class="movement-chip"><input type="checkbox" data-interaction-type value="Conflict resolution">Conflict resolution</label>
-                <label class="movement-chip"><input type="checkbox" data-interaction-type value="Used AAC appropriately">Used AAC appropriately</label>
-                <label class="movement-chip"><input type="checkbox" data-interaction-type value="Maintained eye contact">Maintained eye contact</label>
-                <label class="movement-chip"><input type="checkbox" data-interaction-type value="Other">Other</label>
+              <div class="movement-grid checkbox-grid">
+                <label class="movement-chip checkbox-card"><input type="checkbox" data-interaction-type value="Greeting">Greeting</label>
+                <label class="movement-chip checkbox-card"><input type="checkbox" data-interaction-type value="Compliment">Compliment</label>
+                <label class="movement-chip checkbox-card"><input type="checkbox" data-interaction-type value="Introduced self/family">Introduced self/family</label>
+                <label class="movement-chip checkbox-card"><input type="checkbox" data-interaction-type value="Asked a question">Asked a question</label>
+                <label class="movement-chip checkbox-card"><input type="checkbox" data-interaction-type value="Shared space respectfully">Shared space respectfully</label>
+                <label class="movement-chip checkbox-card"><input type="checkbox" data-interaction-type value="Small talk">Small talk</label>
+                <label class="movement-chip checkbox-card"><input type="checkbox" data-interaction-type value="Requested help">Requested help</label>
+                <label class="movement-chip checkbox-card"><input type="checkbox" data-interaction-type value="Offered help">Offered help</label>
+                <label class="movement-chip checkbox-card"><input type="checkbox" data-interaction-type value="Conflict resolution">Conflict resolution</label>
+                <label class="movement-chip checkbox-card"><input type="checkbox" data-interaction-type value="Used AAC appropriately">Used AAC appropriately</label>
+                <label class="movement-chip checkbox-card"><input type="checkbox" data-interaction-type value="Maintained eye contact">Maintained eye contact</label>
+                <label class="movement-chip checkbox-card"><input type="checkbox" data-interaction-type value="Other">Other</label>
               </div>
               <input type="hidden" name="interaction_type" id="interaction_type" value=""/>
             </div>
@@ -1780,13 +2370,19 @@
           </div>
           <div class="controls">
             <div class="left-actions"><button class="btn" type="button" data-save>Save</button><span class="action-note">Saves your progress so far so you can come back later.</span><span class="savedAt" data-savedat></span></div>
-            <div class="left-actions"><button class="btn" type="button" data-prev>← Back</button><span class="action-note">Saves this section and opens the next one.</span><button class="btn primary" type="button" data-next>Save &amp; Next →</button></div>
+            <div class="left-actions"><button class="btn" type="button" data-prev>← Back</button><span class="action-note">Saves this section and opens the next one.</span><button class="btn primary save-next-btn" type="button" data-next>Save &amp; Next →</button></div>
           </div>
         </fieldset>
+          </div>
+        </div>
       </div>
 
       <!-- STEP 6: Daily Living -->
       <div class="step" data-step="5" id="daily-living-step">
+        <div class="section-card section-detail">
+          <div class="section-header">Daily Living <span>→</span></div>
+          <div class="section-content">
+          <button class="back-btn" type="button">← Back</button>
         <fieldset class="panel">
           <div class="section-title">Daily Living</div>
           <div class="row">
@@ -1821,6 +2417,8 @@
             </div>
           </div>
         </fieldset>
+          </div>
+        </div>
       </div>
 
       <!-- STEP 7: Educational -->
@@ -5340,7 +5938,7 @@
     function resetParticipationRadiosToSkip(){
       ['vocational_participation', 'home_activity_flag', 'public_activity_flag'].forEach((name) => {
         const skip = formEl.querySelector(`input[type="radio"][name="${name}"][value=""]`);
-        if (skip) skip.checked = true;
+        if (skip) skip.checked = false;
       });
     }
     function resetFormValues(){
@@ -5796,16 +6394,148 @@
     }
 
     document.getElementById('allClearBox')?.addEventListener('click', () => {
-      // Find all "nothing to report" checkboxes
-      document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-        if (cb.name && cb.name.toLowerCase().includes('nothing')) {
-          cb.checked = true;
+      const box = document.getElementById('allClearBox');
+
+      // Update confirmation text
+      box.innerHTML = '✔ Skipped — nothing to report';
+
+      // Fade current section slightly
+      const section = document.getElementById('physicalSection');
+      if (section) {
+        section.style.opacity = '0.6';
+      }
+
+      // Scroll to Behavior / Mental Health section directly
+      const nextSection = document.getElementById('behaviorSection');
+      if (nextSection) {
+        nextSection.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        });
+      }
+    });
+
+    const showSectionList = () => {
+      document.querySelectorAll('.section-detail').forEach(s => {
+        s.style.display = 'none';
+      });
+      document.querySelectorAll('.step').forEach(step => {
+        step.style.display = step.id === 'physicalSection' ? 'block' : 'none';
+      });
+      const list = document.getElementById('sectionListView');
+      if (list) list.style.display = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const showActiveSectionDetail = () => {
+      const list = document.getElementById('sectionListView');
+      if (list) list.style.display = 'none';
+      document.querySelectorAll('.section-detail').forEach(s => {
+        s.style.display = 'none';
+      });
+      document.querySelectorAll('.step').forEach(step => {
+        step.style.display = '';
+      });
+      const activeStep = document.querySelector('.step.active');
+      const detail = activeStep?.querySelector('.section-detail');
+      if (detail) detail.style.display = 'block';
+    };
+
+    document.querySelectorAll('.section-list-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const targetId = item.dataset.target || `${item.dataset.section}Section`;
+        const targetStep = document.getElementById(targetId);
+        const list = document.getElementById('sectionListView');
+
+        if (list) list.style.display = 'none';
+
+        document.querySelectorAll('.section-detail').forEach(s => {
+          s.style.display = 'none';
+        });
+
+        document.querySelectorAll('.step').forEach(step => {
+          step.style.display = 'none';
+        });
+
+        if (targetStep) {
+          targetStep.style.display = 'block';
+          const detail = targetStep.querySelector('.section-detail');
+          if (detail) detail.style.display = 'block';
+          targetStep.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+
+    document.querySelectorAll('.back-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        showSectionList();
+      });
+    });
+
+    document.querySelectorAll('[data-next], [data-prev]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        setTimeout(showActiveSectionDetail, 0);
+      });
+    });
+
+    const goToNextSection = (fromSection) => {
+      const idx = steps.findIndex((step) => step === fromSection);
+      if (idx >= 0) {
+        go(idx + 1, true);
+        setTimeout(showActiveSectionDetail, 0);
+      }
+    };
+
+    document.querySelectorAll('[data-skip]').forEach((skipCheckbox) => {
+      const section = skipCheckbox.closest('.step');
+      if (!section) return;
+      const otherInputs = section.querySelectorAll('input:not([data-skip])');
+      const setOtherInputsDisabled = (disabled) => {
+        otherInputs.forEach(input => {
+          input.disabled = disabled;
+        });
+      };
+
+      skipCheckbox.addEventListener('click', (event) => {
+        if (skipCheckbox.checked && skipCheckbox.dataset.skipActive === 'true') {
+          event.preventDefault();
+          skipCheckbox.checked = false;
+          skipCheckbox.dataset.skipActive = 'false';
+          setOtherInputsDisabled(false);
         }
       });
 
-      // Optional: visual feedback
-      document.getElementById('allClearBox').style.opacity = '0.7';
-      document.getElementById('allClearBox').innerText = '✔ All clear applied';
+      skipCheckbox.addEventListener('change', () => {
+        if (skipCheckbox.checked) {
+          skipCheckbox.dataset.skipActive = 'true';
+
+          // uncheck all other inputs
+          otherInputs.forEach(input => {
+            input.checked = false;
+          });
+
+          // disable all other inputs
+          setOtherInputsDisabled(true);
+
+          // move to next section
+          goToNextSection(section);
+        } else {
+          skipCheckbox.dataset.skipActive = 'false';
+
+          // re-enable inputs if unselected
+          setOtherInputsDisabled(false);
+        }
+      });
+
+      otherInputs.forEach(input => {
+        input.addEventListener('change', () => {
+          if (input.checked) {
+            skipCheckbox.checked = false;
+            skipCheckbox.dataset.skipActive = 'false';
+            setOtherInputsDisabled(false);
+          }
+        });
+      });
     });
 </script>
 <script>

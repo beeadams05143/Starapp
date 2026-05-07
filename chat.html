@@ -12,16 +12,12 @@
   <!-- Page-specific styles -->
   <style>
     :root{
-      --font-sans:"Avenir Next","Segoe UI","Helvetica Neue",Arial,sans-serif;
-      --font-serif:"Iowan Old Style","Palatino Linotype","Book Antiqua",Georgia,serif;
-      --page-bg:
-        radial-gradient(circle at top center, rgba(251,230,194,0.8), transparent 34%),
-        linear-gradient(180deg, #fff8ea 0%, #f7ead0 100%);
-      --panel:#fffdf8;
-      --panel-border:#ead7ab;
-      --panel-shadow:0 18px 36px rgba(125,89,34,0.12);
-      --text:#243047;
-      --muted:#667188;
+      --font-sans:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      --page-bg:#F7F4EE;
+      --panel:#FFFFFF;
+      --panel-border:#DDD8CF;
+      --text:#2C2C2A;
+      --muted:#5F5E5A;
     }
     body.star-bg{
       margin:0;
@@ -30,95 +26,199 @@
       color:var(--text);
       font-family:var(--font-sans);
     }
+    .starfield-page-header .star-logo{ font-size:28px; font-weight:700; letter-spacing:2px; color:#2C2C2A; }
+    .starfield-page-header .star-tagline{ margin:0; color:#5F5E5A; font-size:12px; line-height:1.4; font-style:italic; }
     /* Layout for this page */
-    .chat-wrapper { display:flex; justify-content:center; margin:40px auto; padding:0 16px; }
-    .chat-card   { width:min(820px, 94vw); padding:18px; }
+    .chat-wrapper { display:flex; justify-content:center; margin:0 auto; padding:0 16px; }
+    .chat-card   { width:min(420px, 100%); padding:28px 32px; }
+
+    .button-primary {
+      background: #FFF4E1;
+      border: 0.5px solid #F5BD6C;
+      border-radius: 12px;
+      color: #633806;
+      font-size: 14px;
+      font-weight: 500;
+      padding: 12px;
+      cursor: pointer;
+    }
+    .button-pill {
+      background: #FFF4E1;
+      border: 0.5px solid #F5BD6C;
+      border-radius: 999px;
+      color: #633806;
+      font-size: 14px;
+      font-weight: 500;
+      padding: 10px 18px;
+      cursor: pointer;
+    }
+    .button-secondary {
+      background: #F1EFEA;
+      border: 0.5px solid #D6D3CC;
+      border-radius: 12px;
+      color: #2C2C2A;
+      font-size: 14px;
+      font-weight: 500;
+      padding: 12px;
+      cursor: pointer;
+    }
 
     /* message list */
+    .chat-container,
     #chatBox {
       height: 360px;
       overflow-y: auto;
-      background: rgba(255,255,255,0.96);
-      border-radius: 24px;
-      padding: 16px;
-      border: 1px solid #d8e2ef;
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,.7);
+      background: #FFFFFF;
+      border-radius: 0;
+      padding: 4px 0 16px;
+      border: none;
+      box-shadow: none;
     }
 
     /* bubbles */
-    .bubble { display:flex; gap:8px; align-items:flex-start; margin:8px 0; }
+    .bubble {
+      display:flex;
+      gap:14px;
+      align-items:flex-start;
+      margin:18px 0;
+      padding:0 !important;
+      background:transparent !important;
+      background-color:transparent !important;
+      border-radius:0 !important;
+      max-width:none !important;
+    }
     .bubble .avatar {
-      width:28px; height:28px; border-radius:50%;
+      width:48px; height:48px; border-radius:50%;
       object-fit:cover; flex:0 0 28px;
+      background:#D8D5CC;
     }
-    .bubble .content { line-height:1.3; }
-    .bubble .msg {
-      background:#fffdf8;
-      border-radius:16px;
-      padding:8px 12px;
-      border:1px solid #ead7ab;
-      box-shadow:0 6px 14px rgba(36,48,71,.06);
+    .bubble .content { line-height:1.3; flex:1; }
+    .bubble .content > div:first-child {
+      color:#3A3A37;
+      font-size:15px;
+      font-weight:500;
+      margin-bottom:6px;
     }
-    .bubble .meta { font-size:12px; color:var(--muted); margin-top:4px; }
+    .bubble .msg,
+    .bubble.message-other .msg {
+      background: #F6FBF2;
+      border-radius: 0 16px 16px 16px;
+      padding: 14px 16px;
+      border: none;
+      box-shadow: none;
+      color:#111111;
+      font-size:16px;
+      line-height:1.45;
+    }
+    .bubble.message-me {
+      justify-content: flex-end;
+    }
+    .bubble.message-me .avatar {
+      display: none;
+    }
+    .bubble.message-me .content {
+      max-width: 78%;
+    }
+    .bubble.message-me .msg {
+      background: #F6FBF2;
+      border-radius: 16px 16px 0 16px;
+      padding: 14px 16px;
+      border: none;
+      box-shadow: none;
+    }
+    .bubble.message-other .content {
+      max-width: 78%;
+    }
+    .bubble .meta { font-size:14px; color:#3A3A37; margin-top:8px; }
 
     /* input row */
     .input-row {
-      display:flex; gap:8px; margin-top:12px;
+      display:flex; gap:14px; margin-top:18px;
       align-items:center;
     }
-    #chatInput {
+    #chatInput,
+    .chat-input {
       flex:1;
-      height:50px;
-      padding:0 16px;
-      border-radius:18px;
-      border:1.5px solid #cfd8e6;
-      background:#fff;
-      font-size:1.1rem;
+      height:58px;
+      padding:0 28px;
+      border-radius:999px;
+      border:0.5px solid #CFC9BE;
+      background:#FFFFFF;
+      font-size:18px;
+      color:#2C2C2A;
+    }
+    #chatInput::placeholder,
+    .chat-input::placeholder {
+      color:#A4A19B;
     }
     #sendBtn {
-      height:50px;
-      padding:0 20px;
-      border-radius:18px;
-      border:1px solid #2bbf67;
-      background:linear-gradient(180deg,#49da7b 0%,#22c55e 100%);
-      color:#08331d;
-      font-weight:700;
-      cursor:pointer;
-      box-shadow:0 12px 24px rgba(34,197,94,.22);
+      background: #FFF4E1;
+      border: 0.5px solid #F5BD6C;
+      border-radius: 999px;
+      color: #633806;
+      font-size: 18px;
+      font-weight: 700;
+      padding: 14px 26px;
+      cursor: pointer;
+      box-shadow:none;
     }
-    #sendBtn:hover { filter: brightness(0.95); }
+    #sendBtn:hover { background:#FAEEDA; }
 
-    .footnotes { margin-top:14px; font-size:15px; color:var(--muted); font-style:italic; }
+    .footnotes { margin-top:24px; display:grid; gap:10px; font-size:16px; color:#3A3A37; font-style:italic; }
+    .footnote-row {
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .footnote-row svg {
+      width:22px;
+      height:22px;
+      color:#5F5E5A;
+      flex:0 0 auto;
+    }
 
     /* optional nice 'glass' panel for the chat card */
     .chat-panel {
       background: var(--panel);
       border:1px solid var(--panel-border);
-      border-radius: 30px;
-      box-shadow: var(--panel-shadow);
+      border-radius: 28px;
+      box-shadow: none;
     }
 
     /* keep inner areas readable */
-    .chat-panel #chatBox,
-    .chat-panel input,
-    .chat-panel button {
-      background: rgba(255,255,255,0.95);
+    .chat-panel #chatBox {
+      background: #FFFFFF;
+    }
+    .chat-panel input {
+      background: #FFFFFF;
     }
 
     /* avoid overlap with bottom tab bar */
     .chat-wrapper { margin-bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
     h2{
-      margin:4px 0 18px;
+      margin:4px 0 28px;
       text-align:center;
-      font-family:var(--font-serif);
-      font-size:clamp(2rem,4vw,3rem);
-      color:#724016;
+      font-size:26px;
+      font-weight:700;
+      color:#2C2C2A;
     }
   </style>
 </head>
 <body class="star-bg">
   <!-- Shared navbar (your loader fills this) -->
   <div id="navbar"></div>
+
+  <section class="starfield-page-header">
+    <svg class="starfield-bg" viewBox="0 0 420 110" aria-hidden="true">
+      <circle cx="28" cy="18" r="1" fill="#2C2C2A" opacity="0.15"></circle><circle cx="80" cy="10" r="0.7" fill="#2C2C2A" opacity="0.12"></circle><circle cx="130" cy="28" r="0.9" fill="#2C2C2A" opacity="0.1"></circle><circle cx="200" cy="8" r="0.7" fill="#2C2C2A" opacity="0.1"></circle><circle cx="260" cy="22" r="0.6" fill="#2C2C2A" opacity="0.1"></circle><circle cx="340" cy="14" r="0.8" fill="#2C2C2A" opacity="0.12"></circle><circle cx="390" cy="28" r="1" fill="#2C2C2A" opacity="0.15"></circle><circle cx="50" cy="55" r="0.7" fill="#2C2C2A" opacity="0.1"></circle><circle cx="150" cy="65" r="0.8" fill="#2C2C2A" opacity="0.1"></circle><circle cx="300" cy="50" r="0.8" fill="#2C2C2A" opacity="0.12"></circle><circle cx="400" cy="68" r="0.7" fill="#2C2C2A" opacity="0.1"></circle>
+      <polygon points="60,20 61.4,24.4 66,24.4 62.4,27 63.8,31.4 60,28.8 56.2,31.4 57.6,27 54,24.4 58.6,24.4" fill="#2C2C2A" opacity="0.25"></polygon><polygon points="365,10 366.2,13.8 370.2,13.8 367,16 368.2,19.8 365,17.6 361.8,19.8 363,16 359.8,13.8 363.8,13.8" fill="#2C2C2A" opacity="0.2"></polygon>
+    </svg>
+    <div class="starfield-header-content">
+      <svg class="header-star" viewBox="0 0 24 24" fill="none" stroke="#2C2C2A" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><polygon points="12,2 14.9,9.3 22.6,9.3 16.4,14 18.8,21.5 12,17.2 5.2,21.5 7.6,14 1.4,9.3 9.1,9.3"></polygon></svg>
+      <div class="star-logo">STAR</div>
+      <p class="star-tagline">Support Tool for Autonomy and Reflection.</p>
+    </div>
+  </section>
 
   <main class="chat-wrapper">
     <div class="chat-card chat-panel" aria-label="Group chat">
@@ -129,13 +229,25 @@
 
       <!-- composer -->
       <div class="input-row">
-        <input id="chatInput" type="text" placeholder="Type a message..." autocomplete="off" />
-        <button id="sendBtn" type="button">Send</button>
+        <input id="chatInput" class="chat-input" type="text" placeholder="Type a message..." autocomplete="off" />
+        <button id="sendBtn" class="button-pill" type="button">Send</button>
       </div>
 
       <div class="footnotes">
-        <div>✅ Connected to group</div>
-        <div>🗓️ Showing messages from the last 24 hours</div>
+        <div class="footnote-row">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M9 11l3 3l6 -6"></path>
+            <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+          </svg>
+          <span>Connected to group</span>
+        </div>
+        <div class="footnote-row">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <rect x="4" y="5" width="16" height="15" rx="2"></rect>
+            <path d="M8 3v4M16 3v4M4 10h16"></path>
+          </svg>
+          <span>Showing messages from the last 24 hours</span>
+        </div>
       </div>
     </div>
   </main>

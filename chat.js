@@ -101,7 +101,7 @@ function render(messages, myId, readsByMsgId) {
     const avatarUrl   = p.avatar_url   || 'https://placehold.co/36x36';
 
     const node = el(`
-      <div class="bubble">
+      <div class="bubble ${isMine ? 'message-me' : 'message-other'}">
         <img class="avatar" src="${escapeHTML(avatarUrl)}" onerror="this.style.display='none'">
         <div class="content">
           <div><strong>${escapeHTML(displayName)}</strong></div>

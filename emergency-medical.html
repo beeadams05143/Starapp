@@ -11,18 +11,36 @@
   <style>
     /* --- Force scrolling even if a global sheet sets overflow: hidden or 100vh --- */
     html, body { height: auto !important; min-height: 100%; overflow-y: auto !important; -webkit-overflow-scrolling: touch; }
-    body { margin: 0; }
+    body { margin: 0; background:#F5F2EC; color:#2C2C2A; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
 
     /* Navbar should not be fixed here */
     #navbar-container { position: static; }
 
-    .page-wrap {
-      max-width: 900px;
+    .emergency-shell {
+      width: min(900px, calc(100% - 32px));
       margin: 24px auto 80px;
-      padding: 24px;
-      background: rgba(255,255,255,0.92);
+      border: 0.5px solid #E7E2D8;
       border-radius: 16px;
-      box-shadow: 0 10px 30px rgba(0,0,0,.08);
+      overflow: hidden;
+      background: #F5F2EC;
+    }
+    .emergency-header {
+      min-height: 178px;
+      display: grid;
+      place-items: center;
+    }
+    .emergency-header .header-title {
+      font-size: 17px;
+      font-weight: 500;
+      color: #2C2C2A;
+    }
+    .page-wrap {
+      max-width: none;
+      margin: -16px 0 0;
+      padding: 28px 24px;
+      background: #FFFFFF;
+      border-radius: 16px 16px 0 0;
+      box-shadow: none;
     }
     h1 { text-align: center; margin-top: 0; }
 
@@ -43,16 +61,39 @@
     .photo-uploader.has-image img { display: block; }
     .photo-placeholder { text-align: center; font-size: 14px; color: #666; line-height: 1.3; padding: 0 16px; }
     .photo-actions { display: flex; flex-direction: column; gap: 8px; }
-    .btn { appearance: none; border: 0; border-radius: 8px; padding: 10px 14px; background: #22c55e; color: white; font-weight: 600; cursor: pointer; }
-    .btn.secondary { background: #e5e7eb; color: #111; }
+    .btn {
+      appearance: none;
+      background: #FAEEDA;
+      border: 0.5px solid #FAC775;
+      border-radius: 10px;
+      color: #633806;
+      font-size: 14px;
+      font-weight: 500;
+      padding: 10px 14px;
+      cursor: pointer;
+      box-shadow: none;
+    }
+    .btn.secondary {
+      background: var(--color-background-secondary, #F1EFEA);
+      border: 0.5px solid var(--color-border-tertiary, #D6D3CC);
+      border-radius: 12px;
+      color: var(--color-text-primary, #2C2C2A);
+    }
     .btn:disabled { opacity: .6; cursor: default; }
 
     /* Simple form section styles */
-    fieldset { border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; margin: 18px 0; background: #fff; }
-    legend { font-weight: 700; }
+    fieldset { border: 0.5px solid var(--color-border-tertiary, #D6D3CC); border-radius: 12px; padding: 14px; margin: 18px 0; background: #fff; }
+    fieldset:first-of-type { border-color: #FAC775; }
+    legend { font-size: 15px; font-weight: 500; color:#633806; padding: 0 6px; }
     label { display:block; margin:10px 0 6px; font-weight:600; }
     input[type="text"], input[type="tel"], input[type="email"], textarea {
-      width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px;
+      width: 100%;
+      padding: 10px 12px;
+      border: 0.5px solid var(--color-border-secondary, #D8D2C8);
+      border-radius: 10px;
+      background: var(--color-background-secondary, #F9F7F3);
+      color: #2C2C2A;
+      font: inherit;
     }
     textarea { min-height: 80px; resize: vertical; }
     input.read-only, textarea.read-only { background:#f9fafb; color:#374151; }
@@ -79,8 +120,19 @@
   <!-- ✅ Navbar mount -->
   <div id="navbar-container"></div>
 
-  <div class="page-wrap">
-    <h1>Emergency / Medical Information</h1>
+  <div class="emergency-shell">
+    <section class="emergency-header starfield-page-header">
+      <svg class="starfield-bg" viewBox="0 0 420 110" aria-hidden="true">
+        <circle cx="28" cy="18" r="1" fill="#2C2C2A" opacity="0.15"></circle><circle cx="80" cy="10" r="0.7" fill="#2C2C2A" opacity="0.12"></circle><circle cx="130" cy="28" r="0.9" fill="#2C2C2A" opacity="0.1"></circle><circle cx="200" cy="8" r="0.7" fill="#2C2C2A" opacity="0.1"></circle><circle cx="260" cy="22" r="0.6" fill="#2C2C2A" opacity="0.1"></circle><circle cx="340" cy="14" r="0.8" fill="#2C2C2A" opacity="0.12"></circle><circle cx="390" cy="28" r="1" fill="#2C2C2A" opacity="0.15"></circle><circle cx="50" cy="55" r="0.7" fill="#2C2C2A" opacity="0.1"></circle><circle cx="150" cy="65" r="0.8" fill="#2C2C2A" opacity="0.1"></circle><circle cx="300" cy="50" r="0.8" fill="#2C2C2A" opacity="0.12"></circle><circle cx="400" cy="68" r="0.7" fill="#2C2C2A" opacity="0.1"></circle>
+        <polygon points="60,20 61.4,24.4 66,24.4 62.4,27 63.8,31.4 60,28.8 56.2,31.4 57.6,27 54,24.4 58.6,24.4" fill="#2C2C2A" opacity="0.25"></polygon><polygon points="365,10 366.2,13.8 370.2,13.8 367,16 368.2,19.8 365,17.6 361.8,19.8 363,16 359.8,13.8 363.8,13.8" fill="#2C2C2A" opacity="0.2"></polygon>
+      </svg>
+      <div class="starfield-header-content">
+        <svg class="header-star" viewBox="0 0 24 24" fill="none" stroke="#2C2C2A" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><polygon points="12,2 14.9,9.3 22.6,9.3 16.4,14 18.8,21.5 12,17.2 5.2,21.5 7.6,14 1.4,9.3 9.1,9.3"></polygon></svg>
+        <h1 class="header-title">Emergency / medical info</h1>
+      </div>
+    </section>
+
+    <div class="page-wrap">
 
     <!-- ===== Profile Photo ===== -->
     <div class="photo-row">
@@ -254,6 +306,7 @@
         <span class="pill" id="cloudStatus"></span>
       </div>
     </div>
+  </div>
   </div>
 
   <!-- ===== Utils ===== -->

@@ -4,35 +4,42 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Documents</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
   <style>
     :root{
-      --ink:#24314a;
-      --muted:#6b7280;
-      --bg:#fafaf9;
-      --card:#fffdfa;
-      --border:#e8dcc3;
-      --accent:#8a6b44;
+      --ink:#2C2C2A;
+      --muted:#5F5E5A;
+      --bg:#F5F2EC;
+      --card:#FFFFFF;
+      --border:#E7E2D8;
+      --accent:#FAEEDA;
+      --color-background-primary:#FFFFFF;
+      --color-background-secondary:#F9F7F3;
+      --color-border-secondary:#D8D2C8;
+      --color-border-tertiary:#E7E2D8;
       --sans:"Avenir Next","Segoe UI","Helvetica Neue",Arial,sans-serif;
       --serif:Georgia,"Iowan Old Style","Palatino Linotype","Book Antiqua",serif;
     }
     *{ box-sizing:border-box; }
     body{
       margin:0;
-      padding:24px;
+      padding:0 24px 24px;
       font-family: var(--sans);
-      background:
-        radial-gradient(circle at top, rgba(242, 221, 176, .34), transparent 30%),
-        linear-gradient(180deg, #fffefb 0%, #fbf5e8 100%);
+      background:#F5F2EC;
       color:var(--ink);
     }
     .page{ max-width:1100px; margin:0 auto; }
+    .starfield-page-header{position:relative;overflow:hidden;text-align:center;background:#F5F2EC;color:#2C2C2A;padding:32px 16px 22px;margin:0 -24px 18px;}
+    .starfield-bg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+    .starfield-header-content{position:relative;z-index:1;display:grid;justify-items:center;gap:6px;}
+    .header-star{width:22px;height:22px;display:block;}
     h1{
-      margin:0 0 8px;
+      margin:0;
       letter-spacing:.2px;
-      font-family:var(--serif);
-      font-size:clamp(2.2rem, 4vw, 3rem);
-      font-weight:700;
-      color:#73441b;
+      font-family:var(--sans);
+      font-size:17px;
+      font-weight:500;
+      color:#2C2C2A;
     }
     p.lead{ margin:0 0 18px; color:var(--muted); }
     .grid{
@@ -42,13 +49,13 @@
     }
     .card{
       background:var(--card);
-      border:1px solid var(--border);
-      border-radius:16px;
-      padding:16px;
+      border:0.5px solid var(--color-border-tertiary);
+      border-radius:12px;
+      padding:14px 16px;
       display:flex;
       flex-direction:column;
       gap:10px;
-      box-shadow:0 12px 28px rgba(15,23,42,.08);
+      box-shadow:none;
     }
     .card .top{
       display:flex;
@@ -61,16 +68,16 @@
       border-radius:12px;
       display:grid;
       place-items:center;
-      background:#8a6b44;
-      color:#fff;
-      font-size:20px;
+      background:#FAEEDA;
+      color:#854F0B;
+      font-size:24px;
     }
     .card h3{
       margin:0;
       font-size:20px;
-      font-family:var(--serif);
-      font-weight:700;
-      color:#73441b;
+      font-family:var(--sans);
+      font-weight:500;
+      color:#633806;
     }
     .card p{ margin:0; color:var(--muted); line-height:1.35; }
     .card a{
@@ -79,11 +86,13 @@
       align-items:center;
       gap:8px;
       text-decoration:none;
-      color:#fff;
-      background:var(--accent);
-      padding:10px 14px;
+      color:#633806;
+      background:#FAEEDA;
+      border:0.5px solid #FAC775;
+      padding:12px 16px;
       border-radius:12px;
-      font-weight:600;
+      font-size:14px;
+      font-weight:500;
       width:fit-content;
     }
     @media (max-width: 720px){
@@ -95,14 +104,24 @@
 <body data-doc-page="docs-home">
   <div id="navbar"></div>
 
+  <section class="starfield-page-header">
+    <svg class="starfield-bg" viewBox="0 0 420 110" aria-hidden="true">
+      <circle cx="28" cy="18" r="1" fill="#2C2C2A" opacity="0.15"></circle><circle cx="80" cy="10" r="0.7" fill="#2C2C2A" opacity="0.12"></circle><circle cx="130" cy="28" r="0.9" fill="#2C2C2A" opacity="0.1"></circle><circle cx="200" cy="8" r="0.7" fill="#2C2C2A" opacity="0.1"></circle><circle cx="260" cy="22" r="0.6" fill="#2C2C2A" opacity="0.1"></circle><circle cx="340" cy="14" r="0.8" fill="#2C2C2A" opacity="0.12"></circle><circle cx="390" cy="28" r="1" fill="#2C2C2A" opacity="0.15"></circle><circle cx="50" cy="55" r="0.7" fill="#2C2C2A" opacity="0.1"></circle><circle cx="150" cy="65" r="0.8" fill="#2C2C2A" opacity="0.1"></circle><circle cx="300" cy="50" r="0.8" fill="#2C2C2A" opacity="0.12"></circle><circle cx="400" cy="68" r="0.7" fill="#2C2C2A" opacity="0.1"></circle>
+      <polygon points="60,20 61.4,24.4 66,24.4 62.4,27 63.8,31.4 60,28.8 56.2,31.4 57.6,27 54,24.4 58.6,24.4" fill="#2C2C2A" opacity="0.25"></polygon><polygon points="365,10 366.2,13.8 370.2,13.8 367,16 368.2,19.8 365,17.6 361.8,19.8 363,16 359.8,13.8 363.8,13.8" fill="#2C2C2A" opacity="0.2"></polygon>
+    </svg>
+    <div class="starfield-header-content">
+      <svg class="header-star" viewBox="0 0 24 24" fill="none" stroke="#2C2C2A" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><polygon points="12,2 14.9,9.3 22.6,9.3 16.4,14 18.8,21.5 12,17.2 5.2,21.5 7.6,14 1.4,9.3 9.1,9.3"></polygon></svg>
+      <h1>Documents</h1>
+    </div>
+  </section>
+
   <div class="page">
-    <h1>Documents</h1>
     <p class="lead">Choose a document category to add or view items.</p>
 
     <div class="grid">
       <div class="card">
         <div class="top">
-          <div class="icon">💵</div>
+          <div class="icon"><i class="ti ti-receipt"></i></div>
           <h3>Finance</h3>
         </div>
         <p>Invoices, receipts, budgets, shopping records, and expense notes.</p>
@@ -111,7 +130,7 @@
 
       <div class="card">
         <div class="top">
-          <div class="icon">🩺</div>
+          <div class="icon"><i class="ti ti-stethoscope"></i></div>
           <h3>Medical</h3>
         </div>
         <p>Appointments, medication notes, lab results, and provider instructions.</p>
@@ -120,7 +139,7 @@
 
       <div class="card">
         <div class="top">
-          <div class="icon">🏢</div>
+          <div class="icon"><i class="ti ti-users"></i></div>
           <h3>HR</h3>
         </div>
         <p>Staffing documents, policies, payroll notes, and onboarding items.</p>
@@ -129,7 +148,7 @@
 
       <div class="card">
         <div class="top">
-          <div class="icon">🧩</div>
+          <div class="icon"><i class="ti ti-heart"></i></div>
           <h3>Caregiving</h3>
         </div>
         <p>Care plans, routines, behavior notes, and support documentation.</p>
@@ -138,7 +157,7 @@
 
       <div class="card">
         <div class="top">
-          <div class="icon">📚</div>
+          <div class="icon"><i class="ti ti-school"></i></div>
           <h3>ISA/IEP</h3>
         </div>
         <p>Current ISA/IEP paperwork, review cycles, educational records, and linked meeting follow-up.</p>
@@ -147,7 +166,7 @@
 
       <div class="card">
         <div class="top">
-          <div class="icon">📦</div>
+          <div class="icon"><i class="ti ti-calendar-event"></i></div>
           <h3>Year End Paperwork</h3>
         </div>
         <p>Annual forms, checklists, and end‑of‑year documentation.</p>
@@ -156,7 +175,7 @@
 
       <div class="card">
         <div class="top">
-          <div class="icon">🛡️</div>
+          <div class="icon"><i class="ti ti-gavel"></i></div>
           <h3>Guardianship</h3>
         </div>
         <p>Legal documents, court paperwork, and guardian‑related records.</p>
@@ -165,7 +184,7 @@
 
       <div class="card">
         <div class="top">
-          <div class="icon">📝</div>
+          <div class="icon"><i class="ti ti-notes"></i></div>
           <h3>Meeting Minutes</h3>
         </div>
         <p>Team meetings, med checks, and decision notes with follow‑ups.</p>

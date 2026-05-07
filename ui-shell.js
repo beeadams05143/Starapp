@@ -5,7 +5,7 @@
     window.STAR_BUILD_VERSION = BUILD_VERSION;
   }
 
-  // ----- styles for bars (thick black, consistent) -----
+  // ----- styles for bars (soft, consistent) -----
   const css = `
     :root{ --appbar-h:56px; --tabbar-h:56px; }
     body{ padding-top:var(--appbar-h); padding-bottom:calc(var(--tabbar-h) + 8px); }
@@ -13,31 +13,47 @@
     /* TOP APP BAR */
     .appbar{ position:fixed; inset:0 0 auto 0; z-index:1000;
       display:flex; align-items:center; gap:12px;
-      padding:10px 16px; background:#111; color:#fff; }
-    .appbar .iconbtn{ appearance:none; border:0; background:#222; color:#fff;
+      padding:10px 16px; background:#f9f7f2; color:#2c2c2c;
+      border-bottom:1px solid #e5dfd3; box-shadow:none; }
+    .appbar .menu-btn{ appearance:none; width:40px; height:40px; background:#F4F1EA;
+      border-radius:10px; border:1px solid #E0D8CC; display:flex; flex-direction:column;
+      justify-content:center; align-items:center; gap:4px; cursor:pointer; padding:0; }
+    .appbar .menu-btn span{ width:18px; height:2px; background:#3A3A3A;
+      display:block; border-radius:2px; }
+    .appbar .menu-btn:hover{ background:#EDE6DA; }
+    .appbar .iconbtn{ appearance:none; border:1px solid #E0D8CC; background:#F4F1EA; color:#2c2c2c;
       font-size:20px; line-height:1; padding:8px 10px; border-radius:10px; }
-    .appbar .brand .title{ font-weight:800; color:#fff; }
+    .appbar .brand .title{ font-weight:800; color:#2c2c2c; }
 
     /* BOTTOM TABS */
     .tabbar{ position:fixed; inset:auto 0 0 0; z-index:999;
-      height:var(--tabbar-h); background:#111; color:#fff;
-      border-top:6px solid #000; } /* thick black line */
+      height:var(--tabbar-h); background:#f9f7f2; color:#2c2c2c;
+      border-top:1px solid #e5dfd3; box-shadow:none; }
     .tabbar__inner{ max-width:980px; height:100%; margin:0 auto; padding:0 16px;
       display:flex; align-items:center; justify-content:space-around; gap:8px; }
-    .tabbar .tab{ display:inline-flex; flex-direction:column; align-items:center;
+    .tabbar .tab, .bottom-nav .nav-item{ position:relative; display:inline-flex; flex-direction:column; align-items:center;
       gap:4px; min-width:60px; padding:4px 8px; border-radius:10px;
-      text-decoration:none; color:#ddd; font-weight:700; font-size:12px; }
-    .tabbar .tab .icon{ font-size:18px; line-height:1; }
-    .tabbar .tab:is(:hover,.is-active,[aria-current="page"]){ color:#fff; background:#222; }
+      text-decoration:none; color:#5F5E5A; font-weight:400; font-size:12px; }
+    .tabbar .tab svg, .bottom-nav svg{ color:#5F5E5A; width:22px; height:22px; }
+    .tabbar .tab span, .bottom-nav span{ color:#5F5E5A; font-weight:400; }
+    .tabbar .tab.active, .tabbar .tab:is(:hover,.is-active,[aria-current="page"]),
+    .bottom-nav .active{ background:#f4f1ea; }
+    .tabbar .tab.active svg, .tabbar .tab.active span,
+    .tabbar .tab:is(:hover,.is-active,[aria-current="page"]) svg,
+    .tabbar .tab:is(:hover,.is-active,[aria-current="page"]) span,
+    .bottom-nav .active svg, .bottom-nav .active span{ color:#854F0B; font-weight:500; }
+    .tabbar .badge, .bottom-nav .badge{ position:absolute; top:-4px; right:6px; background:#E54848; color:white;
+      font-size:10px; padding:2px 5px; border-radius:999px; font-weight:600;
+      min-width:16px; text-align:center; line-height:1; }
 
     @media (max-width: 640px){
       :root{ --appbar-h:52px; --tabbar-h:52px; }
       body{ padding-top:var(--appbar-h); padding-bottom:calc(var(--tabbar-h) + 6px); }
       .appbar{ padding:8px 12px; }
-      .tabbar{ border-top:5px solid #000; }
+      .tabbar{ border-top:1px solid #e5dfd3; }
       .tabbar__inner{ padding:0 10px; }
       .tabbar .tab{ min-width:52px; padding:2px 6px; font-size:10px; }
-      .tabbar .tab .icon{ font-size:16px; }
+      .tabbar .tab svg{ width:20px; height:20px; }
     }
   `;
   if (!document.getElementById('ui-shell-css')) {
@@ -56,9 +72,18 @@
   // ----- TOP BAR (brand + menu button only) -----
  top.innerHTML = `
   <header class="appbar" role="banner">
-    <button class="iconbtn" id="openMenu" aria-label="Open menu" aria-controls="appDrawer" aria-expanded="false">☰</button>
+    <button class="menu-btn iconbtn" id="openMenu" aria-label="Open menu" aria-controls="appDrawer" aria-expanded="false">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
     <a class="brand" href="/dashboard.html" style="text-decoration:none;color:inherit">
-      <div class="title">⭐️ STAR</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2C2C2A" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true">
+          <polygon points="12,2 14.9,9.3 22.6,9.3 16.4,14 18.8,21.5 12,17.2 5.2,21.5 7.6,14 1.4,9.3 9.1,9.3"></polygon>
+        </svg>
+        <span style="font-size:15px;font-weight:400;color:#2C2C2A;letter-spacing:0.15em;text-transform:uppercase;">STAR</span>
+      </div>
     </a>
   </header>
 `;
@@ -89,35 +114,80 @@
     }
   };
 
+  const attentionItems = [
+    'document',
+    'chat',
+    'emergency',
+  ];
+
+  function updateHomeBadge() {
+    const badge = document.getElementById('homeBadge');
+    if (!badge) return;
+
+    const count = attentionItems.length;
+
+    if (count === 0) {
+      badge.style.display = 'none';
+    } else {
+      badge.style.display = 'inline-block';
+      badge.textContent = count;
+    }
+  }
+
+  const iconSvg = {
+    home: '<svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" fill="none" stroke-width="2" aria-hidden="true"><path d="M3 12l9 -9l9 9"></path><path d="M9 21v-6h6v6"></path></svg>',
+    checkin: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 11l3 3l6 -6"></path><rect x="3" y="3" width="18" height="18" rx="2"></rect></svg>',
+    reports: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="10" width="3" height="10"></rect><rect x="10" y="6" width="3" height="14"></rect><rect x="16" y="2" width="3" height="18"></rect></svg>',
+    calendar: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"></rect><path d="M8 3v4M16 3v4M4 10h16"></path></svg>',
+    focus: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="12 2 15 9 22 9 17 14 19 21 12 17 5 21 7 14 2 9 9 9"></polygon></svg>',
+    docs: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="4" width="14" height="14"></rect><path d="M8 8h6M8 12h6M8 16h4"></path></svg>',
+    chat: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 5h16v11H8l-4 4z"></path></svg>',
+    emergency: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l8 4v5c0 5 -3.5 8 -8 9c-4.5 -1 -8 -4 -8 -9v-5z"></path><path d="M12 8v8M8 12h8"></path></svg>',
+    mood: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M9 10h.01M15 10h.01M9 15c1.5 1 4.5 1 6 0"></path></svg>',
+    voice: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 9a3 3 0 0 1 6 0v4a3 3 0 0 1 -6 0z"></path><path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path></svg>',
+  };
+
   function renderBottomBar(){
     const mode = getMenuMode();
     const features = getAppFeatures();
     const tabs = mode === 'individual'
       ? [
-          { href: '/dashboard.html', icon: '🏠', label: 'Home' },
-          ...(features.calendar ? [{ href: '/calendar.html', icon: '📅', label: 'Calendar' }] : []),
-          { href: '/home.html', icon: '😊', label: 'Mood' },
-          { href: '/my-star-voice.html', icon: '🗣️', label: 'Voice' },
-          ...(features.chat ? [{ href: '/chat.html', icon: '💬', label: 'Chat' }] : []),
-          { href: '/emergency-medical.html', icon: '🚑', label: 'Emergency' },
+          { href: '/dashboard.html', icon: 'home', label: 'Home' },
+          ...(features.calendar ? [{ href: '/calendar.html', icon: 'calendar', label: 'Calendar' }] : []),
+          { href: '/home.html', icon: 'mood', label: 'Mood' },
+          { href: '/my-star-voice.html', icon: 'voice', label: 'Voice' },
+          ...(features.chat ? [{ href: '/chat.html', icon: 'chat', label: 'Chat' }] : []),
+          { href: '/emergency-medical.html', icon: 'emergency', label: 'Emergency' },
         ]
       : [
-          { href: '/dashboard.html', icon: '🏠', label: 'Home' },
-          { href: '/caregiver-checkin.html', icon: '👥', label: 'Check-In' },
-          { href: '/caregiver-report.html', icon: '📊', label: 'Reports' },
-          ...(features.calendar ? [{ href: '/calendar.html', icon: '📅', label: 'Calendar' }] : []),
-          ...(features.focus ? [{ href: '/focus-week.html', icon: '⭐', label: 'Focus' }] : []),
-          ...(features.documents ? [{ href: '/documents/index.html', icon: '📂', label: 'Docs' }] : []),
-          ...(features.chat ? [{ href: '/chat.html', icon: '💬', label: 'Chat' }] : []),
-          { href: '/emergency-medical.html', icon: '🚑', label: 'Emergency' },
+          { href: '/dashboard.html', icon: 'home', label: 'Home' },
+          { href: '/caregiver-checkin.html', icon: 'checkin', label: 'Check-in' },
+          { href: '/caregiver-report.html', icon: 'reports', label: 'Reports' },
+          ...(features.calendar ? [{ href: '/calendar.html', icon: 'calendar', label: 'Calendar' }] : []),
+          ...(features.focus ? [{ href: '/focus-week.html', icon: 'focus', label: 'Focus' }] : []),
+          ...(features.documents ? [{ href: '/documents/index.html', icon: 'docs', label: 'Docs' }] : []),
+          ...(features.chat ? [{ href: '/chat.html', icon: 'chat', label: 'Chat' }] : []),
+          { href: '/emergency-medical.html', icon: 'emergency', label: 'Emergency' },
         ];
     bottom.innerHTML = `
       <nav class="tabbar" aria-label="Primary">
         <div class="tabbar__inner">
-          ${tabs.map((tab) => `<a href="${tab.href}" class="tab"><span class="icon">${tab.icon}</span><span class="label">${tab.label}</span></a>`).join('')}
+          ${tabs.map((tab) => {
+            const isHome = tab.label === 'Home';
+            return `<a href="${tab.href}" class="tab nav-item${isHome ? ' active' : ''}"${isHome ? ' id="homeNav"' : ''}>` +
+              `${iconSvg[tab.icon] || iconSvg.home}` +
+              `<span>${tab.label}</span>` +
+              `${isHome ? '<div class="badge" id="homeBadge">3</div>' : ''}` +
+            `</a>`;
+          }).join('')}
         </div>
       </nav>
     `;
+    updateHomeBadge();
+    document.getElementById('homeNav')?.addEventListener('click', () => {
+      const badge = document.getElementById('homeBadge');
+      if (badge) badge.style.display = 'none';
+    });
   }
   renderBottomBar();
   window.addEventListener('storage', (event) => {

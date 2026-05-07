@@ -239,6 +239,12 @@
 
   // If we've already injected, don't do it again
   if (document.getElementById('drawerOverlay')) return;
+  if (!document.querySelector('link[href*="@tabler/icons-webfont"]')) {
+    const tablerLink = document.createElement('link');
+    tablerLink.rel = 'stylesheet';
+    tablerLink.href = 'https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css';
+    document.head.appendChild(tablerLink);
+  }
   const isDocsFamilyPage = (() => {
     const path = window.location.pathname || '';
     return path.startsWith('/documents/')
@@ -290,48 +296,49 @@
         color:${isDocsFamilyPage ? '#6f4518' : '#111'};
       }
       nav.drawer .drawer-item{
-        display:block; padding:10px 16px;
+        display:block;
+        padding:0;
       }
       nav.drawer .drawer-item a{
-        display:flex; align-items:center; gap:12px;
-        text-decoration:none; color:#1f2937; font-weight:600; font-size:17px;
+        display:flex;
+        align-items:center;
+        gap:14px;
+        padding:13px 20px;
+        text-decoration:none;
+        color:#1f2937;
+        font-weight:400;
+        font-size:17px;
         line-height:1.25;
       }
-      nav.drawer .mode-toggle{
-        display:flex; gap:10px; padding:14px 16px; border-bottom:1px solid #f1f5f9;
+      nav.drawer .drawer-item a.active,
+      nav.drawer .drawer-item a.active .nav-icon,
+      nav.drawer .drawer-item a.active .nav-text{
+        color:#854F0B;
+        font-weight:500;
       }
-      nav.drawer .mode-btn{
-        flex:1; border:1px solid #d8dee8; background:#fff; color:#334155;
-        border-radius:999px; padding:11px 12px; font-weight:600; cursor:pointer;
-        font-size:16px;
-        font-family:inherit;
-      }
-      nav.drawer .mode-btn.active{
-        background:${isDocsFamilyPage ? '#8a6b44' : '#0f172a'}; color:#fff; border-color:${isDocsFamilyPage ? '#8a6b44' : '#0f172a'};
-      }
-      nav.drawer details{ padding:8px 14px; }
+      nav.drawer details{ padding:0; }
       nav.drawer details > *:not(summary){ display:block; }
       nav.drawer details>summary{
         cursor:pointer;
-        font-weight:600;
+        font-weight:400;
         list-style:none;
         font-size:17px;
         display:flex;
         align-items:center;
-        justify-content:space-between;
-        gap:12px;
+        gap:14px;
+        padding:13px 20px;
         color:#1f2937;
       }
       nav.drawer details>summary::-webkit-details-marker{ display:none; }
-      nav.drawer details>summary::after{
-        content:'▾';
-        font-size:20px;
-        line-height:1;
-        color:${isDocsFamilyPage ? '#8a6b44' : '#64748b'};
-        transition:transform .22s ease;
+      nav.drawer .drawer-chevron{
         margin-left:auto;
+        font-size:22px;
+        color:#888;
+        width:24px;
+        text-align:center;
+        transition:transform .22s ease;
       }
-      nav.drawer details[open]>summary::after{ transform:rotate(180deg); }
+      nav.drawer details[open] .drawer-chevron{ transform:rotate(180deg); }
       nav.drawer .detail-body{
         display:grid;
         grid-template-rows:0fr;
@@ -367,11 +374,11 @@
       }
       nav.drawer .sub a:hover{ background:${isDocsFamilyPage ? 'rgba(246, 232, 200, .5)' : '#f1f5f9'}; }
       nav.drawer .nav-icon{
-        display:inline-grid;
-        place-items:center;
-        width:28px;
-        min-width:28px;
-        font-size:27px;
+        font-size:22px;
+        color:#888;
+        width:24px;
+        min-width:24px;
+        text-align:center;
         line-height:1;
       }
       nav.drawer .nav-text{
@@ -390,16 +397,12 @@
   overlay.innerHTML = `
     <nav class="drawer" id="appDrawer" aria-label="Main">
       <header>Menu</header>
-      <div class="mode-toggle" role="group" aria-label="Menu mode">
-        <button type="button" class="mode-btn" data-role-btn="individual">Individual (Me)</button>
-        <button type="button" class="mode-btn" data-role-btn="caregiver">Caregiver</button>
-      </div>
 
       <div class="drawer-item" data-role="shared">
-        <a href="/profile.html"><span class="nav-icon">👤</span><span class="nav-text">Profile</span></a>
+        <a href="/profile.html"><i class="ti ti-user nav-icon" aria-hidden="true"></i><span class="nav-text">Profile</span></a>
       </div>
       <details data-role="caregiver">
-        <summary><span class="nav-icon">⚙️</span><span class="nav-text">Settings & Admin</span></summary>
+        <summary><i class="ti ti-settings nav-icon" aria-hidden="true"></i><span class="nav-text">Settings & Admin</span><i class="ti ti-chevron-down drawer-chevron" aria-hidden="true"></i></summary>
         <div class="detail-body">
           <div class="detail-body-inner">
             <div class="sub">
@@ -410,37 +413,37 @@
         </div>
       </details>
       <div class="drawer-item" data-role="shared">
-        <a href="/dashboard.html"><span class="nav-icon">🏠</span><span class="nav-text">Dashboard</span></a>
+        <a href="/dashboard.html" class="active"><i class="ti ti-home nav-icon" aria-hidden="true"></i><span class="nav-text">Dashboard</span></a>
       </div>
       <div class="drawer-item" data-role="shared">
-        <a id="auth-dash-link" href="/auth.html"><span class="nav-icon">🔐</span><span class="nav-text">Log In</span></a>
+        <a id="auth-dash-link" href="/auth.html"><i class="ti ti-logout nav-icon" aria-hidden="true"></i><span class="nav-text">Log Out</span></a>
       </div>
       <div class="drawer-item" data-role="individual">
-        <a href="/home.html"><span class="nav-icon">😊</span><span class="nav-text">Mood Check-In</span></a>
+        <a href="/home.html"><i class="ti ti-mood-smile nav-icon" aria-hidden="true"></i><span class="nav-text">Mood Check-In</span></a>
       </div>
       <div class="drawer-item" data-role="individual">
-        <a href="/wouldyourather.html"><span class="nav-icon">🤔</span><span class="nav-text">Would You Rather</span></a>
+        <a href="/wouldyourather.html"><i class="ti ti-arrows-random nav-icon" aria-hidden="true"></i><span class="nav-text">Would You Rather</span></a>
       </div>
       <div class="drawer-item" data-role="individual">
-        <a href="/my-star-voice.html"><span class="nav-icon">🗣️</span><span class="nav-text">My STAR Voice</span></a>
+        <a href="/my-star-voice.html"><i class="ti ti-microphone nav-icon" aria-hidden="true"></i><span class="nav-text">My STAR Voice</span></a>
       </div>
       <div class="drawer-item" data-role="caregiver">
-        <a href="/caregiver-checkin.html"><span class="nav-icon">👥</span><span class="nav-text">Caregiver Check-In</span></a>
+        <a href="/caregiver-checkin.html"><i class="ti ti-checkbox nav-icon" aria-hidden="true"></i><span class="nav-text">Caregiver Check-In</span></a>
       </div>
       <div class="drawer-item" data-role="caregiver">
-        <a href="/caregiver-report.html"><span class="nav-icon">📊</span><span class="nav-text">Caregiver Report</span></a>
+        <a href="/caregiver-report.html"><i class="ti ti-chart-bar nav-icon" aria-hidden="true"></i><span class="nav-text">Caregiver Report</span></a>
       </div>
       <div class="drawer-item" data-role="shared">
-        <a href="/chat.html" data-feature="chat"><span class="nav-icon">💬</span><span class="nav-text">Group Chat</span></a>
+        <a href="/chat.html" data-feature="chat"><i class="ti ti-message nav-icon" aria-hidden="true"></i><span class="nav-text">Group Chat</span></a>
       </div>
       <div class="drawer-item" data-role="shared">
-        <a href="/calendar.html" data-feature="calendar"><span class="nav-icon">📅</span><span class="nav-text">Calendar</span></a>
+        <a href="/calendar.html" data-feature="calendar"><i class="ti ti-calendar nav-icon" aria-hidden="true"></i><span class="nav-text">Calendar</span></a>
       </div>
       <div class="drawer-item" data-role="caregiver">
-        <a href="/focus-week.html" data-feature="focus"><span class="nav-icon">⭐</span><span class="nav-text">Focus of the Week</span></a>
+        <a href="/focus-week.html" data-feature="focus"><i class="ti ti-star nav-icon" aria-hidden="true"></i><span class="nav-text">Focus of the Week</span></a>
       </div>
       <details data-role="caregiver" data-feature="documents">
-        <summary><span class="nav-icon">📂</span><span class="nav-text">Documents</span></summary>
+        <summary><i class="ti ti-files nav-icon" aria-hidden="true"></i><span class="nav-text">Documents</span><i class="ti ti-chevron-down drawer-chevron" aria-hidden="true"></i></summary>
         <div class="detail-body">
           <div class="detail-body-inner">
             <div class="helper">Access important records, ISA/IEP plans, meeting notes, medical details, finance, caregiving, HR, year end paperwork, guardianship, and uploaded files.</div>
@@ -460,7 +463,7 @@
         </div>
       </details>
       <div class="drawer-item" data-role="shared">
-        <a href="/emergency-medical.html"><span class="nav-icon">🚨</span><span class="nav-text">Emergency</span></a>
+        <a href="/emergency-medical.html"><i class="ti ti-alert-triangle nav-icon" aria-hidden="true"></i><span class="nav-text">Emergency</span></a>
       </div>
       <div class="drawer-item" data-role="shared">
         <div class="helper">Legal</div>
@@ -564,43 +567,77 @@
       editLink.style.display = hasCompletedCaregiverSetup() ? '' : 'none';
     }
   }
+
+  function normalizeRole(role) {
+    const value = String(role || '').trim().toLowerCase();
+    if (value === 'individual' || value === 'caregiver') return value;
+    return '';
+  }
+
+  function getCachedRole() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(APP_CONFIG_KEY) || 'null');
+      const configRole = normalizeRole(parsed?.role || parsed?.userRole || parsed?.mode);
+      if (configRole) return configRole;
+    } catch {}
+
+    try {
+      const storedRole = normalizeRole(localStorage.getItem('user_type') || localStorage.getItem('role'));
+      if (storedRole) return storedRole;
+    } catch {}
+
+    return 'caregiver';
+  }
+
+  async function fetchCurrentRole() {
+    const session = typeof getSessionFromStorage === 'function' ? getSessionFromStorage() : null;
+    const userId = session?.user?.id;
+    if (!userId || !SUPABASE_URL) return '';
+
+    try {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=role&limit=1`,
+        {
+          headers: buildAuthHeaders(session.access_token),
+        }
+      );
+      if (!res.ok) throw new Error(`Role lookup failed (${res.status})`);
+      const rows = await res.json();
+      return normalizeRole(Array.isArray(rows) ? rows[0]?.role : '');
+    } catch (error) {
+      console.warn('[drawer] role lookup failed', error);
+      return '';
+    }
+  }
+
+  let currentRole = getCachedRole();
+
+  function applyRoleVisibility(role) {
+    currentRole = normalizeRole(role) || 'caregiver';
+    overlay.querySelectorAll('[data-role]').forEach(node => {
+      const roles = (node.dataset.role || '').split(/\s+/).filter(Boolean);
+      node.style.display = (roles.includes('shared') || roles.includes(currentRole)) ? '' : 'none';
+    });
+    applyFeatureVisibility(currentRole);
+  }
+
+  async function refreshRoleVisibility() {
+    applyRoleVisibility(getCachedRole());
+    const fetchedRole = await fetchCurrentRole();
+    if (fetchedRole) applyRoleVisibility(fetchedRole);
+  }
+
   updateAuthLink();
   window.addEventListener('storage', () => {
     updateAuthLink();
-    applyFeatureVisibility(storedMode === 'caregiver' ? 'caregiver' : 'individual');
+    refreshRoleVisibility();
     resetInactivityLogoutTimer();
   });
   setupInactivityAutoLogout();
-
-  const MODE_KEY = 'star_menu_mode';
-  let storedMode = 'caregiver';
-  function applyMenuMode(mode){
-    const role = mode === 'caregiver' ? 'caregiver' : 'individual';
-    storedMode = role;
-    try { localStorage.setItem(MODE_KEY, role); } catch {}
-    overlay.querySelectorAll('[data-role-btn]').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.roleBtn === role);
-    });
-    overlay.querySelectorAll('[data-role]').forEach(node => {
-      const roles = (node.dataset.role || '').split(/\s+/).filter(Boolean);
-      node.style.display = (roles.includes('shared') || roles.includes(role)) ? '' : 'none';
-    });
-    applyFeatureVisibility(role);
-  }
-  try { storedMode = localStorage.getItem(MODE_KEY) || storedMode; } catch {}
-  if (storedMode !== 'caregiver' && storedMode !== 'individual') storedMode = 'caregiver';
-  applyMenuMode(storedMode);
+  refreshRoleVisibility();
   // --- open / close helpers ---
   const open  = () => { overlay.setAttribute('aria-hidden','false'); document.body.style.overflow='hidden'; };
   const close = () => { overlay.setAttribute('aria-hidden','true');  document.body.style.overflow=''; };
-
-  overlay.querySelectorAll('[data-role-btn]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      applyMenuMode(btn.dataset.roleBtn);
-      close();
-      location.href = '/dashboard.html';
-    });
-  });
 
   // bind to the button created by your top appbar (#openMenu)
   function bindOpen(){

@@ -8,232 +8,342 @@
   <link rel="stylesheet" href="/style.css?v=2026.03.29A" />
 
   <style>
-    /* --- Card layout (matches Login vibe) --- */
-    :root{
-      --ink:#1f2937;
-      --muted:#6b7280;
-      --panel: rgba(255,255,255,.96);
+    :root {
+      --page-bg: #F5F2EC;
+      --card-bg: #FFFFFF;
+      --card-border: #E7E2D8;
+      --soft: #F4F1EA;
+      --focus: #FAEEDA;
+      --focus-border: #FAC775;
+      --text: #2C2C2A;
+      --muted: #5F5E5A;
+      --label: #7A766F;
+      --divider: #B4B2A9;
     }
-    html, body { height: 100%; }
-    body.plain-page{
-      margin:0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      color:var(--ink);
-      background: #f5f6fb;
+    * {
+      box-sizing: border-box;
     }
-
-    .wrap{
+    html,
+    body {
       min-height: 100%;
-      display: grid;
-      place-items: start center;
-      padding: 72px 16px 40px;
     }
-
-    .dashboard-stack{
-      width:100%;
-      max-width:720px;
-      display:grid;
-      gap:18px;
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background: var(--page-bg);
     }
-
-    .card{
-      width:100%;
-      background: var(--panel);
-      border-radius:16px;
-      box-shadow: 0 10px 30px rgba(0,0,0,.08);
-      padding: 28px 24px 24px;
-      text-align:center;
-      backdrop-filter: blur(2px);
+    .page {
+      width: min(100%, 420px);
+      margin: 0 auto;
+      min-height: 100vh;
+      padding: 56px 0 0;
     }
-
-    h1{ margin:0 0 6px; font-size:2rem; }
-    .sub{ font-weight:700; margin:0 0 6px; }
-    .tagline{ margin:0 0 18px; color:#4b5563; font-style: italic; }
-    .welcome{ margin:10px 0 4px; font-size:1.35rem; }
-    .user{ margin:0 0 18px; color:var(--muted); font-size:.95rem; }
-
-    .row{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-top:10px; }
-    .btn{
-      appearance:none; border:0; background:#3b82f6; color:#fff;
-      padding:10px 16px; border-radius:10px; font-weight:700; cursor:pointer;
+    .dashboard-header { padding-top: 32px; }
+    .header-content { text-align: center; }
+    .logo {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 2px;
     }
-    .btn:hover{ filter:brightness(.97); }
-
-    .help{ margin-top:12px; font-size:.9rem; color:var(--muted); }
-    .getting-started-card{
-      text-align:left;
-      background:rgba(255,255,255,.82);
-    }
-    .getting-started-head{
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-start;
-      gap:12px;
-      margin-bottom:14px;
-      flex-wrap:wrap;
-    }
-    .getting-started-head h2{
-      margin:0;
-      font-size:1.35rem;
-    }
-    .getting-started-head p{
-      margin:6px 0 0;
-      color:#4b5563;
-    }
-    .getting-started-pill{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      min-width:110px;
-      min-height:36px;
-      padding:0 12px;
-      border-radius:999px;
-      background:#eff6ff;
-      color:#1d4ed8;
-      font-weight:800;
-      font-size:.92rem;
-    }
-    .getting-started-list{
-      list-style:none;
-      padding:0;
-      margin:0;
-      display:grid;
-      gap:12px;
-    }
-    .getting-started-item{
-      display:grid;
-      grid-template-columns:auto 1fr auto;
-      gap:12px;
-      align-items:center;
-      padding:14px 16px;
-      border:1px solid #dbe4ee;
-      border-radius:14px;
-      background:rgba(255,255,255,.86);
-    }
-    .getting-started-item.is-done{
-      border-color:#bbf7d0;
-      background:#f0fdf4;
-    }
-    .getting-started-check{
-      width:28px;
-      height:28px;
-      border-radius:999px;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      font-weight:900;
-      border:2px solid #cbd5e1;
-      color:#94a3b8;
-      background:#fff;
-      flex:0 0 auto;
-    }
-    .getting-started-item.is-done .getting-started-check{
-      border-color:#22c55e;
-      color:#15803d;
-      background:#dcfce7;
-    }
-    .getting-started-copy strong{
-      display:block;
-      font-size:1rem;
-      margin-bottom:2px;
-    }
-    .getting-started-copy span{
-      color:#6b7280;
-      font-size:.92rem;
-      line-height:1.45;
-    }
-    .getting-started-link{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      padding:10px 14px;
-      border-radius:10px;
-      background:#111827;
-      color:#fff;
-      text-decoration:none;
-      font-weight:800;
-      white-space:nowrap;
-    }
-    .getting-started-item.is-done .getting-started-link{
-      background:#e5e7eb;
-      color:#374151;
-    }
-    @media (max-width:640px){
-      .getting-started-item{
-        grid-template-columns:auto 1fr;
-      }
-      .getting-started-link{
-        grid-column:1 / -1;
-        width:100%;
-      }
-    }
-    .dashboard-legal-footer{
-      text-align:center;
-      padding: 8px 16px 20px;
+    .tagline {
+      margin: 6px 0 0;
       color: var(--muted);
       font-size: 12px;
+      line-height: 1.4;
     }
-    .dashboard-legal-links{
-      display:flex;
-      justify-content:center;
-      gap:14px;
-      flex-wrap:wrap;
-      margin-bottom:6px;
+    .divider {
+      width: 32px;
+      height: 1px;
+      background: var(--divider);
+      margin: 10px auto;
     }
-    .dashboard-legal-links a{
+    .dashboard-header h2 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 650;
+      color: var(--text);
+    }
+    .date,
+    .user {
+      margin: 4px 0 0;
       color: var(--muted);
-      text-decoration:none;
+      font-size: 13px;
     }
-    .dashboard-legal-links a:hover{
-      text-decoration:underline;
+    .dashboard-card {
+      background: var(--card-bg);
+      border-radius: 16px 16px 0 0;
+      padding: 20px 16px 28px;
+      border-top: 1px solid var(--card-border);
     }
-    .dashboard-legal-copy{
-      margin:0;
+    .section-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--label);
+      margin: 0 0 10px;
+      font-weight: 600;
+    }
+    .quick-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .action-card {
+      border-radius: 12px;
+      padding: 28px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 24px;
+      min-height: 146px;
+      font-size: 28px;
+      font-weight: 700;
+      cursor: pointer;
+      background: #E9E6DF;
+      color: #2C2C2A;
+      border: 1px solid transparent;
+      text-decoration: none;
+    }
+    .action-card svg {
+      color: #5F5E5A;
+    }
+    .action-card.active {
+      background: #FAEEDA;
+      border: 1px solid #FAC775;
+      color: #633806;
+    }
+    .action-card.active svg {
+      color: #854F0B;
+    }
+    .focus-banner {
+      background: var(--focus);
+      border: 1px solid var(--focus-border);
+      padding: 16px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      font-size: 18px;
+      color: #633806;
+      font-style: italic;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .focus-banner svg {
+      color: #F59E0B;
+      flex: 0 0 auto;
+    }
+    .recent-activity {
+      border: 1px solid #D8D2C8;
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 20px;
+      background: #FFFFFF;
+    }
+    .activity-row {
+      display: grid;
+      grid-template-columns: 36px 1fr auto;
+      align-items: center;
+      gap: 14px;
+      padding: 20px;
+      border-bottom: 1px solid #E7E2D8;
+    }
+    .activity-row:last-child {
+      border-bottom: none;
+    }
+    .activity-row svg {
+      color: #854F0B;
+    }
+    .activity-title {
+      margin: 0;
+      color: #191919;
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .activity-meta {
+      margin: 2px 0 0;
+      color: #3A3A37;
+      font-size: 16px;
+      line-height: 1.25;
+    }
+    .activity-dismiss {
+      appearance: none;
+      border: none;
+      background: transparent;
+      color: #3A3A37;
+      font-size: 34px;
+      line-height: 1;
+      padding: 0 2px;
+      cursor: pointer;
+    }
+    .help {
+      margin: 10px 0 0;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .secondary-btn {
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: var(--soft);
+      color: var(--text);
+      border: 1px solid #D8D2C8;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .secondary-btn:hover {
+      background: #ECE7DD;
+    }
+    .dashboard-legal-footer {
+      width: min(100%, 420px);
+      margin: 0 auto;
+      text-align: center;
+      padding: 14px 16px 24px;
+      color: var(--muted);
+      font-size: 12px;
+      background: #FFFFFF;
+    }
+    .dashboard-legal-links {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 6px;
+    }
+    .dashboard-legal-links a {
+      color: var(--muted);
+      text-decoration: none;
+    }
+    .dashboard-legal-links a:hover {
+      text-decoration: underline;
+    }
+    .dashboard-legal-copy {
+      margin: 0;
       color: var(--muted);
       font-size: 12px;
     }
   </style>
 </head>
 
-<body style="background-image:url('STAR1.jpg');background-size:cover;background-position:center top;background-repeat:no-repeat;background-color:#eef3fb;">
+<body>
 
   <!-- Top navbar host (ui-shell will fill this; safe to keep) -->
   <div id="navbar"></div>
 
-  <div id="activityBannerHost" class="activity-banner-host is-hidden" role="region" aria-live="polite" aria-label="Recent updates"></div>
-
-  <main class="wrap">
-    <div class="dashboard-stack">
-      <section class="card" 
-            style="background: rgba(255,255,255,0.45); border-radius: 20px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
-
-        <h1>🌟 STAR</h1>
-        <div class="sub">Support Tool for Autonomy and Reflection</div>
-        <p class="tagline"><em>Guided by the North Star, supporting progress, engagement, and satisfaction.</em></p>
-
-        <div class="welcome"><strong>Welcome!</strong></div>
+  <main class="page">
+    <section class="dashboard-header starfield-page-header">
+      <svg class="starfield-bg" viewBox="0 0 420 110" aria-hidden="true">
+        <circle cx="28" cy="18" r="1" fill="#2C2C2A" opacity="0.15"></circle>
+        <circle cx="80" cy="10" r="0.7" fill="#2C2C2A" opacity="0.12"></circle>
+        <circle cx="130" cy="28" r="0.9" fill="#2C2C2A" opacity="0.1"></circle>
+        <circle cx="200" cy="8" r="0.7" fill="#2C2C2A" opacity="0.1"></circle>
+        <circle cx="260" cy="22" r="0.6" fill="#2C2C2A" opacity="0.1"></circle>
+        <circle cx="340" cy="14" r="0.8" fill="#2C2C2A" opacity="0.12"></circle>
+        <circle cx="390" cy="28" r="1" fill="#2C2C2A" opacity="0.15"></circle>
+        <circle cx="50" cy="55" r="0.7" fill="#2C2C2A" opacity="0.1"></circle>
+        <circle cx="150" cy="65" r="0.8" fill="#2C2C2A" opacity="0.1"></circle>
+        <circle cx="300" cy="50" r="0.8" fill="#2C2C2A" opacity="0.12"></circle>
+        <circle cx="400" cy="68" r="0.7" fill="#2C2C2A" opacity="0.1"></circle>
+        <polygon points="60,20 61.4,24.4 66,24.4 62.4,27 63.8,31.4 60,28.8 56.2,31.4 57.6,27 54,24.4 58.6,24.4" fill="#2C2C2A" opacity="0.25"></polygon>
+        <polygon points="365,10 366.2,13.8 370.2,13.8 367,16 368.2,19.8 365,17.6 361.8,19.8 363,16 359.8,13.8 363.8,13.8" fill="#2C2C2A" opacity="0.2"></polygon>
+      </svg>
+      <div class="header-content starfield-header-content">
+        <svg class="header-star" viewBox="0 0 24 24" fill="none" stroke="#2C2C2A" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true">
+          <polygon points="12,2 14.9,9.3 22.6,9.3 16.4,14 18.8,21.5 12,17.2 5.2,21.5 7.6,14 1.4,9.3 9.1,9.3"></polygon>
+        </svg>
+        <div class="logo">STAR</div>
+        <p class="tagline">Support Tool for Autonomy and Reflection.</p>
+        <div class="divider"></div>
+        <h2>Good morning</h2>
+        <p class="date">Wednesday, May 6</p>
         <p id="user-email" class="user"></p>
+      </div>
+    </section>
 
-        <div class="row">
-          <button id="logoutBtn" class="btn">Log Out</button>
-          <button id="restartOnboardingBtn" class="btn" type="button">Restart Onboarding (DEV)</button>
-        </div>
-        <p id="onboardingDebugStatus" class="help" style="margin-top:10px;"></p>
+    <section class="dashboard-card">
+      <div class="section-label">Quick actions</div>
+      <div class="quick-actions">
+        <a class="action-card active" href="caregiver-checkin.html">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 11l3 3l6 -6"></path>
+            <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+          </svg>
+          <span>Check-in</span>
+        </a>
 
-        <p class="help">Use the menu (☰) or the bottom bar to navigate.</p>
-      </section>
+        <a class="action-card" href="caregiver-report.html">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="4" y="10" width="3" height="10"></rect>
+            <rect x="10" y="6" width="3" height="14"></rect>
+            <rect x="16" y="2" width="3" height="18"></rect>
+          </svg>
+          <span>Reports</span>
+        </a>
 
-      <section class="card getting-started-card" id="gettingStartedCard">
-        <div class="getting-started-head">
+        <a class="action-card" href="focus-week.html">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="12 2 15 9 22 9 17 14 19 21 12 17 5 21 7 14 2 9 9 9"></polygon>
+          </svg>
+          <span>Focus</span>
+        </a>
+
+        <a class="action-card" href="documents/index.html">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="4" y="4" width="14" height="14"></rect>
+            <path d="M8 8h6M8 12h6M8 16h4"></path>
+          </svg>
+          <span>Docs</span>
+        </a>
+      </div>
+
+      <div class="section-label">Weekly focus</div>
+      <div class="focus-banner">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="#F59E0B" stroke="none" aria-hidden="true">
+          <polygon points="12 2 15 9 22 9 17 14 19 21 12 17 5 21 7 14 2 9 9 9"></polygon>
+        </svg>
+        <span>No focus set — open Focus Planner</span>
+      </div>
+
+      <div class="section-label">Recent activity</div>
+      <div class="recent-activity">
+        <div class="activity-row">
+          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M7 3h7l4 4v14H7z"></path>
+            <path d="M14 3v5h5M10 12h5M10 16h5M10 8h1"></path>
+          </svg>
           <div>
-            <h2 id="gettingStartedTitle">Getting Started</h2>
-            <p id="gettingStartedIntro">Use this checklist to set up STAR the first time and help your group start smoothly.</p>
+            <p class="activity-title">Document saved</p>
+            <p class="activity-meta">Med check · 3/26/2026</p>
           </div>
-          <div class="getting-started-pill" id="gettingStartedProgress">0 of 5 done</div>
+          <button class="activity-dismiss" type="button" aria-label="Dismiss document saved">×</button>
         </div>
-        <ul class="getting-started-list" id="gettingStartedList"></ul>
-      </section>
-    </div>
+        <div class="activity-row">
+          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M5 4h4v16H5zM10 7h4v13h-4zM15 5l4 14"></path>
+          </svg>
+          <div>
+            <p class="activity-title">Shared document library</p>
+            <p class="activity-meta">3/11/2026</p>
+          </div>
+          <button class="activity-dismiss" type="button" aria-label="Dismiss shared document library">×</button>
+        </div>
+        <div class="activity-row">
+          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M4 5h16v11H8l-4 4z"></path>
+            <path d="M8 9h8M8 13h5"></path>
+          </svg>
+          <div>
+            <p class="activity-title">Chat message</p>
+            <p class="activity-meta">11/7/2025</p>
+          </div>
+          <button class="activity-dismiss" type="button" aria-label="Dismiss chat message">×</button>
+        </div>
+      </div>
+    </section>
   </main>
 
 <!-- Page logic that populates #user-email etc. -->
@@ -242,316 +352,12 @@
 <script type="module" src="./home-activity.js?v=2026.03.29A"></script>
 
 <script type="module">
-  import { rest } from './restClient.js?v=2026.03.29A';
   import {
-    SUPABASE_URL,
-    SUPABASE_ANON_KEY,
     getSessionFromStorage,
-    clearSavedSession,
   } from './supabaseClient.js?v=2026.03.29A';
-  import {
-    clearGuidedOnboarding,
-    fetchCurrentProfile,
-    fetchCurrentMemberships,
-    setOnboardingCompletionState,
-  } from './onboarding-flow.js?v=2026.03.29A';
-  import { ensureActiveGroupId } from './active-group.js?v=2026.03.29A';
-  import { fetchFocusByGroup } from './focus-data.js?v=2026.03.29A';
+  import { fetchCurrentProfile } from './onboarding-flow.js?v=2026.03.29A';
 
-  const clearLocalIdentityState = () => {
-    const keys = ['user_id', 'currentGroupId', 'currentGroupName'];
-    for (const key of keys) {
-      try { localStorage.removeItem(key); } catch {}
-    }
-  };
-
-  const logoutBtn = document.getElementById('logoutBtn');
-  const restartOnboardingBtn = document.getElementById('restartOnboardingBtn');
-  const onboardingDebugStatus = document.getElementById('onboardingDebugStatus');
-  const gettingStartedList = document.getElementById('gettingStartedList');
-  const gettingStartedProgress = document.getElementById('gettingStartedProgress');
-  const gettingStartedCard = document.getElementById('gettingStartedCard');
-  const gettingStartedTitle = document.getElementById('gettingStartedTitle');
-  const gettingStartedIntro = document.getElementById('gettingStartedIntro');
   const userEmailEl = document.getElementById('user-email');
-  const MENU_MODE_KEY = 'star_menu_mode';
-
-  function parseConfigObject(value) {
-    if (value && typeof value === 'object') return value;
-    if (typeof value === 'string') {
-      try { return JSON.parse(value); } catch { return null; }
-    }
-    return null;
-  }
-
-  function renderGettingStarted(items = []) {
-    if (!gettingStartedList || !gettingStartedProgress || !gettingStartedCard) return;
-    if (!items.length) {
-      gettingStartedCard.style.display = 'none';
-      return;
-    }
-    gettingStartedCard.style.display = '';
-    const completed = items.filter((item) => item.done).length;
-    gettingStartedProgress.textContent = `${completed} of ${items.length} done`;
-    gettingStartedList.innerHTML = '';
-    items.forEach((item) => {
-      const li = document.createElement('li');
-      li.className = `getting-started-item${item.done ? ' is-done' : ''}`;
-      li.innerHTML = `
-        <span class="getting-started-check" aria-hidden="true">${item.done ? '✓' : item.step}</span>
-        <div class="getting-started-copy">
-          <strong>${item.title}</strong>
-          <span>${item.description}</span>
-        </div>
-        <a class="getting-started-link" href="${item.href}">${item.done ? 'Review' : item.action}</a>
-      `;
-      gettingStartedList.appendChild(li);
-    });
-  }
-
-  function setGettingStartedCopy(mode = 'caregiver') {
-    if (!gettingStartedTitle || !gettingStartedIntro) return;
-    if (mode === 'individual') {
-      gettingStartedTitle.textContent = 'Your STAR Start';
-      gettingStartedIntro.textContent = 'Use this checklist to set up the individual side of STAR and get comfortable with your daily tools.';
-      return;
-    }
-    gettingStartedTitle.textContent = 'Getting Started';
-    gettingStartedIntro.textContent = 'Use this checklist to set up STAR the first time and help your group start smoothly.';
-  }
-
-  function getDashboardMode() {
-    try {
-      return localStorage.getItem(MENU_MODE_KEY) === 'individual' ? 'individual' : 'caregiver';
-    } catch {
-      return 'caregiver';
-    }
-  }
-
-  function renderOnboardingDebugStatus(onboardingComplete) {
-    if (!onboardingDebugStatus) return;
-    onboardingDebugStatus.textContent = `Onboarding complete: ${onboardingComplete === true ? 'true' : 'false'}`;
-  }
-
-  async function loadGettingStartedCard(userId, profile) {
-    try {
-      const dashboardMode = getDashboardMode();
-      const [memberships, groupId] = await Promise.all([
-        fetchCurrentMemberships(userId),
-        ensureActiveGroupId(userId),
-      ]);
-      const hasProfile = !!(
-        profile?.id &&
-        (profile?.display_name || profile?.public_name || profile?.full_name)
-      );
-      const hasGroup = !!groupId || memberships.length > 0;
-
-      let hasCaregiverSetup = false;
-      let hasFocusPlan = false;
-      let hasCheckin = false;
-      let hasMoodCheckin = false;
-
-      if (groupId) {
-        const [configs, focusPlan, checkins, moodEntries] = await Promise.all([
-          rest(`caregiver_checkin_configs?group_id=eq.${encodeURIComponent(groupId)}&select=id,selected_items&limit=1`),
-          fetchFocusByGroup(groupId),
-          rest(`caregiver_checkins?group_id=eq.${encodeURIComponent(groupId)}&select=id&limit=1`),
-          rest(`mood_entries?group_id=eq.${encodeURIComponent(groupId)}&select=id&limit=1`),
-        ]);
-        const config = configs?.[0] || null;
-        const selectedItems = parseConfigObject(config?.selected_items);
-        hasCaregiverSetup = !!config && (
-          selectedItems?.__custom_mode__ === true ||
-          Object.keys(selectedItems || {}).some((key) => key !== '__custom_mode__')
-        );
-        hasFocusPlan = !!focusPlan;
-        hasCheckin = Array.isArray(checkins) && checkins.length > 0;
-        hasMoodCheckin = Array.isArray(moodEntries) && moodEntries.length > 0;
-      }
-
-      if (dashboardMode === 'individual') {
-        setGettingStartedCopy('individual');
-        renderGettingStarted([
-          {
-            step: 1,
-            title: 'Finish your profile',
-            description: 'Update the name people should see and add a profile photo if you want one.',
-            href: '/profile.html',
-            action: 'Open Profile',
-            done: hasProfile,
-          },
-          {
-            step: 2,
-            title: 'Create or join your group',
-            description: 'Connect STAR to the right group so your supports, calendar, and tools stay in sync.',
-            href: '/group-settings.html',
-            action: 'Open Group Settings',
-            done: hasGroup,
-          },
-          {
-            step: 3,
-            title: 'Try your first mood check-in',
-            description: 'Log one mood check-in so your daily tracking starts filling in.',
-            href: '/home.html',
-            action: 'Open Mood Check-In',
-            done: hasMoodCheckin,
-          },
-          {
-            step: 4,
-            title: 'Set up My STAR Voice',
-            description: 'Open your voice board and start personalizing phrases you want available every day.',
-            href: '/my-star-voice.html',
-            action: 'Open My STAR Voice',
-            done: false,
-          },
-          {
-            step: 5,
-            title: 'Explore your tools',
-            description: 'Try Would You Rather and check your calendar so the app feels familiar right away.',
-            href: '/wouldyourather.html',
-            action: 'Open Would You Rather',
-            done: false,
-          },
-        ]);
-        return;
-      }
-
-      setGettingStartedCopy('caregiver');
-      renderGettingStarted([
-        {
-          step: 1,
-          title: 'Finish your profile',
-          description: 'Your name is usually already filled in. Add a profile photo if you want, then save and continue.',
-          href: '/profile.html',
-          action: 'Continue',
-          done: hasProfile,
-        },
-        {
-          step: 2,
-          title: 'Create or join your group',
-          description: 'Set the active group so STAR can connect your caregiver tools and shared planning.',
-          href: '/group-settings.html',
-          action: 'Open Group Settings',
-          done: hasGroup,
-        },
-        {
-          step: 3,
-          title: 'Set up caregiver check-in',
-          description: 'Choose the tracking sections your group wants caregivers to use.',
-          href: '/caregiver-setup-wizard.html',
-          action: 'Open Setup',
-          done: hasCaregiverSetup,
-        },
-        {
-          step: 4,
-          title: 'Add a weekly focus',
-          description: 'Create one focus area or routine so caregivers can support the same goals all week.',
-          href: '/focus-week.html',
-          action: 'Open Focus Planner',
-          done: hasFocusPlan,
-        },
-        {
-          step: 5,
-          title: 'Review your caregiver report',
-          description: 'Open the caregiver report to see the check-in data displayed in graphs, summaries, and trends.',
-          href: '/caregiver-report.html',
-          action: 'Open Caregiver Report',
-          done: hasCheckin,
-        },
-      ]);
-    } catch (error) {
-      console.warn('[DASHBOARD] getting started load failed', error);
-      if (getDashboardMode() === 'individual') {
-        setGettingStartedCopy('individual');
-        renderGettingStarted([
-          {
-            step: 1,
-            title: 'Finish your profile',
-            description: 'Update the name people should see and add a profile photo if you want one.',
-            href: '/profile.html',
-            action: 'Open Profile',
-            done: false,
-          },
-          {
-            step: 2,
-            title: 'Create or join your group',
-            description: 'Connect STAR to the right group.',
-            href: '/group-settings.html',
-            action: 'Open Group Settings',
-            done: false,
-          },
-          {
-            step: 3,
-            title: 'Try your first mood check-in',
-            description: 'Log one mood check-in so your daily tracking starts filling in.',
-            href: '/home.html',
-            action: 'Open Mood Check-In',
-            done: false,
-          },
-          {
-            step: 4,
-            title: 'Set up My STAR Voice',
-            description: 'Open your voice board and start personalizing phrases you want available every day.',
-            href: '/my-star-voice.html',
-            action: 'Open My STAR Voice',
-            done: false,
-          },
-          {
-            step: 5,
-            title: 'Explore your tools',
-            description: 'Try Would You Rather and check your calendar so the app feels familiar right away.',
-            href: '/wouldyourather.html',
-            action: 'Open Would You Rather',
-            done: false,
-          },
-        ]);
-        return;
-      }
-      setGettingStartedCopy('caregiver');
-      renderGettingStarted([
-        {
-          step: 1,
-          title: 'Finish your profile',
-          description: 'Your name is usually already filled in. Add a profile photo if you want, then save and continue.',
-          href: '/profile.html',
-          action: 'Continue',
-          done: false,
-        },
-        {
-          step: 2,
-          title: 'Create or join your group',
-          description: 'Connect STAR to your group.',
-          href: '/group-settings.html',
-          action: 'Open Group Settings',
-          done: false,
-        },
-        {
-          step: 3,
-          title: 'Set up caregiver check-in',
-          description: 'Choose what caregivers should track.',
-          href: '/caregiver-setup-wizard.html',
-          action: 'Open Setup',
-          done: false,
-        },
-        {
-          step: 4,
-          title: 'Add a weekly focus',
-          description: 'Create a shared focus or routine.',
-          href: '/focus-week.html',
-          action: 'Open Focus Planner',
-          done: false,
-        },
-        {
-          step: 5,
-          title: 'Review your caregiver report',
-          description: 'See the caregiver data displayed in one report view.',
-          href: '/caregiver-report.html',
-          action: 'Open Caregiver Report',
-          done: false,
-        },
-      ]);
-    }
-  }
 
   (async () => {
     const session = getSessionFromStorage();
@@ -569,58 +375,11 @@
           session.user.email ||
           '';
       }
-      const onboardingComplete = profile?.onboarding_complete === true;
-      renderOnboardingDebugStatus(onboardingComplete);
-      await loadGettingStartedCard(session.user.id, profile);
     } catch (error) {
-      console.warn('[DASHBOARD] onboarding check failed', error);
+      console.warn('[DASHBOARD] profile load failed', error);
     }
   })();
 
-  if (logoutBtn) {
-    logoutBtn.addEventListener('click', async (event) => {
-      event.preventDefault();
-      const session = getSessionFromStorage();
-      if (session?.access_token) {
-        try {
-          await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
-            method: 'POST',
-            headers: {
-              apikey: SUPABASE_ANON_KEY,
-              Authorization: `Bearer ${session.access_token}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ scope: 'global' }),
-          });
-        } catch (err) {
-          console.warn('logout request failed', err);
-        }
-      }
-      clearSavedSession();
-      clearLocalIdentityState();
-      window.location.href = 'auth.html';
-    });
-  }
-
-  if (restartOnboardingBtn) {
-    restartOnboardingBtn.addEventListener('click', async () => {
-      const session = getSessionFromStorage();
-      if (!session?.user?.id) return;
-
-      restartOnboardingBtn.disabled = true;
-      restartOnboardingBtn.textContent = 'Restarting…';
-
-      try {
-        clearGuidedOnboarding(session.user.id);
-        await setOnboardingCompletionState(session.user.id, false);
-        window.location.href = '/role-select.html';
-      } catch (error) {
-        console.warn('[DASHBOARD] restart onboarding failed', error);
-        restartOnboardingBtn.disabled = false;
-        restartOnboardingBtn.textContent = 'Restart Onboarding (DEV)';
-      }
-    });
-  }
 </script>
 
 <!-- ✅ Restore original hamburger menu + bottom tabbar -->

@@ -4867,6 +4867,21 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         return;
       }
 
+      console.log(
+        '[caregiver table] renderCaregiverCheckins first 5',
+        entries.slice(0, 5).map((e) => ({
+          date: e.date,
+          caregiver_name: e.caregiver_name ?? e.payload?.caregiver_name,
+          timestamp: e.timestamp,
+          created_at: e.created_at,
+          submitted_at: e.submitted_at,
+          'payload.date': e.payload?.date,
+          'payload.timestamp': e.payload?.timestamp,
+          'payload.created_at': e.payload?.created_at,
+          'payload.submitted_at': e.payload?.submitted_at
+        }))
+      );
+
       entries.forEach((entry) => {
         const row = formatEntryForList ? formatEntryForList(entry) : fallbackFormat(entry);
         const tr = document.createElement('tr');

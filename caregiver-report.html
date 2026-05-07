@@ -5396,11 +5396,14 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     }
 
     function sortCaregiverEntriesNewestFirst(entries = []){
-      return entries.slice().sort((a, b) => {
-        const bDate = parseEntryDate(b)?.getTime?.() ?? 0;
-        const aDate = parseEntryDate(a)?.getTime?.() ?? 0;
-        return bDate - aDate;
-      });
+      const sortTimeMs = (entry = {}) => {
+        const raw = entry.timestamp || entry.created_at || entry.submitted_at || entry.date;
+        const primary = raw ? parseCaregiverDate(raw) : null;
+        if (primary) return primary.getTime();
+        const fb = parseEntryDate(entry);
+        return fb ? fb.getTime() : 0;
+      };
+      return entries.slice().sort((a, b) => sortTimeMs(b) - sortTimeMs(a));
     }
 
     function applyCaregiverFilters(){

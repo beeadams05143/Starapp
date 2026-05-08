@@ -1618,7 +1618,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     let loadFromSupabase = null;
     let formatEntryForList = null;
     try {
-      const mod = await import('./caregiver-report-supabase.js?v=2026.05.03C');
+      const mod = await import('./caregiver-report-supabase.js?v=2026.05.03D');
       loadFromSupabase = mod.loadCaregiverCheckins;
       formatEntryForList = mod.formatEntryForList;
     } catch (err) {
@@ -6337,7 +6337,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       if (loadFromSupabase){
         try {
           console.log("Fetching caregiver check-ins...");
-          res = await loadFromSupabase(USER_ID, {
+          res = await loadFromSupabase(null, {
             range: 'all',
             includeAllUsers: true,
             groupId,
@@ -8027,8 +8027,15 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-sh
     const startDate = start.slice(0,10);
     const endDate = end.slice(0,10);
     try{
+      const groupId = await ensureGroupId();
+      if (!groupId) {
+        console.warn('[caregiver-report calendar] loadMonthFlagMap skipped: no group_id');
+        applyLocalAnnotationsToMap(start, end, map);
+        return map;
+      }
       const params = [
-        'caregiver_checkins?select=id,user_id,created_at,submitted_at,date,had_bm,payload',
+        'caregiver_checkins?select=id,user_id,group_id,caregiver_name,created_at,submitted_at,date,had_bm,payload',
+        `group_id=eq.${encodeURIComponent(groupId)}`,
         `date=gte.${encodeURIComponent(startDate)}`,
         `date=lt.${encodeURIComponent(endDate)}`,
         'order=date.asc'
@@ -8266,10 +8273,16 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-sh
 
   async function loadCaregiverFlags(start, end){
     try{
+      const groupId = await ensureGroupId();
+      if (!groupId) {
+        console.warn('[caregiver-report calendar] loadCaregiverFlags skipped: no group_id');
+        return;
+      }
       const startDate = start.slice(0,10);
       const endDate = end.slice(0,10);
       const params = [
-        'caregiver_checkins?select=id,user_id,created_at,submitted_at,date,had_bm,payload',
+        'caregiver_checkins?select=id,user_id,group_id,caregiver_name,created_at,submitted_at,date,had_bm,payload',
+        `group_id=eq.${encodeURIComponent(groupId)}`,
         `date=gte.${encodeURIComponent(startDate)}`,
         `date=lt.${encodeURIComponent(endDate)}`,
         'order=date.asc'

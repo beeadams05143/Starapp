@@ -1,5 +1,6 @@
-// caregiver-report-supabase.js — PRODUCTION SAFE (client-side filtering) v=2026.05.03C
+// caregiver-report-supabase.js — PRODUCTION SAFE (group-scoped; no user_id filter) v=2026.05.03D
 import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
+import { resolveActiveGroup } from './active-group.js?v=2026.03.29A';
 
 /* ---------- shared helpers ---------- */
 const TRUE_VALUES = new Set(['true', 't', 'yes', 'y', '1', 'on', 'done', 'complete', 'present']);
@@ -67,6 +68,38 @@ const rowIndividualId = (row) =>
   row?.individual_id ??
   row?.payload?.individual_id ??
   null;
+
+/** Attach profile rows for name display; RLS may return only visible members. */
+async function hydrateProfilesForCheckinRows(rows = []) {
+  const ids = [
+    ...new Set(
+      rows
+        .map((r) => r?.user_id)
+        .filter(Boolean)
+        .map((id) => String(id).trim())
+    ),
+  ];
+  if (!ids.length) return rows;
+  const inList = ids.map(encodeURIComponent).join(',');
+  try {
+    const profs = await rest(
+      `profiles?select=id,full_name,display_name,public_name,name&id=in.(${inList})`
+    );
+    const map = new Map();
+    (Array.isArray(profs) ? profs : []).forEach((p) => {
+      if (p?.id) map.set(String(p.id), p);
+    });
+    return rows.map((row) => {
+      const uid = row?.user_id ? String(row.user_id) : null;
+      const profileRow = uid ? map.get(uid) : null;
+      if (!profileRow) return row;
+      return { ...row, profiles: profileRow };
+    });
+  } catch (e) {
+    console.warn('[caregiver_checkins] profile hydrate skipped', e?.message || e);
+    return rows;
+  }
+}
 
 const ensurePayload = (row) => {
   const payload = row?.payload;
@@ -714,8 +747,12 @@ const buildSeries = (entries) => {
 };
 
 /* ---------- main loader (safe) ---------- */
+/**
+ * Load caregiver check-ins for the active group only.
+ * @param _legacyUserId Deprecated — not used for filtering (group is the scope).
+ */
 export async function loadCaregiverCheckins(
-  userId,
+  _legacyUserId,
   {
     range = 'all',
     includeAllUsers = false,
@@ -724,7 +761,8 @@ export async function loadCaregiverCheckins(
     endDate = null,
   } = {}
 ) {
-  void userId;
+  void _legacyUserId;
+  void includeAllUsers;
 
   let sessionUserId = null;
   try {
@@ -733,7 +771,12 @@ export async function loadCaregiverCheckins(
     sessionUserId = null;
   }
 
-  const activeGroupId = groupId;
+  let activeGroupId =
+    groupId && String(groupId).trim() ? String(groupId).trim() : null;
+  if (!activeGroupId) {
+    const resolved = await resolveActiveGroup(sessionUserId);
+    activeGroupId = resolved?.groupId ? String(resolved.groupId).trim() : null;
+  }
   const startDateNorm =
     startDate && String(startDate).trim()
       ? String(startDate).trim().slice(0, 10)
@@ -748,8 +791,7 @@ export async function loadCaregiverCheckins(
     currentUserId: sessionUserId,
     startDate: startDateNorm,
     endDate: endDateNorm,
-    includeAllUsers,
-    note: 'user_id is not applied to this query (all caregivers in group). Individual_id is not filtered.',
+    note: 'Scoped by group_id only (no user_id filter). Profiles hydrated in a second request.',
   });
 
   const now = new Date();
@@ -767,17 +809,22 @@ export async function loadCaregiverCheckins(
   }
 
   try {
-    const filters = [];
-    if (activeGroupId) {
-      filters.push(`group_id=eq.${encodeURIComponent(activeGroupId)}`);
-    } else {
-      console.warn(
-        '[caregiver_checkins fetch] activeGroupId missing — query is not scoped to a group'
+    if (!activeGroupId) {
+      console.error(
+        '[caregiver_checkins fetch] No group_id — cannot load group check-ins. Resolve membership (group_members) or set active group.'
       );
+      return {
+        entries: [],
+        summary: summarize([]),
+        charts: buildSeries([]),
+        range_label: range === 'all' ? 'All time' : range,
+      };
     }
 
+    const filters = [`group_id=eq.${encodeURIComponent(activeGroupId)}`];
+
     const params = [
-      'select=*,profiles(full_name,display_name,public_name,name)',
+      'select=*',
       'order=submitted_at.desc.nullslast,created_at.desc.nullslast',
       'limit=10000',
       ...filters,
@@ -785,7 +832,8 @@ export async function loadCaregiverCheckins(
     const path = `caregiver_checkins?${params.join('&')}`;
     const data = await rest(path);
 
-    const rows = Array.isArray(data) ? data : [];
+    const rawRows = Array.isArray(data) ? data : [];
+    const rows = await hydrateProfilesForCheckinRows(rawRows);
 
     console.log('[STAGE 1 raw rows]', rows.length);
     console.log(

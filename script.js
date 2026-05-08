@@ -560,11 +560,8 @@ if (caregiverForm) {
         submitted_at: new Date().toISOString()
       };
 
-      await rest('caregiver_checkins', {
-        method: 'POST',
-        headers: { Prefer: 'return=minimal' },
-        body: JSON.stringify([row]),
-      });
+      // DISABLED: duplicate insert path — primary insert handled in caregiver-checkin.html
+      throw new Error('Duplicate caregiver_checkins insert path is disabled.');
 
       alert('Saved!');
       caregiverForm.reset();

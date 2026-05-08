@@ -859,13 +859,9 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       // 2) minimal insert only to existing columns
       say(L2,'inserting test row…');
       const d = new Date().toISOString().slice(0,10); // YYYY-MM-DD for DATE column
-      await rest('caregiver_checkins', {
-        method: 'POST',
-        headers: { Prefer: 'return=representation' },
-        body: JSON.stringify([{ user_id: user.id, date: d }]),
-      });
-      say(L2,'insert success ✔','ok');
-      alert('Insert success. Check caregiver_checkins for a new row dated '+d);
+      // DISABLED: test insert — not used in production
+      say(L2,'test insert disabled for production safety','err');
+      alert('Test insert is disabled in production.');
     } catch(e){
       console.error(e);
       say(L2, 'insert failed: ' + (e?.message || e), 'err');
@@ -2502,7 +2498,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 
       const caregiverMap = new Map();
       entries.forEach((e) => {
-        const name = String(e.caregiver_name || 'Unknown').trim() || 'Unknown';
+        const name = caregiverViewLabel(e) || 'Unknown';
         if (!caregiverMap.has(name)){
           caregiverMap.set(name, { sessions: 0, minutes: 0 });
         }
@@ -3517,16 +3513,27 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       return trimmed;
     };
 
+    const isPlaceholderCaregiverName = (value) =>
+      typeof value === 'string' && /^caregiver\b/i.test(value.trim());
+
     function getCaregiverName(e) {
+      const profileByUserId = profileNameFromUserId(caregiverIdFromEntry(e));
+      if (profileByUserId) return profileByUserId;
+      const profile = e?.profiles;
+      const profileRow = Array.isArray(profile) ? profile[0] : profile;
+      const rowCaregiverName = sanitizeCaregiverLabel(e?.caregiver_name);
+      const payloadCaregiverName = sanitizeCaregiverLabel(
+        e?.payload?.caregiver_name ?? e?.payload?.caregiverName ?? e?.payload?.caregiver
+      );
       return (
-        e.caregiver_name ||
-        e.payload?.caregiver_name ||
-        e.payload?.caregiverName ||
-        e.payload?.caregiver ||
+        sanitizeCaregiverLabel(profileRow?.full_name) ||
+        sanitizeCaregiverLabel(profileRow?.display_name) ||
+        sanitizeCaregiverLabel(profileRow?.public_name) ||
+        sanitizeCaregiverLabel(profileRow?.name) ||
         e.user_email ||
-        e.profiles?.full_name ||
-        e.profiles?.name ||
-        'Unknown'
+        (!isPlaceholderCaregiverName(payloadCaregiverName) ? payloadCaregiverName : '') ||
+        (!isPlaceholderCaregiverName(rowCaregiverName) ? rowCaregiverName : '') ||
+        'Unknown Caregiver'
       );
     }
 
@@ -3566,7 +3573,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 
     const caregiverNameFromEntry = (entry = {}) => {
       const direct = getCaregiverName(entry);
-      if (direct && direct !== 'Unknown') {
+      if (direct && direct !== 'Unknown' && direct !== 'Unknown Caregiver' && !isPlaceholderCaregiverName(direct)) {
         const label = sanitizeCaregiverLabel(direct);
         if (label) return label;
         const trimmed = String(direct).trim();
@@ -3578,13 +3585,13 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       const email = emailFromEntry(entry);
       const emailLabel = sanitizeCaregiverLabel(email);
       if (emailLabel) return emailLabel;
-      return userId ? `Caregiver ${userId.slice(-6)}` : '';
+      return 'Unknown Caregiver';
     };
 
     function caregiverViewLabel(entry) {
       const g = getCaregiverName(entry);
-      if (g && g !== 'Unknown') return sanitizeCaregiverLabel(g) || g;
-      return caregiverNameFromEntry(entry) || '—';
+      if (g && g !== 'Unknown' && g !== 'Unknown Caregiver' && !isPlaceholderCaregiverName(g)) return sanitizeCaregiverLabel(g) || g;
+      return caregiverNameFromEntry(entry) || 'Unknown Caregiver';
     }
 
     const matchesCaregiverFilter = (entry, filterValue) => {
@@ -4103,7 +4110,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       if (!value || value === 'all') return 'All caregivers';
       const option = cgInputs.caregiver?.querySelector(`option[value="${CSS.escape(value)}"]`);
       if (option?.textContent) return option.textContent;
-      if (value.startsWith(CAREGIVER_ID_PREFIX)) return `Caregiver ${value.slice(-6)}`;
+      if (value.startsWith(CAREGIVER_ID_PREFIX)) return 'Unknown Caregiver';
       if (value.startsWith(CAREGIVER_NAME_PREFIX)) return value.slice(CAREGIVER_NAME_PREFIX.length);
       return value;
     }
@@ -5044,16 +5051,11 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       const optionMap = new Map();
       for (const entry of entries) {
         const id = caregiverIdFromEntry(entry);
-        const g = getCaregiverName(entry);
-        const displayName =
-          g && g !== 'Unknown'
-            ? sanitizeCaregiverLabel(g) || String(g).trim()
-            : caregiverNameFromEntry(entry);
-        const fallbackName = displayName;
+        const fallbackName = caregiverViewLabel(entry);
         if (id) {
           const key = CAREGIVER_ID_PREFIX + id;
           if (!optionMap.has(key)) {
-            optionMap.set(key, fallbackName || `Caregiver ${id.slice(-6)}`);
+            optionMap.set(key, fallbackName || 'Unknown Caregiver');
           }
         } else if (fallbackName) {
           const key = CAREGIVER_NAME_PREFIX + fallbackName.toLowerCase();

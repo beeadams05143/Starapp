@@ -74,15 +74,23 @@ const ensurePayload = (row) => {
 };
 
 function getCaregiverName(e) {
+  const profile = e?.profiles;
+  const profileRow = Array.isArray(profile) ? profile[0] : profile;
+  const rowCaregiverName = String(e?.caregiver_name || '').trim();
+  const payloadCaregiverName = String(
+    e?.payload?.caregiver_name ?? e?.payload?.caregiverName ?? e?.payload?.caregiver ?? ''
+  ).trim();
+  const isPlaceholderCaregiverName = (value) =>
+    typeof value === 'string' && /^caregiver\b/i.test(value.trim());
   return (
-    e.caregiver_name ||
-    e.payload?.caregiver_name ||
-    e.payload?.caregiverName ||
-    e.payload?.caregiver ||
+    profileRow?.full_name ||
+    profileRow?.display_name ||
+    profileRow?.public_name ||
+    profileRow?.name ||
+    (!isPlaceholderCaregiverName(payloadCaregiverName) ? payloadCaregiverName : '') ||
+    (!isPlaceholderCaregiverName(rowCaregiverName) ? rowCaregiverName : '') ||
     e.user_email ||
-    e.profiles?.full_name ||
-    e.profiles?.name ||
-    'Unknown'
+    'Unknown Caregiver'
   );
 }
 
@@ -769,7 +777,7 @@ export async function loadCaregiverCheckins(
     }
 
     const params = [
-      'select=*',
+      'select=*,profiles(full_name,display_name,public_name,name)',
       'order=submitted_at.desc.nullslast,created_at.desc.nullslast',
       'limit=10000',
       ...filters,

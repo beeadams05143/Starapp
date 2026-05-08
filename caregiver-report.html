@@ -1006,6 +1006,40 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 
       </div>
     </section>
+    <section class="panel" id="weekly-averages-panel" data-print-section="Weekly Averages">
+      <h2>Weekly Averages</h2>
+      <p class="muted" id="weeklyAveragesMeta">Based on filtered check-ins and the caregiver date range.</p>
+      <div class="services-summary-grid" id="weeklyAveragesGrid">
+        <div class="service-card">
+          <div class="service-card-title">📊 Combined (vocational + home + community)</div>
+          <div class="service-card-stats">
+            <div class="svc-stat"><span class="svc-stat-label">Avg weekly hours</span><span class="svc-stat-value" id="waOverallHours">—</span></div>
+          </div>
+        </div>
+        <div class="service-card">
+          <div class="service-card-title">🔧 Vocational</div>
+          <div class="service-card-stats">
+            <div class="svc-stat"><span class="svc-stat-label">Avg weekly hours</span><span class="svc-stat-value" id="waVocHours">—</span></div>
+          </div>
+        </div>
+        <div class="service-card">
+          <div class="service-card-title">🏠 Home</div>
+          <div class="service-card-stats">
+            <div class="svc-stat"><span class="svc-stat-label">Avg weekly hours</span><span class="svc-stat-value" id="waHomeHours">—</span></div>
+          </div>
+        </div>
+        <div class="service-card">
+          <div class="service-card-title">🌍 Community</div>
+          <div class="service-card-stats">
+            <div class="svc-stat"><span class="svc-stat-label">Avg weekly hours</span><span class="svc-stat-value" id="waCommunityHours">—</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="service-card" style="margin-top:14px">
+        <div class="service-card-title">👥 By caregiver</div>
+        <div id="weeklyAveragesCaregivers" class="service-card-stats"></div>
+      </div>
+    </section>
     <section class="panel focus-board" id="reportFocusPanel">
       <h2>Weekly Focus</h2>
       <p id="reportFocusSummary" class="muted">Loading weekly focus…</p>
@@ -2396,6 +2430,117 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       renderActivities('svcHomeActivities', svc.homeCommunity?.topActivities || []);
       renderActivities('svcCommActivities', svc.communityAtLarge?.topActivities || []);
       renderActivities('svcAdlActivities',  svc.homeSupports?.topTasks || []);
+    }
+
+    /**
+     * Weekly Averages — uses cgState.filtered only (+ report date inputs for week span).
+     * Does not change Services Summary math.
+     */
+    function renderWeeklyAverages(){
+      const setText = (id, text) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = text != null ? String(text) : '—';
+      };
+      const listEl = document.getElementById('weeklyAveragesCaregivers');
+      const metaEl = document.getElementById('weeklyAveragesMeta');
+      const filtered = cgState.filtered;
+      const entries = Array.isArray(filtered) ? filtered : [];
+
+      if (!entries.length){
+        setText('waOverallHours', '—');
+        setText('waVocHours', '—');
+        setText('waHomeHours', '—');
+        setText('waCommunityHours', '—');
+        if (listEl) listEl.innerHTML = '';
+        if (metaEl) metaEl.textContent = 'No filtered check-ins. Adjust date range or caregiver filter.';
+        return;
+      }
+
+      const startRaw = cgInputs.start?.value?.trim();
+      const endRaw = cgInputs.end?.value?.trim();
+      const start = startRaw ? new Date(`${startRaw}T12:00:00`) : null;
+      const end = endRaw ? new Date(`${endRaw}T12:00:00`) : null;
+
+      if (!start || !end || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())){
+        setText('waOverallHours', '—');
+        setText('waVocHours', '—');
+        setText('waHomeHours', '—');
+        setText('waCommunityHours', '—');
+        if (listEl) listEl.innerHTML = '';
+        if (metaEl) metaEl.textContent = 'Set start and end dates in the caregiver report range.';
+        return;
+      }
+
+      const totalDays = (end - start) / (1000 * 60 * 60 * 24) + 1;
+      const totalWeeks = totalDays / 7;
+      if (metaEl){
+        metaEl.textContent =
+          `${totalDays.toFixed(0)} calendar day(s), ${totalWeeks.toFixed(2)} week(s); ${entries.length} check-in(s) in cgState.filtered`;
+      }
+
+      let totalMinutes = 0;
+      let vocTotal = 0;
+      let homeTotal = 0;
+      let commTotal = 0;
+
+      for (const e of entries){
+        const v = Number(e.vocationalMinutes) || 0;
+        const h = Number(e.homeMinutes) || 0;
+        const c = Number(e.communityMinutes) || 0;
+        vocTotal += v;
+        homeTotal += h;
+        commTotal += c;
+        totalMinutes += v + h + c;
+      }
+
+      const fmtH = (mins) => `${(Math.round(((mins / 60) / totalWeeks) * 1000) / 1000)} h/wk`;
+
+      setText('waOverallHours', fmtH(totalMinutes));
+      setText('waVocHours', fmtH(vocTotal));
+      setText('waHomeHours', fmtH(homeTotal));
+      setText('waCommunityHours', fmtH(commTotal));
+
+      const caregiverMap = new Map();
+      entries.forEach((e) => {
+        const name = String(e.caregiver_name || 'Unknown').trim() || 'Unknown';
+        if (!caregiverMap.has(name)){
+          caregiverMap.set(name, { sessions: 0, minutes: 0 });
+        }
+        const row = caregiverMap.get(name);
+        row.sessions += 1;
+        row.minutes += (
+          (Number(e.vocationalMinutes) || 0)
+          + (Number(e.homeMinutes) || 0)
+          + (Number(e.communityMinutes) || 0)
+        );
+      });
+
+      for (const row of caregiverMap.values()){
+        row.avgWeeklyHours = (row.minutes / 60) / totalWeeks;
+      }
+
+      console.log('Caregiver breakdown:', caregiverMap);
+
+      if (listEl){
+        listEl.innerHTML = '';
+        const sorted = [...caregiverMap.entries()].sort((a, b) => {
+          const ad = (b[1].avgWeeklyHours || 0) - (a[1].avgWeeklyHours || 0);
+          return ad !== 0 ? ad : a[0].localeCompare(b[0]);
+        });
+        for (const [name, row] of sorted){
+          const wrapper = document.createElement('div');
+          wrapper.className = 'svc-stat';
+          const lab = document.createElement('span');
+          lab.className = 'svc-stat-label';
+          lab.textContent = name;
+          const val = document.createElement('span');
+          val.className = 'svc-stat-value';
+          val.textContent = `${row.sessions} sessions · ${(Math.round(row.avgWeeklyHours * 1000) / 1000)} avg h/wk`;
+          wrapper.appendChild(lab);
+          wrapper.appendChild(val);
+          listEl.appendChild(wrapper);
+        }
+      }
     }
 
     function renderReportSummary({
@@ -5615,6 +5760,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         renderCaregiverCheckins([]);
         updateCgSummary([], 0);
         renderQuickLook([]);
+        renderWeeklyAverages();
         return;
       }
 
@@ -5643,6 +5789,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         updateCgSummary(cgState.filtered, entries.length);
         renderQuickLook(cgState.filtered);
         renderCaregiverPdfSummaries(cgState.filtered);
+        renderWeeklyAverages();
         applyChartRange();
         return;
       }
@@ -5723,6 +5870,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       updateCgSummary(cgState.filtered, entries.length);
       renderQuickLook(cgState.filtered);
       renderCaregiverPdfSummaries(cgState.filtered);
+      renderWeeklyAverages();
       applyChartRange();
     }
 

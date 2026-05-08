@@ -323,17 +323,39 @@ const buildParticipationSummary = (entries = []) => {
   };
 };
 
-const gleanAdlFlag = (payload, substrings) => {
-  if (!payload) return null;
+const gleanAdlFlag = (entry, substrings) => {
+  if (!entry || typeof entry !== 'object') return null;
+  const payload = ensurePayload(entry);
   const rawCategory =
+    valueFromEntry(entry, 'adl_category') ||
     payload.adl_category ||
     payload.adlCategory ||
     payload.daily_living_category ||
     payload.dailyLivingCategory ||
     '';
   const category = String(rawCategory).toLowerCase();
-  if (!category) return null;
-  return substrings.some((piece) => category.includes(piece)) ? true : false;
+  if (category) {
+    return substrings.some((piece) => category.includes(piece));
+  }
+  const adlItems = parseArrayField(valueFromEntry(entry, 'adl_entries')).filter(
+    (item) => item && typeof item === 'object'
+  );
+  if (!adlItems.length) return null;
+  return adlItems.some((item) => {
+    const blob = String(item.category || item.activity || item.label || item.name || '').toLowerCase();
+    return blob && substrings.some((s) => blob.includes(s));
+  });
+};
+
+const resolveTriBool = (entry, keys, gleanSubstrings) => {
+  for (const key of keys) {
+    const b = parseBoolean(valueFromEntry(entry, key));
+    if (b !== null) return b;
+  }
+  if (!gleanSubstrings || gleanSubstrings.length === 0) return null;
+  const gleaned = gleanAdlFlag(entry, gleanSubstrings);
+  if (gleaned === null) return null;
+  return gleaned ? true : false;
 };
 
 const buildNotes = (row, payload) => {
@@ -456,19 +478,19 @@ const normalizeSupabaseEntry = (row = {}) => {
     parseBoolean(row.hygiene),
     parseBoolean(payload.hygiene),
     parseBoolean(payload.hygiene_flag),
-    gleanAdlFlag(payload, ['hygiene', 'toilet'])
+    gleanAdlFlag(row, ['hygiene', 'toilet'])
   );
   const foodPrep = coalesce(
     parseBoolean(row.food_prep),
     parseBoolean(payload.food_prep),
     parseBoolean(payload.prepared_food),
-    gleanAdlFlag(payload, ['cook', 'food'])
+    gleanAdlFlag(row, ['cook', 'food'])
   );
   const cleanup = coalesce(
     parseBoolean(row.cleanup),
     parseBoolean(payload.cleanup),
     parseBoolean(payload.cleanup_flag),
-    gleanAdlFlag(payload, ['clean', 'laundry'])
+    gleanAdlFlag(row, ['clean', 'laundry'])
   );
 
   const hadBm = coalesce(
@@ -565,23 +587,60 @@ const normalizeSupabaseEntry = (row = {}) => {
 
 /* ---------- summaries for KPIs ---------- */
 const summarize = (entries) => {
-  const yesNo = (key) => {
-    const vals = entries
-      .map((entry) => parseBoolean(entry[key]))
-      .filter((val) => val !== null);
+  const percentYesTri = (keys, gleanSlices) => {
+    const vals = [];
+    for (const entry of entries) {
+      const r = resolveTriBool(entry, keys, gleanSlices);
+      if (r === null) continue;
+      vals.push(r);
+    }
     if (!vals.length) return 0;
-    const yes = vals.filter(Boolean).length;
-    return Math.round((100 * yes) / vals.length);
+    return Math.round((100 * vals.filter(Boolean).length) / vals.length);
   };
 
-  const sum = (key) =>
-    entries.reduce((acc, cur) => {
-      const num = numberOrNull(cur[key]);
-      return num !== null ? acc + num : acc;
+  const sumVocationalMinutes = () =>
+    entries.reduce((acc, entry) => {
+      for (const key of ['vocational_time', 'vocational_minutes']) {
+        const raw = valueFromEntry(entry, key);
+        const m = minutesFrom(raw);
+        if (m !== null) return acc + m;
+      }
+      return acc;
     }, 0);
 
+  const communityMinutesOne = (entry) => {
+    const direct =
+      numberOrNull(valueFromEntry(entry, 'community_time')) ??
+      numberOrNull(valueFromEntry(entry, 'community_minutes'));
+    if (direct !== null) return direct;
+    const homeKeys = ['home_activity_time', 'home_time', 'home_minutes'];
+    const pubKeys = ['public_activity_time', 'public_time', 'public_minutes'];
+    let home = null;
+    for (const key of homeKeys) {
+      const m = minutesFrom(valueFromEntry(entry, key));
+      if (m !== null) {
+        home = m;
+        break;
+      }
+    }
+    let pub = null;
+    for (const key of pubKeys) {
+      const m = minutesFrom(valueFromEntry(entry, key));
+      if (m !== null) {
+        pub = m;
+        break;
+      }
+    }
+    const h = home ?? 0;
+    const p = pub ?? 0;
+    return h + p;
+  };
+
+  const sumCommunityMinutes = () =>
+    entries.reduce((acc, entry) => acc + communityMinutesOne(entry), 0);
+
   const promptVals = entries
-    .map((entry) => numberOrNull(entry.new_skill_score))
+    .map((entry) => derivePromptScore(entry, ensurePayload(entry)))
     .filter((num) => num !== null);
   const promptAvg = promptVals.length
     ? +(
@@ -593,14 +652,14 @@ const summarize = (entries) => {
   return {
     counts: { entries: entries.length },
     percents: {
-      hygiene_yes: yesNo('hygiene'),
-      food_prep_yes: yesNo('food_prep'),
-      cleanup_yes: yesNo('cleanup'),
-      pet_care_yes: yesNo('pet_interaction_flag'),
+      hygiene_yes: percentYesTri(['hygiene', 'hygiene_flag'], ['hygiene', 'toilet']),
+      food_prep_yes: percentYesTri(['food_prep', 'prepared_food'], ['cook', 'food']),
+      cleanup_yes: percentYesTri(['cleanup', 'cleanup_flag'], ['clean', 'laundry']),
+      pet_care_yes: percentYesTri(['pet_interaction_flag'], []),
     },
     totals: {
-      vocational_minutes: sum('vocational_time'),
-      community_minutes: sum('community_time'),
+      vocational_minutes: sumVocationalMinutes(),
+      community_minutes: sumCommunityMinutes(),
     },
     averages: { new_skill_score: promptAvg },
     ...participation,
@@ -616,12 +675,15 @@ const buildSeries = (entries) => {
     const key = toLocalMonthKey(ts);
     if (!key) continue;
     const agg = byMonth.get(key) || { h: 0, f: 0, c: 0, p: 0, prompts: [] };
-    if (parseBoolean(entry.hygiene) === true) agg.h += 1;
-    if (parseBoolean(entry.food_prep) === true) agg.f += 1;
-    if (parseBoolean(entry.cleanup) === true) agg.c += 1;
-    if (parseBoolean(entry.pet_interaction_flag) === true) agg.p += 1;
-    const prompt = numberOrNull(entry.new_skill_score);
-    if (prompt !== null) agg.prompts.push(prompt);
+    const hy = resolveTriBool(entry, ['hygiene', 'hygiene_flag'], ['hygiene', 'toilet']);
+    const fd = resolveTriBool(entry, ['food_prep', 'prepared_food'], ['cook', 'food']);
+    const cl = resolveTriBool(entry, ['cleanup', 'cleanup_flag'], ['clean', 'laundry']);
+    if (hy === true) agg.h += 1;
+    if (fd === true) agg.f += 1;
+    if (cl === true) agg.c += 1;
+    if (parseBoolean(valueFromEntry(entry, 'pet_interaction_flag')) === true) agg.p += 1;
+    const promptNum = derivePromptScore(entry, ensurePayload(entry));
+    if (promptNum !== null) agg.prompts.push(promptNum);
     byMonth.set(key, agg);
   }
 
@@ -863,19 +925,19 @@ export function formatEntryForList(entry = {}) {
     entry.hygiene,
     payload.hygiene,
     payload.hygiene_flag,
-    gleanAdlFlag(payload, ['hygiene', 'toilet'])
+    gleanAdlFlag(entry, ['hygiene', 'toilet'])
   );
   const foodPrep = coalesce(
     entry.food_prep,
     payload.food_prep,
     payload.prepared_food,
-    gleanAdlFlag(payload, ['cook', 'food'])
+    gleanAdlFlag(entry, ['cook', 'food'])
   );
   const cleanup = coalesce(
     entry.cleanup,
     payload.cleanup,
     payload.cleanup_flag,
-    gleanAdlFlag(payload, ['clean', 'laundry'])
+    gleanAdlFlag(entry, ['clean', 'laundry'])
   );
 
   const vocational = minutesLabel(

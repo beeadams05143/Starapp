@@ -1582,7 +1582,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabaseClient.js?v=2026.03.29A';
     import { loadFocusForCurrentUser, readLocalFocusDraft } from './focus-data.js?v=2026.03.29A';
     import { ensureActiveGroupId } from './active-group.js?v=2026.03.29A';
-    import { CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-shared.js?v=2026.03.13A';
+    import { CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinRecord } from './caregiver-report-shared.js?v=2026.03.13A';
 
     /* =============== Optional live data =============== */
     let loadFromSupabase = null;
@@ -1818,6 +1818,136 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       ).trim();
     }
 
+    /** Merge ADL rows from root and payload (arrays or JSON strings). */
+    function gatherAdlListForSummary(entry = {}) {
+      const p = entry.payload || {};
+      const a = parseAdlEntriesForSummary(entry.adl_entries);
+      const b = parseAdlEntriesForSummary(p.adl_entries);
+      const out = [];
+      const seen = new Set();
+      const stableStringify = (obj) => {
+        if (!obj || typeof obj !== 'object') return String(obj);
+        const keys = Object.keys(obj).sort();
+        const outObj = {};
+        for (const k of keys) outObj[k] = obj[k];
+        return JSON.stringify(outObj);
+      };
+      for (const row of [...a, ...b]) {
+        const id = row.id ?? row.uuid ?? null;
+        if (id == null && (row.category ?? row.activity ?? row.label ?? row.name ?? row.skill ?? row.task) == null) continue;
+        const key = id != null ? `id:${id}` : `obj:${stableStringify(row)}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push(row);
+      }
+      return out;
+    }
+
+    function normalizeAdlCategoryKeyForSummary(value) {
+      return String(value || '')
+        .toLowerCase()
+        .replace(/&/g, 'and')
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim();
+    }
+
+    const ADL_CATEGORY_FLAGS_SUMMARY = {
+      hygiene: ['hygiene toileting', 'hygiene', 'toileting'],
+      food_prep: ['cooking food', 'food prep', 'food preparation', 'cooking', 'food'],
+      cleanup: ['cleaning household', 'cleaning', 'household', 'laundry']
+    };
+
+    function adlCategoryMatchesFlagForSummary(category, flag) {
+      const normalized = normalizeAdlCategoryKeyForSummary(category);
+      const aliases = ADL_CATEGORY_FLAGS_SUMMARY[flag] || [];
+      return aliases.some((alias) =>
+        normalized === alias
+        || normalized.includes(alias)
+        || alias.includes(normalized)
+      );
+    }
+
+    function gleanDailyLivingBoolFromAdl(entry, flag) {
+      const list = gatherAdlListForSummary(entry);
+      const categories = [];
+      for (const item of list) {
+        if (item.category) categories.push(item.category);
+        if (item.activity) categories.push(item.activity);
+      }
+      const p = entry.payload || {};
+      const catField = entry.adl_category ?? p.adl_category ?? p.daily_living_category ?? p.dailyLivingCategory;
+      parseMultiValue(catField).forEach((c) => categories.push(c));
+      if (!categories.length) return null;
+      const hit = categories.some((c) => adlCategoryMatchesFlagForSummary(c, flag));
+      return hit;
+    }
+
+    /** Tri-state: true / false when we have a signal, null if unknown. */
+    function resolveDailyLivingBool(entry, flag) {
+      const p = entry.payload || {};
+      let raw = null;
+      if (flag === 'hygiene') {
+        raw = entry.hygiene ?? p.hygiene ?? p.hygiene_flag;
+      } else if (flag === 'food_prep') {
+        raw = entry.food_prep ?? p.food_prep ?? p.prepared_food;
+      } else {
+        raw = entry.cleanup ?? p.cleanup ?? p.cleanup_flag;
+      }
+      if (hasProvidedValue(raw)) {
+        if (typeof raw === 'boolean') return raw;
+        return isAffirmative(raw);
+      }
+      const gleaned = gleanDailyLivingBoolFromAdl(entry, flag);
+      return gleaned === null ? null : gleaned;
+    }
+
+    function percentYesResolved(entries, flag) {
+      const vals = [];
+      for (const e of entries) {
+        const r = resolveDailyLivingBool(e, flag);
+        if (r === null) continue;
+        vals.push(r);
+      }
+      return vals.length ? Math.round((100 * vals.filter(Boolean).length) / vals.length) : 0;
+    }
+
+    function sumVocationalMinutesResolved(entries) {
+      return entries.reduce((acc, e) => {
+        const p = e.payload || {};
+        const m =
+          pickMinutes(e.vocational_time, e.vocational_minutes, p.vocational_time, p.vocational_minutes) ?? 0;
+        return acc + m;
+      }, 0);
+    }
+
+    function communityMinutesResolvedForEntry(e) {
+      const p = e.payload || {};
+      const direct =
+        pickNumber(e.community_time, e.community_minutes, p.community_time, p.community_minutes);
+      if (direct !== null) return direct;
+      const home =
+        pickMinutes(
+          e.home_time,
+          e.home_activity_time,
+          p.home_activity_time,
+          p.home_time,
+          p.home_minutes
+        ) ?? 0;
+      const pub =
+        pickMinutes(
+          e.public_time,
+          e.public_activity_time,
+          p.public_activity_time,
+          p.public_time,
+          p.public_minutes
+        ) ?? 0;
+      return home + pub;
+    }
+
+    function sumCommunityMinutesResolved(entries) {
+      return entries.reduce((acc, e) => acc + communityMinutesResolvedForEntry(e), 0);
+    }
+
     function rowsFromCounts(counts) {
       return Array.from(counts.entries())
         .map(([label, count]) => ({ label, count }))
@@ -1860,72 +1990,92 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       const adlCounts = new Map();
       let adlTaskCount = 0;
 
+      let adlDbg = 0;
       for (const entry of deduped) {
         const p = entry.payload || {};
         const dateKey = getCheckinDayKey(entry);
-        if (!dateKey) continue;
 
-        const vocFlag = String(
-          entry.vocational_participation ??
-          entry.payload?.vocational_participation ??
-          ''
-        ).trim().toLowerCase();
-        const vocTimeRaw = entry.vocational_time ?? entry.payload?.vocational_time ?? null;
+        const vocFlagRaw = entry.vocational_participation ?? p.vocational_participation;
+        const vocTimeRaw =
+          entry.vocational_time ??
+          entry.vocational_minutes ??
+          p.vocational_time ??
+          p.vocational_minutes ??
+          null;
         const vocTime = pickMinutes(vocTimeRaw) || 0;
-        if (vocFlag === 'yes') {
+        vocMinutes += vocTime;
+        if (vocTime > 0 || isYesValue(vocFlagRaw)) {
           vocSessions += 1;
-          vocDays.add(dateKey);
-          vocMinutes += vocTime;
+        }
+        if (vocTime > 0 || isYesValue(vocFlagRaw)) {
+          if (dateKey) vocDays.add(dateKey);
         }
 
-        const homeFlag = String(
-          entry.home_activity_flag ??
-          entry.payload?.home_activity_flag ??
-          ''
-        ).trim().toLowerCase();
-        const homeTimeRaw = entry.home_time ?? entry.payload?.home_activity_time ?? null;
+        const homeFlagRaw = entry.home_activity_flag ?? p.home_activity_flag;
+        const homeTimeRaw =
+          entry.home_time ??
+          entry.home_activity_time ??
+          p.home_activity_time ??
+          p.home_time ??
+          p.home_minutes ??
+          null;
         const homeTime = pickMinutes(homeTimeRaw) || 0;
-        if (homeFlag === 'yes') {
+        homeMinutes += homeTime;
+        const homeTypes = parseMultiValue(entry.home_activity_type ?? p.home_activity_type);
+        if (homeTime > 0 || isYesValue(homeFlagRaw) || homeTypes.length) {
           homeSessions += 1;
-          homeDays.add(dateKey);
-          homeMinutes += homeTime;
-          for (const type of parseMultiValue(p.home_activity_type)) {
+        }
+        if (homeTime > 0 || isYesValue(homeFlagRaw)) {
+          if (dateKey) homeDays.add(dateKey);
+        }
+        if (homeTypes.length) {
+          for (const type of homeTypes) {
             const label = normalizeActivityLabel(type);
             if (label) homeCounts.set(label, (homeCounts.get(label) || 0) + 1);
           }
         }
 
-        const publicFlag = String(
-          entry.public_activity_flag ??
-          entry.payload?.public_activity_flag ??
-          ''
-        ).trim().toLowerCase();
-        const publicTimeRaw = entry.public_time ?? entry.payload?.public_activity_time ?? null;
+        const publicFlagRaw = entry.public_activity_flag ?? p.public_activity_flag;
+        const publicTimeRaw =
+          entry.public_time ??
+          entry.public_activity_time ??
+          p.public_activity_time ??
+          p.public_time ??
+          p.public_minutes ??
+          null;
         const publicTime = pickMinutes(publicTimeRaw) || 0;
-        if (publicFlag === 'yes') {
+        publicMinutes += publicTime;
+        const publicTypes = parseMultiValue(entry.public_activity_type ?? p.public_activity_type);
+        if (publicTime > 0 || isYesValue(publicFlagRaw) || publicTypes.length) {
           publicSessions += 1;
-          publicDays.add(dateKey);
-          publicMinutes += publicTime;
-          for (const type of parseMultiValue(p.public_activity_type)) {
+        }
+        if (publicTime > 0 || isYesValue(publicFlagRaw)) {
+          if (dateKey) publicDays.add(dateKey);
+        }
+        if (publicTypes.length) {
+          for (const type of publicTypes) {
             const label = normalizeActivityLabel(type);
             if (label) publicCounts.set(label, (publicCounts.get(label) || 0) + 1);
           }
         }
 
-        const rawAdl = entry.adl_entries ?? p.adl_entries ?? null;
-        let adlList = [];
-        if (Array.isArray(rawAdl)) {
-          adlList = rawAdl;
-        } else if (typeof rawAdl === 'string' && rawAdl.trim()) {
-          try { adlList = JSON.parse(rawAdl); } catch { adlList = []; }
+        const adlList = gatherAdlListForSummary(entry);
+        if (adlDbg < 5) {
+          console.log('ADL COUNT DEBUG', entry, adlList.length);
+          adlDbg += 1;
+        }
+        const hasAdlSupport =
+          adlList.length > 0 ||
+          entry.hygiene === true ||
+          entry.food_prep === true ||
+          entry.cleanup === true;
+        if (hasAdlSupport) {
+          if (dateKey) adlDays.add(dateKey);
         }
         if (adlList.length > 0) {
-          adlDays.add(dateKey);
           adlTaskCount += adlList.length;
           for (const task of adlList) {
-            const label = String(
-              task?.activity || task?.category || task?.label || task?.name || ''
-            ).trim();
+            const label = labelFromAdlEntry(task);
             if (label) adlCounts.set(label, (adlCounts.get(label) || 0) + 1);
           }
         }
@@ -1972,12 +2122,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     }
 
     function summarizeEntries(entries){
-      const yesNo = key => {
-        const vals = entries.map(e => e[key]).filter(v => v === true || v === false);
-        const y = vals.filter(Boolean).length;
-        return vals.length ? Math.round((100 * y) / vals.length) : 0;
-      };
-      const sum = key => entries.reduce((acc, cur) => acc + (Number(cur[key] || 0)), 0);
+      const participation = buildParticipationSummary(entries);
       const promptVals = entries
         .map((entry) => getPromptValue(entry))
         .filter((val) => Number.isFinite(val));
@@ -2001,18 +2146,17 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         ? Math.max(...movementSeverities)
         : null;
       const behavior = buildBehaviorInsights(entries);
-      const participation = buildParticipationSummary(entries);
 
       return {
         counts: { entries: entries.length },
         percents: {
-          hygiene_yes: yesNo('hygiene'),
-          food_prep_yes: yesNo('food_prep'),
-          cleanup_yes: yesNo('cleanup'),
+          hygiene_yes: percentYesResolved(entries, 'hygiene'),
+          food_prep_yes: percentYesResolved(entries, 'food_prep'),
+          cleanup_yes: percentYesResolved(entries, 'cleanup'),
         },
         totals: {
-          vocational_minutes: sum('vocational_time'),
-          community_minutes: sum('community_time'),
+          vocational_minutes: sumVocationalMinutesResolved(entries),
+          community_minutes: sumCommunityMinutesResolved(entries),
         },
         averages: {
           new_skill_score: promptAvg,
@@ -2036,9 +2180,9 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         const monthKey = `${ts.getFullYear()}-${String(ts.getMonth() + 1).padStart(2, '0')}`;
         const bucket = byMonth.get(monthKey) || { h:0, f:0, c:0, prompts: [], total:0 };
         bucket.total += 1;
-        if (entry.hygiene === true) bucket.h += 1;
-        if (entry.food_prep === true) bucket.f += 1;
-        if (entry.cleanup === true) bucket.c += 1;
+        if (resolveDailyLivingBool(entry, 'hygiene') === true) bucket.h += 1;
+        if (resolveDailyLivingBool(entry, 'food_prep') === true) bucket.f += 1;
+        if (resolveDailyLivingBool(entry, 'cleanup') === true) bucket.c += 1;
         const prompt = getPromptValue(entry);
         if (Number.isFinite(prompt)) bucket.prompts.push(prompt);
         byMonth.set(monthKey, bucket);
@@ -2202,19 +2346,9 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     }
 
     function getServicesSummaryEntries() {
-      const startInput = document.getElementById('servicesSummaryStart');
-      const endInput = document.getElementById('servicesSummaryEnd');
-      const source = (cgState.filtered && cgState.filtered.length)
-        ? cgState.filtered
-        : (cgState.entries || []);
-      if (!startInput?.value || !endInput?.value) return source;
-      const startVal = startInput.value.trim();
-      const endVal = endInput.value.trim();
-      return source.filter(entry => {
-        const key = getCheckinDayKey(entry);
-        if (!key) return false;
-        return key >= startVal && key <= endVal;
-      });
+      // Reliability: always use the same filtered set as the caregiver table.
+      // The services summary range inputs should not override the report date range.
+      return (cgState.filtered && cgState.filtered.length) ? cgState.filtered : (cgState.entries || []);
     }
 
     function renderServicesSummary(summary, rangeDisplay) {
@@ -2745,12 +2879,13 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       updateReportSectionVisibility();
 
       try {
+        const reportCaregiverEntries = caregiverSource;
         const filteredCaregiver = filterEntriesByRange(caregiverSource, range);
         const historyForCycle = caregiverSource.filter((entry) => {
           const dt = getCheckinDate(entry);
           return !!dt && dt <= range.end;
         });
-        const summary = summarizeEntries(filteredCaregiver);
+        const summary = summarizeEntries(reportCaregiverEntries);
         const fullHistoryBehavior = buildBehaviorInsights(historyForCycle);
         if (summary.behavior?.mania && fullHistoryBehavior?.mania) {
           summary.behavior.mania = {
@@ -2774,7 +2909,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         if (visibility.mania) {
           renderManiaStreak(historyForCycle, summary.behavior?.mania || {}, range);
         }
-        const movementInsights = visibility.movement ? buildMovementInsights(filteredCaregiver) : null;
+        const movementInsights = visibility.movement ? buildMovementInsights(reportCaregiverEntries) : null;
         let behaviorComparison = null;
         const prevRange = rangeKey === 'all' ? null : getPreviousRangeWindow(range);
         if (prevRange) {
@@ -2813,7 +2948,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         renderReportSummary({
           rangeKey,
           range,
-          caregiverEntries: filteredCaregiver,
+          caregiverEntries: reportCaregiverEntries,
           moodEntries: filteredMood,
           monthlySeries,
           movementInsights,
@@ -3031,7 +3166,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       memberProfileById: new Map()
     };
     /** TEMPORARY: Shirley / filter diagnosis — skip date + caregiver dropdown (cgState.filtered = all entries). Set false after pinpointing the filter. */
-    const DEBUG_CG_REPORT_BYPASS_FILTERS = true;
+    const DEBUG_CG_REPORT_BYPASS_FILTERS = false;
 
     const reportConfigState = {
       groupId: null,
@@ -5513,6 +5648,77 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       }
 
       cgState.filtered = finalCombined;
+      // Temporary audit panel (console) after all report filters.
+      // This is meant to confirm the normalized data shape matches saved Supabase rows.
+      try {
+        const adlDaySet = new Set();
+        let adlTaskCount = 0;
+        const adlLabelCounts = new Map();
+        const notesOnlyRows = [];
+        const hygieneTrueNoAdlRows = [];
+        const adlMissingDateKeyRows = [];
+
+        for (const entry of cgState.filtered) {
+          const dateKey = getCheckinDayKey(entry);
+          const adlEntries = Array.isArray(entry.adl_entries) ? entry.adl_entries : [];
+          const taskCount = entry.adlTaskCount ?? adlEntries.length;
+          if (taskCount > 0) {
+            adlTaskCount += taskCount;
+            for (const adl of adlEntries) {
+              const label = String(adl?.category || adl?.activity || adl?.label || adl?.name || adl?.skill || adl?.task || '').trim();
+              if (!label) continue;
+              adlLabelCounts.set(label, (adlLabelCounts.get(label) || 0) + 1);
+            }
+          }
+
+          const hygieneCompleted = entry.hygiene === true;
+          const foodPrepCompleted = entry.food_prep === true;
+          const cleanupCompleted = entry.cleanup === true;
+          const inferredAdlDay =
+            (dateKey && (taskCount > 0 || hygieneCompleted || foodPrepCompleted || cleanupCompleted))
+              ? dateKey
+              : null;
+          if (inferredAdlDay) adlDaySet.add(inferredAdlDay);
+
+          const dailyLivingNotes = entry.dailyLivingNotes ?? entry.payload?.daily_living_notes ?? null;
+          if (dailyLivingNotes && dailyLivingNotes.toString().trim() && adlEntries.length === 0) {
+            if (notesOnlyRows.length < 8) notesOnlyRows.push({ id: entry.id || null, dateKey, dailyLivingNotes: dailyLivingNotes.toString().slice(0, 60) });
+          }
+          if ((hygieneCompleted || foodPrepCompleted || cleanupCompleted) && adlEntries.length === 0) {
+            if (hygieneTrueNoAdlRows.length < 8) hygieneTrueNoAdlRows.push({ id: entry.id || null, dateKey });
+          }
+          if (adlEntries.length > 0 && !dateKey) {
+            if (adlMissingDateKeyRows.length < 8) adlMissingDateKeyRows.push({ id: entry.id || null });
+          }
+        }
+
+        const topAdlLabels = Array.from(adlLabelCounts.entries())
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 10);
+
+        console.log('[CG REPORT AUDIT AFTER FILTERS]', {
+          totalLoadedForGroup: entries.length,
+          afterDateFilter: afterDate.length,
+          afterIndividualFilter: afterIndividual.length,
+          afterAllFilters: finalCombined.length,
+          shirley: {
+            raw: shirleySubset(entries).length,
+            afterDate: shirleySubset(afterDate).length,
+            afterIndividual: shirleySubset(afterIndividual).length,
+            afterAllFilters: shirleySubset(finalCombined).length,
+          },
+          adl: {
+            days: adlDaySet.size,
+            tasks: adlTaskCount,
+            topLabels: topAdlLabels,
+          },
+          notesOnlyRows,
+          hygieneTrueNoAdlRows,
+          adlMissingDateKeyRows,
+        });
+      } catch (e) {
+        console.warn('[CG REPORT AUDIT] failed', e);
+      }
       renderCaregiverCheckins(cgState.filtered);
       updateCgSummary(cgState.filtered, entries.length);
       renderQuickLook(cgState.filtered);
@@ -6018,13 +6224,15 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         inFetch: fetchedRaw.filter((e) => getCaregiverName(e).toLowerCase().includes('shirley')).length,
         afterCalendarStrip: entries.filter((e) => getCaregiverName(e).toLowerCase().includes('shirley')).length,
       });
-      window.latestCaregiverEntries = entries.slice();
-      cgState.entries = entries.slice();
+      const normalizedEntries = entries.map((entry) => normalizeCaregiverCheckinRecord(entry));
+      window.latestCaregiverEntries = normalizedEntries.slice();
+      cgState.entries = normalizedEntries.slice();
+      console.log('ENTRY SAMPLE', cgState.entries.slice(0, 5));
       cgState.entryById = new Map();
-      entries.forEach(entry => {
+      normalizedEntries.forEach(entry => {
         if (entry?.id) cgState.entryById.set(String(entry.id), entry);
       });
-      cgState.focusStats = buildFocusStats(entries);
+      cgState.focusStats = buildFocusStats(normalizedEntries);
       populateCaregiverOptions(cgState.entries);
       updateDateInputs(cgState.entries);
       const now = new Date(); const defaultRangeEnd = now; const defaultRangeStart = new Date(now); defaultRangeStart.setDate(defaultRangeStart.getDate() - 90); const rStart = document.getElementById('reportRangeStart'); const rEnd = document.getElementById('reportRangeEnd'); if (rStart && !rStart.value) rStart.value = formatDateInputValue(defaultRangeStart); if (rEnd && !rEnd.value) rEnd.value = formatDateInputValue(defaultRangeEnd); if (cgInputs.start && !cgInputs.start.value) cgInputs.start.value = formatDateInputValue(defaultRangeStart); if (cgInputs.end && !cgInputs.end.value) cgInputs.end.value = formatDateInputValue(defaultRangeEnd); const sStart = document.getElementById('servicesSummaryStart'); const sEnd = document.getElementById('servicesSummaryEnd'); if (sStart && !sStart.value) sStart.value = formatDateInputValue(defaultRangeStart); if (sEnd && !sEnd.value) sEnd.value = formatDateInputValue(defaultRangeEnd);

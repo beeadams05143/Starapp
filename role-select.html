@@ -84,6 +84,7 @@
   </main>
   <script type="module">
     import { rest, getSessionFromStorage } from './restClient.js';
+    import { loadAndRunRouter } from './routerLoader.js?v=2026.05.07';
 
     const caregiverBtn = document.getElementById('caregiverBtn');
     const individualBtn = document.getElementById('individualBtn');
@@ -99,7 +100,7 @@
           onboarding_step: 'group',
         }),
       });
-      import('./router.js').then(m => m.next());
+      void loadAndRunRouter();
     });
 
     individualBtn.addEventListener('click', async () => {
@@ -113,7 +114,7 @@
           onboarding_step: 'group',
         }),
       });
-      import('./router.js').then(m => m.next());
+      void loadAndRunRouter();
     });
   </script>
 </body>

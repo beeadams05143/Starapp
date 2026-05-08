@@ -69,6 +69,7 @@
   <script type="module">
     import { rest, getSessionFromStorage } from './restClient.js';
     import { setOnboardingCompletionState } from './onboarding-flow.js?v=2026.03.16B';
+    import { loadAndRunRouter } from './routerLoader.js?v=2026.05.07';
 
     const continueBtn = document.getElementById('continueBtn');
 
@@ -85,7 +86,7 @@
       } catch (error) {
         console.warn('[WELCOME] could not persist onboarding_complete', error);
       }
-      import('./router.js').then(m => m.next());
+      void loadAndRunRouter();
     });
   </script>
 </body>

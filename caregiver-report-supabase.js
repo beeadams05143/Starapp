@@ -32,33 +32,59 @@ const DURATION_MAP = new Map([
   ['over 2 hours', 150],
 ]);
 
-const normTs = (row) => {
-  let dateOnly = null;
-  if (row?.date) {
-    const trimmed = `${row.date}`.trim();
-    dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(trimmed)
-      ? `${trimmed}T00:00:00`
-      : trimmed;
-  }
-  const raw =
-    row?.timestamp ||
-    row?.submitted_at ||
-    row?.created_at ||
-    dateOnly;
-  if (!raw) return new Date(NaN);
-  const dt = new Date(raw);
-  if (!Number.isNaN(dt.getTime())) return dt;
-  if (row?.date) {
-    const fallback = new Date(`${row.date}T00:00:00`);
-    if (!Number.isNaN(fallback.getTime())) return fallback;
-  }
-  return new Date(NaN);
+const getCheckinDateValue = (e) => {
+  if (!e) return null;
+  return (
+    e.date ||
+    e.submitted_at ||
+    e.timestamp ||
+    e.created_at ||
+    e.payload?.date ||
+    e.payload?.shiftDate ||
+    e.payload?.submitted_at ||
+    e.payload?.timestamp ||
+    e.payload?.created_at ||
+    null
+  );
 };
+
+const normTs = (row) => {
+  const value = getCheckinDateValue(row);
+  if (!value) return new Date(NaN);
+  const dt = new Date(value);
+  return Number.isNaN(dt.getTime()) ? new Date(NaN) : dt;
+};
+
+/** Same resolver chain as caregiver-report.html (for debug + consistency). */
+const getCheckinDate = (e) => {
+  const value = getCheckinDateValue(e);
+  if (!value) return null;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+};
+
+const rowIndividualId = (row) =>
+  row?.individual_id ??
+  row?.payload?.individual_id ??
+  null;
 
 const ensurePayload = (row) => {
   const payload = row?.payload;
   return payload && typeof payload === 'object' && !Array.isArray(payload) ? payload : {};
 };
+
+function getCaregiverName(e) {
+  return (
+    e.caregiver_name ||
+    e.payload?.caregiver_name ||
+    e.payload?.caregiverName ||
+    e.payload?.caregiver ||
+    e.user_email ||
+    e.profiles?.full_name ||
+    e.profiles?.name ||
+    'Unknown'
+  );
+}
 
 const toISODate = (value) => {
   if (!value) return null;
@@ -367,9 +393,37 @@ const derivePromptScore = (row, payload) => {
 
 const normalizeSupabaseEntry = (row = {}) => {
   const payload = ensurePayload(row);
-  const timestampIso = toISODate(
+  const rawRowDate = row.date != null ? String(row.date).trim() : '';
+  const dateFromRow = /^\d{4}-\d{2}-\d{2}$/.test(rawRowDate) ? rawRowDate : null;
+
+  let timestampIso = toISODate(
     row.submitted_at || row.timestamp || row.created_at || row.date
   );
+  if (dateFromRow) {
+    const isoDay = timestampIso ? timestampIso.slice(0, 10) : null;
+    if (isoDay !== dateFromRow) {
+      const baseRaw = row.submitted_at || row.timestamp || row.created_at;
+      const base = baseRaw ? new Date(baseRaw) : null;
+      if (base && !Number.isNaN(base.getTime())) {
+        const y = Number(dateFromRow.slice(0, 4));
+        const mo = Number(dateFromRow.slice(5, 7)) - 1;
+        const d = Number(dateFromRow.slice(8, 10));
+        const realigned = new Date(
+          y,
+          mo,
+          d,
+          base.getHours(),
+          base.getMinutes(),
+          base.getSeconds(),
+          base.getMilliseconds()
+        );
+        timestampIso = realigned.toISOString();
+      } else {
+        timestampIso = toISODate(`${dateFromRow}T12:00:00`) || timestampIso;
+      }
+    }
+  }
+
   const createdIso = toISODate(row.created_at) || timestampIso;
 
   const homeMinutes = minutesFrom(
@@ -457,14 +511,13 @@ const normalizeSupabaseEntry = (row = {}) => {
     ...row,
     id: uniqueId,
     timestamp: timestampIso,
-    date: timestampIso ? timestampIso.slice(0, 10) : row.date ?? null,
+    date: dateFromRow || (timestampIso ? timestampIso.slice(0, 10) : row.date ?? null),
     created_at: createdIso,
     submitted_at: row.submitted_at ?? timestampIso,
-    caregiver_name:
-      row.caregiver_name ??
-      payload.caregiver_name ??
-      payload.caregiver ??
-      null,
+    caregiver_name: (() => {
+      const r = getCaregiverName(row);
+      return r === 'Unknown' ? null : r;
+    })(),
     caregiver_notes: caregiverNotes,
     group_id: row.group_id ?? payload.group_id ?? payload.group ?? null,
     payload,
@@ -593,19 +646,41 @@ const buildSeries = (entries) => {
 /* ---------- main loader (safe) ---------- */
 export async function loadCaregiverCheckins(
   userId,
-  { range = 'all', includeAllUsers = false, groupId = null } = {}
+  {
+    range = 'all',
+    includeAllUsers = false,
+    groupId = null,
+    startDate = null,
+    endDate = null,
+  } = {}
 ) {
-  let uid = userId ?? null;
-  if (!includeAllUsers && !uid) {
-    try {
-      const session = getSessionFromStorage();
-      uid = session?.user?.id || null;
-    } catch {
-      uid = null;
-    }
-  } else if (includeAllUsers) {
-    uid = null;
+  void userId;
+
+  let sessionUserId = null;
+  try {
+    sessionUserId = getSessionFromStorage()?.user?.id ?? null;
+  } catch {
+    sessionUserId = null;
   }
+
+  const activeGroupId = groupId;
+  const startDateNorm =
+    startDate && String(startDate).trim()
+      ? String(startDate).trim().slice(0, 10)
+      : null;
+  const endDateNorm =
+    endDate && String(endDate).trim()
+      ? String(endDate).trim().slice(0, 10)
+      : null;
+
+  console.log('[caregiver_checkins fetch] inputs', {
+    activeGroupId,
+    currentUserId: sessionUserId,
+    startDate: startDateNorm,
+    endDate: endDateNorm,
+    includeAllUsers,
+    note: 'user_id is not applied to this query (all caregivers in group). Individual_id is not filtered.',
+  });
 
   const now = new Date();
   let start = new Date(0);
@@ -623,23 +698,88 @@ export async function loadCaregiverCheckins(
 
   try {
     const filters = [];
-    if (groupId) {
-      filters.push(`group_id=eq.${encodeURIComponent(groupId)}`);
+    if (activeGroupId) {
+      filters.push(`group_id=eq.${encodeURIComponent(activeGroupId)}`);
+    } else {
+      console.warn(
+        '[caregiver_checkins fetch] activeGroupId missing — query is not scoped to a group'
+      );
     }
 
     const params = [
       'select=*',
-      'order=submitted_at.desc.nullslast',
-      'order=created_at.desc.nullslast',
+      'order=submitted_at.desc.nullslast,created_at.desc.nullslast',
+      'limit=10000',
       ...filters,
     ];
     const path = `caregiver_checkins?${params.join('&')}`;
     const data = await rest(path);
 
-    const normalized = Array.isArray(data)
-      ? data.map(normalizeSupabaseEntry)
-      : [];
-    const filtered = normalized.filter((row) => {
+    const rows = Array.isArray(data) ? data : [];
+
+    console.log('[STAGE 1 raw rows]', rows.length);
+    console.log(
+      '[STAGE 1 Shirley raw]',
+      rows
+        .filter((e) => getCaregiverName(e).toLowerCase().includes('shirley'))
+        .map((e) => ({
+          id: e.id,
+          caregiver: getCaregiverName(e),
+          group_id: e.group_id,
+          individual_id: rowIndividualId(e),
+          user_id: e.user_id,
+          date: e.date,
+          timestamp: e.timestamp,
+          submitted_at: e.submitted_at,
+          created_at: e.created_at,
+          resolvedDate: getCheckinDate(e),
+          payload: e.payload,
+        }))
+    );
+
+    const normalized = rows.map(normalizeSupabaseEntry);
+
+    console.log('[STAGE 2 normalized rows]', normalized.length);
+    console.log(
+      '[STAGE 2 Shirley normalized]',
+      normalized
+        .filter((e) => getCaregiverName(e).toLowerCase().includes('shirley'))
+        .map((e) => ({
+          id: e.id,
+          caregiver: getCaregiverName(e),
+          group_id: e.group_id,
+          individual_id: rowIndividualId(e),
+          date: e.date,
+          timestamp: e.timestamp,
+          submitted_at: e.submitted_at,
+          created_at: e.created_at,
+          resolvedDate: getCheckinDate(e),
+        }))
+    );
+
+    const groupFiltered = activeGroupId
+      ? normalized.filter((row) => {
+          const gid =
+            row.group_id ??
+            ensurePayload(row).group_id ??
+            row.payload?.group ??
+            null;
+          return gid != null && String(gid) === String(activeGroupId);
+        })
+      : normalized.slice();
+
+    console.log('[STAGE 3 after group filter]', groupFiltered.length);
+    console.log(
+      '[STAGE 3 Shirley after group filter]',
+      groupFiltered.filter((e) =>
+        getCaregiverName(e).toLowerCase().includes('shirley')
+      )
+    );
+
+    const individualFiltered = groupFiltered;
+    console.log('[STAGE 4 bypassed individual filter]', normalized.length);
+
+    const rangeFiltered = individualFiltered.filter((row) => {
       const ts = normTs(row);
       const time = ts.getTime();
       if (Number.isNaN(time)) return false;
@@ -648,7 +788,7 @@ export async function loadCaregiverCheckins(
 
     const deduped = [];
     const seen = new Set();
-    for (const row of filtered) {
+    for (const row of rangeFiltered) {
       const key = row.id || row.submitted_at || row.timestamp || row.created_at;
       if (key && seen.has(key)) continue;
       if (key) seen.add(key);
@@ -656,6 +796,14 @@ export async function loadCaregiverCheckins(
     }
 
     deduped.sort((a, b) => normTs(b) - normTs(a));
+
+    console.log('[LOADER rows returned to caregiver-report]', deduped.length);
+    console.log(
+      '[LOADER Shirley returned to caregiver-report]',
+      deduped.filter((e) =>
+        getCaregiverName(e).toLowerCase().includes('shirley')
+      )
+    );
 
     return {
       entries: deduped,

@@ -191,6 +191,7 @@
       joinGroupForUser,
       resolveInviteCodeValue,
     } from './onboarding-flow.js?v=2026.03.29A';
+    import { loadAndRunRouter } from './routerLoader.js?v=2026.05.07';
 
     const groupNameEl = document.getElementById('groupName');
     const joinCodeEl = document.getElementById('joinCode');
@@ -299,7 +300,7 @@
             onboarding_step: 'profile',
           }),
         });
-        import('./router.js').then(m => m.next());
+        void loadAndRunRouter();
       } catch (error) {
         console.error('[GROUP SETUP] join failed', error);
         setStatus(error?.message || 'Could not join group.');
@@ -334,7 +335,7 @@
     });
 
     continueBtn.addEventListener('click', () => {
-      import('./router.js').then(m => m.next());
+      void loadAndRunRouter();
     });
 
     applyUserTypeView();

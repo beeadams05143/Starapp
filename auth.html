@@ -177,6 +177,7 @@
       saveSession,
       getSessionFromStorage,
     } from './supabaseClient.js?v=2026.03.29A';
+    import { loadAndRunRouter } from './routerLoader.js?v=2026.05.07';
 
     const ROLE_SELECT_URL = 'role-select.html';
     const form = document.getElementById('authForm');
@@ -284,7 +285,7 @@
     }
 
     if (getSessionFromStorage()?.user?.id) {
-      import('./router.js').then(m => m.next());
+      void loadAndRunRouter();
     }
 
     form.addEventListener('submit', async (event) => {
@@ -310,7 +311,7 @@
         if (!session?.user?.id) throw new Error('Authentication did not return a valid session.');
         try { localStorage.setItem('user_id', session.user.id); } catch {}
         setMessage('Success! Redirecting…', true);
-        import('./router.js').then(m => m.next());
+        void loadAndRunRouter();
       } catch (error) {
         console.error('[AUTH] continue failed', error);
         setMessage(error?.message || 'Authentication failed.');

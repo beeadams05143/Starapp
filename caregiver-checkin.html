@@ -1076,6 +1076,96 @@
       border-radius: 0 0 14px 14px;
       margin-bottom: 12px;
     }
+    .review-overlay{
+      position:fixed;
+      inset:0;
+      z-index:10050;
+      background:#f8fafc;
+      overflow:auto;
+      padding:16px 14px 110px;
+      -webkit-overflow-scrolling:touch;
+    }
+    .review-overlay.is-hidden{display:none}
+    .review-card{
+      max-width:720px;
+      margin:0 auto;
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+    }
+    .review-head{
+      background:#fff;
+      border:1px solid #e5e7eb;
+      border-radius:14px;
+      padding:14px;
+    }
+    .review-title{
+      font-size:21px;
+      font-weight:800;
+      margin:0 0 6px;
+      color:#111827;
+    }
+    .review-sub{
+      margin:0;
+      color:#4b5563;
+      font-size:14px;
+      line-height:1.45;
+    }
+    .review-section{
+      background:#fff;
+      border:1px solid #e5e7eb;
+      border-radius:14px;
+      padding:12px;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+    .review-section h3{
+      margin:0;
+      font-size:17px;
+      color:#111827;
+    }
+    .review-item{
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+      border-top:1px dashed #e5e7eb;
+      padding-top:8px;
+    }
+    .review-item:first-child{
+      border-top:0;
+      padding-top:0;
+    }
+    .review-label{
+      font-size:13px;
+      color:#6b7280;
+      font-weight:700;
+    }
+    .review-value{
+      font-size:16px;
+      color:#111827;
+      font-weight:600;
+      word-break:break-word;
+      white-space:pre-wrap;
+    }
+    .review-empty{
+      font-size:13px;
+      color:#6b7280;
+      margin:0;
+    }
+    .review-actions{
+      position:sticky;
+      bottom:0;
+      margin-top:8px;
+      background:linear-gradient(to top, #f8fafc 82%, rgba(248,250,252,0));
+      padding:12px 0 8px;
+      display:grid;
+      gap:8px;
+    }
+    .review-actions .btn{
+      min-height:48px;
+      font-size:16px;
+    }
 
     .status,
     .status-text {
@@ -2450,6 +2540,19 @@
     <p>Your caregiver check-in was submitted. Want to see how the data looks in the report?</p>
     <a class="btn primary" href="/caregiver-report.html">View Caregiver Report</a>
   </div>
+  <div id="reviewOverlay" class="review-overlay is-hidden" role="dialog" aria-modal="true" aria-labelledby="reviewTitle">
+    <div class="review-card">
+      <div class="review-head">
+        <h2 id="reviewTitle" class="review-title">Review Before Submit</h2>
+        <p class="review-sub">Please review this check-in before final submission.</p>
+      </div>
+      <div id="reviewSections"></div>
+      <div class="review-actions">
+        <button type="button" class="btn" id="reviewEditBtn">Edit</button>
+        <button type="button" class="btn primary" id="reviewSubmitBtn">Submit Check-In</button>
+      </div>
+    </div>
+  </div>
 
 
 <!-- App logic -->
@@ -2473,6 +2576,8 @@
 
   // Define outer refs so other functions (e.g., submitFinal) can use them
   let formEl, submitBtn;
+  let reviewOverlay, reviewSectionsEl, reviewEditBtn, reviewSubmitBtn;
+  let reviewConfirmed = false;
   let steps = [];
   let toggleAllBtn, resumeDraftBtn;
   let progItems = [];
@@ -5043,6 +5148,10 @@
   document.addEventListener('DOMContentLoaded', async () => {
     formEl        = document.getElementById('cg-form');
     submitBtn     = document.getElementById('submitAll');
+    reviewOverlay = document.getElementById('reviewOverlay');
+    reviewSectionsEl = document.getElementById('reviewSections');
+    reviewEditBtn = document.getElementById('reviewEditBtn');
+    reviewSubmitBtn = document.getElementById('reviewSubmitBtn');
     steps         = Array.from(document.querySelectorAll('.step'));
       adlStepIndex  = steps.findIndex((step) => step.id === 'daily-living-step');
       movementStepIndex = steps.findIndex((step) => step.dataset.step === '0');
@@ -5369,6 +5478,14 @@
     // Final submit handlers
     submitBtn.addEventListener('click', submitFinal);
     formEl.addEventListener('submit', submitFinal);
+    reviewEditBtn?.addEventListener('click', () => {
+      reviewConfirmed = false;
+      hideReviewBeforeSubmit();
+    });
+    reviewSubmitBtn?.addEventListener('click', () => {
+      reviewConfirmed = true;
+      submitFinal();
+    });
 
     // Initial position
     go(0);
@@ -6035,6 +6152,124 @@
       if (el) el.classList.add('is-visible');
     }
 
+    function prettifyFieldName(name = '') {
+      return String(name || '')
+        .replace(/[_-]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .replace(/\b\w/g, (char) => char.toUpperCase());
+    }
+
+    function extractLabelText(field) {
+      if (!field) return '';
+      const id = field.id;
+      if (id) {
+        const direct = document.querySelector(`label[for="${CSS.escape(id)}"]`);
+        if (direct) return direct.textContent.replace(/\s+/g, ' ').trim().replace(/:\s*$/, '');
+      }
+      const wrapped = field.closest('label');
+      if (wrapped) {
+        const clone = wrapped.cloneNode(true);
+        clone.querySelectorAll('input,select,textarea,button').forEach((el) => el.remove());
+        const text = clone.textContent.replace(/\s+/g, ' ').trim().replace(/:\s*$/, '');
+        if (text) return text;
+      }
+      return prettifyFieldName(field.name || field.id || 'Field');
+    }
+
+    function fieldDisplayValue(field, radioSeen) {
+      if (!field) return null;
+      if (field.disabled) return null;
+      const tag = field.tagName.toLowerCase();
+      const type = (field.type || '').toLowerCase();
+      if (tag === 'input' && ['hidden','button','submit','file'].includes(type)) return null;
+
+      if (type === 'radio') {
+        const group = field.name || field.id;
+        if (!group || radioSeen.has(group)) return null;
+        radioSeen.add(group);
+        const chosen = formEl?.querySelector(`input[type="radio"][name="${CSS.escape(group)}"]:checked`);
+        if (!chosen) return null;
+        const wrapped = chosen.closest('.yn-pill');
+        if (wrapped) return wrapped.textContent.trim();
+        if (chosen.value) return chosen.value;
+        return 'Yes';
+      }
+      if (type === 'checkbox') {
+        if (!field.checked) return null;
+        return 'Yes';
+      }
+      if (tag === 'select') {
+        const value = field.value;
+        if (!value) return null;
+        const opt = field.selectedOptions?.[0];
+        return (opt?.textContent || value).trim();
+      }
+      const raw = String(field.value ?? '').trim();
+      if (!raw) return null;
+      return raw;
+    }
+
+    function collectSectionReviewItems(container) {
+      if (!container) return [];
+      const items = [];
+      const seenKeys = new Set();
+      const radioSeen = new Set();
+      const fields = container.querySelectorAll('input,select,textarea');
+      fields.forEach((field) => {
+        const value = fieldDisplayValue(field, radioSeen);
+        if (value === null || value === undefined || value === '') return;
+        const label = extractLabelText(field);
+        if (!label) return;
+        const key = `${label.toLowerCase()}::${String(value).toLowerCase()}`;
+        if (seenKeys.has(key)) return;
+        seenKeys.add(key);
+        items.push({ label, value: String(value) });
+      });
+      return items;
+    }
+
+    function renderReviewBeforeSubmit() {
+      if (!reviewOverlay || !reviewSectionsEl) return;
+      const sectionDefs = [
+        { id: 'physicalSection', title: 'Physical Health' },
+        { id: 'behaviorSection', title: 'Behavior / Mental Health' },
+        { id: 'vocationalSection', title: 'Vocational' },
+        { id: 'homeFamilySection', title: 'Home / Family' },
+        { id: 'communitySection', title: 'Community' },
+        { id: 'daily-living-step', title: 'Daily Living' }
+      ];
+      reviewSectionsEl.innerHTML = '';
+      sectionDefs.forEach(({ id, title }) => {
+        const sectionEl = document.getElementById(id);
+        const items = collectSectionReviewItems(sectionEl);
+        if (!items.length) return;
+        const card = document.createElement('section');
+        card.className = 'review-section';
+        const header = document.createElement('h3');
+        header.textContent = title;
+        card.appendChild(header);
+        items.forEach((item) => {
+          const row = document.createElement('div');
+          row.className = 'review-item';
+          row.innerHTML = `<div class="review-label">${item.label}</div><div class="review-value">${item.value}</div>`;
+          card.appendChild(row);
+        });
+        reviewSectionsEl.appendChild(card);
+      });
+      if (!reviewSectionsEl.children.length) {
+        const empty = document.createElement('p');
+        empty.className = 'review-empty';
+        empty.textContent = 'No values entered yet.';
+        reviewSectionsEl.appendChild(empty);
+      }
+      reviewOverlay.classList.remove('is-hidden');
+    }
+
+    function hideReviewBeforeSubmit() {
+      reviewOverlay?.classList.add('is-hidden');
+    }
+
     // ---------- FINAL SUBMIT ----------
     async function submitFinal(e){
       e?.preventDefault?.();
@@ -6042,6 +6277,12 @@
         window.location.href = 'dashboard.html?onboarding=complete';
         return;
       }
+      if (!reviewConfirmed) {
+        renderReviewBeforeSubmit();
+        return;
+      }
+      reviewConfirmed = false;
+      hideReviewBeforeSubmit();
       if (submitBtn) { submitBtn.disabled=true; submitBtn.textContent='Submitting…'; }
       try {
         const activeStep = steps[current];

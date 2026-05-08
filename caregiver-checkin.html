@@ -6,6 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="stylesheet" href="style.css?v=2025.01.09E"/>
   <style>
+    * {
+      box-sizing: border-box;
+    }
     :root {
       --accent-purple: #7C6ACF;
       --accent-green: #6BBF8A;
@@ -173,7 +176,15 @@
       background:linear-gradient(90deg,#ead5a0 0%,#ead5a0 35%,rgba(234,213,160,.45) 70%,rgba(234,213,160,0) 100%);
       z-index:-1;
     }
-    label{display:block;margin:10px 0 6px;font-weight:700}
+    label{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      margin:10px 0 6px;
+      font-weight:600;
+      font-size:14px;
+      line-height:1.3;
+    }
     input,select,textarea{
       width:100%;
       padding:11px 12px;
@@ -185,10 +196,40 @@
     }
     textarea{min-height:84px;resize:vertical}
     input[type="range"]{width:100%}
-    .row{display:grid;gap:12px;grid-template-columns:minmax(0,1fr)}
-    .cols-3{grid-template-columns:minmax(0,1fr)}
-    .cols-2{grid-template-columns:minmax(0,1fr)}
-    .compact{grid-template-columns:minmax(0,1fr)}
+    .section-grid,
+    .row,
+    .cols-2,
+    .cols-3,
+    .compact,
+    .movement-row,
+    .temp-row,
+    .med-row,
+    .movement-grid,
+    .temp-grid,
+    .med-type-grid,
+    .behavior-section-items,
+    .educational-section-items{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+      gap:16px;
+      align-items:start;
+    }
+    .form-field {
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      min-width:0;
+    }
+    .input-group,
+    .yn-pill-group,
+    .movement-yn,
+    .temp-yn,
+    .med-yn{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
     .yn{width:min(100%,200px)}
     .controls{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;flex-wrap:wrap}
     .left-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -447,7 +488,7 @@
     }
     .movement-inline-input,.temp-inline-input{display:flex;gap:8px;align-items:center}
     .movement-inline-input input[type="text"],.temp-inline-input input[type="text"]{flex:1}
-    .yn-pill-group{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+    .yn-pill-group{margin-top:6px}
     .yn-pill{display:inline-flex;align-items:center;gap:6px;border:1px solid #d1d5db;border-radius:999px;padding:4px 8px;background:#fff;font-weight:700;font-size:12.5px}
     .yn-pill input{width:auto}
     .educational-card{
@@ -914,9 +955,9 @@
 
     .section-card {
       background: #ffffff;
-      border-radius: 14px;
+      border-radius: 12px;
       padding: 16px;
-      margin-bottom: 12px;
+      margin-bottom: 16px;
       box-shadow: 0 1px 4px rgba(0,0,0,0.06);
       border: none;
     }
@@ -1504,27 +1545,55 @@
       border-color: #CBBFAE;
     }
 
-    @media (max-width: 700px) {
-      .form-row,
-      .grid,
-      .two-column,
-      .three-column,
+    @media (max-width: 480px) {
+      .section-grid,
       .row,
       .cols-2,
       .cols-3,
       .compact,
-      .behavior-legacy-paired-row,
-      .behavior-legacy-check-grid,
       .movement-row,
       .temp-row,
-      .med-row {
-        display: block !important;
+      .med-row,
+      .movement-grid,
+      .temp-grid,
+      .med-type-grid,
+      .behavior-section-items,
+      .educational-section-items {
+        grid-template-columns: repeat(2, 1fr);
       }
-
-      input,
-      select,
-      textarea {
-        width: 100% !important;
+    }
+    @media (min-width: 481px) and (max-width: 768px) {
+      .section-grid,
+      .row,
+      .cols-2,
+      .cols-3,
+      .compact,
+      .movement-row,
+      .temp-row,
+      .med-row,
+      .movement-grid,
+      .temp-grid,
+      .med-type-grid,
+      .behavior-section-items,
+      .educational-section-items {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    @media (min-width: 769px) {
+      .section-grid,
+      .row,
+      .cols-2,
+      .cols-3,
+      .compact,
+      .movement-row,
+      .temp-row,
+      .med-row,
+      .movement-grid,
+      .temp-grid,
+      .med-type-grid,
+      .behavior-section-items,
+      .educational-section-items {
+        grid-template-columns: repeat(3, 1fr);
       }
     }
   </style>

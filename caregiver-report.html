@@ -566,16 +566,6 @@
     }
     .svc-activity-row:last-child{border-bottom:0}
 
-    .report-metrics-helper{
-      margin:10px auto 12px;
-      max-width:52rem;
-      padding:0 8px;
-      text-align:center;
-      font-size:12px;
-      line-height:1.55;
-      color:#6b7280;
-    }
-
     /* ===== STAR branding refresh ===== */
     :root{
       --color-background-primary:#ffffff;
@@ -869,9 +859,13 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       // 2) minimal insert only to existing columns
       say(L2,'inserting test row…');
       const d = new Date().toISOString().slice(0,10); // YYYY-MM-DD for DATE column
-      // DISABLED: test insert — not used in production
-      say(L2,'test insert disabled for production safety','err');
-      alert('Test insert is disabled in production.');
+      await rest('caregiver_checkins', {
+        method: 'POST',
+        headers: { Prefer: 'return=representation' },
+        body: JSON.stringify([{ user_id: user.id, date: d }]),
+      });
+      say(L2,'insert success ✔','ok');
+      alert('Insert success. Check caregiver_checkins for a new row dated '+d);
     } catch(e){
       console.error(e);
       say(L2, 'insert failed: ' + (e?.message || e), 'err');
@@ -958,10 +952,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 
   <main class="page">
     <h1>Reports</h1>
-    <div class="panel" id="reportRangePanel" style="margin-bottom:0;padding:12px 16px 14px;">
-      <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;"><strong style="font-size:15px;color:#20324f;">Report Range:</strong><label style="font-size:13px;font-weight:600;">From <input type="date" id="reportRangeStart"></label><label style="font-size:13px;font-weight:600;">To <input type="date" id="reportRangeEnd"></label><button id="reportRangeApply" type="button">Apply to Full Report</button><button id="reportRangeReset" type="button">Reset</button></div>
-      <p class="report-metrics-helper" role="note">Days = days with activity. Sessions = check-ins submitted. Minutes = total time recorded. Activity numbers show how often things happened. ADL totals show which types of support were used (not how many times).</p>
-    </div>
+    <div class="panel" id="reportRangePanel" style="margin-bottom:0;padding:12px 16px;"><div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;"><strong style="font-size:15px;color:#20324f;">Report Range:</strong><label style="font-size:13px;font-weight:600;">From <input type="date" id="reportRangeStart"></label><label style="font-size:13px;font-weight:600;">To <input type="date" id="reportRangeEnd"></label><button id="reportRangeApply" type="button">Apply to Full Report</button><button id="reportRangeReset" type="button">Reset</button></div></div>
     <div class="no-export" aria-hidden="true" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0">
       <input type="date" id="servicesSummaryStart">
       <input type="date" id="servicesSummaryEnd">
@@ -1008,45 +999,11 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
           <div class="service-card-title">🤝 Home Supports (ADL)</div>
           <div class="service-card-stats">
             <div class="svc-stat"><span class="svc-stat-label">Days</span><span class="svc-stat-value" id="svcAdlDays">—</span></div>
-            <div class="svc-stat"><span class="svc-stat-label">Types of Support Used</span><span class="svc-stat-value" id="svcAdlTasks">—</span></div>
+            <div class="svc-stat"><span class="svc-stat-label">Total Tasks Logged</span><span class="svc-stat-value" id="svcAdlTasks">—</span></div>
           </div>
           <div class="service-top-activities" id="svcAdlActivities"></div>
         </div>
 
-      </div>
-    </section>
-    <section class="panel" id="weekly-averages-panel" data-print-section="Weekly Averages">
-      <h2>Weekly Averages</h2>
-      <p class="muted" id="weeklyAveragesMeta">Based on filtered check-ins and the caregiver date range.</p>
-      <div class="services-summary-grid" id="weeklyAveragesGrid">
-        <div class="service-card">
-          <div class="service-card-title">📊 Combined (vocational + home + community)</div>
-          <div class="service-card-stats">
-            <div class="svc-stat"><span class="svc-stat-label">Avg weekly hours</span><span class="svc-stat-value" id="waOverallHours">—</span></div>
-          </div>
-        </div>
-        <div class="service-card">
-          <div class="service-card-title">🔧 Vocational</div>
-          <div class="service-card-stats">
-            <div class="svc-stat"><span class="svc-stat-label">Avg weekly hours</span><span class="svc-stat-value" id="waVocHours">—</span></div>
-          </div>
-        </div>
-        <div class="service-card">
-          <div class="service-card-title">🏠 Home</div>
-          <div class="service-card-stats">
-            <div class="svc-stat"><span class="svc-stat-label">Avg weekly hours</span><span class="svc-stat-value" id="waHomeHours">—</span></div>
-          </div>
-        </div>
-        <div class="service-card">
-          <div class="service-card-title">🌍 Community</div>
-          <div class="service-card-stats">
-            <div class="svc-stat"><span class="svc-stat-label">Avg weekly hours</span><span class="svc-stat-value" id="waCommunityHours">—</span></div>
-          </div>
-        </div>
-      </div>
-      <div class="service-card" style="margin-top:14px">
-        <div class="service-card-title">👥 By caregiver</div>
-        <div id="weeklyAveragesCaregivers" class="service-card-stats"></div>
       </div>
     </section>
     <section class="panel focus-board" id="reportFocusPanel">
@@ -1625,13 +1582,13 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabaseClient.js?v=2026.03.29A';
     import { loadFocusForCurrentUser, readLocalFocusDraft } from './focus-data.js?v=2026.03.29A';
     import { ensureActiveGroupId } from './active-group.js?v=2026.03.29A';
-    import { CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinRecord } from './caregiver-report-shared.js?v=2026.03.13A';
+    import { CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-shared.js?v=2026.03.13A';
 
     /* =============== Optional live data =============== */
     let loadFromSupabase = null;
     let formatEntryForList = null;
     try {
-      const mod = await import('./caregiver-report-supabase.js?v=2026.05.03D');
+      const mod = await import('./caregiver-report-supabase.js?v=2026.05.03C');
       loadFromSupabase = mod.loadCaregiverCheckins;
       formatEntryForList = mod.formatEntryForList;
     } catch (err) {
@@ -1868,17 +1825,11 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       const b = parseAdlEntriesForSummary(p.adl_entries);
       const out = [];
       const seen = new Set();
-      const stableStringify = (obj) => {
-        if (!obj || typeof obj !== 'object') return String(obj);
-        const keys = Object.keys(obj).sort();
-        const outObj = {};
-        for (const k of keys) outObj[k] = obj[k];
-        return JSON.stringify(outObj);
-      };
       for (const row of [...a, ...b]) {
+        const label = labelFromAdlEntry(row);
         const id = row.id ?? row.uuid ?? null;
-        if (id == null && (row.category ?? row.activity ?? row.label ?? row.name ?? row.skill ?? row.task) == null) continue;
-        const key = id != null ? `id:${id}` : `obj:${stableStringify(row)}`;
+        const key = id != null ? `id:${id}` : `lb:${label}`;
+        if (!label && id == null) continue;
         if (seen.has(key)) continue;
         seen.add(key);
         out.push(row);
@@ -2047,7 +1998,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
           null;
         const vocTime = pickMinutes(vocTimeRaw) || 0;
         vocMinutes += vocTime;
-        if (vocTime > 0 || isYesValue(vocFlagRaw)) {
+        if (hasProvidedValue(vocFlagRaw) || hasProvidedValue(vocTimeRaw) || vocTime > 0) {
           vocSessions += 1;
         }
         if (vocTime > 0 || isYesValue(vocFlagRaw)) {
@@ -2065,7 +2016,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         const homeTime = pickMinutes(homeTimeRaw) || 0;
         homeMinutes += homeTime;
         const homeTypes = parseMultiValue(entry.home_activity_type ?? p.home_activity_type);
-        if (homeTime > 0 || isYesValue(homeFlagRaw) || homeTypes.length) {
+        if (hasProvidedValue(homeFlagRaw) || hasProvidedValue(homeTimeRaw) || homeTime > 0 || homeTypes.length) {
           homeSessions += 1;
         }
         if (homeTime > 0 || isYesValue(homeFlagRaw)) {
@@ -2089,7 +2040,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         const publicTime = pickMinutes(publicTimeRaw) || 0;
         publicMinutes += publicTime;
         const publicTypes = parseMultiValue(entry.public_activity_type ?? p.public_activity_type);
-        if (publicTime > 0 || isYesValue(publicFlagRaw) || publicTypes.length) {
+        if (hasProvidedValue(publicFlagRaw) || hasProvidedValue(publicTimeRaw) || publicTime > 0 || publicTypes.length) {
           publicSessions += 1;
         }
         if (publicTime > 0 || isYesValue(publicFlagRaw)) {
@@ -2107,15 +2058,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
           console.log('ADL COUNT DEBUG', entry, adlList.length);
           adlDbg += 1;
         }
-        const hasAdlSupport =
-          adlList.length > 0 ||
-          entry.hygiene === true ||
-          entry.food_prep === true ||
-          entry.cleanup === true;
-        if (hasAdlSupport) {
-          if (dateKey) adlDays.add(dateKey);
-        }
         if (adlList.length > 0) {
+          if (dateKey) adlDays.add(dateKey);
           adlTaskCount += adlList.length;
           for (const task of adlList) {
             const label = labelFromAdlEntry(task);
@@ -2389,9 +2333,19 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     }
 
     function getServicesSummaryEntries() {
-      // Reliability: always use the same filtered set as the caregiver table.
-      // The services summary range inputs should not override the report date range.
-      return (cgState.filtered && cgState.filtered.length) ? cgState.filtered : (cgState.entries || []);
+      const startInput = document.getElementById('servicesSummaryStart');
+      const endInput = document.getElementById('servicesSummaryEnd');
+      const source = (cgState.filtered && cgState.filtered.length)
+        ? cgState.filtered
+        : (cgState.entries || []);
+      if (!startInput?.value || !endInput?.value) return source;
+      const startVal = startInput.value.trim();
+      const endVal = endInput.value.trim();
+      return source.filter(entry => {
+        const key = getCheckinDayKey(entry);
+        if (!key) return false;
+        return key >= startVal && key <= endVal;
+      });
     }
 
     function renderServicesSummary(summary, rangeDisplay) {
@@ -2439,117 +2393,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       renderActivities('svcHomeActivities', svc.homeCommunity?.topActivities || []);
       renderActivities('svcCommActivities', svc.communityAtLarge?.topActivities || []);
       renderActivities('svcAdlActivities',  svc.homeSupports?.topTasks || []);
-    }
-
-    /**
-     * Weekly Averages — uses cgState.filtered only (+ report date inputs for week span).
-     * Does not change Services Summary math.
-     */
-    function renderWeeklyAverages(){
-      const setText = (id, text) => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = text != null ? String(text) : '—';
-      };
-      const listEl = document.getElementById('weeklyAveragesCaregivers');
-      const metaEl = document.getElementById('weeklyAveragesMeta');
-      const filtered = cgState.filtered;
-      const entries = Array.isArray(filtered) ? filtered : [];
-
-      if (!entries.length){
-        setText('waOverallHours', '—');
-        setText('waVocHours', '—');
-        setText('waHomeHours', '—');
-        setText('waCommunityHours', '—');
-        if (listEl) listEl.innerHTML = '';
-        if (metaEl) metaEl.textContent = 'No filtered check-ins. Adjust date range or caregiver filter.';
-        return;
-      }
-
-      const startRaw = cgInputs.start?.value?.trim();
-      const endRaw = cgInputs.end?.value?.trim();
-      const start = startRaw ? new Date(`${startRaw}T12:00:00`) : null;
-      const end = endRaw ? new Date(`${endRaw}T12:00:00`) : null;
-
-      if (!start || !end || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())){
-        setText('waOverallHours', '—');
-        setText('waVocHours', '—');
-        setText('waHomeHours', '—');
-        setText('waCommunityHours', '—');
-        if (listEl) listEl.innerHTML = '';
-        if (metaEl) metaEl.textContent = 'Set start and end dates in the caregiver report range.';
-        return;
-      }
-
-      const totalDays = (end - start) / (1000 * 60 * 60 * 24) + 1;
-      const totalWeeks = totalDays / 7;
-      if (metaEl){
-        metaEl.textContent =
-          `${totalDays.toFixed(0)} calendar day(s), ${totalWeeks.toFixed(2)} week(s); ${entries.length} check-in(s) in cgState.filtered`;
-      }
-
-      let totalMinutes = 0;
-      let vocTotal = 0;
-      let homeTotal = 0;
-      let commTotal = 0;
-
-      for (const e of entries){
-        const v = Number(e.vocationalMinutes) || 0;
-        const h = Number(e.homeMinutes) || 0;
-        const c = Number(e.communityMinutes) || 0;
-        vocTotal += v;
-        homeTotal += h;
-        commTotal += c;
-        totalMinutes += v + h + c;
-      }
-
-      const fmtH = (mins) => `${(Math.round(((mins / 60) / totalWeeks) * 1000) / 1000)} h/wk`;
-
-      setText('waOverallHours', fmtH(totalMinutes));
-      setText('waVocHours', fmtH(vocTotal));
-      setText('waHomeHours', fmtH(homeTotal));
-      setText('waCommunityHours', fmtH(commTotal));
-
-      const caregiverMap = new Map();
-      entries.forEach((e) => {
-        const name = caregiverViewLabel(e) || 'Unknown';
-        if (!caregiverMap.has(name)){
-          caregiverMap.set(name, { sessions: 0, minutes: 0 });
-        }
-        const row = caregiverMap.get(name);
-        row.sessions += 1;
-        row.minutes += (
-          (Number(e.vocationalMinutes) || 0)
-          + (Number(e.homeMinutes) || 0)
-          + (Number(e.communityMinutes) || 0)
-        );
-      });
-
-      for (const row of caregiverMap.values()){
-        row.avgWeeklyHours = (row.minutes / 60) / totalWeeks;
-      }
-
-      console.log('Caregiver breakdown:', caregiverMap);
-
-      if (listEl){
-        listEl.innerHTML = '';
-        const sorted = [...caregiverMap.entries()].sort((a, b) => {
-          const ad = (b[1].avgWeeklyHours || 0) - (a[1].avgWeeklyHours || 0);
-          return ad !== 0 ? ad : a[0].localeCompare(b[0]);
-        });
-        for (const [name, row] of sorted){
-          const wrapper = document.createElement('div');
-          wrapper.className = 'svc-stat';
-          const lab = document.createElement('span');
-          lab.className = 'svc-stat-label';
-          lab.textContent = name;
-          const val = document.createElement('span');
-          val.className = 'svc-stat-value';
-          val.textContent = `${row.sessions} sessions · ${(Math.round(row.avgWeeklyHours * 1000) / 1000)} avg h/wk`;
-          wrapper.appendChild(lab);
-          wrapper.appendChild(val);
-          listEl.appendChild(wrapper);
-        }
-      }
     }
 
     function renderReportSummary({
@@ -3033,13 +2876,12 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       updateReportSectionVisibility();
 
       try {
-        const reportCaregiverEntries = caregiverSource;
         const filteredCaregiver = filterEntriesByRange(caregiverSource, range);
         const historyForCycle = caregiverSource.filter((entry) => {
           const dt = getCheckinDate(entry);
           return !!dt && dt <= range.end;
         });
-        const summary = summarizeEntries(reportCaregiverEntries);
+        const summary = summarizeEntries(filteredCaregiver);
         const fullHistoryBehavior = buildBehaviorInsights(historyForCycle);
         if (summary.behavior?.mania && fullHistoryBehavior?.mania) {
           summary.behavior.mania = {
@@ -3063,7 +2905,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         if (visibility.mania) {
           renderManiaStreak(historyForCycle, summary.behavior?.mania || {}, range);
         }
-        const movementInsights = visibility.movement ? buildMovementInsights(reportCaregiverEntries) : null;
+        const movementInsights = visibility.movement ? buildMovementInsights(filteredCaregiver) : null;
         let behaviorComparison = null;
         const prevRange = rangeKey === 'all' ? null : getPreviousRangeWindow(range);
         if (prevRange) {
@@ -3102,7 +2944,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         renderReportSummary({
           rangeKey,
           range,
-          caregiverEntries: reportCaregiverEntries,
+          caregiverEntries: filteredCaregiver,
           moodEntries: filteredMood,
           monthlySeries,
           movementInsights,
@@ -3320,7 +3162,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       memberProfileById: new Map()
     };
     /** TEMPORARY: Shirley / filter diagnosis — skip date + caregiver dropdown (cgState.filtered = all entries). Set false after pinpointing the filter. */
-    const DEBUG_CG_REPORT_BYPASS_FILTERS = false;
+    const DEBUG_CG_REPORT_BYPASS_FILTERS = true;
 
     const reportConfigState = {
       groupId: null,
@@ -3526,27 +3368,16 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       return trimmed;
     };
 
-    const isPlaceholderCaregiverName = (value) =>
-      typeof value === 'string' && /^caregiver\b/i.test(value.trim());
-
     function getCaregiverName(e) {
-      const profileByUserId = profileNameFromUserId(caregiverIdFromEntry(e));
-      if (profileByUserId) return profileByUserId;
-      const profile = e?.profiles;
-      const profileRow = Array.isArray(profile) ? profile[0] : profile;
-      const rowCaregiverName = sanitizeCaregiverLabel(e?.caregiver_name);
-      const payloadCaregiverName = sanitizeCaregiverLabel(
-        e?.payload?.caregiver_name ?? e?.payload?.caregiverName ?? e?.payload?.caregiver
-      );
       return (
-        sanitizeCaregiverLabel(profileRow?.full_name) ||
-        sanitizeCaregiverLabel(profileRow?.display_name) ||
-        sanitizeCaregiverLabel(profileRow?.public_name) ||
-        sanitizeCaregiverLabel(profileRow?.name) ||
+        e.caregiver_name ||
+        e.payload?.caregiver_name ||
+        e.payload?.caregiverName ||
+        e.payload?.caregiver ||
         e.user_email ||
-        (!isPlaceholderCaregiverName(payloadCaregiverName) ? payloadCaregiverName : '') ||
-        (!isPlaceholderCaregiverName(rowCaregiverName) ? rowCaregiverName : '') ||
-        'Unknown Caregiver'
+        e.profiles?.full_name ||
+        e.profiles?.name ||
+        'Unknown'
       );
     }
 
@@ -3586,7 +3417,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 
     const caregiverNameFromEntry = (entry = {}) => {
       const direct = getCaregiverName(entry);
-      if (direct && direct !== 'Unknown' && direct !== 'Unknown Caregiver' && !isPlaceholderCaregiverName(direct)) {
+      if (direct && direct !== 'Unknown') {
         const label = sanitizeCaregiverLabel(direct);
         if (label) return label;
         const trimmed = String(direct).trim();
@@ -3598,13 +3429,13 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       const email = emailFromEntry(entry);
       const emailLabel = sanitizeCaregiverLabel(email);
       if (emailLabel) return emailLabel;
-      return 'Unknown Caregiver';
+      return userId ? `Caregiver ${userId.slice(-6)}` : '';
     };
 
     function caregiverViewLabel(entry) {
       const g = getCaregiverName(entry);
-      if (g && g !== 'Unknown' && g !== 'Unknown Caregiver' && !isPlaceholderCaregiverName(g)) return sanitizeCaregiverLabel(g) || g;
-      return caregiverNameFromEntry(entry) || 'Unknown Caregiver';
+      if (g && g !== 'Unknown') return sanitizeCaregiverLabel(g) || g;
+      return caregiverNameFromEntry(entry) || '—';
     }
 
     const matchesCaregiverFilter = (entry, filterValue) => {
@@ -4123,7 +3954,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       if (!value || value === 'all') return 'All caregivers';
       const option = cgInputs.caregiver?.querySelector(`option[value="${CSS.escape(value)}"]`);
       if (option?.textContent) return option.textContent;
-      if (value.startsWith(CAREGIVER_ID_PREFIX)) return 'Unknown Caregiver';
+      if (value.startsWith(CAREGIVER_ID_PREFIX)) return `Caregiver ${value.slice(-6)}`;
       if (value.startsWith(CAREGIVER_NAME_PREFIX)) return value.slice(CAREGIVER_NAME_PREFIX.length);
       return value;
     }
@@ -5064,11 +4895,16 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       const optionMap = new Map();
       for (const entry of entries) {
         const id = caregiverIdFromEntry(entry);
-        const fallbackName = caregiverViewLabel(entry);
+        const g = getCaregiverName(entry);
+        const displayName =
+          g && g !== 'Unknown'
+            ? sanitizeCaregiverLabel(g) || String(g).trim()
+            : caregiverNameFromEntry(entry);
+        const fallbackName = displayName;
         if (id) {
           const key = CAREGIVER_ID_PREFIX + id;
           if (!optionMap.has(key)) {
-            optionMap.set(key, fallbackName || 'Unknown Caregiver');
+            optionMap.set(key, fallbackName || `Caregiver ${id.slice(-6)}`);
           }
         } else if (fallbackName) {
           const key = CAREGIVER_NAME_PREFIX + fallbackName.toLowerCase();
@@ -5775,7 +5611,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         renderCaregiverCheckins([]);
         updateCgSummary([], 0);
         renderQuickLook([]);
-        renderWeeklyAverages();
         return;
       }
 
@@ -5804,88 +5639,15 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         updateCgSummary(cgState.filtered, entries.length);
         renderQuickLook(cgState.filtered);
         renderCaregiverPdfSummaries(cgState.filtered);
-        renderWeeklyAverages();
         applyChartRange();
         return;
       }
 
       cgState.filtered = finalCombined;
-      // Temporary audit panel (console) after all report filters.
-      // This is meant to confirm the normalized data shape matches saved Supabase rows.
-      try {
-        const adlDaySet = new Set();
-        let adlTaskCount = 0;
-        const adlLabelCounts = new Map();
-        const notesOnlyRows = [];
-        const hygieneTrueNoAdlRows = [];
-        const adlMissingDateKeyRows = [];
-
-        for (const entry of cgState.filtered) {
-          const dateKey = getCheckinDayKey(entry);
-          const adlEntries = Array.isArray(entry.adl_entries) ? entry.adl_entries : [];
-          const taskCount = entry.adlTaskCount ?? adlEntries.length;
-          if (taskCount > 0) {
-            adlTaskCount += taskCount;
-            for (const adl of adlEntries) {
-              const label = String(adl?.category || adl?.activity || adl?.label || adl?.name || adl?.skill || adl?.task || '').trim();
-              if (!label) continue;
-              adlLabelCounts.set(label, (adlLabelCounts.get(label) || 0) + 1);
-            }
-          }
-
-          const hygieneCompleted = entry.hygiene === true;
-          const foodPrepCompleted = entry.food_prep === true;
-          const cleanupCompleted = entry.cleanup === true;
-          const inferredAdlDay =
-            (dateKey && (taskCount > 0 || hygieneCompleted || foodPrepCompleted || cleanupCompleted))
-              ? dateKey
-              : null;
-          if (inferredAdlDay) adlDaySet.add(inferredAdlDay);
-
-          const dailyLivingNotes = entry.dailyLivingNotes ?? entry.payload?.daily_living_notes ?? null;
-          if (dailyLivingNotes && dailyLivingNotes.toString().trim() && adlEntries.length === 0) {
-            if (notesOnlyRows.length < 8) notesOnlyRows.push({ id: entry.id || null, dateKey, dailyLivingNotes: dailyLivingNotes.toString().slice(0, 60) });
-          }
-          if ((hygieneCompleted || foodPrepCompleted || cleanupCompleted) && adlEntries.length === 0) {
-            if (hygieneTrueNoAdlRows.length < 8) hygieneTrueNoAdlRows.push({ id: entry.id || null, dateKey });
-          }
-          if (adlEntries.length > 0 && !dateKey) {
-            if (adlMissingDateKeyRows.length < 8) adlMissingDateKeyRows.push({ id: entry.id || null });
-          }
-        }
-
-        const topAdlLabels = Array.from(adlLabelCounts.entries())
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 10);
-
-        console.log('[CG REPORT AUDIT AFTER FILTERS]', {
-          totalLoadedForGroup: entries.length,
-          afterDateFilter: afterDate.length,
-          afterIndividualFilter: afterIndividual.length,
-          afterAllFilters: finalCombined.length,
-          shirley: {
-            raw: shirleySubset(entries).length,
-            afterDate: shirleySubset(afterDate).length,
-            afterIndividual: shirleySubset(afterIndividual).length,
-            afterAllFilters: shirleySubset(finalCombined).length,
-          },
-          adl: {
-            days: adlDaySet.size,
-            tasks: adlTaskCount,
-            topLabels: topAdlLabels,
-          },
-          notesOnlyRows,
-          hygieneTrueNoAdlRows,
-          adlMissingDateKeyRows,
-        });
-      } catch (e) {
-        console.warn('[CG REPORT AUDIT] failed', e);
-      }
       renderCaregiverCheckins(cgState.filtered);
       updateCgSummary(cgState.filtered, entries.length);
       renderQuickLook(cgState.filtered);
       renderCaregiverPdfSummaries(cgState.filtered);
-      renderWeeklyAverages();
       applyChartRange();
     }
 
@@ -6350,7 +6112,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       if (loadFromSupabase){
         try {
           console.log("Fetching caregiver check-ins...");
-          res = await loadFromSupabase(null, {
+          res = await loadFromSupabase(USER_ID, {
             range: 'all',
             includeAllUsers: true,
             groupId,
@@ -6387,15 +6149,14 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         inFetch: fetchedRaw.filter((e) => getCaregiverName(e).toLowerCase().includes('shirley')).length,
         afterCalendarStrip: entries.filter((e) => getCaregiverName(e).toLowerCase().includes('shirley')).length,
       });
-      const normalizedEntries = entries.map((entry) => normalizeCaregiverCheckinRecord(entry));
-      window.latestCaregiverEntries = normalizedEntries.slice();
-      cgState.entries = normalizedEntries.slice();
+      window.latestCaregiverEntries = entries.slice();
+      cgState.entries = entries.slice();
       console.log('ENTRY SAMPLE', cgState.entries.slice(0, 5));
       cgState.entryById = new Map();
-      normalizedEntries.forEach(entry => {
+      entries.forEach(entry => {
         if (entry?.id) cgState.entryById.set(String(entry.id), entry);
       });
-      cgState.focusStats = buildFocusStats(normalizedEntries);
+      cgState.focusStats = buildFocusStats(entries);
       populateCaregiverOptions(cgState.entries);
       updateDateInputs(cgState.entries);
       const now = new Date(); const defaultRangeEnd = now; const defaultRangeStart = new Date(now); defaultRangeStart.setDate(defaultRangeStart.getDate() - 90); const rStart = document.getElementById('reportRangeStart'); const rEnd = document.getElementById('reportRangeEnd'); if (rStart && !rStart.value) rStart.value = formatDateInputValue(defaultRangeStart); if (rEnd && !rEnd.value) rEnd.value = formatDateInputValue(defaultRangeEnd); if (cgInputs.start && !cgInputs.start.value) cgInputs.start.value = formatDateInputValue(defaultRangeStart); if (cgInputs.end && !cgInputs.end.value) cgInputs.end.value = formatDateInputValue(defaultRangeEnd); const sStart = document.getElementById('servicesSummaryStart'); const sEnd = document.getElementById('servicesSummaryEnd'); if (sStart && !sStart.value) sStart.value = formatDateInputValue(defaultRangeStart); if (sEnd && !sEnd.value) sEnd.value = formatDateInputValue(defaultRangeEnd);
@@ -8040,15 +7801,8 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-sh
     const startDate = start.slice(0,10);
     const endDate = end.slice(0,10);
     try{
-      const groupId = await ensureGroupId();
-      if (!groupId) {
-        console.warn('[caregiver-report calendar] loadMonthFlagMap skipped: no group_id');
-        applyLocalAnnotationsToMap(start, end, map);
-        return map;
-      }
       const params = [
-        'caregiver_checkins?select=id,user_id,group_id,caregiver_name,created_at,submitted_at,date,had_bm,payload',
-        `group_id=eq.${encodeURIComponent(groupId)}`,
+        'caregiver_checkins?select=id,user_id,created_at,submitted_at,date,had_bm,payload',
         `date=gte.${encodeURIComponent(startDate)}`,
         `date=lt.${encodeURIComponent(endDate)}`,
         'order=date.asc'
@@ -8286,16 +8040,10 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-sh
 
   async function loadCaregiverFlags(start, end){
     try{
-      const groupId = await ensureGroupId();
-      if (!groupId) {
-        console.warn('[caregiver-report calendar] loadCaregiverFlags skipped: no group_id');
-        return;
-      }
       const startDate = start.slice(0,10);
       const endDate = end.slice(0,10);
       const params = [
-        'caregiver_checkins?select=id,user_id,group_id,caregiver_name,created_at,submitted_at,date,had_bm,payload',
-        `group_id=eq.${encodeURIComponent(groupId)}`,
+        'caregiver_checkins?select=id,user_id,created_at,submitted_at,date,had_bm,payload',
         `date=gte.${encodeURIComponent(startDate)}`,
         `date=lt.${encodeURIComponent(endDate)}`,
         'order=date.asc'

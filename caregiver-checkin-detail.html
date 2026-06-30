@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Daily Caregiver Check-In | STAR</title>
+  <link rel="stylesheet" href="style.css?v=2025.01.09E">
+  <link rel="stylesheet" href="styles/bottom-tabs.css?v=2026.06.30A">
+  <style>
+    * { box-sizing: border-box; }
+    html {
+      min-height: 100%;
+      background: #fdf6e7;
+      overflow-y: auto;
+      -webkit-text-size-adjust: 100%;
+    }
+    body {
+      min-height: 100dvh;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+      overflow-y: auto;
+      color: #273449;
+      background:
+        radial-gradient(circle at top left, rgba(255, 239, 199, .72), transparent 30%),
+        linear-gradient(180deg, #fffaf1 0%, #f8ead0 100%);
+      font-family: var(--font-sans, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+    }
+    .detail-page {
+      width: min(100%, 800px);
+      min-height: 100dvh;
+      margin: 0 auto;
+      padding: max(18px, env(safe-area-inset-top)) 16px
+        calc(132px + env(safe-area-inset-bottom)) 16px;
+    }
+    .back-button {
+      appearance: none;
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+      margin: 0 0 16px;
+      padding: 0 15px;
+      border: 1px solid #d7dce4;
+      border-radius: 12px;
+      background: #fff;
+      color: #273449;
+      font: inherit;
+      font-weight: 750;
+      cursor: pointer;
+    }
+    .detail-header { margin: 0 0 18px; }
+    .eyebrow {
+      margin: 0 0 5px;
+      color: #6b7280;
+      font-size: 13px;
+      font-weight: 750;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+    h1 {
+      margin: 0;
+      color: #5c3514;
+      font-family: var(--font-serif, Georgia, serif);
+      font-size: clamp(28px, 7vw, 42px);
+      line-height: 1.12;
+      text-align: left;
+    }
+    .detail-subtitle { margin: 8px 0 0; color: #596579; line-height: 1.5; }
+    .loading-card, .error-card, .detail-section {
+      border: 1px solid rgba(180, 134, 44, .25);
+      border-radius: 16px;
+      background: rgba(255, 253, 248, .97);
+      box-shadow: 0 10px 24px rgba(120, 92, 44, .08);
+    }
+    .loading-card, .error-card { padding: 22px; line-height: 1.55; }
+    .error-card h2 { margin: 0 0 8px; color: #8b2d2d; font-size: 21px; }
+    .error-card p { margin: 0 0 16px; }
+    .sections { display: grid; gap: 14px; }
+    .detail-section { overflow: hidden; }
+    .detail-section .section-title {
+      margin: 0;
+      padding: 11px 15px;
+      background: #f7edd7;
+      color: #6f3d11;
+      font-size: 14px;
+      font-weight: 850;
+      letter-spacing: .035em;
+      text-transform: uppercase;
+      text-align: left;
+    }
+    .section-body { padding: 4px 15px; }
+    .answer-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(180px, 45%);
+      gap: 18px;
+      padding: 12px 0;
+      border-bottom: 1px dashed #e5e7eb;
+    }
+    .answer-row:last-child { border-bottom: 0; }
+    .answer-label { color: #667085; line-height: 1.45; }
+    .answer-value {
+      min-width: 0;
+      color: #1f2937;
+      font-weight: 750;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+      text-align: right;
+      white-space: pre-wrap;
+    }
+    .answer-value.not-answered { color: #7b8492; font-style: italic; font-weight: 600; }
+    .answer-row.is-note { display: block; }
+    .answer-row.is-note .answer-label { margin-bottom: 7px; font-weight: 750; }
+    .answer-row.is-note .answer-value { text-align: left; }
+    .detail-actions { margin-top: 20px; }
+    .edit-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-height: 52px;
+      padding: 12px 18px;
+      border: 1px solid #1fa95a;
+      border-radius: 14px;
+      background: linear-gradient(180deg, #4ade80, #22c55e);
+      color: #073b1c;
+      font-weight: 850;
+      text-decoration: none;
+      box-shadow: 0 7px 16px rgba(16, 185, 129, .2);
+    }
+    .is-hidden { display: none !important; }
+    @media (max-width: 600px) {
+      .detail-page { padding-left: 12px; padding-right: 12px; }
+      .answer-row { grid-template-columns: 1fr; gap: 5px; }
+      .answer-value { text-align: left; }
+    }
+    @media print {
+      body { background: #fff; }
+      .detail-page { width: 100%; max-width: none; padding: 0; }
+      .back-button, .detail-actions, #bottom-tabs { display: none !important; }
+      .detail-section { break-inside: avoid; box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="detail-page">
+    <button class="back-button" id="backButton" type="button">← Back</button>
+
+    <header class="detail-header">
+      <p class="eyebrow">Daily caregiver check-in</p>
+      <h1 id="pageTitle">Check-in details</h1>
+      <p class="detail-subtitle" id="pageSubtitle">Every saved answer from this daily report.</p>
+    </header>
+
+    <div class="loading-card" id="loadingState" role="status">Loading this check-in…</div>
+
+    <section class="error-card is-hidden" id="errorState" role="alert">
+      <h2>We couldn’t find this check-in</h2>
+      <p id="errorMessage">It may have been removed, or you may no longer have access to it.</p>
+      <button class="back-button" id="errorBackButton" type="button">← Back to caregiver check-ins</button>
+    </section>
+
+    <div class="is-hidden" id="detailContent">
+      <div class="sections" id="sections"></div>
+      <div class="detail-actions">
+        <a class="edit-button" id="editButton" href="caregiver-report.html">Edit this check-in</a>
+      </div>
+    </div>
+  </main>
+
+  <nav id="bottom-tabs" aria-label="Primary navigation"></nav>
+  <script src="scripts/load-bottom-tabs.js?v=2026.06.30A"></script>
+  <script type="module" src="caregiver-checkin-detail.js?v=2026.06.30A"></script>
+</body>
+</html>

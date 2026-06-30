@@ -61,6 +61,7 @@
     .cg-action-group{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
     .cg-edit-btn,
     .cg-delete-btn{padding:6px 10px;font-size:13px;border-radius:8px;border:1px solid #c4c4c8;background:#f8fafc}
+    .cg-edit-btn{display:inline-flex;align-items:center;color:inherit;cursor:pointer;text-decoration:none}
     .cg-edit-btn:hover{background:#eef2ff}
     .cg-delete-btn{border-color:#fecdd3;background:#fff1f2;color:#b91c1c}
     .cg-delete-btn:hover{background:#ffe4e6}
@@ -1025,6 +1026,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       <canvas id="focusGoalChart" height="220"></canvas>
     </section>
     <section class="panel" id="cg-panel">
+      <span id="caregiver-checkins" aria-hidden="true"></span>
       <h2>Caregiver Check-Ins</h2>
 
       <div id="cgQuickLook" class="quick-look is-hidden" role="region" aria-live="polite">
@@ -5050,7 +5052,13 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
           editBtn.textContent = 'Edit';
           editBtn.dataset.checkinId = checkinId;
           actionGroup.appendChild(editBtn);
-          const viewBtn = document.createElement('button'); viewBtn.type = 'button'; viewBtn.className = 'cg-edit-btn'; viewBtn.textContent = 'View'; viewBtn.dataset.checkinId = checkinId; viewBtn.dataset.viewAction = 'true'; actionGroup.appendChild(viewBtn);
+          const viewBtn = document.createElement('a');
+          viewBtn.className = 'cg-edit-btn';
+          viewBtn.textContent = 'View';
+          viewBtn.href = `caregiver-checkin-detail.html?id=${encodeURIComponent(checkinId)}`;
+          viewBtn.dataset.checkinId = checkinId;
+          viewBtn.dataset.viewAction = 'true';
+          actionGroup.appendChild(viewBtn);
 
           const deleteBtn = document.createElement('button');
           deleteBtn.type = 'button';
@@ -6764,7 +6772,15 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         if (entry) openNoteDrawer(entry);
         return;
       }
-      const viewBtn = event.target.closest('.cg-edit-btn[data-view-action="true"]'); if (viewBtn) { const checkinId = viewBtn.dataset.checkinId; if (checkinId) openViewDrawer(checkinId); return; }
+      const viewBtn = event.target.closest('.cg-edit-btn[data-view-action="true"]');
+      if (viewBtn) {
+        event.preventDefault();
+        const checkinId = viewBtn.dataset.checkinId;
+        if (checkinId) {
+          window.location.href = `caregiver-checkin-detail.html?id=${encodeURIComponent(checkinId)}`;
+        }
+        return;
+      }
       const btn = event.target.closest('.cg-edit-btn');
       if (btn) {
         const checkinId = btn.dataset.checkinId;
@@ -6926,6 +6942,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 
     await ensureReportGroupContext();
     await loadCaregiverData();
+    const requestedEditId = new URLSearchParams(window.location.search).get('edit');
+    if (requestedEditId) await openEditModal(requestedEditId);
     await loadFocusPanel();
     await renderMoodSection();
     applyChartRange();

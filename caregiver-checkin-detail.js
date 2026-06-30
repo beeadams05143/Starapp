@@ -58,14 +58,36 @@ const SECTIONS = [
   {
     title: 'Community & vocational',
     prefixes: ['vocational_', 'home_', 'public_', 'community_', 'interaction_', 'pet_'],
-    keys: ['vocational_time', 'community_time', 'pet_interaction_flag', 'pet_activity_type', 'pet_activity_note', 'pet_activity_notes'],
+    keys: [
+      'vocational_participation', 'vocational_activity_type', 'vocational_time', 'vocational_prompting', 'vocational_notes',
+      'home_activity_flag', 'home_activity_type', 'home_activity_time', 'home_activity_prompting', 'home_activity_note', 'home_notes',
+      'pet_interaction_flag', 'pet_activity_type', 'pet_activity_note', 'pet_activity_notes',
+      'public_activity_flag', 'public_activity_type', 'public_activity_time', 'public_activity_prompting', 'public_activity_note',
+      'community_interaction_ok', 'interaction_type', 'interaction_prompting', 'interaction_note', 'community_time',
+    ],
   },
   {
     title: 'Physical & health',
     prefixes: ['sleep_', 'night_', 'appetite_', 'med_change_', 'movement_', 'temp_', 'menstrual_'],
-    keys: ['appears_good_health', 'appears_tired', 'hours_sleep', 'had_bm', 'prn_name', 'prn_time',
-      'prn_administered', 'prn_given', 'prn_used_for_sleep_disturbance', 'prn_used_for_symptoms_discomfort',
-      'prn_used_for_pain', 'prn_used_for_headache', 'physical_notes'],
+    keys: [
+      'appears_good_health', 'appears_tired',
+      'hours_sleep', 'sleep_fell_asleep_time', 'sleep_onset_time', 'sleep_onset_difficulty',
+      'night_wake_flag', 'night_waking', 'night_wake_count',
+      'prn_used_for_sleep_disturbance', 'prn_administered', 'prn_given', 'prn_name', 'prn_time',
+      'appetite_change_flag', 'appetite_change_direction',
+      'med_change_flag', 'med_change_type_new', 'med_change_type_dose', 'med_change_type_stopped',
+      'med_change_type_other', 'med_change_time_window', 'med_change_time_other', 'med_change_name',
+      'med_change_dose', 'med_change_note',
+      'movement_present', 'movement_main_type', 'movement_other_text', 'movement_severity',
+      'movement_frequency', 'movement_times', 'movement_body_map', 'movement_triggers',
+      'movement_trigger_other', 'movement_interfered', 'movement_interfered_notes',
+      'movement_awareness', 'movement_safety_risk', 'movement_safety_notes', 'movement_notes',
+      'temp_present', 'temp_value', 'temp_method', 'temp_symptoms', 'temp_symptom_other',
+      'prn_used_for_symptoms_discomfort', 'prn_used_for_pain', 'prn_used_for_headache',
+      'temp_prn_name', 'temp_prn_time', 'temp_notes',
+      'menstrual_present', 'menstrual_symptoms', 'menstrual_symptom_other', 'menstrual_notes',
+      'physical_notes',
+    ],
   },
   {
     title: 'Behavior & mental health',
@@ -73,7 +95,20 @@ const SECTIONS = [
       'pressured_', 'grandiosity_', 'daydreaming_', 'easily_', 'difficulty_', 'short_attention_',
       'needs_frequent_', 'hyperactive_', 'disengaged_', 'prn_used_for_aggression', 'prn_used_for_anxiety',
       'prn_used_for_mania', 'prn_used_for_attention', 'prn_used_for_anomalous_behavior', 'prn_used_for_behavior_other'],
-    keys: [],
+    keys: [
+      'aggression_flag', 'aggression_type', 'aggression_intensity', 'aggression_notes',
+      'manic_flag', 'mania_flag', 'manic_intensity', 'mania_intensity', 'mania_episode_status',
+      'focus_trouble_flag', 'daydreaming_zoning_out_present', 'easily_distracted_environment_present',
+      'difficulty_staying_on_task_present', 'short_attention_span_present',
+      'difficulty_following_instructions_present', 'needs_frequent_redirection_present',
+      'hyperactive_restless_present', 'disengaged_low_motivation_present',
+      'fixation_present', 'fixation_category', 'repetitive_behavior_present',
+      'pressured_speech_present', 'grandiosity_present',
+      'behavior_anomaly_flag', 'behavior_anomaly_trigger', 'behavior_anomaly_notes',
+      'prn_used_for_aggression', 'prn_used_for_anxiety', 'prn_used_for_mania',
+      'prn_used_for_attention', 'prn_used_for_anomalous_behavior', 'prn_used_for_behavior_other',
+      'behavior_support_prn_name', 'behavior_support_prn_time', 'behavior_tracking', 'behavior_notes',
+    ],
   },
   {
     title: 'Caregiver notes',
@@ -81,7 +116,12 @@ const SECTIONS = [
   },
 ];
 
-const SYSTEM_KEYS = new Set(['payload', 'dateObj', 'entryById']);
+const SYSTEM_KEYS = new Set([
+  'payload', 'dateObj', 'entryById', 'id', 'uuid', 'group_id', 'user_id', 'individual_id',
+  'created_at', 'updated_at', 'submitted_at', 'date', 'entry_date', '_saved_at', '_submitted_at',
+  'caregiver_name', 'caregiverName', 'caregiver', 'user_email', 'calendar_only', 'details',
+  'educational', 'educational_tracking', 'focus_goal_logs', 'file_url', 'media_upload', 'media_uploads',
+]);
 const loadingState = document.getElementById('loadingState');
 const errorState = document.getElementById('errorState');
 const errorMessage = document.getElementById('errorMessage');
@@ -207,6 +247,16 @@ function formatDate(value, includeTime = false) {
     : { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 }
 
+function formatDateOnly(value) {
+  if (!value) return 'Not answered';
+  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(String(value));
+  const parsed = new Date(dateOnly ? `${value}T00:00:00` : value);
+  if (Number.isNaN(parsed.getTime())) return String(value);
+  return parsed.toLocaleDateString('en-US', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+  });
+}
+
 async function caregiverLabel(record, payload) {
   const savedName = payload.caregiver_name ?? payload.caregiverName ?? payload.caregiver ?? record.caregiver_name;
   const isPlaceholder = typeof savedName === 'string' && /^caregiver\b/i.test(savedName.trim());
@@ -225,8 +275,18 @@ async function caregiverLabel(record, payload) {
 }
 
 function matchingKeys(allKeys, definition) {
-  const exact = new Set(definition.keys || []);
-  return allKeys.filter((key) => exact.has(key) || (definition.prefixes || []).some((prefix) => key.startsWith(prefix)));
+  const available = new Set(allKeys);
+  const ordered = (definition.keys || []).filter((key) => available.has(key));
+  const exact = new Set(ordered);
+  const remaining = allKeys.filter((key) =>
+    !exact.has(key) && (definition.prefixes || []).some((prefix) => key.startsWith(prefix))
+  );
+  return [...ordered, ...remaining];
+}
+
+function isDisplayableSavedAnswer(key) {
+  if (SYSTEM_KEYS.has(key)) return false;
+  return !/^(?:media|upload|attachment)(?:_|$)/i.test(key);
 }
 
 function showError(message) {
@@ -261,30 +321,20 @@ async function loadDetail() {
     document.title = `${formatDate(date)} | Caregiver Check-In | STAR`;
     editButton.href = `caregiver-report.html?edit=${encodeURIComponent(checkinId)}#caregiver-checkins`;
 
-    const consumed = new Set();
-    const dateRows = [];
-    const dateFields = [
-      ['date', 'Date of shift', record.date ?? payload.entry_date],
-      ['submitted_at', 'Submitted', record.submitted_at ?? payload._submitted_at],
-      ['created_at', 'Created', record.created_at],
-      ['updated_at', 'Last updated', record.updated_at],
-    ];
-    dateFields.forEach(([key, label, value]) => {
-      if (owns(record, key) || (key === 'date' && owns(payload, 'entry_date')) || (key === 'submitted_at' && owns(payload, '_submitted_at'))) {
-        consumed.add(key);
-        if (key === 'date') consumed.add('entry_date');
-        if (key === 'submitted_at') consumed.add('_submitted_at');
-        dateRows.push({ key, label, value: isEmpty(value) ? value : formatDate(value, key !== 'date') });
-      }
-    });
-    addSection('Date / time', dateRows);
+    const consumed = new Set(SYSTEM_KEYS);
+    const submittedAt = record.submitted_at ?? payload._submitted_at ?? record.created_at ?? record.date ?? payload.entry_date;
+    addSection('Submission date', [{
+      key: 'submitted_at',
+      label: 'Date submitted',
+      value: formatDateOnly(submittedAt),
+    }]);
 
     const caregiverRows = [{ key: 'caregiver_name', label: 'Caregiver', value: caregiver }];
     ['caregiver_name', 'caregiverName', 'caregiver', 'user_email'].forEach((key) => consumed.add(key));
     addSection('Caregiver', caregiverRows);
 
-    const payloadKeys = Object.keys(payload).filter((key) => !SYSTEM_KEYS.has(key));
-    const recordKeys = Object.keys(record).filter((key) => !SYSTEM_KEYS.has(key));
+    const payloadKeys = Object.keys(payload).filter(isDisplayableSavedAnswer);
+    const recordKeys = Object.keys(record).filter(isDisplayableSavedAnswer);
     const allKeys = [...new Set([...payloadKeys, ...recordKeys])];
 
     SECTIONS.forEach((definition) => {
@@ -300,14 +350,14 @@ async function loadDetail() {
     });
 
     const additionalRows = allKeys
-      .filter((key) => !consumed.has(key) && !SYSTEM_KEYS.has(key))
+      .filter((key) => !consumed.has(key) && isDisplayableSavedAnswer(key))
       .sort((a, b) => humanize(a).localeCompare(humanize(b)))
       .map((key) => {
         const result = getValue(record, payload, key);
         consumed.add(key);
         return { key, label: humanize(key), value: result.value, note: NOTE_KEYS.has(key) || /notes?$/.test(key) };
       });
-    addSection('Other saved fields', additionalRows);
+    addSection('Additional answers', additionalRows);
 
     loadingState.classList.add('is-hidden');
     errorState.classList.add('is-hidden');

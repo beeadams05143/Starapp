@@ -5,6 +5,7 @@
   <title>Caregiver Report</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <link rel="stylesheet" href="./caregiver-report-print.css?v=2026.06.30A">
 
   <style>
     :root{
@@ -91,7 +92,7 @@
     .chart{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:12px;margin:16px auto;max-width:940px;box-shadow:0 12px 24px rgba(125,89,34,.08)}
     .chart.small{max-width:700px}
     canvas{display:block;max-width:100% !important;height:auto !important}
-    .movement-panel{background:var(--card);border:1px solid var(--border);border-radius:22px;padding:16px;margin:12px 0 24px;box-shadow:0 12px 24px rgba(125,89,34,.08);position:relative}
+    .movement-panel{display:none!important;background:var(--card);border:1px solid var(--border);border-radius:22px;padding:16px;margin:12px 0 24px;box-shadow:0 12px 24px rgba(125,89,34,.08);position:relative}
     .movement-panel h3{margin:0 0 6px;text-align:left}
     .movement-sub{margin:0 0 10px;font-size:12px;color:var(--muted)}
     .movement-summary{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin-bottom:12px}
@@ -512,6 +513,70 @@
 
     body.export-wide{min-width:1200px}
     body.export-wide main.page{max-width:1200px;width:1200px}
+
+    .cg-view-overlay{
+      position:fixed;
+      inset:0;
+      background:rgba(15,23,42,0.45);
+      display:flex;
+      align-items:flex-end;
+      justify-content:center;
+      z-index:10002;
+      overflow:hidden;
+    }
+    .cg-view-drawer{
+      background:#fffdf8;
+      border-radius:18px 18px 0 0;
+      padding:20px 20px 60px;
+      width:min(620px,100vw);
+      height:min(92dvh,980px);
+      max-height:92dvh;
+      overflow:auto;
+      overscroll-behavior:contain;
+      -webkit-overflow-scrolling:touch;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+    body.cg-view-open{overflow:hidden}
+    .cg-view-section{
+      border:1px solid #e5e7eb;
+      border-radius:12px;
+      overflow:hidden;
+      background:#fff;
+    }
+    .cg-view-section-title{
+      background:#f8fafc;
+      padding:8px 14px;
+      font-size:11px;
+      font-weight:700;
+      color:#6b7280;
+      text-transform:uppercase;
+      letter-spacing:.05em;
+    }
+    .cg-view-section-body{padding:12px 14px}
+    .cg-view-row{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) minmax(140px,42%);
+      gap:12px;
+      border-bottom:1px dashed #f1f5f9;
+      padding:7px 0;
+      font-size:13px;
+    }
+    .cg-view-row:last-child{border-bottom:0}
+    .cg-view-label{color:#6b7280}
+    .cg-view-value{font-weight:700;text-align:right;white-space:pre-wrap;overflow-wrap:anywhere}
+    .cg-view-note{
+      font-size:13px;
+      line-height:1.6;
+      white-space:pre-wrap;
+      overflow-wrap:anywhere;
+    }
+    @media (max-width:720px){
+      .cg-view-drawer{width:100%;height:94dvh;max-height:94dvh;border-radius:18px 18px 0 0}
+      .cg-view-row{grid-template-columns:1fr}
+      .cg-view-value{text-align:left}
+    }
 
     /* ===== Services Summary ===== */
     .services-summary-grid{
@@ -944,16 +1009,26 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     </div>
   </header>
   <div class="top-actions no-export" style="display:flex;gap:8px;justify-content:center;margin:8px 0 14px;">
-    <button id="fullExportBtn">📄 Export Full Report (PDF)</button>
-    <button id="fullShareBtn">📤 Share Full Report (PDF)</button>
     <button id="fullPrintBtn">🖨️ Print</button>
     <button id="calendarPrintBtn">🗓️ Print Calendar Only</button>
-    <button id="parentLetterBtn">💌 Parent Letter</button>
   </div>
 
   <main class="page">
     <h1>Reports</h1>
-    <div class="panel" id="reportRangePanel" style="margin-bottom:0;padding:12px 16px;"><div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;"><strong style="font-size:15px;color:#20324f;">Report Range:</strong><label style="font-size:13px;font-weight:600;">From <input type="date" id="reportRangeStart"></label><label style="font-size:13px;font-weight:600;">To <input type="date" id="reportRangeEnd"></label><button id="reportRangeApply" type="button">Apply to Full Report</button><button id="reportRangeReset" type="button">Reset</button></div></div>
+    <div class="panel" id="reportRangePanel" style="margin-bottom:0;padding:12px 16px 14px;">
+      <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;">
+        <strong style="font-size:15px;color:#20324f;">Report Range:</strong>
+        <select id="reportRangePreset" aria-label="Report date range">
+          <option value="current_month">Current month</option>
+          <option value="last_30">Last 30 days</option>
+          <option value="week">Last 7 days</option>
+          <option value="custom">Custom dates</option>
+        </select>
+        <span id="reportCustomDates" hidden><label style="font-size:13px;font-weight:600;">From <input type="date" id="reportRangeStart"></label> <label style="font-size:13px;font-weight:600;">To <input type="date" id="reportRangeEnd"></label></span>
+        <button id="reportRangeApply" type="button">Apply</button>
+      </div>
+      <p class="report-metrics-helper" role="note">Days = days with activity. Sessions = check-ins submitted. Minutes = total time recorded. Activity numbers show how often things happened. ADL totals show which types of support were used (not how many times).</p>
+    </div>
     <div class="no-export" aria-hidden="true" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0">
       <input type="date" id="servicesSummaryStart">
       <input type="date" id="servicesSummaryEnd">
@@ -1005,6 +1080,36 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
           <div class="service-top-activities" id="svcAdlActivities"></div>
         </div>
 
+      </div>
+    </section>
+    <section class="panel" id="weekly-averages-panel" data-print-section="Weekly Averages">
+      <h2>Weekly Averages</h2>
+      <p class="muted" id="weeklyAveragesMeta">Based on check-ins in the selected date range.</p>
+      <div class="services-summary-grid" id="weeklyAveragesGrid">
+        <div class="service-card">
+          <div class="service-card-title">📊 Combined (vocational + home + community)</div>
+          <div class="service-card-stats">
+            <div class="svc-stat"><span class="svc-stat-label">Avg weekly hours</span><span class="svc-stat-value" id="waOverallHours">—</span></div>
+          </div>
+        </div>
+        <div class="service-card">
+          <div class="service-card-title">🔧 Vocational</div>
+          <div class="service-card-stats">
+            <div class="svc-stat"><span class="svc-stat-label">Avg weekly hours</span><span class="svc-stat-value" id="waVocHours">—</span></div>
+          </div>
+        </div>
+        <div class="service-card">
+          <div class="service-card-title">🏠 Home</div>
+          <div class="service-card-stats">
+            <div class="svc-stat"><span class="svc-stat-label">Avg weekly hours</span><span class="svc-stat-value" id="waHomeHours">—</span></div>
+          </div>
+        </div>
+        <div class="service-card">
+          <div class="service-card-title">🌍 Community</div>
+          <div class="service-card-stats">
+            <div class="svc-stat"><span class="svc-stat-label">Avg weekly hours</span><span class="svc-stat-value" id="waCommunityHours">—</span></div>
+          </div>
+        </div>
       </div>
     </section>
     <section class="panel focus-board" id="reportFocusPanel">
@@ -1289,9 +1394,9 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       <div class="kpi"><div class="label">Food % Yes</div><div class="value" id="kpi-food">—</div></div>
       <div class="kpi"><div class="label">Clean-up % Yes</div><div class="value" id="kpi-cleanup">—</div></div>
       <div class="kpi"><div class="label">Avg Prompt Level</div><div class="value" id="kpi-prompt">—</div></div>
-      <div class="kpi"><div class="label">Movement Symptom Days</div><div class="value" id="kpi-move-days">—</div></div>
-      <div class="kpi"><div class="label">Avg Movement Severity</div><div class="value" id="kpi-move-avg">—</div></div>
-      <div class="kpi"><div class="label">Max Movement Severity</div><div class="value" id="kpi-move-max">—</div></div>
+      <div class="kpi" hidden><div class="label">Movement Symptom Days</div><div class="value" id="kpi-move-days">—</div></div>
+      <div class="kpi" hidden><div class="label">Avg Movement Severity</div><div class="value" id="kpi-move-avg">—</div></div>
+      <div class="kpi" hidden><div class="label">Max Movement Severity</div><div class="value" id="kpi-move-max">—</div></div>
     </div>
 
     <!-- Health calendar -->
@@ -1356,18 +1461,17 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 
     <!-- Charts -->
     <section id="chart-stack" data-print-section="Trends & Charts">
-    <div class="chart report-summary-inline" id="reportSummaryCard">
+    <div class="chart report-summary-inline" id="reportSummaryCard" hidden>
       <h4>Report Summary (Plain Language)</h4>
       <p class="muted chart-range-label" id="reportSummaryRange">Range: Month</p>
       <p class="muted" id="reportSummaryEmpty">Summary will appear after data loads.</p>
       <ul id="reportSummaryList" aria-live="polite"></ul>
     </div>
-    <div class="chart report-summary-inline" id="parentLetterCard" style="display:none">
+    <div class="chart report-summary-inline" id="parentLetterCard">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <h4>Parent Letter</h4>
         <div style="display:flex;gap:8px">
           <button id="parentLetterPrint" class="btn" style="font-size:13px">🖨️ Print</button>
-          <button id="parentLetterClose" class="btn" style="font-size:13px">✕ Close</button>
         </div>
       </div>
       <p class="muted" id="parentLetterRange"></p>
@@ -1559,7 +1663,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         <button type="button" id="exportRangeClose" class="cg-note-close" aria-label="Close">✕</button>
       </div>
       <div class="cg-note-meta">
-        <span>Choose the date window for the full report PDF.</span>
+        <span>Choose the date window for the printable report.</span>
       </div>
       <div class="cg-edit-grid">
         <label>From
@@ -1571,10 +1675,12 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       </div>
       <div class="cg-note-actions">
         <button type="button" id="exportRangeCancel">Cancel</button>
-        <button type="button" id="exportRangeApply" class="primary">Export PDF</button>
+        <button type="button" id="exportRangeApply" class="primary">Continue to Print / PDF</button>
       </div>
     </div>
   </div>
+
+  <div id="print-report" aria-hidden="true"></div>
 
   <!-- Single, clean module script -->
   <script type="module">
@@ -1584,13 +1690,14 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabaseClient.js?v=2026.03.29A';
     import { loadFocusForCurrentUser, readLocalFocusDraft } from './focus-data.js?v=2026.03.29A';
     import { ensureActiveGroupId } from './active-group.js?v=2026.03.29A';
-    import { CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-shared.js?v=2026.03.13A';
+    import { CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinRecord } from './caregiver-report-shared.js?v=2026.03.13A';
+    import { renderPrintableCaregiverReport } from './caregiver-report-print.js?v=2026.06.30A';
 
     /* =============== Optional live data =============== */
     let loadFromSupabase = null;
     let formatEntryForList = null;
     try {
-      const mod = await import('./caregiver-report-supabase.js?v=2026.05.03C');
+      const mod = await import('./caregiver-report-supabase.js?v=2026.07.01A');
       loadFromSupabase = mod.loadCaregiverCheckins;
       formatEntryForList = mod.formatEntryForList;
     } catch (err) {
@@ -2397,6 +2504,71 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       renderActivities('svcAdlActivities',  svc.homeSupports?.topTasks || []);
     }
 
+    /**
+     * Weekly Averages — uses cgState.filtered only (+ report date inputs for week span).
+     * Does not change Services Summary math.
+     */
+    function renderWeeklyAverages(){
+      const setText = (id, text) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = text != null ? String(text) : '—';
+      };
+      const metaEl = document.getElementById('weeklyAveragesMeta');
+      const filtered = cgState.filtered;
+      const entries = Array.isArray(filtered) ? filtered : [];
+
+      if (!entries.length){
+        setText('waOverallHours', '—');
+        setText('waVocHours', '—');
+        setText('waHomeHours', '—');
+        setText('waCommunityHours', '—');
+        if (metaEl) metaEl.textContent = 'No check-ins in this date range.';
+        return;
+      }
+
+      const startRaw = cgInputs.start?.value?.trim();
+      const endRaw = cgInputs.end?.value?.trim();
+      const start = startRaw ? new Date(`${startRaw}T12:00:00`) : null;
+      const end = endRaw ? new Date(`${endRaw}T12:00:00`) : null;
+
+      if (!start || !end || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())){
+        setText('waOverallHours', '—');
+        setText('waVocHours', '—');
+        setText('waHomeHours', '—');
+        setText('waCommunityHours', '—');
+        if (metaEl) metaEl.textContent = 'Set start and end dates in the caregiver report range.';
+        return;
+      }
+
+      const totalDays = (end - start) / (1000 * 60 * 60 * 24) + 1;
+      const totalWeeks = totalDays / 7;
+      if (metaEl){
+        metaEl.textContent =
+          `${totalDays.toFixed(0)} calendar day(s), ${totalWeeks.toFixed(2)} week(s); ${entries.length} check-in(s) in cgState.filtered`;
+      }
+
+      let totalMinutes = 0;
+      let vocTotal = 0;
+      let homeTotal = 0;
+      let commTotal = 0;
+
+      for (const e of entries){
+        const v = Number(e.vocationalMinutes) || 0;
+        const h = Number(e.homeMinutes) || 0;
+        const c = Number(e.communityMinutes) || 0;
+        vocTotal += v;
+        homeTotal += h;
+        commTotal += c;
+        totalMinutes += v + h + c;
+      }
+
+      const fmtH = (mins) => `${(Math.round(((mins / 60) / totalWeeks) * 1000) / 1000)} h/wk`;
+
+      setText('waOverallHours', fmtH(totalMinutes));
+      setText('waVocHours', fmtH(vocTotal));
+      setText('waHomeHours', fmtH(homeTotal));
+      setText('waCommunityHours', fmtH(commTotal));
+    }
     function renderReportSummary({
       rangeKey,
       range,
@@ -2541,6 +2713,21 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         listEl.appendChild(li);
       });
       emptyEl.textContent = '';
+
+      const parentRange = document.getElementById('parentLetterRange');
+      const parentBody = document.getElementById('parentLetterBody');
+      if (parentRange && parentBody) {
+        parentRange.textContent = `Range: ${display}`;
+        parentBody.textContent = generateParentLetter({
+          caregiverEntries,
+          moodEntries,
+          range: { ...range, label: display },
+          rangeKey,
+          summary,
+          movementInsights,
+          profile: reportConfigState.individual_profile || reportConfigState.individualProfile || null,
+        });
+      }
     }
 
     function generateParentLetter({
@@ -2868,9 +3055,18 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     }
 
     function applyChartRange(){
-      const rangeKey = document.getElementById('chartRangeSelect')?.value || 'month';
+      const rangeSelect = document.getElementById('chartRangeSelect');
+      const rangeKey = rangeSelect?.value || 'custom';
       const caregiverSource = (cgState.filtered && cgState.filtered.length) ? cgState.filtered : (cgState.entries || []);
-      const range = getChartRangeWindow(rangeKey, caregiverSource);
+      const customStart = cgInputs.start?.value;
+      const customEnd = cgInputs.end?.value;
+      const range = !rangeSelect && customStart && customEnd
+        ? {
+            start: new Date(`${customStart}T00:00:00`),
+            end: new Date(`${customEnd}T23:59:59.999`),
+            label: `${formatLocalDate(new Date(`${customStart}T00:00:00`))}–${formatLocalDate(new Date(`${customEnd}T00:00:00`))}`,
+          }
+        : getChartRangeWindow(rangeKey, caregiverSource);
       const visibility = getReportVisibility();
 
       // Update labels first so UI reflects the selection even if a chart fails.
@@ -2879,6 +3075,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 
       try {
         const filteredCaregiver = filterEntriesByRange(caregiverSource, range);
+        const reportCaregiverEntries = filteredCaregiver;
         const historyForCycle = caregiverSource.filter((entry) => {
           const dt = getCheckinDate(entry);
           return !!dt && dt <= range.end;
@@ -3163,8 +3360,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       focusStats: new Map(),
       memberProfileById: new Map()
     };
-    /** TEMPORARY: Shirley / filter diagnosis — skip date + caregiver dropdown (cgState.filtered = all entries). Set false after pinpointing the filter. */
-    const DEBUG_CG_REPORT_BYPASS_FILTERS = true;
+    /** TEMPORARY: Shirley / filter diagnosis — skip date range (cgState.filtered = all entries). Set false after pinpointing the filter. */
+    const DEBUG_CG_REPORT_BYPASS_FILTERS = false;
 
     const reportConfigState = {
       groupId: null,
@@ -3232,7 +3429,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         isCustom,
         dailyLiving: !isCustom || categories.has('daily_living'),
         prompt: !isCustom || ['behavior_mental_health', 'educational', 'community', 'vocational', 'daily_living'].some((key) => categories.has(key)),
-        movement: !isCustom,
+        movement: false,
         mania: !isCustom,
         aggression: !isCustom,
         community: !isCustom || categories.has('community'),
@@ -3963,7 +4160,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 
     function updateCaregiverFilterBanner() {
       if (!cgInputs.filterBanner || !cgInputs.filterLabel) return;
-      const hasFilter = cgState.caregiverFilter && cgState.caregiverFilter !== 'all';
+      cgState.caregiverFilter = 'all';
+      const hasFilter = false;
       cgInputs.filterLabel.textContent = caregiverFilterLabel(cgState.caregiverFilter);
       cgInputs.filterBanner.classList.toggle('is-hidden', !hasFilter);
     }
@@ -5127,7 +5325,9 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 
     async function fetchCaregiverCheckin(checkinId){
       if (!checkinId) throw new Error('Missing check-in id.');
-      const path = `caregiver_checkins?select=*&id=eq.${encodeURIComponent(checkinId)}`;
+      const groupId = await ensureReportGroupContext();
+      if (!groupId) throw new Error('No active group selected.');
+      const path = `caregiver_checkins?select=*&id=eq.${encodeURIComponent(checkinId)}&group_id=eq.${encodeURIComponent(groupId)}`;
       const rows = await rest(path);
       const record = Array.isArray(rows) ? rows[0] : rows;
       if (!record) throw new Error('Check-in not found.');
@@ -5288,8 +5488,393 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       noteUi.overlay.classList.remove('is-hidden');
     }
 
-    async function openViewDrawer(checkinId) { let record; try { record = await fetchCaregiverCheckin(checkinId); } catch(e) { alert('Could not load this check-in.'); return; } const p = record.payload || {}; const yn = (val) => { if (val === true || String(val).toLowerCase() === 'yes' || String(val).toLowerCase() === 'true') return 'Yes'; if (val === false || String(val).toLowerCase() === 'no' || String(val).toLowerCase() === 'false') return 'No'; return '—'; }; const fmtDate = (val) => { if (!val) return '—'; const dt = new Date(val + 'T00:00:00'); return isNaN(dt) ? val : dt.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' }); }; const promptLabels = {'0':'0 — independent','1':'1 — minimal','2':'2 — periodic','3':'3 — frequent','4':'4 — dependent'}; const promptVal = record.new_skill_score ?? p.new_skill_score; const promptLabel = promptVal != null ? (promptLabels[String(promptVal)] || String(promptVal)) : '—'; const adlList = Array.isArray(p.adl_entries) ? p.adl_entries.map(a => String(a.activity || a.label || a.name || '').trim()).filter(Boolean) : []; const allNotes = [record.caregiver_notes, p.caregiver_notes, p.notes, p.physical_notes, p.behavior_notes, p.community_notes, p.daily_living_notes].filter(n => n && String(n).trim()).join('\n\n'); const overlay = document.createElement('div'); overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.45);display:flex;align-items:flex-end;justify-content:center;z-index:10002;'; const drawer = document.createElement('div'); drawer.style.cssText = 'background:#fffdf8;border-radius:18px 18px 0 0;padding:20px 20px 60px;width:min(620px,100vw);height:92vh;overflow-y:scroll;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;gap:12px;'; const header = document.createElement('div'); header.style.cssText = 'display:flex;justify-content:space-between;align-items:flex-start;'; header.innerHTML = '<div><p style="font-size:12px;color:#6b7280;margin:0;">Caregiver check-in</p><h3 style="margin:4px 0 0;font-size:18px;color:#20324f;">' + fmtDate(record.date) + ' &nbsp;·&nbsp; ' + (caregiverViewLabel(record)) + '</h3></div><div style="display:flex;gap:8px;"><button id="vcPrint" style="font-size:13px;padding:6px 12px;border:1px solid #d4d4d8;border-radius:8px;background:#fff;cursor:pointer;">Print</button><button id="vcClose" style="font-size:13px;padding:6px 12px;border:1px solid #d4d4d8;border-radius:8px;background:#fff;cursor:pointer;">Close</button></div>'; drawer.appendChild(header); const grid = document.createElement('div'); grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;'; [['Hygiene', yn(record.hygiene)], ['Food prep', yn(record.food_prep)], ['Clean-up', yn(record.cleanup)], ['Had BM', yn(record.had_bm)], ['Prompt level', promptLabel]].forEach(([label, val]) => { const card = document.createElement('div'); card.style.cssText = 'background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:10px 12px;'; const color = val === 'Yes' ? '#16a34a' : val === 'No' ? '#dc2626' : '#0f172a'; card.innerHTML = '<p style="font-size:11px;color:#6b7280;margin:0 0 4px;text-transform:uppercase;letter-spacing:.04em;">' + label + '</p><p style="font-size:15px;font-weight:700;margin:0;color:' + color + ';">' + val + '</p>'; grid.appendChild(card); }); drawer.appendChild(grid); if (adlList.length) { const adlSec = document.createElement('div'); adlSec.style.cssText = 'border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;'; adlSec.innerHTML = '<div style="background:#f8fafc;padding:8px 14px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;">Activities of daily living (ADL)</div><div style="padding:12px 14px;display:flex;flex-wrap:wrap;gap:6px;">' + adlList.map(a => '<span style="background:#dcfce7;color:#15803d;font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;">' + a + '</span>').join('') + '</div>'; drawer.appendChild(adlSec); } else { const adlSec = document.createElement('div'); adlSec.style.cssText = 'border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;'; adlSec.innerHTML = '<div style="background:#f8fafc;padding:8px 14px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;">Activities of daily living (ADL)</div><div style="padding:12px 14px;"><p style="color:#6b7280;font-size:12px;margin:0;">No ADL tasks logged for this check-in.</p></div>'; drawer.appendChild(adlSec); } const makeSection = (title, rows) => { const sec = document.createElement('div'); sec.style.cssText = 'border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;'; const visibleRows = rows.filter(([, val]) => val !== null && val !== undefined && String(val).trim() !== '' && String(val).trim() !== '—' && String(val).trim() !== 'undefined' && String(val).trim() !== 'null'); const rowsHtml = visibleRows.map(([label, val]) => '<div style="display:flex;justify-content:space-between;border-bottom:1px dashed #f1f5f9;padding:6px 0;font-size:13px;"><span style="color:#6b7280;">' + label + '</span><span style="font-weight:700;text-align:right;max-width:60%;">' + val + '</span></div>').join(''); sec.innerHTML = '<div style="background:#f8fafc;padding:8px 14px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;">' + title + '</div><div style="padding:12px 14px;">' + (rowsHtml || '<p style="color:#6b7280;font-size:12px;margin:0;">Nothing logged for this section.</p>') + '</div>'; drawer.appendChild(sec); }; makeSection('Community & vocational', [['Vocational participation', String(p.vocational_participation ?? p.vocational_flag ?? '—')], ['Vocational minutes', String(record.vocational_time ?? p.vocational_time ?? '—')], ['Vocational activity type', Array.isArray(p.vocational_activity_type) ? p.vocational_activity_type.join(', ') : String(p.vocational_activity_type || '—')], ['Home activity', String(p.home_activity_flag ?? p.home_flag ?? '—')], ['Home activity type', Array.isArray(p.home_activity_type) ? p.home_activity_type.join(', ') : String(p.home_activity_type || '—')], ['Home activity time', String(p.home_activity_time ?? p.home_time ?? '—')], ['Community-at-large activity', String(p.public_activity_flag ?? p.community_activity_flag ?? '—')], ['Community activity type', Array.isArray(p.public_activity_type) ? p.public_activity_type.join(', ') : String(p.public_activity_type || '—')], ['Community minutes', String(record.community_time ?? p.community_time ?? p.public_activity_time ?? '—')] ]); makeSection('Physical & health', [ ['Sleep hours', String(p.hours_sleep || '—')], ['Sleep onset time', String(p.sleep_onset_time || '—')], ['Night waking', yn(p.night_wake_flag || p.night_waking)], ['Anomaly flag', yn(p.anomaly_flag)], ['PRN for sleep', yn(p.prn_used_for_sleep_disturbance || p.prn_given)], ['Sleep PRN name', String(p.sleep_prn_name || p.prn_name || '—')], ['Sleep PRN time', String(p.sleep_prn_time || p.prn_time || '—')], ['PRN for mania', yn(p.prn_used_for_mania || p.prn_mania_given)], ['PRN for aggression', yn(p.prn_used_for_aggression || p.prn_aggression_given)], ['PRN for anxiety', yn(p.prn_used_for_anxiety)], ['PRN for pain', yn(p.prn_used_for_pain)] ]); makeSection('Behavior & mental health', [ ['Mania signal', (p.manic_flag || p.mania_flag) ? 'Yes' : '—'], ['Mania intensity', String(p.manic_intensity || p.mania_intensity || '—')], ['Aggression', p.aggression_flag ? 'Yes' : '—'], ['Aggression intensity', String(p.aggression_intensity || '—')], ['Appears tired', yn(p.appears_tired)], ['Appetite change', yn(p.appetite_change_flag || p.appetite_change)], ['Fixation', yn(p.fixation_present)], ['Repetitive behavior', yn(p.repetitive_behavior_present)], ['Pressured speech', yn(p.pressured_speech_present)] ]); if (allNotes) { const notesSec = document.createElement('div'); notesSec.style.cssText = 'border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;'; notesSec.innerHTML = '<div style="background:#f8fafc;padding:8px 14px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;">Caregiver notes</div><div style="padding:12px 14px;font-size:13px;line-height:1.6;white-space:pre-wrap;">' + allNotes + '</div>'; drawer.appendChild(notesSec); } const footer = document.createElement('div'); footer.style.cssText = 'display:flex;justify-content:flex-end;gap:8px;padding-top:8px;'; footer.innerHTML = '<button id="vcEdit" style="font-size:13px;padding:8px 16px;border:1px solid #d4d4d8;border-radius:10px;background:#fff;cursor:pointer;">Edit this check-in</button>'; drawer.appendChild(footer); overlay.appendChild(drawer); overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); }); drawer.querySelector('#vcClose').addEventListener('click', () => overlay.remove()); drawer.querySelector('#vcEdit').addEventListener('click', () => { overlay.remove(); openEditModal(checkinId); }); drawer.querySelector('#vcPrint').addEventListener('click', () => { const win = window.open('', '_blank'); win.document.write('<html><head><title>Check-in ' + (record.date||'') + '</title><style>body{font-family:system-ui,sans-serif;max-width:700px;margin:40px auto;font-size:14px;line-height:1.6}h2{margin-bottom:4px}h3{margin:20px 0 8px;font-size:14px;border-bottom:1px solid #e5e7eb;padding-bottom:4px;text-transform:uppercase;letter-spacing:.05em;color:#6b7280}table{width:100%;border-collapse:collapse}td{padding:6px 8px;border-bottom:1px dashed #e5e7eb}td:first-child{color:#6b7280;width:45%}td:last-child{font-weight:700}.pill{display:inline-block;background:#dcfce7;color:#15803d;padding:3px 10px;border-radius:999px;font-size:12px;margin:2px;font-weight:700}@media print{body{margin:20px}}</style></head><body>'); win.document.write('<h2>Caregiver Check-In</h2><p style="color:#6b7280;margin-bottom:20px;">' + fmtDate(record.date) + ' &nbsp;·&nbsp; ' + (caregiverViewLabel(record)) + '</p>'); win.document.write('<h3>Daily overview</h3><table><tr><td>Hygiene</td><td>' + yn(record.hygiene) + '</td></tr><tr><td>Food prep</td><td>' + yn(record.food_prep) + '</td></tr><tr><td>Clean-up</td><td>' + yn(record.cleanup) + '</td></tr><tr><td>Had BM</td><td>' + yn(record.had_bm) + '</td></tr><tr><td>Prompt level</td><td>' + promptLabel + '</td></tr></table>'); if (adlList.length) win.document.write('<h3>Daily living (ADL)</h3><div>' + adlList.map(a => '<span class="pill">'+a+'</span>').join('') + '</div>'); win.document.write('<h3>Community & vocational</h3><table><tr><td>Vocational participation</td><td>'+(p.vocational_participation||'—')+'</td></tr><tr><td>Vocational minutes</td><td>'+(record.vocational_time??p.vocational_time??'—')+'</td></tr><tr><td>Home activity</td><td>'+(p.home_activity_flag||'—')+'</td></tr><tr><td>Home activity type</td><td>'+(Array.isArray(p.home_activity_type)?p.home_activity_type.join(', '):(p.home_activity_type||'—'))+'</td></tr><tr><td>Home activity time</td><td>'+(p.home_activity_time||'—')+'</td></tr><tr><td>Community activity</td><td>'+(p.public_activity_flag||'—')+'</td></tr><tr><td>Community type</td><td>'+(Array.isArray(p.public_activity_type)?p.public_activity_type.join(', '):(p.public_activity_type||'—'))+'</td></tr><tr><td>Community minutes</td><td>'+(record.community_time??p.community_time??'—')+'</td></tr></table>'); win.document.write('<h3>Physical & health</h3><table><tr><td>Sleep hours</td><td>'+(p.hours_sleep||'—')+'</td></tr><tr><td>Night waking</td><td>'+yn(p.night_wake_flag||p.night_waking)+'</td></tr><tr><td>Anomaly</td><td>'+yn(p.anomaly_flag)+'</td></tr><tr><td>PRN sleep</td><td>'+yn(p.prn_used_for_sleep_disturbance||p.prn_given)+'</td></tr><tr><td>PRN mania</td><td>'+yn(p.prn_used_for_mania)+'</td></tr><tr><td>PRN aggression</td><td>'+yn(p.prn_used_for_aggression)+'</td></tr></table>'); win.document.write('<h3>Behavior & mental health</h3><table><tr><td>Mania signal</td><td>'+((p.manic_flag||p.mania_flag)?'Yes':'—')+'</td></tr><tr><td>Mania intensity</td><td>'+(p.manic_intensity||p.mania_intensity||'—')+'</td></tr><tr><td>Aggression</td><td>'+(p.aggression_flag?'Yes':'—')+'</td></tr><tr><td>Aggression intensity</td><td>'+(p.aggression_intensity||'—')+'</td></tr></table>'); if (allNotes) win.document.write('<h3>Caregiver notes</h3><p style="white-space:pre-wrap;">'+allNotes+'</p>'); win.document.write('<' + '/body><' + '/html>'); win.document.close(); setTimeout(()=>win.print(), 500); }); document.body.appendChild(overlay); }
 
+
+    const CG_VIEW_FIELD_LABELS = {
+      entry_date: 'Date of shift',
+      caregiver_name: 'Caregiver name',
+      appears_good_health: 'Appears in good health?',
+      appears_tired: 'Appears tired?',
+      hours_sleep: 'Hours of sleep',
+      sleep_fell_asleep_time: 'Time fell asleep',
+      sleep_onset_time: 'Time fell asleep',
+      sleep_onset_difficulty: 'Difficulty falling asleep (took about 2+ hours)',
+      night_wake_flag: 'Woke up during the night?',
+      night_waking: 'Woke up during the night?',
+      night_wake_count: 'How many times woke up',
+      prn_used_for_sleep_disturbance: 'PRN used for sleep disturbance',
+      prn_name: 'PRN / medication / support used',
+      prn_time: 'PRN time',
+      had_bm: 'Had a BM today?',
+      appetite_change_flag: 'Change in appetite?',
+      appetite_change_direction: 'Appetite shift',
+      med_change_flag: 'Medication change today?',
+      med_change_type_new: 'New medication',
+      med_change_type_dose: 'Dose change',
+      med_change_type_stopped: 'Stopped medication',
+      med_change_type_other: 'Medication change - other',
+      med_change_time_window: 'Medication change time / window',
+      med_change_time_other: 'Medication change time detail',
+      med_change_name: 'Medication name(s)',
+      med_change_dose: 'Dose / change details',
+      med_change_note: 'Medication change notes',
+      movement_present: 'Any involuntary movements or vocalizations today?',
+      movement_main_type: 'Main movement symptom',
+      movement_severity: 'Movement severity',
+      movement_times: 'Movement times',
+      movement_notes: 'Movement notes',
+      movement_body_map: 'Movement body areas',
+      movement_other_text: 'Other movement',
+      movement_frequency: 'Movement frequency',
+      movement_triggers: 'Movement triggers',
+      movement_trigger_other: 'Other movement trigger',
+      movement_interfered: 'Movement interfered with function?',
+      movement_interfered_notes: 'Movement interference notes',
+      movement_awareness: 'Movement awareness / impact',
+      movement_safety_risk: 'Movement safety risk?',
+      movement_safety_notes: 'Movement safety notes',
+      temp_present: 'Symptoms or discomfort today?',
+      prn_used_for_symptoms_discomfort: 'PRN used for illness or discomfort',
+      temp_prn_name: 'Illness/discomfort PRN given',
+      temp_prn_time: 'Illness/discomfort PRN time',
+      temp_value: 'Temperature',
+      temp_method: 'Temperature method',
+      temp_symptoms: 'Symptoms / concerns',
+      temp_symptom_other: 'Other symptom',
+      temp_notes: 'Illness/discomfort notes',
+      menstrual_present: 'Menstrual symptoms today?',
+      menstrual_symptoms: 'Menstrual symptoms',
+      menstrual_symptom_other: 'Other menstrual symptom',
+      menstrual_notes: 'Menstrual notes',
+      physical_notes: 'Physical health notes',
+      aggression_flag: 'Displayed aggression?',
+      aggression_type: 'Aggression type',
+      aggression_intensity: 'Aggression intensity',
+      aggression_notes: 'Aggression notes',
+      manic_flag: 'Seemed manic?',
+      mania_flag: 'Seemed manic?',
+      manic_intensity: 'Mania intensity',
+      mania_intensity: 'Mania intensity',
+      mania_episode_status: 'Episode status',
+      focus_trouble_flag: 'Trouble focusing?',
+      daydreaming_zoning_out_present: 'Daydreaming / zoning out',
+      easily_distracted_environment_present: 'Easily distracted by environment',
+      difficulty_staying_on_task_present: 'Difficulty staying on task',
+      short_attention_span_present: 'Short attention span',
+      fixation_present: 'Fixation / perseveration',
+      fixation_category: 'Fixation category',
+      repetitive_behavior_present: 'Repetitive behavior',
+      pressured_speech_present: 'Pressured / rapid speech',
+      grandiosity_present: 'Grandiosity',
+      difficulty_following_instructions_present: 'Difficulty following instructions',
+      needs_frequent_redirection_present: 'Needs frequent redirection',
+      hyperactive_restless_present: 'Hyperactive / restless',
+      disengaged_low_motivation_present: 'Disengaged / low motivation',
+      behavior_anomaly_flag: 'Anything unusual in mood or behavior?',
+      behavior_anomaly_trigger: 'Unusual behavior trigger/context',
+      behavior_anomaly_notes: 'Unusual behavior details',
+      prn_used_for_aggression: 'PRN used for aggression',
+      prn_used_for_anxiety: 'PRN used for anxiety',
+      prn_used_for_mania: 'PRN used for mania / mood episode',
+      prn_used_for_attention: 'PRN used for attention / focus',
+      prn_used_for_anomalous_behavior: 'PRN used for anomalous behavior',
+      prn_used_for_behavior_other: 'PRN used for behavior - other',
+      behavior_support_prn_name: 'Behavior support PRN medication',
+      behavior_support_prn_time: 'Behavior support PRN time',
+      behavior_notes: 'Behavior / mental health notes',
+      behavior_tracking: 'Configured behavior tracking',
+      vocational_participation: 'Participated in vocational activity?',
+      vocational_time: 'Time in vocational activity',
+      vocational_prompting: 'Prompting (vocational)',
+      vocational_activity_type: 'Vocational activity type',
+      vocational_notes: 'Vocational notes',
+      home_activity_flag: 'Engaged in a home/community activity?',
+      home_activity_time: 'Time spent (home)',
+      home_activity_prompting: 'Prompting (home)',
+      home_activity_type: 'Home activity type',
+      home_activity_note: 'Home activity note',
+      home_notes: 'Home / family notes',
+      pet_interaction_flag: 'Pet interaction?',
+      pet_activity_type: 'Pet activity type',
+      pet_activity_note: 'Pet activity note',
+      pet_activity_notes: 'Pet interaction notes',
+      public_activity_flag: 'Engaged in community-at-large activity?',
+      public_activity_time: 'Time spent (community-at-large)',
+      public_activity_prompting: 'Prompting (community-at-large)',
+      public_activity_type: 'Community activity type',
+      public_activity_note: 'Community activity note',
+      community_interaction_ok: 'Engaged with a community member appropriately?',
+      interaction_type: 'Interaction type',
+      interaction_prompting: 'Prompting (interaction)',
+      interaction_note: 'Interaction note',
+      adl_category: 'ADL category',
+      adl_activity: 'ADL activity',
+      adl_note: 'ADL note',
+      prompting_level: 'Prompting / independence',
+      adl_entries: 'ADL activities',
+      daily_living_notes: 'Daily living notes',
+      educational_tracking: 'Educational tracking',
+      focus_goal_logs: 'Weekly focus logs',
+      caregiver_notes: 'Caregiver notes',
+      notes: 'Notes',
+    };
+
+    const CG_VIEW_SECTIONS = [
+      {
+        title: 'Physical Health',
+        keys: [
+          'appears_good_health','appears_tired','hours_sleep','sleep_fell_asleep_time','sleep_onset_time',
+          'sleep_onset_difficulty','night_wake_flag','night_waking','night_wake_count',
+          'prn_used_for_sleep_disturbance','prn_name','prn_time','had_bm','appetite_change_flag',
+          'appetite_change_direction','med_change_flag','med_change_type_new','med_change_type_dose',
+          'med_change_type_stopped','med_change_type_other','med_change_time_window','med_change_time_other',
+          'med_change_name','med_change_dose','med_change_note','movement_present','movement_main_type',
+          'movement_severity','movement_times','movement_notes','movement_body_map','movement_other_text',
+          'movement_frequency','movement_triggers','movement_trigger_other','movement_interfered',
+          'movement_interfered_notes','movement_awareness','movement_safety_risk','movement_safety_notes',
+          'temp_present','prn_used_for_symptoms_discomfort','temp_prn_name','temp_prn_time','temp_value',
+          'temp_method','temp_symptoms','temp_symptom_other','temp_notes','menstrual_present',
+          'menstrual_symptoms','menstrual_symptom_other','menstrual_notes','physical_notes'
+        ]
+      },
+      {
+        title: 'Behavior / Mental Health',
+        keys: [
+          'behavior_tracking','aggression_flag','aggression_type','aggression_intensity','aggression_notes',
+          'manic_flag','mania_flag','manic_intensity','mania_intensity','mania_episode_status',
+          'focus_trouble_flag','daydreaming_zoning_out_present','easily_distracted_environment_present',
+          'difficulty_staying_on_task_present','short_attention_span_present','fixation_present',
+          'fixation_category','repetitive_behavior_present','pressured_speech_present','grandiosity_present',
+          'difficulty_following_instructions_present','needs_frequent_redirection_present',
+          'hyperactive_restless_present','disengaged_low_motivation_present','behavior_anomaly_flag',
+          'behavior_anomaly_trigger','behavior_anomaly_notes','prn_used_for_aggression',
+          'prn_used_for_anxiety','prn_used_for_mania','prn_used_for_attention',
+          'prn_used_for_anomalous_behavior','prn_used_for_behavior_other','behavior_support_prn_name',
+          'behavior_support_prn_time','behavior_notes'
+        ]
+      },
+      {
+        title: 'Vocational',
+        keys: ['vocational_participation','vocational_time','vocational_prompting','vocational_activity_type','vocational_notes']
+      },
+      {
+        title: 'Home / Family',
+        keys: ['home_activity_flag','home_activity_time','home_activity_prompting','home_activity_type','home_activity_note','home_notes','pet_interaction_flag','pet_activity_type','pet_activity_note','pet_activity_notes']
+      },
+      {
+        title: 'Community & Social Interaction',
+        keys: ['public_activity_flag','public_activity_time','public_activity_prompting','public_activity_type','public_activity_note','community_interaction_ok','interaction_type','interaction_prompting','interaction_note']
+      },
+      {
+        title: 'Daily Living',
+        keys: ['adl_entries','adl_category','adl_activity','adl_note','prompting_level','daily_living_notes']
+      },
+      {
+        title: 'Educational',
+        keys: ['educational_tracking']
+      },
+      {
+        title: 'Notes',
+        keys: ['caregiver_notes','notes']
+      }
+    ];
+
+    const CG_VIEW_INTERNAL_KEYS = new Set([
+      'id','uuid','user_id','group_id','payload','created_at','updated_at','submitted_at','timestamp',
+      'date','dateObj','entryById','calendar_only','individual_id','file_url'
+    ]);
+
+    function cgViewHumanizeKey(key = '') {
+      return CG_VIEW_FIELD_LABELS[key] || String(key)
+        .replace(/^behavior_(notes|occurred|prompt_level|prompt_type|intensity|prn_reason|prn_name|prn_time)__/, 'behavior $1: ')
+        .replace(/^educational_(notes|occurred|prompt_level|prompt_type)__/, 'educational $1: ')
+        .replace(/__/g, ': ')
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, (ch) => ch.toUpperCase());
+    }
+
+    function cgViewIsEmptyValue(value) {
+      if (value === null || value === undefined) return true;
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        return !trimmed || trimmed === '—' || trimmed.toLowerCase() === 'null' || trimmed.toLowerCase() === 'undefined';
+      }
+      if (Array.isArray(value)) return value.length === 0;
+      if (typeof value === 'object') return Object.keys(value).length === 0;
+      return false;
+    }
+
+    function cgViewFormatValue(value) {
+      if (cgViewIsEmptyValue(value)) return '—';
+      if (value === true) return 'Yes';
+      if (value === false) return 'No';
+      if (Array.isArray(value)) {
+        return value.map((item) => {
+          if (item && typeof item === 'object') {
+            return Object.entries(item)
+              .filter(([, val]) => !cgViewIsEmptyValue(val))
+              .map(([key, val]) => `${cgViewHumanizeKey(key)}: ${cgViewFormatValue(val)}`)
+              .join('; ');
+          }
+          return cgViewFormatValue(item);
+        }).filter(Boolean).join('\n');
+      }
+      if (typeof value === 'object') {
+        return Object.entries(value)
+          .filter(([, val]) => !cgViewIsEmptyValue(val))
+          .map(([key, val]) => `${cgViewHumanizeKey(key)}: ${cgViewFormatValue(val)}`)
+          .join('\n');
+      }
+      const text = String(value).trim();
+      if (/^(yes|true)$/i.test(text)) return 'Yes';
+      if (/^(no|false)$/i.test(text)) return 'No';
+      return text;
+    }
+
+    function cgViewAppendSection(parent, title, rows, { hideEmpty = false } = {}) {
+      const visibleRows = rows.filter((row) => !hideEmpty || !cgViewIsEmptyValue(row.value));
+      if (!visibleRows.length) return;
+      const section = document.createElement('section');
+      section.className = 'cg-view-section';
+      const heading = document.createElement('div');
+      heading.className = 'cg-view-section-title';
+      heading.textContent = title;
+      const body = document.createElement('div');
+      body.className = 'cg-view-section-body';
+      visibleRows.forEach(({ label, value, note }) => {
+        const row = document.createElement('div');
+        row.className = note ? 'cg-view-note' : 'cg-view-row';
+        if (note) {
+          row.textContent = cgViewFormatValue(value);
+        } else {
+          const labelEl = document.createElement('div');
+          labelEl.className = 'cg-view-label';
+          labelEl.textContent = label;
+          const valueEl = document.createElement('div');
+          valueEl.className = 'cg-view-value';
+          valueEl.textContent = cgViewFormatValue(value);
+          row.append(labelEl, valueEl);
+        }
+        body.appendChild(row);
+      });
+      section.append(heading, body);
+      parent.appendChild(section);
+    }
+
+    function cgViewBuildRows(record, payload, keys, seen) {
+      return keys.map((key) => {
+        seen.add(key);
+        const value = payload[key] ?? record[key];
+        return { label: cgViewHumanizeKey(key), value, note: ['caregiver_notes','notes','physical_notes','behavior_notes','vocational_notes','home_notes','pet_activity_notes','public_activity_note','interaction_note','daily_living_notes','aggression_notes','behavior_anomaly_notes','movement_notes','temp_notes','menstrual_notes','med_change_note'].includes(key) };
+      });
+    }
+
+    async function openViewDrawer(checkinId) {
+      let record;
+      try {
+        record = await fetchCaregiverCheckin(checkinId);
+      } catch(e) {
+        alert('Could not load this check-in.');
+        return;
+      }
+      const payload = record.payload && typeof record.payload === 'object' ? record.payload : {};
+      const merged = { ...payload, ...record };
+      merged.payload = payload;
+      const fmtDate = (val) => {
+        if (!val) return '—';
+        const dt = new Date(`${val}T00:00:00`);
+        return Number.isNaN(dt.getTime()) ? val : dt.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+      };
+      const handleKeydown = (event) => {
+        if (event.key === 'Escape') close();
+      };
+      const close = () => {
+        overlay.remove();
+        document.body.classList.remove('cg-view-open');
+        document.removeEventListener('keydown', handleKeydown);
+      };
+
+      const overlay = document.createElement('div');
+      overlay.className = 'cg-view-overlay';
+      const drawer = document.createElement('div');
+      drawer.className = 'cg-view-drawer';
+      drawer.tabIndex = -1;
+
+      const header = document.createElement('div');
+      header.style.cssText = 'display:flex;justify-content:space-between;align-items:flex-start;gap:12px;';
+      const titleWrap = document.createElement('div');
+      const eyebrow = document.createElement('p');
+      eyebrow.style.cssText = 'font-size:12px;color:#6b7280;margin:0;';
+      eyebrow.textContent = 'Complete caregiver check-in';
+      const title = document.createElement('h3');
+      title.style.cssText = 'margin:4px 0 0;font-size:18px;color:#20324f;';
+      title.textContent = `${fmtDate(record.date || payload.entry_date)} · ${caregiverViewLabel(record)}`;
+      titleWrap.append(eyebrow, title);
+      const actions = document.createElement('div');
+      actions.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;';
+      actions.innerHTML = '<button id="vcPrint" type="button" style="font-size:13px;padding:6px 12px;border:1px solid #d4d4d8;border-radius:8px;background:#fff;cursor:pointer;">Print</button><button id="vcClose" type="button" style="font-size:13px;padding:6px 12px;border:1px solid #d4d4d8;border-radius:8px;background:#fff;cursor:pointer;">Close</button>';
+      header.append(titleWrap, actions);
+      drawer.appendChild(header);
+
+      const content = document.createElement('div');
+      content.className = 'cg-view-content';
+      content.style.cssText = 'display:flex;flex-direction:column;gap:12px;';
+
+      const seen = new Set();
+      cgViewAppendSection(content, 'Entry Details', [
+        { label: 'Date of shift', value: record.date || payload.entry_date },
+        { label: 'Submitted', value: record.submitted_at || record.created_at || payload.submitted_at },
+        { label: 'Caregiver', value: caregiverViewLabel(record) },
+      ], { hideEmpty: false });
+
+      CG_VIEW_SECTIONS.forEach((section) => {
+        cgViewAppendSection(content, section.title, cgViewBuildRows(merged, payload, section.keys, seen), { hideEmpty: false });
+      });
+
+      const additionalRows = Object.entries(payload)
+        .filter(([key, value]) => !seen.has(key) && !CG_VIEW_INTERNAL_KEYS.has(key) && !cgViewIsEmptyValue(value))
+        .sort(([a], [b]) => cgViewHumanizeKey(a).localeCompare(cgViewHumanizeKey(b)))
+        .map(([key, value]) => ({ label: cgViewHumanizeKey(key), value }));
+      cgViewAppendSection(content, 'Additional Saved Answers', additionalRows, { hideEmpty: true });
+
+      drawer.appendChild(content);
+      const footer = document.createElement('div');
+      footer.style.cssText = 'display:flex;justify-content:flex-end;gap:8px;padding-top:8px;';
+      footer.innerHTML = '<button id="vcEdit" type="button" style="font-size:13px;padding:8px 16px;border:1px solid #d4d4d8;border-radius:10px;background:#fff;cursor:pointer;">Edit this check-in</button>';
+      drawer.appendChild(footer);
+
+      overlay.appendChild(drawer);
+      document.body.classList.add('cg-view-open');
+      document.addEventListener('keydown', handleKeydown);
+      overlay.addEventListener('click', (event) => { if (event.target === overlay) close(); });
+      drawer.querySelector('#vcClose').addEventListener('click', close);
+      drawer.querySelector('#vcEdit').addEventListener('click', () => { close(); openEditModal(checkinId); });
+      drawer.querySelector('#vcPrint').addEventListener('click', () => {
+        const win = window.open('', '_blank');
+        win.document.write('<html><head><title>Caregiver Check-In</title><style>body{font-family:system-ui,sans-serif;max-width:760px;margin:32px auto;font-size:14px;line-height:1.5;color:#111827}h1{font-size:22px;margin:0 0 4px}.meta{color:#6b7280;margin:0 0 20px}.section{border:1px solid #e5e7eb;border-radius:10px;margin:12px 0;overflow:hidden;break-inside:avoid}.section-title{background:#f8fafc;padding:8px 12px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.05em}.body{padding:10px 12px}.row{display:grid;grid-template-columns:1fr 42%;gap:12px;border-bottom:1px dashed #e5e7eb;padding:6px 0}.row:last-child{border-bottom:0}.label{color:#6b7280}.value{font-weight:700;text-align:right;white-space:pre-wrap;overflow-wrap:anywhere}.note{white-space:pre-wrap;overflow-wrap:anywhere}@media print{body{margin:18px}.section{page-break-inside:avoid}}</style></head><body>');
+        win.document.write(`<h1>Caregiver Check-In</h1><p class="meta">${fmtDate(record.date || payload.entry_date)} · ${caregiverViewLabel(record)}</p>`);
+        content.querySelectorAll('.cg-view-section').forEach((section) => {
+          const sectionTitle = section.querySelector('.cg-view-section-title')?.textContent || '';
+          win.document.write(`<div class="section"><div class="section-title">${sectionTitle}</div><div class="body">`);
+          section.querySelectorAll('.cg-view-row,.cg-view-note').forEach((row) => {
+            if (row.classList.contains('cg-view-note')) {
+              win.document.write(`<div class="note">${row.textContent.replace(/[&<>]/g, (ch) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[ch]))}</div>`);
+            } else {
+              const label = row.querySelector('.cg-view-label')?.textContent || '';
+              const value = row.querySelector('.cg-view-value')?.textContent || '';
+              const esc = (text) => text.replace(/[&<>]/g, (ch) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[ch]));
+              win.document.write(`<div class="row"><div class="label">${esc(label)}</div><div class="value">${esc(value)}</div></div>`);
+            }
+          });
+          win.document.write('</div></div>');
+        });
+        win.document.write('</body></html>');
+        win.document.close();
+        setTimeout(() => win.print(), 500);
+      });
+      document.body.appendChild(overlay);
+      requestAnimationFrame(() => drawer.focus());
+    }
 
     // openEditModal fetches a single caregiver_checkins row (select().eq('id').single()) and fills the modal form.
     async function openEditModal(checkinId){
@@ -5488,7 +6073,9 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         }
         updates.payload = payloadClone;
 
-        const path = `caregiver_checkins?id=eq.${encodeURIComponent(editState.currentId)}`;
+        const groupId = await ensureReportGroupContext();
+        if (!groupId) throw new Error('No active group selected.');
+        const path = `caregiver_checkins?id=eq.${encodeURIComponent(editState.currentId)}&group_id=eq.${encodeURIComponent(groupId)}`;
         await rest(path, {
           method: 'PATCH',
           headers: { Prefer: 'return=representation' },
@@ -5525,7 +6112,9 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       if (modalOpen) setEditStatus('Deleting entry…');
 
       try {
-        const path = `caregiver_checkins?id=eq.${encodeURIComponent(checkinId)}`;
+        const groupId = await ensureReportGroupContext();
+        if (!groupId) throw new Error('No active group selected.');
+        const path = `caregiver_checkins?id=eq.${encodeURIComponent(checkinId)}&group_id=eq.${encodeURIComponent(groupId)}`;
         await rest(path, { method: 'DELETE' });
         await loadCaregiverData();
         if (modalOpen) closeEditModal();
@@ -5567,16 +6156,15 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     }
 
     function filterEntriesByCaregiverOnly(entries){
-      const caregiverFilter = cgState.caregiverFilter || 'all';
-      return entries.filter((entry) => matchesCaregiverFilter(entry, caregiverFilter));
+      cgState.caregiverFilter = 'all';
+      return entries.slice();
     }
 
     function filterCaregiverEntries(entries){
       const startVal = (cgInputs.start?.value || '').trim();
       const endVal = (cgInputs.end?.value || '').trim();
-      const caregiverFilter = cgState.caregiverFilter || 'all';
+      cgState.caregiverFilter = 'all';
       return entries.filter(entry => {
-        if (!matchesCaregiverFilter(entry, caregiverFilter)) return false;
         const dayKey = getCheckinDayKey(entry);
         if (!dayKey) return false;
         if (startVal && dayKey < startVal) return false;
@@ -5599,15 +6187,16 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     function applyCaregiverFilters(){
       const entries = cgState.entries.slice();
       if (cgInputs.caregiver) {
-        cgState.caregiverFilter = cgInputs.caregiver.value || 'all';
+        cgInputs.caregiver.value = 'all';
       }
+      cgState.caregiverFilter = 'all';
       updateCaregiverFilterBanner();
 
       const shirleySubset = (arr) =>
         arr.filter((e) => getCaregiverName(e).toLowerCase().includes('shirley'));
 
       const logPipeline = () => {
-        console.log('[caregiver filter inspect] calendar_only stripped in loadCaregiverData only. Pipeline: date (day key) + caregiver dropdown. No individual_id client filter. Dedup/supabase stages: caregiver-report-supabase.js.');
+        console.log('[caregiver report inspect] calendar_only stripped in loadCaregiverData only. Pipeline: date range only. No individual_id or caregiver client filter. Dedup/supabase stages: caregiver-report-supabase.js.');
       };
 
       if (!entries.length) {
@@ -5640,7 +6229,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 
       if (DEBUG_CG_REPORT_BYPASS_FILTERS) {
         console.warn(
-          '[DEBUG_CG_REPORT_BYPASS_FILTERS=true] cgState.filtered = all entries (date + caregiver filters skipped). Flip flag false after diagnosis.'
+          '[DEBUG_CG_REPORT_BYPASS_FILTERS=true] cgState.filtered = all entries (date range skipped). Flip flag false after diagnosis.'
         );
         cgState.filtered = entries.slice();
         renderCaregiverCheckins(cgState.filtered);
@@ -6167,7 +6756,19 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       cgState.focusStats = buildFocusStats(entries);
       populateCaregiverOptions(cgState.entries);
       updateDateInputs(cgState.entries);
-      const now = new Date(); const defaultRangeEnd = now; const defaultRangeStart = new Date(now); defaultRangeStart.setDate(defaultRangeStart.getDate() - 90); const rStart = document.getElementById('reportRangeStart'); const rEnd = document.getElementById('reportRangeEnd'); if (rStart && !rStart.value) rStart.value = formatDateInputValue(defaultRangeStart); if (rEnd && !rEnd.value) rEnd.value = formatDateInputValue(defaultRangeEnd); if (cgInputs.start && !cgInputs.start.value) cgInputs.start.value = formatDateInputValue(defaultRangeStart); if (cgInputs.end && !cgInputs.end.value) cgInputs.end.value = formatDateInputValue(defaultRangeEnd); const sStart = document.getElementById('servicesSummaryStart'); const sEnd = document.getElementById('servicesSummaryEnd'); if (sStart && !sStart.value) sStart.value = formatDateInputValue(defaultRangeStart); if (sEnd && !sEnd.value) sEnd.value = formatDateInputValue(defaultRangeEnd);
+      const now = new Date();
+      const defaultRangeEnd = now;
+      const defaultRangeStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const rStart = document.getElementById('reportRangeStart');
+      const rEnd = document.getElementById('reportRangeEnd');
+      if (rStart && !rStart.value) rStart.value = formatDateInputValue(defaultRangeStart);
+      if (rEnd && !rEnd.value) rEnd.value = formatDateInputValue(defaultRangeEnd);
+      if (cgInputs.start && !cgInputs.start.value) cgInputs.start.value = formatDateInputValue(defaultRangeStart);
+      if (cgInputs.end && !cgInputs.end.value) cgInputs.end.value = formatDateInputValue(defaultRangeEnd);
+      const sStart = document.getElementById('servicesSummaryStart');
+      const sEnd = document.getElementById('servicesSummaryEnd');
+      if (sStart && !sStart.value) sStart.value = formatDateInputValue(defaultRangeStart);
+      if (sEnd && !sEnd.value) sEnd.value = formatDateInputValue(defaultRangeEnd);
       applyCaregiverFilters();
       updateReportSectionVisibility();
       if (currentFocusPlan) {
@@ -6752,8 +7353,33 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       if (endEl) endEl.value = '';
       applyChartRange();
     });
-    document.getElementById('reportRangeApply')?.addEventListener('click', () => { const startVal = document.getElementById('reportRangeStart')?.value; const endVal = document.getElementById('reportRangeEnd')?.value; if (!startVal || !endVal) return; if (cgInputs.start) cgInputs.start.value = startVal; if (cgInputs.end) cgInputs.end.value = endVal; const sStart = document.getElementById('servicesSummaryStart'); const sEnd = document.getElementById('servicesSummaryEnd'); if (sStart) sStart.value = startVal; if (sEnd) sEnd.value = endVal; applyCaregiverFilters(); });
-    document.getElementById('reportRangeReset')?.addEventListener('click', () => { const now = new Date(); const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1); const lastOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0); const startVal = formatDateInputValue(firstOfMonth); const endVal = formatDateInputValue(lastOfMonth); const rStart = document.getElementById('reportRangeStart'); const rEnd = document.getElementById('reportRangeEnd'); if (rStart) rStart.value = startVal; if (rEnd) rEnd.value = endVal; if (cgInputs.start) cgInputs.start.value = startVal; if (cgInputs.end) cgInputs.end.value = endVal; const sStart = document.getElementById('servicesSummaryStart'); const sEnd = document.getElementById('servicesSummaryEnd'); if (sStart) sStart.value = startVal; if (sEnd) sEnd.value = endVal; applyCaregiverFilters(); });
+    const applyReportRangePreset = () => {
+      const preset = document.getElementById('reportRangePreset')?.value || 'current_month';
+      const customWrap = document.getElementById('reportCustomDates');
+      if (customWrap) customWrap.hidden = preset !== 'custom';
+      const now = new Date();
+      let start = new Date(now.getFullYear(), now.getMonth(), 1);
+      if (preset === 'last_30') { start = new Date(now); start.setDate(start.getDate() - 29); }
+      if (preset === 'week') { start = new Date(now); start.setDate(start.getDate() - 6); }
+      const rStart = document.getElementById('reportRangeStart');
+      const rEnd = document.getElementById('reportRangeEnd');
+      if (preset !== 'custom') {
+        if (rStart) rStart.value = formatDateInputValue(start);
+        if (rEnd) rEnd.value = formatDateInputValue(now);
+      }
+      const startVal = rStart?.value;
+      const endVal = rEnd?.value;
+      if (!startVal || !endVal) return;
+      if (cgInputs.start) cgInputs.start.value = startVal;
+      if (cgInputs.end) cgInputs.end.value = endVal;
+      const sStart = document.getElementById('servicesSummaryStart');
+      const sEnd = document.getElementById('servicesSummaryEnd');
+      if (sStart) sStart.value = startVal;
+      if (sEnd) sEnd.value = endVal;
+      applyCaregiverFilters();
+    };
+    document.getElementById('reportRangePreset')?.addEventListener('change', applyReportRangePreset);
+    document.getElementById('reportRangeApply')?.addEventListener('click', applyReportRangePreset);
     document.getElementById('movementRangeSelect')?.addEventListener('change', (event) => {
       const rangeKey = event.target.value || 'month';
       applyMovementRange(rangeKey);
@@ -6830,7 +7456,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     cgInputs.start?.addEventListener('change', () => applyCaregiverFilters());
     cgInputs.end?.addEventListener('change', () => applyCaregiverFilters());
     cgInputs.caregiver?.addEventListener('change', () => {
-      cgState.caregiverFilter = cgInputs.caregiver.value || 'all';
+      cgInputs.caregiver.value = 'all';
+      cgState.caregiverFilter = 'all';
       applyCaregiverFilters();
     });
     cgInputs.notesToggle?.addEventListener('click', () => {
@@ -6928,6 +7555,318 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 
     window.renderMoodSection = renderMoodSection;
 
+    function printDateLabel(value, options = { month: 'long', day: 'numeric', year: 'numeric' }) {
+      if (!value) return '—';
+      const normalized = typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
+        ? `${value}T12:00:00`
+        : value;
+      const date = normalized instanceof Date ? normalized : new Date(normalized);
+      return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleDateString('en-US', options);
+    }
+
+    function printDateTimeLabel(value) {
+      if (!value) return '—';
+      const date = value instanceof Date ? value : new Date(value);
+      return Number.isNaN(date.getTime())
+        ? String(value)
+        : date.toLocaleString('en-US', {
+            month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit'
+          });
+    }
+
+    function printRangeEntries(entries, range) {
+      const startKey = range?.startInput || '';
+      const endKey = range?.endInput || '';
+      return (entries || []).filter((entry) => {
+        const dayKey = getCheckinDayKey(entry);
+        if (!dayKey) return false;
+        if (startKey && dayKey < startKey) return false;
+        if (endKey && dayKey > endKey) return false;
+        return true;
+      });
+    }
+
+    function printRangeMoods(entries, range) {
+      const start = range?.start ? new Date(range.start) : null;
+      const end = range?.end ? new Date(range.end) : null;
+      if (start) start.setHours(0, 0, 0, 0);
+      if (end) end.setHours(23, 59, 59, 999);
+      return (entries || []).filter((entry) => {
+        const date = entry?.dateObj instanceof Date ? entry.dateObj : new Date(entry?.timestamp || entry?.date);
+        if (Number.isNaN(date.getTime())) return false;
+        return (!start || date >= start) && (!end || date <= end);
+      });
+    }
+
+    function buildPrintWeeklyAverages(entries, range) {
+      const start = range?.start ? new Date(range.start) : null;
+      const end = range?.end ? new Date(range.end) : null;
+      const totalDays = start && end ? Math.max(1, Math.round((end - start) / 86400000) + 1) : 0;
+      const totalWeeks = totalDays ? totalDays / 7 : 0;
+      const totals = (entries || []).reduce((acc, entry) => {
+        acc.vocational += Number(entry.vocationalMinutes) || 0;
+        acc.home += Number(entry.homeMinutes) || 0;
+        acc.community += Number(entry.communityMinutes) || 0;
+        return acc;
+      }, { vocational: 0, home: 0, community: 0 });
+      const hours = (minutes) => totalWeeks ? `${Math.round(((minutes / 60) / totalWeeks) * 100) / 100} h/wk` : '—';
+      return [
+        { label: 'Combined', value: hours(totals.vocational + totals.home + totals.community) },
+        { label: 'Vocational', value: hours(totals.vocational) },
+        { label: 'Home', value: hours(totals.home) },
+        { label: 'Community-at-large', value: hours(totals.community) },
+      ];
+    }
+
+    function buildPrintRecord(entry) {
+      const payload = entry?.payload && typeof entry.payload === 'object' ? entry.payload : {};
+      const merged = { ...payload, ...entry };
+      const seen = new Set();
+      const sections = [{
+        title: 'Entry details',
+        rows: [
+          { label: 'Date of shift', value: printDateLabel(entry.date || payload.entry_date) },
+          { label: 'Submitted', value: printDateTimeLabel(entry.submitted_at || entry.created_at || payload.submitted_at) },
+          { label: 'Last updated', value: printDateTimeLabel(entry.updated_at || payload.updated_at) },
+          { label: 'Caregiver', value: caregiverViewLabel(entry) },
+        ]
+      }];
+
+      CG_VIEW_SECTIONS.forEach((definition) => {
+        const rows = cgViewBuildRows(merged, payload, definition.keys, seen).map((row) => ({
+          label: row.label,
+          value: cgViewFormatValue(row.value),
+          note: !!row.note,
+        }));
+        sections.push({ title: definition.title, rows });
+      });
+
+      const additionalRows = Object.entries(payload)
+        .filter(([key, value]) => !seen.has(key) && !CG_VIEW_INTERNAL_KEYS.has(key) && !cgViewIsEmptyValue(value))
+        .sort(([a], [b]) => cgViewHumanizeKey(a).localeCompare(cgViewHumanizeKey(b)))
+        .map(([key, value]) => ({ label: cgViewHumanizeKey(key), value: cgViewFormatValue(value) }));
+      if (additionalRows.length) sections.push({ title: 'Additional saved answers', rows: additionalRows });
+
+      const date = entry.date || payload.entry_date || entry.created_at;
+      return {
+        title: `Caregiver Check-In — ${printDateLabel(date, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}`,
+        subtitle: `${caregiverViewLabel(entry)} · Submitted ${printDateTimeLabel(entry.submitted_at || entry.created_at || payload.submitted_at)}`,
+        sections,
+      };
+    }
+
+    function buildPrintFocus(focus, entries) {
+      if (!focus) return null;
+      const stats = buildFocusStats(entries);
+      const start = focus.weekStart ? new Date(focus.weekStart) : null;
+      const end = start && !Number.isNaN(start.getTime()) ? new Date(start) : null;
+      if (end) end.setDate(end.getDate() + 6);
+      return {
+        title: focus.customTitle || 'Weekly focus',
+        focusArea: focus.focusArea || '',
+        whyMatters: focus.whyMatters || '',
+        nextSteps: focus.nextSteps || '',
+        range: start && end ? `${printDateLabel(start)} – ${printDateLabel(end)}` : '',
+        goals: (focus.goals || []).map((goal) => {
+          const stat = stats.get(goal.id);
+          const average = stat?.promptCount ? stat.promptSum / stat.promptCount : null;
+          return {
+            title: goal.title || 'Goal',
+            notes: goal.notes || '',
+            practiceSummary: `${stat?.count || 0} practices${average != null ? ` · ${average.toFixed(1)} average prompt level` : ''}`,
+          };
+        }),
+        days: normalizePlannerDays(focus.days || []).map((day) => ({
+          day: day.label,
+          practiced: day.practiced ? 'Yes' : 'No',
+          prompt: day.prompt ?? '—',
+          note: day.note || '—',
+        })),
+      };
+    }
+
+    function buildPrintCalendar(entries, moods) {
+      const days = new Map();
+      const ensure = (key) => {
+        if (!days.has(key)) days.set(key, { key, observations: [], moods: [], notes: [] });
+        return days.get(key);
+      };
+      entries.forEach((entry) => {
+        const key = getCheckinDayKey(entry);
+        if (!key) return;
+        const day = ensure(key);
+        const payload = entry.payload || {};
+        const add = (condition, label) => { if (condition && !day.observations.includes(label)) day.observations.push(label); };
+        const sleep = pickNumber(entry.hours_sleep, payload.hours_sleep);
+        add(resolveDailyLivingBool(entry, 'hygiene') === true, 'Hygiene completed');
+        add(isAffirmative(entry.had_bm ?? payload.had_bm), 'BM recorded');
+        add(Number.isFinite(sleep), `${sleep} hours sleep`);
+        add(Number.isFinite(sleep) && sleep < 8, 'Sleep under 8 hours');
+        add(isAffirmative(payload.night_wake_flag ?? payload.night_waking), 'Night waking');
+        add(isAffirmative(payload.appears_tired), 'Appeared tired');
+        add(isAffirmative(payload.manic_flag ?? payload.mania_flag), 'Elevated/manic signal');
+        add(isAffirmative(payload.aggression_flag), 'Aggression recorded');
+        add(isAffirmative(payload.appetite_change_flag), 'Appetite change');
+        add(isAffirmative(payload.med_change_flag), 'Medication change');
+        add(isAffirmative(payload.prn_used_for_sleep_disturbance), 'PRN for sleep');
+        add(isAffirmative(payload.prn_used_for_mania), 'PRN for mania');
+        add(isAffirmative(payload.prn_used_for_aggression), 'PRN for aggression');
+        const note = extractEntryNotes(entry);
+        if (note) day.notes.push(`${caregiverViewLabel(entry)}: ${note}`);
+      });
+      moods.forEach((entry) => {
+        const date = entry.dateObj instanceof Date ? entry.dateObj : new Date(entry.timestamp);
+        if (Number.isNaN(date.getTime())) return;
+        const key = formatDateInputValue(date);
+        const day = ensure(key);
+        day.moods.push(`${entry.mood || 'Unknown'}${entry.intensity != null ? ` (${entry.intensity})` : ''}`);
+        if (entry.notes) day.notes.push(`Mood note: ${entry.notes}`);
+      });
+      return [...days.values()].sort((a, b) => a.key.localeCompare(b.key)).map((day) => ({
+        date: printDateLabel(`${day.key}T12:00:00`),
+        observations: day.observations.length ? day.observations.join('\n') : 'No tracked health flags',
+        moods: day.moods.length ? day.moods.join('\n') : '—',
+        notes: day.notes.length ? day.notes.join('\n\n') : '—',
+      }));
+    }
+
+    function buildPrintableReportModel(exportRange) {
+      const entries = printRangeEntries(cgState.entries, exportRange);
+      const moods = printRangeMoods(window.latestMoodEntries || [], exportRange);
+      const summary = summarizeEntries(entries);
+      const movement = buildMovementInsights(entries);
+      const { monthly } = buildMonthlySeries(entries);
+      const services = summary;
+      const caregiverCount = new Set(entries.map((entry) => caregiverViewLabel(entry)).filter((name) => name && name !== '—')).size;
+      const moodCounts = moods.reduce((counts, entry) => {
+        const mood = entry.mood || 'Unknown';
+        counts[mood] = (counts[mood] || 0) + 1;
+        return counts;
+      }, {});
+      const commonMood = Object.entries(moodCounts).sort((a, b) => b[1] - a[1])[0];
+      const buckets = buildMoodBucketCounts(moods);
+      const pct = (count) => moods.length ? `${Math.round((count / moods.length) * 100)}%` : '—';
+      const visibility = getReportVisibility();
+      const summaryLines = [];
+      if (visibility.dailyLiving) {
+        summaryLines.push(`Daily living completion rates: hygiene ${summary.percents.hygiene_yes}%, food preparation ${summary.percents.food_prep_yes}%, and clean-up ${summary.percents.cleanup_yes}%.`);
+      }
+      if (visibility.prompt) summaryLines.push(`Average prompt level was ${summary.averages.new_skill_score ?? '—'} on the 0–4 support scale.`);
+      if (visibility.mania) summaryLines.push(`Possible elevated-cycle signals were recorded on ${summary.behavior?.mania?.days || 0} day(s).`);
+      if (visibility.aggression) summaryLines.push(`Aggression was recorded on ${summary.behavior?.aggression?.days || 0} day(s).`);
+      if (visibility.movement) summaryLines.push(`Movement symptoms were recorded on ${movement.daysWithSymptoms || 0} day(s), with average severity ${movement.avgSeverity ?? '—'} and maximum severity ${movement.maxSeverity ?? '—'}.`);
+      if (moods.length) summaryLines.push(`The most common mood was ${commonMood?.[0] || '—'} (${commonMood?.[1] || 0} check-ins); ${pct(buckets.Positive || 0)} were positive and ${pct(buckets.Challenging || 0)} were challenging.`);
+
+      const profile = reportConfigState.individual_profile || reportConfigState.individualProfile || {};
+      const rangeLabel = exportRange?.start && exportRange?.end
+        ? `${printDateLabel(exportRange.start)} – ${printDateLabel(exportRange.end)}`
+        : 'All available data';
+      const breakdown = (counts, category, labels = {}) => Object.entries(counts || {}).map(([key, count]) => ({
+        category,
+        item: labels[key] || cgViewHumanizeKey(key),
+        count,
+      }));
+      return {
+        title: 'STAR Caregiver Report',
+        subtitle: 'Caregiver observations, health patterns, daily activities, and support documentation',
+        individualName: profile.preferred_name || profile.display_name || profile.full_name || profile.public_name || 'Not specified',
+        rangeLabel,
+        generatedAt: printDateTimeLabel(new Date()),
+        overviewMetrics: [
+          { label: 'Caregiver check-ins', value: entries.length },
+          { label: 'Caregivers represented', value: caregiverCount },
+          { label: 'Mood check-ins', value: moods.length },
+          { label: 'Hygiene completed', value: `${summary.percents.hygiene_yes}%` },
+          { label: 'Food preparation completed', value: `${summary.percents.food_prep_yes}%` },
+          { label: 'Clean-up completed', value: `${summary.percents.cleanup_yes}%` },
+        ],
+        summaryLines,
+        weeklyAverages: buildPrintWeeklyAverages(entries, exportRange),
+        services: [
+          { title: 'Vocational', metrics: [
+            { label: 'Days', value: services.vocational?.days },
+            { label: 'Sessions', value: services.vocational?.sessions },
+            { label: 'Total minutes', value: services.vocational?.minutes },
+          ] },
+          { title: 'Home Community', metrics: [
+            { label: 'Days', value: services.homeCommunity?.days },
+            { label: 'Sessions', value: services.homeCommunity?.sessions },
+            { label: 'Total minutes', value: services.homeCommunity?.minutes },
+          ], activities: services.homeCommunity?.topActivities, activityLabel: 'Top activities' },
+          { title: 'Community-at-Large', metrics: [
+            { label: 'Days', value: services.communityAtLarge?.days },
+            { label: 'Sessions', value: services.communityAtLarge?.sessions },
+            { label: 'Total minutes', value: services.communityAtLarge?.minutes },
+          ], activities: services.communityAtLarge?.topActivities, activityLabel: 'Top activities' },
+          { title: 'Home Supports / ADLs', metrics: [
+            { label: 'Days', value: services.homeSupports?.days },
+            { label: 'Tasks documented', value: services.homeSupports?.taskCount },
+          ], activities: services.homeSupports?.topTasks, activityLabel: 'Top supports' },
+        ],
+        focus: visibility.focus === false ? null : buildPrintFocus(currentFocusPlan, entries),
+        movementMetrics: visibility.movement ? [
+          { label: 'Days with symptoms', value: movement.daysWithSymptoms },
+          { label: 'Average severity', value: movement.avgSeverity ?? '—' },
+          { label: 'Maximum severity', value: movement.maxSeverity ?? '—' },
+          { label: 'Most common type', value: MOVEMENT_TYPE_LABELS[movement.mostCommonType] || movement.mostCommonType || '—' },
+          { label: 'Most common time', value: MOVEMENT_TIME_LABELS[movement.mostCommonTime] || movement.mostCommonTime || '—' },
+        ] : [],
+        movementBreakdown: visibility.movement ? [
+          ...breakdown(movement.typeCounts, 'Type', MOVEMENT_TYPE_LABELS),
+          ...breakdown(movement.bodyCounts, 'Body area', MOVEMENT_BODY_LABELS),
+          ...breakdown(movement.triggerCounts, 'Trigger', MOVEMENT_TRIGGER_LABELS),
+        ] : [],
+        monthlyTrends: monthly.map((row) => ({
+          month: row.x,
+          hygiene: row.hygiene_yes,
+          food: row.food_prep_yes,
+          cleanup: row.cleanup_yes,
+          prompt: row.avg_new_skill_score ?? '—',
+        })),
+        moodMetrics: [
+          { label: 'Total mood check-ins', value: moods.length },
+          { label: 'Most common mood', value: commonMood?.[0] || '—' },
+          { label: 'Positive', value: pct(buckets.Positive || 0) },
+          { label: 'Challenging', value: pct(buckets.Challenging || 0) },
+        ],
+        moods: moods.map((entry) => ({
+          timestamp: printDateTimeLabel(entry.timestamp || entry.dateObj),
+          mood: entry.mood || 'Unknown',
+          intensity: entry.intensity ?? '—',
+          notes: entry.notes || '—',
+        })),
+        calendarDays: buildPrintCalendar(entries, moods),
+        caregiverEntries: entries
+          .slice()
+          .sort((a, b) => String(getCheckinDayKey(a) || '').localeCompare(String(getCheckinDayKey(b) || '')))
+          .map(buildPrintRecord),
+      };
+    }
+
+    let activePrintCleanup = null;
+    async function printPreparedFullReport(exportRange) {
+      activePrintCleanup?.();
+      const root = document.getElementById('print-report');
+      if (!root) throw new Error('Printable report container is unavailable.');
+      const model = buildPrintableReportModel(exportRange);
+      renderPrintableCaregiverReport(root, model);
+      const previousTitle = document.title;
+      document.title = `STAR_Caregiver_Report_${exportRange?.endInput || formatDateInputValue(new Date())}`;
+      document.body.classList.add('print-document-active');
+      const cleanup = () => {
+        document.body.classList.remove('print-document-active');
+        root.setAttribute('aria-hidden', 'true');
+        document.title = previousTitle;
+        window.removeEventListener('afterprint', cleanup);
+        if (activePrintCleanup === cleanup) activePrintCleanup = null;
+      };
+      activePrintCleanup = cleanup;
+      window.addEventListener('afterprint', cleanup);
+      if (document.fonts?.ready) await document.fonts.ready;
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      window.print();
+    }
+
     window.caregiverReportApi = {
       cgInputs,
       formatDateInputValue,
@@ -6937,8 +7876,14 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       updateFocusPdfSummary,
       getCaregiverName,
       caregiverViewLabel,
-      getCurrentFocusPlan: () => currentFocusPlan
+      getCurrentFocusPlan: () => currentFocusPlan,
+      printPreparedFullReport,
+      buildPrintableReportModel
     };
+
+    const focusPanel = document.getElementById('reportFocusPanel');
+    const servicesPanel = document.getElementById('services-summary-panel');
+    if (focusPanel && servicesPanel) servicesPanel.before(focusPanel);
 
     await ensureReportGroupContext();
     await loadCaregiverData();
@@ -6959,174 +7904,23 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     });
   }
 
-  async function buildFullReportPdfBlob(sections){
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({ unit:'pt', format:'a4' });
-    const pageW = pdf.internal.pageSize.getWidth();
-    const pageH = pdf.internal.pageSize.getHeight();
-    const margin = 36;
-    const scale = window.innerWidth <= 720 ? 1.6 : 2;
-
-    for (let i = 0; i < sections.length; i++) {
-      const section = sections[i];
-      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-      const canvas = await html2canvas(section, {
-        scale,
-        backgroundColor: '#ffffff',
-        width: section.scrollWidth,
-        height: section.scrollHeight,
-        scrollX: 0,
-        scrollY: -window.scrollY
-      });
-      const aspect = canvas.height / canvas.width || 1;
-      let imgW = pageW - margin * 2;
-      let imgH = imgW * aspect;
-      if (imgH > pageH - margin * 2) {
-        imgH = pageH - margin * 2;
-        imgW = imgH / aspect;
-      }
-      if (i > 0) pdf.addPage();
-      const label = section.getAttribute('data-print-section');
-      if (label) {
-        pdf.setFontSize(14);
-        pdf.text(label, margin, margin - 12);
-      }
-      const offsetX = (pageW - imgW) / 2;
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', offsetX, margin, imgW, imgH);
-    }
-    return pdf.output('blob');
-  }
-
   async function exportFullReportPDF() {
-    const sections = [...document.querySelectorAll('[data-print-section]')];
-    if (!sections.length) {
-      alert('No printable sections found.');
-      return;
-    }
-    const exportRange = await getExportRangeSelection();
-    if (!exportRange) return;
-    toggleExportHiders(true);
-    document.body.classList.add('print-export');
-    document.body.classList.add('export-wide');
-    window.setCaregiverNotesExportMode?.(true);
-    const api = window.caregiverReportApi || {};
-    const cgStart = api.cgInputs?.start || document.getElementById('cgStart');
-    const cgEnd = api.cgInputs?.end || document.getElementById('cgEnd');
-    const previousRange = { start: cgStart?.value || '', end: cgEnd?.value || '' };
-    window.exportDateRange = exportRange;
-    if (cgStart) cgStart.value = exportRange.startInput;
-    if (cgEnd) cgEnd.value = exportRange.endInput;
-    api.applyCaregiverFilters?.();
-    await api.renderMoodSection?.();
-    api.updateFocusPdfSummary?.(api.getCurrentFocusPlan?.() || null, false);
-    try {
-      const blob = await buildFullReportPdfBlob(sections);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'Full_Report.pdf';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } finally {
-      document.body.classList.remove('print-export');
-      document.body.classList.remove('export-wide');
-      toggleExportHiders(false);
-      window.setCaregiverNotesExportMode?.(false);
-      window.exportDateRange = null;
-      if (cgStart) cgStart.value = previousRange.start;
-      if (cgEnd) cgEnd.value = previousRange.end;
-      api.applyCaregiverFilters?.();
-      await api.renderMoodSection?.();
-    }
+    return printFullReport();
   }
 
   async function shareFullReportPdf() {
-    const sections = [...document.querySelectorAll('[data-print-section]')];
-    if (!sections.length) {
-      alert('No printable sections found.');
-      return;
-    }
-    const exportRange = await getExportRangeSelection();
-    if (!exportRange) return;
-    toggleExportHiders(true);
-    document.body.classList.add('print-export');
-    document.body.classList.add('export-wide');
-    window.setCaregiverNotesExportMode?.(true);
-    const api = window.caregiverReportApi || {};
-    const cgStart = api.cgInputs?.start || document.getElementById('cgStart');
-    const cgEnd = api.cgInputs?.end || document.getElementById('cgEnd');
-    const previousRange = { start: cgStart?.value || '', end: cgEnd?.value || '' };
-    window.exportDateRange = exportRange;
-    if (cgStart) cgStart.value = exportRange.startInput;
-    if (cgEnd) cgEnd.value = exportRange.endInput;
-    api.applyCaregiverFilters?.();
-    await api.renderMoodSection?.();
-    api.updateFocusPdfSummary?.(api.getCurrentFocusPlan?.() || null, false);
-    try {
-      const blob = await buildFullReportPdfBlob(sections);
-      const fileName = 'Full_Report.pdf';
-      const file = new File([blob], fileName, { type: 'application/pdf' });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'Full Report' });
-      } else {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }
-    } catch (error) {
-      console.error('Share full report failed', error);
-      alert('Unable to share the PDF right now.');
-    } finally {
-      document.body.classList.remove('print-export');
-      document.body.classList.remove('export-wide');
-      toggleExportHiders(false);
-      window.setCaregiverNotesExportMode?.(false);
-      window.exportDateRange = null;
-      if (cgStart) cgStart.value = previousRange.start;
-      if (cgEnd) cgEnd.value = previousRange.end;
-      api.applyCaregiverFilters?.();
-      await api.renderMoodSection?.();
-    }
+    return printFullReport();
   }
 
   async function printFullReport() {
     const exportRange = await getExportRangeSelection();
     if (!exportRange) return;
-    toggleExportHiders(true);
-    document.body.classList.add('print-export');
-    document.body.classList.add('export-wide');
-    window.setCaregiverNotesExportMode?.(true);
     const api = window.caregiverReportApi || {};
-    const cgStart = api.cgInputs?.start || document.getElementById('cgStart');
-    const cgEnd = api.cgInputs?.end || document.getElementById('cgEnd');
-    const previousRange = { start: cgStart?.value || '', end: cgEnd?.value || '' };
-    window.exportDateRange = exportRange;
-    if (cgStart) cgStart.value = exportRange.startInput;
-    if (cgEnd) cgEnd.value = exportRange.endInput;
-    api.applyCaregiverFilters?.();
-    await api.renderMoodSection?.();
-
-    const restore = async () => {
-      document.body.classList.remove('print-export');
-      document.body.classList.remove('export-wide');
-      toggleExportHiders(false);
-      window.setCaregiverNotesExportMode?.(false);
-      window.exportDateRange = null;
-      if (cgStart) cgStart.value = previousRange.start;
-      if (cgEnd) cgEnd.value = previousRange.end;
-      api.applyCaregiverFilters?.();
-      await api.renderMoodSection?.();
-      window.removeEventListener('afterprint', restore);
-    };
-    window.addEventListener('afterprint', restore);
-    window.print();
+    if (typeof api.printPreparedFullReport !== 'function') {
+      alert('The printable report is still loading. Please try again in a moment.');
+      return;
+    }
+    await api.printPreparedFullReport(exportRange);
   }
 
   async function printCalendarOnly() {

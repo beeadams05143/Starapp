@@ -83,7 +83,7 @@ async function hydrateProfilesForCheckinRows(rows = []) {
   const inList = ids.map(encodeURIComponent).join(',');
   try {
     const profs = await rest(
-      `profiles?select=id,full_name,display_name,public_name,name&id=in.(${inList})`
+      `profiles?select=id,group_id,full_name,display_name,public_name&id=in.(${inList})`
     );
     const map = new Map();
     (Array.isArray(profs) ? profs : []).forEach((p) => {
@@ -99,6 +99,36 @@ async function hydrateProfilesForCheckinRows(rows = []) {
     console.warn('[caregiver_checkins] profile hydrate skipped', e?.message || e);
     return rows;
   }
+}
+
+async function keepAuthorizedGroupRows(rows = [], groupId = null) {
+  if (!groupId || !rows.length) return [];
+  let memberIds = new Set();
+  try {
+    const members = await rest(
+      `group_members?select=user_id&group_id=eq.${encodeURIComponent(groupId)}`
+    );
+    memberIds = new Set((Array.isArray(members) ? members : []).map((row) => String(row?.user_id || '')).filter(Boolean));
+  } catch (error) {
+    console.warn('[caregiver_checkins] membership verification unavailable', error?.message || error);
+  }
+  const accepted = [];
+  const rejected = [];
+  rows.forEach((row) => {
+    const userId = String(row?.user_id || '');
+    const profile = Array.isArray(row?.profiles) ? row.profiles[0] : row?.profiles;
+    const profileGroupId = String(profile?.group_id || '');
+    const authorized = userId && (memberIds.has(userId) || profileGroupId === String(groupId));
+    (authorized ? accepted : rejected).push(row);
+  });
+  if (rejected.length) {
+    console.warn('[caregiver_checkins] excluded rows without a valid group relationship', {
+      groupId,
+      count: rejected.length,
+      recordIds: rejected.map((row) => row?.id).filter(Boolean),
+    });
+  }
+  return accepted;
 }
 
 const ensurePayload = (row) => {
@@ -833,7 +863,8 @@ export async function loadCaregiverCheckins(
     const data = await rest(path);
 
     const rawRows = Array.isArray(data) ? data : [];
-    const rows = await hydrateProfilesForCheckinRows(rawRows);
+    const hydratedRows = await hydrateProfilesForCheckinRows(rawRows);
+    const rows = await keepAuthorizedGroupRows(hydratedRows, activeGroupId);
 
     console.log('[STAGE 1 raw rows]', rows.length);
     console.log(

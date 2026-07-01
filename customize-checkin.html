@@ -168,7 +168,7 @@
         <div class="options">
           <label class="option"><input id="checkboxDailyLiving" type="checkbox" /> Daily Living</label>
           <label class="option"><input id="checkboxBehavior" type="checkbox" /> Behavior / Mental Health</label>
-          <label class="option"><input id="checkboxMovement" type="checkbox" /> Movement / Physical Status</label>
+          <label class="option" hidden><input id="checkboxMovement" type="checkbox" /> Movement / Physical Status</label>
           <label class="option"><input id="checkboxHealth" type="checkbox" /> Health Tracking</label>
           <label class="option"><input id="checkboxMenstrual" type="checkbox" /> Menstrual Tracking</label>
         </div>
@@ -186,7 +186,7 @@
     const DEFAULT_CAREGIVER_CONFIG = {
       show_daily_living: true,
       show_behavior: true,
-      show_movement: true,
+      show_movement: false,
       show_health: false,
       show_menstrual: false,
     };
@@ -210,7 +210,7 @@
         return {
           show_daily_living: parsed.show_daily_living !== false,
           show_behavior: parsed.show_behavior !== false,
-          show_movement: parsed.show_movement !== false,
+          show_movement: false,
           show_health: parsed.show_health === true,
           show_menstrual: parsed.show_menstrual === true,
         };
@@ -231,7 +231,7 @@
       const config = {
         show_daily_living: checkboxDailyLiving.checked,
         show_behavior: checkboxBehavior.checked,
-        show_movement: checkboxMovement.checked,
+        show_movement: false,
         show_health: checkboxHealth.checked,
         show_menstrual: checkboxMenstrual.checked,
       };

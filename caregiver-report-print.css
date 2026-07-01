@@ -1,0 +1,348 @@
+#print-report {
+  display: none;
+}
+
+@page {
+  size: Letter portrait;
+  margin: 0.62in 0.64in 0.68in;
+}
+
+@media print {
+  html,
+  body {
+    width: auto !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+
+  body.print-document-active > :not(#print-report) {
+    display: none !important;
+  }
+
+  body.print-document-active #print-report {
+    display: block !important;
+    width: auto !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    color: #172033;
+    background: #fff;
+    font-family: "Avenir Next", "Segoe UI", Arial, sans-serif;
+    font-size: 9.5pt;
+    line-height: 1.42;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  #print-report *,
+  #print-report *::before,
+  #print-report *::after {
+    box-sizing: border-box;
+  }
+
+  .print-report-header {
+    padding: 0 0 15pt;
+    margin: 0 0 18pt;
+    border-bottom: 2pt solid #9a6428;
+    break-after: avoid-page;
+  }
+
+  .print-report-kicker {
+    margin: 0 0 3pt;
+    color: #8a5a25;
+    font-size: 8pt;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  #print-report h1,
+  #print-report h2,
+  #print-report h3,
+  #print-report h4 {
+    color: #20324f;
+    font-family: Georgia, "Times New Roman", serif;
+    text-align: left;
+    break-after: avoid-page;
+  }
+
+  #print-report h1 {
+    margin: 0;
+    font-size: 23pt;
+    line-height: 1.1;
+  }
+
+  #print-report h2 {
+    margin: 0 0 10pt;
+    padding-bottom: 5pt;
+    border-bottom: 0.8pt solid #c99c61;
+    font-size: 15pt;
+  }
+
+  #print-report h3 {
+    margin: 0 0 6pt;
+    font-size: 11.5pt;
+  }
+
+  #print-report h4 {
+    margin: 0 0 4pt;
+    font-size: 9.5pt;
+  }
+
+  .print-report-subtitle {
+    margin: 6pt 0 0;
+    color: #4f5e75;
+    font-size: 10pt;
+  }
+
+  .print-report-meta {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8pt;
+    margin-top: 12pt;
+  }
+
+  .print-meta-item,
+  .print-metric-card {
+    padding: 7pt 8pt;
+    border: 0.7pt solid #d9dee7;
+    border-radius: 5pt;
+    background: #f7f8fa;
+    break-inside: avoid-page;
+  }
+
+  .print-meta-label,
+  .print-metric-label {
+    display: block;
+    margin-bottom: 2pt;
+    color: #657086;
+    font-size: 7.3pt;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .print-meta-value,
+  .print-metric-value {
+    color: #172033;
+    font-size: 10pt;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+  }
+
+  .print-report-section {
+    margin: 0 0 18pt;
+  }
+
+  .print-report-section.print-major-section {
+    break-before: page;
+  }
+
+  .print-report-section.print-first-section {
+    break-before: auto;
+  }
+
+  .print-metric-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7pt;
+    margin: 0 0 10pt;
+  }
+
+  .print-service-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9pt;
+  }
+
+  .print-service-card,
+  .print-focus-card,
+  .print-record-section {
+    border: 0.7pt solid #d9dee7;
+    border-radius: 5pt;
+    background: #fff;
+  }
+
+  .print-service-card,
+  .print-focus-card {
+    padding: 9pt;
+    break-inside: avoid-page;
+  }
+
+  .print-summary-list {
+    margin: 0;
+    padding-left: 16pt;
+  }
+
+  .print-summary-list li {
+    margin: 0 0 5pt;
+    orphans: 3;
+    widows: 3;
+  }
+
+  .print-compact-list {
+    margin: 5pt 0 0;
+    padding-left: 15pt;
+  }
+
+  .print-muted,
+  .print-empty {
+    color: #657086;
+  }
+
+  .print-empty {
+    margin: 5pt 0;
+    font-style: italic;
+  }
+
+  .print-data-table {
+    width: 100%;
+    margin: 6pt 0 12pt;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-size: 8.5pt;
+  }
+
+  .print-data-table thead {
+    display: table-header-group;
+  }
+
+  .print-data-table tr {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+
+  .print-data-table th,
+  .print-data-table td {
+    padding: 5pt 6pt;
+    border: 0.6pt solid #d9dee7;
+    vertical-align: top;
+    text-align: left;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+  }
+
+  .print-data-table th {
+    color: #263a58;
+    background: #eef1f5;
+    font-size: 7.5pt;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+
+  .print-record {
+    margin: 0 0 18pt;
+    break-before: page;
+  }
+
+  .print-record.print-record-first {
+    break-before: auto;
+  }
+
+  .print-record-header {
+    margin-bottom: 9pt;
+    padding: 8pt 9pt;
+    border-left: 3pt solid #9a6428;
+    background: #f7f3ec;
+    break-inside: avoid-page;
+  }
+
+  .print-record-header p {
+    margin: 2pt 0 0;
+    color: #566278;
+  }
+
+  .print-record-section {
+    margin: 0 0 8pt;
+    overflow: visible;
+  }
+
+  .print-record-section-title {
+    padding: 5pt 7pt;
+    border-bottom: 0.7pt solid #d9dee7;
+    color: #263a58;
+    background: #eef1f5;
+    font-size: 7.5pt;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    break-after: avoid-page;
+  }
+
+  .print-record-table {
+    margin: 0;
+  }
+
+  .print-record-table td:first-child {
+    width: 39%;
+    color: #566278;
+    font-weight: 600;
+  }
+
+  .print-record-table td:last-child {
+    color: #172033;
+  }
+
+  .print-note-row td {
+    background: #fffdf7;
+  }
+
+  .print-note-row {
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+
+  .print-note-block {
+    padding: 7pt;
+    background: #fffdf7;
+  }
+
+  .print-note-block + .print-note-block {
+    border-top: 0.6pt solid #d9dee7;
+  }
+
+  .print-note-block h4 {
+    margin-bottom: 3pt;
+    color: #566278;
+    font-family: "Avenir Next", "Segoe UI", Arial, sans-serif;
+    font-size: 8pt;
+  }
+
+  .print-note-block p {
+    margin: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    orphans: 3;
+    widows: 3;
+  }
+
+  .print-confidential-footer {
+    position: fixed;
+    right: 0;
+    bottom: -0.42in;
+    left: 0;
+    padding-top: 4pt;
+    border-top: 0.5pt solid #d9dee7;
+    color: #7a8495;
+    font-size: 7pt;
+    text-align: center;
+  }
+
+  .print-confidential-footer::after {
+    content: "  •  Page " counter(page);
+  }
+
+  .print-legal-note {
+    margin-top: 12pt;
+    padding-top: 7pt;
+    border-top: 0.6pt solid #d9dee7;
+    color: #6d7788;
+    font-size: 7.5pt;
+  }
+}

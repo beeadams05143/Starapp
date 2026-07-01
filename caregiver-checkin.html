@@ -850,6 +850,7 @@
       font-weight:600;
     }
     .step[data-step="0"] .section-title{margin-top:8px}
+    #movementSymptomsPanel{display:none!important}
     #postSubmitPrompt{
       display:none;
       margin:18px auto 0;
@@ -1890,7 +1891,7 @@
             </div>
           </div>
 
-          <div class="movement-panel" id="movementSymptomsPanel">
+          <div class="movement-panel" id="movementSymptomsPanel" hidden>
             <div class="movement-head">
               <div>
                 <div class="movement-title">Observed Movement Changes</div>
@@ -2289,7 +2290,7 @@
                 <span>Disengaged / low motivation</span>
               </label>
             </div>
-            <div class="subcap">Anomalies <span class="muted">(unexpected behaviors, mood shifts, or unusual reactions)</span></div>
+            <div class="subcap">Anomalies <span class="muted">(unexpected behavior, mood, movement, speech, or other changes)</span></div>
             <div class="behavior-legacy-paired-row">
               <div id="question-behavior-anomaly-flag" class="behavior-legacy-question-line">
                 <div class="movement-label">Noticed anything unusual in mood or behavior?</div>
@@ -2302,7 +2303,7 @@
                 <input type="text" name="behavior_anomaly_trigger" placeholder="e.g., loud noise, new staff, schedule change"/>
               </label>
             </div>
-            <label id="anomalyNotesWrap" style="display:none">Anomaly details:<textarea name="behavior_anomaly_notes" placeholder="Describe what felt off, how long it lasted, what helped"></textarea></label>
+            <label id="anomalyNotesWrap" style="display:none">Anomaly details:<textarea name="behavior_anomaly_notes" placeholder="Describe changes in movement, speech, behavior, mood, or anything else unusual; include how long it lasted and what helped"></textarea></label>
             <hr class="soft"/>
             <div class="section-subtitle">PRN used for behavioral / mental health support</div>
             <p class="behavior-legacy-subtext">Check all reasons this PRN was given</p>

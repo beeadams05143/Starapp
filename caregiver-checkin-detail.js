@@ -122,6 +122,10 @@ const SYSTEM_KEYS = new Set([
   'caregiver_name', 'caregiverName', 'caregiver', 'user_email', 'calendar_only', 'details',
   'educational', 'educational_tracking', 'focus_goal_logs', 'file_url', 'media_upload', 'media_uploads',
 ]);
+const HIDDEN_KEYS = new Set([
+  'submitted_at', 'created_at', 'updated_at', '_submitted_at', 'submitted_at_local',
+  'submitted_timezone', 'timezone', 'timezone_name', 'timezone_offset',
+]);
 const loadingState = document.getElementById('loadingState');
 const errorState = document.getElementById('errorState');
 const errorMessage = document.getElementById('errorMessage');
@@ -143,6 +147,21 @@ function goBack() {
 document.getElementById('backButton')?.addEventListener('click', goBack);
 document.getElementById('errorBackButton')?.addEventListener('click', () => {
   window.location.href = 'caregiver-report.html#caregiver-checkins';
+});
+document.getElementById('printButton')?.addEventListener('click', () => window.print());
+document.getElementById('shareButton')?.addEventListener('click', async () => {
+  const data = { title: document.title, text: `${pageTitle.textContent} — ${pageSubtitle.textContent}`, url: window.location.href };
+  try {
+    if (navigator.share) await navigator.share(data);
+    else {
+      await navigator.clipboard.writeText(window.location.href);
+      const button = document.getElementById('shareButton');
+      button.textContent = 'Link copied';
+      setTimeout(() => { button.textContent = 'Share'; }, 1800);
+    }
+  } catch (error) {
+    if (error?.name !== 'AbortError') console.warn('[caregiver detail] share failed', error);
+  }
 });
 
 function owns(object, key) {
@@ -168,18 +187,33 @@ function humanize(key = '') {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-function formatPrimitive(value) {
+function formatClockTime(value) {
+  const match = String(value ?? '').trim().match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+  if (!match) return null;
+  const hour = Number(match[1]);
+  if (hour > 23) return null;
+  return `${hour % 12 || 12}:${match[2]} ${hour < 12 ? 'AM' : 'PM'}`;
+}
+
+function formatPrimitive(value, key = '') {
   if (isEmpty(value)) return 'Not answered';
   if (value === true) return 'Yes';
   if (value === false) return 'No';
   const text = String(value);
+  if (/(?:^|_)(?:time|at)$/.test(key) || key.includes('sleep_')) {
+    const clockTime = formatClockTime(text);
+    if (clockTime) return clockTime;
+  }
   if (/^(true|yes)$/i.test(text.trim())) return 'Yes';
   if (/^(false|no)$/i.test(text.trim())) return 'No';
   return text;
 }
 
-function formatValue(value, depth = 0) {
+function formatValue(value, depth = 0, key = '') {
   if (isEmpty(value)) return 'Not answered';
+  if (typeof value === 'string' && /^\s*[\[{]/.test(value)) {
+    try { return formatValue(JSON.parse(value), depth, key); } catch (_) { /* plain text */ }
+  }
   if (Array.isArray(value)) {
     return value.map((item, index) => {
       if (item && typeof item === 'object') {
@@ -188,7 +222,7 @@ function formatValue(value, depth = 0) {
           .join('; ');
         return value.length > 1 ? `${index + 1}. ${details}` : details;
       }
-      return formatPrimitive(item);
+      return formatPrimitive(item, key);
     }).join('\n');
   }
   if (typeof value === 'object') {
@@ -196,7 +230,7 @@ function formatValue(value, depth = 0) {
       .map(([key, child]) => `${humanize(key)}: ${formatValue(child, depth + 1)}`)
       .join('\n');
   }
-  return formatPrimitive(value);
+  return formatPrimitive(value, key);
 }
 
 function getValue(record, payload, key) {
@@ -224,7 +258,7 @@ function addSection(title, rows) {
     labelElement.textContent = label;
     const valueElement = document.createElement('div');
     valueElement.className = `answer-value${isEmpty(value) ? ' not-answered' : ''}`;
-    valueElement.textContent = formatValue(value);
+    valueElement.textContent = formatValue(value, 0, key);
     row.append(labelElement, valueElement);
     body.appendChild(row);
   });
@@ -263,7 +297,7 @@ async function caregiverLabel(record, payload) {
   if (savedName && !isPlaceholder) return String(savedName);
   if (record.user_id) {
     try {
-      const profiles = await rest(`profiles?select=full_name,display_name,public_name,name&id=eq.${encodeURIComponent(record.user_id)}&limit=1`);
+      const profiles = await rest(`profiles?select=full_name,display_name,public_name&id=eq.${encodeURIComponent(record.user_id)}&limit=1`);
       const profile = Array.isArray(profiles) ? profiles[0] : profiles;
       const name = profile?.full_name || profile?.display_name || profile?.public_name || profile?.name;
       if (name) return name;
@@ -272,6 +306,22 @@ async function caregiverLabel(record, payload) {
     }
   }
   return record.user_email || 'Unknown caregiver';
+}
+
+async function hasValidGroupRelationship(record) {
+  if (!record?.group_id || !record?.user_id) return false;
+  try {
+    const [members, profiles] = await Promise.all([
+      rest(`group_members?select=user_id&group_id=eq.${encodeURIComponent(record.group_id)}&user_id=eq.${encodeURIComponent(record.user_id)}&limit=1`),
+      rest(`profiles?select=group_id&id=eq.${encodeURIComponent(record.user_id)}&limit=1`),
+    ]);
+    const isMember = Array.isArray(members) && members.length > 0;
+    const profile = Array.isArray(profiles) ? profiles[0] : profiles;
+    return isMember || String(profile?.group_id || '') === String(record.group_id);
+  } catch (error) {
+    console.warn('[caregiver detail] group relationship verification failed', error?.message || error);
+    return false;
+  }
 }
 
 function matchingKeys(allKeys, definition) {
@@ -314,6 +364,10 @@ async function loadDetail() {
     const payload = record.payload && typeof record.payload === 'object' && !Array.isArray(record.payload)
       ? record.payload
       : {};
+    if (!(await hasValidGroupRelationship(record))) {
+      showError('This check-in is not associated with a current caregiver in this group. No record was changed.');
+      return;
+    }
     const caregiver = await caregiverLabel(record, payload);
     const date = dateValue(record, payload);
     pageTitle.textContent = formatDate(date);
@@ -322,19 +376,18 @@ async function loadDetail() {
     editButton.href = `caregiver-report.html?edit=${encodeURIComponent(checkinId)}#caregiver-checkins`;
 
     const consumed = new Set(SYSTEM_KEYS);
-    const submittedAt = record.submitted_at ?? payload._submitted_at ?? record.created_at ?? record.date ?? payload.entry_date;
-    addSection('Submission date', [{
-      key: 'submitted_at',
-      label: 'Date submitted',
-      value: formatDateOnly(submittedAt),
-    }]);
+    HIDDEN_KEYS.forEach((key) => consumed.add(key));
 
     const caregiverRows = [{ key: 'caregiver_name', label: 'Caregiver', value: caregiver }];
     ['caregiver_name', 'caregiverName', 'caregiver', 'user_email'].forEach((key) => consumed.add(key));
     addSection('Caregiver', caregiverRows);
 
-    const payloadKeys = Object.keys(payload).filter(isDisplayableSavedAnswer);
-    const recordKeys = Object.keys(record).filter(isDisplayableSavedAnswer);
+    const visibleKey = (key) => isDisplayableSavedAnswer(key)
+      && !HIDDEN_KEYS.has(key)
+      && !key.startsWith('movement_')
+      && !/submitted.*(?:local|time|zone)|timezone/i.test(key);
+    const payloadKeys = Object.keys(payload).filter(visibleKey);
+    const recordKeys = Object.keys(record).filter(visibleKey);
     const allKeys = [...new Set([...payloadKeys, ...recordKeys])];
 
     SECTIONS.forEach((definition) => {
@@ -345,18 +398,18 @@ async function loadDetail() {
         const result = getValue(record, payload, key);
         consumed.add(key);
         return { key, label: humanize(key), value: result.value, note: NOTE_KEYS.has(key) || /notes?$/.test(key) };
-      });
+      }).filter((row) => !isEmpty(row.value));
       addSection(definition.title, rowsForSection);
     });
 
     const additionalRows = allKeys
-      .filter((key) => !consumed.has(key) && isDisplayableSavedAnswer(key))
+      .filter((key) => !consumed.has(key) && visibleKey(key))
       .sort((a, b) => humanize(a).localeCompare(humanize(b)))
       .map((key) => {
         const result = getValue(record, payload, key);
         consumed.add(key);
         return { key, label: humanize(key), value: result.value, note: NOTE_KEYS.has(key) || /notes?$/.test(key) };
-      });
+      }).filter((row) => !isEmpty(row.value));
     addSection('Additional answers', additionalRows);
 
     loadingState.classList.add('is-hidden');

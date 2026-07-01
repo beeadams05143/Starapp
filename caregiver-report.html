@@ -363,29 +363,6 @@
     .month-shift-item .delta{font-weight:900}
     .month-shift-item .delta.up{color:#16a34a}
     .month-shift-item .delta.down{color:#dc2626}
-    .mania-streak-hero{display:flex;align-items:flex-end;gap:10px;margin:6px 0 10px}
-    .mania-streak-value{font-size:56px;line-height:.9;font-weight:900;color:#0f172a}
-    .mania-streak-copy{font-size:20px;font-weight:700;color:#334155;padding-bottom:6px}
-    .mania-streak-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin:0 0 12px}
-    .mania-streak-meta .item{background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:8px 10px;font-weight:700;color:#0f172a}
-    .mania-streak-legend{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;margin:0 0 12px;padding:10px 12px;background:#fffaf0;border:1px solid #fde68a;border-radius:12px}
-    .mania-streak-legend-item{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:700;color:#475569}
-    .mania-streak-legend-dot{width:14px;height:14px;border-radius:999px;border:2px solid #cbd5e1;background:#e5e7eb;flex:0 0 auto}
-    .mania-streak-legend-dot.mild{background:#fde68a;border-color:#c2410c}
-    .mania-streak-legend-dot.moderate{background:#fb923c;border-color:#c2410c}
-    .mania-streak-legend-dot.severe{background:#dc2626;border-color:#991b1b}
-    .mania-streak-legend-dot.bridge{background:#fff7ed;border-color:#fb923c;border-style:dashed}
-    .mania-streak-line{display:grid;grid-template-columns:repeat(14,minmax(0,1fr));gap:8px}
-    .mania-streak-day{display:flex;flex-direction:column;align-items:center;gap:6px}
-    .mania-streak-dot{width:20px;height:20px;border-radius:999px;background:#e5e7eb;border:2px solid #cbd5e1}
-    .mania-streak-dot.active{border-color:#c2410c}
-    .mania-streak-dot.bridge{background:#fff7ed;border-color:#fb923c;border-style:dashed;opacity:.9}
-    .mania-streak-dot.sev-1{background:#fde68a}
-    .mania-streak-dot.sev-2{background:#fdba74}
-    .mania-streak-dot.sev-3{background:#fb923c}
-    .mania-streak-dot.sev-4{background:#f97316}
-    .mania-streak-dot.sev-5{background:#dc2626}
-    .mania-streak-day-label{font-size:11px;font-weight:700;color:#64748b}
     .movement-card{position:relative}
     .movement-empty-note{margin-top:10px;font-size:13px;color:#64748b;font-weight:600;text-align:center}
     .kpi-summary-inline{border:1px solid #e5e7eb;border-radius:16px;padding:16px;background:#fff;box-shadow:0 10px 30px rgba(15,23,42,.08)}
@@ -1516,28 +1493,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         </div>
       </div>
     </div>
-    <div class="chart kpi-summary-inline" id="maniaStreakCard">
-      <h4>Mania Streak</h4>
-      <p class="muted chart-range-label" id="maniaStreakRangeLabel">Range: Month</p>
-      <p class="muted">Tip: turn the phone to landscape for a wider timeline view.</p>
-      <div class="mania-streak-hero">
-        <div class="mania-streak-value" id="maniaCurrentStreakVal">0</div>
-        <div class="mania-streak-copy">day streak</div>
-      </div>
-      <div class="mania-streak-meta">
-        <div class="item">Longest streak <span id="maniaLongestStreakVal">—</span></div>
-        <div class="item">Severe days <span id="maniaSevereDaysVal">—</span></div>
-        <div class="item">PRN mania days <span id="maniaPrnDaysVal">—</span></div>
-      </div>
-      <div class="mania-streak-legend" aria-label="Mania streak key">
-        <div class="mania-streak-legend-item"><span class="mania-streak-legend-dot mild" aria-hidden="true"></span><span>Yellow = milder signal</span></div>
-        <div class="mania-streak-legend-item"><span class="mania-streak-legend-dot moderate" aria-hidden="true"></span><span>Orange = moderate signal</span></div>
-        <div class="mania-streak-legend-item"><span class="mania-streak-legend-dot severe" aria-hidden="true"></span><span>Red = severe signal</span></div>
-        <div class="mania-streak-legend-item"><span class="mania-streak-legend-dot bridge" aria-hidden="true"></span><span>Dotted = inferred cycle day</span></div>
-      </div>
-      <div class="mania-streak-line" id="maniaStreakLine"></div>
-      <p class="muted" id="maniaStreakCaption">Recent days in range, newest on the right.</p>
-    </div>
     <div class="chart">
       <h2>Physical & Daily Living Overview (Monthly Totals)</h2>
       <p class="muted chart-range-label" id="healthRangeLabel">Range: Month</p>
@@ -2408,8 +2363,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       if (interactionLabel) interactionLabel.textContent = `Range: ${display}`;
       const activityLabel = document.getElementById('activityRangeLabel');
       if (activityLabel) activityLabel.textContent = `Range: ${display}`;
-      const maniaStreakLabel = document.getElementById('maniaStreakRangeLabel');
-      if (maniaStreakLabel) maniaStreakLabel.textContent = `Range: ${display}`;
     }
 
     function updateMovementRangeLabel(range, rangeKey){
@@ -2659,7 +2612,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         const cycleRange = mania.current_cycle_start
           ? `possible onset ${humanDate(mania.current_cycle_start)} through ${humanDate(mania.current_cycle_end || mania.current_cycle_start)}`
           : 'cycle onset not clear yet';
-        lines.push(`Elevated-cycle pattern summary: current cycle ${mania.current_streak ?? 0} day(s), longest cycle ${mania.longest_streak ?? 0} day(s), severe-signal days ${mania.severe_days ?? 0}, PRN-for-elevated-mood days ${mania.prn_days ?? 0}, late sleep onset days ${mania.late_sleep_onset_days ?? 0}, sleep-disruption days ${mania.sleep_disruption_days ?? 0}, appetite-change days ${mania.appetite_days ?? 0}, fixation days ${mania.fixation_days ?? 0}, repetitive-behavior days ${mania.repetitive_days ?? 0}, rapid-speech days ${mania.pressured_speech_days ?? 0}, grandiosity days ${mania.grandiosity_days ?? 0}; ${cycleRange}; status mix: ${statusText}.`);
       }
       if (visibility.aggression) {
         lines.push(`Aggression occurred on ${aggression.days ?? 0} day(s), ${aggressionInstancesText}, average intensity ${avgLabel(aggression.avg_intensity)}, peak intensity ${aggression.max_intensity ?? '—'}; ${aggressionTrend}, and ${aggressionInstanceTrend} versus the prior comparable period.`);
@@ -3101,9 +3053,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         const filteredMood = filterMoodEntriesByRange(moodSource, range);
         drawInteractionTypeChart(filteredCaregiver);
         renderActivityTypeSummary(filteredCaregiver);
-        if (visibility.mania) {
-          renderManiaStreak(historyForCycle, summary.behavior?.mania || {}, range);
-        }
         const movementInsights = visibility.movement ? buildMovementInsights(filteredCaregiver) : null;
         let behaviorComparison = null;
         const prevRange = rangeKey === 'all' ? null : getPreviousRangeWindow(range);
@@ -3492,12 +3441,10 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     function updateReportSectionVisibility(){
       const visibility = getReportVisibility();
       const movementPanel = document.getElementById('movementPanelCard');
-      const maniaCard = document.getElementById('maniaStreakCard');
       const moveDaysKpi = document.getElementById('kpi-move-days')?.closest('.kpi');
       const moveAvgKpi = document.getElementById('kpi-move-avg')?.closest('.kpi');
       const moveMaxKpi = document.getElementById('kpi-move-max')?.closest('.kpi');
       if (movementPanel) movementPanel.style.display = visibility.movement ? '' : 'none';
-      if (maniaCard) maniaCard.style.display = visibility.mania ? '' : 'none';
       [moveDaysKpi, moveAvgKpi, moveMaxKpi].forEach((el) => {
         if (el) el.style.display = visibility.movement ? '' : 'none';
       });

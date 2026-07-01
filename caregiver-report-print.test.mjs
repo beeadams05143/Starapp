@@ -70,7 +70,6 @@ const renderedText = collectText(root);
 [
   'STAR Caregiver Report',
   'Report Overview',
-  'Services Summary',
   'Weekly Focus',
   'Clinical & Caregiver Trends',
   'Daily Mood Check-Ins',
@@ -83,6 +82,7 @@ const renderedText = collectText(root);
 
 assert.equal(root.attributes.get('aria-hidden'), 'false');
 assert.doesNotMatch(renderedText, /navigation|bottom tabs|floating button/i);
+assert.doesNotMatch(renderedText, /Services Summary|Weekly averages/i);
 
 const css = await readFile(new URL('./caregiver-report-print.css', import.meta.url), 'utf8');
 assert.match(css, /@page\s*{[\s\S]*size:\s*Letter portrait;/);

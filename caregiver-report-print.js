@@ -225,7 +225,6 @@ export function renderPrintableCaregiverReport(root, model = {}) {
   root.appendChild(header);
 
   renderOverview(root, model);
-  renderServices(root, model);
   renderFocus(root, model.focus);
   renderTrends(root, model);
   renderMood(root, model);

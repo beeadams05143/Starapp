@@ -14,7 +14,7 @@ const LABELS = {
   updated_at: 'Last updated', caregiver_name: 'Caregiver', had_bm: 'Had a bowel movement?',
   hygiene: 'Hygiene / toileting completed?', food_prep: 'Food preparation completed?',
   cleanup: 'Cleaning / household completed?', new_skill_score: 'Prompting / independence score',
-  adl_entries: 'ADL activities', adl_category: 'ADL category', adl_activity: 'ADL activity',
+  adl_entries: 'Recorded ADL details', adl_category: 'Selected ADL categories', adl_activity: 'Selected ADL activities',
   adl_note: 'ADL note', prompting_level: 'Prompting / independence', daily_living_notes: 'Daily living notes',
   vocational_participation: 'Participated in vocational activity?', vocational_time: 'Time in vocational activity',
   vocational_prompting: 'Prompting (vocational)', vocational_activity_type: 'Vocational activity type',
@@ -222,7 +222,8 @@ function formatValue(value, depth = 0, key = '') {
           .join('; ');
         return value.length > 1 ? `${index + 1}. ${details}` : details;
       }
-      return formatPrimitive(item, key);
+      const formatted = formatPrimitive(item, key);
+      return key === 'adl_category' || key === 'adl_activity' ? `✓ ${formatted}` : formatted;
     }).join('\n');
   }
   if (typeof value === 'object') {

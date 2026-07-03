@@ -148,15 +148,54 @@ document.getElementById('backButton')?.addEventListener('click', goBack);
 document.getElementById('errorBackButton')?.addEventListener('click', () => {
   window.location.href = 'caregiver-report.html#caregiver-checkins';
 });
-document.getElementById('printButton')?.addEventListener('click', () => window.print());
+function printableCheckinHtml() {
+  const header = document.querySelector('.detail-header')?.outerHTML || '';
+  const sections = sectionsElement?.outerHTML || '';
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${document.title}</title><style>
+    @page{margin:.35in}*{box-sizing:border-box}body{margin:0;color:#111827;font:9px/1.2 system-ui,-apple-system,"Segoe UI",sans-serif}
+    .detail-header{margin:0 0 6px}.eyebrow{margin:0 0 2px;color:#6b7280;font-size:8px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+    h1{margin:0;font-size:17px;line-height:1.05}.detail-subtitle{margin:3px 0 0;color:#596579}.sections{display:grid;gap:4px}
+    .detail-section{overflow:hidden;border:1px solid #d9d9d9;border-radius:5px;break-inside:auto}.section-title{margin:0;padding:3px 7px;background:#f2f2f2;font-size:8px;letter-spacing:.035em;text-transform:uppercase;break-after:avoid}
+    .section-body{padding:0 7px}.answer-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(150px,42%);gap:8px;padding:2px 0;border-bottom:1px dashed #e5e7eb;break-inside:avoid}
+    .answer-row:last-child{border-bottom:0}.answer-label{color:#667085}.answer-value{min-width:0;font-weight:600;text-align:right;white-space:pre-wrap;overflow-wrap:anywhere}
+    .answer-row.is-note{display:block}.answer-row.is-note .answer-label{margin-bottom:1px;font-weight:650}.answer-row.is-note .answer-value{text-align:left}
+  </style></head><body>${header}${sections}<script>window.addEventListener('load',function(){setTimeout(function(){window.print()},100)})<\/script></body></html>`;
+}
+
+document.getElementById('printButton')?.addEventListener('click', () => {
+  if (detailContent.classList.contains('is-hidden')) return;
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    window.print();
+    return;
+  }
+  printWindow.document.open();
+  printWindow.document.write(printableCheckinHtml());
+  printWindow.document.close();
+});
+
+function checkinShareText() {
+  const lines = [pageTitle.textContent, `Caregiver: ${pageSubtitle.textContent}`];
+  sectionsElement.querySelectorAll('.detail-section').forEach((section) => {
+    lines.push('', section.querySelector('.section-title')?.textContent || '');
+    section.querySelectorAll('.answer-row').forEach((row) => {
+      const label = row.querySelector('.answer-label')?.textContent || '';
+      const value = row.querySelector('.answer-value')?.textContent || '';
+      lines.push(`${label}: ${value}`);
+    });
+  });
+  return lines.join('\n').trim();
+}
+
 document.getElementById('shareButton')?.addEventListener('click', async () => {
-  const data = { title: document.title, text: `${pageTitle.textContent} — ${pageSubtitle.textContent}`, url: window.location.href };
+  if (detailContent.classList.contains('is-hidden')) return;
+  const data = { title: document.title, text: checkinShareText() };
   try {
     if (navigator.share) await navigator.share(data);
     else {
-      await navigator.clipboard.writeText(window.location.href);
+      await navigator.clipboard.writeText(data.text);
       const button = document.getElementById('shareButton');
-      button.textContent = 'Link copied';
+      button.textContent = 'Check-in copied';
       setTimeout(() => { button.textContent = 'Share'; }, 1800);
     }
   } catch (error) {

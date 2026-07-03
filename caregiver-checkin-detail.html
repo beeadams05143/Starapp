@@ -142,10 +142,41 @@
       .answer-value { text-align: left; }
     }
     @media print {
-      body { background: #fff; }
-      .detail-page { width: 100%; max-width: none; padding: 0; }
+      @page { margin: .35in; }
+      body, body * { visibility: visible !important; }
+      body {
+        padding: 0 !important;
+        background: #fff;
+        color: #111827;
+        font-size: 9px;
+        line-height: 1.2;
+      }
+      .detail-page { width: 100%; max-width: none; min-height: 0; padding: 0; }
       .top-actions, .detail-actions, #bottom-tabs { display: none !important; }
-      .detail-section { break-inside: avoid; box-shadow: none; }
+      .detail-header { margin-bottom: 6px; }
+      .eyebrow { margin-bottom: 2px; font-size: 8px; }
+      h1 { font-size: 17px; line-height: 1.05; }
+      .detail-subtitle { margin-top: 3px; line-height: 1.2; }
+      .sections { gap: 4px; }
+      .detail-section {
+        break-inside: auto;
+        border-radius: 5px;
+        box-shadow: none;
+      }
+      .detail-section .section-title {
+        padding: 3px 7px;
+        font-size: 8px;
+        break-after: avoid;
+      }
+      .section-body { padding: 0 7px; }
+      .answer-row {
+        grid-template-columns: minmax(0, 1fr) minmax(150px, 42%);
+        gap: 8px;
+        padding: 2px 0;
+        break-inside: avoid;
+      }
+      .answer-label, .answer-value { line-height: 1.2; }
+      .answer-row.is-note .answer-label { margin-bottom: 1px; }
     }
   </style>
 </head>
@@ -183,6 +214,6 @@
 
   <nav id="bottom-tabs" aria-label="Primary navigation"></nav>
   <script src="scripts/load-bottom-tabs.js?v=2026.06.30A"></script>
-  <script type="module" src="caregiver-checkin-detail.js?v=2026.07.01B"></script>
+  <script type="module" src="caregiver-checkin-detail.js?v=2026.07.03A"></script>
 </body>
 </html>

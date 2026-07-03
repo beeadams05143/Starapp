@@ -1,4 +1,4 @@
-import { rest } from './restClient.js?v=2026.03.29A';
+import { rest } from './restClient.js?v=2026.07.03A';
 
 const NOTE_KEYS = new Set([
   'caregiver_notes', 'notes', 'physical_notes', 'behavior_notes', 'vocational_notes',
@@ -152,13 +152,17 @@ function printableCheckinHtml() {
   const header = document.querySelector('.detail-header')?.outerHTML || '';
   const sections = sectionsElement?.outerHTML || '';
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${document.title}</title><style>
-    @page{margin:.35in}*{box-sizing:border-box}body{margin:0;color:#111827;font:9px/1.2 system-ui,-apple-system,"Segoe UI",sans-serif}
-    .detail-header{margin:0 0 6px}.eyebrow{margin:0 0 2px;color:#6b7280;font-size:8px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
-    h1{margin:0;font-size:17px;line-height:1.05}.detail-subtitle{margin:3px 0 0;color:#596579}.sections{display:grid;gap:4px}
-    .detail-section{overflow:hidden;border:1px solid #d9d9d9;border-radius:5px;break-inside:auto}.section-title{margin:0;padding:3px 7px;background:#f2f2f2;font-size:8px;letter-spacing:.035em;text-transform:uppercase;break-after:avoid}
-    .section-body{padding:0 7px}.answer-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(150px,42%);gap:8px;padding:2px 0;border-bottom:1px dashed #e5e7eb;break-inside:avoid}
-    .answer-row:last-child{border-bottom:0}.answer-label{color:#667085}.answer-value{min-width:0;font-weight:600;text-align:right;white-space:pre-wrap;overflow-wrap:anywhere}
-    .answer-row.is-note{display:block}.answer-row.is-note .answer-label{margin-bottom:1px;font-weight:650}.answer-row.is-note .answer-value{text-align:left}
+    @page{size:Letter portrait;margin:.45in}*{box-sizing:border-box}
+    html{background:#fdf6e7;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    body{width:100%;margin:0;color:#273449;background:linear-gradient(180deg,#fffaf1 0%,#f8ead0 100%);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:10pt;line-height:1.3;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .detail-header{margin:0 0 10px}.eyebrow{margin:0 0 4px;color:#6b7280;font-size:9pt;font-weight:750;letter-spacing:.06em;text-transform:uppercase}
+    h1{margin:0;color:#5c3514;font-size:21pt;font-weight:650;line-height:1.1}.detail-subtitle{margin:6px 0 0;color:#596579;line-height:1.35}
+    .sections{display:grid;gap:8px}.detail-section{overflow:visible;border:1px solid rgba(180,134,44,.25);border-radius:12px;background:rgba(255,253,248,.97);box-shadow:0 10px 24px rgba(120,92,44,.08);break-inside:avoid;page-break-inside:avoid}
+    .section-title{margin:0;padding:5px 10px;border-radius:12px 12px 0 0;background:#f7edd7;color:#6f3d11;font-size:9.5pt;font-weight:700;letter-spacing:.035em;text-transform:uppercase;break-after:avoid;page-break-after:avoid}
+    .section-body{padding:1px 10px}.answer-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(180px,45%);gap:14px;padding:2px 0;border-bottom:1px dashed #e5e7eb;break-inside:avoid;page-break-inside:avoid}
+    .answer-row:last-child{border-bottom:0}.answer-label{color:#667085;line-height:1.45}.answer-value{min-width:0;color:#1f2937;font-weight:500;line-height:1.4;overflow-wrap:anywhere;word-break:break-word;text-align:right;white-space:pre-wrap}
+    .answer-value.not-answered{color:#7b8492;font-style:italic;font-weight:600}.answer-row.is-note{display:block}.answer-row.is-note .answer-label{margin-bottom:4px;font-weight:650}.answer-row.is-note .answer-value{text-align:left}
+    @media print{html,body{min-height:100%;background:linear-gradient(180deg,#fffaf1 0%,#f8ead0 100%)}.detail-section{box-shadow:0 6px 16px rgba(120,92,44,.06)}}
   </style></head><body>${header}${sections}<script>window.addEventListener('load',function(){setTimeout(function(){window.print()},100)})<\/script></body></html>`;
 }
 
@@ -348,22 +352,6 @@ async function caregiverLabel(record, payload) {
   return record.user_email || 'Unknown caregiver';
 }
 
-async function hasValidGroupRelationship(record) {
-  if (!record?.group_id || !record?.user_id) return false;
-  try {
-    const [members, profiles] = await Promise.all([
-      rest(`group_members?select=user_id&group_id=eq.${encodeURIComponent(record.group_id)}&user_id=eq.${encodeURIComponent(record.user_id)}&limit=1`),
-      rest(`profiles?select=group_id&id=eq.${encodeURIComponent(record.user_id)}&limit=1`),
-    ]);
-    const isMember = Array.isArray(members) && members.length > 0;
-    const profile = Array.isArray(profiles) ? profiles[0] : profiles;
-    return isMember || String(profile?.group_id || '') === String(record.group_id);
-  } catch (error) {
-    console.warn('[caregiver detail] group relationship verification failed', error?.message || error);
-    return false;
-  }
-}
-
 function matchingKeys(allKeys, definition) {
   const available = new Set(allKeys);
   const ordered = (definition.keys || []).filter((key) => available.has(key));
@@ -404,10 +392,9 @@ async function loadDetail() {
     const payload = record.payload && typeof record.payload === 'object' && !Array.isArray(record.payload)
       ? record.payload
       : {};
-    if (!(await hasValidGroupRelationship(record))) {
-      showError('This check-in is not associated with a current caregiver in this group. No record was changed.');
-      return;
-    }
+    // The SELECT is protected by Supabase RLS. If this row was returned, the
+    // signed-in user is authorized to view it; avoid rejecting it based on
+    // auxiliary profile/member reads that have separate RLS visibility.
     const caregiver = await caregiverLabel(record, payload);
     const date = dateValue(record, payload);
     pageTitle.textContent = formatDate(date);

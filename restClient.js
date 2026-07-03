@@ -3,7 +3,7 @@ import {
   SUPABASE_ANON_KEY,
   getSessionFromStorage as coreGetSessionFromStorage,
   ensureSession as coreEnsureSession,
-} from './supabaseClient.js?v=2025.01.09E';
+} from './supabaseClient.js?v=2026.07.03A';
 
 export function getSessionFromStorage() {
   return coreGetSessionFromStorage();
@@ -16,23 +16,23 @@ export async function requireSession() {
 }
 
 export async function rest(path, { method = 'GET', headers = {}, body } = {}) {
-  const session = await requireSession();
-  const authHeaders = {
-    apikey: SUPABASE_ANON_KEY,
-    Authorization: `Bearer ${session.access_token}`,
-    'Content-Type': body instanceof FormData ? undefined : 'application/json',
-    ...headers,
+  const send = async (session) => {
+    const authHeaders = {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${session.access_token}`,
+      'Content-Type': body instanceof FormData ? undefined : 'application/json',
+      ...headers,
+    };
+    if (authHeaders['Content-Type'] === undefined) delete authHeaders['Content-Type'];
+    return fetch(`${SUPABASE_URL}/rest/v1/${path}`, { method, headers: authHeaders, body });
   };
 
-  if (authHeaders['Content-Type'] === undefined) {
-    delete authHeaders['Content-Type'];
+  let session = await requireSession();
+  let response = await send(session);
+  if (response.status === 401) {
+    session = await coreEnsureSession({ forceRefresh: true });
+    if (session?.access_token) response = await send(session);
   }
-
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-    method,
-    headers: authHeaders,
-    body,
-  });
 
   if (!response.ok) {
     let errBody = {};

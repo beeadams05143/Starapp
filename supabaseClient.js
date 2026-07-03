@@ -128,8 +128,12 @@ function normalizeSession(payload) {
   };
 }
 
+let refreshSessionPromise = null;
+
 async function refreshSession(session) {
   if (!session?.refresh_token) return session;
+  if (refreshSessionPromise) return refreshSessionPromise;
+  refreshSessionPromise = (async () => {
   try {
     const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
       method: 'POST',
@@ -150,17 +154,25 @@ async function refreshSession(session) {
     return fresh;
   } catch (err) {
     console.warn('[supabase] refresh session failed', err);
+    // Another tab may have rotated the refresh token and already saved the
+    // replacement session. Prefer that session over the stale token we used.
+    const latest = getSessionFromStorage();
+    if (latest?.access_token && latest.access_token !== session.access_token) return latest;
     return session;
+  } finally {
+    refreshSessionPromise = null;
   }
+  })();
+  return refreshSessionPromise;
 }
 
-export async function ensureSession() {
+export async function ensureSession({ forceRefresh = false } = {}) {
   let session = getSessionFromStorage();
   if (!session) return null;
   const expiresAt = session.expires_at || session.expiresAt || null;
-  if (!expiresAt) return session;
+  if (!forceRefresh && !expiresAt) return session;
   const now = Math.floor(Date.now() / 1000);
-  if (expiresAt - REFRESH_MARGIN_SECONDS > now) return session;
+  if (!forceRefresh && expiresAt - REFRESH_MARGIN_SECONDS > now) return session;
   session = await refreshSession(session);
   return session;
 }

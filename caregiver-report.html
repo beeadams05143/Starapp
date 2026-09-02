@@ -4732,7 +4732,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       if (!titleEl || !bodyEl || !statsEl) return;
       if (!focus){
         titleEl.textContent = 'Weekly Focus';
-        bodyEl.textContent = 'No weekly focus set.';
+        bodyEl.textContent = '';
         statsEl.textContent = '';
         return;
       }
@@ -4766,7 +4766,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         focusUi.panel?.classList.add('is-hidden');
         return;
       }
-      focusUi.panel?.classList.remove('is-hidden');
+      focusUi.panel?.classList.add('is-hidden');
       try{
         let focus = null;
         let localFallback = false;
@@ -4781,16 +4781,18 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
           localFallback = !!focus;
         }
         if (!focus){
-        focusUi.summary.textContent = 'Set the weekly focus on the Focus of the Week page to highlight it here.';
-        focusUi.goals.innerHTML = '';
-        focusUi.chartEl?.classList.add('is-hidden');
-        focusChart?.destroy();
-        focusChart = null;
-        currentFocusPlan = null;
-        renderPlannerStats(null, []);
-        updateFocusPdfSummary(null, false);
-        return;
-      }
+          focusUi.panel?.classList.add('is-hidden');
+          focusUi.summary.textContent = '';
+          focusUi.goals.innerHTML = '';
+          focusUi.chartEl?.classList.add('is-hidden');
+          focusChart?.destroy();
+          focusChart = null;
+          currentFocusPlan = null;
+          renderPlannerStats(null, []);
+          updateFocusPdfSummary(null, false);
+          return;
+        }
+        focusUi.panel?.classList.remove('is-hidden');
         currentFocusPlan = focus;
         const start = focus.weekStart ? new Date(focus.weekStart) : null;
         const end = start ? new Date(start) : null;
@@ -4808,6 +4810,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       } catch (error){
         const fallback = readLocalFocusDraft();
         if (fallback) {
+          focusUi.panel?.classList.remove('is-hidden');
           const next = fallback.nextSteps ? `<br><small>Next: ${fallback.nextSteps}</small>` : '';
           focusUi.summary.innerHTML = `<strong>${fallback.customTitle || 'Weekly focus'}</strong>${fallback.whyMatters ? `<br>${fallback.whyMatters}` : ''}${next}<br><small>(Offline copy)</small>`;
           renderPlannerStats(summarizePlannerDays(fallback.days), fallback.days || []);
@@ -4816,7 +4819,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
           currentFocusPlan = fallback;
           updateFocusPdfSummary(fallback, true);
         } else {
-          focusUi.summary.textContent = 'Unable to load weekly focus.';
+          focusUi.panel?.classList.add('is-hidden');
+          focusUi.summary.textContent = '';
           currentFocusPlan = null;
           renderPlannerStats(null, []);
           updateFocusPdfSummary(null, false);

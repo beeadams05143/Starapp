@@ -1737,23 +1737,6 @@
     <h1>Caregiver Check-In</h1>
     <div class="sub">This check-in autosaves while you type. <strong>Save</strong> saves your progress so far and lets you come back later. <strong>Save &amp; Next</strong> saves the current section and moves you to the next one.</div>
 
-    <section class="panel focus-panel weekly-focus config-hidden" id="caregiver-focus-panel" hidden aria-hidden="true">
-      <div class="focus-header weekly-focus-header">
-        <span class="star-icon">⭐</span>
-        <div>
-          <div class="focus-title weekly-focus-title">Weekly focus</div>
-          <div class="focus-sub focus-summary weekly-focus-content" id="focusSummary">No focus set — open Focus Planner</div>
-        </div>
-      </div>
-      <p class="focus-details is-hidden" id="focusDetails"></p>
-      <p class="focus-planner-stats is-hidden" id="focusPlannerStats"></p>
-      <div class="focus-actions">
-        <a class="focus-link" href="focus-week.html" target="_blank" rel="noopener">Open Focus Planner ↗</a>
-      </div>
-      <ul class="focus-goals" id="focusGoalsList"></ul>
-      <div id="focusTrackingList" class="focus-track-list"></div>
-    </section>
-
     <div class="progress" id="progress">
       <div class="prog-item" data-step="0"><div class="prog-label">Physical</div><div class="seg active"></div></div>
       <div class="prog-item" data-step="1"><div class="prog-label">Behavior / Mental Health</div><div class="seg"></div></div>
@@ -2752,7 +2735,6 @@
   // 1) Imports MUST be first in the module
   import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
   import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
-  import { loadFocusForCurrentUser, readLocalFocusDraft } from './focus-data.js?v=2025.01.09E';
   import { advanceGuidedOnboarding } from './onboarding-flow.js?v=2026.03.16B';
 
   // 2) Optional: expose for console debugging
@@ -2775,15 +2757,7 @@
   let progItems = [];
   let segs = [];
   let entryDateInput;
-  const focusSummaryEl = document.getElementById('focusSummary');
-  const focusDetailsEl = document.getElementById('focusDetails');
-  const focusGoalsListEl = document.getElementById('focusGoalsList');
-  const focusTrackingListEl = document.getElementById('focusTrackingList');
-  const focusPanel = document.getElementById('caregiver-focus-panel');
-  const focusPlannerStatsEl = document.getElementById('focusPlannerStats');
   const healthConcernsPanel = document.getElementById('healthConcernsPanel');
-  let focusGoalMeta = [];
-  let plannerTrackerStats = null;
       let adlStepIndex = -1;
       let movementStepIndex = -1;
   let adlCategoryWrap, adlActivityWrap, adlCategoryInput, adlActivityInput;
@@ -4735,249 +4709,6 @@
     return [];
   };
 
-  function summarizePlannerDays(days = []){
-    if (!Array.isArray(days) || !days.length) return null;
-    const practiced = days.filter(day => day && (day.practiced || day.completed));
-    if (!practiced.length) return null;
-    const promptVals = practiced
-      .map(day => Number(day.promptLevel ?? day.prompt_level))
-      .filter(Number.isFinite);
-    const avgPrompt = promptVals.length
-      ? Number((promptVals.reduce((sum, val) => sum + val, 0) / promptVals.length).toFixed(1))
-      : null;
-    const last = practiced[practiced.length - 1] || {};
-    return {
-      count: practiced.length,
-      avgPrompt,
-      lastNote: last.note || last.notes || '',
-      lastDay: last.day || last.date || null,
-    };
-  }
-
-  function setPlannerStats(stats){
-    plannerTrackerStats = stats || null;
-    if (!focusPlannerStatsEl) return;
-    if (!stats?.count){
-      focusPlannerStatsEl.textContent = '';
-      focusPlannerStatsEl.classList.add('is-hidden');
-      return;
-    }
-    const pieces = [`${stats.count} practice day${stats.count === 1 ? '' : 's'} recorded in planner`];
-    if (stats.avgPrompt != null) pieces.push(`avg prompt level ${stats.avgPrompt}`);
-    if (stats.lastNote) pieces.push(`last note: ${stats.lastNote}`);
-    focusPlannerStatsEl.textContent = pieces.join(' • ');
-    focusPlannerStatsEl.classList.remove('is-hidden');
-  }
-
-  function buildFocusSummaryLine(focus, range, localFallback){
-    if (!focus) return '';
-    const rawTitle = focus.customTitle || focus.title || '';
-    const cleanTitle = cleanGoalTitle(rawTitle) || 'Not set';
-    const area = focus.focusArea ? `(${escapeHtml(focus.focusArea)})` : '';
-    const titleLine = `<div class="focus-title-text">${escapeHtml(cleanTitle)} ${area ? `<span class="focus-area">${area}</span>` : ''}</div>`;
-    const rangeLine = range ? `<div class="focus-range">${escapeHtml(range)}</div>` : '';
-    const goalNames = (focus.goals || [])
-      .map((goal, index) => cleanGoalTitle(goal.title || goal.customTitle || `Goal ${index + 1}`))
-      .filter(Boolean);
-    const chipLine = goalNames.length
-      ? `<div class="focus-chip">${escapeHtml(goalNames.slice(0, 2).join(', '))}${goalNames.length > 2 ? '…' : ''}</div>`
-      : '';
-    const offlineLine = localFallback ? '<div class="focus-offline">(Showing draft saved on this device)</div>' : '';
-    return `${titleLine}${rangeLine}${chipLine}${offlineLine}`;
-  }
-
-  function buildFocusDetails(focus){
-    if (!focus) return '';
-    const bits = [];
-    if (focus.whyMatters) bits.push(`<span class="focus-detail-line">${escapeHtml(focus.whyMatters)}</span>`);
-    if (focus.nextSteps) bits.push(`<span class="focus-detail-line">Next: ${escapeHtml(focus.nextSteps)}</span>`);
-    return bits.join('');
-  }
-
-  function hasAssignedFocus(focus){
-    if (!focus) return false;
-    const hasTitle = !!cleanGoalTitle(focus.customTitle || focus.title || '');
-    const hasArea = !!trimOrNull(focus.focusArea);
-    const hasDetails = !!trimOrNull(focus.whyMatters) || !!trimOrNull(focus.nextSteps);
-    const hasGoals = Array.isArray(focus.goals)
-      && focus.goals.some((goal) => cleanGoalTitle(goal?.title || goal?.customTitle || ''));
-    return hasTitle || hasArea || hasDetails || hasGoals;
-  }
-
-  function setFocusPanelVisible(visible){
-    if (!focusPanel) return;
-    focusPanel.classList.toggle('config-hidden', !visible);
-    focusPanel.hidden = !visible;
-    focusPanel.setAttribute('aria-hidden', visible ? 'false' : 'true');
-  }
-
-  async function loadFocusSummary(){
-    if (!focusSummaryEl) return;
-    const appFeatures = getAppFeatures();
-    if (!appFeatures.focus) {
-      setFocusPanelVisible(false);
-      return;
-    }
-    setFocusPanelVisible(false);
-    try{
-      let focus = null;
-      let localFallback = false;
-      try {
-        const result = await loadFocusForCurrentUser();
-        focus = result?.focus || null;
-      } catch (err) {
-        console.warn('[cg] focus shared load failed', err);
-      }
-      if (!focus) {
-        focus = readLocalFocusDraft();
-        localFallback = !!focus;
-      }
-      if (!hasAssignedFocus(focus)){
-        focusSummaryEl.innerHTML = '';
-        focusDetailsEl?.classList.add('is-hidden');
-        focusTrackingListEl && (focusTrackingListEl.style.display = 'none');
-        focusGoalMeta = [];
-        focusGoalsListEl.innerHTML = '';
-        setPlannerStats(null);
-        setFocusPanelVisible(false);
-        return;
-      }
-      setFocusPanelVisible(true);
-      const start = focus.weekStart ? new Date(focus.weekStart) : null;
-      const end = start ? new Date(start) : null;
-      if (end) end.setDate(end.getDate() + 6);
-      const range = start && end ? `${start.toLocaleDateString()} – ${end.toLocaleDateString()}` : '';
-      focusGoalMeta = Array.isArray(focus.goals) ? focus.goals : [];
-      focusSummaryEl.innerHTML = buildFocusSummaryLine(focus, range, localFallback) || '<div class="focus-title-text">Weekly focus not set</div>';
-      const details = buildFocusDetails(focus);
-      if (details){
-        focusDetailsEl.innerHTML = details;
-        focusDetailsEl.classList.remove('is-hidden');
-      } else {
-        focusDetailsEl.classList.add('is-hidden');
-      }
-      focusTrackingListEl && (focusTrackingListEl.style.display = '');
-      setPlannerStats(summarizePlannerDays(focus.days));
-      renderFocusGoals(focusGoalMeta);
-      renderFocusTrackingFields(focusGoalMeta);
-    } catch (error){
-      const fallback = readLocalFocusDraft();
-      if (hasAssignedFocus(fallback)) {
-        setFocusPanelVisible(true);
-        focusGoalMeta = Array.isArray(fallback.goals) ? fallback.goals : [];
-        focusSummaryEl.innerHTML = buildFocusSummaryLine(fallback, null, true) || '<div class="focus-title-text">Weekly focus not set</div>';
-        const details = buildFocusDetails(fallback);
-        if (details){
-          focusDetailsEl.innerHTML = details;
-          focusDetailsEl.classList.remove('is-hidden');
-        } else {
-          focusDetailsEl.classList.add('is-hidden');
-        }
-        focusTrackingListEl && (focusTrackingListEl.style.display = '');
-        setPlannerStats(summarizePlannerDays(fallback.days));
-        renderFocusGoals(focusGoalMeta);
-        renderFocusTrackingFields(focusGoalMeta);
-      } else {
-        focusSummaryEl.innerHTML = '';
-        focusDetailsEl?.classList.add('is-hidden');
-        setPlannerStats(null);
-        setFocusPanelVisible(false);
-      }
-      console.warn('[cg] focus summary load failed', error);
-    }
-  }
-
-  function renderFocusGoals(goals){
-    if (!focusGoalsListEl) return;
-    focusGoalsListEl.innerHTML = '';
-    const cleaned = Array.isArray(goals)
-      ? goals
-          .map((goal) => ({
-            title: cleanGoalTitle(goal.title || goal.customTitle || ''),
-            notes: trimOrNull(goal.notes),
-          }))
-          .filter((item) => item.title)
-      : [];
-    if (!cleaned.length){
-      const li = document.createElement('li');
-      li.textContent = 'Add weekly goals on the Focus page to see them here.';
-      focusGoalsListEl.appendChild(li);
-      return;
-    }
-    cleaned.forEach(({ title, notes }) => {
-      const li = document.createElement('li');
-      const strong = document.createElement('strong');
-      strong.textContent = title;
-      li.appendChild(strong);
-      if (notes){
-        const span = document.createElement('span');
-        span.textContent = notes;
-        li.appendChild(span);
-      }
-      focusGoalsListEl.appendChild(li);
-    });
-  }
-
-  function renderFocusTrackingFields(goals){
-    if (!focusTrackingListEl) return;
-    focusTrackingListEl.innerHTML = '';
-    if (!Array.isArray(goals) || !goals.length) {
-      focusTrackingListEl.style.display = 'none';
-      return;
-    }
-    focusTrackingListEl.style.display = '';
-    goals.forEach((goal, index) => {
-      const li = document.createElement('div');
-      li.className = 'focus-track-item';
-      const cleanTitle = cleanGoalTitle(goal.title || goal.customTitle || '') || '';
-      li.dataset.goalId = goal.id || goal.goal_id || cleanTitle || `goal-${index}`;
-      const targetLabel = goal.promptGoal ? (PROMPT_LABELS[goal.promptGoal] || goal.promptGoal) : '';
-      const titleFragment = cleanTitle ? ` (${escapeHtml(cleanTitle)})` : '';
-      const targetFragment = targetLabel
-        ? `<span class="focus-track-target">Target: ${escapeHtml(targetLabel)}</span>`
-        : '';
-      li.innerHTML = `
-        <div class="focus-track-header">
-          <label class="focus-track-practiced">
-            <input type="checkbox" data-focus-practiced>
-            <span>Practiced${titleFragment}</span>
-            ${targetFragment}
-          </label>
-          <div class="focus-track-prompt">
-            <select class="input input-chip" data-focus-prompt aria-label="Prompt level used">
-              ${PROMPT_SCALE.map(o => `<option value="${o.value}">${o.label}</option>`).join('')}
-            </select>
-          </div>
-        </div>
-        <textarea data-focus-note placeholder="Notes from today…"></textarea>
-      `;
-      focusTrackingListEl.appendChild(li);
-    });
-  }
-
-  function collectFocusLogs(){
-    if (!focusTrackingListEl) return [];
-    return Array.from(focusTrackingListEl.querySelectorAll('.focus-track-item')).map(item => ({
-      goal_id: item.dataset.goalId || null,
-      goal_title: focusGoalMeta.find(g => g.id === item.dataset.goalId)?.title || item.dataset.goalId || '',
-      practiced: item.querySelector('[data-focus-practiced]')?.checked || false,
-      prompt_level: item.querySelector('[data-focus-prompt]')?.value || '',
-      note: item.querySelector('[data-focus-note]')?.value || ''
-    })).filter(entry => entry.practiced || entry.note || entry.prompt_level);
-  }
-
-  function clearFocusTrackingFields(){
-    if (!focusTrackingListEl) return;
-    focusTrackingListEl.querySelectorAll('.focus-track-item').forEach(item => {
-      const practiced = item.querySelector('[data-focus-practiced]');
-      const promptSel = item.querySelector('[data-focus-prompt]');
-      const note = item.querySelector('[data-focus-note]');
-      if (practiced) practiced.checked = false;
-      if (promptSel) promptSel.value = '';
-      if (note) note.value = '';
-    });
-  }
-
   let movementEls = {};
   let tempEls = {};
   let menstrualEls = {};
@@ -5476,7 +5207,6 @@
     syncManiaControls();
     syncAppetiteControls();
     syncFixationControls();
-    loadFocusSummary();
     syncMovementArrays();
     syncTempArrays();
     syncMenstrualArrays();
@@ -6331,7 +6061,6 @@
       if(manicIv) manicIv.textContent='0';
       resetAdlEntries();
       hydratePromptingSelects();
-      clearFocusTrackingFields();
       clearMovementFields();
       movementEls.detailsPanel?.classList.add('is-hidden');
       movementEls.detailsToggle?.setAttribute('aria-expanded', 'false');
@@ -6808,8 +6537,6 @@
           .filter(Boolean)
           .join('\n\n');
 
-        const focusLogs = collectFocusLogs();
-        payload.focus_goal_logs = focusLogs;
         try {
           localStorage.setItem(MOVEMENT_LAST_KEY, JSON.stringify(movementData));
         } catch {}

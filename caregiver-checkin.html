@@ -6674,7 +6674,10 @@
       try {
 	        const activeStep = steps[current];
 	        if (activeStep) {
-	          if (current === 0 && !validateCentralPrns()) return;
+	          if (current === 0 && !validateCentralPrns()) {
+	            reviewConfirmed = false;
+	            return;
+	          }
 	          save(activeStep, current, true);
 	        }
 
@@ -6978,29 +6981,7 @@
           new_skill_score: newSkillScore,
           caregiver_notes: caregiverNotes,
           payload,
-          adl_entries: adlEntriesFromPayload,
-          submitted_at: new Date().toISOString(),
-          pet_interaction_flag: payload.pet_interaction_flag || null,
-          pet_activity_type: payload.pet_activity_type || null,
-          pet_activity_note: payload.pet_activity_note || null,
-          pet_activity_notes: payload.pet_activity_notes || null,
-          movement_present: movementData.movement_present,
-          movement_main_type: movementData.movement_main_type,
-          movement_severity: movementData.movement_severity,
-          movement_times: Array.isArray(movementData.movement_times)
-            ? null
-            : Number(movementData.movement_times) || null,
-          movement_notes: movementData.movement_notes,
-          movement_body_map: movementData.movement_body_map,
-          movement_frequency: movementData.movement_frequency,
-          movement_triggers: movementData.movement_triggers,
-          movement_other_text: movementData.movement_other_text,
-          movement_trigger_other: movementData.movement_trigger_other,
-          movement_interfered: movementData.movement_interfered,
-          movement_interfered_notes: movementData.movement_interfered_notes,
-          movement_awareness: movementData.movement_awareness,
-          movement_safety_risk: movementData.movement_safety_risk,
-          movement_safety_notes: movementData.movement_safety_notes
+          submitted_at: new Date().toISOString()
         };
 
         let inserted = null;

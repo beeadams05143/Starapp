@@ -397,15 +397,6 @@
     body.print-export #cgWeeklySummaryWrap,
     body.print-export #cgMonthlySummaryWrap,
     body.print-export .cg-summary-card{break-inside:avoid;page-break-inside:avoid}
-    body.print-export #reportFocusPanel{padding:10px;margin:6px 0}
-    body.print-export #reportFocusPanel h2{margin:4px 0 6px;font-size:18px}
-    body.print-export #reportFocusPanel h3{margin:0 0 4px;font-size:15px}
-    body.print-export #reportFocusPanel .focus-goal-list{display:none}
-    body.print-export #reportFocusPanel #focusGoalChart{display:none}
-    body.print-export #reportFocusPanel .planner-chart-panel{margin:6px 0 10px}
-    body.print-export #reportFocusPanel .practice-dot{width:22px;height:22px;font-size:11px}
-    body.print-export #reportFocusPanel .practice-cell{gap:4px;font-size:11px}
-    body.print-export #reportFocusPanel .planner-chart-wrap{padding:8px}
     body.print-export #cg-panel{padding:10px}
     body.print-export #cg-panel h2{margin:6px 0}
     body.print-export #cg-panel .toolbar,
@@ -718,7 +709,6 @@
       padding:14px 16px;
       box-shadow:none;
     }
-    #reportFocusPanel,
     #reportFocusSummary,
     .focus-goal-list li{
       background:#FAEEDA;
@@ -726,7 +716,6 @@
       border-radius:12px;
       box-shadow:none;
     }
-    #reportFocusPanel{padding:14px 16px}
     #reportFocusSummary{
       padding:12px;
       color:#633806;
@@ -826,6 +815,32 @@
     }
     #services-summary-panel,
     #weekly-averages-panel{display:none!important}
+    .parent-letter-range-control{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr)) auto;
+      gap:8px;
+      align-items:end;
+      margin:8px 0 12px;
+    }
+    .parent-letter-range-control label{
+      display:grid;
+      gap:4px;
+      font-size:12px;
+      font-weight:700;
+      color:#633806;
+    }
+    .parent-letter-range-control input{
+      min-width:0;
+      width:100%;
+      padding:8px 10px;
+      border:1px solid var(--color-border-tertiary);
+      border-radius:10px;
+      background:#fff;
+    }
+    @media (max-width:560px){
+      .parent-letter-range-control{grid-template-columns:1fr}
+      .parent-letter-range-control .btn{width:100%}
+    }
     .cg-action-group .cg-edit-btn{
       background:var(--color-background-secondary);
       border:0.5px solid var(--color-border-tertiary);
@@ -1086,24 +1101,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
           </div>
         </div>
       </div>
-    </section>
-    <section class="panel focus-board" id="reportFocusPanel">
-      <h2>Weekly Focus</h2>
-      <p id="reportFocusSummary" class="muted">Loading weekly focus…</p>
-      <div id="focusPdfSummary" class="focus-pdf-summary pdf-only">
-        <div class="focus-pdf-title" id="focusPdfTitle">Weekly Focus</div>
-        <div class="focus-pdf-body" id="focusPdfBody">—</div>
-        <div class="focus-pdf-stats" id="focusPdfStats">—</div>
-      </div>
-      <div id="plannerChartSection" class="planner-chart-panel is-hidden">
-        <h3>Weekly Focus</h3>
-        <p id="focusPlannerStats" class="muted is-hidden" style="margin:-6px 0 8px"></p>
-        <div id="plannerChartWrap" class="planner-chart-wrap compact is-hidden">
-          <div id="plannerRow" class="practice-row" aria-label="Weekly practice tracker"></div>
-        </div>
-      </div>
-      <ul id="reportFocusGoals" class="focus-goal-list"></ul>
-      <canvas id="focusGoalChart" height="220"></canvas>
     </section>
     <section class="panel" id="cg-panel">
       <span id="caregiver-checkins" aria-hidden="true"></span>
@@ -1449,6 +1446,15 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
           <button id="parentLetterPrint" class="btn" style="font-size:13px">🖨️ Print</button>
         </div>
       </div>
+      <div class="parent-letter-range-control" aria-label="Parent Letter Range">
+        <label>Start date
+          <input type="date" id="parentLetterStart">
+        </label>
+        <label>End date
+          <input type="date" id="parentLetterEnd">
+        </label>
+        <button id="parentLetterApply" class="btn" type="button">Generate Letter</button>
+      </div>
       <p class="muted" id="parentLetterRange"></p>
       <div id="parentLetterBody" style="font-size:15px;line-height:1.7;color:#1a1a2e;white-space:pre-wrap;font-family:Georgia,serif"></div>
       <p style="margin-top:16px;font-size:12px;color:#9ca3af;font-style:italic">
@@ -1641,7 +1647,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 
     import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabaseClient.js?v=2026.03.29A';
-    import { loadFocusForCurrentUser, readLocalFocusDraft } from './focus-data.js?v=2026.03.29A';
     import { ensureActiveGroupId } from './active-group.js?v=2026.03.29A';
     import { CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinRecord } from './caregiver-report-shared.js?v=2026.03.13A';
     import { renderPrintableCaregiverReport } from './caregiver-report-print.js?v=2026.07.01B';
@@ -2667,16 +2672,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       const parentRange = document.getElementById('parentLetterRange');
       const parentBody = document.getElementById('parentLetterBody');
       if (parentRange && parentBody) {
-        parentRange.textContent = `Range: ${display}`;
-        parentBody.textContent = generateParentLetter({
-          caregiverEntries,
-          moodEntries,
-          range: { ...range, label: display },
-          rangeKey,
-          summary,
-          movementInsights,
-          profile: reportConfigState.individual_profile || reportConfigState.individualProfile || null,
-        });
+        syncParentLetterRangeDefaults();
+        renderParentLetterFromInputs();
       }
     }
 
@@ -3276,23 +3273,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       printSheet: $('#cgQuickLookPrint')
     };
 
-    const focusUi = {
-      panel: document.getElementById('reportFocusPanel'),
-      summary: document.getElementById('reportFocusSummary'),
-      planner: document.getElementById('focusPlannerStats'),
-      plannerPanel: document.getElementById('plannerChartSection'),
-      plannerChartWrap: document.getElementById('plannerChartWrap'),
-      plannerRow: document.getElementById('plannerRow'),
-      goals: document.getElementById('reportFocusGoals'),
-      chartEl: document.getElementById('focusGoalChart')
-    };
-    let currentFocusPlan = null;
-    let focusChart = null;
-    let plannerChart = null;
-    let plannerTrackerStats = null;
-    let plannerTrackerDays = [];
-    let plannerChartNotes = [];
-    const WEEKDAY_LABELS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
     const PROMPT_LABELS = {
       '0': 'Independent',
       '1': '1–2 prompts',
@@ -3309,7 +3289,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       filtered: [],
       caregiverFilter: 'all', // Default is always all caregivers on fresh load.
       entryById: new Map(),
-      focusStats: new Map(),
       memberProfileById: new Map()
     };
     /** TEMPORARY: Shirley / filter diagnosis — skip date range (cgState.filtered = all entries). Set false after pinpointing the filter. */
@@ -4690,312 +4669,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       quickLookUi.empty?.classList.add('is-hidden');
       days.forEach(day => {
         quickLookUi.content.appendChild(buildQuickLookCard(day));
-      });
-    }
-
-    function normalizePlannerDays(days = []){
-      const normalized = [];
-      for (let i = 0; i < 7; i++){
-        const raw = days[i] || {};
-        const promptVal = Number(raw.promptLevel ?? raw.prompt_level);
-        normalized.push({
-          label: WEEKDAY_LABELS[i] || `Day ${i + 1}`,
-          practiced: !!raw.practiced,
-          prompt: Number.isFinite(promptVal) ? promptVal : null,
-          note: raw.note || raw.notes || '',
-          raw
-        });
-      }
-      return normalized;
-    }
-
-    function summarizePlannerDays(days = []){
-      if (!Array.isArray(days) || !days.length) return null;
-      const practiced = days.filter(day => day && (day.practiced || day.completed));
-      if (!practiced.length) return null;
-      const promptVals = practiced
-        .map(day => Number(day.promptLevel ?? day.prompt_level))
-        .filter(Number.isFinite);
-      const avgPrompt = promptVals.length
-        ? Number((promptVals.reduce((sum, val) => sum + val, 0) / promptVals.length).toFixed(1))
-        : null;
-      const last = practiced[practiced.length - 1] || {};
-      return {
-        count: practiced.length,
-        avgPrompt,
-        lastNote: last.note || last.notes || '',
-        lastDay: last.day || last.date || null,
-      };
-    }
-
-    function renderPlannerStats(stats, days){
-      plannerTrackerStats = stats || null;
-      plannerTrackerDays = Array.isArray(days) ? days : [];
-      if (!focusUi.planner) {
-        renderPlannerChart(plannerTrackerDays);
-        return;
-      }
-      if (!stats?.count){
-        focusUi.planner.classList.add('is-hidden');
-        focusUi.planner.textContent = '';
-        renderPlannerChart(plannerTrackerDays);
-        return;
-      }
-      const pieces = [
-        `${stats.count} practice day${stats.count === 1 ? '' : 's'}`,
-        `Avg prompt level: ${stats.avgPrompt ?? '—'}`,
-        `Last note: ${stats.lastNote || '—'}`
-      ];
-      focusUi.planner.textContent = pieces.join(' • ');
-      focusUi.planner.classList.remove('is-hidden');
-      renderPlannerChart(plannerTrackerDays);
-    }
-
-    function updateFocusPdfSummary(focus, localFallback){
-      const titleEl = document.getElementById('focusPdfTitle');
-      const bodyEl = document.getElementById('focusPdfBody');
-      const statsEl = document.getElementById('focusPdfStats');
-      if (!titleEl || !bodyEl || !statsEl) return;
-      if (!focus){
-        titleEl.textContent = 'Weekly Focus';
-        bodyEl.textContent = '';
-        statsEl.textContent = '';
-        return;
-      }
-      const start = focus.weekStart ? new Date(focus.weekStart) : null;
-      const end = start ? new Date(start) : null;
-      if (end) end.setDate(end.getDate() + 6);
-      const range = start && end ? `${start.toLocaleDateString()} – ${end.toLocaleDateString()}` : '';
-      const title = focus.customTitle || 'Weekly focus';
-      const area = focus.focusArea ? `(${focus.focusArea})` : '';
-      const offlineTag = localFallback ? ' (Offline copy)' : '';
-      const why = focus.whyMatters ? `${focus.whyMatters}` : '';
-      const next = focus.nextSteps ? `Next: ${focus.nextSteps}` : '';
-      titleEl.textContent = `Weekly Focus ${offlineTag}`.trim();
-      bodyEl.textContent = [title, area, range, why, next].filter(Boolean).join(' • ');
-      if (plannerTrackerStats?.count) {
-        const parts = [
-          `${plannerTrackerStats.count} practice day${plannerTrackerStats.count === 1 ? '' : 's'}`,
-          `Avg prompt level: ${plannerTrackerStats.avgPrompt ?? '—'}`,
-          `Last note: ${plannerTrackerStats.lastNote || '—'}`
-        ];
-        statsEl.textContent = parts.join(' • ');
-      } else {
-        statsEl.textContent = 'No practice data logged.';
-      }
-    }
-
-    async function loadFocusPanel(){
-      if (!focusUi.summary) return;
-      const appFeatures = getAppFeatures();
-      if (!appFeatures.focus) {
-        focusUi.panel?.classList.add('is-hidden');
-        return;
-      }
-      focusUi.panel?.classList.add('is-hidden');
-      try{
-        let focus = null;
-        let localFallback = false;
-        try {
-          const result = await loadFocusForCurrentUser();
-          focus = result?.focus || null;
-        } catch (err) {
-          console.warn('focus panel load failed (shared)', err);
-        }
-        if (!focus) {
-          focus = readLocalFocusDraft();
-          localFallback = !!focus;
-        }
-        if (!focus){
-          focusUi.panel?.classList.add('is-hidden');
-          focusUi.summary.textContent = '';
-          focusUi.goals.innerHTML = '';
-          focusUi.chartEl?.classList.add('is-hidden');
-          focusChart?.destroy();
-          focusChart = null;
-          currentFocusPlan = null;
-          renderPlannerStats(null, []);
-          updateFocusPdfSummary(null, false);
-          return;
-        }
-        focusUi.panel?.classList.remove('is-hidden');
-        currentFocusPlan = focus;
-        const start = focus.weekStart ? new Date(focus.weekStart) : null;
-        const end = start ? new Date(start) : null;
-        if (end) end.setDate(end.getDate() + 6);
-        const range = start && end ? `${start.toLocaleDateString()} – ${end.toLocaleDateString()}` : '';
-        const title = focus.customTitle || 'Weekly focus';
-        const area = focus.focusArea ? `(${focus.focusArea})` : '';
-        const next = focus.nextSteps ? `<br><small>Next: ${focus.nextSteps}</small>` : '';
-        const offlineTag = localFallback ? '<br><small>(Showing draft saved on this device)</small>' : '';
-        focusUi.summary.innerHTML = `<strong>${title}</strong> ${area}${range ? `<br><small>${range}</small>` : ''}${focus.whyMatters ? `<br>${focus.whyMatters}` : ''}${next}${offlineTag}`;
-        renderPlannerStats(summarizePlannerDays(focus.days), focus.days || []);
-        renderFocusGoalList(focus.goals || []);
-        renderFocusGoalChart(focus.goals || []);
-        updateFocusPdfSummary(focus, localFallback);
-      } catch (error){
-        const fallback = readLocalFocusDraft();
-        if (fallback) {
-          focusUi.panel?.classList.remove('is-hidden');
-          const next = fallback.nextSteps ? `<br><small>Next: ${fallback.nextSteps}</small>` : '';
-          focusUi.summary.innerHTML = `<strong>${fallback.customTitle || 'Weekly focus'}</strong>${fallback.whyMatters ? `<br>${fallback.whyMatters}` : ''}${next}<br><small>(Offline copy)</small>`;
-          renderPlannerStats(summarizePlannerDays(fallback.days), fallback.days || []);
-          renderFocusGoalList(fallback.goals || []);
-          renderFocusGoalChart(fallback.goals || []);
-          currentFocusPlan = fallback;
-          updateFocusPdfSummary(fallback, true);
-        } else {
-          focusUi.panel?.classList.add('is-hidden');
-          focusUi.summary.textContent = '';
-          currentFocusPlan = null;
-          renderPlannerStats(null, []);
-          updateFocusPdfSummary(null, false);
-        }
-        console.warn('focus panel load failed', error);
-      }
-    }
-
-    function renderFocusGoalList(goals){
-      if (!focusUi.goals) return;
-      const stats = cgState.focusStats || new Map();
-      focusUi.goals.innerHTML = '';
-      if (!Array.isArray(goals) || !goals.length){
-        const li = document.createElement('li');
-        li.textContent = 'Add weekly goals to the Focus page.';
-        focusUi.goals.appendChild(li);
-        return;
-      }
-      goals.forEach(goal => {
-        const stat = stats.get(goal.id);
-        const practiced = stat?.count || 0;
-        const avgPromptVal = stat?.promptCount ? (stat.promptSum / stat.promptCount).toFixed(1) : null;
-        const avgPromptLabel = avgPromptVal != null
-          ? `${avgPromptVal} avg (${PROMPT_LABELS[String(Math.round(avgPromptVal))] || 'prompt level'})`
-          : 'No prompt data yet';
-        const titleRaw = (goal.title || '').trim();
-        const notesRaw = (goal.notes || '').trim();
-        const hasPlaceholderTitle = !titleRaw || titleRaw.toLowerCase() === 'goal title';
-        const displayTitle = hasPlaceholderTitle ? 'Notes' : titleRaw;
-        const li = document.createElement('li');
-        li.innerHTML = `<strong>${displayTitle}</strong>${notesRaw ? `<span>${notesRaw}</span>` : ''}<br><small>${practiced} practices · ${avgPromptLabel}</small>`;
-        focusUi.goals.appendChild(li);
-      });
-    }
-
-    function buildFocusStats(entries = []){
-      const stats = new Map();
-      entries.forEach(entry => {
-        const logs = Array.isArray(entry.focus_goal_logs)
-          ? entry.focus_goal_logs
-          : Array.isArray(entry.payload?.focus_goal_logs)
-            ? entry.payload.focus_goal_logs
-            : [];
-        logs.forEach(log => {
-          const id = log.goal_id || log.goal_title || 'goal';
-          if (!stats.has(id)) {
-            stats.set(id, { id, title: log.goal_title || id, count: 0, promptSum: 0, promptCount: 0 });
-          }
-          const stat = stats.get(id);
-          if (log.practiced) stat.count += 1;
-          const num = Number(log.prompt_level);
-          if (Number.isFinite(num)) {
-            stat.promptSum += num;
-            stat.promptCount += 1;
-          }
-        });
-      });
-      return stats;
-    }
-
-    function renderPlannerChart(days = []){
-      if (!focusUi.plannerChartWrap || !focusUi.plannerRow) return;
-      const normalized = normalizePlannerDays(days);
-      const practicedCount = normalized.filter(day => day.practiced).length;
-      if (!practicedCount){
-        focusUi.plannerChartWrap.classList.add('is-hidden');
-        focusUi.plannerPanel?.classList.add('is-hidden');
-        focusUi.plannerRow.innerHTML = '';
-        return;
-      }
-      focusUi.plannerPanel?.classList.remove('is-hidden');
-      focusUi.plannerChartWrap.classList.remove('is-hidden');
-      focusUi.plannerRow.innerHTML = '';
-      normalized.forEach(day => {
-        const cell = document.createElement('div');
-        cell.className = 'practice-cell';
-        const label = document.createElement('div');
-        label.textContent = day.label;
-        const dot = document.createElement('div');
-        const practiced = !!day.practiced;
-        dot.className = `practice-dot ${practiced ? 'on' : 'off'}`;
-        if (practiced && day.prompt != null) {
-          dot.textContent = day.prompt;
-        }
-        if (day.note) dot.title = day.note;
-        cell.appendChild(label);
-        cell.appendChild(dot);
-        focusUi.plannerRow.appendChild(cell);
-      });
-    }
-
-    function renderFocusGoalChart(goals){
-      if (!focusUi.chartEl) return;
-      const stats = cgState.focusStats || new Map();
-      const plannerCount = plannerTrackerStats?.count || 0;
-      const hasGoals = Array.isArray(goals) && goals.length > 0;
-      const counts = hasGoals ? goals.map(g => stats.get(g.id)?.count || 0) : [];
-      const hasLoggedCounts = counts.some(count => count > 0);
-
-      if (!hasGoals && !plannerCount){
-        focusUi.chartEl.classList.add('is-hidden');
-        focusChart?.destroy();
-        focusChart = null;
-        return;
-      }
-
-      if (!hasLoggedCounts && !plannerCount){
-        focusUi.chartEl.classList.add('is-hidden');
-        focusChart?.destroy();
-        focusChart = null;
-        return;
-      }
-
-      let chartLabels = [];
-      let chartData = [];
-      let chartLabel = '# practices logged';
-      let chartColor = '#fcd34d';
-      let borderColor = '#f97316';
-
-      if (hasLoggedCounts){
-        chartLabels = goals.map(g => g.title || 'Goal');
-        chartData = counts;
-      } else if (plannerCount){
-        chartLabels = ['Practice days'];
-        chartData = [plannerCount];
-        chartLabel = 'Planner tracker';
-        chartColor = '#fde047';
-        borderColor = '#ca8a04';
-      }
-
-      focusUi.chartEl.classList.remove('is-hidden');
-      focusChart?.destroy();
-      focusChart = new Chart(focusUi.chartEl, {
-        type: 'bar',
-        data: {
-          labels: chartLabels,
-          datasets: [{
-            label: chartLabel,
-            data: chartData,
-            backgroundColor: chartColor,
-            borderColor
-          }]
-        },
-        options: {
-          responsive: true,
-          scales: {
-            y: { beginAtZero: true, ticks: { precision:0 } }
-          }
-        }
       });
     }
 
@@ -6821,7 +6494,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       entries.forEach(entry => {
         if (entry?.id) cgState.entryById.set(String(entry.id), entry);
       });
-      cgState.focusStats = buildFocusStats(entries);
       populateCaregiverOptions(cgState.entries);
       updateDateInputs(cgState.entries);
       const now = new Date();
@@ -6837,12 +6509,9 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       const sEnd = document.getElementById('servicesSummaryEnd');
       if (sStart && !sStart.value) sStart.value = formatDateInputValue(defaultRangeStart);
       if (sEnd && !sEnd.value) sEnd.value = formatDateInputValue(defaultRangeEnd);
+      syncParentLetterRangeDefaults();
       applyCaregiverFilters();
       updateReportSectionVisibility();
-      if (currentFocusPlan) {
-        renderFocusGoalList(currentFocusPlan.goals || []);
-        renderFocusGoalChart(currentFocusPlan.goals || []);
-      }
       window.dispatchEvent(new Event('caregiverDataReady'));
     }
 
@@ -7444,6 +7113,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       const sEnd = document.getElementById('servicesSummaryEnd');
       if (sStart) sStart.value = startVal;
       if (sEnd) sEnd.value = endVal;
+      syncParentLetterRangeDefaults({ force: true });
       applyCaregiverFilters();
     };
     document.getElementById('reportRangePreset')?.addEventListener('change', applyReportRangePreset);
@@ -7541,31 +7211,13 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     cgInputs.pdf?.addEventListener('click', exportCaregiverPdf);
     cgInputs.sharePdf?.addEventListener('click', shareCaregiverPdf);
     document.getElementById('parentLetterBtn')?.addEventListener('click', () => {
-      const rangeKey = document.getElementById('chartRangeSelect')?.value || 'month';
-      const source = (cgState.filtered && cgState.filtered.length) ? cgState.filtered : (cgState.entries || []);
-      const range = getChartRangeWindow(rangeKey, source);
-      const filtered = filterEntriesByRange(source, range);
-      const summary = summarizeEntries(filtered);
-      const movementInsights = buildMovementInsights(filtered);
-      const profile = reportConfigState.individual_profile || null;
-      const letter = generateParentLetter({
-        caregiverEntries: filtered,
-        moodEntries: window.latestMoodEntries || [],
-        range,
-        rangeKey,
-        summary,
-        movementInsights,
-        profile
-      });
-      const rangeEl = document.getElementById('parentLetterRange');
-      const bodyEl = document.getElementById('parentLetterBody');
-      const cardEl = document.getElementById('parentLetterCard');
-      if (!rangeEl || !bodyEl || !cardEl) return;
-      rangeEl.textContent = `Range: ${range?.label || rangeKey}`;
-      bodyEl.textContent = letter;
-      cardEl.style.display = '';
-      cardEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      renderParentLetterFromInputs({ scroll: true });
     });
+    document.getElementById('parentLetterApply')?.addEventListener('click', () => {
+      renderParentLetterFromInputs({ scroll: true });
+    });
+    document.getElementById('parentLetterStart')?.addEventListener('change', () => renderParentLetterFromInputs());
+    document.getElementById('parentLetterEnd')?.addEventListener('change', () => renderParentLetterFromInputs());
     document.getElementById('parentLetterClose')?.addEventListener('click', () => {
       const cardEl = document.getElementById('parentLetterCard');
       if (cardEl) cardEl.style.display = 'none';
@@ -7666,6 +7318,62 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       });
     }
 
+    function syncParentLetterRangeDefaults({ force = false } = {}) {
+      const startEl = document.getElementById('parentLetterStart');
+      const endEl = document.getElementById('parentLetterEnd');
+      const reportStart = cgInputs.start?.value || document.getElementById('reportRangeStart')?.value || '';
+      const reportEnd = cgInputs.end?.value || document.getElementById('reportRangeEnd')?.value || '';
+      if (startEl && (force || !startEl.value)) startEl.value = reportStart;
+      if (endEl && (force || !endEl.value)) endEl.value = reportEnd;
+    }
+
+    function buildParentLetterRangeFromInputs() {
+      const startVal = document.getElementById('parentLetterStart')?.value || '';
+      const endVal = document.getElementById('parentLetterEnd')?.value || '';
+      if (!startVal || !endVal) return null;
+      const start = new Date(`${startVal}T12:00:00`);
+      const end = new Date(`${endVal}T12:00:00`);
+      if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start > end) return null;
+      return {
+        start,
+        end,
+        startInput: startVal,
+        endInput: endVal,
+        label: `${printDateLabel(start)} – ${printDateLabel(end)}`,
+      };
+    }
+
+    function renderParentLetterFromInputs({ scroll = false } = {}) {
+      syncParentLetterRangeDefaults();
+      const range = buildParentLetterRangeFromInputs();
+      const rangeEl = document.getElementById('parentLetterRange');
+      const bodyEl = document.getElementById('parentLetterBody');
+      const cardEl = document.getElementById('parentLetterCard');
+      if (!rangeEl || !bodyEl || !cardEl) return;
+      if (!range) {
+        rangeEl.textContent = 'Range: choose a valid start and end date';
+        bodyEl.textContent = '';
+        return;
+      }
+      const caregiverEntries = printRangeEntries(cgState.entries || [], range);
+      const moodEntries = printRangeMoods(window.latestMoodEntries || [], range);
+      const summary = summarizeEntries(caregiverEntries);
+      const movementInsights = buildMovementInsights(caregiverEntries);
+      const profile = reportConfigState.individual_profile || reportConfigState.individualProfile || null;
+      rangeEl.textContent = `Range: ${range.label}`;
+      bodyEl.textContent = generateParentLetter({
+        caregiverEntries,
+        moodEntries,
+        range,
+        rangeKey: 'custom',
+        summary,
+        movementInsights,
+        profile,
+      });
+      cardEl.style.display = '';
+      if (scroll) cardEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
     function buildPrintWeeklyAverages(entries, range) {
       const start = range?.start ? new Date(range.start) : null;
       const end = range?.end ? new Date(range.end) : null;
@@ -7723,36 +7431,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         title: `Caregiver Check-In — ${printDateLabel(date, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}`,
         subtitle: `${caregiverViewLabel(entry)} · Submitted ${printDateTimeLabel(entry.submitted_at || entry.created_at || payload.submitted_at)}`,
         sections,
-      };
-    }
-
-    function buildPrintFocus(focus, entries) {
-      if (!focus) return null;
-      const stats = buildFocusStats(entries);
-      const start = focus.weekStart ? new Date(focus.weekStart) : null;
-      const end = start && !Number.isNaN(start.getTime()) ? new Date(start) : null;
-      if (end) end.setDate(end.getDate() + 6);
-      return {
-        title: focus.customTitle || 'Weekly focus',
-        focusArea: focus.focusArea || '',
-        whyMatters: focus.whyMatters || '',
-        nextSteps: focus.nextSteps || '',
-        range: start && end ? `${printDateLabel(start)} – ${printDateLabel(end)}` : '',
-        goals: (focus.goals || []).map((goal) => {
-          const stat = stats.get(goal.id);
-          const average = stat?.promptCount ? stat.promptSum / stat.promptCount : null;
-          return {
-            title: goal.title || 'Goal',
-            notes: goal.notes || '',
-            practiceSummary: `${stat?.count || 0} practices${average != null ? ` · ${average.toFixed(1)} average prompt level` : ''}`,
-          };
-        }),
-        days: normalizePlannerDays(focus.days || []).map((day) => ({
-          day: day.label,
-          practiced: day.practiced ? 'Yes' : 'No',
-          prompt: day.prompt ?? '—',
-          note: day.note || '—',
-        })),
       };
     }
 
@@ -7876,7 +7554,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
             { label: 'Tasks documented', value: services.homeSupports?.taskCount },
           ], activities: services.homeSupports?.topTasks, activityLabel: 'Top supports' },
         ],
-        focus: visibility.focus === false ? null : buildPrintFocus(currentFocusPlan, entries),
+        focus: null,
         movementMetrics: visibility.movement ? [
           { label: 'Days with symptoms', value: movement.daysWithSymptoms },
           { label: 'Average severity', value: movement.avgSeverity ?? '—' },
@@ -7946,23 +7624,16 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       parseCaregiverDate,
       applyCaregiverFilters,
       renderMoodSection,
-      updateFocusPdfSummary,
       getCaregiverName,
       caregiverViewLabel,
-      getCurrentFocusPlan: () => currentFocusPlan,
       printPreparedFullReport,
       buildPrintableReportModel
     };
-
-    const focusPanel = document.getElementById('reportFocusPanel');
-    const servicesPanel = document.getElementById('services-summary-panel');
-    if (focusPanel && servicesPanel) servicesPanel.before(focusPanel);
 
     await ensureReportGroupContext();
     await loadCaregiverData();
     const requestedEditId = new URLSearchParams(window.location.search).get('edit');
     if (requestedEditId) await openEditModal(requestedEditId);
-    await loadFocusPanel();
     await renderMoodSection();
     applyChartRange();
     await renderWyr();
@@ -8711,8 +8382,10 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-sh
             Number(p.night_wake_count) > 0 ||
             /woke|wake|waking/i.test(String(p.night_wake_notes || ''));
 	          const prnEntries = parsePrnEntries(p.prn_entries);
-	          const prnSleep = /yes|true/i.test(String(p.prn_given || p.prn_used_today || '')) ||
-	            !!p.prn_name || !!p.prn_time || prnEntriesInclude(prnEntries, ['sleep', 'settling']);
+	          const hasStructuredPrn = Array.isArray(prnEntries) && prnEntries.length > 0;
+	          const legacySleepPrn = !hasStructuredPrn && /yes|true/i.test(String(p.prn_given || ''));
+	          const prnSleep = /yes|true/i.test(String(p.prn_used_for_sleep_disturbance || p.prn_reason_sleep || '')) ||
+	            legacySleepPrn || prnEntriesInclude(prnEntries, ['sleep', 'settling']);
 	          const prnMania = /yes|true/i.test(String(p.prn_mania_given || '')) ||
 	            !!p.prn_mania_name || !!p.prn_mania_time;
 	          const prnAggr = /yes|true/i.test(String(p.prn_aggression_given || '')) ||
@@ -8953,8 +8626,10 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-sh
             Number(p.night_wake_count) > 0 ||
             /woke|wake|waking/i.test(String(p.night_wake_notes || ''));
 	          const prnEntries = parsePrnEntries(p.prn_entries);
-	          const prnSleep = /yes|true/i.test(String(p.prn_given || p.prn_used_today || '')) ||
-	            !!p.prn_name || !!p.prn_time || prnEntriesInclude(prnEntries, ['sleep', 'settling']);
+	          const hasStructuredPrn = Array.isArray(prnEntries) && prnEntries.length > 0;
+	          const legacySleepPrn = !hasStructuredPrn && /yes|true/i.test(String(p.prn_given || ''));
+	          const prnSleep = /yes|true/i.test(String(p.prn_used_for_sleep_disturbance || p.prn_reason_sleep || '')) ||
+	            legacySleepPrn || prnEntriesInclude(prnEntries, ['sleep', 'settling']);
 	          const prnMania = /yes|true/i.test(String(p.prn_mania_given || '')) ||
 	            !!p.prn_mania_name || !!p.prn_mania_time;
 	          const prnAggr = /yes|true/i.test(String(p.prn_aggression_given || '')) ||

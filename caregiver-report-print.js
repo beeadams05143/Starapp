@@ -104,35 +104,6 @@ function renderServices(root, model) {
   section.appendChild(grid);
 }
 
-function renderFocus(root, focus) {
-  if (!focus) return;
-  const section = addSection(root, 'Weekly Focus');
-  const card = element('div', 'print-focus-card');
-  appendText(card, 'h3', '', focus.title || 'Weekly focus');
-  if (focus.range) appendText(card, 'p', 'print-muted', focus.range);
-  if (focus.focusArea) appendText(card, 'p', '', `Focus area: ${focus.focusArea}`);
-  if (focus.whyMatters) appendText(card, 'p', '', focus.whyMatters);
-  if (focus.nextSteps) appendText(card, 'p', '', `Next steps: ${focus.nextSteps}`);
-  if (focus.goals?.length) {
-    appendText(card, 'h4', '', 'Goals and practice');
-    const list = element('ul', 'print-compact-list');
-    focus.goals.forEach((goal) => {
-      const details = [goal.title, goal.notes, goal.practiceSummary].filter(Boolean).join(' — ');
-      appendText(list, 'li', '', details);
-    });
-    card.appendChild(list);
-  }
-  if (focus.days?.length) {
-    addTable(card, [
-      { key: 'day', label: 'Day' },
-      { key: 'practiced', label: 'Practiced' },
-      { key: 'prompt', label: 'Prompt level' },
-      { key: 'note', label: 'Note' },
-    ], focus.days);
-  }
-  section.appendChild(card);
-}
-
 function renderTrends(root, model) {
   const section = addSection(root, 'Clinical & Caregiver Trends');
   if (model.monthlyTrends?.length) {
@@ -225,7 +196,6 @@ export function renderPrintableCaregiverReport(root, model = {}) {
   root.appendChild(header);
 
   renderOverview(root, model);
-  renderFocus(root, model.focus);
   renderTrends(root, model);
   renderMood(root, model);
   renderCalendar(root, model);

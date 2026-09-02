@@ -453,6 +453,44 @@
     .movement-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
     .movement-details{margin-top:12px;border-top:1px dashed #e2e8f0;padding-top:12px}
     .movement-details.is-hidden{display:none}
+    .health-concerns{
+      border:1px solid #e3dccf;
+      border-radius:12px;
+      background:#fff;
+      margin:14px 0;
+      overflow:hidden;
+    }
+    .health-concerns > summary{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      cursor:pointer;
+      list-style:none;
+      padding:14px;
+      font-weight:800;
+      color:#2c2c2c;
+    }
+    .health-concerns > summary::-webkit-details-marker{display:none}
+    .health-concerns > summary::after{
+      content:"+";
+      flex:0 0 auto;
+      width:28px;
+      height:28px;
+      border-radius:999px;
+      display:grid;
+      place-items:center;
+      background:#f4f1ea;
+      color:#5b4636;
+      font-size:18px;
+      line-height:1;
+    }
+    .health-concerns[open] > summary::after{content:"-"}
+    .health-concerns-body{
+      display:grid;
+      gap:12px;
+      padding:0 14px 14px;
+    }
     .movement-collapse{margin-top:10px}
     .movement-collapse-toggle{border:1px dashed #cbd5f5;background:#fff;color:#1e3a8a;border-radius:8px;padding:4px 8px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-size:12.5px}
     .movement-collapse-toggle .movement-toggle-hint{font-weight:700;font-size:12px;color:#64748b}
@@ -1516,11 +1554,14 @@
       gap: 12px;
     }
 
-    .adl-checkbox-grid,
+    .choice-grid,
     .household-checkbox-grid,
-    .community-checkbox-grid {
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
+    .community-checkbox-grid,
+    .adl-checkbox-grid,
+    .adl-activity-group .movement-chips {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+      gap: 8px;
     }
 
     .section-row {
@@ -1545,7 +1586,11 @@
       background: #F4F1EA;
       cursor: pointer;
       transition: all 0.2s ease;
-      overflow-wrap: anywhere;
+      overflow-wrap: normal;
+      word-break: normal;
+      hyphens: none;
+      line-height: 1.25;
+      min-height: 44px;
     }
 
     .checkbox-card:hover {
@@ -1563,8 +1608,8 @@
       line-height: 1.3;
       text-align: center;
       white-space: normal;
-      overflow-wrap: anywhere;
-      word-break: break-word;
+      overflow-wrap: normal;
+      word-break: normal;
     }
 
     label,
@@ -1606,6 +1651,22 @@
         grid-template-columns: repeat(2, 1fr);
       }
 
+      .choice-grid,
+      .household-checkbox-grid,
+      .community-checkbox-grid,
+      .adl-checkbox-grid,
+      .adl-activity-group .movement-chips {
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
+      }
+
+      .checkbox-card,
+      .adl-activity-group .movement-chip {
+        align-items: center;
+        justify-content: flex-start;
+        padding: 9px 10px;
+        text-align: left;
+      }
+
       .section-row {
         grid-template-columns: 1fr;
       }
@@ -1625,6 +1686,14 @@
       .behavior-section-items,
       .educational-section-items {
         grid-template-columns: repeat(2, 1fr);
+      }
+
+      .choice-grid,
+      .household-checkbox-grid,
+      .community-checkbox-grid,
+      .adl-checkbox-grid,
+      .adl-activity-group .movement-chips {
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
       }
 
       .section-row {
@@ -1668,7 +1737,7 @@
     <h1>Caregiver Check-In</h1>
     <div class="sub">This check-in autosaves while you type. <strong>Save</strong> saves your progress so far and lets you come back later. <strong>Save &amp; Next</strong> saves the current section and moves you to the next one.</div>
 
-    <section class="panel focus-panel weekly-focus" id="caregiver-focus-panel">
+    <section class="panel focus-panel weekly-focus config-hidden" id="caregiver-focus-panel" hidden aria-hidden="true">
       <div class="focus-header weekly-focus-header">
         <span class="star-icon">⭐</span>
         <div>
@@ -1839,58 +1908,146 @@
             </label>
             <div class="physical-spacer" aria-hidden="true"></div>
           </div>
-          <div class="med-panel" id="medChangePanel">
-            <div class="med-head">
-              <div>
-                <div class="med-title">Medication change</div>
-                <div class="med-desc">Note any new meds, dose changes, PRNs, or stops.</div>
-              </div>
-            </div>
-            <div class="med-yn" role="group" aria-label="Medication change today">
-              <label class="med-pill"><input type="radio" name="med_change_flag" value="no"> No</label>
-              <label class="med-pill"><input type="radio" name="med_change_flag" value="yes"> Yes</label>
-            </div>
-            <div class="med-body is-collapsed" data-med-body-wrap>
-              <div>
-                <div class="med-label">Change type</div>
-                <div class="med-type-grid checkbox-grid" role="group" aria-label="Change type">
-                  <label class="med-type-chip checkbox-card"><input type="checkbox" name="med_change_type_new" /> New medication</label>
-                  <label class="med-type-chip checkbox-card"><input type="checkbox" name="med_change_type_dose" /> Dose change</label>
-                  <label class="med-type-chip checkbox-card"><input type="checkbox" name="med_change_type_stopped" /> Stopped medication</label>
-                  <label class="med-type-chip checkbox-card"><input type="checkbox" name="med_change_type_other" /> Other</label>
+          <details class="health-concerns" id="healthConcernsPanel">
+            <summary>Health changes or concerns</summary>
+            <div class="health-concerns-body">
+              <div class="med-panel" id="medChangePanel">
+                <div class="med-head">
+                  <div>
+                    <div class="med-title">Medication change</div>
+                    <div class="med-desc">Note any new meds, dose changes, PRNs, or stops.</div>
+                  </div>
+                </div>
+                <div class="med-yn" role="group" aria-label="Medication change today">
+                  <label class="med-pill"><input type="radio" name="med_change_flag" value="no"> No</label>
+                  <label class="med-pill"><input type="radio" name="med_change_flag" value="yes"> Yes</label>
+                </div>
+                <div class="med-body is-collapsed" data-med-body-wrap>
+                  <div>
+                    <div class="med-label">Change type</div>
+                    <div class="med-type-grid checkbox-grid" role="group" aria-label="Change type">
+                      <label class="med-type-chip checkbox-card"><input type="checkbox" name="med_change_type_new" /> New medication</label>
+                      <label class="med-type-chip checkbox-card"><input type="checkbox" name="med_change_type_dose" /> Dose change</label>
+                      <label class="med-type-chip checkbox-card"><input type="checkbox" name="med_change_type_stopped" /> Stopped medication</label>
+                      <label class="med-type-chip checkbox-card"><input type="checkbox" name="med_change_type_other" /> Other</label>
+                    </div>
+                  </div>
+                  <div class="med-row">
+                    <label>Time / window
+                      <select name="med_change_time_window" id="med_change_time_window">
+                        <option value="">Select</option>
+                        <option>Morning</option>
+                        <option>Late morning</option>
+                        <option>Afternoon</option>
+                        <option>Evening</option>
+                        <option>Night</option>
+                        <option>Overnight</option>
+                        <option>Other</option>
+                      </select>
+                    </label>
+                    <label id="medChangeTimeOtherWrap" style="display:none">Time detail (optional)
+                      <input type="text" name="med_change_time_other" id="med_change_time_other" placeholder="e.g., 8:30am, after lunch" />
+                    </label>
+                  </div>
+                  <div class="med-row">
+                    <label>Medication name(s) (optional)
+                      <input type="text" name="med_change_name" id="med_change_name" placeholder="e.g., Zoloft, Melatonin" />
+                    </label>
+                    <label>Dose / change details (optional)
+                      <input type="text" name="med_change_dose" id="med_change_dose" placeholder="e.g., 25mg → 50mg" />
+                    </label>
+                  </div>
+                  <label>Notes (optional)
+                    <textarea name="med_change_note" id="med_change_note" placeholder="Short note about the change or reason."></textarea>
+                  </label>
                 </div>
               </div>
-              <div class="med-row">
-                <label>Time / window
-                  <select name="med_change_time_window" id="med_change_time_window">
-                    <option value="">Select</option>
-                    <option>Morning</option>
-                    <option>Late morning</option>
-                    <option>Afternoon</option>
-                    <option>Evening</option>
-                    <option>Night</option>
-                    <option>Overnight</option>
-                    <option>Other</option>
-                  </select>
-                </label>
-                <label id="medChangeTimeOtherWrap" style="display:none">Time detail (optional)
-                  <input type="text" name="med_change_time_other" id="med_change_time_other" placeholder="e.g., 8:30am, after lunch" />
-                </label>
-              </div>
-              <div class="med-row">
-                <label>Medication name(s) (optional)
-                  <input type="text" name="med_change_name" id="med_change_name" placeholder="e.g., Zoloft, Melatonin" />
-                </label>
-                <label>Dose / change details (optional)
-                  <input type="text" name="med_change_dose" id="med_change_dose" placeholder="e.g., 25mg → 50mg" />
-                </label>
-              </div>
-              <label>Notes (optional)
-                <textarea name="med_change_note" id="med_change_note" placeholder="Short note about the change or reason."></textarea>
-              </label>
-            </div>
-          </div>
+              <div class="temp-panel" id="tempPanel">
+                <div class="temp-head">
+                  <div>
+                    <div class="temp-title">Illness Symptoms / Discomfort</div>
+                    <p class="temp-desc">Track illness symptoms, pain, physical discomfort, shakiness, headache, stomach upset, or other body-based concerns in one place.</p>
+                  </div>
+                </div>
+                <div class="temp-yn" role="group" aria-label="Symptoms or discomfort today">
+                  <strong>Symptoms or discomfort today?</strong>
+                  <label class="temp-pill"><input type="radio" name="temp_present" value="no"> No</label>
+                  <label class="temp-pill"><input type="radio" name="temp_present" value="yes"> Yes</label>
+                  <div id="question-prn-symptoms-discomfort" class="temp-prn-inline">
+                    <label class="prn-option">
+                      <input type="checkbox" name="prn_used_for_symptoms_discomfort">
+                      PRN used for illness or discomfort
+                    </label>
+                    <input type="text" name="temp_prn_name" id="temp_prn_name" placeholder="What was administered?" />
+                  </div>
+                </div>
+                <div class="temp-body is-collapsed" data-temp-body-wrap>
+                  <div class="temp-row temp-row--illness">
+                    <div>
+                      <label class="temp-label" for="temp_value">Temperature (if taken)</label>
+                      <select name="temp_value" id="temp_value">
+                        <option value="">Select temp</option>
+                        <option value="96.0">96.0°F</option>
+                        <option value="96.5">96.5°F</option>
+                        <option value="97.0">97.0°F</option>
+                        <option value="97.5">97.5°F</option>
+                        <option value="98.0">98.0°F</option>
+                        <option value="98.6">98.6°F</option>
+                        <option value="99.0">99.0°F</option>
+                        <option value="99.5">99.5°F</option>
+                        <option value="100.0">100.0°F</option>
+                        <option value="100.4">100.4°F</option>
+                        <option value="101.0">101.0°F</option>
+                        <option value="101.5">101.5°F</option>
+                        <option value="102.0">102.0°F</option>
+                        <option value="102.5">102.5°F</option>
+                        <option value="103.0">103.0°F</option>
+                        <option value="104.0">104.0°F</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="temp-label" for="temp_method">How measured</label>
+                      <select name="temp_method" id="temp_method">
+                        <option value="">Select method</option>
+                        <option value="oral">Oral</option>
+                        <option value="ear">Ear</option>
+                        <option value="forehead">Forehead</option>
+                        <option value="axillary">Underarm</option>
+                        <option value="temporal">Temporal</option>
+                      </select>
+                    </div>
+                  </div>
 
+                  <div class="temp-label" style="margin-top:12px">Symptoms / concerns</div>
+                  <div class="temp-grid temp-grid--illness checkbox-grid">
+                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="pain_discomfort">Pain / discomfort</label>
+                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="runny_nose">Runny nose</label>
+                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="cough">Cough</label>
+                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="congestion">Congestion</label>
+                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="sore_throat">Sore throat</label>
+                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="chills">Chills</label>
+                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="headache">Headache</label>
+                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="stomach_discomfort">Stomach discomfort</label>
+                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="fatigue">Fatigue</label>
+                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="body_aches">Body aches</label>
+                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="shakiness_restlessness">Shakiness / restlessness</label>
+                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="nausea">Nausea</label>
+                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="vomiting">Vomiting</label>
+                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="diarrhea">Diarrhea</label>
+                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="rash">Rash</label>
+                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="other">Other</label>
+                  </div>
+                  <div class="temp-inline-input" style="margin-top:8px">
+                    <input type="text" name="temp_symptom_other" id="temp_symptom_other" placeholder="Other symptom (optional)"/>
+                  </div>
+                  <input type="hidden" name="temp_symptoms" id="temp_symptoms" value=""/>
+
+                  <label class="temp-label" for="temp_notes" style="margin-top:10px">Notes (optional)</label>
+                  <input type="text" name="temp_notes" id="temp_notes" placeholder="Short note, e.g. warm at 7am"/>
+                </div>
+              </div>
+            </div>
+          </details>
           <div class="movement-panel" id="movementSymptomsPanel" hidden>
             <div class="movement-head">
               <div>
@@ -2041,91 +2198,6 @@
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-
-          <div class="temp-panel" id="tempPanel">
-            <div class="temp-head">
-              <div>
-                <div class="temp-title">Illness Symptoms / Discomfort</div>
-                <p class="temp-desc">Track illness symptoms, pain, physical discomfort, shakiness, headache, stomach upset, or other body-based concerns in one place.</p>
-              </div>
-            </div>
-            <div class="temp-yn" role="group" aria-label="Symptoms or discomfort today">
-              <strong>Symptoms or discomfort today?</strong>
-              <label class="temp-pill"><input type="radio" name="temp_present" value="no"> No</label>
-              <label class="temp-pill"><input type="radio" name="temp_present" value="yes"> Yes</label>
-              <div id="question-prn-symptoms-discomfort" class="temp-prn-inline">
-                <label class="prn-option">
-                  <input type="checkbox" name="prn_used_for_symptoms_discomfort">
-                  PRN used for illness or discomfort
-                </label>
-                <input type="text" name="temp_prn_name" id="temp_prn_name" placeholder="What was administered?" />
-              </div>
-            </div>
-            <div class="temp-body is-collapsed" data-temp-body-wrap>
-              <div class="temp-row temp-row--illness">
-                <div>
-                  <label class="temp-label" for="temp_value">Temperature (if taken)</label>
-                  <select name="temp_value" id="temp_value">
-                    <option value="">Select temp</option>
-                    <option value="96.0">96.0°F</option>
-                    <option value="96.5">96.5°F</option>
-                    <option value="97.0">97.0°F</option>
-                    <option value="97.5">97.5°F</option>
-                    <option value="98.0">98.0°F</option>
-                    <option value="98.6">98.6°F</option>
-                    <option value="99.0">99.0°F</option>
-                    <option value="99.5">99.5°F</option>
-                    <option value="100.0">100.0°F</option>
-                    <option value="100.4">100.4°F</option>
-                    <option value="101.0">101.0°F</option>
-                    <option value="101.5">101.5°F</option>
-                    <option value="102.0">102.0°F</option>
-                    <option value="102.5">102.5°F</option>
-                    <option value="103.0">103.0°F</option>
-                    <option value="104.0">104.0°F</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="temp-label" for="temp_method">How measured</label>
-                  <select name="temp_method" id="temp_method">
-                    <option value="">Select method</option>
-                    <option value="oral">Oral</option>
-                    <option value="ear">Ear</option>
-                    <option value="forehead">Forehead</option>
-                    <option value="axillary">Underarm</option>
-                    <option value="temporal">Temporal</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="temp-label" style="margin-top:12px">Symptoms / concerns</div>
-              <div class="temp-grid temp-grid--illness checkbox-grid">
-                <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="pain_discomfort">Pain / discomfort</label>
-                <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="runny_nose">Runny nose</label>
-                <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="cough">Cough</label>
-                <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="congestion">Congestion</label>
-                <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="sore_throat">Sore throat</label>
-                <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="chills">Chills</label>
-                <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="headache">Headache</label>
-                <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="stomach_discomfort">Stomach discomfort</label>
-                <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="fatigue">Fatigue</label>
-                <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="body_aches">Body aches</label>
-                <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="shakiness_restlessness">Shakiness / restlessness</label>
-                <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="nausea">Nausea</label>
-                <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="vomiting">Vomiting</label>
-                <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="diarrhea">Diarrhea</label>
-                <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="rash">Rash</label>
-                <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="other">Other</label>
-              </div>
-              <div class="temp-inline-input" style="margin-top:8px">
-                <input type="text" name="temp_symptom_other" id="temp_symptom_other" placeholder="Other symptom (optional)"/>
-              </div>
-              <input type="hidden" name="temp_symptoms" id="temp_symptoms" value=""/>
-
-              <label class="temp-label" for="temp_notes" style="margin-top:10px">Notes (optional)</label>
-              <input type="text" name="temp_notes" id="temp_notes" placeholder="Short note, e.g. warm at 7am"/>
             </div>
           </div>
           <div class="temp-panel" id="menstrualPanel">
@@ -2426,7 +2498,7 @@
           <div id="homeDetailsNotes" class="row cols-2" style="display:none">
             <div>
               <div class="movement-label">Home activity type</div>
-              <div class="movement-grid checkbox-grid household-checkbox-grid">
+              <div class="movement-grid checkbox-grid household-checkbox-grid choice-grid">
                 <label class="movement-chip checkbox-card"><input type="checkbox" data-home-type value="Listen to music with family">Listen to music with family</label>
                 <label class="movement-chip checkbox-card"><input type="checkbox" data-home-type value="Movie in living room">Movie in living room</label>
                 <label class="movement-chip checkbox-card"><input type="checkbox" data-home-type value="Played a game">Played a game</label>
@@ -2519,7 +2591,7 @@
           <div id="publicDetailsNotes" class="row cols-2" style="display:none">
             <div>
               <div class="movement-label">Community activity type</div>
-              <div class="movement-grid checkbox-grid community-checkbox-grid">
+              <div class="movement-grid checkbox-grid community-checkbox-grid choice-grid">
                 <label class="movement-chip checkbox-card"><input type="checkbox" data-public-type value="Shopping – grocery/retail">Shopping – grocery/retail</label>
                 <label class="movement-chip checkbox-card"><input type="checkbox" data-public-type value="Library">Library</label>
                 <label class="movement-chip checkbox-card"><input type="checkbox" data-public-type value="Museum">Museum</label>
@@ -2709,6 +2781,7 @@
   const focusTrackingListEl = document.getElementById('focusTrackingList');
   const focusPanel = document.getElementById('caregiver-focus-panel');
   const focusPlannerStatsEl = document.getElementById('focusPlannerStats');
+  const healthConcernsPanel = document.getElementById('healthConcernsPanel');
   let focusGoalMeta = [];
   let plannerTrackerStats = null;
       let adlStepIndex = -1;
@@ -4721,22 +4794,31 @@
     return bits.join('');
   }
 
+  function hasAssignedFocus(focus){
+    if (!focus) return false;
+    const hasTitle = !!cleanGoalTitle(focus.customTitle || focus.title || '');
+    const hasArea = !!trimOrNull(focus.focusArea);
+    const hasDetails = !!trimOrNull(focus.whyMatters) || !!trimOrNull(focus.nextSteps);
+    const hasGoals = Array.isArray(focus.goals)
+      && focus.goals.some((goal) => cleanGoalTitle(goal?.title || goal?.customTitle || ''));
+    return hasTitle || hasArea || hasDetails || hasGoals;
+  }
+
+  function setFocusPanelVisible(visible){
+    if (!focusPanel) return;
+    focusPanel.classList.toggle('config-hidden', !visible);
+    focusPanel.hidden = !visible;
+    focusPanel.setAttribute('aria-hidden', visible ? 'false' : 'true');
+  }
+
   async function loadFocusSummary(){
     if (!focusSummaryEl) return;
     const appFeatures = getAppFeatures();
     if (!appFeatures.focus) {
-      if (focusPanel) {
-        focusPanel.classList.add('config-hidden');
-        focusPanel.hidden = true;
-        focusPanel.setAttribute('aria-hidden', 'true');
-      }
+      setFocusPanelVisible(false);
       return;
     }
-    if (focusPanel) {
-      focusPanel.classList.remove('config-hidden');
-      focusPanel.hidden = false;
-      focusPanel.setAttribute('aria-hidden', 'false');
-    }
+    setFocusPanelVisible(false);
     try{
       let focus = null;
       let localFallback = false;
@@ -4750,15 +4832,17 @@
         focus = readLocalFocusDraft();
         localFallback = !!focus;
       }
-      if (!focus){
-        focusSummaryEl.innerHTML = '<div class="focus-title-text">Set a weekly focus</div><div class="focus-range">Use the Focus Planner to add one.</div>';
+      if (!hasAssignedFocus(focus)){
+        focusSummaryEl.innerHTML = '';
         focusDetailsEl?.classList.add('is-hidden');
         focusTrackingListEl && (focusTrackingListEl.style.display = 'none');
         focusGoalMeta = [];
         focusGoalsListEl.innerHTML = '';
         setPlannerStats(null);
+        setFocusPanelVisible(false);
         return;
       }
+      setFocusPanelVisible(true);
       const start = focus.weekStart ? new Date(focus.weekStart) : null;
       const end = start ? new Date(start) : null;
       if (end) end.setDate(end.getDate() + 6);
@@ -4778,7 +4862,8 @@
       renderFocusTrackingFields(focusGoalMeta);
     } catch (error){
       const fallback = readLocalFocusDraft();
-      if (fallback) {
+      if (hasAssignedFocus(fallback)) {
+        setFocusPanelVisible(true);
         focusGoalMeta = Array.isArray(fallback.goals) ? fallback.goals : [];
         focusSummaryEl.innerHTML = buildFocusSummaryLine(fallback, null, true) || '<div class="focus-title-text">Weekly focus not set</div>';
         const details = buildFocusDetails(fallback);
@@ -4793,9 +4878,10 @@
         renderFocusGoals(focusGoalMeta);
         renderFocusTrackingFields(focusGoalMeta);
       } else {
-        focusSummaryEl.innerHTML = '<div class="focus-title-text">Unable to load weekly focus</div>';
+        focusSummaryEl.innerHTML = '';
         focusDetailsEl?.classList.add('is-hidden');
         setPlannerStats(null);
+        setFocusPanelVisible(false);
       }
       console.warn('[cg] focus summary load failed', error);
     }
@@ -5050,6 +5136,43 @@
     }
   };
 
+  const hasHealthConcernData = (data = {}) => {
+    const medFlag = String(data.med_change_flag || '').toLowerCase();
+    const tempFlag = String(data.temp_present || '').toLowerCase();
+    const medValues = [
+      data.med_change_type_new,
+      data.med_change_type_dose,
+      data.med_change_type_stopped,
+      data.med_change_type_other,
+      data.med_change_time_window,
+      data.med_change_time_other,
+      data.med_change_name,
+      data.med_change_dose,
+      data.med_change_note,
+    ];
+    const tempValues = [
+      data.temp_value,
+      data.temp_method,
+      data.temp_prn_name,
+      data.temp_prn_time,
+      data.temp_symptom_other,
+      data.temp_notes,
+      data.prn_used_for_symptoms_discomfort,
+    ];
+    return medFlag === 'yes'
+      || medFlag === 'no'
+      || tempFlag === 'yes'
+      || tempFlag === 'no'
+      || medValues.some((value) => value === true || !!trimOrNull(value))
+      || tempValues.some((value) => value === true || !!trimOrNull(value))
+      || parseJsonArray(data.temp_symptoms).length > 0;
+  };
+
+  const syncHealthConcernsDisclosure = (data = {}) => {
+    if (!healthConcernsPanel) return;
+    healthConcernsPanel.open = hasHealthConcernData(data);
+  };
+
   const syncMedTimeWindow = () => {
     const wrap = document.getElementById('medChangeTimeOtherWrap');
     const select = document.getElementById('med_change_time_window');
@@ -5065,7 +5188,7 @@
   const clearMedFields = ({ keepPresent = false } = {}) => {
     if (!keepPresent) {
       document.querySelectorAll('input[name="med_change_flag"]').forEach((el) => {
-        el.checked = el.value === 'no';
+        el.checked = false;
       });
     }
     const checkboxNames = [
@@ -5122,6 +5245,8 @@
         const el = document.getElementById(id);
         if (el) el.value = '';
       });
+    const prnSymptoms = document.querySelector('input[name="prn_used_for_symptoms_discomfort"]');
+    if (prnSymptoms) prnSymptoms.checked = false;
     setTempCheckboxValues('[data-temp-symptom]', []);
     syncTempArrays();
   };
@@ -5858,10 +5983,10 @@
         heading.textContent = cat;
         group.appendChild(heading);
         const chips = document.createElement('div');
-        chips.className = 'movement-chips';
+        chips.className = 'movement-chips choice-grid';
         items.forEach((item) => {
           const label = document.createElement('label');
-          label.className = 'movement-chip';
+          label.className = 'movement-chip checkbox-card';
           const input = document.createElement('input');
           input.type = 'checkbox';
           input.value = item;
@@ -6090,6 +6215,9 @@
         hydrateTempFromData(draft.data[idx] || {});
         hydrateMenstrualFromData(draft.data[idx] || {});
         syncMedTimeWindow();
+        const medFlagChecked = step.querySelector('input[name="med_change_flag"]:checked');
+        setMedChangePresent(medFlagChecked?.value === 'yes');
+        syncHealthConcernsDisclosure(draft.data[idx] || {});
       }
       if (step.querySelector('[data-home-type]') || step.querySelector('[data-public-type]')) {
         hydrateHomeCommunityFromData(draft.data[idx] || {});
@@ -6157,7 +6285,7 @@
 	        });
 	      });
 	      if (scroll && steps[current]) {
-	        steps[current].scrollIntoView({ behavior: 'smooth', block: 'start' });
+	        scrollToSectionTop(steps[current], 'smooth');
 	      }
 	    }
     function go(i, preferForward = true){
@@ -6210,6 +6338,7 @@
       clearTempFields();
       clearMenstrualFields();
       clearMedFields();
+      if (healthConcernsPanel) healthConcernsPanel.open = false;
       tempEls.bodyWrap?.classList.add('is-collapsed');
       menstrualEls.bodyWrap?.classList.add('is-collapsed');
       setMedChangePresent(false);
@@ -6238,6 +6367,7 @@
       clearTempFields();
       clearMenstrualFields();
       setMedChangePresent(false);
+      if (healthConcernsPanel) healthConcernsPanel.open = false;
       clearHomeCommunityAdlFields();
       renderAdlActivityChips();
       syncManiaControls();
@@ -6494,8 +6624,20 @@
           const presentRaw = String(payload.temp_present || '').toLowerCase();
           const tempPresent = presentRaw === 'yes' || presentRaw === 'true';
           const symptoms = parseJsonArray(payload.temp_symptoms);
+          const hasTempInfo = presentRaw === 'yes'
+            || presentRaw === 'no'
+            || symptoms.length > 0
+            || !!payload.prn_used_for_symptoms_discomfort
+            || [
+              payload.temp_value,
+              payload.temp_method,
+              payload.temp_prn_name,
+              payload.temp_prn_time,
+              payload.temp_symptom_other,
+              payload.temp_notes,
+            ].some((value) => !!trimOrNull(value));
           const cleaned = {
-            temp_present: tempPresent,
+            temp_present: hasTempInfo ? tempPresent : null,
             temp_value: trimOrNull(payload.temp_value),
             temp_method: trimOrNull(payload.temp_method),
             temp_prn_name: trimOrNull(payload.temp_prn_name),
@@ -6504,7 +6646,7 @@
             temp_symptom_other: trimOrNull(payload.temp_symptom_other),
             temp_notes: trimOrNull(payload.temp_notes),
           };
-          if (!tempPresent) {
+          if (!hasTempInfo || !tempPresent) {
             Object.keys(cleaned).forEach((key) => {
               if (key === 'temp_present') return;
               cleaned[key] = Array.isArray(cleaned[key]) ? [] : null;
@@ -6788,6 +6930,12 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
+    const scrollToSectionTop = (section, behavior = 'smooth') => {
+      if (!section) return;
+      const top = Math.max(0, section.getBoundingClientRect().top + window.scrollY);
+      window.scrollTo({ top, behavior });
+    };
+
     const showActiveSectionDetail = () => {
       const list = document.getElementById('sectionListView');
       if (list) list.style.display = 'none';
@@ -6816,13 +6964,20 @@
 
         document.querySelectorAll('.step').forEach(step => {
           step.style.display = 'none';
+          step.classList.remove('active');
         });
 
         if (targetStep) {
+          const targetIndex = steps.findIndex((step) => step === targetStep);
+          if (targetIndex >= 0) current = targetIndex;
           targetStep.style.display = 'block';
+          targetStep.classList.add('active');
           const detail = targetStep.querySelector('.section-detail');
           if (detail) detail.style.display = 'block';
-          targetStep.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          updateProgress();
+          requestAnimationFrame(() => {
+            scrollToSectionTop(targetStep, targetId === 'behaviorSection' ? 'auto' : 'smooth');
+          });
         }
       });
     });

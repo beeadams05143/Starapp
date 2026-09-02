@@ -5439,8 +5439,9 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 
 
 
-    const CG_VIEW_FIELD_LABELS = {
-      entry_date: 'Date of shift',
+	    const CG_VIEW_FIELD_LABELS = {
+	      section_statuses: 'Section statuses',
+	      entry_date: 'Date of shift',
       caregiver_name: 'Caregiver name',
       appears_good_health: 'Appears in good health?',
       appears_tired: 'Appears tired?',
@@ -5566,12 +5567,22 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       focus_goal_logs: 'Weekly focus logs',
       caregiver_notes: 'Caregiver notes',
       notes: 'Notes',
-    };
+	    };
 
-    const CG_VIEW_SECTIONS = [
-      {
-        title: 'Physical Health',
-        keys: [
+	    const CG_VIEW_SECTION_STATUS_LABELS = {
+	      all_clear: 'All clear',
+	      stable: 'Stable',
+	      did_not_participate: 'Did not participate',
+	      no_notable_activity: 'No notable activity',
+	      completed: 'Completed with detailed answers',
+	      needs_checkin: 'Needs check-in'
+	    };
+
+	    const CG_VIEW_SECTIONS = [
+	      {
+	        title: 'Physical Health',
+	        statusKey: 'physical',
+	        keys: [
           'appears_good_health','appears_tired','hours_sleep','sleep_fell_asleep_time','sleep_onset_time',
           'sleep_onset_difficulty','night_wake_flag','night_waking','night_wake_count',
           'prn_used_for_sleep_disturbance','prn_name','prn_time','had_bm','appetite_change_flag',
@@ -5586,9 +5597,10 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
           'menstrual_symptoms','menstrual_symptom_other','menstrual_notes','physical_notes'
         ]
       },
-      {
-        title: 'Behavior / Mental Health',
-        keys: [
+	      {
+	        title: 'Behavior / Mental Health',
+	        statusKey: 'behavior',
+	        keys: [
           'behavior_tracking','aggression_flag','aggression_type','aggression_intensity','aggression_notes',
           'manic_flag','mania_flag','manic_intensity','mania_intensity','mania_episode_status',
           'focus_trouble_flag','daydreaming_zoning_out_present','easily_distracted_environment_present',
@@ -5602,21 +5614,25 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
           'behavior_support_prn_time','behavior_notes'
         ]
       },
-      {
-        title: 'Vocational',
-        keys: ['vocational_participation','vocational_time','vocational_prompting','vocational_activity_type','vocational_notes']
-      },
-      {
-        title: 'Home / Family',
-        keys: ['home_activity_flag','home_activity_time','home_activity_prompting','home_activity_type','home_activity_note','home_notes','pet_interaction_flag','pet_activity_type','pet_activity_note','pet_activity_notes']
-      },
-      {
-        title: 'Community & Social Interaction',
-        keys: ['public_activity_flag','public_activity_time','public_activity_prompting','public_activity_type','public_activity_note','community_interaction_ok','interaction_type','interaction_prompting','interaction_note']
-      },
-      {
-        title: 'Daily Living',
-        keys: ['adl_entries','adl_category','adl_activity','adl_note','prompting_level','daily_living_notes']
+	      {
+	        title: 'Vocational',
+	        statusKey: 'vocational',
+	        keys: ['vocational_participation','vocational_time','vocational_prompting','vocational_activity_type','vocational_notes']
+	      },
+	      {
+	        title: 'Home / Family',
+	        statusKey: 'home_family',
+	        keys: ['home_activity_flag','home_activity_time','home_activity_prompting','home_activity_type','home_activity_note','home_notes','pet_interaction_flag','pet_activity_type','pet_activity_note','pet_activity_notes']
+	      },
+	      {
+	        title: 'Community & Social Interaction',
+	        statusKey: 'community',
+	        keys: ['public_activity_flag','public_activity_time','public_activity_prompting','public_activity_type','public_activity_note','community_interaction_ok','interaction_type','interaction_prompting','interaction_note']
+	      },
+	      {
+	        title: 'Daily Living',
+	        statusKey: 'daily_living',
+	        keys: ['adl_entries','adl_category','adl_activity','adl_note','prompting_level','daily_living_notes']
       },
       {
         title: 'Educational',
@@ -5628,10 +5644,10 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       }
     ];
 
-    const CG_VIEW_INTERNAL_KEYS = new Set([
-      'id','uuid','user_id','group_id','payload','created_at','updated_at','submitted_at','timestamp',
-      'date','dateObj','entryById','calendar_only','individual_id','file_url'
-    ]);
+	    const CG_VIEW_INTERNAL_KEYS = new Set([
+	      'id','uuid','user_id','group_id','payload','created_at','updated_at','submitted_at','timestamp',
+	      'date','dateObj','entryById','calendar_only','individual_id','file_url','section_statuses'
+	    ]);
 
     function cgViewHumanizeKey(key = '') {
       return CG_VIEW_FIELD_LABELS[key] || String(key)
@@ -5710,13 +5726,27 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       parent.appendChild(section);
     }
 
-    function cgViewBuildRows(record, payload, keys, seen) {
-      return keys.map((key) => {
-        seen.add(key);
+	    function cgViewBuildRows(record, payload, keys, seen) {
+	      return keys.map((key) => {
+	        seen.add(key);
         const value = payload[key] ?? record[key];
         return { label: cgViewHumanizeKey(key), value, note: ['caregiver_notes','notes','physical_notes','behavior_notes','vocational_notes','home_notes','pet_activity_notes','public_activity_note','interaction_note','daily_living_notes','aggression_notes','behavior_anomaly_notes','movement_notes','temp_notes','menstrual_notes','med_change_note'].includes(key) };
-      });
-    }
+	      });
+	    }
+
+	    function cgViewSectionStatusRows(payload, section, seen) {
+	      if (!section?.statusKey) return [];
+	      seen.add('section_statuses');
+	      const statuses = payload?.section_statuses;
+	      if (!statuses || typeof statuses !== 'object' || Array.isArray(statuses)) return [];
+	      const entry = statuses[section.statusKey];
+	      const status = typeof entry === 'string' ? entry : entry?.status;
+	      if (!status || status === 'needs_checkin') return [];
+	      const label = typeof entry === 'object' && entry?.label
+	        ? entry.label
+	        : CG_VIEW_SECTION_STATUS_LABELS[status] || cgViewHumanizeKey(status);
+	      return [{ label: 'Section status', value: label }];
+	    }
 
     async function openViewDrawer(checkinId) {
       let record;
@@ -5776,9 +5806,13 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         { label: 'Caregiver', value: caregiverViewLabel(record) },
       ], { hideEmpty: false });
 
-      CG_VIEW_SECTIONS.forEach((section) => {
-        cgViewAppendSection(content, section.title, cgViewBuildRows(merged, payload, section.keys, seen), { hideEmpty: false });
-      });
+	      CG_VIEW_SECTIONS.forEach((section) => {
+	        const rows = [
+	          ...cgViewSectionStatusRows(payload, section, seen),
+	          ...cgViewBuildRows(merged, payload, section.keys, seen)
+	        ];
+	        cgViewAppendSection(content, section.title, rows, { hideEmpty: false });
+	      });
 
       const additionalRows = Object.entries(payload)
         .filter(([key, value]) => !seen.has(key) && !CG_VIEW_INTERNAL_KEYS.has(key) && !cgViewIsEmptyValue(value))
@@ -7581,11 +7615,14 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         ]
       }];
 
-      CG_VIEW_SECTIONS.forEach((definition) => {
-        const rows = cgViewBuildRows(merged, payload, definition.keys, seen).map((row) => ({
-          label: row.label,
-          value: cgViewFormatValue(row.value),
-          note: !!row.note,
+	      CG_VIEW_SECTIONS.forEach((definition) => {
+	        const rows = [
+	          ...cgViewSectionStatusRows(payload, definition, seen),
+	          ...cgViewBuildRows(merged, payload, definition.keys, seen)
+	        ].map((row) => ({
+	          label: row.label,
+	          value: cgViewFormatValue(row.value),
+	          note: !!row.note,
         }));
         sections.push({ title: definition.title, rows });
       });

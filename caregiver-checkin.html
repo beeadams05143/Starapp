@@ -1118,25 +1118,63 @@
       background-image: none;
     }
 
-    .all-clear-box {
-      background: #E8F5ED;
-      border: 1px solid #CFE9D8;
-      border-radius: 10px;
-      color: #2F6F4F;
-      cursor: pointer;
-      font-size: 13px;
-      margin-bottom: 12px;
-      padding: 12px;
-    }
-
     .section-list-item {
-      display: flex;
-      justify-content: space-between;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
       padding: 14px;
       border-bottom: 1px solid #eee;
       font-size: 15px;
       cursor: pointer;
       background: #fff;
+    }
+
+    .section-list-main {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .section-list-item .status {
+      color: #8b5cf6;
+      font-size: 13px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .section-list-item.is-cleared .status,
+    .section-list-item.is-completed .status {
+      color: #2f6f4f;
+    }
+
+    .quick-clear-btn {
+      width: 100%;
+      min-height: 44px;
+      border: 1px solid #d8e7dd;
+      border-radius: 10px;
+      background: #f1f8f3;
+      color: #27563f;
+      font-size: 14px;
+      font-weight: 800;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .quick-clear-btn[aria-pressed="true"] {
+      background: #2f6f4f;
+      border-color: #2f6f4f;
+      color: #fff;
+    }
+
+    .landing-actions {
+      margin: 14px 0 18px;
+    }
+
+    .landing-actions .primary {
+      width: 100%;
+      min-height: 48px;
+      font-size: 16px;
     }
 
     #sectionListView {
@@ -1768,29 +1806,51 @@
 
         <div id="sectionListView">
           <div class="section-list-item" data-section="physical" data-target="physicalSection">
-            <span>Physical Health</span>
-            <span class="status">not started →</span>
+            <div class="section-list-main">
+              <span>Physical Health</span>
+              <span class="status">Needs check-in →</span>
+            </div>
+            <button type="button" class="quick-clear-btn" data-quick-clear="physical" aria-pressed="false">All clear — nothing to report</button>
           </div>
           <div class="section-list-item" data-section="behavior" data-target="behaviorSection">
-            <span>Behavior / Mental Health</span>
-            <span class="status">not started →</span>
+            <div class="section-list-main">
+              <span>Behavior / Mental Health</span>
+              <span class="status">Needs check-in →</span>
+            </div>
+            <button type="button" class="quick-clear-btn" data-quick-clear="behavior" aria-pressed="false">Stable — nothing to report</button>
           </div>
           <div class="section-list-item" data-section="vocational" data-target="vocationalSection">
-            <span>Vocational</span>
-            <span class="status">not started →</span>
+            <div class="section-list-main">
+              <span>Vocational</span>
+              <span class="status">Needs check-in →</span>
+            </div>
+            <button type="button" class="quick-clear-btn" data-quick-clear="vocational" aria-pressed="false">Did not participate</button>
           </div>
           <div class="section-list-item" data-section="homeFamily" data-target="homeFamilySection">
-            <span>Home / Family</span>
-            <span class="status">not started →</span>
+            <div class="section-list-main">
+              <span>Home / Family</span>
+              <span class="status">Needs check-in →</span>
+            </div>
+            <button type="button" class="quick-clear-btn" data-quick-clear="homeFamily" aria-pressed="false">No notable home/family activity</button>
           </div>
           <div class="section-list-item" data-section="community" data-target="communitySection">
-            <span>Community</span>
-            <span class="status">not started →</span>
+            <div class="section-list-main">
+              <span>Community</span>
+              <span class="status">Needs check-in →</span>
+            </div>
+            <button type="button" class="quick-clear-btn" data-quick-clear="community" aria-pressed="false">Did not participate</button>
           </div>
           <div class="section-list-item" data-section="dailyLiving" data-target="daily-living-step">
-            <span>Daily Living</span>
-            <span class="status">not started →</span>
+            <div class="section-list-main">
+              <span>Daily Living</span>
+              <span class="status">Needs check-in →</span>
+            </div>
+            <button type="button" class="quick-clear-btn" data-quick-clear="dailyLiving" aria-pressed="false">Did not participate</button>
           </div>
+        </div>
+
+        <div class="landing-actions">
+          <button class="btn primary" type="button" id="beginGuidedCheckinBtn">Begin Caregiver Check-in</button>
         </div>
 
         <div class="section-card section-detail">
@@ -1799,12 +1859,6 @@
           <button class="back-btn" type="button">← Back</button>
         <fieldset class="panel">
           <div class="section-title">Physical Health</div>
-          <div id="allClearBox" class="all-clear-box">
-            ✔ All clear — nothing to report
-            <div style="font-size: 12px; color: #2d6a4f;">
-              Tap to mark optional sections as “nothing to report”
-            </div>
-          </div>
           <div class="physical-general-row">
             <div id="question-appears-good-health" class="question-block">
               <div class="movement-label">Appears in good health?</div>
@@ -2790,6 +2844,16 @@
   const MOVEMENT_LAST_KEY = 'cg-movement-last-v1';
   const APP_CONFIG_KEY = 'star_app_config';
   const GUIDED_ONBOARDING_KEY = 'star_guided_onboarding_v1';
+  const SECTION_STATUS_DEFS = [
+    { key: 'physical', navKey: 'physical', stepId: 'physicalSection', title: 'Physical Health', quickStatus: 'all_clear', quickLabel: 'All clear — nothing to report', statusLabel: 'All clear' },
+    { key: 'behavior', navKey: 'behavior', stepId: 'behaviorSection', title: 'Behavior / Mental Health', quickStatus: 'stable', quickLabel: 'Stable — nothing to report', statusLabel: 'Stable' },
+    { key: 'vocational', navKey: 'vocational', stepId: 'vocationalSection', title: 'Vocational', quickStatus: 'did_not_participate', quickLabel: 'Did not participate', statusLabel: 'Did not participate' },
+    { key: 'home_family', navKey: 'homeFamily', stepId: 'homeFamilySection', title: 'Home / Family', quickStatus: 'no_notable_activity', quickLabel: 'No notable home/family activity', statusLabel: 'No notable activity' },
+    { key: 'community', navKey: 'community', stepId: 'communitySection', title: 'Community', quickStatus: 'did_not_participate', quickLabel: 'Did not participate', statusLabel: 'Did not participate' },
+    { key: 'daily_living', navKey: 'dailyLiving', stepId: 'daily-living-step', title: 'Daily Living', quickStatus: 'did_not_participate', quickLabel: 'Did not participate', statusLabel: 'Did not participate' }
+  ];
+  const SECTION_STATUS_BY_NAV = new Map(SECTION_STATUS_DEFS.map((def) => [def.navKey, def]));
+  const SECTION_STATUS_BY_STEP = new Map(SECTION_STATUS_DEFS.map((def) => [def.stepId, def]));
   const LEGACY_PROTECTED_USER_IDS = new Set([
     'e3785c5e-6560-4a6c-b136-31a4ebfbcb8f',
     'b588c31a-7b90-40f3-adc6-d5a65eb5c59d',
@@ -5224,15 +5288,16 @@
       if (!movementCached) movementEls.sameBtn.title = 'No previous movement log found on this device.';
     }
 
-    // Wire per-step buttons and autosave
-    steps.forEach((step, idx) => {
-      step.querySelector('[data-next]')?.addEventListener('click', () => {
-        save(step, idx);
-        go(idx + 1, true);
-      });
-      step.querySelector('[data-prev]')?.addEventListener('click', () => {
-        save(step, idx, true);
-        go(idx - 1, false);
+	    // Wire per-step buttons and autosave
+	    steps.forEach((step, idx) => {
+	      step.querySelector('[data-next]')?.addEventListener('click', () => {
+	        save(step, idx);
+	        markSectionDetailedComplete(step);
+	        continueGuidedFlow(idx);
+	      });
+	      step.querySelector('[data-prev]')?.addEventListener('click', () => {
+	        save(step, idx, true);
+	        go(idx - 1, false);
       });
       step.querySelector('[data-save]')?.addEventListener('click', () => save(step, idx));
       let t;
@@ -5439,7 +5504,8 @@
     toggleAllBtn?.addEventListener('click', () => {
       isExpanded = !isExpanded;
       syncWizardView({ scroll: true });
-      updateProgress();
+	    updateProgress();
+	    updateSectionLandingUI();
     });
 
     // Draft resume
@@ -5861,7 +5927,7 @@
   // Wizard state
   let isExpanded = false;
   let current = 0;
-  let draft = loadDraft() || { data: {}, savedAt: {} };
+  let draft = loadDraft() || createEmptyDraft();
     function clearDadOnlySections(){
       document.querySelectorAll('.is-dad-only').forEach((el) => {
         el.classList.remove('is-dad-active');
@@ -5891,6 +5957,115 @@
     }
 
     // ---------- helpers ----------
+    function createEmptyDraft(){
+      return { data: {}, savedAt: {}, sectionStatuses: {} };
+    }
+    function persistDraft(){
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+        localStorage.setItem(SUBMISSION_COMPLETE_KEY, 'false');
+      } catch (err) {
+        console.warn('[Caregiver Check-In] Draft save failed', err);
+      }
+    }
+    function getSectionDefForStep(step){
+      return step ? SECTION_STATUS_BY_STEP.get(step.id) : null;
+    }
+    function getSectionStatus(def){
+      if (!def) return 'needs_checkin';
+      return draft.sectionStatuses?.[def.key] || 'needs_checkin';
+    }
+    function isQuickClearedStatus(def, status = getSectionStatus(def)){
+      return !!def && status === def.quickStatus;
+    }
+    function isSectionDone(def){
+      const status = getSectionStatus(def);
+      return status === 'completed' || isQuickClearedStatus(def, status);
+    }
+    function setSectionStatus(def, status){
+      if (!def) return;
+      if (!draft.sectionStatuses || typeof draft.sectionStatuses !== 'object') draft.sectionStatuses = {};
+      if (!status || status === 'needs_checkin') delete draft.sectionStatuses[def.key];
+      else draft.sectionStatuses[def.key] = status;
+      persistDraft();
+      updateSectionLandingUI();
+    }
+    function sectionStatusDisplay(def){
+      const status = getSectionStatus(def);
+      if (status === 'completed') return 'Completed ✓';
+      if (isQuickClearedStatus(def, status)) return `${def.statusLabel} ✓`;
+      return 'Needs check-in →';
+    }
+    function buildSectionStatusPayload(){
+      const payload = {};
+      SECTION_STATUS_DEFS.forEach((def) => {
+        const status = getSectionStatus(def);
+        const quick = isQuickClearedStatus(def, status);
+        payload[def.key] = {
+          status,
+          label: quick ? def.statusLabel : status === 'completed' ? 'Completed' : 'Needs check-in',
+          source: quick ? 'quick_clear' : status === 'completed' ? 'detailed' : 'unresolved'
+        };
+      });
+      return payload;
+    }
+    function updateSectionLandingUI(){
+      document.querySelectorAll('.section-list-item').forEach((item) => {
+        const def = SECTION_STATUS_BY_NAV.get(item.dataset.section || '');
+        if (!def) return;
+        const status = getSectionStatus(def);
+        const isQuick = isQuickClearedStatus(def, status);
+        item.classList.toggle('is-cleared', isQuick);
+        item.classList.toggle('is-completed', status === 'completed');
+        const statusEl = item.querySelector('.status');
+        if (statusEl) statusEl.textContent = sectionStatusDisplay(def);
+        const quickBtn = item.querySelector('[data-quick-clear]');
+        if (quickBtn) {
+          quickBtn.setAttribute('aria-pressed', isQuick ? 'true' : 'false');
+          quickBtn.textContent = isQuick ? `${def.statusLabel} ✓` : def.quickLabel;
+        }
+      });
+      const beginBtn = document.getElementById('beginGuidedCheckinBtn');
+      if (beginBtn) {
+        beginBtn.textContent = getNextNeededSectionIndex() >= 0 ? 'Begin Caregiver Check-in' : 'Review & Submit';
+      }
+    }
+    function markSectionDetailedComplete(step){
+      const def = getSectionDefForStep(step);
+      if (!def || isQuickClearedStatus(def)) return;
+      setSectionStatus(def, 'completed');
+    }
+    function getNextNeededSectionIndex(startAt = 0){
+      if (!steps.length) return -1;
+      for (let pass = 0; pass < 2; pass += 1) {
+        const from = pass === 0 ? Math.max(0, startAt) : 0;
+        const to = pass === 0 ? steps.length : Math.max(0, startAt);
+        for (let idx = from; idx < to; idx += 1) {
+          const step = steps[idx];
+          if (isStepHidden(step)) continue;
+          const def = getSectionDefForStep(step);
+          if (def && !isSectionDone(def)) return idx;
+        }
+      }
+      return -1;
+    }
+    function openSectionDetailByIndex(idx, behavior = 'smooth'){
+      if (!steps[idx]) return;
+      current = idx;
+      syncWizardView({ scroll: false });
+      showActiveSectionDetail();
+      updateProgress();
+      requestAnimationFrame(() => scrollToSectionTop(steps[idx], behavior));
+    }
+    function continueGuidedFlow(fromIdx){
+      const nextIdx = getNextNeededSectionIndex(fromIdx + 1);
+      if (nextIdx >= 0) {
+        openSectionDetailByIndex(nextIdx);
+        return;
+      }
+      showSectionList();
+      renderReviewBeforeSubmit();
+    }
     function serialize(step){
       const data={};
       step.querySelectorAll('input,select,textarea').forEach(el=>{
@@ -5916,12 +6091,7 @@
     function save(step,idx,silent){
       draft.data[idx]=serialize(step);
       draft.savedAt[idx]=new Date().toISOString();
-      try {
-        localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
-        localStorage.setItem(SUBMISSION_COMPLETE_KEY, 'false');
-      } catch (err) {
-        console.warn('[Caregiver Check-In] Draft save failed', err);
-      }
+      persistDraft();
       updateSavedAt(step,idx);
       updateSavedButtons();
       if(!silent) toast('Saved');
@@ -5968,12 +6138,13 @@
         const raw=localStorage.getItem(DRAFT_KEY);
         if(!raw) return null;
         const parsed = JSON.parse(raw);
-        return {
-          data: parsed?.data && typeof parsed.data === 'object' ? parsed.data : {},
-          savedAt: parsed?.savedAt && typeof parsed.savedAt === 'object' ? parsed.savedAt : {},
-        };
-      }catch{
-        return null;
+	        return {
+	          data: parsed?.data && typeof parsed.data === 'object' ? parsed.data : {},
+	          savedAt: parsed?.savedAt && typeof parsed.savedAt === 'object' ? parsed.savedAt : {},
+	          sectionStatuses: parsed?.sectionStatuses && typeof parsed.sectionStatuses === 'object' ? parsed.sectionStatuses : {},
+	        };
+	      }catch{
+	        return null;
       }
     }
     function updateSavedAt(step,idx){
@@ -5985,7 +6156,7 @@
       try { hasDraft = !!localStorage.getItem(DRAFT_KEY); } catch {}
       if (resumeDraftBtn){ resumeDraftBtn.style.display = hasDraft ? '' : 'none'; resumeDraftBtn.disabled = !hasDraft; }
     }
-    function updateProgress(){
+	    function updateProgress(){
       segs.forEach((seg,idx)=>{
         const hidden = isStepHidden(steps[idx]);
         seg.parentElement?.classList.toggle('config-hidden', !!hidden);
@@ -5996,8 +6167,9 @@
         seg.classList.toggle('active', idx===current);
         const hasData = !!draft.data[idx] && Object.values(draft.data[idx]).some(v=>v!=='' && v!==false && v!==null && v!==undefined);
         seg.classList.toggle('done', hasData && idx<current);
-      });
-    }
+	      });
+	      updateSectionLandingUI();
+	    }
 	    function syncWizardView({ scroll = false } = {}){
 	      current = normalizeStepIndex(current);
 	      const lastVisibleStepIndex = (() => {
@@ -6023,13 +6195,25 @@
       syncWizardView({ scroll: true });
       updateProgress();
     }
-    function buildPayload(){
-      const payload={};
-      steps.forEach((s,idx)=>Object.assign(payload, draft.data[idx]||{}));
-      payload._saved_at = draft.savedAt;
-      payload._submitted_at = new Date().toISOString();
-      return payload;
-    }
+	    function buildPayload(){
+	      const payload={};
+	      steps.forEach((s,idx)=>{
+	        const data = draft.data[idx] || {};
+	        const def = getSectionDefForStep(s);
+	        if (def && isQuickClearedStatus(def)) {
+	          if (def.key === 'physical') {
+	            if (data.entry_date) payload.entry_date = data.entry_date;
+	            if (data.caregiver_name) payload.caregiver_name = data.caregiver_name;
+	          }
+	          return;
+	        }
+	        Object.assign(payload, data);
+	      });
+	      payload._saved_at = draft.savedAt;
+	      payload.section_statuses = buildSectionStatusPayload();
+	      payload._submitted_at = new Date().toISOString();
+	      return payload;
+	    }
     function resetParticipationRadiosToSkip(){
       ['vocational_participation', 'home_activity_flag', 'public_activity_flag'].forEach((name) => {
         const skip = formEl.querySelector(`input[type="radio"][name="${name}"][value=""]`);
@@ -6086,11 +6270,12 @@
       resetFormValues();
       go(0);
     }
-    function clearDraftUI(){
-      draft={ data:{}, savedAt:{} };
-      localStorage.removeItem(DRAFT_KEY);
-      steps.forEach((s,i)=>updateSavedAt(s,i));
-      updateSavedButtons();
+	    function clearDraftUI(){
+	      draft=createEmptyDraft();
+	      localStorage.removeItem(DRAFT_KEY);
+	      steps.forEach((s,i)=>updateSavedAt(s,i));
+	      updateSavedButtons();
+	      updateSectionLandingUI();
       resetAdlEntries();
       clearMovementFields();
       clearTempFields();
@@ -6208,26 +6393,24 @@
       return items;
     }
 
-    function renderReviewBeforeSubmit() {
-      if (!reviewOverlay || !reviewSectionsEl) return;
-      const sectionDefs = [
-        { id: 'physicalSection', title: 'Physical Health' },
-        { id: 'behaviorSection', title: 'Behavior / Mental Health' },
-        { id: 'vocationalSection', title: 'Vocational' },
-        { id: 'homeFamilySection', title: 'Home / Family' },
-        { id: 'communitySection', title: 'Community' },
-        { id: 'daily-living-step', title: 'Daily Living' }
-      ];
-      reviewSectionsEl.innerHTML = '';
-      sectionDefs.forEach(({ id, title }) => {
-        const sectionEl = document.getElementById(id);
-        const items = collectSectionReviewItems(sectionEl);
-        if (!items.length) return;
-        const card = document.createElement('section');
-        card.className = 'review-section';
-        const header = document.createElement('h3');
-        header.textContent = title;
-        card.appendChild(header);
+	    function renderReviewBeforeSubmit() {
+	      if (!reviewOverlay || !reviewSectionsEl) return;
+	      reviewSectionsEl.innerHTML = '';
+	      SECTION_STATUS_DEFS.forEach((def) => {
+	        const sectionEl = document.getElementById(def.stepId);
+	        const status = getSectionStatus(def);
+	        const items = isQuickClearedStatus(def, status) ? [] : collectSectionReviewItems(sectionEl);
+	        if (isQuickClearedStatus(def, status)) {
+	          items.unshift({ label: 'Section status', value: def.statusLabel });
+	        } else if (status === 'completed') {
+	          items.unshift({ label: 'Section status', value: 'Completed with detailed answers' });
+	        }
+	        if (!items.length) return;
+	        const card = document.createElement('section');
+	        card.className = 'review-section';
+	        const header = document.createElement('h3');
+	        header.textContent = def.title;
+	        card.appendChild(header);
         items.forEach((item) => {
           const row = document.createElement('div');
           row.className = 'review-item';
@@ -6275,7 +6458,8 @@
         if (!user_id) throw new Error('Not signed in');
 
         const payload = buildPayload();
-        const behaviorTracking = collectBehaviorTracking();
+	        const behaviorDef = SECTION_STATUS_BY_STEP.get('behaviorSection');
+	        const behaviorTracking = isQuickClearedStatus(behaviorDef) ? [] : collectBehaviorTracking();
         const educationalTracking = collectEducationalTracking();
         const educationalPayload = collectEducationalPayload();
         payload.behavior_tracking = behaviorTracking;
@@ -6623,39 +6807,18 @@
       }
     }
 
-    document.getElementById('allClearBox')?.addEventListener('click', () => {
-      const box = document.getElementById('allClearBox');
-
-      // Update confirmation text
-      box.innerHTML = '✔ Skipped — nothing to report';
-
-      // Fade current section slightly
-      const section = document.getElementById('physicalSection');
-      if (section) {
-        section.style.opacity = '0.6';
-      }
-
-      // Scroll to Behavior / Mental Health section directly
-      const nextSection = document.getElementById('behaviorSection');
-      if (nextSection) {
-        nextSection.scrollIntoView({
-          behavior: 'smooth',
-          block: 'start'
-        });
-      }
-    });
-
-    const showSectionList = () => {
-      document.querySelectorAll('.section-detail').forEach(s => {
-        s.style.display = 'none';
+	    const showSectionList = () => {
+	      document.querySelectorAll('.section-detail').forEach(s => {
+	        s.style.display = 'none';
       });
       document.querySelectorAll('.step').forEach(step => {
         step.style.display = step.id === 'physicalSection' ? 'block' : 'none';
       });
-      const list = document.getElementById('sectionListView');
-      if (list) list.style.display = 'block';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
+	      const list = document.getElementById('sectionListView');
+	      if (list) list.style.display = 'block';
+	      updateSectionLandingUI();
+	      window.scrollTo({ top: 0, behavior: 'smooth' });
+	    };
 
     const scrollToSectionTop = (section, behavior = 'smooth') => {
       if (!section) return;
@@ -6677,13 +6840,14 @@
       if (detail) detail.style.display = 'block';
     };
 
-    document.querySelectorAll('.section-list-item').forEach(item => {
-      item.addEventListener('click', () => {
-        const targetId = item.dataset.target || `${item.dataset.section}Section`;
-        const targetStep = document.getElementById(targetId);
-        const list = document.getElementById('sectionListView');
+	    document.querySelectorAll('.section-list-item').forEach(item => {
+	      item.addEventListener('click', () => {
+	        const targetId = item.dataset.target || `${item.dataset.section}Section`;
+	        const targetStep = document.getElementById(targetId);
+	        const def = SECTION_STATUS_BY_NAV.get(item.dataset.section || '');
+	        const list = document.getElementById('sectionListView');
 
-        if (list) list.style.display = 'none';
+	        if (list) list.style.display = 'none';
 
         document.querySelectorAll('.section-detail').forEach(s => {
           s.style.display = 'none';
@@ -6694,10 +6858,13 @@
           step.classList.remove('active');
         });
 
-        if (targetStep) {
-          const targetIndex = steps.findIndex((step) => step === targetStep);
-          if (targetIndex >= 0) current = targetIndex;
-          targetStep.style.display = 'block';
+	        if (targetStep) {
+	          if (def && isQuickClearedStatus(def)) {
+	            setSectionStatus(def, 'needs_checkin');
+	          }
+	          const targetIndex = steps.findIndex((step) => step === targetStep);
+	          if (targetIndex >= 0) current = targetIndex;
+	          targetStep.style.display = 'block';
           targetStep.classList.add('active');
           const detail = targetStep.querySelector('.section-detail');
           if (detail) detail.style.display = 'block';
@@ -6706,8 +6873,27 @@
             scrollToSectionTop(targetStep, targetId === 'behaviorSection' ? 'auto' : 'smooth');
           });
         }
-      });
-    });
+	      });
+	    });
+
+	    document.querySelectorAll('[data-quick-clear]').forEach((button) => {
+	      button.addEventListener('click', (event) => {
+	        event.stopPropagation();
+	        const def = SECTION_STATUS_BY_NAV.get(button.dataset.quickClear || '');
+	        if (!def) return;
+	        const nextStatus = isQuickClearedStatus(def) ? 'needs_checkin' : def.quickStatus;
+	        setSectionStatus(def, nextStatus);
+	      });
+	    });
+
+	    document.getElementById('beginGuidedCheckinBtn')?.addEventListener('click', () => {
+	      const nextIdx = getNextNeededSectionIndex();
+	      if (nextIdx >= 0) {
+	        openSectionDetailByIndex(nextIdx);
+	      } else {
+	        renderReviewBeforeSubmit();
+	      }
+	    });
 
     document.querySelectorAll('.back-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -6715,10 +6901,10 @@
       });
     });
 
-    document.querySelectorAll('[data-next], [data-prev]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        setTimeout(showActiveSectionDetail, 0);
-      });
+	    document.querySelectorAll('[data-prev]').forEach(btn => {
+	      btn.addEventListener('click', () => {
+	        setTimeout(showActiveSectionDetail, 0);
+	      });
     });
 
     const goToNextSection = (fromSection) => {

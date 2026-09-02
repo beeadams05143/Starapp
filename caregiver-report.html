@@ -1648,7 +1648,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabaseClient.js?v=2026.03.29A';
     import { ensureActiveGroupId } from './active-group.js?v=2026.03.29A';
-    import { CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinRecord } from './caregiver-report-shared.js?v=2026.03.13A';
+    import { CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinForCalendar, normalizeCaregiverCheckinRecord } from './caregiver-report-shared.js?v=2026.09.02A';
     import { renderPrintableCaregiverReport } from './caregiver-report-print.js?v=2026.07.01B';
 
     /* =============== Optional live data =============== */
@@ -1772,6 +1772,10 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     function getCheckinDate(e) {
       const value = getCheckinDateValue(e);
       if (!value) return null;
+      if (typeof value === 'string') {
+        const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})(?:$|[T\s])/);
+        if (match) return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 12, 0, 0, 0);
+      }
       const d = new Date(value);
       return Number.isNaN(d.getTime()) ? null : d;
     }
@@ -3152,52 +3156,22 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       const counts = {};
       CALENDAR_QUICK_LOOK_ITEMS.forEach(item => { counts[item.key] = 0; });
       entries.forEach(entry => {
-        const p = entry.payload || {};
-        const bm = (entry.had_bm === true) || (/yes/i.test(String(p.bm_today || p.had_bm || '')));
-        let sleep = null;
-        const hrsRaw = p.hours_sleep;
-        if (typeof hrsRaw === 'string'){
-          if (hrsRaw.includes('10')) sleep = 10;
-          else { const n = parseFloat(hrsRaw); if (isFinite(n)) sleep = n; }
-        } else if (typeof hrsRaw === 'number') { sleep = hrsRaw; }
-        const sleepLow = (sleep != null && sleep < 8);
-        const onsetLate = hasLateSleepOnset(p) || hasLateSleepOnset(entry);
-        const nightWake = /yes|true/i.test(String(p.night_wake_flag || p.night_waking || '')) ||
-          Number(p.night_wake_count) > 0 ||
-          /woke|wake|waking/i.test(String(p.night_wake_notes || ''));
-	        const prnEntries = parsePrnEntries(p.prn_entries);
-	        const prnSleep = /yes|true/i.test(String(p.prn_given || p.prn_used_today || '')) ||
-	          !!p.prn_name || !!p.prn_time || prnEntriesInclude(prnEntries, ['sleep', 'settling']);
-	        const prnMania = /yes|true/i.test(String(p.prn_mania_given || '')) ||
-	          !!p.prn_mania_name || !!p.prn_mania_time;
-	        const prnAggr = /yes|true/i.test(String(p.prn_aggression_given || '')) ||
-	          !!p.prn_aggression_name || !!p.prn_aggression_time || prnEntriesInclude(prnEntries, ['aggression', 'agitation', 'escalat']);
-        const tired = /yes|true/i.test(String(p.appears_tired || ''));
-        const manic = /yes|true/i.test(String(p.manic_flag || p.mania_flag || '')) || ((+p.manic_intensity || 0) > 0);
-        const sick  = (p.appears_good_health === false) || /no/i.test(String(p.appears_good_health || ''));
-        const temp = p.temp_present === true
-          || /yes|true/i.test(String(p.temp_present || ''))
-          || !!p.temp_value;
-        const menstrual = p.menstrual_present === true
-          || /yes|true/i.test(String(p.menstrual_present || ''));
-        const appetite = hasAppetiteChange(p) || hasAppetiteChange(entry);
-        const anomaly = p.anomaly_flag === true || /yes/i.test(String(p.anomaly || ''));
-
-        if (bm) counts.bm += 1;
-        if (sleep != null && sleep >= 8) counts.sleep += 1;
-        if (sleep != null && sleep < 8) counts.sleep_low += 1;
-        if (onsetLate) counts.onset += 1;
-        if (nightWake) counts.night += 1;
-        if (prnSleep) counts.prn_sleep += 1;
-        if (prnMania) counts.prn_mania += 1;
-        if (prnAggr) counts.prn_aggr += 1;
-        if (tired) counts.tired += 1;
-        if (manic) counts.manic += 1;
-        if (sick) counts.sick += 1;
-        if (temp) counts.temp += 1;
-        if (menstrual) counts.menstrual += 1;
-        if (appetite) counts.appetite += 1;
-        if (anomaly) counts.anomaly += 1;
+        const flags = normalizeCaregiverCheckinForCalendar(entry).flags || {};
+        if (flags.bm) counts.bm += 1;
+        if (flags.sleep != null && flags.sleep >= 8) counts.sleep += 1;
+        if (flags.sleep != null && flags.sleep < 8) counts.sleep_low += 1;
+        if (flags.onset) counts.onset += 1;
+        if (flags.night) counts.night += 1;
+        if (flags.prn_sleep) counts.prn_sleep += 1;
+        if (flags.prn_mania) counts.prn_mania += 1;
+        if (flags.prn_aggr) counts.prn_aggr += 1;
+        if (flags.tired) counts.tired += 1;
+        if (flags.manic) counts.manic += 1;
+        if (flags.sick) counts.sick += 1;
+        if (flags.temp) counts.temp += 1;
+        if (flags.menstrual) counts.menstrual += 1;
+        if (flags.appetite) counts.appetite += 1;
+        if (flags.anomaly) counts.anomaly += 1;
       });
       return counts;
     }
@@ -7851,7 +7825,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 <script type="module">
 import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 import { ensureActiveGroupId } from './active-group.js?v=2026.03.29A';
-import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-shared.js?v=2026.03.13A';
+import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinForCalendar } from './caregiver-report-shared.js?v=2026.09.02A';
 
 (() => {
   // Bail out quietly if the calendar HTML isn't present
@@ -8126,6 +8100,7 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-sh
   let EVENT_MAP = {};              // meetings/appointments
   let HEALTH_FLAGS = {};           // persisted manual flags
   const layers = { bm:true, sleep:true, sleep_low:true, onset:true, night:true, prn_sleep:true, prn_mania:true, prn_aggr:true, tired:true, manic:true, sick:true, temp:true, menstrual:true, appetite:true, med_change:true, moon:true, anomaly:true };
+  const emptyCalendarRecord = () => ({ bm:false, sleep:null, sleep_low:false, onset:false, night:false, prn_sleep:false, prn_mania:false, prn_aggr:false, tired:false, manic:false, sick:false, temp:false, menstrual:false, appetite:false, moon:false, anomaly:false, med_change_notes:[] });
   const SYNODIC_MONTH = 29.530588853; // days
   const BASE_FULL_MOON = Date.UTC(2024, 8, 17, 18, 34); // Sep 17 2024 full moon reference
 
@@ -8307,7 +8282,7 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-sh
   }
 
   function applyHealthFlagToMapLocal(key, data = {}, targetMap){
-    const base = targetMap[key] || { bm:false, sleep:null, sleep_low:false, onset:false, night:false, prn_sleep:false, prn_mania:false, prn_aggr:false, tired:false, manic:false, sick:false, temp:false, menstrual:false, appetite:false, moon:false, anomaly:false, med_change_notes:[] };
+    const base = targetMap[key] || emptyCalendarRecord();
     const hours = data.sleepHours != null ? Number(data.sleepHours) : (data.sleep ? 8 : null);
     const sleepLowFromHours = Number.isFinite(hours) ? hours < 8 : null;
     const incomingNotes = Array.isArray(data.med_change_notes) ? data.med_change_notes.filter(Boolean) : [];
@@ -8351,6 +8326,58 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-sh
     });
   }
 
+  function mergeCalendarObservation(targetMap, calendarRecord){
+    const key = calendarRecord?.dateKey;
+    if (!key) return;
+    const flags = calendarRecord.flags || {};
+    const cur = targetMap[key] || emptyCalendarRecord();
+    const notes = cur.med_change_notes ? cur.med_change_notes.slice() : [];
+    (flags.med_change_notes || []).forEach(note => {
+      if (note && !notes.includes(note)) notes.push(note);
+    });
+    targetMap[key] = {
+      bm: cur.bm || !!flags.bm,
+      sleep: (flags.sleep != null && (cur.sleep == null || flags.sleep > cur.sleep)) ? flags.sleep : cur.sleep,
+      sleep_low: cur.sleep_low || !!flags.sleep_low,
+      onset: cur.onset || !!flags.onset,
+      night: cur.night || !!flags.night,
+      prn_sleep: cur.prn_sleep || !!flags.prn_sleep,
+      prn_mania: cur.prn_mania || !!flags.prn_mania,
+      prn_aggr: cur.prn_aggr || !!flags.prn_aggr,
+      tired: cur.tired || !!flags.tired,
+      manic: cur.manic || !!flags.manic,
+      sick: cur.sick || !!flags.sick,
+      temp: cur.temp || !!flags.temp,
+      menstrual: cur.menstrual || !!flags.menstrual,
+      appetite: cur.appetite || !!flags.appetite,
+      moon: cur.moon || !!flags.moon || isFullMoonKey(key),
+      anomaly: cur.anomaly || !!flags.anomaly,
+      med_change_notes: notes
+    };
+  }
+
+  function collectReportLoadedCalendarRows(startDate, endDate){
+    const rows = Array.isArray(window.latestCaregiverEntries) ? window.latestCaregiverEntries : [];
+    return rows.filter((row) => {
+      const calendarRecord = normalizeCaregiverCheckinForCalendar(row);
+      const key = calendarRecord.dateKey;
+      return key && key >= startDate && key < endDate;
+    });
+  }
+
+  function dedupeCalendarRows(...groups){
+    const seen = new Set();
+    const rows = [];
+    groups.flat().forEach((row) => {
+      if (!row) return;
+      const key = row.id ? `id:${row.id}` : `row:${JSON.stringify(row)}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      rows.push(row);
+    });
+    return rows;
+  }
+
   async function loadMonthFlagMap(y, m){
     const map = {};
     const { start, end } = monthBoundsUTC(y, m);
@@ -8364,75 +8391,16 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-sh
         'order=date.asc'
       ];
       const data = await rest(params.join('&'));
-      if (Array.isArray(data)) {
-        for (const row of data){
-          const key = getCheckinDayKey(row);
-          if (!key) continue;
-          const p   = row.payload || {};
-          const bm    = (row.had_bm === true) || (/yes/i.test(String(p.bm_today || p.had_bm || '')));
-          let   sleep = null;
-          const hrsRaw = p.hours_sleep;
-          if (typeof hrsRaw === 'string'){
-            if (hrsRaw.includes('10')) sleep = 10;
-            else { const n = parseFloat(hrsRaw); if (isFinite(n)) sleep = n; }
-          } else if (typeof hrsRaw === 'number') { sleep = hrsRaw; }
-          const sleepLow = (sleep != null && sleep < 8);
-          const onsetLate = hasLateSleepOnset(p) || hasLateSleepOnset(row);
-          const nightWake = /yes|true/i.test(String(p.night_wake_flag || p.night_waking || '')) ||
-            Number(p.night_wake_count) > 0 ||
-            /woke|wake|waking/i.test(String(p.night_wake_notes || ''));
-	          const prnEntries = parsePrnEntries(p.prn_entries);
-	          const hasStructuredPrn = Array.isArray(prnEntries) && prnEntries.length > 0;
-	          const legacySleepPrn = !hasStructuredPrn && /yes|true/i.test(String(p.prn_given || ''));
-	          const prnSleep = /yes|true/i.test(String(p.prn_used_for_sleep_disturbance || p.prn_reason_sleep || '')) ||
-	            legacySleepPrn || prnEntriesInclude(prnEntries, ['sleep', 'settling']);
-	          const prnMania = /yes|true/i.test(String(p.prn_mania_given || '')) ||
-	            !!p.prn_mania_name || !!p.prn_mania_time;
-	          const prnAggr = /yes|true/i.test(String(p.prn_aggression_given || '')) ||
-	            !!p.prn_aggression_name || !!p.prn_aggression_time || prnEntriesInclude(prnEntries, ['aggression', 'agitation', 'escalat']);
-          const tired = /yes|true/i.test(String(p.appears_tired || ''));
-          const manic = /yes|true/i.test(String(p.manic_flag || p.mania_flag || '')) || ((+p.manic_intensity || 0) > 0);
-          const sick  = (p.appears_good_health === false) || /no/i.test(String(p.appears_good_health || ''));
-          const temp = p.temp_present === true
-            || /yes|true/i.test(String(p.temp_present || ''))
-            || !!p.temp_value;
-          const menstrual = p.menstrual_present === true
-            || /yes|true/i.test(String(p.menstrual_present || ''));
-          const appetite = hasAppetiteChange(p) || hasAppetiteChange(row);
-          const anomaly = p.anomaly_flag === true || /yes/i.test(String(p.anomaly || ''));
-          const cur = map[key] || { bm:false, sleep:null, sleep_low:false, onset:false, night:false, prn_sleep:false, prn_mania:false, prn_aggr:false, tired:false, manic:false, sick:false, temp:false, menstrual:false, appetite:false, moon:false, anomaly:false, med_change_notes:[] };
-          const medChangeFlag = /yes|true/i.test(String(p.med_change_flag || ''));
-          const medChangeNote = String(p.med_change_note || '').trim();
-          const caregiverLabel = (() => {
-            const g = getCaregiverName(row);
-            if (g && g !== 'Unknown') return sanitizeCaregiverLabel(g) || String(g).trim();
-            return '';
-          })();
-          const medChangeLine = (medChangeFlag || medChangeNote)
-            ? `Med change${caregiverLabel ? ` (${caregiverLabel})` : ''}: ${medChangeNote || 'Yes'}`
-            : '';
-          const medNotes = cur.med_change_notes ? cur.med_change_notes.slice() : [];
-          if (medChangeLine && !medNotes.includes(medChangeLine)) medNotes.push(medChangeLine);
-          map[key] = {
-            bm:    cur.bm    || bm,
-            sleep: (sleep!=null && (cur.sleep==null || sleep>cur.sleep)) ? sleep : cur.sleep,
-            sleep_low: cur.sleep_low || sleepLow,
-            onset: cur.onset || onsetLate,
-            night: cur.night || nightWake,
-            prn_sleep: cur.prn_sleep || prnSleep,
-            prn_mania: cur.prn_mania || prnMania,
-            prn_aggr: cur.prn_aggr || prnAggr,
-            tired: cur.tired || tired,
-            manic: cur.manic || manic,
-            sick:  cur.sick  || sick,
-            temp:  cur.temp  || temp,
-            menstrual: cur.menstrual || menstrual,
-            appetite: cur.appetite || appetite,
-            moon: cur.moon || isFullMoonKey(key),
-            anomaly: cur.anomaly || anomaly,
-            med_change_notes: medNotes
-          };
-        }
+      const reportRows = collectReportLoadedCalendarRows(startDate, endDate);
+      dedupeCalendarRows(Array.isArray(data) ? data : [], reportRows).forEach((row) => {
+        mergeCalendarObservation(map, normalizeCaregiverCheckinForCalendar(row));
+      });
+      if (Array.isArray(data) || reportRows.length) {
+        console.log('[caregiver calendar] month rows normalized', {
+          restRows: Array.isArray(data) ? data.length : 0,
+          reportRows: reportRows.length,
+          days: Object.keys(map).length
+        });
       }
     }catch(error){
       console.warn('month flags load error', error?.message || error);
@@ -8462,6 +8430,7 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-sh
       if (rec.manic) counts.manic += 1;
       if (rec.sick) counts.sick += 1;
       if (rec.temp) counts.temp += 1;
+      if (rec.menstrual) counts.menstrual += 1;
       if (rec.appetite) counts.appetite += 1;
       if (moon) counts.moon += 1;
       if (rec.anomaly) counts.anomaly += 1;
@@ -8495,6 +8464,7 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-sh
       if (rec.manic) counts.manic += 1;
       if (rec.sick) counts.sick += 1;
       if (rec.temp) counts.temp += 1;
+      if (rec.menstrual) counts.menstrual += 1;
       if (rec.appetite) counts.appetite += 1;
       if (moon) counts.moon += 1;
       if (rec.anomaly) counts.anomaly += 1;
@@ -8608,76 +8578,16 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-sh
         'order=date.asc'
       ];
       const data = await rest(params.join('&'));
-      if (Array.isArray(data)) {
-        for (const row of data){
-          const key = getCheckinDayKey(row);
-          if (!key) continue;
-          const p   = row.payload || {};
-          const bm    = (row.had_bm === true) || (/yes/i.test(String(p.bm_today || p.had_bm || '')));
-          let   sleep = null;
-          const hrsRaw = p.hours_sleep;
-          if (typeof hrsRaw === 'string'){
-            if (hrsRaw.includes('10')) sleep = 10;
-            else { const n = parseFloat(hrsRaw); if (isFinite(n)) sleep = n; }
-          } else if (typeof hrsRaw === 'number') { sleep = hrsRaw; }
-          const sleepLow = (sleep != null && sleep < 8);
-          const onsetLate = hasLateSleepOnset(p) || hasLateSleepOnset(row);
-          const nightWake = /yes|true/i.test(String(p.night_wake_flag || p.night_waking || '')) ||
-            Number(p.night_wake_count) > 0 ||
-            /woke|wake|waking/i.test(String(p.night_wake_notes || ''));
-	          const prnEntries = parsePrnEntries(p.prn_entries);
-	          const hasStructuredPrn = Array.isArray(prnEntries) && prnEntries.length > 0;
-	          const legacySleepPrn = !hasStructuredPrn && /yes|true/i.test(String(p.prn_given || ''));
-	          const prnSleep = /yes|true/i.test(String(p.prn_used_for_sleep_disturbance || p.prn_reason_sleep || '')) ||
-	            legacySleepPrn || prnEntriesInclude(prnEntries, ['sleep', 'settling']);
-	          const prnMania = /yes|true/i.test(String(p.prn_mania_given || '')) ||
-	            !!p.prn_mania_name || !!p.prn_mania_time;
-	          const prnAggr = /yes|true/i.test(String(p.prn_aggression_given || '')) ||
-	            !!p.prn_aggression_name || !!p.prn_aggression_time || prnEntriesInclude(prnEntries, ['aggression', 'agitation', 'escalat']);
-          const tired = /yes|true/i.test(String(p.appears_tired || ''));
-          const manic = /yes|true/i.test(String(p.manic_flag || p.mania_flag || '')) || ((+p.manic_intensity || 0) > 0);
-          const sick  = (p.appears_good_health === false) || /no/i.test(String(p.appears_good_health || ''));
-          const temp = p.temp_present === true
-            || /yes|true/i.test(String(p.temp_present || ''))
-            || !!p.temp_value;
-          const menstrual = p.menstrual_present === true
-            || /yes|true/i.test(String(p.menstrual_present || ''));
-          const appetite = hasAppetiteChange(p) || hasAppetiteChange(row);
-          const anomaly = p.anomaly_flag === true || /yes/i.test(String(p.anomaly || ''));
-
-          const cur = MAP[key] || { bm:false, sleep:null, sleep_low:false, onset:false, night:false, prn_sleep:false, prn_mania:false, prn_aggr:false, tired:false, manic:false, sick:false, temp:false, menstrual:false, appetite:false, moon:false, anomaly:false, med_change_notes:[] };
-          const medChangeFlag = /yes|true/i.test(String(p.med_change_flag || ''));
-          const medChangeNote = String(p.med_change_note || '').trim();
-          const caregiverLabel = (() => {
-            const g = getCaregiverName(row);
-            if (g && g !== 'Unknown') return sanitizeCaregiverLabel(g) || String(g).trim();
-            return '';
-          })();
-          const medChangeLine = (medChangeFlag || medChangeNote)
-            ? `Med change${caregiverLabel ? ` (${caregiverLabel})` : ''}: ${medChangeNote || 'Yes'}`
-            : '';
-          const medNotes = cur.med_change_notes ? cur.med_change_notes.slice() : [];
-          if (medChangeLine && !medNotes.includes(medChangeLine)) medNotes.push(medChangeLine);
-          MAP[key] = {
-            bm:    cur.bm    || bm,
-            sleep: (sleep!=null && (cur.sleep==null || sleep>cur.sleep)) ? sleep : cur.sleep,
-            sleep_low: cur.sleep_low || sleepLow,
-            onset: cur.onset || onsetLate,
-            night: cur.night || nightWake,
-            prn_sleep: cur.prn_sleep || prnSleep,
-            prn_mania: cur.prn_mania || prnMania,
-            prn_aggr: cur.prn_aggr || prnAggr,
-            tired: cur.tired || tired,
-            manic: cur.manic || manic,
-            sick:  cur.sick  || sick,
-            temp:  cur.temp  || temp,
-            menstrual: cur.menstrual || menstrual,
-            appetite: cur.appetite || appetite,
-            moon: cur.moon || isFullMoonKey(key),
-            anomaly: cur.anomaly || anomaly,
-            med_change_notes: medNotes
-          };
-        }
+      const reportRows = collectReportLoadedCalendarRows(startDate, endDate);
+      dedupeCalendarRows(Array.isArray(data) ? data : [], reportRows).forEach((row) => {
+        mergeCalendarObservation(MAP, normalizeCaregiverCheckinForCalendar(row));
+      });
+      if (Array.isArray(data) || reportRows.length) {
+        console.log('[caregiver calendar] visible month rows normalized', {
+          restRows: Array.isArray(data) ? data.length : 0,
+          reportRows: reportRows.length,
+          days: Object.keys(MAP).length
+        });
       }
     }catch(error){
       console.warn('caregiver flags load error', error?.message || error);
@@ -8938,6 +8848,9 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-sh
     if (input) input.checked = true;
     if (value === 'sleep' && !editorSleep.value) editorSleep.value = '8';
     editorQuick.value = '';
+  });
+  window.addEventListener('caregiverDataReady', () => {
+    loadMonth();
   });
 
   // Boot

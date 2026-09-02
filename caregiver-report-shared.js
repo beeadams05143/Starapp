@@ -179,6 +179,10 @@ function getCheckinDateValue(entry = {}) {
 function getCheckinDayKeyFromEntry(entry = {}) {
   const value = getCheckinDateValue(entry);
   if (!value) return '';
+  if (typeof value === 'string') {
+    const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})(?:$|[T\s])/);
+    if (match) return `${match[1]}-${match[2]}-${match[3]}`;
+  }
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return '';
   const y = d.getFullYear();
@@ -400,3 +404,177 @@ export function normalizeCaregiverCheckinRecord(entry = {}) {
   return Object.assign(entry, normalized);
 }
 
+function pickNumberForCalendar(...values) {
+  for (const value of values) {
+    if (value === null || value === undefined || value === '') continue;
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    const text = String(value).toLowerCase();
+    if (/\b10\+|\bten\+/.test(text)) return 10;
+    const match = text.match(/-?\d+(?:\.\d+)?/);
+    if (match) {
+      const parsed = Number(match[0]);
+      if (Number.isFinite(parsed)) return parsed;
+    }
+  }
+  return null;
+}
+
+function parsePrnEntriesForCalendar(value) {
+  return parseJsonishArray(value)
+    .filter((entry) => entry && typeof entry === 'object')
+    .map((entry) => ({
+      time: String(entry.time || entry.prn_time || '').trim(),
+      medication: String(entry.medication || entry.prn_name || entry.medication_name || '').trim(),
+      reason: String(entry.reason || entry.prn_reason || entry.purpose || '').trim(),
+      notes: String(entry.notes || entry.note || '').trim(),
+    }))
+    .filter((entry) => entry.time || entry.medication || entry.reason || entry.notes);
+}
+
+function prnEntriesContain(entries = [], terms = []) {
+  return entries.some((entry) => {
+    const haystack = `${entry.reason || ''} ${entry.notes || ''}`.toLowerCase();
+    return terms.some((term) => haystack.includes(term));
+  });
+}
+
+function hasLateSleepOnsetForCalendar(source = {}) {
+  const direct = source.sleep_onset_difficulty ?? source.difficulty_sleep_onset ?? null;
+  const parsed = parseBooleanLoose(direct);
+  if (parsed !== null) return parsed;
+  const text = String(
+    source.sleep_onset_duration ??
+    source.sleep_onset_minutes ??
+    source.sleep_onset ??
+    source.sleep_latency ??
+    source.sleep_latency_minutes ??
+    ''
+  ).toLowerCase();
+  if (!text) return false;
+  if (/under\s*30|<\s*30/.test(text)) return false;
+  if (/120|180|2-3|3\+|over 2|two to three|three plus/.test(text)) return true;
+  const hours = text.match(/(\d+(?:\.\d+)?)\s*(?:h|hour)/);
+  if (hours) return Number(hours[1]) >= 2;
+  const minutes = text.match(/(\d+(?:\.\d+)?)\s*(?:m|min)/);
+  return minutes ? Number(minutes[1]) >= 120 : false;
+}
+
+function hasAppetiteChangeForCalendar(source = {}) {
+  const candidates = [
+    source.appetite_change_flag,
+    source.appetite_change,
+    source.change_in_appetite,
+    source.appetite_flag,
+    source.behavior_appetite,
+    source.appetite_notes,
+  ];
+  for (const value of candidates) {
+    const parsed = parseBooleanLoose(value);
+    if (parsed !== null) return parsed;
+    const text = String(value || '').trim().toLowerCase();
+    if (!text || text === 'normal' || text.includes('no change')) continue;
+    if (/(less|more|low|high|reduced|increase|decrease)/.test(text)) return true;
+  }
+  return false;
+}
+
+function hasAnyCalendarObservation(flags, notes) {
+  return Object.entries(flags || {}).some(([key, value]) => key === 'sleep' ? value !== null && value !== undefined : !!value)
+    || (Array.isArray(notes) && notes.length > 0);
+}
+
+export function normalizeCaregiverCheckinForCalendar(record = {}) {
+  const normalized = normalizeCaregiverCheckinRecord({ ...(record || {}) });
+  const payload = normalized.payload || {};
+  const dateKey = normalized.dateKey || getCheckinDayKeyFromEntry(normalized);
+  const prnEntries = parsePrnEntriesForCalendar(payload.prn_entries ?? normalized.prn_entries);
+  const hasStructuredPrn = prnEntries.length > 0;
+  const sleep = pickNumberForCalendar(payload.hours_sleep, normalized.hours_sleep, payload.sleep_hours);
+  const movementPresent = parseBooleanLoose(payload.movement_present ?? normalized.movement_present);
+  const movementSeverity = pickNumberForCalendar(payload.movement_severity, normalized.movement_severity);
+  const moodEngagementScore = pickNumberForCalendar(payload.mood_engagement_score, payload.mood_engagement);
+  const moodSpeech = String(payload.mood_speech || '').toLowerCase();
+  const moodPacing = String(payload.mood_pacing || '').toLowerCase();
+  const moodEnergy = String(payload.mood_energy || '').toLowerCase();
+  const moodAttention = String(payload.mood_attention || '').toLowerCase();
+
+  const legacySleepPrn = !hasStructuredPrn && parseBooleanLoose(payload.prn_given) === true;
+  const prnSleep = parseBooleanLoose(payload.prn_used_for_sleep_disturbance ?? payload.prn_reason_sleep) === true
+    || legacySleepPrn
+    || prnEntriesContain(prnEntries, ['sleep', 'settling']);
+  const prnAggr = parseBooleanLoose(payload.prn_used_for_aggression ?? payload.prn_reason_aggression) === true
+    || parseBooleanLoose(payload.prn_aggression_given) === true
+    || !!payload.prn_aggression_name
+    || !!payload.prn_aggression_time
+    || prnEntriesContain(prnEntries, ['aggression', 'agitation', 'anxiety', 'pacing', 'restless', 'escalat']);
+  const prnMania = parseBooleanLoose(payload.prn_used_for_mania ?? payload.prn_reason_mania) === true
+    || parseBooleanLoose(payload.prn_mania_given) === true
+    || !!payload.prn_mania_name
+    || !!payload.prn_mania_time;
+
+  const flags = {
+    bm: normalized.hadBm === true || parseBooleanLoose(payload.had_bm ?? payload.bm_today) === true,
+    sleep,
+    sleep_low: sleep !== null ? sleep < 8 : false,
+    onset: hasLateSleepOnsetForCalendar(payload) || hasLateSleepOnsetForCalendar(normalized),
+    night: parseBooleanLoose(payload.night_wake_flag ?? payload.night_waking) === true
+      || Number(payload.night_wake_count) > 0
+      || /woke|wake|waking/i.test(String(payload.night_wake_notes || '')),
+    prn_sleep: prnSleep,
+    prn_mania: prnMania,
+    prn_aggr: prnAggr,
+    tired: parseBooleanLoose(payload.appears_tired ?? normalized.appears_tired) === true
+      || ['low', 'very_low', 'tired', 'fatigued'].some((term) => moodEnergy.includes(term)),
+    manic: parseBooleanLoose(payload.manic_flag ?? payload.mania_flag) === true
+      || pickNumberForCalendar(payload.manic_intensity) > 0
+      || ['rapid_pressured', 'difficult_to_interrupt'].includes(moodSpeech)
+      || ['frequent', 'nearly_constant'].includes(moodPacing),
+    sick: payload.appears_good_health === false
+      || parseBooleanLoose(payload.appears_good_health) === false,
+    temp: parseBooleanLoose(payload.temp_present) === true || !!payload.temp_value,
+    menstrual: parseBooleanLoose(payload.menstrual_present) === true,
+    appetite: hasAppetiteChangeForCalendar(payload) || hasAppetiteChangeForCalendar(normalized),
+    moon: false,
+    anomaly: parseBooleanLoose(payload.anomaly_flag ?? payload.behavior_anomaly_flag ?? payload.behavior_anomaly_present) === true
+      || movementPresent === true
+      || movementSeverity > 0,
+    med_change_notes: [],
+  };
+
+  const notes = [];
+  const caregiver = normalized.caregiver_name || payload.caregiver_name || '';
+  const prefix = caregiver ? `Caregiver check-in (${caregiver})` : 'Caregiver check-in';
+  notes.push(`${prefix}: recorded`);
+  if (payload.prn_used_today === 'no' || payload.prn_administered === 'no') notes.push('PRN: no');
+  if (hasStructuredPrn) {
+    notes.push(`PRN: ${prnEntries.length} recorded`);
+  }
+  if (Number.isFinite(moodEngagementScore) || payload.mood_energy || payload.mood_speech || payload.mood_attention || payload.mood_pacing) {
+    notes.push(`Mood/regulation: engagement ${Number.isFinite(moodEngagementScore) ? moodEngagementScore : 'not scored'}${moodAttention ? `, attention ${payload.mood_attention}` : ''}`);
+  }
+  const participation = [];
+  if (normalized.vocationalMinutes > 0 || parseBooleanLoose(payload.vocational_participation) === true) participation.push('vocational');
+  if (normalized.homeMinutes > 0 || parseBooleanLoose(payload.home_activity_flag) === true) participation.push('home');
+  if (normalized.publicMinutes > 0 || parseBooleanLoose(payload.public_activity_flag) === true) participation.push('community');
+  if (normalized.adlTaskCount > 0) participation.push(`${normalized.adlTaskCount} ADL task${normalized.adlTaskCount === 1 ? '' : 's'}`);
+  if (participation.length) notes.push(`Participation: ${participation.join(', ')}`);
+  if (parseBooleanLoose(payload.pet_interaction_flag) === true || payload.pet_activity_type) {
+    notes.push(`Pet interaction: ${payload.pet_activity_type || 'yes'}`);
+  }
+  const medChangeFlag = parseBooleanLoose(payload.med_change_flag) === true;
+  const medChangeNote = String(payload.med_change_note || '').trim();
+  if (medChangeFlag || medChangeNote) {
+    notes.push(`Med change${caregiver ? ` (${caregiver})` : ''}: ${medChangeNote || 'Yes'}`);
+  }
+  flags.med_change_notes = notes;
+
+  return {
+    id: normalized.id,
+    dateKey,
+    flags,
+    prnEntries,
+    hasCheckin: !!dateKey,
+    hasObservations: hasAnyCalendarObservation(flags, notes),
+    source: normalized,
+  };
+}

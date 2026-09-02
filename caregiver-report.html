@@ -2792,13 +2792,15 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       paragraphs.push(`Dear Family,\n\nThis report covers ${rangeLabel} and includes ${entryCount} caregiver check-in${entryCount !== 1 ? 's' : ''} logged by ${caregiverText}.`);
 
       const aggDays = safeSummary.behavior?.aggression?.days ?? 0;
-      const prnBehaviorDays = caregiverEntries.filter((entry) => {
-        const payload = entry?.payload || {};
-        return String(payload.prn_administered || '').toLowerCase() === 'yes'
-          || isAffirmative(payload.prn_used_for_aggression)
-          || isAffirmative(payload.prn_used_for_behavior_other)
-          || Boolean(payload.behavior_support_prn_name);
-      }).length;
+	      const prnBehaviorDays = caregiverEntries.filter((entry) => {
+	        const payload = entry?.payload || {};
+	        const prnEntries = parsePrnEntries(payload.prn_entries);
+	        return String(payload.prn_administered || '').toLowerCase() === 'yes'
+	          || isAffirmative(payload.prn_used_for_aggression)
+	          || isAffirmative(payload.prn_used_for_behavior_other)
+	          || Boolean(payload.behavior_support_prn_name)
+	          || prnEntriesInclude(prnEntries, ['aggression', 'agitation', 'anxiety', 'pacing', 'irritability', 'escalat']);
+	      }).length;
       const anomalyDays = caregiverEntries.filter((entry) => isAffirmative(entry?.payload?.anomaly_flag)).length;
       const safetyLines = [];
       if (aggDays > 0) {
@@ -2832,11 +2834,13 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
           || ((payload.appears_good_health === false) || /no/i.test(String(payload.appears_good_health || '')));
       }).length;
       const appetiteDays = caregiverEntries.filter((entry) => hasAppetiteChange(entry) || hasAppetiteChange(entry?.payload)).length;
-      const prnMedicalDays = caregiverEntries.filter((entry) => {
-        const payload = entry?.payload || {};
-        return isAffirmative(payload.prn_used_for_sleep_disturbance)
-          || isAffirmative(payload.prn_used_for_symptoms_discomfort);
-      }).length;
+	      const prnMedicalDays = caregiverEntries.filter((entry) => {
+	        const payload = entry?.payload || {};
+	        const prnEntries = parsePrnEntries(payload.prn_entries);
+	        return isAffirmative(payload.prn_used_for_sleep_disturbance)
+	          || isAffirmative(payload.prn_used_for_symptoms_discomfort)
+	          || prnEntriesInclude(prnEntries, ['sleep', 'settling', 'pain', 'discomfort', 'headache', 'illness']);
+	      }).length;
       const nightWakingDays = caregiverEntries.filter((entry) => {
         const payload = entry?.payload || {};
         return isAffirmative(payload.night_wake_flag)
@@ -3164,12 +3168,13 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         const nightWake = /yes|true/i.test(String(p.night_wake_flag || p.night_waking || '')) ||
           Number(p.night_wake_count) > 0 ||
           /woke|wake|waking/i.test(String(p.night_wake_notes || ''));
-        const prnSleep = /yes|true/i.test(String(p.prn_given || '')) ||
-          !!p.prn_name || !!p.prn_time;
-        const prnMania = /yes|true/i.test(String(p.prn_mania_given || '')) ||
-          !!p.prn_mania_name || !!p.prn_mania_time;
-        const prnAggr = /yes|true/i.test(String(p.prn_aggression_given || '')) ||
-          !!p.prn_aggression_name || !!p.prn_aggression_time;
+	        const prnEntries = parsePrnEntries(p.prn_entries);
+	        const prnSleep = /yes|true/i.test(String(p.prn_given || p.prn_used_today || '')) ||
+	          !!p.prn_name || !!p.prn_time || prnEntriesInclude(prnEntries, ['sleep', 'settling']);
+	        const prnMania = /yes|true/i.test(String(p.prn_mania_given || '')) ||
+	          !!p.prn_mania_name || !!p.prn_mania_time;
+	        const prnAggr = /yes|true/i.test(String(p.prn_aggression_given || '')) ||
+	          !!p.prn_aggression_name || !!p.prn_aggression_time || prnEntriesInclude(prnEntries, ['aggression', 'agitation', 'escalat']);
         const tired = /yes|true/i.test(String(p.appears_tired || ''));
         const manic = /yes|true/i.test(String(p.manic_flag || p.mania_flag || '')) || ((+p.manic_intensity || 0) > 0);
         const sick  = (p.appears_good_health === false) || /no/i.test(String(p.appears_good_health || ''));
@@ -4050,19 +4055,40 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       };
     }
 
-    function isAffirmative(value) {
-      if (value === true) return true;
-      if (value === false) return false;
+	    function isAffirmative(value) {
+	      if (value === true) return true;
+	      if (value === false) return false;
       if (typeof value === 'number') return value > 0;
       if (typeof value === 'string') {
         const normalized = value.trim().toLowerCase();
         if (!normalized) return false;
         return ['yes','y','true','1','done','complete','completed'].includes(normalized);
       }
-      return false;
-    }
+	      return false;
+	    }
 
-    function parseMultiValue(value) {
+	    function parsePrnEntries(value) {
+	      const raw = Array.isArray(value)
+	        ? value
+	        : (() => {
+	            try {
+	              const parsed = typeof value === 'string' ? JSON.parse(value) : value;
+	              return Array.isArray(parsed) ? parsed : [];
+	            } catch {
+	              return [];
+	            }
+	          })();
+	      return raw.filter((entry) => entry && typeof entry === 'object');
+	    }
+
+	    function prnEntriesInclude(entries, terms) {
+	      return entries.some((entry) => {
+	        const haystack = `${entry.reason || entry.prn_reason || ''} ${entry.notes || entry.note || ''}`.toLowerCase();
+	        return terms.some((term) => haystack.includes(term));
+	      });
+	    }
+
+	    function parseMultiValue(value) {
       if (!value) return [];
       if (Array.isArray(value)) return value.filter(Boolean);
       if (typeof value === 'string') {
@@ -5442,7 +5468,11 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 	    const CG_VIEW_FIELD_LABELS = {
 	      section_statuses: 'Section statuses',
 	      entry_date: 'Date of shift',
-      caregiver_name: 'Caregiver name',
+	      caregiver_name: 'Caregiver name',
+	      prn_used_today: 'PRN used today?',
+	      prn_entries: 'PRN administrations',
+	      prn_count: 'PRN count',
+	      prn_reason: 'PRN reason',
       appears_good_health: 'Appears in good health?',
       appears_tired: 'Appears tired?',
       hours_sleep: 'Hours of sleep',
@@ -5531,9 +5561,17 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       prn_used_for_behavior_other: 'PRN used for behavior - other',
       behavior_support_prn_name: 'Behavior support PRN medication',
       behavior_support_prn_time: 'Behavior support PRN time',
-      behavior_notes: 'Behavior / mental health notes',
-      behavior_tracking: 'Configured behavior tracking',
-      vocational_participation: 'Participated in vocational activity?',
+	      behavior_notes: 'Behavior / mental health notes',
+	      behavior_tracking: 'Configured behavior tracking',
+	      mood_energy: 'Energy / activation',
+	      mood_speech: 'Speech',
+	      mood_attention: 'Attention / activity focus',
+	      mood_engagement: 'Engagement score',
+	      mood_engagement_score: 'Engagement score',
+	      mood_pacing: 'Pacing / physical restlessness',
+	      mood_irritability: 'Irritability / emotional regulation',
+	      mood_regulation_notes: 'Mood & regulation notes',
+	      vocational_participation: 'Participated in vocational activity?',
       vocational_time: 'Time in vocational activity',
       vocational_prompting: 'Prompting (vocational)',
       vocational_activity_type: 'Vocational activity type',
@@ -5578,12 +5616,57 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 	      needs_checkin: 'Needs check-in'
 	    };
 
+	    const CG_VIEW_CHOICE_LABELS = {
+	      mood_energy: {
+	        lower: 'Lower than usual',
+	        typical: 'Typical',
+	        higher: 'Higher than usual',
+	        much_higher: 'Much higher than usual'
+	      },
+	      mood_speech: {
+	        typical: 'Typical',
+	        more_talkative: 'More talkative than usual',
+	        rapid_pressured: 'Rapid / pressured',
+	        difficult_to_interrupt: 'Very difficult to interrupt'
+	      },
+	      mood_attention: {
+	        typical: 'Typical',
+	        some_difficulty: 'Some difficulty focusing',
+	        frequently_loses_focus: 'Frequently loses focus',
+	        unable_to_stay_with_activities: 'Unable to stay with activities'
+	      },
+	      mood_engagement: {
+	        '0': '0 - Engaged',
+	        '1': '1 - Less engaged',
+	        '2': '2 - Mostly withdrawn',
+	        '3': '3 - Highly withdrawn'
+	      },
+	      mood_engagement_score: {
+	        '0': '0 - Engaged',
+	        '1': '1 - Less engaged',
+	        '2': '2 - Mostly withdrawn',
+	        '3': '3 - Highly withdrawn'
+	      },
+	      mood_pacing: {
+	        none: 'None',
+	        occasional: 'Occasional',
+	        frequent: 'Frequent',
+	        nearly_constant: 'Nearly constant'
+	      },
+	      mood_irritability: {
+	        none: 'None',
+	        mild: 'Mild',
+	        moderate: 'Moderate',
+	        significant: 'Significant'
+	      }
+	    };
+
 	    const CG_VIEW_SECTIONS = [
 	      {
 	        title: 'Physical Health',
 	        statusKey: 'physical',
 	        keys: [
-          'appears_good_health','appears_tired','hours_sleep','sleep_fell_asleep_time','sleep_onset_time',
+          'prn_used_today','prn_entries','prn_count','appears_good_health','appears_tired','hours_sleep','sleep_fell_asleep_time','sleep_onset_time',
           'sleep_onset_difficulty','night_wake_flag','night_waking','night_wake_count',
           'prn_used_for_sleep_disturbance','prn_name','prn_time','had_bm','appetite_change_flag',
           'appetite_change_direction','med_change_flag','med_change_type_new','med_change_type_dose',
@@ -5601,7 +5684,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 	        title: 'Behavior / Mental Health',
 	        statusKey: 'behavior',
 	        keys: [
-          'behavior_tracking','aggression_flag','aggression_type','aggression_intensity','aggression_notes',
+	          'mood_energy','mood_speech','mood_attention','mood_engagement_score','mood_pacing','mood_irritability','mood_regulation_notes',
+	          'behavior_tracking','aggression_flag','aggression_type','aggression_intensity','aggression_notes',
           'manic_flag','mania_flag','manic_intensity','mania_intensity','mania_episode_status',
           'focus_trouble_flag','daydreaming_zoning_out_present','easily_distracted_environment_present',
           'difficulty_staying_on_task_present','short_attention_span_present','fixation_present',
@@ -5729,7 +5813,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 	    function cgViewBuildRows(record, payload, keys, seen) {
 	      return keys.map((key) => {
 	        seen.add(key);
-        const value = payload[key] ?? record[key];
+        const rawValue = payload[key] ?? record[key];
+        const value = CG_VIEW_CHOICE_LABELS[key]?.[String(rawValue)] || rawValue;
         return { label: cgViewHumanizeKey(key), value, note: ['caregiver_notes','notes','physical_notes','behavior_notes','vocational_notes','home_notes','pet_activity_notes','public_activity_note','interaction_note','daily_living_notes','aggression_notes','behavior_anomaly_notes','movement_notes','temp_notes','menstrual_notes','med_change_note'].includes(key) };
 	      });
 	    }
@@ -7680,9 +7765,10 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       entries.forEach((entry) => {
         const key = getCheckinDayKey(entry);
         if (!key) return;
-        const day = ensure(key);
-        const payload = entry.payload || {};
-        const add = (condition, label) => { if (condition && !day.observations.includes(label)) day.observations.push(label); };
+	        const day = ensure(key);
+	        const payload = entry.payload || {};
+	        const prnEntries = parsePrnEntries(payload.prn_entries);
+	        const add = (condition, label) => { if (condition && !day.observations.includes(label)) day.observations.push(label); };
         const sleep = pickNumber(entry.hours_sleep, payload.hours_sleep);
         add(resolveDailyLivingBool(entry, 'hygiene') === true, 'Hygiene completed');
         add(isAffirmative(entry.had_bm ?? payload.had_bm), 'BM recorded');
@@ -7694,9 +7780,10 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         add(isAffirmative(payload.aggression_flag), 'Aggression recorded');
         add(isAffirmative(payload.appetite_change_flag), 'Appetite change');
         add(isAffirmative(payload.med_change_flag), 'Medication change');
-        add(isAffirmative(payload.prn_used_for_sleep_disturbance), 'PRN for sleep');
-        add(isAffirmative(payload.prn_used_for_mania), 'PRN for mania');
-        add(isAffirmative(payload.prn_used_for_aggression), 'PRN for aggression');
+	        add(isAffirmative(payload.prn_used_today) || prnEntries.length > 0, `${prnEntries.length || 1} PRN recorded`);
+	        add(isAffirmative(payload.prn_used_for_sleep_disturbance) || prnEntriesInclude(prnEntries, ['sleep', 'settling']), 'PRN for sleep');
+	        add(isAffirmative(payload.prn_used_for_mania), 'PRN for mania');
+	        add(isAffirmative(payload.prn_used_for_aggression) || prnEntriesInclude(prnEntries, ['aggression', 'agitation', 'escalat']), 'PRN for aggression');
         const note = extractEntryNotes(entry);
         if (note) day.notes.push(`${caregiverViewLabel(entry)}: ${note}`);
       });
@@ -8623,12 +8710,13 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-sh
           const nightWake = /yes|true/i.test(String(p.night_wake_flag || p.night_waking || '')) ||
             Number(p.night_wake_count) > 0 ||
             /woke|wake|waking/i.test(String(p.night_wake_notes || ''));
-          const prnSleep = /yes|true/i.test(String(p.prn_given || '')) ||
-            !!p.prn_name || !!p.prn_time;
-          const prnMania = /yes|true/i.test(String(p.prn_mania_given || '')) ||
-            !!p.prn_mania_name || !!p.prn_mania_time;
-          const prnAggr = /yes|true/i.test(String(p.prn_aggression_given || '')) ||
-            !!p.prn_aggression_name || !!p.prn_aggression_time;
+	          const prnEntries = parsePrnEntries(p.prn_entries);
+	          const prnSleep = /yes|true/i.test(String(p.prn_given || p.prn_used_today || '')) ||
+	            !!p.prn_name || !!p.prn_time || prnEntriesInclude(prnEntries, ['sleep', 'settling']);
+	          const prnMania = /yes|true/i.test(String(p.prn_mania_given || '')) ||
+	            !!p.prn_mania_name || !!p.prn_mania_time;
+	          const prnAggr = /yes|true/i.test(String(p.prn_aggression_given || '')) ||
+	            !!p.prn_aggression_name || !!p.prn_aggression_time || prnEntriesInclude(prnEntries, ['aggression', 'agitation', 'escalat']);
           const tired = /yes|true/i.test(String(p.appears_tired || ''));
           const manic = /yes|true/i.test(String(p.manic_flag || p.mania_flag || '')) || ((+p.manic_intensity || 0) > 0);
           const sick  = (p.appears_good_health === false) || /no/i.test(String(p.appears_good_health || ''));
@@ -8864,12 +8952,13 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS } from './caregiver-report-sh
           const nightWake = /yes|true/i.test(String(p.night_wake_flag || p.night_waking || '')) ||
             Number(p.night_wake_count) > 0 ||
             /woke|wake|waking/i.test(String(p.night_wake_notes || ''));
-          const prnSleep = /yes|true/i.test(String(p.prn_given || '')) ||
-            !!p.prn_name || !!p.prn_time;
-          const prnMania = /yes|true/i.test(String(p.prn_mania_given || '')) ||
-            !!p.prn_mania_name || !!p.prn_mania_time;
-          const prnAggr = /yes|true/i.test(String(p.prn_aggression_given || '')) ||
-            !!p.prn_aggression_name || !!p.prn_aggression_time;
+	          const prnEntries = parsePrnEntries(p.prn_entries);
+	          const prnSleep = /yes|true/i.test(String(p.prn_given || p.prn_used_today || '')) ||
+	            !!p.prn_name || !!p.prn_time || prnEntriesInclude(prnEntries, ['sleep', 'settling']);
+	          const prnMania = /yes|true/i.test(String(p.prn_mania_given || '')) ||
+	            !!p.prn_mania_name || !!p.prn_mania_time;
+	          const prnAggr = /yes|true/i.test(String(p.prn_aggression_given || '')) ||
+	            !!p.prn_aggression_name || !!p.prn_aggression_time || prnEntriesInclude(prnEntries, ['aggression', 'agitation', 'escalat']);
           const tired = /yes|true/i.test(String(p.appears_tired || ''));
           const manic = /yes|true/i.test(String(p.manic_flag || p.mania_flag || '')) || ((+p.manic_intensity || 0) > 0);
           const sick  = (p.appears_good_health === false) || /no/i.test(String(p.appears_good_health || ''));

@@ -1177,6 +1177,105 @@
       font-size: 16px;
     }
 
+    .central-prn-card,
+    .mood-regulation-card {
+      background: #fff;
+      border: 1px solid #e8dfd2;
+      border-radius: 12px;
+      display: grid;
+      gap: 12px;
+      margin: 0 0 12px;
+      padding: 14px;
+    }
+
+    .central-prn-card h2,
+    .mood-regulation-card h3 {
+      color: #273449;
+      font-family: var(--font-sans);
+      font-size: 17px;
+      font-weight: 900;
+      margin: 0;
+      text-align: left;
+    }
+
+    .prn-entry-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .prn-entry {
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      display: grid;
+      gap: 10px;
+      padding: 12px;
+    }
+
+    .prn-entry-head {
+      align-items: center;
+      display: flex;
+      gap: 8px;
+      justify-content: space-between;
+    }
+
+    .prn-entry-title {
+      color: #273449;
+      font-weight: 900;
+    }
+
+    .prn-remove-btn {
+      background: #fff;
+      border: 1px solid #fecdd3;
+      color: #9f1239;
+      font-size: 13px;
+      padding: 8px 10px;
+    }
+
+    .prn-entry-grid,
+    .mood-choice-grid {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: 1fr;
+    }
+
+    .mood-choice {
+      align-items: flex-start;
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      color: #273449;
+      display: flex;
+      gap: 8px;
+      line-height: 1.25;
+      margin: 0;
+      min-height: 44px;
+      padding: 10px;
+    }
+
+    .mood-choice input {
+      flex: 0 0 auto;
+      margin-top: 2px;
+    }
+
+    .mood-choice small {
+      color: #6b7280;
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      margin-top: 3px;
+    }
+
+    .mood-question {
+      display: grid;
+      gap: 8px;
+    }
+
+    .mood-question-title {
+      color: #273449;
+      font-weight: 900;
+    }
+
     #sectionListView {
       background: #fff;
       border-radius: 14px;
@@ -1797,14 +1896,40 @@
             <input type="date" id="entryDateInput" name="entry_date"/>
             <span class="muted">Pick another day if you missed logging it.</span>
           </label>
-          <div id="question-caregiver-name" class="question-block">
-            <label for="caregiver_name">Caregiver Name:
-              <input id="caregiver_name" name="caregiver_name" type="text" placeholder="Enter your name" required />
-            </label>
-          </div>
-        </div>
+	          <div id="question-caregiver-name" class="question-block">
+	            <label for="caregiver_name">Caregiver Name:
+	              <input id="caregiver_name" name="caregiver_name" type="text" placeholder="Enter your name" required />
+	            </label>
+	          </div>
+	        </div>
 
-        <div id="sectionListView">
+	        <section class="central-prn-card" id="centralPrnSection" aria-labelledby="centralPrnTitle">
+	          <h2 id="centralPrnTitle">PRN Medication</h2>
+	          <input type="hidden" name="prn_entries" id="prn_entries" value="[]"/>
+	          <div class="question-block">
+	            <div class="movement-label">PRN used today?</div>
+	            <div class="yn-pill-group" role="group" aria-label="PRN used today">
+	              <label class="yn-pill"><input type="radio" name="prn_used_today" value="no"> No</label>
+	              <label class="yn-pill"><input type="radio" name="prn_used_today" value="yes"> Yes</label>
+	            </div>
+	          </div>
+	          <div id="prnEntriesWrap" class="is-hidden">
+	            <div id="prnEntryList" class="prn-entry-list"></div>
+	            <button class="btn" type="button" id="addPrnEntryBtn">+ Add another PRN</button>
+	          </div>
+	          <datalist id="prnReasonOptions">
+	            <option value="anxiety"></option>
+	            <option value="pacing"></option>
+	            <option value="agitation"></option>
+	            <option value="sleep"></option>
+	            <option value="difficulty settling"></option>
+	            <option value="escalating irritability"></option>
+	            <option value="pain / discomfort"></option>
+	            <option value="other"></option>
+	          </datalist>
+	        </section>
+
+	        <div id="sectionListView">
           <div class="section-list-item" data-section="physical" data-target="physicalSection">
             <div class="section-list-main">
               <span>Physical Health</span>
@@ -1881,11 +2006,11 @@
               <input type="time" name="sleep_fell_asleep_time"/>
             </label>
           </div>
-          <div class="physical-sleep-row">
-            <label class="physical-checkbox-card" style="display:flex;align-items:center;gap:8px">
-              <input type="checkbox" name="sleep_onset_difficulty" style="width:auto"/>
-              <span>Difficulty falling asleep (took ~2+ hours)</span>
-            </label>
+	          <div class="physical-sleep-row">
+	            <label class="physical-checkbox-card" style="display:flex;align-items:center;gap:8px">
+	              <input type="checkbox" name="sleep_onset_difficulty" style="width:auto"/>
+	              <span>Difficulty falling asleep (took ~2+ hours)</span>
+	            </label>
             <div id="question-night-wake-flag" class="question-block">
               <div class="movement-label">Woke up during the night?</div>
               <div class="yn-pill-group" role="group" aria-label="Woke up during the night">
@@ -1893,15 +2018,7 @@
                 <label class="yn-pill"><input type="radio" name="night_wake_flag" id="night_wake_flag_no" value="no"> No</label>
               </div>
             </div>
-            <div class="physical-checkbox-stack">
-              <div id="question-prn-sleep-disturbance" class="question-block">
-                <label class="prn-option">
-                  <input type="checkbox" name="prn_used_for_sleep_disturbance">
-                  PRN used for sleep disturbance
-                </label>
-              </div>
-            </div>
-          </div>
+	          </div>
           <label id="nightWakeCountWrap" style="display:none">How many times?
             <select name="night_wake_count" id="night_wake_count" class="yn">
               <option value="">Select</option>
@@ -1912,15 +2029,7 @@
             </select>
           </label>
           <div class="muted" style="margin:-4px 0 8px">Record hours of sleep or time fell asleep — either one is fine, or both.</div>
-          <div class="physical-prn-row">
-            <label>If PRN was given - record medication name and time:
-              <input type="text" name="prn_name" id="prn_name" placeholder="Enter PRN, medication, or support used"/>
-            </label>
-            <label>Time
-              <input type="time" name="prn_time" id="prn_time"/>
-            </label>
-          </div>
-          <div class="physical-final-row">
+	          <div class="physical-final-row">
             <div id="question-had-bm" class="question-block">
               <div class="movement-label">Had a BM today?</div>
               <div class="yn-pill-group" role="group" aria-label="Had a BM today">
@@ -1952,7 +2061,7 @@
                 <div class="med-head">
                   <div>
                     <div class="med-title">Medication change</div>
-                    <div class="med-desc">Note any new meds, dose changes, PRNs, or stops.</div>
+	                    <div class="med-desc">Note any new meds, dose changes, or stops.</div>
                   </div>
                 </div>
                 <div class="med-yn" role="group" aria-label="Medication change today">
@@ -2010,14 +2119,7 @@
                   <strong>Symptoms or discomfort today?</strong>
                   <label class="temp-pill"><input type="radio" name="temp_present" value="no"> No</label>
                   <label class="temp-pill"><input type="radio" name="temp_present" value="yes"> Yes</label>
-                  <div id="question-prn-symptoms-discomfort" class="temp-prn-inline">
-                    <label class="prn-option">
-                      <input type="checkbox" name="prn_used_for_symptoms_discomfort">
-                      PRN used for illness or discomfort
-                    </label>
-                    <input type="text" name="temp_prn_name" id="temp_prn_name" placeholder="What was administered?" />
-                  </div>
-                </div>
+	                </div>
                 <div class="temp-body is-collapsed" data-temp-body-wrap>
                   <div class="temp-row temp-row--illness">
                     <div>
@@ -2314,91 +2416,67 @@
             <label id="aggressionNotesWrap">Aggression notes:
               <textarea name="aggression_notes" placeholder="What happened, what helped"></textarea>
             </label>
-            <hr class="soft"/>
-            <div class="section-subtitle">Mood / Regulation</div>
-            <div class="behavior-legacy-section">
-              <div id="question-manic-flag" class="behavior-legacy-question-line">
-                <div class="movement-label">Did the individual seem manic?</div>
-                <div class="yn-pill-group" role="group" aria-label="Seemed manic">
-                  <label class="yn-pill"><input type="radio" name="manic_flag" value="yes"> Yes</label>
-                  <label class="yn-pill"><input type="radio" name="manic_flag" value="no"> No</label>
-                </div>
-              </div>
-              <div class="behavior-legacy-paired-row">
-                <label id="maniaIntensityWrap" style="display:none">Mania intensity (0–5):
-                  <input type="range" min="0" max="5" step="1" value="0" name="manic_intensity" id="manic_intensity" disabled/>
-                  <div class="savedAt"><span id="manicIntensityVal">0</span></div>
-                </label>
-                <label id="maniaEpisodeStatusWrap" style="display:none">Episode status:
-                  <select name="mania_episode_status" id="mania_episode_status">
-                    <option value="">Select</option>
-                    <option value="suspected">Suspected</option>
-                    <option value="active">Active</option>
-                    <option value="improving">Improving</option>
-                  </select>
-                </label>
-              </div>
-            </div>
-            <div class="section-subtitle">Attention / Engagement</div>
-            <div class="behavior-legacy-section">
-              <div id="question-focus-trouble-flag" class="behavior-legacy-question-line">
-                <div class="movement-label">Trouble focusing?</div>
-                <div class="yn-pill-group" role="group" aria-label="Trouble focusing">
-                  <label class="yn-pill"><input type="radio" name="focus_trouble_flag" value="yes"> Yes</label>
-                  <label class="yn-pill"><input type="radio" name="focus_trouble_flag" value="no"> No</label>
-                </div>
-              </div>
-            </div>
-            <div class="behavior-legacy-check-grid checkbox-grid" id="maniaSymptomsWrap" style="display:none">
-              <label class="behavior-legacy-check checkbox-card">
-                <input type="checkbox" name="daydreaming_zoning_out_present" id="daydreaming_zoning_out_present" style="width:auto"/>
-                <span>Daydreaming / zoning out</span>
-              </label>
-              <label class="behavior-legacy-check checkbox-card">
-                <input type="checkbox" name="easily_distracted_environment_present" id="easily_distracted_environment_present" style="width:auto"/>
-                <span>Easily distracted by environment</span>
-              </label>
-              <label class="behavior-legacy-check checkbox-card">
-                <input type="checkbox" name="difficulty_staying_on_task_present" id="difficulty_staying_on_task_present" style="width:auto"/>
-                <span>Difficulty staying on task</span>
-              </label>
-              <label class="behavior-legacy-check checkbox-card">
-                <input type="checkbox" name="short_attention_span_present" id="short_attention_span_present" style="width:auto"/>
-                <span>Short attention span</span>
-              </label>
-              <label class="behavior-legacy-check checkbox-card">
-                <input type="checkbox" name="fixation_present" id="fixation_present" style="width:auto"/>
-                <span>Fixation / perseveration</span>
-              </label>
-              <label class="behavior-legacy-check checkbox-card">
-                <input type="checkbox" name="repetitive_behavior_present" id="repetitive_behavior_present" style="width:auto"/>
-                <span>Repetitive behavior</span>
-              </label>
-              <label class="behavior-legacy-check checkbox-card">
-                <input type="checkbox" name="pressured_speech_present" id="pressured_speech_present" style="width:auto"/>
-                <span>Pressured / rapid speech</span>
-              </label>
-              <label class="behavior-legacy-check checkbox-card">
-                <input type="checkbox" name="grandiosity_present" id="grandiosity_present" style="width:auto"/>
-                <span>Grandiosity</span>
-              </label>
-              <label class="behavior-legacy-check checkbox-card">
-                <input type="checkbox" name="difficulty_following_instructions_present" id="difficulty_following_instructions_present" style="width:auto"/>
-                <span>Difficulty following instructions</span>
-              </label>
-              <label class="behavior-legacy-check checkbox-card">
-                <input type="checkbox" name="needs_frequent_redirection_present" id="needs_frequent_redirection_present" style="width:auto"/>
-                <span>Needs frequent redirection</span>
-              </label>
-              <label class="behavior-legacy-check checkbox-card">
-                <input type="checkbox" name="hyperactive_restless_present" id="hyperactive_restless_present" style="width:auto"/>
-                <span>Hyperactive / restless</span>
-              </label>
-              <label class="behavior-legacy-check checkbox-card">
-                <input type="checkbox" name="disengaged_low_motivation_present" id="disengaged_low_motivation_present" style="width:auto"/>
-                <span>Disengaged / low motivation</span>
-              </label>
-            </div>
+	            <hr class="soft"/>
+	            <div class="section-subtitle">Mood &amp; Regulation</div>
+	            <div class="mood-regulation-card">
+	              <div class="mood-question">
+	                <div class="mood-question-title">Compared with their usual baseline, energy/activity was:</div>
+	                <div class="mood-choice-grid">
+	                  <label class="mood-choice"><input type="radio" name="mood_energy" value="lower">Lower than usual</label>
+	                  <label class="mood-choice"><input type="radio" name="mood_energy" value="typical">Typical</label>
+	                  <label class="mood-choice"><input type="radio" name="mood_energy" value="higher">Higher than usual</label>
+	                  <label class="mood-choice"><input type="radio" name="mood_energy" value="much_higher">Much higher than usual</label>
+	                </div>
+	              </div>
+	              <div class="mood-question">
+	                <div class="mood-question-title">Speech today was:</div>
+	                <div class="mood-choice-grid">
+	                  <label class="mood-choice"><input type="radio" name="mood_speech" value="typical">Typical</label>
+	                  <label class="mood-choice"><input type="radio" name="mood_speech" value="more_talkative">More talkative than usual</label>
+	                  <label class="mood-choice"><input type="radio" name="mood_speech" value="rapid_pressured">Rapid / pressured</label>
+	                  <label class="mood-choice"><input type="radio" name="mood_speech" value="difficult_to_interrupt">Very difficult to interrupt</label>
+	                </div>
+	              </div>
+	              <div class="mood-question">
+	                <div class="mood-question-title">Attention / ability to stay with an activity:</div>
+	                <div class="mood-choice-grid">
+	                  <label class="mood-choice"><input type="radio" name="mood_attention" value="typical">Typical</label>
+	                  <label class="mood-choice"><input type="radio" name="mood_attention" value="some_difficulty">Some difficulty focusing</label>
+	                  <label class="mood-choice"><input type="radio" name="mood_attention" value="frequently_loses_focus">Frequently loses focus</label>
+	                  <label class="mood-choice"><input type="radio" name="mood_attention" value="unable_to_stay_with_activities">Unable to stay with activities</label>
+	                </div>
+	              </div>
+	              <div class="mood-question">
+	                <div class="mood-question-title">Engagement with people and usual activities:</div>
+	                <div class="mood-choice-grid">
+	                  <label class="mood-choice"><input type="radio" name="mood_engagement" value="0"><span>0 — Engaged<small>Interested in usual activities and people.</small></span></label>
+	                  <label class="mood-choice"><input type="radio" name="mood_engagement" value="1"><span>1 — Less engaged<small>Still interested, with more or longer breaks.</small></span></label>
+	                  <label class="mood-choice"><input type="radio" name="mood_engagement" value="2"><span>2 — Mostly withdrawn<small>Some participation, less interest, substantial breaks.</small></span></label>
+	                  <label class="mood-choice"><input type="radio" name="mood_engagement" value="3"><span>3 — Highly withdrawn<small>Little interest in usual activities or interaction.</small></span></label>
+	                </div>
+	              </div>
+	              <div class="mood-question">
+	                <div class="mood-question-title">Pacing or physical restlessness:</div>
+	                <div class="mood-choice-grid">
+	                  <label class="mood-choice"><input type="radio" name="mood_pacing" value="none">None</label>
+	                  <label class="mood-choice"><input type="radio" name="mood_pacing" value="occasional">Occasional</label>
+	                  <label class="mood-choice"><input type="radio" name="mood_pacing" value="frequent">Frequent</label>
+	                  <label class="mood-choice"><input type="radio" name="mood_pacing" value="nearly_constant">Nearly constant</label>
+	                </div>
+	              </div>
+	              <div class="mood-question">
+	                <div class="mood-question-title">Irritability / difficulty regulating emotions:</div>
+	                <div class="mood-choice-grid">
+	                  <label class="mood-choice"><input type="radio" name="mood_irritability" value="none">None</label>
+	                  <label class="mood-choice"><input type="radio" name="mood_irritability" value="mild">Mild</label>
+	                  <label class="mood-choice"><input type="radio" name="mood_irritability" value="moderate">Moderate</label>
+	                  <label class="mood-choice"><input type="radio" name="mood_irritability" value="significant">Significant</label>
+	                </div>
+	              </div>
+	              <label>Anything else you noticed?
+	                <textarea name="mood_regulation_notes" placeholder="Optional short note"></textarea>
+	              </label>
+	            </div>
             <div class="subcap">Anomalies <span class="muted">(unexpected behavior, mood, movement, speech, or other changes)</span></div>
             <div class="behavior-legacy-paired-row">
               <div id="question-behavior-anomaly-flag" class="behavior-legacy-question-line">
@@ -2413,44 +2491,7 @@
               </label>
             </div>
             <label id="anomalyNotesWrap" style="display:none">Anomaly details:<textarea name="behavior_anomaly_notes" placeholder="Describe changes in movement, speech, behavior, mood, or anything else unusual; include how long it lasted and what helped"></textarea></label>
-            <hr class="soft"/>
-            <div class="section-subtitle">PRN used for behavioral / mental health support</div>
-            <p class="behavior-legacy-subtext">Check all reasons this PRN was given</p>
-            <div class="behavior-legacy-check-grid checkbox-grid" role="group" aria-label="Behavioral PRN reasons">
-              <label class="behavior-legacy-check checkbox-card">
-                <input type="checkbox" name="prn_used_for_aggression" style="width:auto"/>
-                <span>Aggression</span>
-              </label>
-              <label class="behavior-legacy-check checkbox-card">
-                <input type="checkbox" name="prn_used_for_anxiety" style="width:auto"/>
-                <span>Anxiety</span>
-              </label>
-              <label class="behavior-legacy-check checkbox-card">
-                <input type="checkbox" name="prn_used_for_mania" style="width:auto"/>
-                <span>Mania / mood episode</span>
-              </label>
-              <label class="behavior-legacy-check checkbox-card">
-                <input type="checkbox" name="prn_used_for_attention" style="width:auto"/>
-                <span>Attention / focus</span>
-              </label>
-              <label class="behavior-legacy-check checkbox-card">
-                <input type="checkbox" name="prn_used_for_anomalous_behavior" style="width:auto"/>
-                <span>Anomalous behavior</span>
-              </label>
-              <label class="behavior-legacy-check checkbox-card">
-                <input type="checkbox" name="prn_used_for_behavior_other" style="width:auto"/>
-                <span>Other</span>
-              </label>
-            </div>
-            <div class="behavior-legacy-paired-row">
-              <label>Medication used (optional):
-                <input class="behavior-legacy-small-input" type="text" name="behavior_support_prn_name" placeholder="e.g., hydroxyzine"/>
-              </label>
-              <label>Time given (optional):
-                <input type="time" name="behavior_support_prn_time"/>
-              </label>
-            </div>
-          </div>
+	          </div>
           <div class="controls">
             <div class="left-actions"><button class="btn" type="button" data-save>Save</button><span class="action-note">Saves your progress so far so you can come back later.</span><span class="savedAt" data-savedat></span></div>
             <div>
@@ -2816,9 +2857,11 @@
       let movementStepIndex = -1;
   let adlCategoryWrap, adlActivityWrap, adlCategoryInput, adlActivityInput;
   let adlNoteInput, adlPromptingSelect, adlEntryListEl, addAdlEntryBtn, adlEntriesField;
+  let prnEntriesWrap, prnEntryListEl, addPrnEntryBtn, prnEntriesField;
   let homeActivityTypeInput, publicActivityTypeInput, interactionTypeInput;
   let behaviorQuestionsWrap, behaviorTrackingField, educationalQuestionsWrap, educationalTrackingField;
   let adlEntries = [];
+  let prnEntries = [];
   let adlHandlersBound = false;
   const todayISO = () => new Date().toISOString().slice(0,10);
 
@@ -3911,35 +3954,11 @@
     `;
   }
 
-  function renderPrnUsageFields(prefix, itemKey){
-    return `
-      <div class="behavior-followup-grid">
-        <label class="behavior-choice-field behavior-followup-span-2">Reason / target behavior:
-          <input
-            class="behavior-inline-input"
-            type="text"
-            name="${prefix}_prn_reason__${escapeHtml(itemKey)}"
-            placeholder="e.g., anxiety, agitation, escalating behavior"
-          >
-        </label>
-        <label class="behavior-choice-field">What was used?:
-          <input
-            class="behavior-inline-input"
-            type="text"
-            name="${prefix}_prn_name__${escapeHtml(itemKey)}"
-            placeholder="e.g., hydroxyzine"
-          >
-        </label>
-        <label class="behavior-choice-field">Time given:
-          <input
-            class="behavior-inline-time"
-            type="time"
-            name="${prefix}_prn_time__${escapeHtml(itemKey)}"
-          >
-        </label>
-      </div>
-    `;
-  }
+	  function renderPrnUsageFields(prefix, itemKey){
+	    return `
+	      <p class="behavior-section-helper">Document medication, time, and reason in the PRN Medication section above.</p>
+	    `;
+	  }
 
   async function saveBehaviorDescription(itemKey, description){
     const nextDescription = trimOrNull(description);
@@ -4759,7 +4778,7 @@
       return [];
     }
   };
-  const parseMultiValue = (value) => {
+	  const parseMultiValue = (value) => {
     if (!value) return [];
     if (Array.isArray(value)) return value.filter(Boolean);
     if (typeof value === 'string') {
@@ -4770,8 +4789,106 @@
       const trimmed = value.trim();
       return trimmed ? [trimmed] : [];
     }
-    return [];
-  };
+	    return [];
+	  };
+
+	  const emptyPrnEntry = () => ({
+	    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+	    time: '',
+	    medication: '',
+	    reason: '',
+	    notes: ''
+	  });
+
+	  function normalizePrnEntry(entry = {}) {
+	    return {
+	      id: entry.id || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+	      time: String(entry.time || entry.prn_time || '').trim(),
+	      medication: String(entry.medication || entry.prn_name || entry.medication_name || '').trim(),
+	      reason: String(entry.reason || entry.prn_reason || entry.purpose || '').trim(),
+	      notes: String(entry.notes || entry.note || '').trim()
+	    };
+	  }
+
+	  function readPrnEntriesFromDom() {
+	    if (!prnEntryListEl) return [];
+	    return Array.from(prnEntryListEl.querySelectorAll('[data-prn-entry]'))
+	      .map((entryEl) => normalizePrnEntry({
+	        id: entryEl.dataset.prnEntry || '',
+	        time: entryEl.querySelector('[data-prn-time]')?.value || '',
+	        medication: entryEl.querySelector('[data-prn-medication]')?.value || '',
+	        reason: entryEl.querySelector('[data-prn-reason]')?.value || '',
+	        notes: entryEl.querySelector('[data-prn-notes]')?.value || ''
+	      }));
+	  }
+
+	  function syncPrnEntriesField() {
+	    prnEntries = readPrnEntriesFromDom();
+	    if (prnEntriesField) prnEntriesField.value = JSON.stringify(prnEntries);
+	  }
+
+	  function renderPrnEntries() {
+	    if (!prnEntryListEl) return;
+	    if (!prnEntries.length) prnEntries = [emptyPrnEntry()];
+	    prnEntryListEl.innerHTML = prnEntries.map((entry, index) => `
+	      <article class="prn-entry" data-prn-entry="${escapeHtml(entry.id)}">
+	        <div class="prn-entry-head">
+	          <div class="prn-entry-title">PRN ${index + 1}</div>
+	          ${prnEntries.length > 1 ? `<button class="prn-remove-btn" type="button" data-remove-prn="${escapeHtml(entry.id)}">Remove</button>` : ''}
+	        </div>
+	        <div class="prn-entry-grid">
+	          <label>Time given
+	            <input type="time" data-prn-time value="${escapeHtml(entry.time)}" required>
+	          </label>
+	          <label>Medication / PRN
+	            <input type="text" data-prn-medication value="${escapeHtml(entry.medication)}" placeholder="Medication or PRN" required>
+	          </label>
+	          <label>What was it given for?
+	            <input type="text" data-prn-reason value="${escapeHtml(entry.reason)}" list="prnReasonOptions" placeholder="e.g., anxiety, pacing, agitation, sleep" required>
+	          </label>
+	          <label>Notes
+	            <textarea data-prn-notes placeholder="Optional brief note">${escapeHtml(entry.notes)}</textarea>
+	          </label>
+	        </div>
+	      </article>
+	    `).join('');
+	    syncPrnEntriesField();
+	  }
+
+	  function syncCentralPrnUI() {
+	    const yes = getYnValue('prn_used_today') === 'yes';
+	    if (prnEntriesWrap) prnEntriesWrap.classList.toggle('is-hidden', !yes);
+	    if (yes && !prnEntries.length) {
+	      prnEntries = [emptyPrnEntry()];
+	      renderPrnEntries();
+	    }
+	    if (!yes && prnEntriesField) prnEntriesField.value = '[]';
+	  }
+
+	  function hydratePrnFromData(data = {}) {
+	    const entries = parseJsonArray(data.prn_entries).map(normalizePrnEntry);
+	    prnEntries = entries.length ? entries : [];
+	    const used = String(data.prn_used_today || '').toLowerCase();
+	    const yes = used === 'yes' || used === 'true' || prnEntries.length > 0;
+	    document.querySelectorAll('input[name="prn_used_today"]').forEach((el) => {
+	      el.checked = yes ? el.value === 'yes' : used === 'no' ? el.value === 'no' : false;
+	    });
+	    renderPrnEntries();
+	    syncCentralPrnUI();
+	  }
+
+	  function validateCentralPrns() {
+	    syncPrnEntriesField();
+	    if (getYnValue('prn_used_today') !== 'yes') return true;
+	    const firstInvalid = Array.from(prnEntryListEl?.querySelectorAll('[data-prn-time],[data-prn-medication],[data-prn-reason]') || [])
+	      .find((field) => !String(field.value || '').trim());
+	    if (firstInvalid) {
+	      firstInvalid.focus();
+	      alert('Please enter time, medication, and reason for each PRN given today.');
+	      return false;
+	    }
+	    return true;
+	  }
 
   let movementEls = {};
   let tempEls = {};
@@ -5195,10 +5312,14 @@
     steps         = Array.from(document.querySelectorAll('.step'));
       adlStepIndex  = steps.findIndex((step) => step.id === 'daily-living-step');
       movementStepIndex = steps.findIndex((step) => step.dataset.step === '0');
-    entryDateInput = document.getElementById('entryDateInput');
-    toggleAllBtn  = document.getElementById('toggleAll');
-    resumeDraftBtn = document.getElementById('resumeDraftBtn');
-    behaviorQuestionsWrap = document.getElementById('behaviorQuestionsWrap');
+	    entryDateInput = document.getElementById('entryDateInput');
+	    toggleAllBtn  = document.getElementById('toggleAll');
+	    resumeDraftBtn = document.getElementById('resumeDraftBtn');
+	    prnEntriesWrap = document.getElementById('prnEntriesWrap');
+	    prnEntryListEl = document.getElementById('prnEntryList');
+	    addPrnEntryBtn = document.getElementById('addPrnEntryBtn');
+	    prnEntriesField = document.getElementById('prn_entries');
+	    behaviorQuestionsWrap = document.getElementById('behaviorQuestionsWrap');
     behaviorTrackingField = document.getElementById('behavior_tracking');
     educationalQuestionsWrap = document.getElementById('educationalQuestionsWrap');
     educationalTrackingField = document.getElementById('educational_tracking');
@@ -5291,6 +5412,7 @@
 	    // Wire per-step buttons and autosave
 	    steps.forEach((step, idx) => {
 	      step.querySelector('[data-next]')?.addEventListener('click', () => {
+	        if (idx === 0 && !validateCentralPrns()) return;
 	        save(step, idx);
 	        markSectionDetailedComplete(step);
 	        continueGuidedFlow(idx);
@@ -5351,12 +5473,36 @@
       syncBehaviorQuestionStates();
       syncBehaviorTrackingField({ dispatch: true });
     });
-    behaviorQuestionsWrap?.addEventListener('input', (event) => {
-      if (event.target?.matches('[data-behavior-intensity]')) {
-        syncBehaviorIntensityDisplay(event.target.closest('[data-behavior-key]'));
-      }
-    });
-    behaviorQuestionsWrap?.addEventListener('click', async (event) => {
+	    behaviorQuestionsWrap?.addEventListener('input', (event) => {
+	      if (event.target?.matches('[data-behavior-intensity]')) {
+	        syncBehaviorIntensityDisplay(event.target.closest('[data-behavior-key]'));
+	      }
+	    });
+	    document.querySelectorAll('input[name="prn_used_today"]').forEach((input) => {
+	      input.addEventListener('change', () => {
+	        syncCentralPrnUI();
+	        save(steps[0], 0, true);
+	      });
+	    });
+	    prnEntryListEl?.addEventListener('input', () => {
+	      syncPrnEntriesField();
+	      save(steps[0], 0, true);
+	    });
+	    prnEntryListEl?.addEventListener('click', (event) => {
+	      const removeBtn = event.target.closest('[data-remove-prn]');
+	      if (!removeBtn) return;
+	      syncPrnEntriesField();
+	      prnEntries = prnEntries.filter((entry) => entry.id !== removeBtn.dataset.removePrn);
+	      renderPrnEntries();
+	      save(steps[0], 0, true);
+	    });
+	    addPrnEntryBtn?.addEventListener('click', () => {
+	      syncPrnEntriesField();
+	      prnEntries.push(emptyPrnEntry());
+	      renderPrnEntries();
+	      save(steps[0], 0, true);
+	    });
+	    behaviorQuestionsWrap?.addEventListener('click', async (event) => {
       const editBtn = event.target.closest('[data-behavior-desc-edit]');
       if (editBtn) {
         const key = editBtn.dataset.behaviorDescEdit || '';
@@ -6088,8 +6234,9 @@
         else el.value = v;
       });
     }
-    function save(step,idx,silent){
-      draft.data[idx]=serialize(step);
+	    function save(step,idx,silent){
+	      syncPrnEntriesField();
+	      draft.data[idx]=serialize(step);
       draft.savedAt[idx]=new Date().toISOString();
       persistDraft();
       updateSavedAt(step,idx);
@@ -6107,10 +6254,13 @@
         syncEducationalQuestionStates();
         syncEducationalTrackingField();
       }
-      if(idx===adlStepIndex){
-        hydrateAdlFieldsFromData(draft.data[idx] || {}, { silent: true });
-      }
-      if (idx === movementStepIndex) {
+	      if(idx===adlStepIndex){
+	        hydrateAdlFieldsFromData(draft.data[idx] || {}, { silent: true });
+	      }
+	      if (idx === 0) {
+	        hydratePrnFromData(draft.data[idx] || {});
+	      }
+	      if (idx === movementStepIndex) {
         hydrateMovementFromData(draft.data[idx] || {});
         hydrateTempFromData(draft.data[idx] || {});
         hydrateMenstrualFromData(draft.data[idx] || {});
@@ -6204,6 +6354,8 @@
 	          if (def.key === 'physical') {
 	            if (data.entry_date) payload.entry_date = data.entry_date;
 	            if (data.caregiver_name) payload.caregiver_name = data.caregiver_name;
+	            if (data.prn_used_today) payload.prn_used_today = data.prn_used_today;
+	            if (data.prn_entries) payload.prn_entries = data.prn_entries;
 	          }
 	          return;
 	        }
@@ -6213,6 +6365,19 @@
 	      payload.section_statuses = buildSectionStatusPayload();
 	      payload._submitted_at = new Date().toISOString();
 	      return payload;
+	    }
+
+	    function getNormalizedPrnEntriesFromPayload(payload = {}) {
+	      const usedToday = String(payload.prn_used_today || '').toLowerCase() === 'yes';
+	      const entries = parseJsonArray(payload.prn_entries)
+	        .map(normalizePrnEntry)
+	        .filter((entry) => entry.time || entry.medication || entry.reason || entry.notes);
+	      return usedToday ? entries : [];
+	    }
+
+	    function reasonMatches(entry, patterns = []) {
+	      const haystack = `${entry.reason || ''} ${entry.notes || ''}`.toLowerCase();
+	      return patterns.some((pattern) => haystack.includes(pattern));
 	    }
     function resetParticipationRadiosToSkip(){
       ['vocational_participation', 'home_activity_flag', 'public_activity_flag'].forEach((name) => {
@@ -6228,8 +6393,11 @@
       formEl.querySelectorAll('input[type="radio"]').forEach((el) => {
         el.checked = false;
       });
-      resetParticipationRadiosToSkip();
-      formEl.querySelectorAll('input[type="text"], input[type="time"], input[type="number"], textarea').forEach((el) => {
+	      resetParticipationRadiosToSkip();
+	      prnEntries = [];
+	      renderPrnEntries();
+	      syncCentralPrnUI();
+	      formEl.querySelectorAll('input[type="text"], input[type="time"], input[type="number"], textarea').forEach((el) => {
         el.value = '';
       });
       formEl.querySelectorAll('select').forEach((el) => {
@@ -6374,7 +6542,7 @@
       return raw;
     }
 
-    function collectSectionReviewItems(container) {
+	    function collectSectionReviewItems(container) {
       if (!container) return [];
       const items = [];
       const seenKeys = new Set();
@@ -6390,12 +6558,40 @@
         seenKeys.add(key);
         items.push({ label, value: String(value) });
       });
-      return items;
-    }
+	      return items;
+	    }
+
+	    function appendReviewItem(card, item) {
+	      const row = document.createElement('div');
+	      row.className = 'review-item';
+	      const labelEl = document.createElement('div');
+	      labelEl.className = 'review-label';
+	      labelEl.textContent = item.label;
+	      const valueEl = document.createElement('div');
+	      valueEl.className = 'review-value';
+	      valueEl.textContent = item.value;
+	      row.append(labelEl, valueEl);
+	      card.appendChild(row);
+	    }
 
 	    function renderReviewBeforeSubmit() {
 	      if (!reviewOverlay || !reviewSectionsEl) return;
+	      syncPrnEntriesField();
 	      reviewSectionsEl.innerHTML = '';
+	      const prnUsed = getYnValue('prn_used_today') === 'yes';
+	      const prnItems = prnUsed
+	        ? readPrnEntriesFromDom().map((entry, index) => ({
+	            label: `PRN ${index + 1}`,
+	            value: [entry.time, entry.medication, entry.reason].filter(Boolean).join(' — ') + (entry.notes ? `\n${entry.notes}` : '')
+	          }))
+	        : [{ label: 'PRN used today?', value: 'No' }];
+	      const prnCard = document.createElement('section');
+	      prnCard.className = 'review-section';
+	      const prnHeader = document.createElement('h3');
+	      prnHeader.textContent = 'PRN Medication';
+	      prnCard.appendChild(prnHeader);
+	      prnItems.forEach((item) => appendReviewItem(prnCard, item));
+	      reviewSectionsEl.appendChild(prnCard);
 	      SECTION_STATUS_DEFS.forEach((def) => {
 	        const sectionEl = document.getElementById(def.stepId);
 	        const status = getSectionStatus(def);
@@ -6411,12 +6607,7 @@
 	        const header = document.createElement('h3');
 	        header.textContent = def.title;
 	        card.appendChild(header);
-        items.forEach((item) => {
-          const row = document.createElement('div');
-          row.className = 'review-item';
-          row.innerHTML = `<div class="review-label">${item.label}</div><div class="review-value">${item.value}</div>`;
-          card.appendChild(row);
-        });
+        items.forEach((item) => appendReviewItem(card, item));
         reviewSectionsEl.appendChild(card);
       });
       if (!reviewSectionsEl.children.length) {
@@ -6439,18 +6630,20 @@
         window.location.href = 'dashboard.html?onboarding=complete';
         return;
       }
-      if (!reviewConfirmed) {
-        renderReviewBeforeSubmit();
-        return;
-      }
+	      if (!reviewConfirmed) {
+	        if (!validateCentralPrns()) return;
+	        renderReviewBeforeSubmit();
+	        return;
+	      }
       reviewConfirmed = false;
       hideReviewBeforeSubmit();
       if (submitBtn) { submitBtn.disabled=true; submitBtn.textContent='Submitting…'; }
       try {
-        const activeStep = steps[current];
-        if (activeStep) {
-          save(activeStep, current, true);
-        }
+	        const activeStep = steps[current];
+	        if (activeStep) {
+	          if (current === 0 && !validateCentralPrns()) return;
+	          save(activeStep, current, true);
+	        }
 
         const session = getSessionFromStorage();
         const user = session?.user || null;
@@ -6599,57 +6792,70 @@
           return cleaned;
         };
         normalizeMenstrual();
-        const normalizeMania = () => {
-          const manic = String(payload.manic_flag || '').toLowerCase() === 'yes';
-          const focusTrouble = String(payload.focus_trouble_flag || '').toLowerCase() === 'yes';
-          const intensity = Number(payload.manic_intensity);
-          const fixation = !!payload.fixation_present;
-          const repetitive = !!payload.repetitive_behavior_present;
-          const pressuredSpeech = !!payload.pressured_speech_present;
-          const grandiosity = !!payload.grandiosity_present;
-          const cleaned = {
-            manic_flag: manic ? 'Yes' : 'No',
-            manic_intensity: manic && Number.isFinite(intensity) ? intensity : 0,
-            mania_instances_today: null,
-            mania_episode_status: manic ? trimOrNull(payload.mania_episode_status) : null,
-            fixation_present: focusTrouble ? fixation : false,
-            fixation_category: focusTrouble && fixation ? trimOrNull(payload.fixation_category) : null,
-            repetitive_behavior_present: focusTrouble ? repetitive : false,
-            pressured_speech_present: focusTrouble ? pressuredSpeech : false,
-            grandiosity_present: focusTrouble ? grandiosity : false,
-            appetite_change_flag: isAffirmative(payload.appetite_change_flag) ? 'Yes' : 'No',
-            appetite_change_direction: isAffirmative(payload.appetite_change_flag)
-              ? trimOrNull(payload.appetite_change_direction)
-              : null
-          };
-          Object.assign(payload, cleaned);
-          return cleaned;
-        };
-        normalizeMania();
-        const normalizePrn = () => {
-          const reasonSleep = !!payload.prn_used_for_sleep_disturbance;
-          const reasonAggression = !!payload.prn_used_for_aggression;
-          const reasonMania = !!payload.prn_used_for_mania;
-          const reasonAnxiety = !!payload.prn_used_for_anxiety;
-          const reasonPain = !!payload.prn_used_for_pain;
-          const reasonSymptomsDiscomfort = !!payload.prn_used_for_symptoms_discomfort;
-          const administered = reasonSleep || reasonAggression || reasonMania || reasonAnxiety || reasonPain || reasonSymptomsDiscomfort;
-          const cleaned = {
-            prn_administered: administered ? 'yes' : 'no',
-            prn_name: administered ? trimOrNull(payload.prn_name) : null,
-            prn_time: administered ? trimOrNull(payload.prn_time) : null,
-            prn_reason_sleep: reasonSleep,
-            prn_reason_aggression: reasonAggression,
-            prn_reason_mania: reasonMania,
-            prn_used_for_anxiety: reasonAnxiety,
-            prn_used_for_pain: reasonPain,
-            prn_used_for_headache: reasonSymptomsDiscomfort,
-            prn_used_for_symptoms_discomfort: reasonSymptomsDiscomfort,
-            prn_given: administered ? 'yes' : 'no',
-            prn_mania_given: reasonMania ? 'yes' : 'no',
-            prn_aggression_given: reasonAggression ? 'yes' : 'no',
-            prn_mania_name: null,
-            prn_mania_time: null,
+	        const normalizeMoodRegulation = () => {
+	          const engagementRaw = payload.mood_engagement;
+	          const engagementScore = Number(engagementRaw);
+	          const speech = trimOrNull(payload.mood_speech);
+	          const attention = trimOrNull(payload.mood_attention);
+	          const pacing = trimOrNull(payload.mood_pacing);
+	          const cleaned = {
+	            mood_energy: trimOrNull(payload.mood_energy),
+	            mood_speech: speech,
+	            mood_attention: attention,
+	            mood_engagement: Number.isFinite(engagementScore) ? String(engagementScore) : null,
+	            mood_engagement_score: Number.isFinite(engagementScore) ? engagementScore : null,
+	            mood_pacing: pacing,
+	            mood_irritability: trimOrNull(payload.mood_irritability),
+	            mood_regulation_notes: trimOrNull(payload.mood_regulation_notes),
+	            manic_flag: null,
+	            manic_intensity: null,
+	            mania_instances_today: null,
+	            mania_episode_status: null,
+	            focus_trouble_flag: attention && attention !== 'typical' ? 'Yes' : null,
+	            fixation_present: false,
+	            fixation_category: null,
+	            repetitive_behavior_present: false,
+	            pressured_speech_present: speech === 'rapid_pressured' || speech === 'difficult_to_interrupt',
+	            grandiosity_present: false,
+	            hyperactive_restless_present: pacing === 'frequent' || pacing === 'nearly_constant',
+	            disengaged_low_motivation_present: Number.isFinite(engagementScore) && engagementScore >= 2,
+	            appetite_change_flag: isAffirmative(payload.appetite_change_flag) ? 'Yes' : 'No',
+	            appetite_change_direction: isAffirmative(payload.appetite_change_flag)
+	              ? trimOrNull(payload.appetite_change_direction)
+	              : null
+	          };
+	          Object.assign(payload, cleaned);
+	          return cleaned;
+	        };
+	        normalizeMoodRegulation();
+	        const normalizePrn = () => {
+	          const entries = getNormalizedPrnEntriesFromPayload(payload);
+	          const administered = entries.length > 0;
+	          const reasonSleep = entries.some((entry) => reasonMatches(entry, ['sleep', 'settling']));
+	          const reasonAggression = entries.some((entry) => reasonMatches(entry, ['aggression', 'agitation', 'escalat']));
+	          const reasonAnxiety = entries.some((entry) => reasonMatches(entry, ['anxiety', 'anxious', 'pacing', 'restless']));
+	          const reasonPain = entries.some((entry) => reasonMatches(entry, ['pain', 'discomfort', 'headache', 'illness']));
+	          const firstEntry = entries[0] || {};
+	          const cleaned = {
+	            prn_used_today: administered ? 'yes' : 'no',
+	            prn_entries: entries,
+	            prn_administered: administered ? 'yes' : 'no',
+	            prn_count: entries.length,
+	            prn_name: administered ? trimOrNull(firstEntry.medication) : null,
+	            prn_time: administered ? trimOrNull(firstEntry.time) : null,
+	            prn_reason: administered ? trimOrNull(firstEntry.reason) : null,
+	            prn_reason_sleep: reasonSleep,
+	            prn_reason_aggression: reasonAggression,
+	            prn_reason_mania: false,
+	            prn_used_for_anxiety: reasonAnxiety,
+	            prn_used_for_pain: reasonPain,
+	            prn_used_for_headache: reasonPain,
+	            prn_used_for_symptoms_discomfort: reasonPain,
+	            prn_given: administered ? 'yes' : 'no',
+	            prn_mania_given: 'no',
+	            prn_aggression_given: reasonAggression ? 'yes' : 'no',
+	            prn_mania_name: null,
+	            prn_mania_time: null,
             prn_aggression_name: null,
             prn_aggression_time: null
           };

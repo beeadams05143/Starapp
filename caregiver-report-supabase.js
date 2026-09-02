@@ -470,6 +470,34 @@ const buildNotes = (row, payload) => {
   return parts.length ? parts.join('\n\n') : null;
 };
 
+const normalizePrnEntries = (payload = {}) => {
+  const raw = payload?.prn_entries;
+  const entries = Array.isArray(raw)
+    ? raw
+    : (() => {
+        try {
+          const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+          return Array.isArray(parsed) ? parsed : [];
+        } catch {
+          return [];
+        }
+      })();
+  return entries
+    .filter((entry) => entry && typeof entry === 'object')
+    .map((entry) => ({
+      time: String(entry.time || entry.prn_time || '').trim(),
+      medication: String(entry.medication || entry.prn_name || entry.medication_name || '').trim(),
+      reason: String(entry.reason || entry.prn_reason || entry.purpose || '').trim(),
+      notes: String(entry.notes || entry.note || '').trim()
+    }))
+    .filter((entry) => entry.time || entry.medication || entry.reason || entry.notes);
+};
+
+const prnReasonMatches = (entries = [], terms = []) => entries.some((entry) => {
+  const haystack = `${entry.reason || ''} ${entry.notes || ''}`.toLowerCase();
+  return terms.some((term) => haystack.includes(term));
+});
+
 const derivePromptScore = (row, payload) => {
   const candidates = [
     row?.new_skill_score,
@@ -572,6 +600,8 @@ const normalizeSupabaseEntry = (row = {}) => {
   );
 
   const caregiverNotes = buildNotes(row, payload);
+  const prnEntries = normalizePrnEntries(payload);
+  const structuredPrnUsed = prnEntries.length > 0 || parseBoolean(payload.prn_used_today) === true;
   const promptScore = derivePromptScore(row, payload);
   const uniqueId =
     row.id ??
@@ -626,6 +656,13 @@ const normalizeSupabaseEntry = (row = {}) => {
     leisure_time: leisureMinutes,
     new_skill_score: promptScore,
     focus_goal_logs: Array.isArray(payload.focus_goal_logs) ? payload.focus_goal_logs : [],
+    prn_entries: prnEntries,
+    prn_used_today: structuredPrnUsed,
+    prn_count: prnEntries.length,
+    prn_used_for_sleep_disturbance: parseBoolean(payload.prn_used_for_sleep_disturbance) || prnReasonMatches(prnEntries, ['sleep', 'settling']),
+    prn_used_for_aggression: parseBoolean(payload.prn_used_for_aggression) || prnReasonMatches(prnEntries, ['aggression', 'agitation', 'escalat']),
+    prn_used_for_anxiety: parseBoolean(payload.prn_used_for_anxiety) || prnReasonMatches(prnEntries, ['anxiety', 'anxious', 'pacing', 'restless']),
+    prn_used_for_pain: parseBoolean(payload.prn_used_for_pain) || prnReasonMatches(prnEntries, ['pain', 'discomfort', 'headache', 'illness']),
     movement_present: movementPresent,
     movement_main_type: movementMainType,
     movement_severity: movementSeverity,

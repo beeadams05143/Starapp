@@ -92,7 +92,15 @@ assert.match(html, /Specific dates further narrow the filters/);
 assert.match(html, /function checkinMatchesPrintFilters/);
 assert.match(html, /filterCaregiverCheckinsForPrint/);
 assert.match(html, /function printCheckinRecords/);
+assert.match(html, /function cgPrintShouldShowRow/);
+assert.match(html, /function cgPrintRowsForSection/);
+assert.match(html, /function cgPrintRenderableSections/);
+assert.match(html, /title: 'PRN Medication'/);
+assert.match(html, /meta-grid\{display:grid;grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
+assert.match(html, /field-grid\{display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+assert.match(html, /@page\{size:Letter portrait;margin:\.38in\}/);
 assert.match(html, /checkin-print-record\{break-after:page;page-break-after:always\}/);
+assert.doesNotMatch(html, /row\{display:grid;grid-template-columns:1fr 42%/);
 assert.match(html, /document\.getElementById\('fullPrintBtn'\)\?\.addEventListener\('click', \(\) => \{[\s\S]*window\.starOpenCheckinPrintCenter/);
 
 console.log('caregiver report readability and printing: PASS');

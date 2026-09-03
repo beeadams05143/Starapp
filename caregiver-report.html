@@ -276,6 +276,11 @@
       .hc-event-pill{font-size:8px;padding:2px 4px}
       .hc-note{font-size:8px;line-height:1.2;padding:3px;max-height:4.1em}
       .hc-empty{font-size:9px;left:5px;bottom:5px}
+      .cg-print-overlay{align-items:flex-start;padding:10px}
+      .cg-print-modal{width:100%;max-height:92vh;padding:14px}
+      .cg-print-grid{grid-template-columns:1fr}
+      .cg-print-weekdays{grid-template-columns:1fr 1fr}
+      .cg-print-actions{display:grid;grid-template-columns:1fr;gap:8px}
     }
     body.quick-look-mode .top-actions{display:none}
     body.quick-look-mode main.page > :not([data-print-section="Caregiver Overview"]){display:none}
@@ -313,6 +318,26 @@
     .cg-edit-actions button{padding:8px 14px;border-radius:10px;border:1px solid #d4d4d8;background:#fff;font-weight:600;cursor:pointer}
     .cg-edit-actions .primary{background:#111827;color:#fff;border-color:#111827}
     .cg-edit-actions .danger{background:#fff1f2;color:#b91c1c;border-color:#fecdd3}
+    .cg-print-overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(15,23,42,.55);z-index:10002;padding:16px}
+    .cg-print-overlay.is-hidden{display:none!important}
+    .cg-print-modal{background:#fff;border-radius:18px;padding:18px;width:min(680px,96vw);max-height:90vh;overflow:auto;box-shadow:0 25px 65px rgba(15,23,42,.35);display:flex;flex-direction:column;gap:14px}
+    .cg-print-modal h3{margin:0;font-size:20px;text-align:left}
+    .cg-print-help{margin:0;color:#64748b;font-size:13px;line-height:1.4}
+    .cg-print-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .cg-print-modal label{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:700}
+    .cg-print-modal input,
+    .cg-print-modal select{width:100%;padding:10px;border:1px solid #d4d4d8;border-radius:10px;font:inherit}
+    .cg-print-weekdays,
+    .cg-print-date-list{display:grid;gap:8px}
+    .cg-print-weekdays{grid-template-columns:repeat(auto-fit,minmax(110px,1fr))}
+    .cg-print-date-list{max-height:180px;overflow:auto;border:1px solid #e5e7eb;border-radius:12px;padding:8px;background:#f8fafc}
+    .cg-print-check{display:flex!important;flex-direction:row!important;align-items:center;gap:8px;font-weight:600!important;color:#374151}
+    .cg-print-check input{width:auto}
+    .cg-print-count{padding:10px 12px;border:1px solid #e5e7eb;border-radius:12px;background:#f8fafc;font-weight:800;color:#172033}
+    .cg-print-count.is-empty{color:#b91c1c;background:#fff1f2;border-color:#fecdd3}
+    .cg-print-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+    .cg-print-actions button{padding:9px 14px;border-radius:10px;border:1px solid #d4d4d8;background:#fff;font-weight:700;cursor:pointer}
+    .cg-print-actions .primary{background:#111827;color:#fff;border-color:#111827}
 
     .cg-note-overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);display:flex;align-items:flex-end;justify-content:center;z-index:10001}
     .cg-note-overlay.is-hidden{display:none!important}
@@ -689,6 +714,12 @@
       padding:14px 16px;
       box-shadow:none;
     }
+    .cg-print-modal{
+      background:#ffffff;
+      border:0.5px solid var(--color-border-tertiary);
+      border-radius:12px;
+      box-shadow:none;
+    }
     .panel{margin:14px 0}
     #services-summary-panel .service-card{
       background:#ffffff;
@@ -745,7 +776,6 @@
     #fullExportBtn,
     #fullShareBtn,
     #fullPrintBtn,
-    #calendarPrintBtn,
     #parentLetterBtn,
     #reportRangeApply,
     #cgPdf,
@@ -772,7 +802,6 @@
     #fullExportBtn:hover,
     #fullShareBtn:hover,
     #fullPrintBtn:hover,
-    #calendarPrintBtn:hover,
     #parentLetterBtn:hover,
     #reportRangeApply:hover,
     #cgPdf:hover,
@@ -988,8 +1017,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     </div>
   </header>
   <div class="top-actions no-export" style="display:flex;gap:8px;justify-content:center;margin:8px 0 14px;">
-    <button id="fullPrintBtn">🖨️ Print</button>
-    <button id="calendarPrintBtn">🗓️ Print Calendar Only</button>
+    <button id="fullPrintBtn">🖨️ Print Caregiver Check-ins</button>
   </div>
 
   <main class="page">
@@ -1148,6 +1176,50 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
           <div class="cg-note-actions">
             <button type="button" id="cgNoteEdit">Edit</button>
             <button type="button" id="cgNoteCloseFooter">Close</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="cgPrintOverlay" class="cg-print-overlay is-hidden" role="dialog" aria-modal="true" aria-labelledby="cgPrintTitle">
+        <div class="cg-print-modal">
+          <h3 id="cgPrintTitle">Print Caregiver Check-ins</h3>
+          <p class="cg-print-help">Choose filters, review the count, then print the selected check-ins. Specific dates further narrow the filters.</p>
+          <div class="cg-print-grid">
+            <label>Start date
+              <input type="date" id="cgPrintStart">
+            </label>
+            <label>End date
+              <input type="date" id="cgPrintEnd">
+            </label>
+          </div>
+          <label>Caregiver
+            <select id="cgPrintCaregiver">
+              <option value="all">All caregivers</option>
+            </select>
+          </label>
+          <fieldset>
+            <legend>Days of week</legend>
+            <div class="cg-print-weekdays" id="cgPrintWeekdays">
+              <label class="cg-print-check"><input type="checkbox" value="0"> Sunday</label>
+              <label class="cg-print-check"><input type="checkbox" value="1"> Monday</label>
+              <label class="cg-print-check"><input type="checkbox" value="2"> Tuesday</label>
+              <label class="cg-print-check"><input type="checkbox" value="3"> Wednesday</label>
+              <label class="cg-print-check"><input type="checkbox" value="4"> Thursday</label>
+              <label class="cg-print-check"><input type="checkbox" value="5"> Friday</label>
+              <label class="cg-print-check"><input type="checkbox" value="6"> Saturday</label>
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend>Specific dates</legend>
+            <p class="cg-print-help">Optional. Checked dates further narrow the selected check-ins.</p>
+            <div class="cg-print-date-list" id="cgPrintDates">
+              <label class="cg-print-check">Loaded check-in dates will appear here.</label>
+            </div>
+          </fieldset>
+          <div id="cgPrintCount" class="cg-print-count" aria-live="polite">No check-ins match these filters</div>
+          <div class="cg-print-actions">
+            <button type="button" id="cgPrintCancel">Cancel</button>
+            <button type="button" id="cgPrintSelected" class="primary" disabled>Print Selected Check-ins</button>
           </div>
         </div>
       </div>
@@ -1433,9 +1505,9 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         <label>End date
           <input type="date" id="parentLetterEnd">
         </label>
-        <button id="parentLetterApply" class="btn" type="button">Generate Letter</button>
+        <button id="parentLetterApply" class="btn" type="button" disabled>Generate Letter</button>
       </div>
-      <p class="muted" id="parentLetterRange"></p>
+      <p class="muted" id="parentLetterRange">Choose a start and end date.</p>
       <div id="parentLetterBody" style="font-size:15px;line-height:1.7;color:#1a1a2e;white-space:pre-wrap;font-family:Georgia,serif"></div>
       <p id="parentLetterDisclaimer" style="margin-top:16px;font-size:12px;color:#9ca3af;font-style:italic">
         This letter was generated from caregiver check-in data recorded
@@ -1578,7 +1650,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabaseClient.js?v=2026.03.29A';
     import { ensureActiveGroupId } from './active-group.js?v=2026.03.29A';
-    import { CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinForCalendar, normalizeCaregiverCheckinRecord, summarizeParticipationHoursForLetter } from './caregiver-report-shared.js?v=2026.09.02C';
+    import { CALENDAR_QUICK_LOOK_ITEMS, filterCaregiverCheckinsForPrint, normalizeCaregiverCheckinForCalendar, normalizeCaregiverCheckinRecord, summarizeParticipationHoursForLetter } from './caregiver-report-shared.js?v=2026.09.02D';
     import { renderPrintableCaregiverReport } from './caregiver-report-print.js?v=2026.07.01B';
 
     /* =============== Optional live data =============== */
@@ -2606,8 +2678,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       const parentRange = document.getElementById('parentLetterRange');
       const parentBody = document.getElementById('parentLetterBody');
       if (parentRange && parentBody) {
-        syncParentLetterRangeDefaults();
-        renderParentLetterFromInputs();
+        updateParentLetterControls();
       }
     }
 
@@ -5486,27 +5557,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       drawer.querySelector('#vcClose').addEventListener('click', close);
       drawer.querySelector('#vcEdit').addEventListener('click', () => { close(); openEditModal(checkinId); });
       drawer.querySelector('#vcPrint').addEventListener('click', () => {
-        const win = window.open('', '_blank');
-        win.document.write('<html><head><title>Caregiver Check-In</title><style>body{font-family:system-ui,sans-serif;max-width:760px;margin:32px auto;font-size:14px;line-height:1.5;color:#111827}h1{font-size:22px;margin:0 0 4px}.meta{color:#6b7280;margin:0 0 20px}.section{border:1px solid #e5e7eb;border-radius:10px;margin:12px 0;overflow:hidden;break-inside:avoid}.section-title{background:#f8fafc;padding:8px 12px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.05em}.body{padding:10px 12px}.row{display:grid;grid-template-columns:1fr 42%;gap:12px;border-bottom:1px dashed #e5e7eb;padding:6px 0}.row:last-child{border-bottom:0}.label{color:#6b7280}.value{font-weight:700;text-align:right;white-space:pre-wrap;overflow-wrap:anywhere}.note{white-space:pre-wrap;overflow-wrap:anywhere}@media print{body{margin:18px}.section{page-break-inside:avoid}}</style></head><body>');
-        win.document.write(`<h1>Caregiver Check-In</h1><p class="meta">${fmtDate(record.date || payload.entry_date)} · ${caregiverViewLabel(record)}</p>`);
-        content.querySelectorAll('.cg-view-section').forEach((section) => {
-          const sectionTitle = section.querySelector('.cg-view-section-title')?.textContent || '';
-          win.document.write(`<div class="section"><div class="section-title">${sectionTitle}</div><div class="body">`);
-          section.querySelectorAll('.cg-view-row,.cg-view-note').forEach((row) => {
-            if (row.classList.contains('cg-view-note')) {
-              win.document.write(`<div class="note">${row.textContent.replace(/[&<>]/g, (ch) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[ch]))}</div>`);
-            } else {
-              const label = row.querySelector('.cg-view-label')?.textContent || '';
-              const value = row.querySelector('.cg-view-value')?.textContent || '';
-              const esc = (text) => text.replace(/[&<>]/g, (ch) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[ch]));
-              win.document.write(`<div class="row"><div class="label">${esc(label)}</div><div class="value">${esc(value)}</div></div>`);
-            }
-          });
-          win.document.write('</div></div>');
-        });
-        win.document.write('</body></html>');
-        win.document.close();
-        setTimeout(() => win.print(), 500);
+        printCheckinRecords([record], 'Caregiver Check-In');
       });
       document.body.appendChild(overlay);
       requestAnimationFrame(() => drawer.focus());
@@ -6390,6 +6441,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         if (entry?.id) cgState.entryById.set(String(entry.id), entry);
       });
       populateCaregiverOptions(cgState.entries);
+      populateCheckinPrintCaregivers();
       updateDateInputs(cgState.entries);
       const now = new Date();
       const defaultRangeEnd = now;
@@ -6404,7 +6456,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       const sEnd = document.getElementById('servicesSummaryEnd');
       if (sStart && !sStart.value) sStart.value = formatDateInputValue(defaultRangeStart);
       if (sEnd && !sEnd.value) sEnd.value = formatDateInputValue(defaultRangeEnd);
-      syncParentLetterRangeDefaults();
       applyCaregiverFilters();
       updateReportSectionVisibility();
       window.dispatchEvent(new Event('caregiverDataReady'));
@@ -7008,7 +7059,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       const sEnd = document.getElementById('servicesSummaryEnd');
       if (sStart) sStart.value = startVal;
       if (sEnd) sEnd.value = endVal;
-      syncParentLetterRangeDefaults({ force: true });
       applyCaregiverFilters();
     };
     document.getElementById('reportRangePreset')?.addEventListener('change', applyReportRangePreset);
@@ -7079,6 +7129,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       if (event.key !== 'Escape') return;
       if (!editUi.overlay?.classList.contains('is-hidden')) closeEditModal();
       if (!noteUi.overlay?.classList.contains('is-hidden')) closeNoteDrawer();
+      if (!checkinPrintEls().overlay?.classList.contains('is-hidden')) closeCheckinPrintCenter();
     });
 
     cgInputs.apply?.addEventListener('click', (event) => {
@@ -7111,14 +7162,19 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     document.getElementById('parentLetterApply')?.addEventListener('click', () => {
       renderParentLetterFromInputs({ scroll: true });
     });
-    document.getElementById('parentLetterStart')?.addEventListener('change', () => renderParentLetterFromInputs());
-    document.getElementById('parentLetterEnd')?.addEventListener('change', () => renderParentLetterFromInputs());
+    ['parentLetterStart', 'parentLetterEnd'].forEach((id) => {
+      document.getElementById(id)?.addEventListener('change', () => {
+        const bodyEl = document.getElementById('parentLetterBody');
+        if (bodyEl) bodyEl.textContent = '';
+        updateParentLetterControls();
+      });
+    });
     document.getElementById('parentLetterClose')?.addEventListener('click', () => {
       const cardEl = document.getElementById('parentLetterCard');
       if (cardEl) cardEl.style.display = 'none';
     });
     document.getElementById('parentLetterPrint')?.addEventListener('click', () => {
-      renderParentLetterFromInputs();
+      if (!renderParentLetterFromInputs()) return;
       const rangeText = document.getElementById('parentLetterRange')?.textContent || '';
       const bodyText = document.getElementById('parentLetterBody')?.textContent || '';
       const disclaimerText = document.getElementById('parentLetterDisclaimer')?.textContent || '';
@@ -7130,6 +7186,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     });
     quickLookUi.toggle?.addEventListener('click', () => toggleQuickLook());
     quickLookUi.close?.addEventListener('click', () => toggleQuickLook(false));
+    initCheckinPrintCenter();
 
     async function renderMoodSection(){
       const rangeSel = $('#moodRange').value || 'all';
@@ -7223,15 +7280,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       });
     }
 
-    function syncParentLetterRangeDefaults({ force = false } = {}) {
-      const startEl = document.getElementById('parentLetterStart');
-      const endEl = document.getElementById('parentLetterEnd');
-      const reportStart = cgInputs.start?.value || document.getElementById('reportRangeStart')?.value || '';
-      const reportEnd = cgInputs.end?.value || document.getElementById('reportRangeEnd')?.value || '';
-      if (startEl && (force || !startEl.value)) startEl.value = reportStart;
-      if (endEl && (force || !endEl.value)) endEl.value = reportEnd;
-    }
-
     function buildParentLetterRangeFromInputs() {
       const startVal = document.getElementById('parentLetterStart')?.value || '';
       const endVal = document.getElementById('parentLetterEnd')?.value || '';
@@ -7249,16 +7297,16 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     }
 
     function renderParentLetterFromInputs({ scroll = false } = {}) {
-      syncParentLetterRangeDefaults();
       const range = buildParentLetterRangeFromInputs();
       const rangeEl = document.getElementById('parentLetterRange');
       const bodyEl = document.getElementById('parentLetterBody');
       const cardEl = document.getElementById('parentLetterCard');
       if (!rangeEl || !bodyEl || !cardEl) return;
       if (!range) {
-        rangeEl.textContent = 'Range: choose a valid start and end date';
+        rangeEl.textContent = 'Choose a start and end date.';
         bodyEl.textContent = '';
-        return;
+        updateParentLetterControls();
+        return false;
       }
       const caregiverEntries = printRangeEntries(cgState.entries || [], range);
       const moodEntries = printRangeMoods(window.latestMoodEntries || [], range);
@@ -7276,7 +7324,22 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         profile,
       });
       cardEl.style.display = '';
+      updateParentLetterControls();
       if (scroll) cardEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return true;
+    }
+
+    function updateParentLetterControls() {
+      const range = buildParentLetterRangeFromInputs();
+      const applyBtn = document.getElementById('parentLetterApply');
+      const printBtn = document.getElementById('parentLetterPrint');
+      const rangeEl = document.getElementById('parentLetterRange');
+      const bodyEl = document.getElementById('parentLetterBody');
+      const hasLetter = !!bodyEl?.textContent?.trim();
+      if (applyBtn) applyBtn.disabled = !range;
+      if (printBtn) printBtn.disabled = !range || !hasLetter;
+      if (rangeEl && !range) rangeEl.textContent = 'Choose a start and end date.';
+      return !!range;
     }
 
     function buildPrintWeeklyAverages(entries, range) {
@@ -7337,6 +7400,214 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         subtitle: `${caregiverViewLabel(entry)} · Submitted ${printDateTimeLabel(entry.submitted_at || entry.created_at || payload.submitted_at)}`,
         sections,
       };
+    }
+
+    function cgPrintEscape(value) {
+      return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      })[char]);
+    }
+
+    function checkinPrintStyles() {
+      return 'body{font-family:system-ui,sans-serif;max-width:760px;margin:32px auto;font-size:14px;line-height:1.5;color:#111827}h1{font-size:22px;margin:0 0 4px}.meta{color:#6b7280;margin:0 0 20px}.checkin-print-record{break-after:page;page-break-after:always}.checkin-print-record:last-child{break-after:auto;page-break-after:auto}.section{border:1px solid #e5e7eb;border-radius:10px;margin:12px 0;overflow:hidden;break-inside:avoid}.section-title{background:#f8fafc;padding:8px 12px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.05em}.body{padding:10px 12px}.row{display:grid;grid-template-columns:1fr 42%;gap:12px;border-bottom:1px dashed #e5e7eb;padding:6px 0}.row:last-child{border-bottom:0}.label{color:#6b7280}.value{font-weight:700;text-align:right;white-space:pre-wrap;overflow-wrap:anywhere}.note{white-space:pre-wrap;overflow-wrap:anywhere}@media print{@page{size:Letter portrait;margin:.45in}body{margin:0 auto}.section{page-break-inside:avoid}}';
+    }
+
+    function renderCheckinPrintRecordHtml(entry) {
+      const model = buildPrintRecord(entry);
+      const sections = (model.sections || []).map((section) => `
+        <div class="section">
+          <div class="section-title">${cgPrintEscape(section.title)}</div>
+          <div class="body">
+            ${(section.rows || []).map((row) => row.note
+              ? `<div class="note">${cgPrintEscape(row.value)}</div>`
+              : `<div class="row"><div class="label">${cgPrintEscape(row.label)}</div><div class="value">${cgPrintEscape(row.value)}</div></div>`
+            ).join('')}
+          </div>
+        </div>
+      `).join('');
+      return `
+        <article class="checkin-print-record">
+          <h1>Caregiver Check-In</h1>
+          <p class="meta">${cgPrintEscape(model.title.replace(/^Caregiver Check-In —\s*/, ''))} · ${cgPrintEscape(model.subtitle.split(' · ')[0] || '')}</p>
+          ${sections}
+        </article>
+      `;
+    }
+
+    function printCheckinRecords(records, title = 'Caregiver Check-Ins') {
+      const selected = (records || []).filter(Boolean);
+      if (!selected.length) {
+        alert('No check-ins match these filters.');
+        return;
+      }
+      const win = window.open('', '_blank');
+      if (!win) {
+        alert('Pop-up blocking prevented the print window from opening. Please allow pop-ups for STAR and try again.');
+        return;
+      }
+      win.document.open();
+      win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${cgPrintEscape(title)}</title><style>${checkinPrintStyles()}</style></head><body>${selected.map(renderCheckinPrintRecordHtml).join('')}</body></html>`);
+      win.document.close();
+      const doPrint = () => {
+        win.focus();
+        win.print();
+      };
+      if (win.document.fonts?.ready) win.document.fonts.ready.then(() => setTimeout(doPrint, 120));
+      else setTimeout(doPrint, 180);
+    }
+
+    const checkinPrintState = { selectedDates: new Set(), lastMatches: [] };
+
+    function checkinPrintEls() {
+      return {
+        overlay: document.getElementById('cgPrintOverlay'),
+        start: document.getElementById('cgPrintStart'),
+        end: document.getElementById('cgPrintEnd'),
+        caregiver: document.getElementById('cgPrintCaregiver'),
+        weekdays: document.getElementById('cgPrintWeekdays'),
+        dates: document.getElementById('cgPrintDates'),
+        count: document.getElementById('cgPrintCount'),
+        cancel: document.getElementById('cgPrintCancel'),
+        print: document.getElementById('cgPrintSelected'),
+      };
+    }
+
+    function caregiverPrintFilterValue(entry) {
+      return caregiverViewLabel(entry) || '—';
+    }
+
+    function populateCheckinPrintCaregivers() {
+      const { caregiver } = checkinPrintEls();
+      if (!caregiver) return;
+      const current = caregiver.value || 'all';
+      const names = [...new Set((cgState.entries || []).map(caregiverPrintFilterValue).filter((name) => name && name !== '—'))]
+        .sort((a, b) => a.localeCompare(b));
+      caregiver.innerHTML = '<option value="all">All caregivers</option>';
+      names.forEach((name) => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        caregiver.appendChild(opt);
+      });
+      caregiver.value = names.includes(current) ? current : 'all';
+    }
+
+    function buildCheckinPrintFilters({ ignoreSpecificDates = false } = {}) {
+      const { start, end, caregiver } = checkinPrintEls();
+      const selectedWeekdays = [...document.querySelectorAll('#cgPrintWeekdays input:checked')].map((input) => Number(input.value));
+      return {
+        startDate: start?.value || '',
+        endDate: end?.value || '',
+        caregiver: caregiver?.value || 'all',
+        weekdays: selectedWeekdays,
+        specificDates: ignoreSpecificDates ? [] : [...checkinPrintState.selectedDates],
+      };
+    }
+
+    function checkinMatchesPrintFilters(entry, { ignoreSpecificDates = false } = {}) {
+      return filterCaregiverCheckinsForPrint([entry], buildCheckinPrintFilters({ ignoreSpecificDates }), {
+        getDayKey: getCheckinDayKey,
+        getCaregiver: caregiverPrintFilterValue,
+      }).length > 0;
+    }
+
+    function renderCheckinPrintDates() {
+      const { dates } = checkinPrintEls();
+      if (!dates) return;
+      const counts = new Map();
+      (cgState.entries || []).forEach((entry) => {
+        if (!checkinMatchesPrintFilters(entry, { ignoreSpecificDates: true })) return;
+        const key = getCheckinDayKey(entry);
+        counts.set(key, (counts.get(key) || 0) + 1);
+      });
+      const keys = [...counts.keys()].sort();
+      checkinPrintState.selectedDates.forEach((key) => {
+        if (!counts.has(key)) checkinPrintState.selectedDates.delete(key);
+      });
+      if (!keys.length) {
+        dates.innerHTML = '<label class="cg-print-check">No loaded dates match the current filters.</label>';
+        return;
+      }
+      dates.innerHTML = keys.map((key) => {
+        const date = new Date(`${key}T12:00:00`);
+        const label = Number.isNaN(date.getTime())
+          ? key
+          : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', weekday: 'short' });
+        const checked = checkinPrintState.selectedDates.has(key) ? ' checked' : '';
+        return `<label class="cg-print-check"><input type="checkbox" value="${cgPrintEscape(key)}"${checked}> ${cgPrintEscape(label)} <span class="muted">(${counts.get(key)})</span></label>`;
+      }).join('');
+      dates.querySelectorAll('input[type="checkbox"]').forEach((input) => {
+        input.addEventListener('change', () => {
+          if (input.checked) checkinPrintState.selectedDates.add(input.value);
+          else checkinPrintState.selectedDates.delete(input.value);
+          updateCheckinPrintPreview();
+        });
+      });
+    }
+
+    function getCheckinPrintMatches() {
+      return filterCaregiverCheckinsForPrint(cgState.entries || [], buildCheckinPrintFilters(), {
+        getDayKey: getCheckinDayKey,
+        getCaregiver: caregiverPrintFilterValue,
+      })
+        .sort((a, b) => String(getCheckinDayKey(a) || '').localeCompare(String(getCheckinDayKey(b) || '')));
+    }
+
+    function updateCheckinPrintPreview({ rebuildDates = false } = {}) {
+      if (rebuildDates) renderCheckinPrintDates();
+      const { count, print } = checkinPrintEls();
+      const matches = getCheckinPrintMatches();
+      checkinPrintState.lastMatches = matches;
+      if (count) {
+        count.textContent = matches.length
+          ? `${matches.length} check-in${matches.length === 1 ? '' : 's'} selected`
+          : 'No check-ins match these filters';
+        count.classList.toggle('is-empty', !matches.length);
+      }
+      if (print) print.disabled = !matches.length;
+    }
+
+    function openCheckinPrintCenter() {
+      const els = checkinPrintEls();
+      if (!els.overlay) return;
+      populateCheckinPrintCaregivers();
+      checkinPrintState.selectedDates.clear();
+      els.overlay.classList.remove('is-hidden');
+      updateCheckinPrintPreview({ rebuildDates: true });
+      els.start?.focus();
+    }
+
+    function closeCheckinPrintCenter() {
+      checkinPrintEls().overlay?.classList.add('is-hidden');
+    }
+
+    function initCheckinPrintCenter() {
+      const els = checkinPrintEls();
+      if (!els.overlay) return;
+      [els.start, els.end, els.caregiver].forEach((el) => {
+        el?.addEventListener('change', () => updateCheckinPrintPreview({ rebuildDates: true }));
+      });
+      els.weekdays?.querySelectorAll('input[type="checkbox"]').forEach((input) => {
+        input.addEventListener('change', () => updateCheckinPrintPreview({ rebuildDates: true }));
+      });
+      els.cancel?.addEventListener('click', closeCheckinPrintCenter);
+      els.overlay.addEventListener('click', (event) => {
+        if (event.target === els.overlay) closeCheckinPrintCenter();
+      });
+      els.print?.addEventListener('click', () => {
+        const matches = checkinPrintState.lastMatches.length ? checkinPrintState.lastMatches : getCheckinPrintMatches();
+        if (!matches.length) {
+          alert('No check-ins match these filters.');
+          updateCheckinPrintPreview();
+          return;
+        }
+        printCheckinRecords(matches, 'STAR Caregiver Check-ins');
+      });
+      window.starOpenCheckinPrintCenter = openCheckinPrintCenter;
     }
 
     function buildPrintCalendar(entries, moods) {
@@ -7758,8 +8029,13 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 
   document.getElementById('fullExportBtn')?.addEventListener('click', exportFullReportPDF);
   document.getElementById('fullShareBtn')?.addEventListener('click', shareFullReportPdf);
-  document.getElementById('fullPrintBtn')?.addEventListener('click', printFullReport);
-  document.getElementById('calendarPrintBtn')?.addEventListener('click', printCalendarOnly);
+  document.getElementById('fullPrintBtn')?.addEventListener('click', () => {
+    if (typeof window.starOpenCheckinPrintCenter === 'function') {
+      window.starOpenCheckinPrintCenter();
+    } else {
+      alert('The caregiver check-in print center is still loading. Please try again in a moment.');
+    }
+  });
   document.getElementById('hcPrintBtn')?.addEventListener('click', printCalendarOnly);
   document.getElementById('hcShareBtn')?.addEventListener('click', () => exportCalendarPdf(true));
 
@@ -7882,7 +8158,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 <script type="module">
 import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 import { ensureActiveGroupId } from './active-group.js?v=2026.03.29A';
-import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinForCalendar } from './caregiver-report-shared.js?v=2026.09.02C';
+import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinForCalendar } from './caregiver-report-shared.js?v=2026.09.02D';
 
 (() => {
   // Bail out quietly if the calendar HTML isn't present

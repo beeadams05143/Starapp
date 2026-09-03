@@ -61,6 +61,41 @@ export function summarizeParticipationHoursForLetter(totalMinutes, range) {
   };
 }
 
+function defaultPrintFilterDayKey(entry = {}) {
+  const value = entry.date || entry.payload?.entry_date || entry.payload?.date || entry.submitted_at || entry.created_at || '';
+  if (typeof value === 'string') {
+    const match = value.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (match) return match[1];
+  }
+  const date = value ? new Date(value) : null;
+  return date && !Number.isNaN(date.getTime()) ? date.toISOString().slice(0, 10) : '';
+}
+
+function defaultPrintFilterCaregiver(entry = {}) {
+  return String(entry.caregiver_name || entry.payload?.caregiver_name || entry.caregiver || entry.user_name || '').trim();
+}
+
+export function filterCaregiverCheckinsForPrint(entries = [], filters = {}, helpers = {}) {
+  const getDayKey = helpers.getDayKey || defaultPrintFilterDayKey;
+  const getCaregiver = helpers.getCaregiver || defaultPrintFilterCaregiver;
+  const weekdays = new Set((filters.weekdays || []).map(Number).filter((value) => Number.isInteger(value) && value >= 0 && value <= 6));
+  const specificDates = new Set(filters.specificDates || []);
+  const caregiver = filters.caregiver && filters.caregiver !== 'all' ? String(filters.caregiver) : '';
+  return (entries || []).filter((entry) => {
+    const key = getDayKey(entry);
+    if (!key) return false;
+    if (filters.startDate && key < filters.startDate) return false;
+    if (filters.endDate && key > filters.endDate) return false;
+    if (caregiver && getCaregiver(entry) !== caregiver) return false;
+    if (weekdays.size) {
+      const date = new Date(`${key}T12:00:00`);
+      if (Number.isNaN(date.getTime()) || !weekdays.has(date.getDay())) return false;
+    }
+    if (specificDates.size && !specificDates.has(key)) return false;
+    return true;
+  });
+}
+
 /* -------------------------------------------------------------------------- */
 /* Caregiver report normalization (data accuracy only)                       */
 /* -------------------------------------------------------------------------- */

@@ -1,39 +1,35 @@
 export const CALENDAR_EMOJI = {
   bm: '💩',
-  sleep: '😴',
-  sleep_low: '😪',
-  onset: '🦉',
-  night: '🌙',
-  prn_sleep: '💊S',
-  prn_mania: '💊M',
-  prn_aggr: '💊A',
-  tired: '🥱',
-  manic: '⚡️',
-  sick: '🤒',
+  sleep_concern: '😴',
+  prn: '💊',
+  illness: '🤒',
   temp: '🌡️',
-  menstrual: '🩸',
   appetite: '🍽️',
+  med_change: '📝',
   moon: '🌕',
   anomaly: '🚩',
+  sleep: '😴',
+  sleep_low: '😴',
+  onset: '😴',
+  night: '😴',
+  prn_sleep: '💊',
+  prn_mania: '💊',
+  prn_aggr: '💊',
+  tired: '🚩',
+  manic: '🚩',
+  sick: '🤒',
+  menstrual: '🚩',
 };
 
 export const CALENDAR_QUICK_LOOK_ITEMS = [
   { key: 'bm', label: 'BM', emoji: CALENDAR_EMOJI.bm },
-  { key: 'sleep', label: 'Good sleep', emoji: CALENDAR_EMOJI.sleep },
-  { key: 'sleep_low', label: 'Poor sleep', emoji: CALENDAR_EMOJI.sleep_low },
-  { key: 'onset', label: 'Late onset', emoji: CALENDAR_EMOJI.onset },
-  { key: 'night', label: 'Night waking', emoji: CALENDAR_EMOJI.night },
-  { key: 'prn_sleep', label: 'PRN sleep', emoji: CALENDAR_EMOJI.prn_sleep },
-  { key: 'prn_mania', label: 'PRN mania', emoji: CALENDAR_EMOJI.prn_mania },
-  { key: 'prn_aggr', label: 'PRN aggression', emoji: CALENDAR_EMOJI.prn_aggr },
-  { key: 'tired', label: 'Appears tired', emoji: CALENDAR_EMOJI.tired },
-  { key: 'manic', label: 'Manic', emoji: CALENDAR_EMOJI.manic },
-  { key: 'sick', label: 'Sick', emoji: CALENDAR_EMOJI.sick },
-  { key: 'temp', label: 'Temp', emoji: CALENDAR_EMOJI.temp },
-  { key: 'menstrual', label: 'Menstrual cycle', emoji: CALENDAR_EMOJI.menstrual },
+  { key: 'sleep_concern', label: 'Sleep concern', emoji: CALENDAR_EMOJI.sleep_concern },
+  { key: 'prn', label: 'PRN used', emoji: CALENDAR_EMOJI.prn },
+  { key: 'illness', label: 'Illness/discomfort', emoji: CALENDAR_EMOJI.illness },
   { key: 'appetite', label: 'Appetite change', emoji: CALENDAR_EMOJI.appetite },
+  { key: 'med_change', label: 'Medication change', emoji: CALENDAR_EMOJI.med_change },
   { key: 'moon', label: 'Full moon', emoji: CALENDAR_EMOJI.moon },
-  { key: 'anomaly', label: 'Anomaly', emoji: CALENDAR_EMOJI.anomaly },
+  { key: 'anomaly', label: 'Significant concern', emoji: CALENDAR_EMOJI.anomaly },
 ];
 
 /* -------------------------------------------------------------------------- */
@@ -479,8 +475,41 @@ function hasAppetiteChangeForCalendar(source = {}) {
 }
 
 function hasAnyCalendarObservation(flags, notes) {
-  return Object.entries(flags || {}).some(([key, value]) => key === 'sleep' ? value !== null && value !== undefined : !!value)
+  return Object.entries(flags || {}).some(([key, value]) => {
+    if (['sleep', 'legacy'].includes(key)) return false;
+    if (Array.isArray(value)) return value.length > 0;
+    return !!value;
+  })
     || (Array.isArray(notes) && notes.length > 0);
+}
+
+function friendlyCalendarLabel(map, value) {
+  const key = String(value || '').trim().toLowerCase();
+  return map[key] || '';
+}
+
+function formatCalendarPrnTime(time) {
+  const raw = String(time || '').trim();
+  if (!raw) return '';
+  const match = raw.match(/^(\d{1,2}):(\d{2})/);
+  if (!match) return raw;
+  let hour = Number(match[1]);
+  const minute = match[2];
+  if (!Number.isFinite(hour)) return raw;
+  const suffix = hour >= 12 ? 'PM' : 'AM';
+  hour = hour % 12 || 12;
+  return `${hour}:${minute} ${suffix}`;
+}
+
+function compactCalendarLines(lines, limit = 3) {
+  const out = [];
+  for (const line of lines) {
+    const text = String(line || '').trim();
+    if (!text || out.includes(text)) continue;
+    out.push(text);
+    if (out.length >= limit) break;
+  }
+  return out;
 }
 
 export function normalizeCaregiverCheckinForCalendar(record = {}) {
@@ -497,6 +526,7 @@ export function normalizeCaregiverCheckinForCalendar(record = {}) {
   const moodPacing = String(payload.mood_pacing || '').toLowerCase();
   const moodEnergy = String(payload.mood_energy || '').toLowerCase();
   const moodAttention = String(payload.mood_attention || '').toLowerCase();
+  const moodIrritability = String(payload.mood_irritability || payload.irritability || '').toLowerCase();
 
   const legacySleepPrn = !hasStructuredPrn && parseBooleanLoose(payload.prn_given) === true;
   const prnSleep = parseBooleanLoose(payload.prn_used_for_sleep_disturbance ?? payload.prn_reason_sleep) === true
@@ -512,8 +542,7 @@ export function normalizeCaregiverCheckinForCalendar(record = {}) {
     || !!payload.prn_mania_name
     || !!payload.prn_mania_time;
 
-  const flags = {
-    bm: normalized.hadBm === true || parseBooleanLoose(payload.had_bm ?? payload.bm_today) === true,
+  const legacy = {
     sleep,
     sleep_low: sleep !== null ? sleep < 8 : false,
     onset: hasLateSleepOnsetForCalendar(payload) || hasLateSleepOnsetForCalendar(normalized),
@@ -531,42 +560,132 @@ export function normalizeCaregiverCheckinForCalendar(record = {}) {
       || ['frequent', 'nearly_constant'].includes(moodPacing),
     sick: payload.appears_good_health === false
       || parseBooleanLoose(payload.appears_good_health) === false,
-    temp: parseBooleanLoose(payload.temp_present) === true || !!payload.temp_value,
     menstrual: parseBooleanLoose(payload.menstrual_present) === true,
-    appetite: hasAppetiteChangeForCalendar(payload) || hasAppetiteChangeForCalendar(normalized),
+  };
+  const medChangeFlag = parseBooleanLoose(payload.med_change_flag) === true;
+  const medChangeNote = String(payload.med_change_note || '').trim();
+  const anyPrnUsed = hasStructuredPrn
+    || prnSleep
+    || prnMania
+    || prnAggr
+    || parseBooleanLoose(payload.prn_used_today ?? payload.prn_administered ?? payload.prn_given) === true;
+  const tempRecorded = parseBooleanLoose(payload.temp_present) === true || !!payload.temp_value;
+  const illness = legacy.sick
+    || tempRecorded
+    || parseBooleanLoose(payload.illness_symptoms ?? payload.pain_discomfort ?? payload.discomfort_present) === true
+    || !!String(payload.illness_notes || payload.pain_notes || payload.discomfort_notes || '').trim();
+  const appetite = hasAppetiteChangeForCalendar(payload) || hasAppetiteChangeForCalendar(normalized);
+  const sleepConcern = legacy.sleep_low || legacy.onset || legacy.night;
+  const anomaly = parseBooleanLoose(payload.anomaly_flag ?? payload.behavior_anomaly_flag ?? payload.behavior_anomaly_present) === true
+    || movementPresent === true
+    || movementSeverity > 0
+    || legacy.manic
+    || legacy.menstrual;
+
+  const flags = {
+    bm: normalized.hadBm === true || parseBooleanLoose(payload.had_bm ?? payload.bm_today) === true,
+    sleep_concern: sleepConcern,
+    prn: anyPrnUsed,
+    illness,
+    temp: tempRecorded,
+    appetite,
+    med_change: medChangeFlag || !!medChangeNote,
     moon: false,
-    anomaly: parseBooleanLoose(payload.anomaly_flag ?? payload.behavior_anomaly_flag ?? payload.behavior_anomaly_present) === true
-      || movementPresent === true
-      || movementSeverity > 0,
+    anomaly,
+    sleep,
+    sleep_low: legacy.sleep_low,
+    onset: legacy.onset,
+    night: legacy.night,
+    prn_sleep: prnSleep,
+    prn_mania: prnMania,
+    prn_aggr: prnAggr,
+    tired: legacy.tired,
+    manic: legacy.manic,
+    sick: legacy.sick,
+    menstrual: legacy.menstrual,
+    legacy,
+    summary_lines: [],
     med_change_notes: [],
   };
 
-  const notes = [];
   const caregiver = normalized.caregiver_name || payload.caregiver_name || '';
-  const prefix = caregiver ? `Caregiver check-in (${caregiver})` : 'Caregiver check-in';
-  notes.push(`${prefix}: recorded`);
-  if (payload.prn_used_today === 'no' || payload.prn_administered === 'no') notes.push('PRN: no');
-  if (hasStructuredPrn) {
-    notes.push(`PRN: ${prnEntries.length} recorded`);
+  const moodDetails = [
+    friendlyCalendarLabel({
+      high: 'Higher energy',
+      higher: 'Higher energy',
+      elevated: 'Higher energy',
+      very_high: 'Much higher energy',
+      much_higher: 'Much higher energy',
+      low: 'Lower energy',
+      lower: 'Lower energy',
+      very_low: 'Much lower energy',
+    }, moodEnergy),
+    friendlyCalendarLabel({
+      rapid_pressured: 'Rapid/pressured speech',
+      difficult_to_interrupt: 'Very difficult to interrupt',
+      hard_to_interrupt: 'Very difficult to interrupt',
+    }, moodSpeech),
+    friendlyCalendarLabel({
+      some_difficulty: 'Some trouble focusing',
+      some_trouble: 'Some trouble focusing',
+      frequently_loses_focus: 'Frequently loses focus',
+      frequent: 'Frequently loses focus',
+    }, moodAttention),
+    friendlyCalendarLabel({
+      frequent: 'Frequent pacing',
+      nearly_constant: 'Nearly constant pacing',
+    }, moodPacing),
+    friendlyCalendarLabel({
+      moderate: 'Moderate irritability',
+      significant: 'Significant irritability',
+      severe: 'Significant irritability',
+    }, moodIrritability),
+  ].filter(Boolean);
+  if (Number.isFinite(moodEngagementScore) && moodEngagementScore > 0) {
+    const engagementLabel = moodEngagementScore >= 3
+      ? 'Highly withdrawn'
+      : moodEngagementScore === 2
+        ? 'Mostly withdrawn'
+        : 'Less engaged';
+    moodDetails.push(`Engagement ${moodEngagementScore} · ${engagementLabel}`);
   }
-  if (Number.isFinite(moodEngagementScore) || payload.mood_energy || payload.mood_speech || payload.mood_attention || payload.mood_pacing) {
-    notes.push(`Mood/regulation: engagement ${Number.isFinite(moodEngagementScore) ? moodEngagementScore : 'not scored'}${moodAttention ? `, attention ${payload.mood_attention}` : ''}`);
-  }
+
   const participation = [];
-  if (normalized.vocationalMinutes > 0 || parseBooleanLoose(payload.vocational_participation) === true) participation.push('vocational');
-  if (normalized.homeMinutes > 0 || parseBooleanLoose(payload.home_activity_flag) === true) participation.push('home');
-  if (normalized.publicMinutes > 0 || parseBooleanLoose(payload.public_activity_flag) === true) participation.push('community');
+  if (normalized.vocationalMinutes > 0 || parseBooleanLoose(payload.vocational_participation) === true) participation.push('Vocational');
+  if (normalized.homeMinutes > 0 || parseBooleanLoose(payload.home_activity_flag) === true) participation.push('Home');
+  if (normalized.publicMinutes > 0 || parseBooleanLoose(payload.public_activity_flag) === true) participation.push('Community');
   if (normalized.adlTaskCount > 0) participation.push(`${normalized.adlTaskCount} ADL task${normalized.adlTaskCount === 1 ? '' : 's'}`);
-  if (participation.length) notes.push(`Participation: ${participation.join(', ')}`);
+  const physicalDetails = [];
+  if (sleepConcern) physicalDetails.push('Sleep concern');
+  if (illness) physicalDetails.push(tempRecorded ? 'Illness/discomfort or temp' : 'Illness/discomfort');
+  if (appetite) physicalDetails.push('Appetite change');
+  if (flags.med_change) physicalDetails.push(`Medication change${medChangeNote ? `: ${medChangeNote}` : ''}`);
+  if (movementPresent === true || movementSeverity > 0) physicalDetails.push('Movement concern');
+  if (legacy.manic && !moodDetails.length) physicalDetails.push('Legacy elevated signal');
+
+  const prnTimes = prnEntries.map((entry) => formatCalendarPrnTime(entry.time)).filter(Boolean);
+  const prnLine = anyPrnUsed
+    ? prnTimes.length
+      ? `${prnTimes.length > 1 ? 'PRNs' : 'PRN'} ${prnTimes.slice(0, 3).join(', ')}${prnTimes.length > 3 ? ' +' : ''}`
+      : 'PRN used'
+    : '';
+
+  const signalLines = [
+    ...compactCalendarLines(moodDetails, 2),
+    prnLine,
+    participation.length ? participation.join(' + ') : '',
+    ...physicalDetails,
+  ];
+  const summaryLines = compactCalendarLines([caregiver, ...signalLines], caregiver ? 4 : 3);
+  if (!summaryLines.length || (caregiver && summaryLines.length === 1)) {
+    summaryLines.push('No notable concerns');
+  }
   if (parseBooleanLoose(payload.pet_interaction_flag) === true || payload.pet_activity_type) {
-    notes.push(`Pet interaction: ${payload.pet_activity_type || 'yes'}`);
+    const petLine = `Pet interaction: ${payload.pet_activity_type || 'yes'}`;
+    if (summaryLines.length < 3 && !summaryLines.includes(petLine)) summaryLines.push(petLine);
   }
-  const medChangeFlag = parseBooleanLoose(payload.med_change_flag) === true;
-  const medChangeNote = String(payload.med_change_note || '').trim();
-  if (medChangeFlag || medChangeNote) {
-    notes.push(`Med change${caregiver ? ` (${caregiver})` : ''}: ${medChangeNote || 'Yes'}`);
-  }
-  flags.med_change_notes = notes;
+  flags.summary_lines = summaryLines;
+  flags.med_change_notes = summaryLines;
 
   return {
     id: normalized.id,
@@ -574,7 +693,7 @@ export function normalizeCaregiverCheckinForCalendar(record = {}) {
     flags,
     prnEntries,
     hasCheckin: !!dateKey,
-    hasObservations: hasAnyCalendarObservation(flags, notes),
+    hasObservations: hasAnyCalendarObservation(flags, summaryLines),
     source: normalized,
   };
 }

@@ -345,6 +345,9 @@
     .mood-summary-inline h4{margin:0 0 8px;font-size:14px}
     .mood-summary-inline .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
     .mood-summary-inline .item{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:8px 10px;font-weight:700;color:#0f172a}
+    .calendar-quicklook-panel{padding:10px 16px;border-top:1px solid #e9e9e9;background:#fff}
+    .calendar-quicklook-panel h4{margin:0 0 6px;font-size:15px;color:#20324f}
+    .calendar-quicklook-panel .muted{margin:0 0 8px}
     .calendar-quicklook{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
     .calendar-quicklook .item{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:8px 10px;font-weight:700;color:#0f172a;display:flex;justify-content:space-between;align-items:center}
     .calendar-quicklook .label{display:flex;align-items:center;gap:6px;font-size:12px;color:#64748b;font-weight:700}
@@ -354,15 +357,6 @@
     .activity-title{font-weight:800;margin-bottom:8px;color:#0f172a}
     .activity-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px}
     .activity-item{background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:6px 8px;font-weight:700;color:#0f172a;display:flex;justify-content:space-between;align-items:center;font-size:12px}
-    .month-shifts{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
-    .month-shift-card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:10px 12px}
-    .month-shift-card h5{margin:0 0 6px;font-size:13px;color:#0f172a}
-    .month-shift-list{display:grid;gap:6px}
-    .month-shift-item{display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:13px}
-    .month-shift-item .label{display:flex;align-items:center;gap:6px;color:#64748b}
-    .month-shift-item .delta{font-weight:900}
-    .month-shift-item .delta.up{color:#16a34a}
-    .month-shift-item .delta.down{color:#dc2626}
     .movement-card{position:relative}
     .movement-empty-note{margin-top:10px;font-size:13px;color:#64748b;font-weight:600;text-align:center}
     .kpi-summary-inline{border:1px solid #e5e7eb;border-radius:16px;padding:16px;background:#fff;box-shadow:0 10px 30px rgba(15,23,42,.08)}
@@ -432,12 +426,6 @@
     body.print-export .hc-date{font-size:11px}
     body.print-export .hc-icons{font-size:16px;gap:4px}
     body.print-export .pdf-only{display:block}
-
-    body.calendar-print-only main.page > :not([data-print-section="Daily Mood & Calendar"]){display:none}
-    body.calendar-print-only #mood-panel{display:none}
-    body.calendar-print-only #kpi-row{display:none}
-    body.calendar-print-only .hc-head .hc-btn{display:none}
-    body.calendar-print-only .hc-wrap{margin:0}
 
     @media print{
       #navbar{display:none!important}
@@ -1399,6 +1387,14 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
           </div>
         </div>
 
+        <div class="calendar-quicklook-panel" id="calendarQuickLook">
+          <h4>Calendar Quick Look</h4>
+          <p class="muted" id="calendarQuickLookRange">Month: —</p>
+          <div class="calendar-quicklook" id="calendarQuickLookList">
+            <div class="item"><span class="label">Loading…</span><span class="count">—</span></div>
+          </div>
+        </div>
+
         <div class="hc-legend hc-row" style="border-top:0">
           <label><input type="checkbox" data-hc-layer="bm" checked/> <span class="hc-emo" aria-hidden="true">💩</span> BM</label>
           <label><input type="checkbox" data-hc-layer="sleep_concern" checked/> <span class="hc-emo" aria-hidden="true">😴</span> Sleep concern</label>
@@ -1427,7 +1423,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <h4>Parent Letter</h4>
         <div style="display:flex;gap:8px">
-          <button id="parentLetterPrint" class="btn" style="font-size:13px">🖨️ Print</button>
+          <button id="parentLetterPrint" class="btn" style="font-size:13px">🖨️ Print Letter</button>
         </div>
       </div>
       <div class="parent-letter-range-control" aria-label="Parent Letter Range">
@@ -1441,45 +1437,11 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       </div>
       <p class="muted" id="parentLetterRange"></p>
       <div id="parentLetterBody" style="font-size:15px;line-height:1.7;color:#1a1a2e;white-space:pre-wrap;font-family:Georgia,serif"></div>
-      <p style="margin-top:16px;font-size:12px;color:#9ca3af;font-style:italic">
+      <p id="parentLetterDisclaimer" style="margin-top:16px;font-size:12px;color:#9ca3af;font-style:italic">
         This letter was generated from caregiver check-in data recorded
         in the STAR app. It is intended as a communication tool for
         families and support teams, not a clinical document.
       </p>
-    </div>
-    <div class="chart kpi-summary-inline" id="calendarQuickLook">
-      <h4>Calendar Quick Look</h4>
-      <p class="muted" id="calendarQuickLookRange">Month: —</p>
-      <div class="calendar-quicklook" id="calendarQuickLookList">
-        <div class="item"><span class="label">Loading…</span><span class="count">—</span></div>
-      </div>
-    </div>
-    <div class="chart kpi-summary-inline" id="calendarMonthShift">
-      <h4>Monthly Shifts</h4>
-      <p class="muted" id="calendarShiftRange">Comparisons for current month</p>
-      <p class="muted" id="calendarShiftExplain" style="margin-top:-4px">Counts show how many days increased or decreased vs the prior period.</p>
-      <div class="month-shifts">
-        <div class="month-shift-card">
-          <h5 id="shiftPrevPrevTitle">Month Before vs Last</h5>
-          <div class="month-shift-list" id="shiftPrevPrevList">
-            <div class="month-shift-item"><span class="label">Loading…</span><span class="delta">—</span></div>
-          </div>
-        </div>
-        <div class="month-shift-card">
-          <h5 id="shiftPrevTitle">Last vs Latest Full Month</h5>
-          <div class="month-shift-list" id="shiftPrevList">
-            <div class="month-shift-item"><span class="label">Loading…</span><span class="delta">—</span></div>
-          </div>
-        </div>
-      </div>
-      <div class="month-shifts" style="margin-top:10px">
-        <div class="month-shift-card">
-          <h5 id="shiftToDateTitle">Current Month To‑Date</h5>
-          <div class="month-shift-list" id="shiftToDateList">
-            <div class="month-shift-item"><span class="label">Loading…</span><span class="delta">—</span></div>
-          </div>
-        </div>
-      </div>
     </div>
     <div class="chart">
       <h2>Physical & Daily Living Overview (Monthly Totals)</h2>
@@ -1616,7 +1578,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabaseClient.js?v=2026.03.29A';
     import { ensureActiveGroupId } from './active-group.js?v=2026.03.29A';
-    import { CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinForCalendar, normalizeCaregiverCheckinRecord } from './caregiver-report-shared.js?v=2026.09.02B';
+    import { CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinForCalendar, normalizeCaregiverCheckinRecord, summarizeParticipationHoursForLetter } from './caregiver-report-shared.js?v=2026.09.02C';
     import { renderPrintableCaregiverReport } from './caregiver-report-print.js?v=2026.07.01B';
 
     /* =============== Optional live data =============== */
@@ -2941,10 +2903,12 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       const communityActivities = [...new Set(caregiverEntries.flatMap((entry) => parseMultiValue(entry?.payload?.public_activity_type ?? entry?.public_activity_type)).filter(Boolean))];
       const vocationalLines = [];
       if (totalCom > 0) {
-        vocationalLines.push(`Community time this period totaled ${totalCom} minutes${communityActivities.length ? ` and included activities like ${joinList(communityActivities.slice(0, 3))}.` : '.'}`);
+        const communityHours = summarizeParticipationHoursForLetter(totalCom, range);
+        vocationalLines.push(`Community participation averaged ${communityHours.averageHoursText} per week during this period, for ${communityHours.totalHoursText} total${communityActivities.length ? `. Common activities included ${joinList(communityActivities.slice(0, 3))}.` : '.'}`);
       }
       if (totalVoc > 0) {
-        vocationalLines.push(`Vocational activities were supported for ${totalVoc} minutes.`);
+        const vocationalHours = summarizeParticipationHoursForLetter(totalVoc, range);
+        vocationalLines.push(`Vocational participation averaged ${vocationalHours.averageHoursText} per week during this period, for ${vocationalHours.totalHoursText} total.`);
       }
       if (vocationalLines.length) paragraphs.push(vocationalLines.join(' '));
 
@@ -7153,7 +7117,17 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       const cardEl = document.getElementById('parentLetterCard');
       if (cardEl) cardEl.style.display = 'none';
     });
-    document.getElementById('parentLetterPrint')?.addEventListener('click', () => window.print());
+    document.getElementById('parentLetterPrint')?.addEventListener('click', () => {
+      renderParentLetterFromInputs();
+      const rangeText = document.getElementById('parentLetterRange')?.textContent || '';
+      const bodyText = document.getElementById('parentLetterBody')?.textContent || '';
+      const disclaimerText = document.getElementById('parentLetterDisclaimer')?.textContent || '';
+      if (!bodyText.trim()) {
+        alert('Generate the Parent Letter first, then print it.');
+        return;
+      }
+      window.starPrintParentLetterOnly?.({ rangeText, bodyText, disclaimerText });
+    });
     quickLookUi.toggle?.addEventListener('click', () => toggleQuickLook());
     quickLookUi.close?.addEventListener('click', () => toggleQuickLook(false));
 
@@ -7598,34 +7572,127 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     await api.printPreparedFullReport(exportRange);
   }
 
-  async function printCalendarOnly() {
-    toggleExportHiders(true);
-    document.body.classList.add('print-export');
-    document.body.classList.add('calendar-print-only');
-    const restore = () => {
-      document.body.classList.remove('print-export');
-      document.body.classList.remove('calendar-print-only');
-      toggleExportHiders(false);
-      window.removeEventListener('afterprint', restore);
+  function escapePrintHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    })[char]);
+  }
+
+  function cleanedCloneHtml(selector) {
+    const source = document.querySelector(selector);
+    if (!source) return '';
+    const clone = source.cloneNode(true);
+    clone.querySelectorAll('button, input, select, textarea, .no-export').forEach((el) => el.remove());
+    clone.querySelectorAll('[id]').forEach((el) => el.removeAttribute('id'));
+    return clone.outerHTML;
+  }
+
+  function calendarPrintStyles() {
+    return `
+      @page{size:Letter landscape;margin:.35in}
+      *{box-sizing:border-box}
+      body{margin:0;background:#fff;color:#172033;font-family:"Avenir Next","Segoe UI",Arial,sans-serif;font-size:10pt;line-height:1.25;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      .print-calendar{width:100%;max-width:10.3in;margin:0 auto}
+      .print-calendar-header{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin:0 0 8px;border-bottom:2px solid #9a6428;padding-bottom:6px}
+      .print-calendar-kicker{margin:0 0 2px;color:#8a5a25;font-size:8pt;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+      .print-calendar h1{margin:0;color:#20324f;font-family:Georgia,"Times New Roman",serif;font-size:21pt;line-height:1.05}
+      .print-calendar-generated{color:#657086;font-size:8pt;font-weight:700;text-align:right}
+      .calendar-quicklook-panel{margin:0 0 7px;padding:7px 8px;border:1px solid #d9dee7;border-radius:6px;background:#f8fafc}
+      .calendar-quicklook-panel h4{margin:0 0 3px;color:#20324f;font-size:10pt}
+      .calendar-quicklook-panel .muted{margin:0 0 5px;color:#657086;font-size:8pt}
+      .calendar-quicklook{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+      .calendar-quicklook .item{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:4px 6px;border:1px solid #d9dee7;border-radius:5px;background:#fff;font-weight:700}
+      .calendar-quicklook .label{display:flex;align-items:center;gap:4px;color:#4f5e75;font-size:8pt}
+      .calendar-quicklook .count{font-size:9pt;font-weight:900;color:#172033}
+      .hc-legend{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 7px;padding:6px 8px;border:1px solid #d9dee7;border-radius:6px;background:#fff}
+      .hc-legend label{display:flex;align-items:center;gap:3px;font-weight:700;font-size:8pt;color:#172033}
+      .hc-emo{font-size:11pt}
+      .hc-grid{display:grid;grid-template-columns:repeat(7,1fr);border-top:1px solid #d9dee7;border-left:1px solid #d9dee7}
+      .hc-dow{padding:4px 3px;text-align:center;font-weight:800;color:#4f5e75;background:#f8fafc;border-right:1px solid #d9dee7;border-bottom:1px solid #d9dee7;font-size:8pt}
+      .hc-cell{min-height:.77in;padding:3px 4px;border-right:1px solid #d9dee7;border-bottom:1px solid #d9dee7;background:#fff;overflow:hidden;position:relative}
+      .hc-date{font-weight:900;font-size:8pt;color:#111827}
+      .hc-icons{display:flex;gap:2px;margin-top:2px;font-size:11pt;line-height:1;flex-wrap:wrap}
+      .hc-icon{line-height:1}
+      .hc-empty{color:#9ca3af;font-size:7pt;position:absolute;left:4px;bottom:3px}
+      .hc-events{display:none}
+      .hc-note{margin-top:2px;padding:3px;border:1px dashed #e5e7eb;border-radius:4px;background:#f8fafc;color:#374151;font-size:6.8pt;line-height:1.12;white-space:pre-wrap;max-height:3.5em;overflow:hidden}
+      @media print{body{width:auto}.print-calendar{break-inside:avoid;page-break-inside:avoid}}
+    `;
+  }
+
+  function buildCalendarPrintHtml() {
+    const title = document.getElementById('hc-monthTitle')?.textContent || 'Calendar';
+    const quickLook = cleanedCloneHtml('#calendarQuickLook');
+    const legend = cleanedCloneHtml('#hc-root .hc-legend');
+    const grid = cleanedCloneHtml('#hc-grid');
+    return `
+      <section class="print-calendar" aria-label="STAR calendar print">
+        <header class="print-calendar-header">
+          <div>
+            <p class="print-calendar-kicker">STAR Calendar</p>
+            <h1>${escapePrintHtml(title)}</h1>
+          </div>
+          <div class="print-calendar-generated">Generated ${escapePrintHtml(new Date().toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }))}</div>
+        </header>
+        ${quickLook}
+        ${legend}
+        ${grid}
+      </section>
+    `;
+  }
+
+  function openIsolatedPrintWindow({ title, bodyHtml, styles }) {
+    const win = window.open('', '_blank');
+    if (!win) {
+      alert('Pop-up blocking prevented the print window from opening. Please allow pop-ups for STAR and try again.');
+      return null;
+    }
+    win.document.open();
+    win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapePrintHtml(title)}</title><style>${styles}</style></head><body>${bodyHtml}</body></html>`);
+    win.document.close();
+    const doPrint = () => {
+      win.focus();
+      win.print();
     };
-    window.addEventListener('afterprint', restore);
-    window.print();
+    if (win.document.fonts?.ready) {
+      win.document.fonts.ready.then(() => setTimeout(doPrint, 120));
+    } else {
+      setTimeout(doPrint, 180);
+    }
+    return win;
+  }
+
+  async function printCalendarOnly() {
+    const bodyHtml = buildCalendarPrintHtml();
+    if (!bodyHtml.includes('hc-grid')) {
+      alert('The calendar is still loading. Please try again in a moment.');
+      return;
+    }
+    openIsolatedPrintWindow({
+      title: 'STAR Calendar',
+      bodyHtml,
+      styles: calendarPrintStyles()
+    });
   }
 
   async function exportCalendarPdf(share = false) {
-    const target = document.getElementById('hc-root');
-    if (!target) return;
-    toggleExportHiders(true);
-    document.body.classList.add('print-export');
-    document.body.classList.add('calendar-print-only');
+    const bodyHtml = buildCalendarPrintHtml();
+    const target = document.createElement('div');
+    target.style.cssText = 'position:absolute;left:-10000px;top:0;width:1056px;background:#fff;pointer-events:none;';
+    target.innerHTML = `<style>${calendarPrintStyles()}</style>${bodyHtml}`;
+    document.body.appendChild(target);
     try {
       await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
       const canvas = await html2canvas(target, { scale: 2, backgroundColor: '#ffffff' });
       const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF({ unit: 'pt', format: 'a4' });
+      const pdf = new jsPDF({ unit: 'pt', format: 'letter', orientation: 'landscape' });
       const pageW = pdf.internal.pageSize.getWidth();
       const pageH = pdf.internal.pageSize.getHeight();
-      const margin = 28;
+      const margin = 20;
       const imgW = pageW - margin * 2;
       const imgH = canvas.height * (imgW / canvas.width);
       const finalH = Math.min(imgH, pageH - margin * 2);
@@ -7650,11 +7717,44 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } finally {
-      document.body.classList.remove('print-export');
-      document.body.classList.remove('calendar-print-only');
-      toggleExportHiders(false);
+      document.body.removeChild(target);
     }
   }
+
+  function parentLetterPrintStyles() {
+    return `
+      @page{size:Letter portrait;margin:.7in .75in}
+      *{box-sizing:border-box}
+      body{margin:0;background:#fff;color:#172033;font-family:Georgia,"Times New Roman",serif;font-size:12pt;line-height:1.55}
+      .letter{max-width:7.1in;margin:0 auto}
+      .letter-header{margin:0 0 18pt;border-bottom:2px solid #9a6428;padding-bottom:10pt;font-family:"Avenir Next","Segoe UI",Arial,sans-serif}
+      .kicker{margin:0 0 3pt;color:#8a5a25;font-size:8pt;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+      h1{margin:0;color:#20324f;font-family:Georgia,"Times New Roman",serif;font-size:22pt;line-height:1.1}
+      .range{margin:7pt 0 0;color:#4f5e75;font-size:10pt;font-weight:700}
+      .body{white-space:pre-wrap}
+      .disclaimer{margin-top:18pt;padding-top:9pt;border-top:1px solid #d9dee7;color:#657086;font-family:"Avenir Next","Segoe UI",Arial,sans-serif;font-size:8.5pt;font-style:italic;line-height:1.35}
+      @media print{.letter{break-inside:auto}}
+    `;
+  }
+
+  window.starPrintParentLetterOnly = ({ rangeText = '', bodyText = '', disclaimerText = '' } = {}) => {
+    const bodyHtml = `
+      <article class="letter" aria-label="STAR Parent Letter">
+        <header class="letter-header">
+          <p class="kicker">STAR Parent Letter</p>
+          <h1>Parent Letter</h1>
+          <p class="range">${escapePrintHtml(rangeText || 'Range: selected dates')}</p>
+        </header>
+        <div class="body">${escapePrintHtml(bodyText)}</div>
+        <p class="disclaimer">${escapePrintHtml(disclaimerText)}</p>
+      </article>
+    `;
+    openIsolatedPrintWindow({
+      title: 'STAR Parent Letter',
+      bodyHtml,
+      styles: parentLetterPrintStyles()
+    });
+  };
 
   document.getElementById('fullExportBtn')?.addEventListener('click', exportFullReportPDF);
   document.getElementById('fullShareBtn')?.addEventListener('click', shareFullReportPdf);
@@ -7782,7 +7882,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 <script type="module">
 import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 import { ensureActiveGroupId } from './active-group.js?v=2026.03.29A';
-import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinForCalendar } from './caregiver-report-shared.js?v=2026.09.02B';
+import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinForCalendar } from './caregiver-report-shared.js?v=2026.09.02C';
 
 (() => {
   // Bail out quietly if the calendar HTML isn't present
@@ -7802,13 +7902,6 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinFor
   const quickLookRange = document.getElementById('calendarQuickLookRange');
   const quickLookList = document.getElementById('calendarQuickLookList');
   const statusMessage = document.getElementById('hc-statusMessage');
-  const shiftRange = document.getElementById('calendarShiftRange');
-  const shiftPrevTitle = document.getElementById('shiftPrevTitle');
-  const shiftPrevList = document.getElementById('shiftPrevList');
-  const shiftPrevPrevTitle = document.getElementById('shiftPrevPrevTitle');
-  const shiftPrevPrevList = document.getElementById('shiftPrevPrevList');
-  const shiftToDateTitle = document.getElementById('shiftToDateTitle');
-  const shiftToDateList = document.getElementById('shiftToDateList');
 
   const editorOverlay   = document.getElementById('hc-editor-overlay');
   const editorForm      = document.getElementById('hcEditorForm');
@@ -8368,122 +8461,6 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinFor
     counts: buildMonthCounts(Y, M, MAP)
   });
 
-  function buildMonthCountsToDate(y, m, map, dayLimit){
-    const counts = {};
-    QUICK_LOOK_ITEMS.forEach(item => { counts[item.key] = 0; });
-    const daysInMonth = new Date(y, m + 1, 0).getDate();
-    const maxDay = Math.max(1, Math.min(dayLimit, daysInMonth));
-    for (let day = 1; day <= maxDay; day++){
-      const key = y + '-' + pad(m+1) + '-' + pad(day);
-      const rec = map[key] || {};
-      const moon = rec.moon || isFullMoonKey(key);
-      if (rec.bm) counts.bm += 1;
-      if (rec.sleep_concern) counts.sleep_concern += 1;
-      if (rec.prn) counts.prn += 1;
-      if (rec.illness) counts.illness += 1;
-      if (rec.appetite) counts.appetite += 1;
-      if (rec.med_change) counts.med_change += 1;
-      if (moon) counts.moon += 1;
-      if (rec.anomaly) counts.anomaly += 1;
-    }
-    return counts;
-  }
-
-  function renderMonthShift(listEl, titleEl, label, baseCounts, compareCounts){
-    if (!listEl || !titleEl) return;
-    titleEl.textContent = label;
-    const changes = QUICK_LOOK_ITEMS.map(item => {
-      const base = baseCounts[item.key] ?? 0;
-      const comp = compareCounts[item.key] ?? 0;
-      const delta = base - comp;
-      return { ...item, delta };
-    }).filter(item => item.delta !== 0)
-      .sort((a,b) => Math.abs(b.delta) - Math.abs(a.delta))
-      .slice(0,3);
-    if (!changes.length){
-      listEl.innerHTML = `<div class="month-shift-item"><span class="label">No changes</span><span class="delta">—</span></div>`;
-      return;
-    }
-    listEl.innerHTML = changes.map(item => {
-      const up = item.delta > 0;
-      const sign = up ? '+' : '';
-      return `
-        <div class="month-shift-item">
-          <span class="label"><span class="emo">${item.emoji}</span>${item.label}</span>
-          <span class="delta ${up ? 'up' : 'down'}">${sign}${item.delta}</span>
-        </div>
-      `;
-    }).join('');
-  }
-
-  function hasAnyCounts(counts = {}){
-    return Object.values(counts).some(value => Number(value) > 0);
-  }
-
-  async function findLatestFullMonthWithData(refDate = new Date(), lookback = 12){
-    // Full month = any month strictly before the current month.
-    const base = new Date(refDate.getFullYear(), refDate.getMonth() - 1, 1);
-    for (let i = 0; i <= lookback; i++){
-      const d = new Date(base.getFullYear(), base.getMonth() - i, 1);
-      const map = await loadMonthFlagMap(d.getFullYear(), d.getMonth());
-      const counts = buildMonthCounts(d.getFullYear(), d.getMonth(), map);
-      if (hasAnyCounts(counts)) return { date: d, counts, map };
-    }
-    return null;
-  }
-
-  async function updateMonthShiftCards(){
-    if (!shiftPrevList) return;
-    const latest = await findLatestFullMonthWithData(new Date());
-    if (!latest) {
-      if (shiftRange) shiftRange.textContent = 'Comparing full months';
-      renderMonthShift(shiftPrevList, shiftPrevTitle, 'No data yet', {}, {});
-      renderMonthShift(shiftPrevPrevList, shiftPrevPrevTitle, 'No data yet', {}, {});
-      renderMonthShift(shiftToDateList, shiftToDateTitle, 'No data yet', {}, {});
-      return;
-    }
-
-    const curDate = latest.date;
-    const prev = new Date(curDate.getFullYear(), curDate.getMonth() - 1, 1);
-    const prevPrev = new Date(curDate.getFullYear(), curDate.getMonth() - 2, 1);
-    const currentMonth = new Date();
-    const curLabel = fmtMonth(curDate.getFullYear(), curDate.getMonth());
-    const prevLabel = fmtMonth(prev.getFullYear(), prev.getMonth());
-    const prevPrevLabel = fmtMonth(prevPrev.getFullYear(), prevPrev.getMonth());
-    if (shiftRange) shiftRange.textContent = `Full months: ${prevPrevLabel} → ${prevLabel} → ${curLabel}`;
-    const shiftExplain = document.getElementById('calendarShiftExplain');
-    if (shiftExplain) {
-      shiftExplain.textContent = 'Numbers show how many more (green) or fewer (red) days this month compared with the prior month.';
-    }
-
-    const [prevMap, prevPrevMap, currentMap] = await Promise.all([
-      loadMonthFlagMap(prev.getFullYear(), prev.getMonth()),
-      loadMonthFlagMap(prevPrev.getFullYear(), prevPrev.getMonth()),
-      loadMonthFlagMap(currentMonth.getFullYear(), currentMonth.getMonth())
-    ]);
-    const curCounts = latest.counts;
-    const prevCounts = buildMonthCounts(prev.getFullYear(), prev.getMonth(), prevMap);
-    const prevPrevCounts = buildMonthCounts(prevPrev.getFullYear(), prevPrev.getMonth(), prevPrevMap);
-
-    renderMonthShift(shiftPrevPrevList, shiftPrevPrevTitle, `${prevLabel} vs ${prevPrevLabel}`, prevCounts, prevPrevCounts);
-    renderMonthShift(shiftPrevList, shiftPrevTitle, `${curLabel} vs ${prevLabel}`, curCounts, prevCounts);
-
-    if (shiftToDateList && shiftToDateTitle) {
-      const dayLimit = new Date().getDate();
-      const currentToDate = buildMonthCountsToDate(currentMonth.getFullYear(), currentMonth.getMonth(), currentMap, dayLimit);
-      const lastFullToDate = buildMonthCountsToDate(curDate.getFullYear(), curDate.getMonth(), latest.map || {}, dayLimit);
-      const currentLabel = fmtMonth(currentMonth.getFullYear(), currentMonth.getMonth());
-      const lastFullLabel = curLabel;
-      renderMonthShift(
-        shiftToDateList,
-        shiftToDateTitle,
-        `${currentLabel} to‑date vs ${lastFullLabel} (same days)`,
-        currentToDate,
-        lastFullToDate
-      );
-    }
-  }
-
   async function loadCaregiverFlags(start, end){
     try{
       const startDate = start.slice(0,10);
@@ -8572,7 +8549,6 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinFor
       await loadCaregiverFlags(start, end);
       await loadCalendarEventsInRange(start, end);
       render();
-      updateMonthShiftCards();
     } catch (error) {
       console.error('[caregiver-report] calendar month load failed', error);
       setCalendarStatus('Calendar data could not be loaded right now. Please refresh or reselect your group.', 'error');

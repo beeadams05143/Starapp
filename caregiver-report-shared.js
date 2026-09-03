@@ -32,6 +32,35 @@ export const CALENDAR_QUICK_LOOK_ITEMS = [
   { key: 'anomaly', label: 'Significant concern', emoji: CALENDAR_EMOJI.anomaly },
 ];
 
+export function formatReportHours(hours) {
+  const value = Number(hours);
+  if (!Number.isFinite(value) || value <= 0) return '0 hours';
+  const rounded = Math.round(value * 10) / 10;
+  const text = Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+  return `${text} ${rounded === 1 ? 'hour' : 'hours'}`;
+}
+
+export function summarizeParticipationHoursForLetter(totalMinutes, range) {
+  const minutes = Math.max(0, Number(totalMinutes) || 0);
+  const start = range?.start instanceof Date ? range.start : range?.start ? new Date(range.start) : null;
+  const end = range?.end instanceof Date ? range.end : range?.end ? new Date(range.end) : null;
+  const days = start && end && !Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime())
+    ? Math.max(1, Math.round((end - start) / 86400000) + 1)
+    : 7;
+  const weeks = days / 7;
+  const totalHours = minutes / 60;
+  const averageHoursPerWeek = weeks > 0 ? totalHours / weeks : 0;
+  return {
+    totalMinutes: minutes,
+    totalHours,
+    averageHoursPerWeek,
+    days,
+    weeks,
+    totalHoursText: formatReportHours(totalHours),
+    averageHoursText: formatReportHours(averageHoursPerWeek),
+  };
+}
+
 /* -------------------------------------------------------------------------- */
 /* Caregiver report normalization (data accuracy only)                       */
 /* -------------------------------------------------------------------------- */

@@ -52,9 +52,10 @@
 
     .weekday-row{ display:grid; grid-template-columns: repeat(7, 1fr); margin:0 0 6px; font-weight:600; font-size:12px; color:#5F5E5A; text-align:center; }
     .month-grid{ display:grid; grid-template-columns: repeat(7, 1fr); gap:6px; padding:0; }
-    .day, .calendar-day{ position:relative; display:flex; align-items:flex-start; justify-content:flex-start; min-height:58px; padding:8px 8px 6px; border-radius:10px; background:white; border:0.5px solid #E0DED8; text-align:left; cursor:pointer; box-shadow:none; }
+    .day, .calendar-day{ position:relative; display:flex; flex-direction:column; align-items:flex-start; justify-content:flex-start; min-height:58px; padding:8px 8px 6px; border-radius:10px; background:white; border:0.5px solid #E0DED8; text-align:left; cursor:pointer; box-shadow:none; }
     .day .num{ font-weight:500; font-size:14px; }
-    .day .dots{ position:absolute; right:8px; top:8px; width:8px; height:8px; border-radius:999px; background:var(--vio); box-shadow: 12px 0 0 #6fb28f, 24px 0 0 #d9a441; }
+    .day .event-row{ display:flex; align-items:flex-start; gap:4px; width:100%; min-width:0; margin-top:6px; }
+    .day .dots{ flex:0 0 auto; width:6px; height:6px; margin-top:3px; border-radius:999px; background:var(--vio); }
     .day.today, .calendar-day.today{ border:1.5px solid #FAC775; color:#854F0B; font-weight:500; background:transparent; outline:none; }
     .day.selected, .calendar-day.selected{ background:#FAEEDA; border:0.5px solid #FAC775; box-shadow:none; }
     .day.muted{ color:#A19D94; background:#F9F7F3; }
@@ -72,7 +73,9 @@
     .event .del{ border:0; background:#fff; cursor:pointer; font-size:18px; }
     .day .event-title{
       display:block;
-      margin-top:6px;
+      flex:1 1 auto;
+      min-width:0;
+      margin-top:0;
       font-size:11px;
       font-weight:700;
       color:#1f2937;
@@ -121,8 +124,9 @@
       .month-grid{ gap:6px; padding:0 6px; }
       .day{ min-height:56px; padding:6px; border-radius:12px; }
       .day .num{ font-size:12px; }
+      .day .event-row{ gap:3px; margin-top:4px; }
+      .day .dots{ width:5px; height:5px; margin-top:3px; }
       .day .event-title{
-        margin-top:4px;
         font-size:9px;
         line-height:1.1;
         display:-webkit-box;
@@ -614,10 +618,12 @@
         const items = eventsForDay(key);
         const firstTitle = items[0]?.title ? escapeHtml(items[0].title) : "";
         const moreLabel = items.length > 1 ? `+${items.length - 1} more` : "";
+        const eventSummary = items.length
+          ? `<span class="event-row"><span class="dots" title="${items.length} event(s)"></span>${firstTitle ? `<span class="event-title">${firstTitle}</span>` : ""}</span>`
+          : "";
         cell.innerHTML =
           `<span class="num">${d.getDate()}</span>` +
-          (items.length ? `<span class="dots" title="${items.length} event(s)"></span>` : "") +
-          (firstTitle ? `<span class="event-title">${firstTitle}</span>` : "") +
+          eventSummary +
           (moreLabel ? `<span class="event-more">${moreLabel}</span>` : "");
 
         cell.addEventListener("click", () => {

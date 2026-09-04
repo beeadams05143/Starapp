@@ -359,6 +359,10 @@
     #chart-stack{display:flex;flex-direction:column;gap:16px}
     .chart-range-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:10px 12px}
     .chart-range-controls label{font-weight:700}
+    .graph-range-controls{justify-content:center;margin:8px 0 10px;align-items:end}
+    .graph-range-controls label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:#334155;text-align:left}
+    .graph-range-controls input{min-height:36px;padding:6px 8px;border-radius:9px;font-size:13px}
+    .graph-range-controls button{min-height:36px;padding:6px 10px;border-radius:9px;font-size:13px}
     .chart-range-controls select{padding:6px 10px;border-radius:10px;border:1px solid #d4d4d8;background:#fff;font-weight:600}
     .chart-range-display{font-size:12px;color:#475569;font-weight:600}
     .chart-range-label{margin:-4px 0 10px;color:#475569}
@@ -1500,29 +1504,29 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         families and support teams, not a clinical document.
       </p>
     </div>
-    <div class="chart">
+    <div class="chart report-graph" data-graph-id="health" data-graph-title="Physical & Daily Living Overview" data-graph-canvas="healthChart">
       <h2>Physical & Daily Living Overview (Monthly Totals)</h2>
-      <p class="muted chart-range-label" id="healthRangeLabel">Range: Month</p>
+      <p class="muted chart-range-label" id="healthRangeLabel">Range: Recent 3 months</p>
       <p class="muted">Tip: turn the phone to landscape for a wider chart view.</p>
       <canvas id="healthChart"></canvas>
       <p class="muted">Counts of caregiver check-ins where each category was marked “Yes”. Use this to spot over- or under-focused areas.</p>
     </div>
-      <div class="chart">
-        <h2>Prompt Level Over Time</h2>
-        <p class="muted chart-range-label" id="promptRangeLabel">Range: Month</p>
+      <div class="chart report-graph" data-graph-id="prompt" data-graph-title="Prompt Level Trend" data-graph-canvas="skillChart">
+        <h2>Prompt Level Trend</h2>
+        <p class="muted chart-range-label" id="promptRangeLabel">Range: Recent 3 months</p>
         <canvas id="skillChart"></canvas>
-        <p class="muted">Average prompt level (0–4) per day from caregiver check-ins, rounded to whole numbers. Higher = more prompting needed.</p>
+        <p class="muted">Weekly average prompt level. Lower scores indicate greater independence.</p>
         <p class="muted" style="margin-top:6px">Prompt scale: 0 – Independent · 1 – 1–2 prompts · 2 – Periodic prompts · 3 – Frequent prompts · 4 – Dependent</p>
       </div>
-      <div class="chart">
+      <div class="chart report-graph" data-graph-id="interaction" data-graph-title="Community Interaction Types" data-graph-canvas="interactionTypeChart">
         <h2>Community Interaction Types</h2>
-        <p class="muted chart-range-label" id="interactionRangeLabel">Range: Month</p>
+        <p class="muted chart-range-label" id="interactionRangeLabel">Range: Recent 3 months</p>
         <canvas id="interactionTypeChart"></canvas>
         <p class="muted">Counts of interaction types when he engaged with community members.</p>
       </div>
-      <div class="chart kpi-summary-inline" id="activityTypeSummary">
+      <div class="chart kpi-summary-inline report-graph" id="activityTypeSummary" data-graph-id="activity" data-graph-title="Activity Types">
         <h4>Activity Types (Top 6)</h4>
-        <p class="muted chart-range-label" id="activityRangeLabel">Range: Month</p>
+        <p class="muted chart-range-label" id="activityRangeLabel">Range: Recent 3 months</p>
         <div class="activity-quicklook">
           <div class="activity-block">
             <div class="activity-title">Home / Community</div>
@@ -1538,8 +1542,9 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
           </div>
         </div>
       </div>
-      <div class="chart">
+      <div class="chart report-graph" data-graph-id="mood" data-graph-title="Individual Mood Share" data-graph-canvas="moodPieMain">
         <h2>Individual Mood Share (Pie)</h2>
+        <p class="muted chart-range-label" id="moodGraphRangeLabel">Range: Recent 3 months</p>
         <canvas id="moodPieMain"></canvas>
         <div class="mood-summary-inline">
           <h4>Daily Mood Summary</h4>
@@ -1552,8 +1557,9 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         </div>
       </div>
 
-      <div class="chart small">
+      <div class="chart small report-graph" data-graph-id="wyr" data-graph-title="Leisure Would-You-Rather" data-graph-canvas="wyrBar">
         <h2 style="margin:0 0 8px;">Leisure (Would-You-Rather) — Minutes & Picks</h2>
+        <p class="muted chart-range-label" id="wyrRangeLabel">Range: Recent 3 months</p>
         <canvas id="wyrBar" height="220"></canvas>
         <p class="muted" id="wyrNote">Bars = total leisure minutes credited to each choice; line = number of picks.</p>
       </div>
@@ -1639,6 +1645,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     import { CALENDAR_QUICK_LOOK_ITEMS, filterCaregiverCheckinsForPrint, normalizeCaregiverCheckinForCalendar, normalizeCaregiverCheckinRecord } from './caregiver-report-shared.js?v=2026.09.02D';
     import { renderPrintableCaregiverReport } from './caregiver-report-print.js?v=2026.07.01B';
     import { collectNotableActivities, filterParentLetterEntries, formatBehaviorFindings, participationSentence, summarizeBehaviorForParentLetter, summarizeParticipationForParentLetter } from './caregiver-parent-letter.js?v=2026.09.04A';
+    import { buildWeeklyPromptSeries, defaultGraphRange, filterRecordsByRange, formatGraphRange, rangeFromInputs } from './caregiver-report-graphs.js?v=2026.09.04A';
 
     /* =============== Optional live data =============== */
     let loadFromSupabase = null;
@@ -1672,7 +1679,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     const destroy = key => { charts[key]?.destroy?.(); charts[key]=null; };
     const dayKey = d => new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString().slice(0,10);
     const axisTitle = text => ({ title:{display:true,text} });
-    const RANGE_LIMITS = { day: 1, week: 7, month: 30, year: 365, all: Infinity };
     const APP_CONFIG_KEY = 'star_app_config';
     const CAREGIVER_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
     const parseCaregiverDate = (value) => {
@@ -2307,12 +2313,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       return { start, end, label };
     }
 
-    function truncateSeries(series, rangeKey){
-      const limit = RANGE_LIMITS[rangeKey] ?? Infinity;
-      if (!series || !series.length || !Number.isFinite(limit) || limit === Infinity) return series;
-      return series.slice(-limit);
-    }
-
     function filterEntriesByRange(entries, range){
       if (!range?.start) return entries.slice();
       return entries.filter(entry => {
@@ -2322,9 +2322,91 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       });
     }
 
-    function filterMoodEntriesByRange(entries, range){
-      if (!range?.start) return entries.slice();
-      return entries.filter(entry => entry.dateObj >= range.start && entry.dateObj <= range.end);
+    const graphState = {
+      health: { source: 'caregiver', labelId: 'healthRangeLabel' },
+      prompt: { source: 'caregiver', labelId: 'promptRangeLabel' },
+      interaction: { source: 'caregiver', labelId: 'interactionRangeLabel' },
+      activity: { source: 'caregiver', labelId: 'activityRangeLabel' },
+      mood: { source: 'mood', labelId: 'moodGraphRangeLabel' },
+      wyr: { source: 'wyr', labelId: 'wyrRangeLabel' },
+    };
+    let latestWyrRows = [];
+
+    function ensureGraphRange(graphId) {
+      const state = graphState[graphId];
+      if (!state) return null;
+      if (!state.range) {
+        const defaults = defaultGraphRange(new Date());
+        state.range = rangeFromInputs(defaults.startInput, defaults.endInput);
+      }
+      return state.range;
+    }
+
+    function setGraphRangeLabel(graphId) {
+      const state = graphState[graphId];
+      const label = state?.labelId ? document.getElementById(state.labelId) : null;
+      if (label) label.textContent = `Range: ${formatGraphRange(ensureGraphRange(graphId))}`;
+    }
+
+    function renderGraphById(graphId) {
+      const range = ensureGraphRange(graphId);
+      const caregiverSource = cgState.entries || [];
+      const filteredCaregiver = filterRecordsByRange(caregiverSource, range, getCheckinDate);
+      setGraphRangeLabel(graphId);
+      if (graphId === 'health') {
+        const { monthly } = buildMonthlySeries(filteredCaregiver);
+        drawHealthChart(monthly);
+      } else if (graphId === 'prompt') {
+        drawSkillChart(filteredCaregiver);
+      } else if (graphId === 'interaction') {
+        drawInteractionTypeChart(filteredCaregiver);
+      } else if (graphId === 'activity') {
+        renderActivityTypeSummary(filteredCaregiver);
+      } else if (graphId === 'mood') {
+        const moods = filterRecordsByRange(window.latestMoodAllEntries || window.latestMoodEntries || [], range, (entry) => entry.dateObj);
+        renderMoodGraphFromEntries(moods);
+      } else if (graphId === 'wyr') {
+        const wyrRows = filterRecordsByRange(latestWyrRows, range, (row) => row.ts);
+        renderWyrGraph(wyrRows, filteredCaregiver);
+      }
+    }
+
+    function renderAllGraphs() {
+      Object.keys(graphState).forEach((graphId) => {
+        try { renderGraphById(graphId); } catch (err) { console.warn(`[report] graph render failed: ${graphId}`, err); }
+      });
+    }
+
+    function initGraphControls() {
+      document.querySelectorAll('.report-graph[data-graph-id]').forEach((card) => {
+        const graphId = card.dataset.graphId;
+        if (!graphState[graphId] || card.querySelector('.graph-range-controls')) return;
+        const range = ensureGraphRange(graphId);
+        const controls = document.createElement('div');
+        controls.className = 'chart-range-controls graph-range-controls no-export';
+        controls.innerHTML = `
+          <label>Start date <input type="date" data-graph-start value="${range.startInput || ''}"></label>
+          <label>End date <input type="date" data-graph-end value="${range.endInput || ''}"></label>
+          <button type="button" data-graph-apply>Apply</button>
+          <button type="button" data-graph-print>Print Graph</button>
+        `;
+        const title = card.querySelector('h2, h3, h4');
+        if (title?.nextSibling) title.parentNode.insertBefore(controls, title.nextSibling);
+        else card.prepend(controls);
+        controls.querySelector('[data-graph-apply]')?.addEventListener('click', () => {
+          const nextRange = rangeFromInputs(
+            controls.querySelector('[data-graph-start]')?.value,
+            controls.querySelector('[data-graph-end]')?.value
+          );
+          if (!nextRange) {
+            alert('Choose a valid start and end date for this graph.');
+            return;
+          }
+          graphState[graphId].range = nextRange;
+          renderGraphById(graphId);
+        });
+        controls.querySelector('[data-graph-print]')?.addEventListener('click', () => printGraph(graphId));
+      });
     }
 
     function formatRangeDisplay(rangeKey, rangeLabel){
@@ -2344,21 +2426,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       const end = new Date(range.start.getTime() - 1);
       const start = new Date(end.getTime() - duration);
       return { start, end };
-    }
-
-    function updateChartRangeLabels(range, rangeKey){
-      const label = range?.label || CHART_RANGE_LABELS[rangeKey] || 'All time';
-      const display = formatRangeDisplay(rangeKey, label);
-      const displayEl = document.getElementById('chartRangeDisplay');
-      if (displayEl) displayEl.textContent = `Showing: ${display}`;
-      const healthLabel = document.getElementById('healthRangeLabel');
-      if (healthLabel) healthLabel.textContent = `Range: ${display}`;
-      const promptLabel = document.getElementById('promptRangeLabel');
-      if (promptLabel) promptLabel.textContent = `Range: ${display}`;
-      const interactionLabel = document.getElementById('interactionRangeLabel');
-      if (interactionLabel) interactionLabel.textContent = `Range: ${display}`;
-      const activityLabel = document.getElementById('activityRangeLabel');
-      if (activityLabel) activityLabel.textContent = `Range: ${display}`;
     }
 
     function updateMovementRangeLabel(range, rangeKey){
@@ -2940,27 +3007,14 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     }
 
     function applyChartRange(){
-      const rangeSelect = document.getElementById('chartRangeSelect');
-      const rangeKey = rangeSelect?.value || 'custom';
       const caregiverSource = (cgState.filtered && cgState.filtered.length) ? cgState.filtered : (cgState.entries || []);
-      const customStart = cgInputs.start?.value;
-      const customEnd = cgInputs.end?.value;
-      const range = !rangeSelect && customStart && customEnd
-        ? {
-            start: new Date(`${customStart}T00:00:00`),
-            end: new Date(`${customEnd}T23:59:59.999`),
-            label: `${formatLocalDate(new Date(`${customStart}T00:00:00`))}–${formatLocalDate(new Date(`${customEnd}T00:00:00`))}`,
-          }
-        : getChartRangeWindow(rangeKey, caregiverSource);
+      const range = ensureGraphRange('health');
       const visibility = getReportVisibility();
-
-      // Update labels first so UI reflects the selection even if a chart fails.
-      updateChartRangeLabels(range, rangeKey);
       updateReportSectionVisibility();
 
       try {
-        const filteredCaregiver = filterEntriesByRange(caregiverSource, range);
-        const reportCaregiverEntries = filteredCaregiver;
+        initGraphControls();
+        const filteredCaregiver = filterRecordsByRange(caregiverSource, range, getCheckinDate);
         const historyForCycle = caregiverSource.filter((entry) => {
           const dt = getCheckinDate(entry);
           return !!dt && dt <= range.end;
@@ -2977,20 +3031,15 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
           };
         }
         renderKPIs(summary);
-        const { monthly, promptDaily } = buildMonthlySeries(filteredCaregiver);
-        const monthlySeries = truncateSeries(monthly, rangeKey);
-        drawHealthChart(monthlySeries);
-        drawSkillChart({ rangeKey, monthly, promptDaily });
-
-        const moodSource = window.latestMoodEntries || [];
-        const filteredMood = filterMoodEntriesByRange(moodSource, range);
-        drawInteractionTypeChart(filteredCaregiver);
-        renderActivityTypeSummary(filteredCaregiver);
+        const { monthly } = buildMonthlySeries(filteredCaregiver);
+        renderAllGraphs();
+        const moodSource = window.latestMoodAllEntries || window.latestMoodEntries || [];
+        const filteredMood = filterRecordsByRange(moodSource, range, (entry) => entry.dateObj);
         const movementInsights = visibility.movement ? buildMovementInsights(filteredCaregiver) : null;
         let behaviorComparison = null;
-        const prevRange = rangeKey === 'all' ? null : getPreviousRangeWindow(range);
+        const prevRange = getPreviousRangeWindow(range);
         if (prevRange) {
-          const prevCaregiver = filterEntriesByRange(caregiverSource, prevRange);
+          const prevCaregiver = filterRecordsByRange(caregiverSource, prevRange, getCheckinDate);
           const prevBehavior = buildBehaviorInsights(prevCaregiver);
           const curBehavior = summary.behavior || {};
           const maniaCurAvg = Number(curBehavior.mania?.avg_intensity);
@@ -3020,33 +3069,18 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         const endEl = document.getElementById('servicesSummaryEnd');
         const serviceRangeLabel = (startEl?.value && endEl?.value)
           ? `${startEl.value} to ${endEl.value}`
-          : formatRangeDisplay(rangeKey, range?.label || '');
+          : formatGraphRange(range);
         renderServicesSummary(serviceSummary, serviceRangeLabel);
         renderReportSummary({
-          rangeKey,
+          rangeKey: 'custom',
           range,
           caregiverEntries: filteredCaregiver,
           moodEntries: filteredMood,
-          monthlySeries,
+          monthlySeries: monthly,
           movementInsights,
           behaviorComparison,
           summaryData: summary
         });
-
-        const movementSelect = document.getElementById('movementRangeSelect');
-        if (movementSelect) movementSelect.value = rangeKey;
-        if (visibility.movement) {
-          applyMovementRange(rangeKey, caregiverSource);
-        }
-
-        const mergedQuickLook = window.getMergedCalendarQuickLookCounts?.();
-        if (mergedQuickLook?.counts) {
-          window.setCalendarQuickLookOverride?.(null, null);
-        } else {
-          const quickLookLabel = formatRangeDisplay(rangeKey, range?.label || '');
-          const quickLookCounts = buildCalendarRangeCounts(filteredCaregiver);
-          window.setCalendarQuickLookOverride?.(`Range: ${quickLookLabel}`, quickLookCounts);
-        }
       } catch (err) {
         console.warn('[report] applyChartRange failed', err);
       }
@@ -5934,76 +5968,44 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       });
     }
 
-    function drawSkillChart({ rangeKey, monthly, promptDaily }){
+    function drawSkillChart(entries = []){
       destroy('skill');
 
-      const toDate = (key) => new Date(`${key}T00:00:00`);
-      const formatShort = (key) => {
-        const dt = toDate(key);
-        if (Number.isNaN(dt.getTime())) return key;
-        return dt.toLocaleDateString(undefined, { month:'2-digit', day:'2-digit', year:'2-digit' });
-      };
-      const formatMonth = (key) => {
-        const parts = String(key || '').split('-');
-        if (parts.length !== 2) return key;
-        const dt = new Date(Number(parts[0]), Number(parts[1]) - 1, 1);
-        if (Number.isNaN(dt.getTime())) return key;
-        return dt.toLocaleDateString(undefined, { month:'short', year:'numeric' });
-      };
-      const startOfWeek = (dt) => {
-        const d = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
-        d.setDate(d.getDate() - d.getDay());
-        return d;
-      };
-
-      let labels = [];
-      let data = [];
-      let xLabel = 'Date';
-
-      if (rangeKey === 'year' || rangeKey === 'all') {
-        const rows = (monthly || []).filter(row => row.avg_new_skill_score != null);
-        labels = rows.map(row => formatMonth(row.x));
-        data = rows.map(row => row.avg_new_skill_score);
-        xLabel = 'Month';
-      } else if (rangeKey === 'month') {
-        const buckets = new Map();
-        (promptDaily || []).forEach(row => {
-          if (row.avg_new_skill_score == null) return;
-          const dt = toDate(row.x);
-          if (Number.isNaN(dt.getTime())) return;
-          const weekStart = startOfWeek(dt);
-          const key = weekStart.toISOString().slice(0,10);
-          const bucket = buckets.get(key) || { total:0, count:0 };
-          bucket.total += row.avg_new_skill_score;
-          bucket.count += 1;
-          buckets.set(key, bucket);
-        });
-        const rows = Array.from(buckets.entries())
-          .sort(([a],[b]) => a.localeCompare(b))
-          .map(([key, bucket]) => ({ key, avg: +(bucket.total / bucket.count).toFixed(1) }));
-        labels = rows.map(row => `Week of ${formatShort(row.key)}`);
-        data = rows.map(row => row.avg);
-        xLabel = 'Week';
-      } else {
-        const rows = (promptDaily || []).filter(row => row.avg_new_skill_score != null);
-        labels = rows.map(row => formatShort(row.x));
-        data = rows.map(row => row.avg_new_skill_score);
-        xLabel = 'Date';
-      }
+      const rows = buildWeeklyPromptSeries(entries, {
+        getDate: getCheckinDate,
+        getPrompt: getPromptValue,
+      });
+      let labels = rows.map(row => row.label);
+      let data = rows.map(row => +row.average.toFixed(2));
 
       if (!labels.length) {
         labels = ['No data'];
-        data = [0];
+        data = [null];
       }
 
       charts.skill = new Chart($('#skillChart'), {
-        type:'bar',
-        data:{ labels, datasets:[{ label:'Avg Prompt Level', data, borderRadius:8, backgroundColor:'rgba(239,68,68,.55)' }]},
+        type:'line',
+        data:{ labels, datasets:[{ label:'Weekly Avg Prompt Level', data, borderColor:'#dc2626', backgroundColor:'rgba(239,68,68,.14)', borderWidth:2, tension:.25, pointRadius:3, pointHoverRadius:5, fill:false, spanGaps:false }]},
         options:{
           responsive:true,
-          plugins:{ legend:{ position:'top', labels:{ boxWidth:12, boxHeight:12, font:{ size:12 } } } },
+          plugins:{
+            legend:{ position:'top', labels:{ boxWidth:12, boxHeight:12, font:{ size:12 } } },
+            tooltip:{
+              callbacks:{
+                title:(items) => {
+                  const index = items?.[0]?.dataIndex ?? 0;
+                  return rows[index] ? `Week of ${rows[index].label}` : 'No data';
+                },
+                label:(item) => {
+                  const row = rows[item.dataIndex];
+                  if (!row) return 'No prompt observations';
+                  return `Average ${row.average.toFixed(1)} from n = ${row.count}`;
+                }
+              }
+            }
+          },
           scales:{
-            x:axisTitle(xLabel),
+            x:{ ...axisTitle('Week'), ticks:{ autoSkip:true, maxRotation:0, minRotation:0, maxTicksLimit:8 } },
             y:{ min:0,max:4,ticks:{stepSize:1, precision:0}, ...axisTitle('Prompt level (0–4)') }
           }
         }
@@ -6440,9 +6442,35 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     function drawMoodShare(indivCounts){
       if (pieMain) pieMain.destroy();
       let labels=Object.keys(indivCounts), data=Object.values(indivCounts);
-      if (!labels.length){ labels=['Loved','OK','Confused','Hungry']; data=[6,3,2,1]; }
-      const colors=labels.map((_,i)=>`hsl(${(i*360)/Math.max(labels.length,1)},70%,60%)`);
+      const hasData = labels.length > 0;
+      if (!hasData){ labels=['No data']; data=[1]; }
+      const colors = hasData
+        ? labels.map((_,i)=>`hsl(${(i*360)/Math.max(labels.length,1)},70%,60%)`)
+        : ['#e2e8f0'];
       pieMain = new Chart($('#moodPieMain'), { type:'pie', data:{labels, datasets:[{data, backgroundColor:colors}]} });
+    }
+
+    function renderMoodGraphFromEntries(entries = []) {
+      const indiv = {};
+      const buckets = {"Positive":0,"Low Energy":0,"Challenging":0,"Other":0};
+      for (const entry of entries) {
+        const mood = entry.mood || 'Unknown';
+        indiv[mood] = (indiv[mood] || 0) + 1;
+        buckets[toBucket(mood)]++;
+      }
+      const totalMood = entries.length || 0;
+      const commonMoodEntry = Object.entries(indiv).sort((a,b)=>b[1]-a[1])[0];
+      const commonMood = commonMoodEntry ? commonMoodEntry[0] : '-';
+      const pct = (count) => totalMood ? `${Math.round((count / totalMood) * 100)}%` : '-';
+      const setText = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+      };
+      setText('moodSummaryTotalInline', totalMood ? `${totalMood}` : '-');
+      setText('moodSummaryCommonInline', commonMood);
+      setText('moodSummaryPositiveInline', pct(buckets.Positive || 0));
+      setText('moodSummaryChallengingInline', pct(buckets.Challenging || 0));
+      drawMoodShare(indiv);
     }
 
     function buildInteractionTypeCounts(entries = []) {
@@ -6714,12 +6742,26 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       return rows;
     }
     async function renderWyr(){
-      const rows = await fetchWyr();
-      const cg = (window.latestCaregiverEntries||[]);
+      latestWyrRows = await fetchWyr();
+      renderGraphById('wyr');
+    }
+
+    function renderWyrGraph(rows = [], caregiverEntries = []) {
+      const cg = caregiverEntries || [];
       const leisureByDay = new Map();
-      for(const e of cg){ const d=(e.timestamp||e.created_at||'').slice(0,10); const add=+e.leisure_time||0; leisureByDay.set(d,(leisureByDay.get(d)||0)+add); }
+      for(const e of cg){
+        const d = getCheckinDayKey(e);
+        if (!d) continue;
+        const add = +e.leisure_time || +e.payload?.leisure_time || 0;
+        leisureByDay.set(d,(leisureByDay.get(d)||0)+add);
+      }
       const picksByDay=new Map();
-      for(const r of rows){ const k=r.ts.toISOString().slice(0,10); (picksByDay.get(k)||picksByDay.set(k,[]).get(k)).push(r.label); }
+      for(const r of rows){
+        if (!r?.ts || Number.isNaN(r.ts.getTime())) continue;
+        const k = r.ts.toISOString().slice(0,10);
+        const label = String(r.label || 'Unknown').trim() || 'Unknown';
+        (picksByDay.get(k)||picksByDay.set(k,[]).get(k)).push(label);
+      }
 
       const totals={}, counts={};
       for(const [day,labels] of picksByDay){
@@ -6727,10 +6769,11 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         const share = labels.length ? mins/labels.length : 0;
         for (const lbl of labels){ totals[lbl]=(totals[lbl]||0)+share; counts[lbl]=(counts[lbl]||0)+1; }
       }
-      let labels=Object.keys(totals);
-      if (!labels.length){ labels=["Music","Walk","Cooking"]; }
-      const minutes = labels.map(l=>+(totals[l]||[62,89,72][labels.indexOf(l)]||30).toFixed(1));
-      const picks   = labels.map(l=>counts[l]||[1,2,1][labels.indexOf(l)]||1);
+      let labels = Object.keys(counts).sort((a,b)=>(totals[b]||0)-(totals[a]||0) || (counts[b]||0)-(counts[a]||0));
+      const hasData = labels.length > 0;
+      if (!hasData){ labels=['No data']; }
+      const minutes = labels.map(l=>+(totals[l]||0).toFixed(1));
+      const picks   = labels.map(l=>counts[l]||0);
 
       charts.wyr && charts.wyr.destroy();
       charts.wyr = new Chart($('#wyrBar'),{
@@ -6744,7 +6787,91 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         options:{ responsive:true, interaction:{mode:'index',intersect:false},
           scales:{ y:{beginAtZero:true,...axisTitle('Minutes')}, y1:{beginAtZero:true,position:'right',grid:{drawOnChartArea:false},...axisTitle('Picks')} } }
       });
-      $('#wyrNote').textContent = 'Bars = total leisure minutes credited to each choice (split across multiple picks in a day). Line = times chosen.';
+      $('#wyrNote').textContent = hasData
+        ? 'Bars = total leisure minutes credited to each choice (split across multiple picks in a day). Line = times chosen.'
+        : 'No leisure choices found for this graph range.';
+    }
+
+    function escapeGraphHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[ch]));
+    }
+
+    function graphSupplementHtml(card, graphId) {
+      const selector = graphId === 'activity'
+        ? '.activity-quicklook'
+        : graphId === 'mood'
+          ? '.mood-summary-inline'
+          : null;
+      if (!selector) return '';
+      const clone = card.querySelector(selector)?.cloneNode(true);
+      return clone ? clone.outerHTML : '';
+    }
+
+    function printGraph(graphId) {
+      const card = document.querySelector(`.report-graph[data-graph-id="${graphId}"]`);
+      if (!card) return;
+      const state = graphState[graphId];
+      const title = card.dataset.graphTitle || card.querySelector('h2, h3, h4')?.textContent || 'Report Graph';
+      const rangeText = formatGraphRange(ensureGraphRange(graphId));
+      const canvas = state?.canvasId
+        ? document.getElementById(state.canvasId)
+        : document.getElementById(card.dataset.graphCanvas || '');
+      let chartHtml = '';
+      if (canvas) {
+        try {
+          chartHtml = `<img class="graph-image" src="${canvas.toDataURL('image/png')}" alt="${escapeGraphHtml(title)}">`;
+        } catch (err) {
+          console.warn('[report] graph image export failed', err);
+        }
+      }
+      const supplement = graphSupplementHtml(card, graphId);
+      const note = card.querySelector('p.muted:not(.chart-range-label)')?.textContent || '';
+      const scale = graphId === 'prompt'
+        ? '<p class="scale">Prompt scale: 0 Independent, 1 one to two prompts, 2 periodic prompts, 3 frequent prompts, 4 dependent.</p>'
+        : '';
+      const win = window.open('', '_blank');
+      if (!win) {
+        alert('Please allow pop-ups so the graph can open for printing.');
+        return;
+      }
+      win.document.write(`<!doctype html>
+        <html>
+          <head>
+            <title>${escapeGraphHtml(title)}</title>
+            <style>
+              @page { size: Letter landscape; margin: .45in; }
+              * { box-sizing: border-box; }
+              body { margin: 0; color: #0f172a; font: 14px/1.45 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+              h1 { margin: 0 0 4px; font-size: 24px; }
+              .meta { margin: 0 0 18px; color: #475569; font-weight: 700; }
+              .graph-image { display: block; width: 100%; max-height: 6.5in; object-fit: contain; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px; }
+              .activity-quicklook, .mood-summary-inline .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+              .activity-block, .mood-summary-inline .item { border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; }
+              .activity-item { display: flex; justify-content: space-between; gap: 12px; border-top: 1px solid #e5e7eb; padding: 7px 0; }
+              .activity-item:first-child { border-top: 0; }
+              .note, .scale { color: #475569; margin-top: 12px; }
+            </style>
+          </head>
+          <body>
+            <h1>${escapeGraphHtml(title)}</h1>
+            <p class="meta">STAR Reports - ${escapeGraphHtml(rangeText)}</p>
+            ${chartHtml}
+            ${supplement}
+            ${scale}
+            ${note ? `<p class="note">${escapeGraphHtml(note)}</p>` : ''}
+          </body>
+        </html>`);
+      win.document.close();
+      setTimeout(() => {
+        try { win.focus(); } catch {}
+        win.print();
+      }, 150);
     }
 
     /* =================== Export helpers =================== */
@@ -6856,15 +6983,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 
     /* =================== Wire & boot =================== */
     $('#moodRange').addEventListener('change', renderMoodSection);
-    const chartRangeSelect = document.getElementById('chartRangeSelect');
-    if (chartRangeSelect) {
-      window.applyChartRange = applyChartRange;
-      chartRangeSelect.addEventListener('change', applyChartRange);
-      chartRangeSelect.addEventListener('input', applyChartRange);
-      setTimeout(() => {
-        try { applyChartRange(); } catch (err) { console.warn('[report] applyChartRange init failed', err); }
-      }, 0);
-    }
+    window.applyChartRange = applyChartRange;
+    initGraphControls();
     document.getElementById('movementRangeSelect')?.addEventListener('change', (event) => {
       const rangeKey = event.target.value || 'month';
       applyMovementRange(rangeKey);
@@ -7006,7 +7126,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       }
 
       const tb=$('#moodTable tbody');
-      tb.innerHTML = tableRows.length ? '' : `<tr><td colspan="4">No mood check-ins found (showing placeholder data in charts).</td></tr>`;
+      tb.innerHTML = tableRows.length ? '' : `<tr><td colspan="4">No mood check-ins found.</td></tr>`;
       for (const e of tableRows){
         tb.insertAdjacentHTML('beforeend', `<tr><td>${e.timestamp}</td><td>${e.mood}</td><td>${e.intensity ?? 'N/A'}</td><td>${e.notes||'—'}</td></tr>`);
       }
@@ -7025,7 +7145,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       $('#moodSummaryCommonInline').textContent = commonMood;
       $('#moodSummaryPositiveInline').textContent = pct(buckets.Positive || 0);
       $('#moodSummaryChallengingInline').textContent = pct(buckets.Challenging || 0);
-      drawMoodShare(indiv);
+      window.latestMoodAllEntries = full.slice();
       window.latestMoodEntries = filteredMood.slice();
       applyChartRange();
     }

@@ -1636,8 +1636,9 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabaseClient.js?v=2026.03.29A';
     import { ensureActiveGroupId } from './active-group.js?v=2026.03.29A';
     import { openCompactCaregiverCheckinPrintWindow } from './caregiver-checkin-print.js?v=2026.09.02A';
-    import { CALENDAR_QUICK_LOOK_ITEMS, filterCaregiverCheckinsForPrint, normalizeCaregiverCheckinForCalendar, normalizeCaregiverCheckinRecord, summarizeParticipationHoursForLetter } from './caregiver-report-shared.js?v=2026.09.02D';
+    import { CALENDAR_QUICK_LOOK_ITEMS, filterCaregiverCheckinsForPrint, normalizeCaregiverCheckinForCalendar, normalizeCaregiverCheckinRecord } from './caregiver-report-shared.js?v=2026.09.02D';
     import { renderPrintableCaregiverReport } from './caregiver-report-print.js?v=2026.07.01B';
+    import { collectNotableActivities, filterParentLetterEntries, formatBehaviorFindings, participationSentence, summarizeBehaviorForParentLetter, summarizeParticipationForParentLetter } from './caregiver-parent-letter.js?v=2026.09.04A';
 
     /* =============== Optional live data =============== */
     let loadFromSupabase = null;
@@ -2725,24 +2726,18 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         if (values.length === 2) return `${values[0]} and ${values[1]}`;
         return `${values.slice(0, -1).join(', ')}, and ${values[values.length - 1]}`;
       };
-      const supportSentence = (label, pct) => {
-        if (!Number.isFinite(pct)) return '';
-        if (pct === 100) return `${label} was completed on every logged shift.`;
-        if (pct >= 75) return `${label} was completed on most shifts.`;
-        if (pct > 0) return `${label} was completed on some shifts (${pct}% of check-ins).`;
-        return '';
+      const dailyLivingStat = (flag) => {
+        const values = caregiverEntries
+          .map((entry) => resolveDailyLivingBool(entry, flag))
+          .filter((value) => value !== null);
+        const yes = values.filter(Boolean).length;
+        return { yes, answered: values.length, pct: values.length ? Math.round((yes / values.length) * 100) : null };
       };
-      const uniqueDaysForBehavior = (keys = []) => {
-        const daySet = new Set();
-        caregiverEntries.forEach((entry) => {
-          const dayKey = dateKeyFor(entry);
-          if (!dayKey) return;
-          const items = parseBehaviorTracking(entry);
-          if (items.some((item) => keys.includes(item?.key) && item?.occurred === true)) {
-            daySet.add(dayKey);
-          }
-        });
-        return daySet;
+      const supportSentence = (label, stat) => {
+        if (!stat || !stat.answered) return '';
+        if (stat.yes === stat.answered) return `${label} was completed on all ${stat.answered} applicable check-in${stat.answered === 1 ? '' : 's'}.`;
+        if (stat.yes > 0) return `${label} was completed on ${stat.yes} of ${stat.answered} applicable check-in${stat.answered === 1 ? '' : 's'} (${stat.pct}%).`;
+        return '';
       };
       const positiveBehaviorLabels = {
         identifies_feelings: 'naming feelings',
@@ -2758,24 +2753,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         returns_to_activity: 'returning to activities after a pause'
       };
       const positiveBehaviorKeys = Object.keys(positiveBehaviorLabels);
-      const concerningBehaviorLabels = {
-        anxiety_signs_present: 'worry or tension',
-        withdrawal_present: 'pulling back or disengaging',
-        distress_impacts_participation: 'distress affecting participation',
-        elevated_mood_indicators: 'elevated energy',
-        low_mood_indicators: 'lower mood',
-        pressured_speech_present: 'talking very quickly or being hard to redirect',
-        grandiose_statements_present: 'expressing some very big ideas or plans',
-        perseveration_present: 'getting stuck on certain topics or ideas',
-        compulsive_checking_repeating: 'a strong need to repeat certain routines'
-      };
-      const positiveSkillDays = uniqueDaysForBehavior(positiveBehaviorKeys);
-      const concernDaySets = Object.fromEntries(
-        Object.keys(concerningBehaviorLabels).map((key) => [key, uniqueDaysForBehavior([key])])
-      );
-      const allConcernDays = new Set(
-        Object.values(concernDaySets).flatMap((set) => Array.from(set))
-      );
 
       paragraphs.push(`Dear Family,\n\nThis report covers ${rangeLabel} and includes ${entryCount} caregiver check-in${entryCount !== 1 ? 's' : ''} logged by ${caregiverText}.`);
 
@@ -2790,6 +2767,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 	          || prnEntriesInclude(prnEntries, ['aggression', 'agitation', 'anxiety', 'pacing', 'irritability', 'escalat']);
 	      }).length;
       const anomalyDays = caregiverEntries.filter((entry) => isAffirmative(entry?.payload?.anomaly_flag)).length;
+      const behaviorFindings = summarizeBehaviorForParentLetter(caregiverEntries);
+      const behaviorLines = formatBehaviorFindings(behaviorFindings);
       const safetyLines = [];
       if (aggDays > 0) {
         safetyLines.push(`Caregivers noted some challenging behaviors toward others on ${formatCount(aggDays, 'day')}.`);
@@ -2800,11 +2779,13 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       if (anomalyDays > 0) {
         safetyLines.push(`Caregivers flagged something unexpected on ${formatCount(anomalyDays, 'day')}.`);
       }
-      if (!safetyLines.length) {
-        safetyLines.push('No safety concerns were flagged during this period.');
+      if (behaviorLines.length || safetyLines.length) {
+        const sectionLines = ['Behavior & Mental Health'];
+        sectionLines.push(...behaviorLines.map((line) => `${line}.`));
+        if (safetyLines.length) sectionLines.push(...safetyLines);
+        else sectionLines.push('No aggression or safety concerns were recorded in applicable behavior fields during this period.');
+        paragraphs.push(sectionLines.join('\n'));
       }
-      safetyLines.push('If you have questions about any specific incident, please reach out to your support team.');
-      paragraphs.push(safetyLines.join(' '));
 
       const sleepValues = caregiverEntries
         .map((entry) => pickNumber(entry?.hours_sleep, entry?.payload?.hours_sleep))
@@ -2841,11 +2822,11 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       if (illnessDays > 0) physicalLines.push(`${subj} was not feeling well on ${formatCount(illnessDays, 'day')}.`);
       if (appetiteDays > 0) physicalLines.push(`Caregivers noted a change in appetite on ${formatCount(appetiteDays, 'day')}.`);
       if (prnMedicalDays > 0) physicalLines.push(`A support medication was used for physical comfort on ${formatCount(prnMedicalDays, 'occasion')}.`);
-      if (physicalLines.length) paragraphs.push(physicalLines.join(' '));
+      if (physicalLines.length) paragraphs.push(`Physical Health & Sleep\n${physicalLines.join(' ')}`);
 
-      const hygienePct = safeSummary?.percents?.hygiene_yes;
-      const foodPct = safeSummary?.percents?.food_prep_yes;
-      const cleanupPct = safeSummary?.percents?.cleanup_yes;
+      const hygieneStat = dailyLivingStat('hygiene');
+      const foodStat = dailyLivingStat('food_prep');
+      const cleanupStat = dailyLivingStat('cleanup');
       const adlCounts = {};
       caregiverEntries.forEach((entry) => {
         const adlEntries = parseAdlEntriesLocal(entry?.adl_entries || entry?.payload?.adl_entries);
@@ -2856,28 +2837,25 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       });
       const sortedAdl = Object.entries(adlCounts).sort((a, b) => b[1] - a[1]);
       const dailyLines = [];
-      const hygieneSentence = supportSentence('Personal hygiene', hygienePct);
-      const foodSentence = supportSentence('Food preparation', foodPct);
-      const cleanupSentence = supportSentence('Clean-up routines', cleanupPct);
+      const hygieneSentence = supportSentence('Personal hygiene', hygieneStat);
+      const foodSentence = supportSentence('Food preparation', foodStat);
+      const cleanupSentence = supportSentence('Clean-up routines', cleanupStat);
       if (hygieneSentence || foodSentence || cleanupSentence || sortedAdl.length) {
-        dailyLines.push('Daily living skills were supported throughout this period.');
         if (hygieneSentence) dailyLines.push(hygieneSentence);
         if (foodSentence) dailyLines.push(foodSentence);
         if (cleanupSentence) dailyLines.push(cleanupSentence);
         if (sortedAdl.length) {
           dailyLines.push(`The most frequently supported daily living activity was ${sortedAdl[0][0]} (${formatCount(sortedAdl[0][1], 'time')}).`);
-          if (sortedAdl.length > 1) {
-            dailyLines.push(`Note for caregivers: ${sortedAdl[sortedAdl.length - 1][0]} was the least frequently practiced skill this period, so it may be worth focusing on next.`);
-          }
         }
       }
-      if (dailyLines.length) paragraphs.push(dailyLines.join(' '));
+      if (dailyLines.length) paragraphs.push(`Daily Living Skills\n${dailyLines.join(' ')}`);
 
       const positiveCounts = {};
       caregiverEntries.forEach((entry) => {
         parseBehaviorTracking(entry).forEach((item) => {
-          if (item?.occurred === true && positiveBehaviorLabels[item?.key]) {
-            positiveCounts[item.key] = (positiveCounts[item.key] || 0) + 1;
+          const key = item?.item_key || item?.key;
+          if (item?.occurred === true && positiveBehaviorLabels[key]) {
+            positiveCounts[key] = (positiveCounts[key] || 0) + 1;
           }
         });
       });
@@ -2885,42 +2863,12 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         .sort((a, b) => b[1] - a[1])
         .slice(0, 2)
         .map(([key]) => positiveBehaviorLabels[key]);
-      const emotionalLines = [];
-      if (positiveSkillDays.size) {
-        emotionalLines.push(`${subj} showed some great regulation skills this period, including ${joinList(topPositiveSkills)}.`);
-      }
-      const anxietyDays = concernDaySets.anxiety_signs_present?.size || 0;
-      const elevatedEnergyDays = new Set([
-        ...Array.from(concernDaySets.elevated_mood_indicators || []),
-        ...Array.from(concernDaySets.pressured_speech_present || []),
-        ...Array.from(concernDaySets.grandiose_statements_present || [])
-      ]).size;
-      const withdrawalDays = concernDaySets.withdrawal_present?.size || 0;
-      const lowMoodDays = concernDaySets.low_mood_indicators?.size || 0;
-      const distressDays = concernDaySets.distress_impacts_participation?.size || 0;
-      const fastSpeechDays = concernDaySets.pressured_speech_present?.size || 0;
-      const bigIdeasDays = concernDaySets.grandiose_statements_present?.size || 0;
-      const stuckTopicDays = concernDaySets.perseveration_present?.size || 0;
-      const repeatingRoutineDays = concernDaySets.compulsive_checking_repeating?.size || 0;
-      if (anxietyDays > 0) emotionalLines.push(`Signs of worry or tension were noted on ${formatCount(anxietyDays, 'day')}.`);
-      if (elevatedEnergyDays > 0) {
-        const details = [];
-        if (fastSpeechDays > 0) details.push('talking very quickly');
-        if (bigIdeasDays > 0) details.push('expressing some very big ideas or plans');
-        if (stuckTopicDays > 0) details.push('getting stuck on certain topics or ideas');
-        if (repeatingRoutineDays > 0) details.push('showing a strong need to repeat routines');
-        emotionalLines.push(`Caregivers noticed some elevated energy patterns on ${formatCount(elevatedEnergyDays, 'day')}${details.length ? `, including ${joinList(details)}.` : '.'}`);
-      }
-      if (withdrawalDays > 0) emotionalLines.push(`${subj} seemed to pull back or disengage on ${formatCount(withdrawalDays, 'day')}.`);
-      if (lowMoodDays > 0 && !withdrawalDays) emotionalLines.push(`Lower-energy or down moments were noted on ${formatCount(lowMoodDays, 'day')}.`);
-      if (distressDays > 0) emotionalLines.push(`There were ${formatCount(distressDays, 'day')} when hard feelings affected participation in activities.`);
-      if (emotionalLines.length) paragraphs.push(emotionalLines.join(' '));
 
       const focusAreas = Array.isArray(safeProfile?.focus_areas)
         ? safeProfile.focus_areas.map((item) => String(item || '').trim()).filter(Boolean).slice(0, 3)
         : [];
       const positivePromptValues = caregiverEntries
-        .filter((entry) => parseBehaviorTracking(entry).some((item) => positiveBehaviorKeys.includes(item?.key) && item?.occurred === true))
+        .filter((entry) => parseBehaviorTracking(entry).some((item) => positiveBehaviorKeys.includes(item?.item_key || item?.key) && item?.occurred === true))
         .map((entry) => getPromptValue(entry))
         .filter((value) => Number.isFinite(value));
       const promptAvg = positivePromptValues.length
@@ -2933,41 +2881,36 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         3: 'with frequent support',
         4: 'with full support'
       }[Math.round(promptAvg)] || 'with support';
-      const previousRange = getPreviousRangeWindow(range);
-      const caregiverSource = (cgState.filtered && cgState.filtered.length) ? cgState.filtered : (cgState.entries || []);
-      const previousEntries = previousRange ? filterEntriesByRange(caregiverSource, previousRange) : [];
-      const previousPositivePromptValues = previousEntries
-        .filter((entry) => parseBehaviorTracking(entry).some((item) => positiveBehaviorKeys.includes(item?.key) && item?.occurred === true))
-        .map((entry) => getPromptValue(entry))
-        .filter((value) => Number.isFinite(value));
-      const previousPromptAvg = previousPositivePromptValues.length
-        ? previousPositivePromptValues.reduce((sum, value) => sum + value, 0) / previousPositivePromptValues.length
-        : null;
       const goalLines = [];
       if (focusAreas.length) {
         goalLines.push(`Current focus areas for ${name} include ${joinList(focusAreas)}.`);
       }
+      if (topPositiveSkills.length) {
+        goalLines.push(`Caregivers recorded regulation or participation skills including ${joinList(topPositiveSkills)}.`);
+      }
       if (promptAvg != null) {
         goalLines.push(`Skills were practiced ${promptLabel} on average this period.`);
-        if (previousPromptAvg != null && promptAvg < previousPromptAvg - 0.25) {
-          goalLines.push('The level of support needed has been decreasing, which is a great sign of growing independence.');
-        }
       }
       if (goalLines.length) paragraphs.push(goalLines.join(' '));
 
-      const totalVoc = caregiverEntries.reduce((sum, entry) => sum + (pickNumber(entry?.vocational_time, entry?.vocational_minutes, entry?.payload?.vocational_time, entry?.payload?.vocational_minutes) || 0), 0);
-      const totalCom = caregiverEntries.reduce((sum, entry) => sum + (pickNumber(entry?.community_time, entry?.community_minutes, entry?.payload?.community_time, entry?.payload?.community_minutes) || 0), 0);
-      const communityActivities = [...new Set(caregiverEntries.flatMap((entry) => parseMultiValue(entry?.payload?.public_activity_type ?? entry?.public_activity_type)).filter(Boolean))];
+      const communitySummary = summarizeParticipationForParentLetter(caregiverEntries, range, 'community');
+      const vocationalSummary = summarizeParticipationForParentLetter(caregiverEntries, range, 'vocational');
       const vocationalLines = [];
-      if (totalCom > 0) {
-        const communityHours = summarizeParticipationHoursForLetter(totalCom, range);
-        vocationalLines.push(`Community participation averaged ${communityHours.averageHoursText} per week during this period, for ${communityHours.totalHoursText} total${communityActivities.length ? `. Common activities included ${joinList(communityActivities.slice(0, 3))}.` : '.'}`);
+      const communitySentence = participationSentence('Community', communitySummary);
+      const vocationalSentence = participationSentence('Vocational', vocationalSummary);
+      if (communitySentence) vocationalLines.push(communitySentence);
+      if (vocationalSentence) vocationalLines.push(vocationalSentence);
+      if (vocationalLines.length) paragraphs.push(`Community & Vocational Participation\n${vocationalLines.join(' ')}`);
+
+      const notableActivities = collectNotableActivities(caregiverEntries);
+      if (notableActivities.length) {
+        const activityLines = notableActivities.slice(0, 5).map((activity) =>
+          activity.successful
+            ? `${activity.label}, which caregivers documented as successful`
+            : activity.label
+        );
+        paragraphs.push(`Community Activities & Notable Experiences\nAdditional documented activities included ${joinList(activityLines)}.`);
       }
-      if (totalVoc > 0) {
-        const vocationalHours = summarizeParticipationHoursForLetter(totalVoc, range);
-        vocationalLines.push(`Vocational participation averaged ${vocationalHours.averageHoursText} per week during this period, for ${vocationalHours.totalHoursText} total.`);
-      }
-      if (vocationalLines.length) paragraphs.push(vocationalLines.join(' '));
 
       const poorSleepDays = new Set(
         caregiverEntries
@@ -2981,15 +2924,13 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
           .map((entry) => dateKeyFor(entry))
           .filter(Boolean)
       );
-      const sleepOverlapDays = Array.from(poorSleepDays).filter((dayKey) => allConcernDays.has(dayKey)).length;
+      const allConcernDaysCount = behaviorFindings.some((item) => item.yes > 0);
       const noSafetyFlags = aggDays === 0 && prnBehaviorDays === 0 && anomalyDays === 0;
       let patternParagraph = '';
-      if (sleepOverlapDays > 2 && allConcernDays.size > 2) {
-        patternParagraph = 'Something worth noting: sleep disruption and some behavioral patterns appeared to overlap during this period. This may be worth discussing with your support team or doctor.';
-      } else if (promptAvg != null && previousPromptAvg != null && promptAvg >= 3 && previousPromptAvg >= 3) {
-        patternParagraph = 'The level of support needed for daily skills has remained high for a few check-in periods. It may be helpful to review the current support approach with your team.';
-      } else if (noSafetyFlags && allConcernDays.size === 0 && promptAvg != null && promptAvg <= 2) {
-        patternParagraph = 'This was a strong period with no safety concerns, steady daily living skills, and good engagement with goals.';
+      if (poorSleepDays.size > 2 && allConcernDaysCount) {
+        patternParagraph = 'Sleep disruption and behavioral observations were both documented during this reporting period. This may be useful for the support team to review alongside the underlying check-ins.';
+      } else if (noSafetyFlags && !allConcernDaysCount && promptAvg != null && promptAvg <= 2) {
+        patternParagraph = 'During this reporting period, applicable check-ins did not record safety concerns or behavior/mental-health concerns, and recorded prompt levels were low.';
       }
       if (patternParagraph) paragraphs.push(patternParagraph);
 
@@ -7162,7 +7103,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         updateParentLetterControls();
         return false;
       }
-      const caregiverEntries = printRangeEntries(cgState.entries || [], range);
+      const caregiverEntries = filterParentLetterEntries(cgState.entries || [], range);
       const moodEntries = printRangeMoods(window.latestMoodEntries || [], range);
       const summary = summarizeEntries(caregiverEntries);
       const movementInsights = buildMovementInsights(caregiverEntries);

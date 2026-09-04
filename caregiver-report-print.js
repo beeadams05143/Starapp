@@ -151,7 +151,7 @@ function renderCalendar(root, model) {
 function renderCaregiverEntries(root, entries = []) {
   const section = addSection(root, 'Complete Caregiver Check-Ins');
   if (!entries.length) {
-    appendText(section, 'p', 'print-empty', 'No caregiver check-ins were recorded in this report range.');
+    appendText(section, 'p', 'print-empty', 'No caregiver check-ins were recorded.');
     return;
   }
   entries.forEach((entry, index) => {

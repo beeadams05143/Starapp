@@ -759,7 +759,6 @@
     #cgNotesToggle,
     #cgQuickLookToggle,
     #cgCsv,
-    #reportRangeReset,
     #exportRangeCancel,
     #cgEditCancel,
     #cgNoteClose,
@@ -777,7 +776,6 @@
     #fullShareBtn,
     #fullPrintBtn,
     #parentLetterBtn,
-    #reportRangeApply,
     #cgPdf,
     #cgSharePdf,
     #exportMoodBtn,
@@ -803,7 +801,6 @@
     #fullShareBtn:hover,
     #fullPrintBtn:hover,
     #parentLetterBtn:hover,
-    #reportRangeApply:hover,
     #cgPdf:hover,
     #cgSharePdf:hover,
     #exportMoodBtn:hover,
@@ -1022,22 +1019,10 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 
   <main class="page">
     <h1>Reports</h1>
-    <div class="panel" id="reportRangePanel" style="margin-bottom:0;padding:12px 16px 14px;">
-      <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;">
-        <strong style="font-size:15px;color:#20324f;">Report Range:</strong>
-        <select id="reportRangePreset" aria-label="Report date range">
-          <option value="current_month">Current month</option>
-          <option value="last_30">Last 30 days</option>
-          <option value="week">Last 7 days</option>
-          <option value="custom">Custom dates</option>
-        </select>
-        <span id="reportCustomDates" hidden><label style="font-size:13px;font-weight:600;">From <input type="date" id="reportRangeStart"></label> <label style="font-size:13px;font-weight:600;">To <input type="date" id="reportRangeEnd"></label></span>
-        <button id="reportRangeApply" type="button">Apply</button>
-      </div>
-    </div>
     <div class="no-export" aria-hidden="true" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0">
       <input type="date" id="servicesSummaryStart">
       <input type="date" id="servicesSummaryEnd">
+      <!-- Internal loaded-data span for summaries; not a user-facing caregiver table filter. -->
       <input type="date" id="cgStart">
       <input type="date" id="cgEnd">
     </div>
@@ -1090,7 +1075,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     </section>
     <section class="panel" id="weekly-averages-panel" data-print-section="Weekly Averages" hidden>
       <h2>Weekly Averages</h2>
-      <p class="muted" id="weeklyAveragesMeta">Based on check-ins in the selected date range.</p>
+      <p class="muted" id="weeklyAveragesMeta">Based on loaded caregiver check-ins.</p>
       <div class="services-summary-grid" id="weeklyAveragesGrid">
         <div class="service-card">
           <div class="service-card-title">📊 Combined (vocational + home + community)</div>
@@ -2485,7 +2470,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         setText('waVocHours', '—');
         setText('waHomeHours', '—');
         setText('waCommunityHours', '—');
-        if (metaEl) metaEl.textContent = 'No check-ins in this date range.';
+        if (metaEl) metaEl.textContent = 'No caregiver check-ins loaded.';
         return;
       }
 
@@ -2499,7 +2484,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         setText('waVocHours', '—');
         setText('waHomeHours', '—');
         setText('waCommunityHours', '—');
-        if (metaEl) metaEl.textContent = 'Set start and end dates in the caregiver report range.';
+        if (metaEl) metaEl.textContent = 'Waiting for caregiver check-in dates.';
         return;
       }
 
@@ -2507,7 +2492,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       const totalWeeks = totalDays / 7;
       if (metaEl){
         metaEl.textContent =
-          `${totalDays.toFixed(0)} calendar day(s), ${totalWeeks.toFixed(2)} week(s); ${entries.length} check-in(s) in cgState.filtered`;
+          `${totalDays.toFixed(0)} calendar day(s), ${totalWeeks.toFixed(2)} week(s); ${entries.length} loaded check-in(s)`;
       }
 
       let totalMinutes = 0;
@@ -3176,7 +3161,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     const cgInputs = {
       start: $('#cgStart'),
       end: $('#cgEnd'),
-      apply: $('#cgApply'),
       caregiver: $('#cgCaregiver'),
       filterBanner: document.getElementById('cgFilterBanner'),
       filterLabel: document.getElementById('cgFilterLabel'),
@@ -3261,9 +3245,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       entryById: new Map(),
       memberProfileById: new Map()
     };
-    /** TEMPORARY: Shirley / filter diagnosis — skip date range (cgState.filtered = all entries). Set false after pinpointing the filter. */
-    const DEBUG_CG_REPORT_BYPASS_FILTERS = false;
-
     const reportConfigState = {
       groupId: null,
       isCustom: false,
@@ -4832,7 +4813,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       body.innerHTML = '';
 
       if (!rowsToRender.length) {
-        body.innerHTML = `<tr><td colspan="3">No caregiver check-ins found for the selected range.</td></tr>`;
+        body.innerHTML = `<tr><td colspan="3">No caregiver check-ins found.</td></tr>`;
         return;
       }
 
@@ -5831,36 +5812,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       cgInputs.count.textContent = '';
     }
 
-    function filterEntriesByReportDateOnly(entries){
-      const startVal = (cgInputs.start?.value || '').trim();
-      const endVal = (cgInputs.end?.value || '').trim();
-      return entries.filter((entry) => {
-        const dayKey = getCheckinDayKey(entry);
-        if (!dayKey) return false;
-        if (startVal && dayKey < startVal) return false;
-        if (endVal && dayKey > endVal) return false;
-        return true;
-      });
-    }
-
-    function filterEntriesByCaregiverOnly(entries){
-      cgState.caregiverFilter = 'all';
-      return entries.slice();
-    }
-
-    function filterCaregiverEntries(entries){
-      const startVal = (cgInputs.start?.value || '').trim();
-      const endVal = (cgInputs.end?.value || '').trim();
-      cgState.caregiverFilter = 'all';
-      return entries.filter(entry => {
-        const dayKey = getCheckinDayKey(entry);
-        if (!dayKey) return false;
-        if (startVal && dayKey < startVal) return false;
-        if (endVal && dayKey > endVal) return false;
-        return true;
-      });
-    }
-
     function sortCaregiverEntriesNewestFirst(entries = []){
       return entries.slice().sort((a, b) => {
         const ta = getCheckinDate(a)?.getTime() ?? 0;
@@ -5880,55 +5831,16 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       cgState.caregiverFilter = 'all';
       updateCaregiverFilterBanner();
 
-      const shirleySubset = (arr) =>
-        arr.filter((e) => getCaregiverName(e).toLowerCase().includes('shirley'));
-
-      const logPipeline = () => {
-        console.log('[caregiver report inspect] calendar_only stripped in loadCaregiverData only. Pipeline: date range only. No individual_id or caregiver client filter. Dedup/supabase stages: caregiver-report-supabase.js.');
-      };
-
       if (!entries.length) {
-        console.log('RAW ENTRIES:', 0);
-        console.log('After date filter:', 0);
-        console.log('After individual filter:', 0);
-        console.log('After all filters:', 0);
-        logPipeline();
         renderCaregiverCheckins([]);
         updateCgSummary([], 0);
         renderQuickLook([]);
-        return;
-      }
-
-      console.log('RAW ENTRIES:', entries.length);
-      const afterDate = filterEntriesByReportDateOnly(entries);
-      console.log('After date filter:', afterDate.length);
-      const afterIndividual = afterDate.slice();
-      console.log('After individual filter:', afterIndividual.length);
-      const finalCombined = sortCaregiverEntriesNewestFirst(filterCaregiverEntries(entries));
-      console.log('After all filters:', finalCombined.length);
-      console.log('[Shirley counts by stage]', {
-        raw: shirleySubset(entries).length,
-        afterDate: shirleySubset(afterDate).length,
-        afterIndividual: shirleySubset(afterIndividual).length,
-        afterAllFilters: shirleySubset(finalCombined).length,
-        caregiverDropdownOnlyPasses: shirleySubset(filterEntriesByCaregiverOnly(entries)).length,
-      });
-      logPipeline();
-
-      if (DEBUG_CG_REPORT_BYPASS_FILTERS) {
-        console.warn(
-          '[DEBUG_CG_REPORT_BYPASS_FILTERS=true] cgState.filtered = all entries (date range skipped). Flip flag false after diagnosis.'
-        );
-        cgState.filtered = entries.slice();
-        renderCaregiverCheckins(cgState.filtered);
-        updateCgSummary(cgState.filtered, entries.length);
-        renderQuickLook(cgState.filtered);
-        renderCaregiverPdfSummaries(cgState.filtered);
+        renderCaregiverPdfSummaries([]);
         applyChartRange();
         return;
       }
 
-      cgState.filtered = finalCombined;
+      cgState.filtered = sortCaregiverEntriesNewestFirst(entries);
       renderCaregiverCheckins(cgState.filtered);
       updateCgSummary(cgState.filtered, entries.length);
       renderQuickLook(cgState.filtered);
@@ -6401,8 +6313,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
             range: 'all',
             includeAllUsers: true,
             groupId,
-            startDate: cgInputs.start?.value || null,
-            endDate: cgInputs.end?.value || null,
           });
         } catch {}
       }
@@ -6447,12 +6357,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       const now = new Date();
       const defaultRangeEnd = now;
       const defaultRangeStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      const rStart = document.getElementById('reportRangeStart');
-      const rEnd = document.getElementById('reportRangeEnd');
-      if (rStart && !rStart.value) rStart.value = formatDateInputValue(defaultRangeStart);
-      if (rEnd && !rEnd.value) rEnd.value = formatDateInputValue(defaultRangeEnd);
-      if (cgInputs.start && !cgInputs.start.value) cgInputs.start.value = formatDateInputValue(defaultRangeStart);
-      if (cgInputs.end && !cgInputs.end.value) cgInputs.end.value = formatDateInputValue(defaultRangeEnd);
       const sStart = document.getElementById('servicesSummaryStart');
       const sEnd = document.getElementById('servicesSummaryEnd');
       if (sStart && !sStart.value) sStart.value = formatDateInputValue(defaultRangeStart);
@@ -7020,50 +6924,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         try { applyChartRange(); } catch (err) { console.warn('[report] applyChartRange init failed', err); }
       }, 0);
     }
-    document.getElementById('servicesSummaryApply')?.addEventListener('click', () => {
-      const rangeKey = document.getElementById('chartRangeSelect')?.value || 'month';
-      const serviceEntries = getServicesSummaryEntries();
-      const serviceSummary = buildParticipationSummary(serviceEntries);
-      const startVal = document.getElementById('servicesSummaryStart')?.value;
-      const endVal = document.getElementById('servicesSummaryEnd')?.value;
-      const label = (startVal && endVal) ? `${startVal} to ${endVal}` : 'Custom range';
-      renderServicesSummary(serviceSummary, label);
-    });
-
-    document.getElementById('servicesSummaryReset')?.addEventListener('click', () => {
-      const startEl = document.getElementById('servicesSummaryStart');
-      const endEl = document.getElementById('servicesSummaryEnd');
-      if (startEl) startEl.value = '';
-      if (endEl) endEl.value = '';
-      applyChartRange();
-    });
-    const applyReportRangePreset = () => {
-      const preset = document.getElementById('reportRangePreset')?.value || 'current_month';
-      const customWrap = document.getElementById('reportCustomDates');
-      if (customWrap) customWrap.hidden = preset !== 'custom';
-      const now = new Date();
-      let start = new Date(now.getFullYear(), now.getMonth(), 1);
-      if (preset === 'last_30') { start = new Date(now); start.setDate(start.getDate() - 29); }
-      if (preset === 'week') { start = new Date(now); start.setDate(start.getDate() - 6); }
-      const rStart = document.getElementById('reportRangeStart');
-      const rEnd = document.getElementById('reportRangeEnd');
-      if (preset !== 'custom') {
-        if (rStart) rStart.value = formatDateInputValue(start);
-        if (rEnd) rEnd.value = formatDateInputValue(now);
-      }
-      const startVal = rStart?.value;
-      const endVal = rEnd?.value;
-      if (!startVal || !endVal) return;
-      if (cgInputs.start) cgInputs.start.value = startVal;
-      if (cgInputs.end) cgInputs.end.value = endVal;
-      const sStart = document.getElementById('servicesSummaryStart');
-      const sEnd = document.getElementById('servicesSummaryEnd');
-      if (sStart) sStart.value = startVal;
-      if (sEnd) sEnd.value = endVal;
-      applyCaregiverFilters();
-    };
-    document.getElementById('reportRangePreset')?.addEventListener('change', applyReportRangePreset);
-    document.getElementById('reportRangeApply')?.addEventListener('click', applyReportRangePreset);
     document.getElementById('movementRangeSelect')?.addEventListener('change', (event) => {
       const rangeKey = event.target.value || 'month';
       applyMovementRange(rangeKey);
@@ -7133,13 +6993,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       if (!checkinPrintEls().overlay?.classList.contains('is-hidden')) closeCheckinPrintCenter();
     });
 
-    cgInputs.apply?.addEventListener('click', (event) => {
-      event?.preventDefault?.();
-      console.log('[Caregiver Report] Apply clicked');
-      applyCaregiverFilters();
-    });
-    cgInputs.start?.addEventListener('change', () => applyCaregiverFilters());
-    cgInputs.end?.addEventListener('change', () => applyCaregiverFilters());
     cgInputs.caregiver?.addEventListener('change', () => {
       cgInputs.caregiver.value = 'all';
       cgState.caregiverFilter = 'all';
@@ -7540,7 +7393,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       checkinPrintState.selectedDates.clear();
       els.overlay.classList.remove('is-hidden');
       updateCheckinPrintPreview({ rebuildDates: true });
-      els.start?.focus();
     }
 
     function closeCheckinPrintCenter() {

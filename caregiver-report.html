@@ -997,7 +997,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 </script>
 
 <!-- Shared navigation shell -->
-<script defer src="./ui-shell.js?v=2026.10.07D"></script>
+<script defer src="./ui-shell.js?v=2026.10.07E"></script>
 <script defer src="./scripts/appbar-drawer.js?v=2026.03.29A"></script>
 
   <div id="navbar"></div>
@@ -1658,7 +1658,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     let loadFromSupabase = null;
     let formatEntryForList = null;
     try {
-      const mod = await import('./caregiver-report-supabase.js?v=2026.10.07D');
+      const mod = await import('./caregiver-report-supabase.js?v=2026.10.07E');
       loadFromSupabase = mod.loadCaregiverCheckins;
       formatEntryForList = mod.formatEntryForList;
     } catch (err) {
@@ -8007,7 +8007,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 
 <script>
   (function(){
-    const version = window.STAR_BUILD_VERSION || '2026.10.07D';
+    const version = window.STAR_BUILD_VERSION || '2026.10.07E';
     if (!window.STAR_BUILD_VERSION) window.STAR_BUILD_VERSION = version;
     const ensureBadge = () => {
       if (document.getElementById('star-build-version')) return;

@@ -1910,6 +1910,7 @@
 
     <div class="top-actions">
       <button class="btn" id="resumeDraftBtn" style="display:none" disabled>Resume last draft</button>
+      <button class="btn" id="discardDraftBtn" type="button" style="display:none" disabled>Discard draft</button>
     </div>
 
     <form id="cg-form" novalidate>
@@ -2872,10 +2873,11 @@
   let reviewOverlay, reviewSectionsEl, reviewEditBtn, reviewSubmitBtn;
   let reviewConfirmed = false;
   let steps = [];
-  let toggleAllBtn, resumeDraftBtn;
+  let toggleAllBtn, resumeDraftBtn, discardDraftBtn;
   let progItems = [];
   let segs = [];
   let entryDateInput;
+  let entryDateSelectedThisSession = false;
   const healthConcernsPanel = document.getElementById('healthConcernsPanel');
       let adlStepIndex = -1;
       let movementStepIndex = -1;
@@ -2887,7 +2889,6 @@
   let adlEntries = [];
   let prnEntries = [];
   let adlHandlersBound = false;
-  const todayISO = () => new Date().toISOString().slice(0,10);
 
   const PROMPT_SCALE = [
     { value:"", label:"Select prompt level" },
@@ -5343,6 +5344,7 @@
 	    entryDateInput = document.getElementById('entryDateInput');
 	    toggleAllBtn  = document.getElementById('toggleAll');
 	    resumeDraftBtn = document.getElementById('resumeDraftBtn');
+	    discardDraftBtn = document.getElementById('discardDraftBtn');
 	    prnEntriesWrap = document.getElementById('prnEntriesWrap');
 	    prnEntryListEl = document.getElementById('prnEntryList');
 	    addPrnEntryBtn = document.getElementById('addPrnEntryBtn');
@@ -5409,12 +5411,8 @@
     homeActivityTypeInput = document.getElementById('home_activity_type');
     publicActivityTypeInput = document.getElementById('public_activity_type');
     interactionTypeInput = document.getElementById('interaction_type');
-    if (entryDateInput && !entryDateInput.value) {
-      entryDateInput.value = todayISO();
-    }
     hydratePromptingSelects();
-    applyDraftToForm();
-    setFreshEntryDate();
+    resetFormValues();
     updateSavedButtons();
     updateProgress();
     syncAggressionControls();
@@ -5689,9 +5687,26 @@
       hydratePromptingSelects();
       applyDraftToForm();
       const restoredDate = draft?.data?.[0]?.entry_date || entryDateInput?.value || '';
+      entryDateSelectedThisSession = isValidEntryDate(restoredDate);
       const restoredLabel = formatDraftDateLabel(restoredDate);
       toast(restoredLabel ? `Restored draft from ${restoredLabel}` : 'Draft restored');
     });
+    discardDraftBtn?.addEventListener('click', () => {
+      clearDraftUI();
+      resetFormValues();
+      go(0, false);
+      toast('Draft discarded');
+    });
+    const markEntryDateSelected = () => {
+      entryDateSelectedThisSession = isValidEntryDate(entryDateInput.value);
+      if (!draft.data || typeof draft.data !== 'object') draft.data = {};
+      if (!draft.data[0] || typeof draft.data[0] !== 'object') draft.data[0] = {};
+      draft.data[0].entry_date = entryDateInput.value || '';
+      persistDraft();
+      updateSavedButtons();
+    };
+    entryDateInput?.addEventListener('input', markEntryDateSelected);
+    entryDateInput?.addEventListener('change', markEntryDateSelected);
 
     // Final submit handlers
     submitBtn.addEventListener('click', submitFinal);
@@ -6109,7 +6124,7 @@
   // Wizard state
   let isExpanded = false;
   let current = 0;
-  let draft = loadDraft() || createEmptyDraft();
+  let draft = createEmptyDraft();
   let isSubmittingFinal = false;
     function clearDadOnlySections(){
       document.querySelectorAll('.is-dad-only').forEach((el) => {
@@ -6320,12 +6335,26 @@
       applyCaregiverSetupVisibility();
       syncEducationalQuestionStates();
     }
-    function setFreshEntryDate(){
-      const freshDate = todayISO();
-      if (entryDateInput) entryDateInput.value = freshDate;
+    function clearEntryDateSelection(){
+      entryDateSelectedThisSession = false;
+      if (entryDateInput) entryDateInput.value = '';
       if (!draft.data || typeof draft.data !== 'object') draft.data = {};
       if (!draft.data[0] || typeof draft.data[0] !== 'object') draft.data[0] = {};
-      draft.data[0].entry_date = freshDate;
+      draft.data[0].entry_date = '';
+    }
+    function isValidEntryDate(value){
+      return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value.trim());
+    }
+    function currentExplicitEntryDate(){
+      const raw = entryDateInput?.value || '';
+      return entryDateSelectedThisSession && isValidEntryDate(raw) ? raw.trim() : '';
+    }
+    function requireExplicitEntryDate(){
+      if (currentExplicitEntryDate()) return true;
+      alert('Please select the check-in date before reviewing or submitting.');
+      go(0, false);
+      entryDateInput?.focus?.();
+      return false;
     }
     function formatDraftDateLabel(value){
       if (typeof value !== 'string') return '';
@@ -6356,8 +6385,23 @@
     }
     function updateSavedButtons(){
       let hasDraft = false;
+      let draftLabel = '';
       try { hasDraft = !!localStorage.getItem(DRAFT_KEY); } catch {}
-      if (resumeDraftBtn){ resumeDraftBtn.style.display = hasDraft ? '' : 'none'; resumeDraftBtn.disabled = !hasDraft; }
+      if (hasDraft) {
+        const savedDraft = loadDraft();
+        draftLabel = formatDraftDateLabel(savedDraft?.data?.[0]?.entry_date || '');
+      }
+      if (resumeDraftBtn){
+        resumeDraftBtn.style.display = hasDraft ? '' : 'none';
+        resumeDraftBtn.disabled = !hasDraft;
+        resumeDraftBtn.textContent = draftLabel
+          ? `Resume draft from ${draftLabel}`
+          : 'Resume unfinished draft';
+      }
+      if (discardDraftBtn){
+        discardDraftBtn.style.display = hasDraft ? '' : 'none';
+        discardDraftBtn.disabled = !hasDraft;
+      }
     }
 	    function updateProgress(){
       segs.forEach((seg,idx)=>{
@@ -6459,7 +6503,7 @@
       formEl.querySelectorAll('input[type="range"]').forEach((el) => {
         el.value = '0';
       });
-      if (entryDateInput) entryDateInput.value = todayISO();
+      clearEntryDateSelection();
       const iv=document.getElementById('intensityVal');
       if(iv) iv.textContent='0';
       const manicIv=document.getElementById('manicIntensityVal');
@@ -6684,6 +6728,7 @@
         return;
       }
 	      if (!reviewConfirmed) {
+	        if (!requireExplicitEntryDate()) return;
 	        if (!validateCentralPrns()) return;
 	        renderReviewBeforeSubmit();
 	        return;
@@ -6724,10 +6769,10 @@
         if (educationalTrackingField) {
           educationalTrackingField.value = educationalTracking.length ? JSON.stringify(educationalTracking) : '';
         }
-        const entryDateRaw = payload.entry_date || entryDateInput?.value || '';
-        const entryDate = /^\d{4}-\d{2}-\d{2}$/.test(entryDateRaw)
-          ? entryDateRaw
-          : todayISO();
+        const entryDate = currentExplicitEntryDate();
+        if (!entryDate) {
+          throw new Error('Please select the check-in date before submitting.');
+        }
         payload.entry_date = entryDate;
         const normalizeMovement = () => {
           if (!shouldShowMovementSection()) {
@@ -7235,7 +7280,7 @@
 </script>
 <script>
   (function(){
-    const version = window.STAR_BUILD_VERSION || '2026.10.07D';
+    const version = window.STAR_BUILD_VERSION || '2026.10.07E';
     if (!window.STAR_BUILD_VERSION) window.STAR_BUILD_VERSION = version;
     const ensureBadge = () => {
       if (document.getElementById('star-build-version')) return;

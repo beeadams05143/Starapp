@@ -13,6 +13,23 @@ assert.match(checkinHtml, /reviewSubmitBtn\.disabled = false/);
 assert.match(checkinHtml, /Supabase did not return the saved caregiver check-in/);
 assert.match(checkinHtml, /caregiver_checkins\?select=id,user_id,group_id,date,submitted_at&/);
 assert.match(checkinHtml, /Restored draft from/);
+assert.match(checkinHtml, /let draft = createEmptyDraft\(\);/);
+assert.match(checkinHtml, /resetFormValues\(\);\s*updateSavedButtons\(\);/);
+assert.match(checkinHtml, /function clearEntryDateSelection\(\)[\s\S]*entryDateInput\) entryDateInput\.value = '';/);
+assert.match(checkinHtml, /function requireExplicitEntryDate\(\)[\s\S]*Please select the check-in date before reviewing or submitting/);
+assert.match(checkinHtml, /const entryDate = currentExplicitEntryDate\(\);[\s\S]*Please select the check-in date before submitting/);
+assert.match(checkinHtml, /discardDraftBtn\?\.addEventListener\('click'/);
+assert.ok(
+  checkinHtml.indexOf('resetFormValues();\n    updateSavedButtons();') < checkinHtml.indexOf("resumeDraftBtn?.addEventListener('click'"),
+  'new check-in initialization must reset blank before offering explicit draft resume'
+);
+assert.ok(
+  checkinHtml.indexOf("resumeDraftBtn?.addEventListener('click'") < checkinHtml.indexOf('applyDraftToForm();'),
+  'draft hydration must only happen from the explicit Resume action'
+);
+assert.doesNotMatch(checkinHtml, /entryDateInput\.value = todayISO\(\)/);
+assert.doesNotMatch(checkinHtml, /: todayISO\(\)/);
+assert.doesNotMatch(checkinHtml, /todayISO/);
 
 assert.match(reportHtml, /STAR_ENABLE_REPORT_SMOKE_INSERT/);
 assert.match(reportHtml, /localhost', '127\.0\.0\.1/);

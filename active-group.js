@@ -71,7 +71,7 @@ export async function resolveActiveGroup(userId = null) {
 
   const storedGroupId = readStoredGroupId();
   const chosen = pickMembership(memberships, [profileGroupId, storedGroupId]);
-  const groupId = chosen?.group_id || null;
+  const groupId = chosen?.group_id || profileGroupId || null;
   const groupName = chosen?.groups?.name || '';
   const source =
     groupId && groupId === profileGroupId ? 'profile'

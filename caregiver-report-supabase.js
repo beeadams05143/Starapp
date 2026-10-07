@@ -1,6 +1,6 @@
 // caregiver-report-supabase.js — PRODUCTION SAFE (group-scoped; no user_id filter) v=2026.05.03D
 import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
-import { resolveActiveGroup } from './active-group.js?v=2026.03.29A';
+import { resolveActiveGroup } from './active-group.js?v=2026.10.07A';
 
 /* ---------- shared helpers ---------- */
 const TRUE_VALUES = new Set(['true', 't', 'yes', 'y', '1', 'on', 'done', 'complete', 'present']);
@@ -103,26 +103,15 @@ async function hydrateProfilesForCheckinRows(rows = []) {
 
 async function keepAuthorizedGroupRows(rows = [], groupId = null) {
   if (!groupId || !rows.length) return [];
-  let memberIds = new Set();
-  try {
-    const members = await rest(
-      `group_members?select=user_id&group_id=eq.${encodeURIComponent(groupId)}`
-    );
-    memberIds = new Set((Array.isArray(members) ? members : []).map((row) => String(row?.user_id || '')).filter(Boolean));
-  } catch (error) {
-    console.warn('[caregiver_checkins] membership verification unavailable', error?.message || error);
-  }
   const accepted = [];
   const rejected = [];
   rows.forEach((row) => {
-    const userId = String(row?.user_id || '');
-    const profile = Array.isArray(row?.profiles) ? row.profiles[0] : row?.profiles;
-    const profileGroupId = String(profile?.group_id || '');
-    const authorized = userId && (memberIds.has(userId) || profileGroupId === String(groupId));
-    (authorized ? accepted : rejected).push(row);
+    const rowGroupId = String(row?.group_id || row?.payload?.group_id || row?.payload?.group || '');
+    const rowMatchesGroup = rowGroupId === String(groupId);
+    (rowMatchesGroup ? accepted : rejected).push(row);
   });
   if (rejected.length) {
-    console.warn('[caregiver_checkins] excluded rows without a valid group relationship', {
+    console.warn('[caregiver_checkins] excluded rows outside the active group', {
       groupId,
       count: rejected.length,
       recordIds: rejected.map((row) => row?.id).filter(Boolean),

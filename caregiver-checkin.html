@@ -5688,7 +5688,9 @@
       draft = loadDraft() || { data: {}, savedAt: {} };
       hydratePromptingSelects();
       applyDraftToForm();
-      toast('Draft restored');
+      const restoredDate = draft?.data?.[0]?.entry_date || entryDateInput?.value || '';
+      const restoredLabel = formatDraftDateLabel(restoredDate);
+      toast(restoredLabel ? `Restored draft from ${restoredLabel}` : 'Draft restored');
     });
 
     // Final submit handlers
@@ -6108,6 +6110,7 @@
   let isExpanded = false;
   let current = 0;
   let draft = loadDraft() || createEmptyDraft();
+  let isSubmittingFinal = false;
     function clearDadOnlySections(){
       document.querySelectorAll('.is-dad-only').forEach((el) => {
         el.classList.remove('is-dad-active');
@@ -6323,6 +6326,15 @@
       if (!draft.data || typeof draft.data !== 'object') draft.data = {};
       if (!draft.data[0] || typeof draft.data[0] !== 'object') draft.data[0] = {};
       draft.data[0].entry_date = freshDate;
+    }
+    function formatDraftDateLabel(value){
+      if (typeof value !== 'string') return '';
+      const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (!match) return '';
+      const dt = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+      return Number.isNaN(dt.getTime())
+        ? ''
+        : dt.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
     }
     function loadDraft(){
       try{
@@ -6676,9 +6688,13 @@
 	        renderReviewBeforeSubmit();
 	        return;
 	      }
+      if (isSubmittingFinal) return;
+      isSubmittingFinal = true;
+      let submissionSucceeded = false;
       reviewConfirmed = false;
       hideReviewBeforeSubmit();
       if (submitBtn) { submitBtn.disabled=true; submitBtn.textContent='Submitting…'; }
+      if (reviewSubmitBtn) { reviewSubmitBtn.disabled = true; reviewSubmitBtn.textContent = 'Submitting...'; }
       try {
 	        const activeStep = steps[current];
 	        if (activeStep) {
@@ -7041,6 +7057,7 @@
         if (onboardingActive) {
           advanceGuidedOnboarding(user_id, 'view_report');
         }
+        submissionSucceeded = true;
         setTimeout(() => {
           window.location.href = 'caregiver-report.html';
         }, 900);
@@ -7048,7 +7065,11 @@
         console.error('[cg] submit error:', err);
         alert('Could not submit. ' + (err?.message || 'Check your connection and try again.'));
       } finally {
-        if (submitBtn) { submitBtn.disabled=false; submitBtn.textContent='Submit Final'; }
+        if (!submissionSucceeded) {
+          isSubmittingFinal = false;
+          if (submitBtn) { submitBtn.disabled=false; submitBtn.textContent='Submit Final'; }
+          if (reviewSubmitBtn) { reviewSubmitBtn.disabled = false; reviewSubmitBtn.textContent = 'Submit Check-In'; }
+        }
       }
     }
 
@@ -7214,7 +7235,7 @@
 </script>
 <script>
   (function(){
-    const version = window.STAR_BUILD_VERSION || '2026.03.29A';
+    const version = window.STAR_BUILD_VERSION || '2026.10.07D';
     if (!window.STAR_BUILD_VERSION) window.STAR_BUILD_VERSION = version;
     const ensureBadge = () => {
       if (document.getElementById('star-build-version')) return;

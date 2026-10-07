@@ -1022,6 +1022,16 @@ const toLocalDateTimeLabel = (value) => {
   return `${dateLabel} • ${timeLabel}`;
 };
 
+const toLocalDateOnlyLabel = (value) => {
+  if (typeof value !== 'string') return '';
+  const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return '';
+  const dt = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  return Number.isNaN(dt.getTime())
+    ? ''
+    : dt.toLocaleDateString(undefined, { month: 'short', day: '2-digit', year: 'numeric' });
+};
+
 const minutesLabel = (value, fallback) => {
   const num =
     numberOrNull(value) ??
@@ -1032,7 +1042,7 @@ const minutesLabel = (value, fallback) => {
 export function formatEntryForList(entry = {}) {
   const payload = ensurePayload(entry);
   const ts = normTs(entry);
-  const dateTime = toLocalDateTimeLabel(ts);
+  const dateTime = toLocalDateOnlyLabel(entry.date) || toLocalDateTimeLabel(ts);
 
   const hygiene = coalesce(
     entry.hygiene,

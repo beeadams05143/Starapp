@@ -909,6 +909,13 @@
 import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 
 (function(){
+  const smokeInsertEnabled =
+    ['localhost', '127.0.0.1'].includes(window.location.hostname) &&
+    window.localStorage?.getItem('STAR_ENABLE_REPORT_SMOKE_INSERT') === 'true';
+  if (!smokeInsertEnabled) {
+    document.getElementById('cg-status')?.remove();
+    return;
+  }
   const Status = document.getElementById('cg-status');
   const L1 = document.getElementById('cg-line1');
   const L2 = document.getElementById('cg-line2');
@@ -990,7 +997,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 </script>
 
 <!-- Shared navigation shell -->
-<script defer src="./ui-shell.js?v=2026.10.07C"></script>
+<script defer src="./ui-shell.js?v=2026.10.07D"></script>
 <script defer src="./scripts/appbar-drawer.js?v=2026.03.29A"></script>
 
   <div id="navbar"></div>
@@ -1651,7 +1658,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     let loadFromSupabase = null;
     let formatEntryForList = null;
     try {
-      const mod = await import('./caregiver-report-supabase.js?v=2026.10.07B');
+      const mod = await import('./caregiver-report-supabase.js?v=2026.10.07D');
       loadFromSupabase = mod.loadCaregiverCheckins;
       formatEntryForList = mod.formatEntryForList;
     } catch (err) {
@@ -3420,14 +3427,20 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     };
 
     function getCaregiverName(e) {
+      const profile = Array.isArray(e?.profiles) ? e.profiles[0] : e?.profiles;
+      const profileName = [
+        profile?.display_name,
+        profile?.public_name,
+        profile?.full_name,
+        profile?.name
+      ].map(sanitizeCaregiverLabel).find(Boolean);
+      if (profileName) return profileName;
       return (
         e.caregiver_name ||
         e.payload?.caregiver_name ||
         e.payload?.caregiverName ||
         e.payload?.caregiver ||
         e.user_email ||
-        e.profiles?.full_name ||
-        e.profiles?.name ||
         'Unknown'
       );
     }
@@ -3467,6 +3480,9 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     };
 
     const caregiverNameFromEntry = (entry = {}) => {
+      const userId = caregiverIdFromEntry(entry);
+      const profileName = profileNameFromUserId(userId);
+      if (profileName) return profileName;
       const direct = getCaregiverName(entry);
       if (direct && direct !== 'Unknown') {
         const label = sanitizeCaregiverLabel(direct);
@@ -3474,9 +3490,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         const trimmed = String(direct).trim();
         if (trimmed) return trimmed;
       }
-      const userId = caregiverIdFromEntry(entry);
-      const profileName = profileNameFromUserId(userId);
-      if (profileName) return profileName;
       const email = emailFromEntry(entry);
       const emailLabel = sanitizeCaregiverLabel(email);
       if (emailLabel) return emailLabel;
@@ -3484,8 +3497,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     };
 
     function caregiverViewLabel(entry) {
-      const g = getCaregiverName(entry);
-      if (g && g !== 'Unknown') return sanitizeCaregiverLabel(g) || g;
       return caregiverNameFromEntry(entry) || '—';
     }
 
@@ -3517,6 +3528,9 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       const dateLabel = dt
         .toLocaleDateString(undefined, { month: 'long', day: '2-digit', year: 'numeric' })
         .replace(/,/g, '');
+      if (/^\d{4}-\d{2}-\d{2}$/.test(String(entry?.date || '').trim())) {
+        return dateLabel;
+      }
       const timeLabel = dt.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
       return `${dateLabel} at ${timeLabel}`;
     }
@@ -4666,11 +4680,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       const optionMap = new Map();
       for (const entry of entries) {
         const id = caregiverIdFromEntry(entry);
-        const g = getCaregiverName(entry);
-        const displayName =
-          g && g !== 'Unknown'
-            ? sanitizeCaregiverLabel(g) || String(g).trim()
-            : caregiverNameFromEntry(entry);
+        const displayName = caregiverNameFromEntry(entry);
         const fallbackName = displayName;
         if (id) {
           const key = CAREGIVER_ID_PREFIX + id;
@@ -7997,7 +8007,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 
 <script>
   (function(){
-    const version = window.STAR_BUILD_VERSION || '2026.10.07C';
+    const version = window.STAR_BUILD_VERSION || '2026.10.07D';
     if (!window.STAR_BUILD_VERSION) window.STAR_BUILD_VERSION = version;
     const ensureBadge = () => {
       if (document.getElementById('star-build-version')) return;

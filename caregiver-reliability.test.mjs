@@ -19,6 +19,9 @@ assert.match(checkinHtml, /function clearEntryDateSelection\(\)[\s\S]*entryDateI
 assert.match(checkinHtml, /function requireExplicitEntryDate\(\)[\s\S]*Please select the check-in date before reviewing or submitting/);
 assert.match(checkinHtml, /const entryDate = currentExplicitEntryDate\(\);[\s\S]*Please select the check-in date before submitting/);
 assert.match(checkinHtml, /discardDraftBtn\?\.addEventListener\('click'/);
+assert.match(checkinHtml, /function saveDraftExplicitly\(\)[\s\S]*captureCurrentFormAsDraft\(\);[\s\S]*persistDraft\(\);/);
+assert.match(checkinHtml, /step\.querySelector\('\[data-save\]'\)\?\.addEventListener\('click', saveDraftExplicitly\)/);
+assert.match(checkinHtml, /const data = serialize\(s\);/);
 assert.ok(
   checkinHtml.indexOf('resetFormValues();\n    updateSavedButtons();') < checkinHtml.indexOf("resumeDraftBtn?.addEventListener('click'"),
   'new check-in initialization must reset blank before offering explicit draft resume'
@@ -30,6 +33,28 @@ assert.ok(
 assert.doesNotMatch(checkinHtml, /entryDateInput\.value = todayISO\(\)/);
 assert.doesNotMatch(checkinHtml, /: todayISO\(\)/);
 assert.doesNotMatch(checkinHtml, /todayISO/);
+assert.doesNotMatch(checkinHtml, /autosaves/i);
+assert.doesNotMatch(checkinHtml, /Save &amp; Next/);
+assert.doesNotMatch(checkinHtml, /setTimeout\(\(\) => save/);
+assert.doesNotMatch(checkinHtml, /SUBMISSION_COMPLETE_KEY/);
+assert.doesNotMatch(checkinHtml, /MOVEMENT_LAST_KEY/);
+assert.doesNotMatch(checkinHtml, /localStorage\.setItem\(SUBMISSION/);
+assert.doesNotMatch(checkinHtml, /localStorage\.setItem\(MOVEMENT/);
+assert.ok(
+  checkinHtml.indexOf('persistDraft();') > checkinHtml.indexOf('function saveDraftExplicitly()'),
+  'draft persistence must be reached through explicit Save Draft'
+);
+assert.ok(
+  checkinHtml.indexOf('const markEntryDateSelected = () =>') < checkinHtml.indexOf("entryDateInput?.addEventListener('change', markEntryDateSelected);"),
+  'date changes may update only current-session validation state'
+);
+assert.doesNotMatch(
+  checkinHtml.slice(
+    checkinHtml.indexOf('const markEntryDateSelected = () =>'),
+    checkinHtml.indexOf("entryDateInput?.addEventListener('change', markEntryDateSelected);")
+  ),
+  /persistDraft|localStorage|setItem/
+);
 
 assert.match(reportHtml, /STAR_ENABLE_REPORT_SMOKE_INSERT/);
 assert.match(reportHtml, /localhost', '127\.0\.0\.1/);

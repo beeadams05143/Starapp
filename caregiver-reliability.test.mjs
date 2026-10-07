@@ -74,6 +74,8 @@ assert.doesNotMatch(reportLoader, /const getCheckinDateValue = \(e\) => \{[\s\S]
 assert.match(reportLoader, /order=date\.desc,submitted_at\.desc\.nullslast,created_at\.desc\.nullslast/);
 assert.match(reportLoader, /offset=\$\{offset\}/);
 assert.match(reportHtml, /No check-in recorded/);
+assert.match(reportHtml, /<th>Check-In Date<\/th>/);
+assert.doesNotMatch(reportHtml, /<th>Timestamp<\/th>\s*<th>Caregiver<\/th>/);
 assert.match(reportHtml, /const localDayKey = \(date = new Date\(\)\) =>/);
 const calendarModuleStart = reportHtml.indexOf("import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinForCalendar }");
 assert.ok(calendarModuleStart > 0, 'calendar module import should be present');

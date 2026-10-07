@@ -997,7 +997,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 </script>
 
 <!-- Shared navigation shell -->
-<script defer src="./ui-shell.js?v=2026.10.07F"></script>
+<script defer src="./ui-shell.js?v=2026.10.07G"></script>
 <script defer src="./scripts/appbar-drawer.js?v=2026.03.29A"></script>
 
   <div id="navbar"></div>
@@ -1649,7 +1649,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabaseClient.js?v=2026.03.29A';
     import { ensureActiveGroupId } from './active-group.js?v=2026.10.07A';
     import { openCompactCaregiverCheckinPrintWindow } from './caregiver-checkin-print.js?v=2026.09.02A';
-    import { CALENDAR_QUICK_LOOK_ITEMS, filterCaregiverCheckinsForPrint, normalizeCaregiverCheckinForCalendar, normalizeCaregiverCheckinRecord } from './caregiver-report-shared.js?v=2026.09.02D';
+    import { CALENDAR_QUICK_LOOK_ITEMS, filterCaregiverCheckinsForPrint, normalizeCaregiverCheckinForCalendar, normalizeCaregiverCheckinRecord } from './caregiver-report-shared.js?v=2026.10.07G';
     import { renderPrintableCaregiverReport } from './caregiver-report-print.js?v=2026.07.01B';
     import { collectNotableActivities, filterParentLetterEntries, formatBehaviorFindings, participationSentence, summarizeBehaviorForParentLetter, summarizeParticipationForParentLetter } from './caregiver-parent-letter.js?v=2026.09.04A';
     import { buildWeeklyPromptSeries, defaultGraphRange, filterRecordsByRange, formatGraphRange, rangeFromInputs } from './caregiver-report-graphs.js?v=2026.09.04A';
@@ -1658,7 +1658,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     let loadFromSupabase = null;
     let formatEntryForList = null;
     try {
-      const mod = await import('./caregiver-report-supabase.js?v=2026.10.07F');
+      const mod = await import('./caregiver-report-supabase.js?v=2026.10.07G');
       loadFromSupabase = mod.loadCaregiverCheckins;
       formatEntryForList = mod.formatEntryForList;
     } catch (err) {
@@ -1715,6 +1715,13 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         return { chat: true, calendar: true, focus: true, documents: true };
       }
     };
+    const selectedCheckinDateValue = (entry = {}) =>
+      entry?.date ||
+      entry?.payload?.entry_date ||
+      entry?.payload?.date ||
+      entry?.payload?.shiftDate ||
+      null;
+
     // Converts Supabase timestamps (stored in UTC) into concise local strings so dates don't appear one day ahead.
     const formatLocalDate = (value) => {
       const dt = parseCaregiverDate(value);
@@ -1757,18 +1764,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     };
 
     function getCheckinDateValue(e) {
-      return (
-        e.date ||
-        e.submitted_at ||
-        e.timestamp ||
-        e.created_at ||
-        e.payload?.date ||
-        e.payload?.shiftDate ||
-        e.payload?.submitted_at ||
-        e.payload?.timestamp ||
-        e.payload?.created_at ||
-        null
-      );
+      return selectedCheckinDateValue(e);
     }
 
     function getCheckinDate(e) {
@@ -4710,10 +4706,9 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 
     const fallbackFormat = (e) => {
       const yn = (val) => val === true ? 'Yes' : val === false ? 'No' : '—';
-      const ts = e.timestamp || e.created_at || e.submitted_at || Date.now();
       return {
         id: e.id || e.uuid || null,
-        dateTime: formatLocalDateTimeLabel(ts),
+        dateTime: formatCaregiverTableTimestamp(e),
         hygiene: yn(e.hygiene ?? e.had_bm),
         food_prep: yn(e.food_prep),
         cleanup: yn(e.cleanup),
@@ -7319,7 +7314,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         .map(([key, value]) => ({ label: cgViewHumanizeKey(key), value: cgViewFormatValue(value) }));
       if (additionalRows.length) sections.push({ title: 'Additional saved answers', rows: additionalRows });
 
-      const date = entry.date || payload.entry_date || entry.created_at;
+      const date = entry.date || payload.entry_date || payload.date;
       return {
         title: `Caregiver Check-In — ${printDateLabel(date, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}`,
         subtitle: `${caregiverViewLabel(entry)} · Submitted ${printDateTimeLabel(entry.submitted_at || entry.created_at || payload.submitted_at)}`,
@@ -8007,7 +8002,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 
 <script>
   (function(){
-    const version = window.STAR_BUILD_VERSION || '2026.10.07F';
+    const version = window.STAR_BUILD_VERSION || '2026.10.07G';
     if (!window.STAR_BUILD_VERSION) window.STAR_BUILD_VERSION = version;
     const ensureBadge = () => {
       if (document.getElementById('star-build-version')) return;
@@ -8043,7 +8038,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 <script type="module">
 import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 import { ensureActiveGroupId } from './active-group.js?v=2026.10.07A';
-import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinForCalendar } from './caregiver-report-shared.js?v=2026.09.02D';
+import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinForCalendar } from './caregiver-report-shared.js?v=2026.10.07G';
 
 (() => {
   // Bail out quietly if the calendar HTML isn't present
@@ -8287,7 +8282,7 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinFor
   let EVENT_MAP = {};              // meetings/appointments
   let HEALTH_FLAGS = {};           // persisted manual flags
   const layers = { bm:true, sleep_concern:true, prn:true, illness:true, appetite:true, med_change:true, moon:true, anomaly:true };
-  const emptyCalendarRecord = () => ({ bm:false, sleep_concern:false, prn:false, illness:false, appetite:false, med_change:false, moon:false, anomaly:false, sleep:null, sleep_low:false, onset:false, night:false, prn_sleep:false, prn_mania:false, prn_aggr:false, tired:false, manic:false, sick:false, temp:false, menstrual:false, summary_lines:[], med_change_notes:[] });
+  const emptyCalendarRecord = () => ({ has_checkin:false, bm:false, sleep_concern:false, prn:false, illness:false, appetite:false, med_change:false, moon:false, anomaly:false, sleep:null, sleep_low:false, onset:false, night:false, prn_sleep:false, prn_mania:false, prn_aggr:false, tired:false, manic:false, sick:false, temp:false, menstrual:false, summary_lines:[], med_change_notes:[] });
   const SYNODIC_MONTH = 29.530588853; // days
   const BASE_FULL_MOON = Date.UTC(2024, 8, 17, 18, 34); // Sep 17 2024 full moon reference
 
@@ -8351,7 +8346,13 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinFor
       if (rec.anomaly && layers.anomaly){ const s=document.createElement('span'); s.className='hc-icon'; s.textContent=EMO.anomaly; s.setAttribute('aria-label','Significant concern or anomaly'); icons.appendChild(s); anomalyDays++; }
 
       if (icons.children.length) cell.appendChild(icons);
-      else { const e=document.createElement('div'); e.className='hc-empty'; e.textContent='—'; cell.appendChild(e); }
+      else {
+        const e=document.createElement('div');
+        e.className='hc-empty';
+        const todayKey = formatDateInputValue(new Date());
+        e.textContent = key <= todayKey && !rec.has_checkin ? 'No check-in recorded' : '—';
+        cell.appendChild(e);
+      }
 
       const dayEvents = EVENT_MAP[key] || [];
       if (dayEvents.length) {
@@ -8462,6 +8463,7 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinFor
     const illness = !!data.illness || !!data.sick || !!data.temp;
     const medChange = !!data.med_change || mergedNotes.some((note) => /med/i.test(note));
     targetMap[key] = {
+      has_checkin: base.has_checkin || !!data.has_checkin,
       bm: base.bm || !!data.bm,
       sleep_concern: base.sleep_concern || sleepConcern,
       prn: base.prn || prn,
@@ -8518,6 +8520,7 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinFor
       if (note && !notes.includes(note)) notes.push(note);
     });
     targetMap[key] = {
+      has_checkin: cur.has_checkin || !!calendarRecord.hasCheckin || !!calendarRecord.id,
       bm: cur.bm || !!flags.bm,
       sleep_concern: cur.sleep_concern || !!flags.sleep_concern || !!flags.sleep_low || !!flags.onset || !!flags.night,
       prn: cur.prn || !!flags.prn || !!flags.prn_sleep || !!flags.prn_mania || !!flags.prn_aggr,

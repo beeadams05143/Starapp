@@ -33,34 +33,40 @@ const DURATION_MAP = new Map([
   ['over 2 hours', 150],
 ]);
 
-const getCheckinDateValue = (e) => {
+const DATE_ONLY_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+const selectedDateValue = (e) => {
   if (!e) return null;
   return (
     e.date ||
-    e.submitted_at ||
-    e.timestamp ||
-    e.created_at ||
+    e.payload?.entry_date ||
     e.payload?.date ||
     e.payload?.shiftDate ||
-    e.payload?.submitted_at ||
-    e.payload?.timestamp ||
-    e.payload?.created_at ||
     null
   );
 };
 
+const getCheckinDateValue = (e) => selectedDateValue(e);
+
+const parseCheckinDate = (value) => {
+  if (!value) return new Date(NaN);
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? new Date(NaN) : value;
+  const str = String(value).trim();
+  const match = str.match(DATE_ONLY_RE);
+  if (match) return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 12, 0, 0, 0);
+  const dt = new Date(str);
+  return Number.isNaN(dt.getTime()) ? new Date(NaN) : dt;
+};
+
 const normTs = (row) => {
   const value = getCheckinDateValue(row);
-  if (!value) return new Date(NaN);
-  const dt = new Date(value);
-  return Number.isNaN(dt.getTime()) ? new Date(NaN) : dt;
+  return parseCheckinDate(value);
 };
 
 /** Same resolver chain as caregiver-report.html (for debug + consistency). */
 const getCheckinDate = (e) => {
   const value = getCheckinDateValue(e);
-  if (!value) return null;
-  const d = new Date(value);
+  const d = parseCheckinDate(value);
   return Number.isNaN(d.getTime()) ? null : d;
 };
 
@@ -506,33 +512,10 @@ const normalizeSupabaseEntry = (row = {}) => {
   const rawRowDate = row.date != null ? String(row.date).trim() : '';
   const dateFromRow = /^\d{4}-\d{2}-\d{2}$/.test(rawRowDate) ? rawRowDate : null;
 
-  let timestampIso = toISODate(
-    row.submitted_at || row.timestamp || row.created_at || row.date
-  );
-  if (dateFromRow) {
-    const isoDay = timestampIso ? timestampIso.slice(0, 10) : null;
-    if (isoDay !== dateFromRow) {
-      const baseRaw = row.submitted_at || row.timestamp || row.created_at;
-      const base = baseRaw ? new Date(baseRaw) : null;
-      if (base && !Number.isNaN(base.getTime())) {
-        const y = Number(dateFromRow.slice(0, 4));
-        const mo = Number(dateFromRow.slice(5, 7)) - 1;
-        const d = Number(dateFromRow.slice(8, 10));
-        const realigned = new Date(
-          y,
-          mo,
-          d,
-          base.getHours(),
-          base.getMinutes(),
-          base.getSeconds(),
-          base.getMilliseconds()
-        );
-        timestampIso = realigned.toISOString();
-      } else {
-        timestampIso = toISODate(`${dateFromRow}T12:00:00`) || timestampIso;
-      }
-    }
-  }
+  const selectedDate = dateFromRow || selectedDateValue(row);
+  const timestampIso = selectedDate
+    ? toISODate(parseCheckinDate(selectedDate))
+    : null;
 
   const createdIso = toISODate(row.created_at) || timestampIso;
 
@@ -625,7 +608,7 @@ const normalizeSupabaseEntry = (row = {}) => {
     timestamp: timestampIso,
     date: dateFromRow || (timestampIso ? timestampIso.slice(0, 10) : row.date ?? null),
     created_at: createdIso,
-    submitted_at: row.submitted_at ?? timestampIso,
+    submitted_at: row.submitted_at ?? null,
     caregiver_name: (() => {
       const r = getCaregiverName(row);
       return r === 'Unknown' ? null : r;
@@ -879,16 +862,22 @@ export async function loadCaregiverCheckins(
 
     const filters = [`group_id=eq.${encodeURIComponent(activeGroupId)}`];
 
-    const params = [
-      'select=*',
-      'order=submitted_at.desc.nullslast,created_at.desc.nullslast',
-      'limit=10000',
-      ...filters,
-    ];
-    const path = `caregiver_checkins?${params.join('&')}`;
-    const data = await rest(path);
-
-    const rawRows = Array.isArray(data) ? data : [];
+    const pageSize = 1000;
+    const rawRows = [];
+    for (let offset = 0; ; offset += pageSize) {
+      const params = [
+        'select=*',
+        'order=date.desc,submitted_at.desc.nullslast,created_at.desc.nullslast',
+        `limit=${pageSize}`,
+        `offset=${offset}`,
+        ...filters,
+      ];
+      const path = `caregiver_checkins?${params.join('&')}`;
+      const page = await rest(path);
+      const pageRows = Array.isArray(page) ? page : [];
+      rawRows.push(...pageRows);
+      if (pageRows.length < pageSize) break;
+    }
     const hydratedRows = await hydrateProfilesForCheckinRows(rawRows);
     const rows = await keepAuthorizedGroupRows(hydratedRows, activeGroupId);
 

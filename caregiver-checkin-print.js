@@ -227,7 +227,7 @@ function caregiverNameFor(record, payload, fallback = '') {
 }
 
 function dateValue(record, payload) {
-  return record.date || payload.entry_date || payload.date || record.submitted_at || record.created_at || payload.submitted_at || null;
+  return record.date || payload.entry_date || payload.date || null;
 }
 
 function rowText(row) {

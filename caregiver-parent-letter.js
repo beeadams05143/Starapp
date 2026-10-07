@@ -191,7 +191,7 @@ function pickMinutes(...values) {
 }
 
 function getDayKey(entry = {}) {
-  const value = entry.date || entry.payload?.entry_date || entry.payload?.date || entry.submitted_at || entry.created_at || '';
+  const value = entry.date || entry.payload?.entry_date || entry.payload?.date || '';
   if (typeof value === 'string') {
     const match = value.match(/^(\d{4}-\d{2}-\d{2})/);
     if (match) return match[1];

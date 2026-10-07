@@ -62,7 +62,7 @@ export function summarizeParticipationHoursForLetter(totalMinutes, range) {
 }
 
 function defaultPrintFilterDayKey(entry = {}) {
-  const value = entry.date || entry.payload?.entry_date || entry.payload?.date || entry.submitted_at || entry.created_at || '';
+  const value = entry.date || entry.payload?.entry_date || entry.payload?.date || '';
   if (typeof value === 'string') {
     const match = value.match(/^(\d{4}-\d{2}-\d{2})/);
     if (match) return match[1];
@@ -224,14 +224,9 @@ function pickMinutesFromValue(value) {
 function getCheckinDateValue(entry = {}) {
   return (
     entry.date ||
-    entry.submitted_at ||
-    entry.timestamp ||
-    entry.created_at ||
+    entry.payload?.entry_date ||
     entry.payload?.date ||
     entry.payload?.shiftDate ||
-    entry.payload?.submitted_at ||
-    entry.payload?.timestamp ||
-    entry.payload?.created_at ||
     null
   );
 }

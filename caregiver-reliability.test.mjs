@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { formatEntryForList } from './caregiver-report-supabase.js';
+import {
+  filterCaregiverCheckinsForPrint,
+  normalizeCaregiverCheckinForCalendar,
+} from './caregiver-report-shared.js';
 
 const checkinHtml = await readFile(new URL('./caregiver-checkin.html', import.meta.url), 'utf8');
 const reportHtml = await readFile(new URL('./caregiver-report.html', import.meta.url), 'utf8');
@@ -66,6 +70,10 @@ assert.ok(
 assert.match(reportLoader, /group_id=eq\.\$\{encodeURIComponent\(activeGroupId\)\}/);
 assert.match(reportLoader, /const key = row\.id \|\| row\.submitted_at \|\| row\.timestamp \|\| row\.created_at;/);
 assert.doesNotMatch(reportLoader, /memberIds\.has\(userId\) \|\| profileGroupId === groupId/);
+assert.doesNotMatch(reportLoader, /const getCheckinDateValue = \(e\) => \{[\s\S]*e\.submitted_at[\s\S]*\};/);
+assert.match(reportLoader, /order=date\.desc,submitted_at\.desc\.nullslast,created_at\.desc\.nullslast/);
+assert.match(reportLoader, /offset=\$\{offset\}/);
+assert.match(reportHtml, /No check-in recorded/);
 
 const sameDateRows = [
   { id: 'beth-1', user_id: 'beth', caregiver_name: 'Beth', group_id: 'g1', date: '2026-10-07' },
@@ -78,6 +86,27 @@ assert.deepEqual(sameDateRows.map((row) => row.id), ['beth-1', 'josh-1', 'shirle
 assert.deepEqual(
   sameDateRows.map((row) => formatEntryForList(row).dateTime),
   ['Oct 07, 2026', 'Oct 07, 2026', 'Oct 07, 2026', 'Oct 07, 2026']
+);
+
+const submittedNextDay = {
+  id: 'tue-submitted-wed',
+  user_id: 'beth',
+  caregiver_name: 'Beth',
+  group_id: 'g1',
+  date: '2026-10-06',
+  submitted_at: '2026-10-07T13:19:13Z',
+  created_at: '2026-10-07T13:19:13Z',
+  payload: { entry_date: '2026-10-06', hours_sleep: '10+ hrs' },
+};
+assert.equal(formatEntryForList(submittedNextDay).dateTime, 'Oct 06, 2026');
+assert.equal(normalizeCaregiverCheckinForCalendar(submittedNextDay).dateKey, '2026-10-06');
+assert.deepEqual(
+  filterCaregiverCheckinsForPrint([submittedNextDay], { startDate: '2026-10-06', endDate: '2026-10-06' }).map((row) => row.id),
+  ['tue-submitted-wed']
+);
+assert.deepEqual(
+  filterCaregiverCheckinsForPrint([submittedNextDay], { startDate: '2026-10-07', endDate: '2026-10-07' }).map((row) => row.id),
+  []
 );
 
 console.log('caregiver reliability safeguards: PASS');

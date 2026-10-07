@@ -997,7 +997,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 </script>
 
 <!-- Shared navigation shell -->
-<script defer src="./ui-shell.js?v=2026.10.07G"></script>
+<script defer src="./ui-shell.js?v=2026.10.07H"></script>
 <script defer src="./scripts/appbar-drawer.js?v=2026.03.29A"></script>
 
   <div id="navbar"></div>
@@ -1649,7 +1649,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabaseClient.js?v=2026.03.29A';
     import { ensureActiveGroupId } from './active-group.js?v=2026.10.07A';
     import { openCompactCaregiverCheckinPrintWindow } from './caregiver-checkin-print.js?v=2026.09.02A';
-    import { CALENDAR_QUICK_LOOK_ITEMS, filterCaregiverCheckinsForPrint, normalizeCaregiverCheckinForCalendar, normalizeCaregiverCheckinRecord } from './caregiver-report-shared.js?v=2026.10.07G';
+    import { CALENDAR_QUICK_LOOK_ITEMS, filterCaregiverCheckinsForPrint, normalizeCaregiverCheckinForCalendar, normalizeCaregiverCheckinRecord } from './caregiver-report-shared.js?v=2026.10.07H';
     import { renderPrintableCaregiverReport } from './caregiver-report-print.js?v=2026.07.01B';
     import { collectNotableActivities, filterParentLetterEntries, formatBehaviorFindings, participationSentence, summarizeBehaviorForParentLetter, summarizeParticipationForParentLetter } from './caregiver-parent-letter.js?v=2026.09.04A';
     import { buildWeeklyPromptSeries, defaultGraphRange, filterRecordsByRange, formatGraphRange, rangeFromInputs } from './caregiver-report-graphs.js?v=2026.09.04A';
@@ -1658,7 +1658,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     let loadFromSupabase = null;
     let formatEntryForList = null;
     try {
-      const mod = await import('./caregiver-report-supabase.js?v=2026.10.07G');
+      const mod = await import('./caregiver-report-supabase.js?v=2026.10.07H');
       loadFromSupabase = mod.loadCaregiverCheckins;
       formatEntryForList = mod.formatEntryForList;
     } catch (err) {
@@ -8002,7 +8002,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 
 <script>
   (function(){
-    const version = window.STAR_BUILD_VERSION || '2026.10.07G';
+    const version = window.STAR_BUILD_VERSION || '2026.10.07H';
     if (!window.STAR_BUILD_VERSION) window.STAR_BUILD_VERSION = version;
     const ensureBadge = () => {
       if (document.getElementById('star-build-version')) return;
@@ -8038,7 +8038,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 <script type="module">
 import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 import { ensureActiveGroupId } from './active-group.js?v=2026.10.07A';
-import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinForCalendar } from './caregiver-report-shared.js?v=2026.10.07G';
+import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinForCalendar } from './caregiver-report-shared.js?v=2026.10.07H';
 
 (() => {
   // Bail out quietly if the calendar HTML isn't present
@@ -8304,6 +8304,11 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinFor
     const dt = new Date(key);
     return Number.isNaN(dt.getTime()) ? key : dt.toLocaleDateString(undefined, { weekday:'short', month:'short', day:'numeric' });
   };
+  const localDayKey = (date = new Date()) => {
+    const dt = date instanceof Date ? date : new Date(date);
+    if (Number.isNaN(dt.getTime())) return '';
+    return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
+  };
 
   function render(){
     if (!grid || !title) return;
@@ -8349,7 +8354,7 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinFor
       else {
         const e=document.createElement('div');
         e.className='hc-empty';
-        const todayKey = formatDateInputValue(new Date());
+        const todayKey = localDayKey(new Date());
         e.textContent = key <= todayKey && !rec.has_checkin ? 'No check-in recorded' : '—';
         cell.appendChild(e);
       }

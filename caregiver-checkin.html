@@ -2853,7 +2853,7 @@
 <script type="module">
   // 1) Imports MUST be first in the module
   import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
-  import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
+  import { ensureActiveGroupId } from './active-group.js?v=2026.10.07A';
   import { advanceGuidedOnboarding } from './onboarding-flow.js?v=2026.03.16B';
 
   // 2) Optional: expose for console debugging
@@ -5414,6 +5414,7 @@
     }
     hydratePromptingSelects();
     applyDraftToForm();
+    setFreshEntryDate();
     updateSavedButtons();
     updateProgress();
     syncAggressionControls();
@@ -6316,6 +6317,13 @@
       applyCaregiverSetupVisibility();
       syncEducationalQuestionStates();
     }
+    function setFreshEntryDate(){
+      const freshDate = todayISO();
+      if (entryDateInput) entryDateInput.value = freshDate;
+      if (!draft.data || typeof draft.data !== 'object') draft.data = {};
+      if (!draft.data[0] || typeof draft.data[0] !== 'object') draft.data[0] = {};
+      draft.data[0].entry_date = freshDate;
+    }
     function loadDraft(){
       try{
         const raw=localStorage.getItem(DRAFT_KEY);
@@ -6906,6 +6914,9 @@
           /yes/i.test(String(payload.had_bm ?? payload.bm_today ?? ''));
 
         const group_id = await ensureGroupId(user_id);
+        if (!group_id) {
+          throw new Error('No active group found for this caregiver. Please join or select a group before submitting.');
+        }
         const caregiverName = trimOrNull(payload.caregiver_name) ||
           trimOrNull(user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email);
 
@@ -7002,6 +7013,20 @@
         }
         console.log('[cg] save result:', inserted);
         const data = Array.isArray(inserted) ? inserted[0] : inserted;
+        if (!data?.id) {
+          throw new Error('Supabase did not return the saved caregiver check-in. Please try again before leaving this page.');
+        }
+        const savedRows = await rest(
+          `caregiver_checkins?select=id,user_id,group_id,date,submitted_at&` +
+          `id=eq.${encodeURIComponent(data.id)}&limit=1`
+        );
+        const savedRow = Array.isArray(savedRows) ? savedRows[0] : null;
+        if (!savedRow?.id) {
+          throw new Error('The caregiver check-in could not be read back from Supabase after saving. Please try again.');
+        }
+        if (String(savedRow.user_id || '') !== String(user_id) || String(savedRow.group_id || '') !== String(group_id)) {
+          throw new Error('The saved caregiver check-in did not match the current caregiver/group. Please contact support before submitting again.');
+        }
 
         const when = new Date(data?.submitted_at || row.submitted_at).toLocaleString();
         const slot = document.getElementById('finalSubmittedAt');

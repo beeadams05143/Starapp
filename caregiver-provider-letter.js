@@ -268,7 +268,7 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
     const date = new Date(day * DAY).toISOString().slice(0, 10);
     if (!covered.has(date)) missing.push(date);
   }
-  sections.push('We hope this overview helps everyone involved in supporting Benny understand his experiences, challenges, activities, and successes during this period. Thank you for reviewing these observations with us.');
+  sections.push('We hope this overview helps everyone involved in supporting the individual understand his experiences, challenges, activities, and successes during this period. Thank you for reviewing these observations with us.');
   if (missing.length) sections.push('Record coverage\nNo caregiver check-in was found for ' + dateList(missing) + '. These dates are not evidence that no activities or concerns occurred.');
   return sections.join('\n\n');
 }

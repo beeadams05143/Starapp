@@ -17,8 +17,18 @@ export class CheckinSubmissionUI {
     this.cloudSaving = false;
     this.cloudDraftId = null;
     this.cloudDraftVersion = null;
-    this.cloudDraftService = !context.practice && context.userId && context.groupId
-      ? new CaregiverDraftService({ request, userId: context.userId, groupId: context.groupId }) : null;
+    // Cloud draft setup is optional: a configuration error must never prevent
+    // caregivers from opening the form or submitting their check-ins.
+    this.cloudDraftService = null;
+    if (!context.practice && context.userId && context.groupId) {
+      try {
+        this.cloudDraftService = new CaregiverDraftService({
+          request, userId: context.userId, groupId: context.groupId,
+        });
+      } catch (error) {
+        console.warn('[STAR] Cloud draft setup unavailable; check-in remains usable.', error);
+      }
+    }
     this.duplicateIds = [];
     this.store = null;
     this.setStore();

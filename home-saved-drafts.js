@@ -66,7 +66,46 @@ export async function showHomeDrafts(doc = document, win = window) {
       detail.textContent = (draft.date ? formatCheckinDate(draft.date, 'en-US', { weekday:'long',month:'long',day:'numeric',year:'numeric' }) : 'Date not selected') +
         ' · Saved ' + (draft.updatedAt ? new Date(draft.updatedAt).toLocaleString() : 'on this device');
       link.append(title, detail);
-      host.appendChild(link);
+      const row = doc.createElement('div');
+      row.className = 'saved-draft-row';
+      row.style.cssText = 'display:flex;gap:8px;align-items:stretch;margin:8px 0';
+      link.style.margin = '0';
+      link.style.flex = '1';
+      link.style.minWidth = '0';
+      const actions = doc.createElement('div');
+      actions.style.cssText = 'display:flex;align-items:center;position:relative';
+      const menu = doc.createElement('button');
+      menu.type = 'button';
+      menu.textContent = '⋯';
+      menu.setAttribute('aria-label', 'Options for this draft');
+      menu.setAttribute('aria-expanded', 'false');
+      menu.style.cssText = 'border:1px solid #d8d2c8;background:white;border-radius:12px;font-size:25px;padding:10px 16px;cursor:pointer';
+      const option = doc.createElement('button');
+      option.type = 'button';
+      option.textContent = 'Delete draft';
+      option.hidden = true;
+      option.style.cssText = 'position:absolute;right:0;top:100%;z-index:5;white-space:nowrap;border:1px solid #d8d2c8;background:white;color:#9a2525;border-radius:10px;padding:12px;font-weight:700;cursor:pointer';
+      menu.addEventListener('click', () => {
+        option.hidden = !option.hidden;
+        menu.setAttribute('aria-expanded', String(!option.hidden));
+      });
+      option.addEventListener('click', () => {
+        if (draft.pending) {
+          win.alert('This check-in may have been sent already. Please verify its submission status before deleting its recovery copy.');
+          return;
+        }
+        if (!win.confirm('Delete this unfinished draft? This cannot be undone.')) return;
+        try {
+          win.localStorage.removeItem(draft.key);
+          row.remove();
+          if (!host.querySelector('.saved-draft-row')) showHomeDrafts(doc, win);
+        } catch (error) {
+          win.alert('Unable to delete this draft. Please try again.');
+        }
+      });
+      actions.append(menu, option);
+      row.append(link, actions);
+      host.appendChild(row);
     }
     host.hidden = false;
   } catch (error) {

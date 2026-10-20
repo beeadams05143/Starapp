@@ -2,6 +2,18 @@
 
 Status: design only; no database migration has been applied. This document is intentionally separate from the live submission/recovery workflow.
 
+## Confirmed Supabase schema reference (provided October 20, 2026)
+
+**Do not ask the user to rerun the same schema-identification query.** This was verified directly from a Supabase information_schema export.
+
+- `public.profiles`: `id uuid NOT NULL` (authenticated account ID), `group_id uuid`, `default_group_id uuid`, `display_name text`, `public_name text`, `full_name text`, `time_zone text`, plus `is_admin`, `role`, and onboarding fields.
+- `public.group_members`: `user_id uuid NOT NULL`, `group_id uuid NOT NULL`, `role USER-DEFINED NOT NULL`, `joined_at timestamptz`. Use both IDs to check membership.
+- `public.groups`: `id uuid NOT NULL`, `name text NOT NULL`, `created_by uuid NOT NULL`, `archived boolean NOT NULL`, plus slug/invite fields.
+- `public.caregiver_checkins`: `id uuid NOT NULL`, `user_id uuid`, `group_id uuid`, `date date`, `payload jsonb NOT NULL`, `submitted_at timestamptz NOT NULL`, `caregiver_name text`, `details jsonb`, `created_at timestamp without time zone`, `submitted_at_local text`, `submitted_timezone text`, and other check-in-specific fields.
+- `profiles.id` is the identity, NOT the caregiver display name. Historical screen names remain display-only.
+- These are column definitions, **not proof of keys, foreign keys, policies, or membership grants**. Security migration must use `auth.uid()` plus an EXISTS check against `group_members`, and must be tested for cross-user access.
+- No change to existing `caregiver_checkins` data is necessary for draft storage.
+
 ## Existing behavior verified in GitHub
 - `caregiver-submission.js` maintains separate browser recovery slots scoped by authenticated user ID, group ID, and practice/real mode.
 - `caregiver-submission-ui.js` already supports Save Draft, a browser recovery selector, and explicit Resume. These copies are browser-local and are not portable across devices.

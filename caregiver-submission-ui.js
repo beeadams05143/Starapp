@@ -34,6 +34,17 @@ export class CheckinSubmissionUI {
     this.setStore();
     this.service = new CaregiverSubmission({ request,
       assertContext: row => this.assertContext(row), persistAttempt: () => this.saveRecovery(true) });
+    // Always offer a clear route home; browser Back is not the only exit.
+    const main = doc.querySelector('.page-wrap') || doc.querySelector('.main-container');
+    if (main && !doc.getElementById('caregiverBackHome')) {
+      const back = doc.createElement('a');
+      back.id = 'caregiverBackHome';
+      back.href = 'dashboard.html';
+      back.className = 'btn';
+      back.textContent = '← Back to Home';
+      back.style.cssText = 'display:inline-flex;align-items:center;margin:0 0 16px;text-decoration:none;';
+      main.prepend(back);
+    }
     this.el.entryDateInput.value = '';
     this.el.checkinDateConfirmed.checked = false;
     this.el.submissionContext.textContent = `${context.practice ? 'PRACTICE — not saved to Supabase. ' : ''}Caregiver: ${context.caregiverLabel} · Group: ${context.groupLabel}`;

@@ -187,7 +187,8 @@ const LABELS = { sleep: 'Sleep difficulty', engagement: 'Reduced engagement', wi
 const evidenceSentence = (label, metric) => `${label} was reported on ${metric.positive} of ${metric.answered} dates with an interpretable answer${metric.mixed ? `; ${metric.mixed} additional dates had conflicting answers` : ''}.`;
 export function renderProviderLetter(a, { includeQuotes = true } = {}) {
   const blocks = ['Dear Healthcare Provider,'];
-  const fmt = dates => [...new Set(dates)].sort().map(dateLabel).join(', ');
+  const shortDate = key => { const [y,m,d] = key.split('-'); return Number(m) + '/' + Number(d) + '/' + y.slice(2); };
+  const fmt = dates => [...new Set(dates)].sort().map(shortDate).join(', ');
   const quote = (themes, limit = 2) => {
     if (!includeQuotes) return '';
     const seen = new Set();
@@ -197,14 +198,14 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
       seen.add(key);
       return true;
     }).slice(0, limit);
-    return selected.length ? ' Caregiver notes provide examples: ' + selected.map(q => 'On ' + dateLabel(q.date) + ', a caregiver wrote, “' + q.quote.trim() + '”').join(' ') : '';
+    return selected.length ? ' Caregiver notes provide examples: ' + selected.map(q => 'On ' + shortDate(q.date) + ', a caregiver wrote, “' + q.quote.trim() + '”').join(' ') : '';
   };
   const section = (title, body) => { if (body.trim()) blocks.push(title + '\n' + body.trim()); };
-  blocks.push('I am sharing a summary of observations documented by caregivers between ' + dateLabel(a.start) + ' and ' + dateLabel(a.end) + '. The goal is to give the treatment team a clearer picture of daily experiences, areas of concern, and positive moments that may be helpful during our next discussion.');
+  blocks.push('I am sharing a summary of observations documented by caregivers between ' + shortDate(a.start) + ' and ' + shortDate(a.end) + '. The goal is to give the treatment team a clearer picture of daily experiences, areas of concern, and positive moments that may be helpful during our next discussion.');
   const sleep = a.metrics.sleep;
   if (sleep.positive) {
-    let body = 'Caregivers specifically documented difficulty falling asleep or waking during the night on ' + fmt(sleep.dates) + '. Sleep questions had interpretable answers on ' + sleep.answered + ' of the ' + a.days.length + ' dates with check-ins, so these are documented examples rather than a complete picture of sleep throughout the period.';
-    body += ' We would appreciate guidance about which sleep details to track consistently, particularly when sleep disruption occurs alongside changes in daytime activity or engagement.';
+    let body = 'Caregivers documented difficulty falling asleep or waking during the night on ' + fmt(sleep.dates) + '. These are the dates when sleep concerns were recorded; other nights may not have been documented.';
+    body += ' Tracking sleep alongside daytime energy and engagement may help the care team understand these observations.';
     section('Sleep and Energy', body);
   } else {
     section('Sleep and Energy', 'The available check-ins do not provide enough clearly answered sleep questions to describe a reliable pattern for this period.');
@@ -238,18 +239,15 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
   medication += ' We would welcome the provider’s guidance on what information about timing, response, sleep, and daily functioning would be most useful when reviewing medications.';
   section('Medication and PRN Observations', medication);
   blocks.push('We hope these observations help support a conversation about what is going well, what has been difficult, and what we should continue monitoring. Thank you for reviewing them with us.');
-  const caveats = [];
-  caveats.push(a.rows.length + ' caregiver check-ins were recorded across ' + a.days.length + ' of the ' + a.totalDays + ' calendar days in the selected period');
-  if (a.multipleEntryDays) caveats.push('on ' + a.multipleEntryDays + ' dates, more than one caregiver check-in was recorded; each caregiver’s observations were included in this summary');
-  const recordedDates = new Set(a.days.map(day => day.date));
-  const missingDates = [];
+  const recorded = new Set(a.days.map(day => day.date));
+  const missing = [];
   for (let day = ordinal(a.start); day <= ordinal(a.end); day++) {
     const date = new Date(day * DAY).toISOString().slice(0, 10);
-    if (!recordedDates.has(date)) missingDates.push(date);
+    if (!recorded.has(date)) missing.push(date);
   }
-  if (missingDates.length) caveats.push('no caregiver check-in was found for ' + fmt(missingDates));
-  if (a.dateConflicts) caveats.push(a.dateConflicts + ' record' + (a.dateConflicts === 1 ? ' was' : 's were') + ' excluded because its dates conflicted');
-  if (a.historical) caveats.push('older check-ins may not distinguish unanswered questions from negative answers');
-  blocks.push('About these records\n' + caveats.join('; ') + '. Days without check-ins are not evidence that no symptoms occurred. This letter summarizes caregiver observations and does not establish a diagnosis or medication effect.');
+  let coverage = 'The summary includes ' + a.rows.length + ' caregiver check-ins across ' + a.days.length + ' dates.';
+  if (a.multipleEntryDays) coverage += ' Some dates have check-ins from multiple caregivers, and all were included.';
+  if (missing.length) coverage += ' No check-in was found for ' + fmt(missing) + '.';
+  blocks.push('Check-in coverage\n' + coverage);
   return blocks.join('\n\n');
 }

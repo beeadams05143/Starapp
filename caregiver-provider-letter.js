@@ -187,7 +187,20 @@ const LABELS = { sleep: 'Sleep difficulty', engagement: 'Reduced engagement', wi
 const evidenceSentence = (label, metric) => `${label} was reported on ${metric.positive} of ${metric.answered} dates with an interpretable answer${metric.mixed ? `; ${metric.mixed} additional dates had conflicting answers` : ''}.`;
 export function renderProviderLetter(a, { includeQuotes = true } = {}) {
   const fullDate = key => new Date(key + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
-  const dateList = keys => [...new Set(keys)].sort().map(fullDate).join('; ');
+  const dateList = keys => {
+    const grouped = new Map();
+    for (const key of [...new Set(keys)].sort()) {
+      const [year, month, day] = key.split('-').map(Number);
+      const monthName = new Date(Date.UTC(year, month - 1, 1)).toLocaleDateString('en-US', { month: 'long', timeZone: 'UTC' });
+      const label = monthName + ' ' + year;
+      if (!grouped.has(label)) grouped.set(label, []);
+      grouped.get(label).push(day);
+    }
+    return [...grouped].map(([label, days]) => {
+      const [monthName, year] = label.split(' ');
+      return monthName + ' ' + days.join(', ') + ', ' + year;
+    }).join('; ');
+  };
   const sections = ['Dear Support Team,'];
   const add = (title, text) => { if (text.trim()) sections.push(title + '\n' + text.trim()); };
   const p = row => row.payload ?? row;

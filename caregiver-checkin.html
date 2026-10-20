@@ -1889,6 +1889,17 @@
     .checkin-submit-panel button { min-height:44px; white-space:normal; }
     #submissionContext, #recoveryChoices { max-width:100%; overflow-wrap:anywhere; }
     @media(max-width:600px) { .checkin-submit-panel { padding:14px; } .checkin-submit-panel > button { width:100%; margin:6px 0; } }
+
+    /* Focused caregiver workflow: setup, section list, guided questions, review. */
+    .top-actions { display:none !important; }
+    #checkinSubmitPanel { display:none; }
+    #checkinSubmitPanel.is-reviewing { display:block; }
+    #submissionContext { display:none; }
+    .draft-save-bar { position:sticky; top:62px; z-index:30; display:flex; align-items:center; gap:10px; padding:10px 14px; background:#fffaf0; border:1px solid #e9d6af; border-radius:12px; margin:12px 0; box-shadow:0 2px 8px #0000000b; }
+    .draft-save-bar button { min-height:46px; font-weight:800; background:#234d3d; color:white; border:0; border-radius:9px; padding:10px 18px; cursor:pointer; }
+    .draft-save-bar button:disabled { opacity:.55; }
+    .draft-save-bar [role=status] { font-size:.9rem; overflow-wrap:anywhere; }
+    @media(max-width:600px) { .draft-save-bar { top:52px; } }
 </style>
 </head>
 <body>
@@ -1907,7 +1918,7 @@
       ⚠️ Practice mode — nothing you enter here will be saved to real records.
     </div>
     <h1>Caregiver Check-In</h1>
-    <div class="sub">Every new check-in starts with a blank date. A recovery copy is kept in this browser when storage is available. <strong>Save Draft</strong> saves a local copy; only <strong>Submit Check-In</strong> saves to Supabase.</div>
+    <div class="sub">Choose the date you are documenting, then begin. You can save an unfinished check-in at any time.</div>
 
     <div class="progress" id="progress">
       <div class="prog-item" data-step="0"><div class="prog-label">Physical</div><div class="seg active"></div></div>
@@ -1918,6 +1929,8 @@
       <div class="prog-item" data-step="5"><div class="prog-label">Daily Living</div><div class="seg"></div></div>
       <div class="prog-item" data-step="6"><div class="prog-label">Educational</div><div class="seg"></div></div>
     </div>
+
+    <div class="draft-save-bar" id="draftSaveBar"><button type="button" id="saveDraftAlways" disabled>Save Draft</button><span id="draftSaveFeedback" role="status" aria-live="polite">Available once your check-in opens.</span></div>
 
     <div class="top-actions">
       <label>Recovery copies <select id="recoveryChoices" hidden aria-label="Choose a recovery copy"></select></label>
@@ -2805,7 +2818,7 @@
           <div class="controls">
             <div class="left-actions">
               <button class="btn" type="button" data-save>Save Draft</button>
-              <span class="action-note">Save a local recovery copy. This does not submit the check-in.</span>
+              <span class="action-note">Save your unfinished work without submitting a check-in.</span>
               <span class="savedAt" data-savedat></span>
               <span class="savedAt" id="finalSubmittedAt"></span>
             </div>
@@ -2869,7 +2882,7 @@
 <script type="module">
   // 1) Imports MUST be first in the module
   import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.19B';
-  import { CheckinSubmissionUI } from './caregiver-submission-ui.js?v=2026.10.20E';
+  import { CheckinSubmissionUI } from './caregiver-submission-ui.js?v=2026.10.20F';
   import { validSelectedDate } from './caregiver-submission.js';
   import { ANSWER_VERSION, optionalEngagement, optionalYesNo } from './caregiver-answer-quality.js?v=2026.10.20A';
   import { ensureActiveGroupId } from './active-group.js?v=2026.10.07A';
@@ -5349,6 +5362,12 @@
     formEl        = document.getElementById('cg-form');
     submitBtn     = document.getElementById('submitAll');
     reviewOverlay = document.getElementById('checkinSubmitPanel');
+    // Keep PRN questions inside the guided Physical Health check-in,
+    // not ahead of the "Begin Caregiver Check-in" action.
+    const prnCard = document.getElementById('centralPrnSection');
+    const physicalDetail = document.querySelector('#physicalSection .section-detail .section-content');
+    const physicalQuestions = physicalDetail?.querySelector('fieldset.panel');
+    if (prnCard && physicalQuestions) physicalQuestions.prepend(prnCard);
     reviewSectionsEl = document.getElementById('reviewSections');
     steps         = Array.from(document.querySelectorAll('.step'));
       adlStepIndex  = steps.findIndex((step) => step.id === 'daily-living-step');
@@ -6208,6 +6227,7 @@
       return -1;
     }
     function openSectionDetailByIndex(idx, behavior = 'smooth'){
+      reviewOverlay?.classList.remove('is-reviewing');
       if (!steps[idx]) return;
       current = idx;
       syncWizardView({ scroll: false });
@@ -6263,8 +6283,23 @@
           : {}
       };
     }
-    function saveDraftExplicitly(){
-      if (submissionUI?.saveDraft()) steps.forEach((step, idx) => updateSavedAt(step, idx));
+    async function saveDraftExplicitly(){
+      const feedback = document.getElementById('draftSaveFeedback');
+      const button = document.getElementById('saveDraftAlways');
+      if (!submissionUI) { if (feedback) feedback.textContent = 'Check-in is still loading.'; return; }
+      if (button) button.disabled = true;
+      if (feedback) feedback.textContent = 'Saving…';
+      try {
+        const saved = await submissionUI.saveDraft();
+        if (saved) steps.forEach((step, idx) => updateSavedAt(step, idx));
+        if (feedback) feedback.textContent = saved
+          ? (isPractice ? 'Practice draft saved on this browser.' : 'Draft saved in Supabase.')
+          : 'Cloud save not confirmed. Browser recovery may still be available.';
+      } catch (error) {
+        if (feedback) feedback.textContent = 'Save failed: ' + (error?.message || 'Please try again.');
+      } finally {
+        if (button) button.disabled = !submissionUI || submissionUI.done || submissionUI.busy;
+      }
     }
     function restore(step,idx){
       hydrate(step,draft.data[idx]);
@@ -6628,6 +6663,7 @@
         reviewSectionsEl.appendChild(empty);
       }
       document.getElementById('checkinAnswersReview').open = true;
+      reviewOverlay.classList.add('is-reviewing');
       reviewOverlay.scrollIntoView({ block: 'start', behavior: 'smooth' });
     }
 
@@ -6950,6 +6986,7 @@
     }
 
 	    const showSectionList = () => {
+      reviewOverlay?.classList.remove('is-reviewing');
 	      document.querySelectorAll('.section-detail').forEach(s => {
 	        s.style.display = 'none';
       });
@@ -7028,7 +7065,8 @@
 	      });
 	    });
 
-	    document.getElementById('beginGuidedCheckinBtn')?.addEventListener('click', () => {
+	    document.getElementById('saveDraftAlways')?.addEventListener('click', saveDraftExplicitly);
+    document.getElementById('beginGuidedCheckinBtn')?.addEventListener('click', () => {
 	      const nextIdx = getNextNeededSectionIndex();
 	      if (nextIdx >= 0) {
 	        openSectionDetailByIndex(nextIdx);

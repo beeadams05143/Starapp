@@ -200,7 +200,7 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
     return [...groups].map(([month, days]) => month + ' ' + (days.length === 1 ? days[0] : days.slice(0, -1).join(', ') + ' and ' + days.at(-1))).join('; ');
   };
   const prepared = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-  const sections = ['Caregiver Observation Summary\\nDate Prepared: ' + prepared, 'Dear Support Team,'];
+  const sections = ['Caregiver Observation Summary\nDate Prepared: ' + prepared, 'Dear Support Team,'];
   const add = (title, paragraphs) => {
     const content = paragraphs.filter(Boolean).join('\n\n').trim();
     if (content) sections.push(title + '\n' + content);

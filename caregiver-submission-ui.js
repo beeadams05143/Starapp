@@ -61,6 +61,22 @@ export class CheckinSubmissionUI {
     }, true);
     this.setLocked(false);
     this.refreshRecoveryList();
+    // A Home dashboard draft link opens its exact recovery slot after account/group
+    // context is established. Never auto-resume a draft without an explicit link.
+    const requestedDraft = new URLSearchParams(win.location.search).get('resumeDraft');
+    if (requestedDraft) {
+      const match = this.recoveries?.find(item => item.key === requestedDraft);
+      if (match && match.context?.userId === context.userId &&
+          match.context?.groupId === context.groupId && match.context?.practice === context.practice) {
+        this.el.recoveryChoices.value = requestedDraft;
+        this.resume();
+      } else {
+        this.status('This saved draft is not available in this browser, caregiver account, or group.', true);
+      }
+      const cleaned = new URL(win.location.href);
+      cleaned.searchParams.delete('resumeDraft');
+      win.history.replaceState(null, '', cleaned.pathname + cleaned.search + cleaned.hash);
+    }
     if (!context.userId || !context.groupId) this.status('Save Failed — sign in and open this form in the correct group before entering a check-in.', true);
     else this.status(context.practice ? 'Practice Mode — completion does not save a real check-in.' : 'Choose the date being documented, then confirm it below.');
     this.update();

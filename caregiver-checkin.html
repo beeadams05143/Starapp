@@ -1900,6 +1900,14 @@
     .draft-save-bar button:disabled { opacity:.55; }
     .draft-save-bar [role=status] { font-size:.9rem; overflow-wrap:anywhere; }
     @media(max-width:600px) { .draft-save-bar { top:52px; } }
+
+.top-actions,#downloadRecovery,#storageNotice,#submissionContext{display:none!important}
+#checkinSubmitPanel>p:not(#checkinDateLabel):not(#submissionStatus),#checkinSubmitPanel>a[href="caregiver-report.html"]{display:none}
+.prn-quick-row{padding:15px;border-bottom:1px solid #e9e8e4;display:grid;gap:10px}
+.prn-quick-row>div{display:flex;justify-content:space-between;gap:12px;align-items:center}
+.prn-quick-row button{cursor:pointer}
+.prn-quick-row .prn-quick-no{background:#edf6ef;border:1px solid #cfe5d5;border-radius:9px;padding:12px;text-align:left;color:#25563f;font-weight:700}
+.prn-quick-row .prn-open{background:none;border:0;color:#7547e8;font-weight:750}
 </style>
 </head>
 <body>
@@ -1981,6 +1989,10 @@
 	        </section>
 
 	        <div id="sectionListView">
+          <div class="prn-quick-row">
+            <div><strong>PRN Medication Used Today</strong><button class="prn-open" type="button" id="prnOpenQuestions">Needs check-in →</button></div>
+            <button class="prn-quick-no" type="button" id="prnQuickNo">No PRN medication used</button>
+          </div>
           <div class="section-list-item" data-section="physical" data-target="physicalSection">
             <div class="section-list-main">
               <span>Physical Health</span>
@@ -2860,12 +2872,12 @@
           <p id="duplicateDateLabel"></p>
           <label class="confirmation-choice"><input type="checkbox" id="allowDuplicate" autocomplete="off"> I intend to create an additional check-in for this same date. Keep the existing record unchanged.</label>
         </div>
-        <h2 id="checkinDateTitle">Review Your Check-In Date</h2>
-        <p>You're about to submit a caregiver check-in for:</p>
+        <h2 id="checkinDateTitle">Confirm Check-In Date</h2>
+        
         <p id="checkinDateLabel" class="checkin-date-label" aria-live="polite">Select the date being documented.</p>
-        <p><em>Date being documented — not necessarily today's date.</em></p>
-        <button class="btn" id="changeCheckinDate" type="button">Change date without losing answers</button>
-        <label class="confirmation-choice"><input type="checkbox" id="checkinDateConfirmed" autocomplete="off" required disabled> <strong>Yes, this is the correct date for this check-in.</strong></label>
+        
+        <button class="btn" id="changeCheckinDate" type="button">Change Date</button>
+        <label class="confirmation-choice"><input type="checkbox" id="checkinDateConfirmed" autocomplete="off" required disabled> <strong>I confirm this date is correct.</strong></label>
         <button class="btn primary" id="submitAll" type="submit" disabled>Submit Check-In</button>
         <p id="submissionStatus" role="status" aria-live="assertive" aria-atomic="true" tabindex="-1">Loading submission safeguards…</p>
         <button class="btn" id="checkSaveStatus" type="button" hidden>Check original save status — no new submission</button>
@@ -6662,7 +6674,7 @@
         empty.textContent = 'No values entered yet.';
         reviewSectionsEl.appendChild(empty);
       }
-      document.getElementById('checkinAnswersReview').open = true;
+      document.getElementById('checkinAnswersReview').open = false;
       reviewOverlay.classList.add('is-reviewing');
       reviewOverlay.scrollIntoView({ block: 'start', behavior: 'smooth' });
     }
@@ -7066,6 +7078,29 @@
 	    });
 
 	    document.getElementById('saveDraftAlways')?.addEventListener('click', saveDraftExplicitly);
+
+    const prnQuickNo = document.getElementById('prnQuickNo');
+    const prnOpenQuestions = document.getElementById('prnOpenQuestions');
+    const updatePrnOverview = () => {
+      const value = document.querySelector('input[name="prn_used_today"]:checked')?.value;
+      if (prnQuickNo) prnQuickNo.textContent = value === 'no' ? 'No PRN medication used ✓' : 'No PRN medication used';
+      if (prnOpenQuestions) prnOpenQuestions.textContent = value === 'yes' ? 'PRN recorded ✓' : value === 'no' ? 'No PRN used ✓' : 'Needs check-in →';
+    };
+    prnQuickNo?.addEventListener('click', () => {
+      const no = document.querySelector('input[name="prn_used_today"][value="no"]');
+      if (no) { no.checked = true; no.dispatchEvent(new Event('change',{bubbles:true})); }
+      updatePrnOverview();
+    });
+    prnOpenQuestions?.addEventListener('click', () => {
+      const idx = steps.findIndex(step => step.id === 'physicalSection');
+      if (idx >= 0) {
+        openSectionDetailByIndex(idx);
+        requestAnimationFrame(() => document.getElementById('centralPrnSection')?.scrollIntoView({behavior:'smooth',block:'start'}));
+      }
+    });
+    document.querySelectorAll('input[name="prn_used_today"]').forEach(el => el.addEventListener('change',updatePrnOverview));
+    updatePrnOverview();
+
     document.getElementById('beginGuidedCheckinBtn')?.addEventListener('click', () => {
 	      const nextIdx = getNextNeededSectionIndex();
 	      if (nextIdx >= 0) {

@@ -1516,6 +1516,9 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       <label style="display:block;margin:10px 0"><input type="checkbox" id="providerIncludeQuotes" checked> Include exact caregiver quotations (review for privacy)</label>
       <p class="muted">Generate a summary of caregiver observations and activities for the selected dates.</p>
       <p class="muted" id="parentLetterRange">Choose a start and end date.</p>
+      <div style="display:flex;justify-content:flex-end;margin:12px 0 6px">
+        <button id="parentLetterCopy" class="btn" type="button" disabled title="Copy the entire generated letter">▢▢ Copy Letter</button>
+      </div>
       <div id="parentLetterBody" style="font-size:15px;line-height:1.7;color:#1a1a2e;white-space:pre-wrap;overflow-wrap:anywhere;font-family:Georgia,serif"></div>
       <p id="parentLetterDisclaimer" style="margin-top:16px;font-size:12px;color:#9ca3af;font-style:italic">
         This letter was generated from caregiver check-in data recorded
@@ -1663,7 +1666,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     import { openCompactCaregiverCheckinPrintWindow } from './caregiver-checkin-print.js?v=2026.09.02A';
     import { CALENDAR_QUICK_LOOK_ITEMS, filterCaregiverCheckinsForPrint, normalizeCaregiverCheckinForCalendar, normalizeCaregiverCheckinRecord } from './caregiver-report-shared.js?v=2026.10.19A';
     import { renderPrintableCaregiverReport } from './caregiver-report-print.js?v=2026.07.01B';
-    import { analyzeProviderRecords, renderProviderLetter, individualKey, groupKey } from './caregiver-provider-letter.js?v=2026.10.20H';
+    import { analyzeProviderRecords, renderProviderLetter, individualKey, groupKey } from './caregiver-provider-letter.js?v=2026.10.20I';
     import { buildWeeklyPromptSeries, defaultGraphRange, filterRecordsByRange, formatGraphRange, rangeFromInputs } from './caregiver-report-graphs.js?v=2026.09.04A';
 
     /* =============== Optional live data =============== */
@@ -6831,12 +6834,29 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       document.getElementById(id)?.addEventListener('change', () => {
         const bodyEl = document.getElementById('parentLetterBody');
         if (bodyEl) bodyEl.textContent = '';
+        document.getElementById('parentLetterCopy').disabled = true;
         updateParentLetterControls();
       });
     });
     document.getElementById('parentLetterClose')?.addEventListener('click', () => {
       const cardEl = document.getElementById('parentLetterCard');
       if (cardEl) cardEl.style.display = 'none';
+    });
+    document.getElementById('parentLetterCopy')?.addEventListener('click', async () => {
+      const button = document.getElementById('parentLetterCopy');
+      const body = document.getElementById('parentLetterBody');
+      if (!body?.textContent?.trim()) return;
+      if (body.dataset.groupId !== localStorage.getItem('currentGroupId')) {
+        alert('The active group changed. Generate a new summary before copying.');
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(body.textContent);
+        button.textContent = '✓ Copied!';
+        setTimeout(() => { button.textContent = '▢▢ Copy Letter'; }, 2200);
+      } catch {
+        alert('Could not copy automatically. Select the letter text and use Copy.');
+      }
     });
     document.getElementById('parentLetterPrint')?.addEventListener('click', () => {
       const generatedGroup = document.getElementById('parentLetterBody')?.dataset.groupId;
@@ -6999,6 +7019,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         });
         rangeEl.textContent = `Range: ${range.label}`;
         bodyEl.textContent = renderProviderLetter(analysis, { includeQuotes: document.getElementById('providerIncludeQuotes').checked });
+        document.getElementById('parentLetterCopy').disabled = false;
         bodyEl.dataset.groupId = String(groupId);
       } catch (error) {
         rangeEl.textContent = error.message;

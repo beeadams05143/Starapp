@@ -186,74 +186,89 @@ export function analyzeProviderRecords(entries, { start, end, groupId, individua
 const LABELS = { sleep: 'Sleep difficulty', engagement: 'Reduced engagement', withdrawal: 'Marked withdrawal', pacing: 'Pacing', irritability: 'Irritability', attention: 'Attention difficulty', appetite: 'Appetite change', behavior: 'Other behavior observations' };
 const evidenceSentence = (label, metric) => `${label} was reported on ${metric.positive} of ${metric.answered} dates with an interpretable answer${metric.mixed ? `; ${metric.mixed} additional dates had conflicting answers` : ''}.`;
 export function renderProviderLetter(a, { includeQuotes = true } = {}) {
-  const short = key => { const [year, month, day] = key.split('-'); return Number(month) + '/' + Number(day) + '/' + year.slice(2); };
-  const dates = keys => [...new Set(keys)].sort().map(short).join(', ');
-  const blocks = ['To the Support Team,'];
-  const add = (heading, body) => { if (body.trim()) blocks.push(heading + '\n' + body.trim()); };
-  const samples = (themes, limit = 2) => {
-    if (!includeQuotes) return '';
-    const selected = [];
-    const usedDates = new Set();
-    const usedExperiences = new Set();
-    for (const q of a.notes.quotes) {
-      if (!q.date || !q.themes.some(theme => themes.includes(theme))) continue;
-      const value = q.quote.trim();
-      if (value.length < 12 || value.length > 200 || usedDates.has(q.date)) continue;
-      // Avoid repeating multiple quotations about the same outing or activity.
-      const normalized = value.toLowerCase();
-      const topic = /orchard|apple/.test(normalized) ? 'orchard' : /walk/.test(normalized) ? 'walking' : /music|sing|guitar/.test(normalized) ? 'music' : /work|job|gym/.test(normalized) ? 'work' : /shopping|store/.test(normalized) ? 'shopping' : normalized.replace(/[^a-z]+/g, ' ').slice(0, 35);
-      if (usedExperiences.has(topic)) continue;
-      selected.push('On ' + short(q.date) + ': “' + value + '”');
-      usedDates.add(q.date); usedExperiences.add(topic);
-      if (selected.length === limit) break;
-    }
-    return selected.length ? ' Examples from caregiver notes: ' + selected.join(' ') : '';
+  const fullDate = key => new Date(key + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+  const dateList = keys => [...new Set(keys)].sort().map(fullDate).join('; ');
+  const sections = ['Dear Support Team,'];
+  const add = (title, text) => { if (text.trim()) sections.push(title + '\n' + text.trim()); };
+  const p = row => row.payload ?? row;
+  const active = (row, field) => bool(p(row)[field]) === true;
+  const values = value => {
+    if (Array.isArray(value)) return value.filter(Boolean).map(String);
+    if (typeof value !== 'string' || !value.trim()) return [];
+    try { const parsed = JSON.parse(value); if (Array.isArray(parsed)) return parsed.filter(Boolean).map(String); } catch {}
+    return value.split(/[,;|]/).map(part => part.trim()).filter(Boolean);
   };
-  blocks.push('This summary brings together observations recorded by caregivers from ' + short(a.start) + ' through ' + short(a.end) + '. It provides an overview of daily experiences, activities, strengths, and areas of concern during that time. Observations from all caregivers are included, with each calendar day counted once.');
-  const sleep = a.metrics.sleep;
-  if (sleep.positive) add('Sleep and Energy', 'Difficulty falling asleep or waking during the night was documented on ' + dates(sleep.dates) + '.');
-  const moodParts = [];
-  for (const [key, label] of [['engagement', 'Reduced engagement'], ['withdrawal', 'Withdrawal'], ['pacing', 'Pacing or restlessness'], ['irritability', 'Irritability'], ['attention', 'Difficulty maintaining attention']]) {
-    if (a.metrics[key].positive) moodParts.push(label + ' was documented on ' + a.metrics[key].positive + ' calendar ' + (a.metrics[key].positive === 1 ? 'day' : 'days') + ': ' + dates(a.metrics[key].dates) + '.');
-  }
-  if (moodParts.length) add('Engagement and Behavior', moodParts.join('\n') + samples(['pacing or restlessness', 'reduced participation']));
-  const notes = a.notes.themes;
-  const positive = notes.find(t => t.name === 'positive experiences');
-  const independent = notes.find(t => t.name === 'independence and coping');
-  const goodDays = [...new Set([...(positive?.dates || []), ...(independent?.dates || [])])];
-  if (goodDays.length) add('Participation and Positive Experiences', 'Positive experiences or examples of independence were documented on ' + dates(goodDays) + '.' + samples(['positive experiences', 'independence and coping'], 3));
-  // Activities are drawn from original notes rather than inferring participation from blank fields.
-  const activityGroups = [
-    ['Vocational Activities', /\b(work|worked|job|vocational|employment|shift|job coach)\b/i],
-    ['Community Activities', /\b(community|outing|orchard|store|shopping|library|restaurant|pizza|park|trip|walk|gym|yankee candle)\b/i],
-    ['Home and Daily Living', /\b(cook|cooking|meal|clean|laundry|dishes|hygiene|shower|household|home activit)\b/i],
-  ];
-  for (const [heading, pattern] of activityGroups) {
-    const matches = a.notes.quotes.filter(q => q.date && pattern.test(q.quote) && !/\b(will|planned|tomorrow|did not|didn't|refused|no outing)\b/i.test(q.quote));
-    const activityDates = [...new Set(matches.map(q => q.date))];
-    if (activityDates.length) {
-      const examples = [];
-      const used = new Set();
-      for (const q of matches) {
-        if (used.has(q.date) || q.quote.trim().length > 170) continue;
-        used.add(q.date); examples.push('On ' + short(q.date) + ': “' + q.quote.trim() + '”');
-        if (examples.length >= 3) break;
-      }
-      add(heading, 'Caregiver notes described activities on ' + dates(activityDates) + '.' + (includeQuotes && examples.length ? ' Examples: ' + examples.join(' ') : ''));
+  const activity = (flag, type) => {
+    const days = [];
+    const descriptions = new Map();
+    for (const day of a.days) {
+      const participating = day.records.filter(({ row }) => active(row, flag));
+      if (!participating.length) continue;
+      days.push(day.date);
+      const types = [...new Set(participating.flatMap(({ row }) => values(p(row)[type])))].filter(t => t.toLowerCase() !== 'other');
+      if (types.length) descriptions.set(day.date, types.join(', '));
     }
+    return { days, descriptions };
+  };
+  const examples = (pattern, max = 3) => {
+    if (!includeQuotes) return '';
+    const found = [];
+    const usedDates = new Set(), usedTopics = new Set();
+    for (const q of a.notes.quotes) {
+      if (!q.date || !pattern.test(q.quote) || q.quote.trim().length > 190 || usedDates.has(q.date)) continue;
+      if (/\b(will|planned|tomorrow|didn't|did not|refused)\b/i.test(q.quote)) continue;
+      const lower = q.quote.toLowerCase();
+      const topic = /apple|orchard/.test(lower) ? 'orchard' : /work|job/.test(lower) ? 'work' : /walk/.test(lower) ? 'walk' : /music|sing/.test(lower) ? 'music' : lower.replace(/[^a-z]/g, '').slice(0, 25);
+      if (usedTopics.has(topic)) continue;
+      found.push('On ' + fullDate(q.date) + ', a caregiver wrote, “' + q.quote.trim() + '”');
+      usedDates.add(q.date); usedTopics.add(topic);
+      if (found.length >= max) break;
+    }
+    return found.length ? ' ' + found.join(' ') : '';
+  };
+  sections.push('We would like to share observations from the caregiver records for ' + fullDate(a.start) + ' through ' + fullDate(a.end) + '. This summary describes sleep, mood, engagement, medication, vocational activities, community participation, and daily experiences. It brings together observations from all caregivers to provide a picture of the period as a whole.');
+  const sleepDates = a.metrics.sleep.dates;
+  if (sleepDates.length) {
+    let text = 'Sleep difficulties or waking during the night were documented on ' + dateList(sleepDates) + '.';
+    const fatigue = a.notes.quotes.filter(q => /\b(tired|fatigue|exhausted|low energy|slept well|little sleep)\b/i.test(q.quote));
+    const selected = fatigue.filter(q => q.date && q.quote.length <= 200).slice(0, 3);
+    if (includeQuotes && selected.length) text += ' Caregiver notes also described changes in energy. ' + selected.map(q => 'On ' + fullDate(q.date) + ', a caregiver wrote, “' + q.quote.trim() + '”').join(' ');
+    text += ' The records describe periods of disrupted sleep and changes in energy, but do not establish a fixed recurring cycle.';
+    add('Sleep and Changes in Energy', text);
   }
-  const prnDates = [...new Set(a.prnEntries.map(e => e.date))];
-  let medication = prnDates.length ? 'PRN medication entries were recorded on ' + prnDates.length + ' calendar days: ' + dates(prnDates) + '.' : a.metrics.prn.positive ? 'PRN medication use was noted on ' + dates(a.metrics.prn.dates) + '.' : '';
-  const changes = a.days.filter(d => d.records.some(r => r.values.medicationChange === true)).map(d => d.date);
-  if (changes.length) medication += (medication ? ' ' : '') + 'Medication changes were noted on ' + dates(changes) + '.';
-  add('Medication Observations', medication);
-  const missing = [];
-  const recorded = new Set(a.days.map(d => d.date));
+  const behavior = [];
+  for (const [key, label] of [['engagement', 'Reduced engagement'], ['withdrawal', 'Withdrawal'], ['pacing', 'Pacing or restlessness'], ['irritability', 'Irritability'], ['attention', 'Difficulty maintaining attention']]) {
+    const days = a.metrics[key].dates;
+    if (days.length) behavior.push(label + ' was recorded on ' + dateList(days) + '.');
+  }
+  if (behavior.length) add('Mood, Engagement, and Behavioral Regulation', 'Caregiver observations describe changes in engagement and behavior during the period.\n' + behavior.join('\n') + examples(/\b(pacing|paced|restless|irritab|snappy|withdrawn|engag)/i, 2));
+  const vocational = activity('vocational_participation', 'vocational_activity_type');
+  if (vocational.days.length) add('Vocational Participation', 'Vocational participation was recorded on ' + dateList(vocational.days) + '.' + [...vocational.descriptions].map(([day, desc]) => ' On ' + fullDate(day) + ': ' + desc + '.').join('') + examples(/\b(work|job|vocational|employment|job coach)\b/i, 2));
+  const home = activity('home_activity_flag', 'home_activity_type');
+  const community = activity('public_activity_flag', 'public_activity_type');
+  if (home.days.length || community.days.length) {
+    let text = '';
+    if (home.days.length) text += 'Home and family community activities were recorded on ' + dateList(home.days) + '. ' + [...home.descriptions].map(([day, desc]) => 'On ' + fullDate(day) + ': ' + desc + '.').join(' ');
+    if (community.days.length) text += (text ? '\n' : '') + 'Community-at-large activities were recorded on ' + dateList(community.days) + '. ' + [...community.descriptions].map(([day, desc]) => 'On ' + fullDate(day) + ': ' + desc + '.').join(' ');
+    add('Community and Family Participation', text.trim() + examples(/\b(orchard|outing|shopping|store|library|restaurant|pizza|park|walk|community)\b/i, 3));
+  }
+  const positive = a.notes.themes.find(t => t.name === 'positive experiences');
+  const independence = a.notes.themes.find(t => t.name === 'independence and coping');
+  const positiveDates = [...new Set([...(positive?.dates || []), ...(independence?.dates || [])])];
+  if (positiveDates.length) add('Strengths and Positive Experiences', 'Caregivers described positive moments and examples of independence on ' + dateList(positiveDates) + '.' + examples(/\b(enjoyed|happy|good|successful|independent|greeted|conversation|ordered|participat)/i, 3));
+  const prnDays = [...new Set(a.prnEntries.map(e => e.date))];
+  const changes = a.days.filter(day => day.records.some(({ values }) => values.medicationChange === true)).map(day => day.date);
+  const med = [];
+  if (prnDays.length) med.push('PRN medication entries were documented on ' + dateList(prnDays) + '. More than one caregiver may have recorded information for the same date.');
+  else if (a.metrics.prn.dates.length) med.push('PRN medication use was noted on ' + dateList(a.metrics.prn.dates) + '.');
+  if (changes.length) med.push('Medication changes were noted on ' + dateList(changes) + '.');
+  if (med.length) add('Medication and PRN Observations', med.join(' '));
+  const covered = new Set(a.days.map(day => day.date)), missing = [];
   for (let day = ordinal(a.start); day <= ordinal(a.end); day++) {
-    const key = new Date(day * DAY).toISOString().slice(0, 10);
-    if (!recorded.has(key)) missing.push(key);
+    const date = new Date(day * DAY).toISOString().slice(0, 10);
+    if (!covered.has(date)) missing.push(date);
   }
-  add('Dates Covered', 'Caregiver observations were available for ' + a.days.length + ' of the ' + a.totalDays + ' calendar days in this period.' + (missing.length ? ' No check-in was recorded for ' + dates(missing) + '.' : ''));
-  blocks.push('This summary reflects caregiver-recorded observations and activities during the selected period.');
-  return blocks.join('\n\n');
+  sections.push('We hope this overview helps everyone involved in supporting Benny understand his experiences, challenges, activities, and successes during this period. Thank you for reviewing these observations with us.');
+  if (missing.length) sections.push('Record coverage\nNo caregiver check-in was found for ' + dateList(missing) + '. These dates are not evidence that no activities or concerns occurred.');
+  return sections.join('\n\n');
 }

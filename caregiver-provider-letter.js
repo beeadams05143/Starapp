@@ -199,7 +199,8 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
     }
     return [...groups].map(([month, days]) => month + ' ' + (days.length === 1 ? days[0] : days.slice(0, -1).join(', ') + ' and ' + days.at(-1))).join('; ');
   };
-  const sections = ['Dear Support Team,'];
+  const prepared = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  const sections = ['Caregiver Observation Summary\\nDate Prepared: ' + prepared, 'Dear Support Team,'];
   const add = (title, paragraphs) => {
     const content = paragraphs.filter(Boolean).join('\n\n').trim();
     if (content) sections.push(title + '\n' + content);
@@ -286,10 +287,35 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
   if (vocational.days.length) {
     const parts = ['Vocational participation was documented on ' + vocational.days.length + ' different ' + (vocational.days.length === 1 ? 'day' : 'days') + ' during this period.'];
     if (vocational.types.size) parts.push('Recorded activities included ' + [...vocational.types.keys()].slice(0, 7).join(', ') + '.');
-    parts.push(quote(/\b(work|job|maintenance|employment|job coach)\b/i, { max: 1 }));
+    const workNotes = a.notes.quotes.filter(q => q.date && /\b(work|job|maintenance|employment|job coach|vocational)\b/i.test(q.quote) && q.quote.trim().length <= 180 && !/\b(will|planned|tomorrow|did not|didn't)\b/i.test(q.quote));
+    const distinctiveWork = workNotes.find(q => /\b(met|new|learned|helped|completed|independent|task|coach)\b/i.test(q.quote));
+    if (distinctiveWork && includeQuotes) {
+      parts.push('A specific workplace experience noted on ' + short(distinctiveWork.date) + ' was: “' + distinctiveWork.quote.trim() + '”');
+      usedQuotes.add(distinctiveWork.date + ':' + distinctiveWork.quote.trim().toLowerCase());
+    } else parts.push(quote(/\b(work|job|maintenance|employment|job coach)\b/i, { max: 1 }));
     add('Vocational Participation', parts);
   }
 
+  // Highlight specific experiences in notes, rather than treating every routine
+  // walk or store visit as equally notable. Match actual caregiver text only.
+  const notableRules = [
+    { id: 'orchard', pattern: /\b(orchard|apple picking|pumpkin patch)\b/i },
+    { id: 'new-person', pattern: /\b(met (?:a |the )?new|new (?:person|staff|employee|maintenance|friend)|introduced (?:himself|herself|themselves))\b/i },
+    { id: 'event', pattern: /\b(festival|fair|concert|show|museum|zoo|field trip|birthday party|holiday event|parade)\b/i },
+    { id: 'social', pattern: /\b(greeted|said hello|made conversation|introduced himself|ordered (?:his|their|her) own|asked (?:for|someone))\b/i },
+    { id: 'outing', pattern: /\b(yankee candle|christmas village|halloween village|library|farm|hiking trail|nature center)\b/i },
+  ];
+  const notable = [];
+  const seenNotable = new Set();
+  for (const q of a.notes.quotes) {
+    if (!q.date || q.quote.trim().length > 180) continue;
+    const value = q.quote.trim();
+    if (/\b(will|tomorrow|planned|might|didn't|did not|refused)\b/i.test(value)) continue;
+    const rule = notableRules.find(rule => rule.pattern.test(value));
+    if (!rule || seenNotable.has(rule.id)) continue;
+    notable.push({ date: q.date, value, id: rule.id });
+    seenNotable.add(rule.id);
+  }
   const home = activity('home_activity_flag', 'home_activity_type');
   const community = activity('public_activity_flag', 'public_activity_type');
   if (home.days.length || community.days.length) {
@@ -301,7 +327,13 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
     };
     parts.push(summarize('At-home and family activities', home));
     parts.push(summarize('Participation in the wider community', community));
-    parts.push(quote(/\b(orchard|outing|shopping|store|library|restaurant|pizza|park|walk|community)\b/i, { max: 1 }));
+    if (notable.length) {
+      const selected = notable.slice(0, 4);
+      parts.push('Noteworthy experiences and social interactions described in caregiver notes included: ' + selected.map(item => short(item.date) + ' — “' + item.value + '”').join('; ') + '.');
+      for (const item of selected) usedQuotes.add(item.date + ':' + item.value.toLowerCase());
+    } else {
+      parts.push(quote(/\b(orchard|outing|shopping|store|library|restaurant|pizza|park|walk|community)\b/i, { max: 1 }));
+    }
     add('Community and Family Participation', parts);
   }
 

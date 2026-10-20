@@ -230,7 +230,7 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
   section('Participation and Positive Experiences', strengths);
   const prnDates = [...new Set(a.prnEntries.map(e => e.date))].sort();
   let medication = '';
-  if (a.prnEntries.length) medication = 'Caregivers recorded ' + a.prnEntries.length + ' itemized PRN medication entries on ' + prnDates.length + ' dates: ' + fmt(prnDates) + '. These are recorded entries, not necessarily distinct administrations.';
+  if (a.prnEntries.length) medication = 'PRN medication was documented on ' + prnDates.length + ' calendar days: ' + fmt(prnDates) + '. These dates may include observations from more than one caregiver.';
   else if (a.metrics.prn.positive) medication = 'Caregivers indicated PRN medication use on ' + fmt(a.metrics.prn.dates) + ', although individual administration details were not available in these records.';
   else medication = 'The available check-ins do not contain itemized PRN administrations; this does not establish that no PRN medication was given.';
   if (a.possibleRepeatedPrn) medication += ' Some entries may refer to the same administration and should be verified.';
@@ -245,8 +245,7 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
     const date = new Date(day * DAY).toISOString().slice(0, 10);
     if (!recorded.has(date)) missing.push(date);
   }
-  let coverage = 'The summary includes ' + a.rows.length + ' caregiver check-ins across ' + a.days.length + ' dates.';
-  if (a.multipleEntryDays) coverage += ' Some dates have check-ins from multiple caregivers, and all were included.';
+  let coverage = 'Caregiver observations were available for ' + a.days.length + ' of the ' + a.totalDays + ' calendar days in this period. Observations from all caregivers were considered for each date.';
   if (missing.length) coverage += ' No check-in was found for ' + fmt(missing) + '.';
   blocks.push('Check-in coverage\n' + coverage);
   return blocks.join('\n\n');

@@ -140,6 +140,12 @@ export class CheckinSubmissionUI {
   setLocked(locked) {
     this.el.checkinFields.disabled = locked;
     this.el.checkinFields.inert = locked;
+    const saveButton = this.doc.getElementById('saveDraftAlways');
+    const saveFeedback = this.doc.getElementById('draftSaveFeedback');
+    if (saveButton) saveButton.disabled = locked || this.done || this.busy || this.cloudSaving;
+    if (saveFeedback && !locked && saveFeedback.textContent === 'Available once your check-in opens.') {
+      saveFeedback.textContent = 'Save your progress anytime. This does not submit a check-in.';
+    }
     for (const id of ['changeCheckinDate', 'resumeDraftBtn', 'discardDraftBtn', 'recoveryChoices', 'allowDuplicate']) this.el[id].disabled = locked;
     const progress = this.doc.querySelector('.progress');
     if (progress) progress.inert = locked;

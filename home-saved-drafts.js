@@ -29,7 +29,11 @@ export async function showHomeDrafts(doc = document, win = window) {
   const host = doc.getElementById('homeSavedDrafts');
   if (!host) return;
   const session = getSessionFromStorage();
-  if (!session?.user?.id) return;
+  if (!session?.user?.id) {
+    win.location.replace('auth.html');
+    return;
+  }
+  host.replaceChildren();
   try {
     const groupId = await ensureActiveGroupId(session.user.id);
     if (!groupId) return;

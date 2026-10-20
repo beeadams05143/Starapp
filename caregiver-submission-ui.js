@@ -1,5 +1,6 @@
 import { formatCheckinDate } from './caregiver-dates.js';
 import { CaregiverSubmission, CheckinRecoveryStore, validSelectedDate } from './caregiver-submission.js';
+import { CaregiverDraftService } from './caregiver-draft-service.js?v=2026.10.20D';
 
 const fullDate = value => formatCheckinDate(value, undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 
@@ -13,6 +14,11 @@ export class CheckinSubmissionUI {
     this.dirty = false;
     this.busy = false;
     this.done = false;
+    this.cloudSaving = false;
+    this.cloudDraftId = null;
+    this.cloudDraftVersion = null;
+    this.cloudDraftService = !context.practice && context.userId && context.groupId
+      ? new CaregiverDraftService({ request, userId: context.userId, groupId: context.groupId }) : null;
     this.duplicateIds = [];
     this.store = null;
     this.setStore();
@@ -149,13 +155,61 @@ export class CheckinSubmissionUI {
     this.dirty = true;
     this.saveRecovery();
   }
-  saveDraft() {
-    if (this.busy || this.done || this.service.attempt?.sent) return false;
+  async saveDraft() {
+    if (this.busy || this.done || this.service.attempt?.sent || this.cloudSaving) return false;
     this.dirty = true;
-    const saved = this.saveRecovery();
-    this.status(saved ? 'Draft Saved — local browser copy verified; not submitted to Supabase.' : 'Draft Not Saved — answers remain on this page. Download a recovery copy before leaving.', !saved);
-    if (saved) this.refreshRecoveryList();
-    return saved;
+    const localSaved = this.saveRecovery();
+    if (this.context.practice) {
+      this.status(localSaved ? 'Practice draft saved on this browser only.' : 'Practice draft could not be saved.', !localSaved);
+      if (localSaved) this.refreshRecoveryList();
+      return localSaved;
+    }
+    if (!localSaved || !this.cloudDraftService) {
+      this.status('Draft not saved to Supabase. Keep this page open or download a recovery copy.', true);
+      return false;
+    }
+    this.cloudSaving = true;
+    this.status('Saving draft securely to Supabase…');
+    try {
+      await this.assertContext({ user_id: this.context.userId, group_id: this.context.groupId });
+      const draft = this.capture();
+      const rawDate = draft?.data?.[0]?.entry_date || this.el.entryDateInput.value;
+      const date = validSelectedDate(rawDate) ? rawDate : null;
+      // Use one stable ID per browser recovery slot. An interrupted create can be
+      // reconciled by this ID without creating a second server draft.
+      const id = this.cloudDraftId || this.store.key.split(':').at(-1);
+      let existing = null;
+      try { existing = await this.cloudDraftService.get(id); }
+      catch (error) {
+        if (!String(error.message).includes('not found or access denied')) throw error;
+      }
+      let saved;
+      if (existing) {
+        // A stale browser copy must not overwrite changes saved from another device.
+        if (this.cloudDraftVersion !== null && existing.version !== this.cloudDraftVersion) {
+          throw new Error('This draft changed on another device. Nothing was overwritten. Keep your browser recovery copy and review the newer draft.');
+        }
+        if (this.cloudDraftVersion === null) {
+          throw new Error('A Supabase draft already exists for this browser slot. Nothing was overwritten. Open the saved draft from My Saved Drafts.');
+        }
+        saved = await this.cloudDraftService.update({ id, version: existing.version, date, data: draft });
+      } else {
+        saved = await this.cloudDraftService.create({ id, date, data: draft, caregiverName: this.context.caregiverLabel });
+      }
+      this.cloudDraftId = id;
+      this.cloudDraftVersion = saved.version;
+      this.status('Draft Saved and Verified in Supabase — not submitted as a check-in.');
+      this.el.storageNotice.hidden = false;
+      this.el.storageNotice.textContent = 'Supabase draft verified. A separate browser recovery copy is also kept on this device.';
+      this.refreshRecoveryList();
+      return true;
+    } catch (error) {
+      this.status('Supabase draft NOT confirmed: ' + (error?.message || 'Connection error') + ' Your browser recovery copy is retained. Do not clear browser data.', true);
+      this.refreshRecoveryList();
+      return false;
+    } finally {
+      this.cloudSaving = false;
+    }
   }
   refreshRecoveryList() {
     try {

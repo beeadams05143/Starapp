@@ -6984,6 +6984,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         const entries = [...(cgState.entries || []), ...(cgState.providerUndated || [])];
         const identities = [...new Set(entries.filter(row => groupKey(row) === String(groupId)).map(individualKey))].sort();
         const selector = document.getElementById('providerIndividual');
+        const individualLabel = document.getElementById('providerIndividualLabel');
+        if (individualLabel) individualLabel.style.display = identities.length > 1 ? 'block' : 'none';
         const signature = JSON.stringify([groupId, identities]);
         if (selector.dataset.scope !== signature) {
           selector.replaceChildren();

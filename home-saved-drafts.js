@@ -73,20 +73,22 @@ export async function showHomeDrafts(doc = document, win = window) {
       link.style.flex = '1';
       link.style.minWidth = '0';
       const actions = doc.createElement('div');
-      actions.style.cssText = 'display:flex;align-items:center;position:relative';
+      actions.style.cssText = 'display:flex;flex-direction:column;align-items:stretch;justify-content:center;gap:6px';
       const menu = doc.createElement('button');
       menu.type = 'button';
-      menu.textContent = '⋯';
+      menu.textContent = '•••';
       menu.setAttribute('aria-label', 'Options for this draft');
       menu.setAttribute('aria-expanded', 'false');
-      menu.style.cssText = 'border:1px solid #d8d2c8;background:white;border-radius:12px;font-size:25px;padding:10px 16px;cursor:pointer';
+      menu.style.cssText = 'display:block;visibility:visible;opacity:1;color:#35312d!important;-webkit-text-fill-color:#35312d;font-family:Arial,sans-serif;font-weight:900;letter-spacing:2px;line-height:1;border:1px solid #d8d2c8;background:#fff;border-radius:12px;font-size:19px;padding:16px 10px;min-width:58px;min-height:54px;cursor:pointer';
       const option = doc.createElement('button');
       option.type = 'button';
       option.textContent = 'Delete draft';
       option.hidden = true;
-      option.style.cssText = 'position:absolute;right:0;top:100%;z-index:5;white-space:nowrap;border:1px solid #d8d2c8;background:white;color:#9a2525;border-radius:10px;padding:12px;font-weight:700;cursor:pointer';
+      option.style.display = 'none';
+      option.style.cssText = 'display:none;white-space:nowrap;border:1px solid #d8d2c8;background:#fff;color:#9a2525!important;-webkit-text-fill-color:#9a2525;border-radius:10px;padding:10px;font-weight:700;cursor:pointer';
       menu.addEventListener('click', () => {
         option.hidden = !option.hidden;
+        option.style.display = option.hidden ? 'none' : 'block';
         menu.setAttribute('aria-expanded', String(!option.hidden));
       });
       option.addEventListener('click', () => {

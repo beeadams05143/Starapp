@@ -33,6 +33,40 @@ Separate Supabase table `caregiver_checkin_drafts` (do not reuse `caregiver_chec
 - Optional `author_display_name_snapshot text` for user-facing display only.
 - Drafts are never queried by provider reports and never counted as submitted check-ins.
 
+## Confirmed RLS policy inventory (Supabase CSV supplied October 20, 2026)
+
+**Do not ask the user to rerun the existing-policy query.** Full source: user-supplied `Supabase Snippet Untitled query-3.csv` (21 rows). All four tables below have `rowsecurity=true`. The inventory covers policy names, roles, commands, USING, and WITH CHECK. It does not establish grants, FORCE RLS, foreign keys, or actual execution results.
+
+### caregiver_checkins (6 policies)
+- `caregiver delete by owner or group member`: DELETE, public; USING `auth.uid() = user_id OR EXISTS group_members(group_id = caregiver_checkins.group_id, user_id = auth.uid())`.
+- `caregiver insert family`: INSERT, public; WITH CHECK same owner-or-group-member expression.
+- `caregiver select by owner or group member`: SELECT, public; USING same owner-or-group-member expression.
+- `group_read_caregiver_checkins`: SELECT, authenticated; USING matching `profiles.group_id` between current user and record owner.
+- `insert caregiver_checkins`: INSERT, authenticated; WITH CHECK `true` (broad; permissive policies OR together).
+- `users_can_update_group_caregiver_checkins`: UPDATE, authenticated; USING and WITH CHECK `user_id = auth.uid()` AND own `group_members` row for record group.
+
+### group_members (3 policies)
+- `gm_delete_own`: DELETE, public; USING `auth.uid() = user_id`.
+- `gm_insert_self`: INSERT, public; WITH CHECK `user_id = auth.uid()` AND `role IN ('admin','member')`. **Security concern:** policy alone does not verify invitation or authorization to join a particular group. Review any additional mechanisms before treating group membership as strong proof.
+- `gm_select_self`: SELECT, public; USING `user_id = auth.uid()`.
+
+### groups (3 policies)
+- `allow_group_lookup_by_invite_code`: SELECT, authenticated; USING `invite_code IS NOT NULL`.
+- `authenticated users can create groups`: INSERT, authenticated; WITH CHECK `created_by = auth.uid()` and nonblank name.
+- `users_can_read_their_groups`: SELECT, authenticated; USING `created_by = auth.uid()` OR own group membership.
+
+### profiles (9 policies)
+- INSERT: `profiles insert own`, `profiles_insert_own` (authenticated), `profiles_upsert_self` (public), all restrict id to `auth.uid()`.
+- SELECT: `profiles readable to authenticated` (authenticated, USING `true`), `profiles_read_shared_group` (public, shared group membership), `profiles_select_own` (authenticated, own id).
+- UPDATE: `profiles update own`, `profiles_update_own` (authenticated), `profiles_update_self` (public), all restrict own id; `profiles_update_own` explicitly WITH CHECK own id.
+
+### Implications for new drafts
+1. Never reuse `caregiver_checkins` RLS for drafts; it grants group-member read/delete and broad authenticated insert.
+2. New `caregiver_checkin_drafts` must require `auth.uid() = author_user_id` on SELECT, INSERT, UPDATE, DELETE and membership in the selected group; no other permissive policy may broaden it.
+3. Existing `group_members` self-insert policy could permit unauthorized joining if there are no additional safeguards. **Before enabling sensitive draft storage, confirm that group membership cannot be self-granted into arbitrary groups**; alternatively use a trusted, separately enforced authorization mechanism.
+4. Use `auth.uid()` as owner identity and retain caregiver screen name only for display.
+5. The inventory is documented; no existing policy has been altered. Any hardening of existing tables must be a separately approved change, since it may affect current app workflows.
+
 ## Authorization
 - Enable and FORCE row-level security on the new draft table.
 - SELECT, INSERT, UPDATE, DELETE require `auth.uid() = author_user_id` and verified membership in `group_id`.

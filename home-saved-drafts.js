@@ -34,7 +34,14 @@ export async function showHomeDrafts(doc = document, win = window) {
     const groupId = await ensureActiveGroupId(session.user.id);
     if (!groupId) return;
     const drafts = listHomeDrafts(win.localStorage, session.user.id, groupId);
-    if (!drafts.length) return;
+    if (!drafts.length) {
+      const empty = doc.createElement('p');
+      empty.textContent = 'No saved drafts on this device yet. Start a new check-in and choose Save Draft to see it here.';
+      empty.style.cssText = 'padding:18px;background:#fff;border:1px solid #d8d2c8;border-radius:12px;line-height:1.5';
+      host.appendChild(empty);
+      host.hidden = false;
+      return;
+    }
     const heading = doc.createElement('h2');
     heading.textContent = 'My Saved Drafts';
     heading.style.cssText = 'font-size:20px;margin:0 0 8px;color:#2c2c2a';

@@ -1919,15 +1919,11 @@
       <div class="prog-item" data-step="6"><div class="prog-label">Educational</div><div class="seg"></div></div>
     </div>
 
-    <section aria-labelledby="savedDraftsHeading" style="padding:16px;margin:12px 0 20px;border:1px solid #e8d29a;border-radius:14px;background:#fffaf0">
-      <h2 id="savedDraftsHeading" style="font-size:21px;margin:0 0 6px;color:#5c3514">My Saved Drafts</h2>
-      <p style="margin:0 0 12px;color:#665b4b">Continue a check-in you previously saved on this browser. Your new check-in below always starts blank. These drafts are stored on this device, not yet in your STAR account.</p>
-      <div class="top-actions" style="justify-content:flex-start;margin:0">
-        <label for="recoveryChoices">Choose a saved draft <select id="recoveryChoices" hidden aria-label="Choose your saved draft"></select></label>
-        <button class="btn" id="resumeDraftBtn" type="button" hidden>Continue Selected Draft</button>
-        <button class="btn" id="discardDraftBtn" type="button" disabled>Discard open form</button>
-      </div>
-    </section>
+    <div class="top-actions">
+      <label for="recoveryChoices">Browser recovery <select id="recoveryChoices" hidden aria-label="Choose browser recovery"></select></label>
+      <button class="btn" id="resumeDraftBtn" type="button" hidden>Resume recovery</button>
+      <button class="btn" id="discardDraftBtn" type="button" disabled>Discard open form</button>
+    </div>
 
     <form id="cg-form" novalidate>
       <fieldset id="checkinFields" disabled inert style="border:0;padding:0;margin:0;min-width:0">

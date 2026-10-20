@@ -239,8 +239,15 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
   section('Medication and PRN Observations', medication);
   blocks.push('We hope these observations help support a conversation about what is going well, what has been difficult, and what we should continue monitoring. Thank you for reviewing them with us.');
   const caveats = [];
-  caveats.push(a.rows.length + ' check-in records were available across ' + a.days.length + ' distinct dates in the selected ' + a.totalDays + '-day period');
-  if (a.multipleEntryDays) caveats.push(a.multipleEntryDays + ' dates had multiple entries');
+  caveats.push(a.rows.length + ' caregiver check-ins were recorded across ' + a.days.length + ' of the ' + a.totalDays + ' calendar days in the selected period');
+  if (a.multipleEntryDays) caveats.push('on ' + a.multipleEntryDays + ' dates, more than one caregiver check-in was recorded; each caregiver’s observations were included in this summary');
+  const recordedDates = new Set(a.days.map(day => day.date));
+  const missingDates = [];
+  for (let day = ordinal(a.start); day <= ordinal(a.end); day++) {
+    const date = new Date(day * DAY).toISOString().slice(0, 10);
+    if (!recordedDates.has(date)) missingDates.push(date);
+  }
+  if (missingDates.length) caveats.push('no caregiver check-in was found for ' + fmt(missingDates));
   if (a.dateConflicts) caveats.push(a.dateConflicts + ' record' + (a.dateConflicts === 1 ? ' was' : 's were') + ' excluded because its dates conflicted');
   if (a.historical) caveats.push('older check-ins may not distinguish unanswered questions from negative answers');
   blocks.push('About these records\n' + caveats.join('; ') + '. Days without check-ins are not evidence that no symptoms occurred. This letter summarizes caregiver observations and does not establish a diagnosis or medication effect.');

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My Saved Drafts – STAR</title>
+  <link rel="stylesheet" href="./style.css?v=2026.03.29A">
+  <style>
+    body { margin:0; font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color:#2c2c2a; background:#f5f2ec; }
+    .draft-page { max-width:700px; margin:0 auto; padding:24px 18px 80px; }
+    .draft-header { display:flex; align-items:center; gap:14px; margin-bottom:24px; }
+    .back { color:#633806; text-decoration:none; font-weight:700; padding:10px 0; }
+    h1 { font-size:clamp(28px,5vw,38px); margin:0 0 10px; }
+    .description { color:#5f5e5a; line-height:1.5; margin:0 0 22px; }
+    #homeSavedDrafts a:focus-visible,.back:focus-visible { outline:3px solid #854f0b; outline-offset:3px; }
+    #homeSavedDrafts a { transition:background .15s ease; }
+    #homeSavedDrafts a:hover { background:#faeeda!important; }
+    .new-checkin { display:inline-block; margin-top:20px; padding:14px 18px; border-radius:12px; background:#faeeda; border:1px solid #fac775; color:#633806; font-weight:700; text-decoration:none; }
+  </style>
+</head>
+<body>
+  <main class="draft-page">
+    <nav class="draft-header" aria-label="Page navigation"><a class="back" href="dashboard.html">← Home</a><span aria-hidden="true">☆ STAR</span></nav>
+    <h1>My Saved Drafts</h1>
+    <p class="description">Pick an unfinished check-in to continue exactly where you left off. The original check-in date stays with your saved answers.</p>
+    <section id="homeSavedDrafts" aria-label="Your unfinished check-ins">
+      <p role="status">Looking for your saved drafts…</p>
+    </section>
+    <a class="new-checkin" href="caregiver-checkin.html">+ Start a new check-in</a>
+  </main>
+  <script type="module" src="./home-saved-drafts.js?v=2026.10.20C"></script>
+</body>
+</html>

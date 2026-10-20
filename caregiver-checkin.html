@@ -1920,8 +1920,8 @@
     </div>
 
     <div class="top-actions">
-      <label for="recoveryChoices">Browser recovery <select id="recoveryChoices" hidden aria-label="Choose browser recovery"></select></label>
-      <button class="btn" id="resumeDraftBtn" type="button" hidden>Resume recovery</button>
+      <label>Recovery copies <select id="recoveryChoices" hidden aria-label="Choose a recovery copy"></select></label>
+      <button class="btn" id="resumeDraftBtn" type="button" hidden>Resume selected recovery</button>
       <button class="btn" id="discardDraftBtn" type="button" disabled>Discard open form</button>
     </div>
 
@@ -2869,7 +2869,7 @@
 <script type="module">
   // 1) Imports MUST be first in the module
   import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.19B';
-  import { CheckinSubmissionUI } from './caregiver-submission-ui.js?v=2026.10.19B';
+  import { CheckinSubmissionUI } from './caregiver-submission-ui.js?v=2026.10.20E';
   import { validSelectedDate } from './caregiver-submission.js';
   import { ANSWER_VERSION, optionalEngagement, optionalYesNo } from './caregiver-answer-quality.js?v=2026.10.20A';
   import { ensureActiveGroupId } from './active-group.js?v=2026.10.07A';
@@ -3498,3 +3498,3655 @@
       label: 'Emotional Regulation',
       helper: 'How the individual manages feelings, frustration, coping, and emotional recovery',
       behaviors: [
+        'identifies_feelings',
+        'tolerates_frustration',
+        'uses_coping_strategy',
+        'accepts_redirection',
+        'requests_break',
+        'recovers_after_distress',
+      ],
+      fields: ['regulation_level', 'recovery'],
+    },
+    {
+      key: 'behavioral_safety',
+      label: 'Behavioral Safety',
+      helper: 'How the individual maintains safe behavior and responds to support when dysregulated',
+      behaviors: [
+        'maintains_safe_body',
+        'maintains_safe_space',
+        'reduces_aggression',
+        'reduces_self_injury',
+        'reduces_property_disruption',
+        'responds_to_safety_support',
+      ],
+      fields: ['safety_level', 'recovery'],
+    },
+    {
+      key: 'flexibility_tolerance',
+      label: 'Flexibility & Tolerance',
+      helper: 'How the individual tolerates changes, waiting, non-preferred tasks, and limits',
+      behaviors: [
+        'tolerates_waiting',
+        'tolerates_denial',
+        'tolerates_change',
+        'tolerates_nonpreferred_tasks',
+        'accepts_limits',
+        'transitions_with_support',
+      ],
+      fields: ['tolerance_level'],
+    },
+    {
+      key: 'social_behavioral_response',
+      label: 'Social / Behavioral Response',
+      helper: 'How the individual responds behaviorally during interactions with staff, peers, and group expectations',
+      behaviors: [
+        'responds_to_staff_direction',
+        'responds_to_peer_interaction',
+        'maintains_group_expectations',
+        'reduces_verbal_outbursts',
+        'uses_repair_after_conflict',
+        'returns_to_activity',
+      ],
+      fields: ['response_quality'],
+    },
+    {
+      key: 'mental_health_internal_state',
+      label: 'Mental Health / Internal State',
+      helper: 'Observable indicators of anxiety, withdrawal, mood instability, or distress that affect participation',
+      behaviors: [
+        'anxiety_signs_present',
+        'withdrawal_present',
+        'perseveration_present',
+        'compulsive_checking_repeating',
+        'low_mood_indicators',
+        'elevated_mood_indicators',
+        'pressured_speech_present',
+        'grandiose_statements_present',
+        'distress_impacts_participation',
+      ],
+      fields: ['regulation_level', 'recovery'],
+    },
+  ];
+  const BEHAVIOR_BEHAVIOR_CONFIG = BEHAVIOR_CATEGORY_CONFIGS.reduce((acc, category) => {
+    category.behaviors.forEach((behaviorKey) => {
+      acc[behaviorKey] = category;
+    });
+    return acc;
+  }, {});
+  const EDUCATIONAL_LABEL_OVERRIDES = {
+    requests_needs: 'Requests needs',
+    uses_communication_method: 'Uses communication method',
+    responds_to_questions: 'Responds to questions',
+    initiates_communication: 'Initiates communication',
+    makes_choices: 'Makes choices',
+    expresses_emotions: 'Expresses emotions',
+    engages_1to1: 'Engages 1:1',
+    responds_to_peer: 'Responds to peer',
+    initiates_interaction: 'Initiates interaction',
+    takes_turns: 'Takes turns',
+    shares_materials: 'Shares materials',
+    maintains_interaction: 'Maintains interaction',
+    participates_small_group: 'Participates in small group',
+    participates_group: 'Participates in group',
+    uses_coping_strategies: 'Uses coping strategies',
+    accepts_redirection: 'Accepts redirection',
+    recovers_from_frustration: 'Recovers from frustration',
+    tolerates_nonpreferred: 'Tolerates non-preferred tasks',
+    maintains_safe_behavior: 'Maintains safe behavior',
+    requests_break: 'Requests a break',
+    hygiene: 'Hygiene',
+    dressing: 'Dressing',
+    eating: 'Eating',
+    cleanup: 'Cleanup',
+    follows_routine: 'Follows routine',
+    uses_materials: 'Uses materials',
+    attends_to_task: 'Attends to task',
+    starts_task: 'Starts task',
+    completes_task: 'Completes task',
+    follows_directions: 'Follows directions',
+    transitions_between_tasks: 'Transitions between tasks',
+    stays_on_task: 'Stays on task',
+    participates_community: 'Participates in community activities',
+    engages_vocational: 'Engages in vocational activities',
+    follows_expectations: 'Follows expectations',
+    interacts_appropriately: 'Interacts appropriately',
+    completes_role: 'Completes role or responsibility',
+    transitions_activities: 'Transitions between activities',
+  };
+  const EDUCATIONAL_DESCRIPTION_OVERRIDES = {
+    requests_needs: 'Clearly asks for wants or needs instead of only relying on caregiver guessing.',
+    uses_communication_method: 'Uses their communication system in a functional way.',
+    responds_to_questions: 'Answers or responds when asked a question.',
+    initiates_communication: 'Starts communication without waiting for someone else first.',
+    makes_choices: 'Chooses between options when given the chance.',
+    expresses_emotions: 'Communicates feelings in a way others can understand.',
+    engages_1to1: 'Participates appropriately in a one-to-one interaction.',
+    responds_to_peer: 'Responds when a peer talks, gestures, or engages.',
+    initiates_interaction: 'Starts an interaction with another person.',
+    takes_turns: 'Waits for and takes a turn during an activity or conversation.',
+    shares_materials: 'Shares materials or space with support as needed.',
+    maintains_interaction: 'Stays in the interaction for more than a brief exchange.',
+    participates_small_group: 'Joins a small group activity appropriately.',
+    participates_group: 'Participates in a larger group activity appropriately.',
+    uses_coping_strategies: 'Uses regulation tools when frustrated or overwhelmed.',
+    accepts_redirection: 'Shifts back to the expected task or behavior after support.',
+    recovers_from_frustration: 'Returns to baseline after frustration.',
+    tolerates_nonpreferred: 'Participates in a non-preferred task with support as needed.',
+    maintains_safe_behavior: 'Keeps body and behavior safe during activities.',
+    requests_break: 'Asks for a break before dysregulation increases.',
+    hygiene: 'Participates in hygiene routines.',
+    dressing: 'Participates in dressing tasks.',
+    eating: 'Participates in eating or meal routines.',
+    cleanup: 'Helps clean up after activities or meals.',
+    follows_routine: 'Follows the expected daily routine.',
+    uses_materials: 'Uses materials appropriately for the task.',
+    attends_to_task: 'Stays oriented to the task.',
+    starts_task: 'Begins the task within a reasonable time.',
+    completes_task: 'Finishes the task or expected portion of it.',
+    follows_directions: 'Follows caregiver or teacher directions.',
+    transitions_between_tasks: 'Moves from one task to the next with support as needed.',
+    stays_on_task: 'Remains engaged without frequent drifting away.',
+    participates_community: 'Participates appropriately in community-based learning or outings.',
+    engages_vocational: 'Participates in work or pre-vocational activities.',
+    follows_expectations: 'Follows the expectations of the setting.',
+    interacts_appropriately: 'Uses appropriate behavior during interactions.',
+    completes_role: 'Completes the expected role or responsibility.',
+    transitions_activities: 'Transitions between activities with support as needed.',
+  };
+  const EDUCATIONAL_PROMPT_LEVELS = [
+    { value: '0', label: '0 - Independent' },
+    { value: '1', label: '1 - 1-2 prompts' },
+    { value: '2', label: '2 - Periodic prompts' },
+    { value: '3', label: '3 - Frequent prompts' },
+    { value: '4', label: '4 - Dependent' },
+  ];
+  const EDUCATIONAL_FIELD_CONFIGS = {
+    communication_method: {
+      label: 'Communication Method',
+      options: [
+        { value: 'verbal', label: 'Verbal' },
+        { value: 'gesture', label: 'Gesture' },
+        { value: 'visual_support', label: 'Visual support' },
+        { value: 'aac_device', label: 'AAC device' },
+        { value: 'sign', label: 'Sign' },
+      ],
+    },
+    initiation_type: {
+      label: 'Initiation Type',
+      options: [
+        { value: 'spontaneous', label: 'Spontaneous' },
+        { value: 'prompted', label: 'Prompted' },
+        { value: 'choice_based', label: 'Choice-based' },
+      ],
+    },
+    interaction_level: {
+      label: 'Interaction Level',
+      options: [
+        { value: '1to1', label: '1:1' },
+        { value: 'small_group', label: 'Small Group' },
+        { value: 'group', label: 'Group' },
+      ],
+    },
+    engagement: {
+      label: 'Engagement',
+      options: [
+        { value: 'brief', label: 'Brief' },
+        { value: 'inconsistent', label: 'Inconsistent' },
+        { value: 'sustained', label: 'Sustained' },
+      ],
+    },
+    regulation_state: {
+      label: 'Regulation State',
+      options: [
+        { value: 'regulated', label: 'Regulated' },
+        { value: 'mildly_dysregulated', label: 'Mildly dysregulated' },
+        { value: 'dysregulated', label: 'Dysregulated' },
+      ],
+    },
+    recovery: {
+      label: 'Recovery',
+      options: [
+        { value: 'independent', label: 'Recovered independently' },
+        { value: 'with_prompting', label: 'Recovered with prompting' },
+        { value: 'required_break', label: 'Required break or reset' },
+      ],
+    },
+    completion: {
+      label: 'Completion',
+      options: [
+        { value: 'partial', label: 'Partial' },
+        { value: 'most', label: 'Most of task' },
+        { value: 'complete', label: 'Complete' },
+      ],
+    },
+    initiation: {
+      label: 'Initiation',
+      options: [
+        { value: 'independent', label: 'Initiated independently' },
+        { value: 'after_prompt', label: 'Started after prompt' },
+        { value: 'full_support', label: 'Needed full support to start' },
+      ],
+    },
+    participation: {
+      label: 'Participation',
+      options: [
+        { value: 'observed', label: 'Observed only' },
+        { value: 'partial', label: 'Partial participation' },
+        { value: 'active', label: 'Active participation' },
+      ],
+    },
+    behavior: {
+      label: 'Behavior',
+      options: [
+        { value: 'expected', label: 'Met expectations' },
+        { value: 'redirected', label: 'Needed redirection' },
+        { value: 'support_needed', label: 'Needed significant support' },
+      ],
+    },
+  };
+  const EDUCATIONAL_CATEGORY_CONFIGS = [
+    {
+      key: 'functional_communication',
+      label: 'Functional Communication',
+      helper: 'How the individual communicates wants, needs, and choices',
+      behaviors: [
+        'requests_needs',
+        'uses_communication_method',
+        'responds_to_questions',
+        'initiates_communication',
+        'makes_choices',
+        'expresses_emotions',
+      ],
+      fields: ['communication_method', 'initiation_type'],
+    },
+    {
+      key: 'peer_interaction',
+      label: 'Peer Interaction',
+      helper: 'How the individual engages with peers from 1:1 through group participation',
+      behaviors: [
+        'engages_1to1',
+        'responds_to_peer',
+        'initiates_interaction',
+        'takes_turns',
+        'shares_materials',
+        'maintains_interaction',
+        'participates_small_group',
+        'participates_group',
+      ],
+      fields: ['interaction_level', 'engagement'],
+    },
+    {
+      key: 'self_regulation',
+      label: 'Self Regulation',
+      helper: 'How the individual manages emotions, redirection, and recovery',
+      behaviors: [
+        'uses_coping_strategies',
+        'accepts_redirection',
+        'recovers_from_frustration',
+        'tolerates_nonpreferred',
+        'maintains_safe_behavior',
+        'requests_break',
+      ],
+      fields: ['regulation_state', 'recovery'],
+    },
+    {
+      key: 'daily_living_skills',
+      label: 'Daily Living Skills',
+      helper: 'How the individual participates in routines and practical self-care tasks',
+      behaviors: [
+        'hygiene',
+        'dressing',
+        'eating',
+        'cleanup',
+        'follows_routine',
+        'uses_materials',
+      ],
+      fields: ['completion'],
+    },
+    {
+      key: 'task_engagement',
+      label: 'Task Engagement',
+      helper: 'How the individual starts, follows, and completes tasks',
+      behaviors: [
+        'attends_to_task',
+        'starts_task',
+        'completes_task',
+        'follows_directions',
+        'transitions_between_tasks',
+        'stays_on_task',
+      ],
+      fields: ['engagement', 'initiation'],
+    },
+    {
+      key: 'community_vocational_participation',
+      label: 'Community & Vocational',
+      helper: 'How the individual participates in community and work-related activities',
+      behaviors: [
+        'participates_community',
+        'engages_vocational',
+        'follows_expectations',
+        'interacts_appropriately',
+        'completes_role',
+        'transitions_activities',
+      ],
+      fields: ['participation', 'behavior'],
+    },
+  ];
+  const EDUCATIONAL_BEHAVIOR_CONFIG = EDUCATIONAL_CATEGORY_CONFIGS.reduce((acc, category) => {
+    category.behaviors.forEach((behaviorKey) => {
+      acc[behaviorKey] = category;
+    });
+    return acc;
+  }, {});
+
+  const toBehaviorKey = (value) =>
+    String(value || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '');
+
+  const toBehaviorLabel = (value) => {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+    const key = toBehaviorKey(raw);
+    if (BEHAVIOR_LABEL_OVERRIDES[key]) return BEHAVIOR_LABEL_OVERRIDES[key];
+    if (/[A-Z]/.test(raw) || /\s/.test(raw)) return raw;
+    return raw
+      .split('_')
+      .filter(Boolean)
+      .map((part) => {
+        const upper = part.toUpperCase();
+        if (upper === 'OCD' || upper === 'ADHD' || upper === 'PRN') return upper;
+        return part.charAt(0).toUpperCase() + part.slice(1);
+      })
+      .join(' ');
+  };
+
+  const toEducationalKey = (value) =>
+    String(value || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '');
+
+  const toEducationalLabel = (value) => {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+    const key = toEducationalKey(raw);
+    if (EDUCATIONAL_LABEL_OVERRIDES[key]) return EDUCATIONAL_LABEL_OVERRIDES[key];
+    if (/[A-Z]/.test(raw) || /\s/.test(raw)) return raw;
+    return raw
+      .split('_')
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
+  };
+
+  function getConfiguredBehaviorOptions(){
+    if (!caregiverSetupState.hasConfig || !caregiverSetupState.selectedCategories.has('behavior_mental_health')) {
+      return [];
+    }
+    const seen = new Set();
+    const configured = (caregiverSetupState.selectedItems.behavior_mental_health || [])
+      .map((entry, index) => {
+        const key = toBehaviorKey(entry) || `behavior_${index + 1}`;
+        if (seen.has(key)) return null;
+        seen.add(key);
+        return {
+          key,
+          label: toBehaviorLabel(entry),
+        };
+      })
+      .filter(Boolean);
+
+    // Behavior / Mental Health should always include a PRN tracker,
+    // even if admins did not explicitly select the dedicated library item.
+    if (!seen.has('behavior_prn_used')) {
+      configured.unshift({
+        key: 'behavior_prn_used',
+        label: toBehaviorLabel('behavior_prn_used'),
+      });
+    }
+    return configured;
+  }
+
+  function getBehaviorConfig(itemKey){
+    return BEHAVIOR_BEHAVIOR_CONFIG[itemKey] || null;
+  }
+
+  function getBehaviorDescription(itemKey, label){
+    const custom = trimOrNull(caregiverSetupState.itemDescriptions?.[itemKey]);
+    if (custom) return custom;
+    return BEHAVIOR_DESCRIPTION_OVERRIDES[itemKey] || `Define what "${label}" looks like for this individual.`;
+  }
+
+  function getBehaviorTrackingType(itemKey){
+    return BEHAVIOR_TRACKING_TYPES[itemKey] || 'prompt_skill';
+  }
+
+  function getEducationalTrackingType(){
+    return 'prompt_skill';
+  }
+
+  function getPromptFieldLabels(itemKey){
+    if (itemKey === 'mood') {
+      return {
+        typeLabel: 'How was the mood check-in supported?:',
+        levelLabel: 'Support level used:',
+        levelPlaceholder: 'Select support level',
+      };
+    }
+    return {
+      typeLabel: 'Prompt type:',
+      levelLabel: 'Prompt level:',
+      levelPlaceholder: 'Select prompt level',
+    };
+  }
+
+  function renderPromptSkillFields(prefix, itemKey){
+    const labels = getPromptFieldLabels(itemKey);
+    const notesLabel = itemKey === 'mood' ? 'Mood check-in notes:' : 'Notes:';
+    const notesPlaceholder = itemKey === 'mood'
+      ? 'Optional notes about using the mood check-in app'
+      : `Optional notes for ${toBehaviorLabel(itemKey).toLowerCase()}`;
+    return `
+      <div class="behavior-followup-grid">
+        <label class="behavior-choice-field">${escapeHtml(labels.typeLabel)}
+          <select class="behavior-inline-select" name="${prefix}_prompt_type__${escapeHtml(itemKey)}">
+            ${PROMPT_TYPE_OPTIONS.map((option) => `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`).join('')}
+          </select>
+        </label>
+        <label class="behavior-choice-field">${escapeHtml(labels.levelLabel)}
+          <select class="behavior-inline-select" name="${prefix}_prompt_level__${escapeHtml(itemKey)}">
+            <option value="">${escapeHtml(labels.levelPlaceholder)}</option>
+            ${BEHAVIOR_PROMPT_LEVELS.map((option) => `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`).join('')}
+          </select>
+        </label>
+      </div>
+      <label class="behavior-card-notes">${escapeHtml(notesLabel)}
+        <textarea name="${prefix}_notes__${escapeHtml(itemKey)}" placeholder="${escapeHtml(notesPlaceholder)}"></textarea>
+      </label>
+    `;
+  }
+
+  function renderSymptomFields(prefix, itemKey){
+    return `
+      <div class="behavior-followup-grid">
+        <label class="behavior-choice-field">Intensity (0-5):
+          <input
+            class="behavior-inline-range"
+            type="range"
+            min="0"
+            max="5"
+            step="1"
+            value="0"
+            name="${prefix}_intensity__${escapeHtml(itemKey)}"
+            data-behavior-intensity="${escapeHtml(itemKey)}"
+          />
+          <div class="behavior-intensity-readout">
+            <span class="behavior-intensity-number" data-behavior-intensity-value="${escapeHtml(itemKey)}">0</span>
+            <span class="behavior-intensity-text" data-behavior-intensity-text="${escapeHtml(itemKey)}">None</span>
+          </div>
+        </label>
+      </div>
+    `;
+  }
+
+	  function renderPrnUsageFields(prefix, itemKey){
+	    return `
+	      <p class="behavior-section-helper">Document medication, time, and reason in the PRN Medication section above.</p>
+	    `;
+	  }
+
+  async function saveBehaviorDescription(itemKey, description){
+    const nextDescription = trimOrNull(description);
+    const nextDescriptions = { ...(caregiverSetupState.itemDescriptions || {}) };
+    if (nextDescription) nextDescriptions[itemKey] = nextDescription;
+    else delete nextDescriptions[itemKey];
+
+    caregiverSetupState.itemDescriptions = nextDescriptions;
+    if (!caregiverSetupState.configRowId) return;
+
+    const nextSelectedItems = {
+      ...caregiverSetupState.selectedItems,
+      __custom_mode__: true,
+      __item_descriptions__: nextDescriptions,
+    };
+
+    await rest(`caregiver_checkin_configs?id=eq.${encodeURIComponent(caregiverSetupState.configRowId)}`, {
+      method: 'PATCH',
+      headers: { Prefer: 'return=representation' },
+      body: JSON.stringify({
+        selected_items: nextSelectedItems,
+        updated_at: new Date().toISOString(),
+      }),
+    });
+    caregiverSetupState.selectedItems = nextSelectedItems;
+  }
+
+  function renderBehaviorChoiceField(fieldKey, itemKey){
+    const config = BEHAVIOR_FIELD_CONFIGS[fieldKey];
+    if (!config) return '';
+    return `
+      <div class="behavior-choice-field">
+        <div class="behavior-choice-label">${escapeHtml(config.label)}:</div>
+        <div class="behavior-choice-group" role="group" aria-label="${escapeHtml(config.label)}">
+          ${config.options.map((option) => `
+            <label class="yn-pill">
+              <input
+                type="radio"
+                name="behavior_${escapeHtml(fieldKey)}__${escapeHtml(itemKey)}"
+                value="${escapeHtml(option.value)}"
+              >
+              ${escapeHtml(option.label)}
+            </label>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  function clearBehaviorChoiceValue(block, inputName){
+    if (!block || !inputName) return;
+    block.querySelectorAll(`input[name="${inputName}"]`).forEach((input) => {
+      input.checked = false;
+    });
+  }
+
+  function collectBehaviorTracking(){
+    if (!behaviorQuestionsWrap) return [];
+    return Array.from(behaviorQuestionsWrap.querySelectorAll('[data-behavior-key]')).map((block) => {
+      const behaviorName = block.dataset.behaviorLabel || '';
+      const behaviorKey = block.dataset.behaviorKey || '';
+      const config = getBehaviorConfig(behaviorKey);
+      const trackingType = getBehaviorTrackingType(behaviorKey);
+      const occurredValue = getYnValue(`behavior_occurred__${behaviorKey}`);
+      const occurred = occurredValue === 'yes'
+        ? true
+        : occurredValue === 'no'
+          ? false
+          : null;
+      const promptLevel = trimOrNull(block.querySelector(`select[name="behavior_prompt_level__${behaviorKey}"]`)?.value || '');
+      const promptType = trimOrNull(block.querySelector(`select[name="behavior_prompt_type__${behaviorKey}"]`)?.value || '');
+      const intensity = trimOrNull(block.querySelector(`input[name="behavior_intensity__${behaviorKey}"]`)?.value || '');
+      const prnReason = trimOrNull(block.querySelector(`input[name="behavior_prn_reason__${behaviorKey}"]`)?.value || '');
+      const prnName = trimOrNull(block.querySelector(`input[name="behavior_prn_name__${behaviorKey}"]`)?.value || '');
+      const prnTime = trimOrNull(block.querySelector(`input[name="behavior_prn_time__${behaviorKey}"]`)?.value || '');
+      const notes = trimOrNull(block.querySelector(`textarea[name="behavior_notes__${behaviorKey}"]`)?.value || '');
+      const entry = {
+        item_key: behaviorKey,
+        behavior_name: behaviorName,
+        tracking_type: trackingType,
+        occurred,
+        prn_used: trackingType === 'prn_usage' ? occurred === true : null,
+        observed_periods: [],
+        prompt_level: promptLevel,
+        prompt_count: promptLevel,
+        prompt_type: promptType,
+        intensity,
+        prn_reason: prnReason,
+        prn_name: prnName,
+        prn_time: prnTime,
+        notes,
+      };
+      return entry;
+    });
+  }
+
+  function syncBehaviorIntensityDisplay(block){
+    if (!block) return;
+    const behaviorKey = block.dataset.behaviorKey || '';
+    const slider = block.querySelector(`input[name="behavior_intensity__${behaviorKey}"]`);
+    const valueEl = block.querySelector(`[data-behavior-intensity-value="${behaviorKey}"]`);
+    const textEl = block.querySelector(`[data-behavior-intensity-text="${behaviorKey}"]`);
+    if (!slider || !valueEl) return;
+    const value = slider.value || '0';
+    const labels = {
+      '0': 'None',
+      '1': 'Very mild',
+      '2': 'Mild',
+      '3': 'Moderate',
+      '4': 'High',
+      '5': 'Severe',
+    };
+    valueEl.textContent = value;
+    if (textEl) textEl.textContent = labels[value] || 'None';
+  }
+
+  function syncBehaviorItemState(block){
+    if (!block) return;
+    const behaviorKey = block.dataset.behaviorKey || '';
+    const config = getBehaviorConfig(behaviorKey);
+    const occurredValue = getYnValue(`behavior_occurred__${behaviorKey}`);
+    const followups = block.querySelector('[data-behavior-followups]');
+    const showFollowups = occurredValue === 'yes';
+    followups?.classList.toggle('is-hidden', !showFollowups);
+    const notesField = block.querySelector(`textarea[name="behavior_notes__${behaviorKey}"]`);
+    const promptField = block.querySelector(`select[name="behavior_prompt_level__${behaviorKey}"]`);
+    const promptTypeField = block.querySelector(`select[name="behavior_prompt_type__${behaviorKey}"]`);
+    const intensityField = block.querySelector(`input[name="behavior_intensity__${behaviorKey}"]`);
+    const prnReasonField = block.querySelector(`input[name="behavior_prn_reason__${behaviorKey}"]`);
+    const prnNameField = block.querySelector(`input[name="behavior_prn_name__${behaviorKey}"]`);
+    const prnTimeField = block.querySelector(`input[name="behavior_prn_time__${behaviorKey}"]`);
+    if (showFollowups) return;
+
+    if (promptField) promptField.value = '';
+    if (promptTypeField) promptTypeField.value = '';
+    if (intensityField) intensityField.value = '0';
+    if (prnReasonField) prnReasonField.value = '';
+    if (prnNameField) prnNameField.value = '';
+    if (prnTimeField) prnTimeField.value = '';
+    if (notesField) notesField.value = '';
+    syncBehaviorIntensityDisplay(block);
+  }
+
+  function syncBehaviorQuestionStates(){
+    if (!behaviorQuestionsWrap) return;
+    behaviorQuestionsWrap.querySelectorAll('[data-behavior-key]').forEach((block) => {
+      syncBehaviorItemState(block);
+      syncBehaviorIntensityDisplay(block);
+    });
+  }
+
+  function syncBehaviorTrackingField({ dispatch = false } = {}){
+    if (!behaviorTrackingField) return;
+    const tracking = collectBehaviorTracking();
+    behaviorTrackingField.value = tracking.length ? JSON.stringify(tracking) : '';
+    if (dispatch) {
+      behaviorTrackingField.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  }
+
+  function renderBehaviorQuestions(){
+    if (!behaviorQuestionsWrap) return;
+    const options = getConfiguredBehaviorOptions();
+    if (!options.length) {
+      behaviorQuestionsWrap.innerHTML = '<p class="muted">No behavior tracking items are enabled for this group.</p>';
+      syncBehaviorTrackingField();
+      return;
+    }
+    const optionMap = new Map(options.map((option) => [option.key, option]));
+    const usedKeys = new Set();
+    const renderedSections = BEHAVIOR_CATEGORY_CONFIGS
+      .map((category) => {
+        const sectionOptions = category.behaviors
+          .map((behaviorKey) => optionMap.get(behaviorKey))
+          .filter(Boolean);
+        if (!sectionOptions.length) return '';
+        sectionOptions.forEach(({ key }) => usedKeys.add(key));
+        return `
+          <section class="behavior-section" data-behavior-section="${escapeHtml(category.key)}">
+            <div>
+              <h3 class="behavior-section-header">${escapeHtml(category.label || toBehaviorLabel(category.key))}</h3>
+              ${category.helper ? `<p class="behavior-section-helper">${escapeHtml(category.helper)}</p>` : ''}
+            </div>
+            <div class="behavior-section-items">
+            ${sectionOptions.map(({ key, label }) => `
+              <article class="panel behavior-card" data-behavior-key="${escapeHtml(key)}" data-behavior-label="${escapeHtml(label)}" style="padding:16px">
+                <div class="behavior-card-question">
+                  <h4 class="behavior-card-title">${escapeHtml(label)}</h4>
+                  <div class="yn-pill-group" role="group" aria-label="${escapeHtml(label)}">
+                    <label class="yn-pill"><input type="radio" name="behavior_occurred__${escapeHtml(key)}" value="yes"> Yes</label>
+                    <label class="yn-pill"><input type="radio" name="behavior_occurred__${escapeHtml(key)}" value="no"> No</label>
+                  </div>
+                </div>
+                <div class="behavior-section-helper" data-behavior-description-text="${escapeHtml(key)}">${escapeHtml(getBehaviorDescription(key, label))}</div>
+                <div>
+                  <button class="btn" type="button" data-behavior-desc-edit="${escapeHtml(key)}">Edit description</button>
+                </div>
+                <div class="behavior-followups is-hidden" data-behavior-desc-editor="${escapeHtml(key)}">
+                  <label class="behavior-card-notes">Behavior description:
+                    <textarea name="behavior_description__${escapeHtml(key)}" placeholder="Describe exactly what caregivers should count for ${escapeHtml(label).toLowerCase()}">${escapeHtml(getBehaviorDescription(key, label))}</textarea>
+                  </label>
+                  <div class="movement-actions">
+                    <button class="btn primary" type="button" data-behavior-desc-save="${escapeHtml(key)}">Save description</button>
+                    <button class="btn" type="button" data-behavior-desc-cancel="${escapeHtml(key)}">Cancel</button>
+                  </div>
+                </div>
+                <div class="behavior-followups is-hidden" data-behavior-followups>
+                  ${getBehaviorTrackingType(key) === 'symptom_intensity'
+                    ? `${renderSymptomFields('behavior', key)}
+                  <label class="behavior-card-notes">Notes:
+                    <textarea name="behavior_notes__${escapeHtml(key)}" placeholder="Optional notes for ${escapeHtml(label).toLowerCase()}"></textarea>
+                  </label>`
+                    : getBehaviorTrackingType(key) === 'prn_usage'
+                      ? `${renderPrnUsageFields('behavior', key)}
+                  <label class="behavior-card-notes">Notes:
+                    <textarea name="behavior_notes__${escapeHtml(key)}" placeholder="Optional notes for ${escapeHtml(label).toLowerCase()}"></textarea>
+                  </label>`
+                      : renderPromptSkillFields('behavior', key)}
+                </div>
+              </article>
+            `).join('')}
+            </div>
+          </section>
+        `;
+      })
+      .filter(Boolean);
+    const uncategorizedOptions = options.filter(({ key }) => !usedKeys.has(key));
+    if (uncategorizedOptions.length) {
+      renderedSections.push(`
+        <section class="behavior-section" data-behavior-section="additional_behavior_tracking">
+          <div>
+            <h3 class="behavior-section-header">Additional Behavior Tracking</h3>
+            <p class="behavior-section-helper">Existing behavior items that are still enabled for this group.</p>
+          </div>
+          <div class="behavior-section-items">
+          ${uncategorizedOptions.map(({ key, label }) => `
+            <article class="panel behavior-card" data-behavior-key="${escapeHtml(key)}" data-behavior-label="${escapeHtml(label)}" style="padding:16px">
+              <div class="behavior-card-question">
+                <h4 class="behavior-card-title">${escapeHtml(label)}</h4>
+                <div class="yn-pill-group" role="group" aria-label="${escapeHtml(label)}">
+                  <label class="yn-pill"><input type="radio" name="behavior_occurred__${escapeHtml(key)}" value="yes"> Yes</label>
+                  <label class="yn-pill"><input type="radio" name="behavior_occurred__${escapeHtml(key)}" value="no"> No</label>
+                </div>
+              </div>
+              <div class="behavior-section-helper" data-behavior-description-text="${escapeHtml(key)}">${escapeHtml(getBehaviorDescription(key, label))}</div>
+              <div>
+                <button class="btn" type="button" data-behavior-desc-edit="${escapeHtml(key)}">Edit description</button>
+              </div>
+              <div class="behavior-followups is-hidden" data-behavior-desc-editor="${escapeHtml(key)}">
+                <label class="behavior-card-notes">Behavior description:
+                  <textarea name="behavior_description__${escapeHtml(key)}" placeholder="Describe exactly what caregivers should count for ${escapeHtml(label).toLowerCase()}">${escapeHtml(getBehaviorDescription(key, label))}</textarea>
+                </label>
+                <div class="movement-actions">
+                  <button class="btn primary" type="button" data-behavior-desc-save="${escapeHtml(key)}">Save description</button>
+                  <button class="btn" type="button" data-behavior-desc-cancel="${escapeHtml(key)}">Cancel</button>
+                </div>
+              </div>
+              <div class="behavior-followups is-hidden" data-behavior-followups>
+                ${getBehaviorTrackingType(key) === 'symptom_intensity'
+                  ? `${renderSymptomFields('behavior', key)}
+                <label class="behavior-card-notes">Notes:
+                  <textarea name="behavior_notes__${escapeHtml(key)}" placeholder="Optional notes for ${escapeHtml(label).toLowerCase()}"></textarea>
+                </label>`
+                  : getBehaviorTrackingType(key) === 'prn_usage'
+                    ? `${renderPrnUsageFields('behavior', key)}
+                <label class="behavior-card-notes">Notes:
+                  <textarea name="behavior_notes__${escapeHtml(key)}" placeholder="Optional notes for ${escapeHtml(label).toLowerCase()}"></textarea>
+                </label>`
+                    : renderPromptSkillFields('behavior', key)}
+              </div>
+            </article>
+          `).join('')}
+          </div>
+        </section>
+      `);
+    }
+    behaviorQuestionsWrap.innerHTML = renderedSections.join('');
+    const behaviorStep = document.querySelector('.step[data-step="1"]');
+    if (behaviorStep && draft?.data?.[1]) {
+      hydrate(behaviorStep, draft.data[1]);
+    }
+    syncBehaviorQuestionStates();
+    syncBehaviorTrackingField();
+  }
+
+  function getConfiguredEducationalOptions(){
+    if (!caregiverSetupState.hasConfig || !caregiverSetupState.selectedCategories.has('educational')) {
+      return [];
+    }
+    const seen = new Set();
+    return (caregiverSetupState.selectedItems.educational || [])
+      .map((entry, index) => {
+        const key = toEducationalKey(entry) || `educational_${index + 1}`;
+        if (seen.has(key)) return null;
+        seen.add(key);
+        return {
+          key,
+          label: toEducationalLabel(entry),
+        };
+      })
+      .filter(Boolean);
+  }
+
+  function getEducationalBehaviorConfig(itemKey){
+    return EDUCATIONAL_BEHAVIOR_CONFIG[itemKey] || null;
+  }
+
+  function getEducationalDescription(itemKey, label){
+    const custom = trimOrNull(caregiverSetupState.itemDescriptions?.[itemKey]);
+    if (custom) return custom;
+    return EDUCATIONAL_DESCRIPTION_OVERRIDES[itemKey] || `Define what "${label}" looks like for this individual.`;
+  }
+
+  function renderEducationalChoiceField(fieldKey, itemKey){
+    const config = EDUCATIONAL_FIELD_CONFIGS[fieldKey];
+    if (!config) return '';
+    return `
+      <div class="educational-choice-field">
+        <div class="educational-choice-label">${escapeHtml(config.label)}:</div>
+        <div class="educational-choice-group" role="group" aria-label="${escapeHtml(config.label)}">
+          ${config.options.map((option) => `
+            <label class="yn-pill">
+              <input
+                type="radio"
+                name="educational_${escapeHtml(fieldKey)}__${escapeHtml(itemKey)}"
+                value="${escapeHtml(option.value)}"
+              >
+              ${escapeHtml(option.label)}
+            </label>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  function clearEducationalChoiceValue(block, inputName){
+    if (!block || !inputName) return;
+    block.querySelectorAll(`input[name="${inputName}"]`).forEach((input) => {
+      input.checked = false;
+    });
+  }
+
+  function collectEducationalTracking(){
+    if (!educationalQuestionsWrap) return [];
+    return Array.from(educationalQuestionsWrap.querySelectorAll('[data-educational-key]')).map((block) => {
+      const itemName = block.dataset.educationalLabel || '';
+      const itemKey = block.dataset.educationalKey || '';
+      const trackingType = getEducationalTrackingType(itemKey);
+      const occurredValue = getYnValue(`educational_occurred__${itemKey}`);
+      const occurred = occurredValue === 'yes'
+        ? true
+        : occurredValue === 'no'
+          ? false
+          : null;
+      const promptLevel = trimOrNull(block.querySelector(`select[name="educational_prompt_level__${itemKey}"]`)?.value || '');
+      const promptType = trimOrNull(block.querySelector(`select[name="educational_prompt_type__${itemKey}"]`)?.value || '');
+      const notes = trimOrNull(block.querySelector(`textarea[name="educational_notes__${itemKey}"]`)?.value || '');
+      const entry = {
+        item_key: itemKey,
+        item_name: itemName,
+        tracking_type: trackingType,
+        occurred,
+        observed_periods: [],
+        prompt_level: promptLevel,
+        prompt_count: promptLevel,
+        prompt_type: promptType,
+        notes,
+      };
+      return entry;
+    });
+  }
+
+  function collectEducationalPayload(){
+    return collectEducationalTracking().map((entry) => {
+      const { item_name, ...payloadEntry } = entry;
+      return payloadEntry;
+    });
+  }
+
+  function syncEducationalItemState(block){
+    if (!block) return;
+    const itemKey = block.dataset.educationalKey || '';
+    const occurredValue = getYnValue(`educational_occurred__${itemKey}`);
+    const followups = block.querySelector('[data-educational-followups]');
+    const showFollowups = occurredValue === 'yes';
+    followups?.classList.toggle('is-hidden', !showFollowups);
+    const notesField = block.querySelector(`textarea[name="educational_notes__${itemKey}"]`);
+    const promptField = block.querySelector(`select[name="educational_prompt_level__${itemKey}"]`);
+    const promptTypeField = block.querySelector(`select[name="educational_prompt_type__${itemKey}"]`);
+    if (showFollowups) return;
+
+    if (promptField) promptField.value = '';
+    if (promptTypeField) promptTypeField.value = '';
+    if (notesField) notesField.value = '';
+  }
+
+  function syncEducationalQuestionStates(){
+    if (!educationalQuestionsWrap) return;
+    educationalQuestionsWrap.querySelectorAll('[data-educational-key]').forEach(syncEducationalItemState);
+  }
+
+  function syncEducationalTrackingField({ dispatch = false } = {}){
+    if (!educationalTrackingField) return;
+    const tracking = collectEducationalTracking();
+    educationalTrackingField.value = tracking.length ? JSON.stringify(tracking) : '';
+    if (dispatch) {
+      educationalTrackingField.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  }
+
+  function renderEducationalQuestions(){
+    if (!educationalQuestionsWrap) return;
+    const options = getConfiguredEducationalOptions();
+    if (!options.length) {
+      educationalQuestionsWrap.innerHTML = '';
+      syncEducationalTrackingField();
+      return;
+    }
+    const optionMap = new Map(options.map((option) => [option.key, option]));
+    const renderedSections = EDUCATIONAL_CATEGORY_CONFIGS
+      .map((category) => {
+        const sectionOptions = category.behaviors
+          .map((behaviorKey) => optionMap.get(behaviorKey))
+          .filter(Boolean);
+        if (!sectionOptions.length) return '';
+        return `
+          <section class="educational-section" data-educational-section="${escapeHtml(category.key)}">
+            <div>
+              <h3 class="educational-section-header">${escapeHtml(category.label || toEducationalLabel(category.key))}</h3>
+              ${category.helper ? `<p class="educational-section-helper">${escapeHtml(category.helper)}</p>` : ''}
+            </div>
+            <div class="educational-section-items">
+            ${sectionOptions.map(({ key, label }) => `
+      <article class="panel educational-card" data-educational-key="${escapeHtml(key)}" data-educational-label="${escapeHtml(label)}" style="padding:16px">
+        <div class="educational-card-question">
+          <h4 class="educational-card-title">${escapeHtml(label)}</h4>
+          <div class="yn-pill-group" role="group" aria-label="${escapeHtml(label)}">
+            <label class="yn-pill"><input type="radio" name="educational_occurred__${escapeHtml(key)}" value="yes"> Yes</label>
+            <label class="yn-pill"><input type="radio" name="educational_occurred__${escapeHtml(key)}" value="no"> No</label>
+          </div>
+        </div>
+        <div class="educational-section-helper" data-educational-description-text="${escapeHtml(key)}">${escapeHtml(getEducationalDescription(key, label))}</div>
+        <div>
+          <button class="btn" type="button" data-educational-desc-edit="${escapeHtml(key)}">Edit description</button>
+        </div>
+        <div class="educational-followups is-hidden" data-educational-desc-editor="${escapeHtml(key)}">
+          <label class="educational-card-notes">Skill description:
+            <textarea name="educational_description__${escapeHtml(key)}" placeholder="Describe exactly what caregivers should count for ${escapeHtml(label).toLowerCase()}">${escapeHtml(getEducationalDescription(key, label))}</textarea>
+          </label>
+          <div class="movement-actions">
+            <button class="btn primary" type="button" data-educational-desc-save="${escapeHtml(key)}">Save description</button>
+            <button class="btn" type="button" data-educational-desc-cancel="${escapeHtml(key)}">Cancel</button>
+          </div>
+        </div>
+        <div class="educational-followups is-hidden" data-educational-followups>
+          <div class="behavior-followup-grid">
+            <label class="educational-choice-field">Prompt type:
+              <select class="behavior-inline-select" name="educational_prompt_type__${escapeHtml(key)}">
+                ${PROMPT_TYPE_OPTIONS.map((option) => `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`).join('')}
+              </select>
+            </label>
+            <label class="educational-choice-field">Prompt Level:
+              <select class="behavior-inline-select" name="educational_prompt_level__${escapeHtml(key)}">
+                <option value="">Select prompt level</option>
+                ${EDUCATIONAL_PROMPT_LEVELS.map((option) => `
+                  <option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>
+                `).join('')}
+              </select>
+            </label>
+          </div>
+          <label class="educational-card-notes">Notes:
+            <textarea name="educational_notes__${escapeHtml(key)}" placeholder="Optional notes for ${escapeHtml(label).toLowerCase()}"></textarea>
+          </label>
+        </div>
+      </article>
+            `).join('')}
+            </div>
+          </section>
+        `;
+      })
+      .filter(Boolean)
+      .join('');
+    educationalQuestionsWrap.innerHTML = renderedSections;
+    const educationalStep = document.getElementById('educational-step');
+    if (educationalStep && draft?.data?.[6]) {
+      hydrate(educationalStep, draft.data[6]);
+    }
+    syncEducationalQuestionStates();
+    syncEducationalTrackingField();
+  }
+
+  function getConfiguredAdlOptions(){
+    if (!caregiverSetupState.hasConfig) return BASE_ADL_OPTIONS;
+    const next = {};
+    if (configItemEnabled('daily_living', 'hygiene') || configItemEnabled('daily_living', 'toileting')) {
+      next['Hygiene / Toileting'] = BASE_ADL_OPTIONS['Hygiene / Toileting'];
+    }
+    if (configItemEnabled('daily_living', 'dressing')) {
+      next['Dressing / Grooming'] = BASE_ADL_OPTIONS['Dressing / Grooming'];
+    }
+    if (
+      configItemEnabled('daily_living', 'clean_up') ||
+      configItemEnabled('daily_living', 'laundry') ||
+      configItemEnabled('daily_living', 'following_routine')
+    ) {
+      next['Cleaning / Household'] = BASE_ADL_OPTIONS['Cleaning / Household'];
+    }
+    if (configItemEnabled('daily_living', 'food_preparation')) {
+      next['Cooking / Food'] = BASE_ADL_OPTIONS['Cooking / Food'];
+    }
+    return next;
+  }
+
+  async function loadGroupCaregiverSetup(userId){
+    if (caregiverSetupState.forceLegacyMode) {
+      caregiverSetupState.groupId = await ensureGroupId(userId);
+      caregiverSetupState.configRowId = null;
+      caregiverSetupState.hasConfig = false;
+      caregiverSetupState.selectedCategories = new Set();
+      caregiverSetupState.selectedItems = {};
+      caregiverSetupState.itemDescriptions = {};
+      return;
+    }
+    const groupId = await ensureGroupId(userId);
+    caregiverSetupState.groupId = groupId || null;
+    caregiverSetupState.configRowId = null;
+    caregiverSetupState.hasConfig = false;
+    caregiverSetupState.selectedCategories = new Set();
+    caregiverSetupState.selectedItems = {};
+    caregiverSetupState.itemDescriptions = {};
+    let config = null;
+    if (groupId) {
+      const rows = await rest(
+        `caregiver_checkin_configs?group_id=eq.${encodeURIComponent(groupId)}&select=id,group_id,individual_id,selected_categories,selected_items,updated_at&order=updated_at.desc.nullslast&limit=1`
+      );
+      config = rows?.[0] || null;
+    }
+    if (!config && userId) {
+      const rows = await rest(
+        `caregiver_checkin_configs?individual_id=eq.${encodeURIComponent(userId)}&select=id,individual_id,group_id,selected_categories,selected_items,updated_at&order=updated_at.desc.nullslast&limit=1`
+      );
+      config = rows?.[0] || null;
+    }
+    if (config && isCustomCaregiverSetupEnabled(config)) {
+      caregiverSetupState.configRowId = config.id || null;
+      caregiverSetupState.hasConfig = true;
+      caregiverSetupState.selectedCategories = new Set(normalizeConfigCategories(config.selected_categories));
+      caregiverSetupState.selectedItems = normalizeConfigItems(config.selected_items);
+      caregiverSetupState.itemDescriptions = normalizeItemDescriptions(parseConfigObject(config.selected_items)?.__item_descriptions__);
+    }
+
+    const localWizardConfig = parseConfigObject(localStorage.getItem('caregiver_config'));
+    if (!caregiverSetupState.forceLegacyMode && !caregiverSetupState.hasConfig && localWizardConfig) {
+      applyLocalWizardConfigToSetupState(localWizardConfig);
+    }
+  }
+
+  function applyLegacyCheckinVisibility({ updateView = true } = {}){
+    const subtitle = document.querySelector('.sub');
+    if (subtitle) {
+      subtitle.innerHTML = 'Every new check-in starts with a blank date. A recovery copy is kept in this browser when storage is available. <strong>Save Draft</strong> saves a local copy; only <strong>Submit Check-In</strong> saves to Supabase.';
+    }
+
+    const physicalStep = document.querySelector('.step[data-step="0"]');
+    const behaviorStep = document.querySelector('.step[data-step="1"]');
+    const vocationalStep = document.querySelector('.step[data-step="2"]');
+    const homeFamilyStep = document.querySelector('.step[data-step="3"]');
+    const communityStep = document.querySelector('.step[data-step="4"]');
+    const dailyLivingStep = document.getElementById('daily-living-step');
+    const educationalStep = document.getElementById('educational-step');
+    const progressItems = {
+      physical: document.querySelector('.prog-item[data-step="0"]'),
+      behavior: document.querySelector('.prog-item[data-step="1"]'),
+      vocational: document.querySelector('.prog-item[data-step="2"]'),
+      home_family: document.querySelector('.prog-item[data-step="3"]'),
+      community: document.querySelector('.prog-item[data-step="4"]'),
+      daily_living: document.querySelector('.prog-item[data-step="5"]'),
+      educational: document.querySelector('.prog-item[data-step="6"]'),
+    };
+
+    setConfigHidden([formEl], false);
+    setConfigHidden([document.getElementById('cg-setup-empty-state')], true);
+
+    setStepAndNavHidden(physicalStep, progressItems.physical, false);
+    setStepAndNavHidden(behaviorStep, progressItems.behavior, false);
+    setStepAndNavHidden(vocationalStep, progressItems.vocational, false);
+    setStepAndNavHidden(homeFamilyStep, progressItems.home_family, false);
+    setStepAndNavHidden(communityStep, progressItems.community, false);
+    setStepAndNavHidden(dailyLivingStep, progressItems.daily_living, false);
+    setStepAndNavHidden(educationalStep, progressItems.educational, true);
+
+    setConfigHidden([
+      educationalQuestionsWrap,
+    ], true);
+    setConfigHidden([behaviorQuestionsWrap], true);
+    setConfigHidden([document.getElementById('legacyBehaviorQuestions')], false);
+    setConfigHidden([
+      document.getElementById('movementSymptomsPanel'),
+    ], !shouldShowMovementSection());
+    setConfigHidden([
+      document.getElementById('menstrualPanel'),
+    ], !shouldShowMenstrualSection());
+    setConfigHidden([
+      document.getElementById('prnPanel'),
+    ], false);
+
+    renderAdlCategoryChips();
+    renderAdlActivityChips();
+    if (updateView) {
+      current = normalizeStepIndex(current);
+      syncWizardView();
+      updateProgress();
+    }
+  }
+
+  function applyCaregiverSetupVisibility({ updateView = true } = {}){
+    const subtitle = document.querySelector('.sub');
+    if (subtitle && caregiverSetupState.groupName) {
+      subtitle.innerHTML = `Every new check-in starts with a blank date. A recovery copy is kept in this browser when storage is available. <strong>Save Draft</strong> saves a local copy; only <strong>Submit Check-In</strong> saves to Supabase. Configured for ${caregiverSetupState.groupName}.`;
+    }
+    if (caregiverSetupState.forceLegacyMode || !caregiverSetupState.hasConfig) {
+      applyLegacyCheckinVisibility({ updateView });
+      return;
+    }
+
+    let emptyState = document.getElementById('cg-setup-empty-state');
+    if (!emptyState) {
+      emptyState = document.createElement('div');
+      emptyState.id = 'cg-setup-empty-state';
+      emptyState.className = 'panel config-hidden';
+      emptyState.style.marginTop = '12px';
+      emptyState.innerHTML = '<div class="section-title">Caregiver Check-In</div><p>No caregiver tracking items are enabled for this group.</p>';
+      formEl?.parentNode?.insertBefore(emptyState, formEl);
+    }
+
+    const anythingEnabled = hasAnyEnabledCategory();
+    setConfigHidden([formEl], !anythingEnabled);
+    setConfigHidden([emptyState], anythingEnabled);
+
+    const physicalStep = document.querySelector('.step[data-step="0"]');
+    const behaviorStep = document.querySelector('.step[data-step="1"]');
+    const vocationalStep = document.querySelector('.step[data-step="2"]');
+    const homeFamilyStep = document.querySelector('.step[data-step="3"]');
+    const communityStep = document.querySelector('.step[data-step="4"]');
+    const dailyLivingStep = document.getElementById('daily-living-step');
+    const educationalStep = document.getElementById('educational-step');
+    const progressItems = {
+      physical: document.querySelector('.prog-item[data-step="0"]'),
+      behavior: document.querySelector('.prog-item[data-step="1"]'),
+      vocational: document.querySelector('.prog-item[data-step="2"]'),
+      home_family: document.querySelector('.prog-item[data-step="3"]'),
+      community: document.querySelector('.prog-item[data-step="4"]'),
+      daily_living: document.querySelector('.prog-item[data-step="5"]'),
+      educational: document.querySelector('.prog-item[data-step="6"]'),
+    };
+
+    const physicalVisible = caregiverSetupState.selectedCategories.has('physical_health');
+    const behaviorVisible = caregiverSetupState.selectedCategories.has('behavior_mental_health');
+    const vocationalVisible = caregiverSetupState.selectedCategories.has('vocational');
+    const communityVisible = caregiverSetupState.selectedCategories.has('community');
+    const dailyLivingVisible = caregiverSetupState.selectedCategories.has('daily_living');
+    const educationalVisible = caregiverSetupState.selectedCategories.has('educational');
+    const educationalItemsVisible = getConfiguredEducationalOptions().length > 0;
+
+    const visibility = getCheckinVisibilityFlags();
+    const sleepEnabled = visibility.sleep;
+    const appetiteEnabled = visibility.appetite;
+    const energyEnabled = visibility.tired;
+    const illnessEnabled = visibility.illness;
+    const painEnabled = visibility.pain;
+    const symptomPanelEnabled = illnessEnabled || painEnabled;
+    const menstrualEnabled = visibility.menstrual;
+    const medicationEnabled = visibility.medicationChanges;
+    const prnEnabled = visibility.prn;
+    const movementEnabled = visibility.movement;
+
+    setStepAndNavHidden(physicalStep, progressItems.physical, !physicalVisible);
+    setStepAndNavHidden(behaviorStep, progressItems.behavior, !behaviorVisible);
+    setStepAndNavHidden(vocationalStep, progressItems.vocational, !vocationalVisible);
+    setStepAndNavHidden(homeFamilyStep, progressItems.home_family, true);
+    setStepAndNavHidden(communityStep, progressItems.community, !communityVisible);
+    setStepAndNavHidden(dailyLivingStep, progressItems.daily_living, !dailyLivingVisible);
+    setStepAndNavHidden(educationalStep, progressItems.educational, !(educationalVisible && educationalItemsVisible));
+
+    setConfigHidden([
+      labelForName('hours_sleep'),
+      labelForName('sleep_fell_asleep_time'),
+      labelForName('sleep_onset_difficulty'),
+      document.getElementById('question-night-wake-flag'),
+      document.getElementById('nightWakeCountWrap'),
+    ], !sleepEnabled);
+
+    setConfigHidden([
+      document.getElementById('question-appetite-change-flag'),
+      document.getElementById('appetiteDirectionWrap'),
+    ], !appetiteEnabled);
+
+    setConfigHidden([
+      document.getElementById('question-appears-tired'),
+    ], !energyEnabled);
+
+    setConfigHidden([
+      document.getElementById('question-appears-good-health'),
+    ], !visibility.goodHealth);
+
+    setConfigHidden([
+      document.getElementById('tempPanel'),
+    ], !symptomPanelEnabled);
+
+    setConfigHidden([
+      document.getElementById('movementSymptomsPanel'),
+    ], !movementEnabled);
+
+    setConfigHidden([
+      document.getElementById('prnPanel'),
+    ], !prnEnabled);
+
+    setConfigHidden([
+      document.getElementById('menstrualPanel'),
+    ], !menstrualEnabled);
+
+    setConfigHidden([
+      document.getElementById('medChangePanel'),
+    ], !medicationEnabled);
+
+    setConfigHidden([
+      document.getElementById('question-had-bm'),
+    ], !visibility.bmTracking);
+
+    setConfigHidden([
+      document.getElementById('question-caregiver-name'),
+    ], !anythingEnabled);
+
+    setConfigHidden([
+      labelForName('physical_notes'),
+    ], !anyConfigItemEnabled('daily_living', ['following_routine']));
+    renderBehaviorQuestions();
+    setConfigHidden([
+      behaviorQuestionsWrap,
+    ], !behaviorVisible);
+    setConfigHidden([
+      document.getElementById('legacyBehaviorQuestions'),
+    ], true);
+
+    renderEducationalQuestions();
+    setConfigHidden([
+      educationalQuestionsWrap,
+    ], !(educationalVisible && educationalItemsVisible));
+
+    setConfigHidden([
+      document.getElementById('question-vocational-participation'),
+      document.getElementById('vocationalDetails'),
+      document.getElementById('vocationalNotesWrap'),
+    ], !anyConfigItemEnabled('vocational', ['attended_work_program', 'task_completion', 'prompting_needed', 'workplace_behavior', 'independence']));
+
+    setConfigHidden([
+      document.getElementById('question-public-activity-flag'),
+      document.getElementById('publicDetails'),
+      document.getElementById('publicDetailsNotes'),
+      labelForName('public_activity_note'),
+    ], !anyConfigItemEnabled('community', ['community_outing', 'transportation', 'recreation_participation']));
+
+    setConfigHidden([
+      document.getElementById('question-community-interaction-ok'),
+      document.getElementById('interactionDetails'),
+      document.getElementById('interactionDetailsNotes'),
+    ], !anyConfigItemEnabled('community', ['social_interaction', 'safety_in_community']));
+
+    setConfigHidden([
+      labelForName('daily_living_notes'),
+    ], !(visibility.hygiene || visibility.meals || visibility.personalCare || anyConfigItemEnabled('daily_living', ['following_routine', 'clean_up', 'laundry'])));
+
+    renderAdlCategoryChips();
+    renderAdlActivityChips();
+    if (updateView) {
+      current = normalizeStepIndex(current);
+      syncWizardView();
+      updateProgress();
+    }
+  }
+
+  const parseAdlEntries = (value) => {
+    if (!value) return [];
+    if (Array.isArray(value)) return value.filter(Boolean);
+    try {
+      const parsed = typeof value === 'string' ? JSON.parse(value) : value;
+      return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const cleanGoalTitle = (raw) => {
+    if (!raw) return '';
+    const trimmed = String(raw).trim();
+    if (!trimmed) return '';
+    const lower = trimmed.toLowerCase();
+    if (lower === 'goal title') return '';
+    if (/^goal\s+\d+/.test(lower)) return '';
+    return trimmed;
+  };
+  const escapeHtml = (str = '') =>
+    String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
+  const parseJsonArray = (value) => {
+    if (!value) return [];
+    if (Array.isArray(value)) return value.filter(Boolean);
+    try {
+      const parsed = typeof value === 'string' ? JSON.parse(value) : value;
+      return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+    } catch {
+      return [];
+    }
+  };
+	  const parseMultiValue = (value) => {
+    if (!value) return [];
+    if (Array.isArray(value)) return value.filter(Boolean);
+    if (typeof value === 'string') {
+      try {
+        const parsed = JSON.parse(value);
+        if (Array.isArray(parsed)) return parsed.filter(Boolean);
+      } catch {}
+      const trimmed = value.trim();
+      return trimmed ? [trimmed] : [];
+    }
+	    return [];
+	  };
+
+	  const emptyPrnEntry = () => ({
+	    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+	    time: '',
+	    medication: '',
+	    reason: '',
+	    notes: ''
+	  });
+
+	  function normalizePrnEntry(entry = {}) {
+	    return {
+	      id: entry.id || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+	      time: String(entry.time || entry.prn_time || '').trim(),
+	      medication: String(entry.medication || entry.prn_name || entry.medication_name || '').trim(),
+	      reason: String(entry.reason || entry.prn_reason || entry.purpose || '').trim(),
+	      notes: String(entry.notes || entry.note || '').trim()
+	    };
+	  }
+
+	  function readPrnEntriesFromDom() {
+	    if (!prnEntryListEl) return [];
+	    return Array.from(prnEntryListEl.querySelectorAll('[data-prn-entry]'))
+	      .map((entryEl) => normalizePrnEntry({
+	        id: entryEl.dataset.prnEntry || '',
+	        time: entryEl.querySelector('[data-prn-time]')?.value || '',
+	        medication: entryEl.querySelector('[data-prn-medication]')?.value || '',
+	        reason: entryEl.querySelector('[data-prn-reason]')?.value || '',
+	        notes: entryEl.querySelector('[data-prn-notes]')?.value || ''
+	      }));
+	  }
+
+		  function syncPrnEntriesField() {
+		    prnEntries = readPrnEntriesFromDom();
+		    if (prnEntriesField) prnEntriesField.value = JSON.stringify(prnEntries);
+		  }
+
+		  function renderPrnEntries() {
+		    if (!prnEntryListEl) return;
+		    prnEntryListEl.innerHTML = prnEntries.map((entry, index) => `
+		      <article class="prn-entry" data-prn-entry="${escapeHtml(entry.id)}">
+	        <div class="prn-entry-head">
+	          <div class="prn-entry-title">PRN ${index + 1}</div>
+	          ${prnEntries.length > 1 ? `<button class="prn-remove-btn" type="button" data-remove-prn="${escapeHtml(entry.id)}">Remove</button>` : ''}
+	        </div>
+	        <div class="prn-entry-grid">
+	          <label>Time given
+	            <input type="time" data-prn-time value="${escapeHtml(entry.time)}" required>
+	          </label>
+	          <label>Medication / PRN
+	            <input type="text" data-prn-medication value="${escapeHtml(entry.medication)}" placeholder="Medication or PRN" required>
+	          </label>
+	          <label>What was it given for?
+	            <input type="text" data-prn-reason value="${escapeHtml(entry.reason)}" list="prnReasonOptions" placeholder="e.g., anxiety, pacing, agitation, sleep" required>
+	          </label>
+	          <label>Notes
+	            <textarea data-prn-notes placeholder="Optional brief note">${escapeHtml(entry.notes)}</textarea>
+	          </label>
+	        </div>
+	      </article>
+	    `).join('');
+	    syncPrnEntriesField();
+	  }
+
+		  function syncCentralPrnUI() {
+		    const yes = getYnValue('prn_used_today') === 'yes';
+		    if (prnEntriesWrap) prnEntriesWrap.classList.toggle('is-hidden', !yes);
+		    if (yes && !prnEntries.length) {
+		      prnEntries = [emptyPrnEntry()];
+		      renderPrnEntries();
+		    }
+		    if (!yes) {
+		      prnEntries = [];
+		      if (prnEntryListEl) prnEntryListEl.innerHTML = '';
+		      if (prnEntriesField) prnEntriesField.value = '[]';
+		    }
+		  }
+
+	  function hydratePrnFromData(data = {}) {
+		    const entries = parseJsonArray(data.prn_entries).map(normalizePrnEntry);
+		    prnEntries = entries.length ? entries : [];
+		    const used = String(data.prn_used_today || '').toLowerCase();
+		    const yes = used === 'yes' || used === 'true' || (used !== 'no' && prnEntries.length > 0);
+	    document.querySelectorAll('input[name="prn_used_today"]').forEach((el) => {
+	      el.checked = yes ? el.value === 'yes' : used === 'no' ? el.value === 'no' : false;
+	    });
+		    if (yes) renderPrnEntries();
+		    else if (prnEntryListEl) prnEntryListEl.innerHTML = '';
+		    syncCentralPrnUI();
+		  }
+
+	  function validateCentralPrns() {
+	    syncPrnEntriesField();
+	    if (getYnValue('prn_used_today') !== 'yes') return true;
+	    const firstInvalid = Array.from(prnEntryListEl?.querySelectorAll('[data-prn-time],[data-prn-medication],[data-prn-reason]') || [])
+	      .find((field) => !String(field.value || '').trim());
+	    if (firstInvalid) {
+	      firstInvalid.focus();
+	      alert('Please enter time, medication, and reason for each PRN given today.');
+	      return false;
+	    }
+	    return true;
+	  }
+
+  let movementEls = {};
+  let tempEls = {};
+  let menstrualEls = {};
+  let medEls = {};
+  const getMovementCheckboxValues = (selector) =>
+    Array.from(document.querySelectorAll(selector))
+      .filter((el) => el.checked)
+      .map((el) => el.value);
+
+  const setMovementCheckboxValues = (selector, values = []) => {
+    const set = new Set(values || []);
+    document.querySelectorAll(selector).forEach((el) => {
+      el.checked = set.has(el.value);
+    });
+  };
+
+  const syncMovementHiddenField = (hiddenEl, values) => {
+    if (!hiddenEl) return;
+    hiddenEl.value = values.length ? JSON.stringify(values) : '';
+    hiddenEl.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+
+  const setMovementSeverity = (value) => {
+    if (!movementEls.severityInput) return;
+    movementEls.severityInput.value = value ?? '';
+    movementEls.severityButtons?.forEach((btn) => {
+      const active = String(btn.dataset.sev) === String(value);
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+    movementEls.severityInput.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+
+  const setKnownTriggers = (known) => {
+    movementEls.knownTriggerButtons?.forEach((btn) => {
+      const isYes = btn.dataset.knownTrigger === 'yes';
+      const active = known ? isYes : !isYes;
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+    movementEls.triggersBody?.classList.toggle('is-hidden', !known);
+    if (!known) {
+      setMovementCheckboxValues('[data-movement-trigger]', []);
+      if (movementEls.triggersInput) movementEls.triggersInput.value = '';
+      const other = document.getElementById('movement_trigger_other');
+      if (other) other.value = '';
+      syncMovementArrays();
+    }
+  };
+
+  const setAwarenessExpanded = (expanded) => {
+    if (!movementEls.awarenessBody) return;
+    movementEls.awarenessBody.classList.remove('is-hidden');
+    if (!movementEls.awarenessToggle) return;
+    movementEls.awarenessToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    const hint = movementEls.awarenessToggle.querySelector('.movement-toggle-hint');
+    if (hint) hint.textContent = expanded ? 'Hide' : 'Show';
+  };
+
+  const syncMovementArrays = () => {
+    const times = getMovementCheckboxValues('[data-movement-time]');
+    const bodyMap = getMovementCheckboxValues('[data-movement-body]');
+    const triggers = getMovementCheckboxValues('[data-movement-trigger]');
+    syncMovementHiddenField(movementEls.timesInput, times);
+    syncMovementHiddenField(movementEls.bodyMapInput, bodyMap);
+    syncMovementHiddenField(movementEls.triggersInput, triggers);
+  };
+
+  const getMultiCheckboxValues = (selector) =>
+    Array.from(document.querySelectorAll(selector))
+      .filter((el) => el.checked)
+      .map((el) => el.value);
+
+  const setMultiCheckboxValues = (selector, values = []) => {
+    const set = new Set(values || []);
+    document.querySelectorAll(selector).forEach((el) => {
+      el.checked = set.has(el.value);
+    });
+  };
+
+  const syncMultiHiddenField = (hiddenEl, values) => {
+    if (!hiddenEl) return;
+    hiddenEl.value = values.length ? JSON.stringify(values) : '';
+    hiddenEl.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+
+  const getTempCheckboxValues = (selector) =>
+    Array.from(document.querySelectorAll(selector))
+      .filter((el) => el.checked)
+      .map((el) => el.value);
+
+  const setTempCheckboxValues = (selector, values = []) => {
+    const set = new Set(values || []);
+    document.querySelectorAll(selector).forEach((el) => {
+      el.checked = set.has(el.value);
+    });
+  };
+
+  const syncTempHiddenField = (hiddenEl, values) => {
+    if (!hiddenEl) return;
+    hiddenEl.value = values.length ? JSON.stringify(values) : '';
+    hiddenEl.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+
+  const syncTempArrays = () => {
+    const symptoms = getTempCheckboxValues('[data-temp-symptom]');
+    syncTempHiddenField(tempEls.symptomsInput, symptoms);
+  };
+
+  const syncMenstrualArrays = () => {
+    const symptoms = getTempCheckboxValues('[data-menstrual-symptom]');
+    syncTempHiddenField(menstrualEls.symptomsInput, symptoms);
+  };
+
+  const setMovementPresent = (present) => {
+    if (!movementEls.bodyWrap) return;
+    movementEls.bodyWrap.classList.toggle('is-collapsed', !present);
+    if (!present) {
+      clearMovementFields({ keepPresent: true });
+      movementEls.detailsPanel?.classList.add('is-hidden');
+      movementEls.detailsToggle?.setAttribute('aria-expanded', 'false');
+      if (movementEls.detailsToggle) movementEls.detailsToggle.textContent = 'Show body map & triggers';
+    } else {
+      movementEls.detailsPanel?.classList.remove('is-hidden');
+      movementEls.detailsToggle?.setAttribute('aria-expanded', 'true');
+      if (movementEls.detailsToggle) movementEls.detailsToggle.textContent = 'Hide body map & triggers';
+      const times = parseJsonArray(movementEls.timesInput?.value);
+      if (!times.length) {
+        setMovementCheckboxValues('[data-movement-time]', ['AM']);
+        syncMovementArrays();
+      }
+    }
+  };
+
+  const setTempPresent = (present) => {
+    if (!tempEls.bodyWrap) return;
+    tempEls.bodyWrap.classList.toggle('is-collapsed', !present);
+    if (!present) {
+      clearTempFields({ keepPresent: true });
+    }
+  };
+
+  const setMenstrualPresent = (present) => {
+    if (!menstrualEls.bodyWrap) return;
+    menstrualEls.bodyWrap.classList.toggle('is-collapsed', !present);
+    if (!present) {
+      clearMenstrualFields({ keepPresent: true });
+    }
+  };
+
+  const setMedChangePresent = (present) => {
+    if (!medEls.bodyWrap) return;
+    medEls.bodyWrap.classList.toggle('is-collapsed', !present);
+    if (!present) {
+      clearMedFields({ keepPresent: true });
+    }
+  };
+
+  const hasHealthConcernData = (data = {}) => {
+    const medFlag = String(data.med_change_flag || '').toLowerCase();
+    const tempFlag = String(data.temp_present || '').toLowerCase();
+    const medValues = [
+      data.med_change_type_new,
+      data.med_change_type_dose,
+      data.med_change_type_stopped,
+      data.med_change_type_other,
+      data.med_change_time_window,
+      data.med_change_time_other,
+      data.med_change_name,
+      data.med_change_dose,
+      data.med_change_note,
+    ];
+    const tempValues = [
+      data.temp_value,
+      data.temp_method,
+      data.temp_prn_name,
+      data.temp_prn_time,
+      data.temp_symptom_other,
+      data.temp_notes,
+      data.prn_used_for_symptoms_discomfort,
+    ];
+    return medFlag === 'yes'
+      || medFlag === 'no'
+      || tempFlag === 'yes'
+      || tempFlag === 'no'
+      || medValues.some((value) => value === true || !!trimOrNull(value))
+      || tempValues.some((value) => value === true || !!trimOrNull(value))
+      || parseJsonArray(data.temp_symptoms).length > 0;
+  };
+
+  const syncHealthConcernsDisclosure = (data = {}) => {
+    if (!healthConcernsPanel) return;
+    healthConcernsPanel.open = hasHealthConcernData(data);
+  };
+
+  const syncMedTimeWindow = () => {
+    const wrap = document.getElementById('medChangeTimeOtherWrap');
+    const select = document.getElementById('med_change_time_window');
+    if (!wrap || !select) return;
+    const show = select.value === 'Other';
+    wrap.style.display = show ? '' : 'none';
+    if (!show) {
+      const input = document.getElementById('med_change_time_other');
+      if (input) input.value = '';
+    }
+  };
+
+  const clearMedFields = ({ keepPresent = false } = {}) => {
+    if (!keepPresent) {
+      document.querySelectorAll('input[name="med_change_flag"]').forEach((el) => {
+        el.checked = false;
+      });
+    }
+    const checkboxNames = [
+      'med_change_type_new',
+      'med_change_type_dose',
+      'med_change_type_stopped',
+      'med_change_type_other'
+    ];
+    checkboxNames.forEach((name) => {
+      const el = document.querySelector(`input[name="${name}"]`);
+      if (el) el.checked = false;
+    });
+    ['med_change_time_window','med_change_time_other','med_change_name','med_change_dose','med_change_note']
+      .forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+    syncMedTimeWindow();
+  };
+
+  const clearMovementFields = ({ keepPresent = false } = {}) => {
+    if (!keepPresent) {
+      document.querySelectorAll('input[name="movement_present"]').forEach((el) => {
+        el.checked = false;
+      });
+    }
+    document.querySelectorAll('input[name="movement_main_type"]').forEach((el) => (el.checked = false));
+    setMovementSeverity('');
+    setMovementCheckboxValues('[data-movement-time]', []);
+    setMovementCheckboxValues('[data-movement-body]', []);
+    setMovementCheckboxValues('[data-movement-trigger]', []);
+    ['movement_notes','movement_other_text','movement_trigger_other','movement_interfered_notes','movement_safety_notes']
+      .forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+    ['movement_frequency','movement_interfered','movement_awareness','movement_safety_risk']
+      .forEach((name) => {
+        document.querySelectorAll(`input[name="${name}"]`).forEach((el) => (el.checked = false));
+      });
+    setKnownTriggers(false);
+    setAwarenessExpanded(true);
+    syncMovementArrays();
+  };
+
+  const clearTempFields = ({ keepPresent = false } = {}) => {
+    if (!keepPresent) {
+      document.querySelectorAll('input[name="temp_present"]').forEach((el) => {
+        el.checked = false;
+      });
+    }
+    ['temp_value', 'temp_method', 'temp_prn_name', 'temp_prn_time', 'temp_symptom_other', 'temp_notes']
+      .forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+    const prnSymptoms = document.querySelector('input[name="prn_used_for_symptoms_discomfort"]');
+    if (prnSymptoms) prnSymptoms.checked = false;
+    setTempCheckboxValues('[data-temp-symptom]', []);
+    syncTempArrays();
+  };
+
+  const clearMenstrualFields = ({ keepPresent = false } = {}) => {
+    if (!keepPresent) {
+      document.querySelectorAll('input[name="menstrual_present"]').forEach((el) => {
+        el.checked = false;
+      });
+    }
+    ['menstrual_symptom_other', 'menstrual_notes']
+      .forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+    setTempCheckboxValues('[data-menstrual-symptom]', []);
+    syncMenstrualArrays();
+  };
+
+  const hydrateMovementFromData = (data = {}) => {
+    const present = String(data.movement_present || '').toLowerCase() === 'yes'
+      || data.movement_present === true;
+    document.querySelectorAll('input[name="movement_present"]').forEach((el) => {
+      el.checked = present ? el.value === 'yes' : false;
+    });
+    setMovementPresent(present);
+    if (!present) return;
+
+    document.querySelectorAll('input[name="movement_main_type"]').forEach((el) => {
+      el.checked = el.value === (data.movement_main_type || '');
+    });
+    setMovementSeverity(data.movement_severity ?? '');
+    const times = parseJsonArray(data.movement_times);
+    setMovementCheckboxValues('[data-movement-time]', times);
+    const bodyMap = parseJsonArray(data.movement_body_map);
+    setMovementCheckboxValues('[data-movement-body]', bodyMap);
+    const triggers = parseJsonArray(data.movement_triggers);
+    setMovementCheckboxValues('[data-movement-trigger]', triggers);
+    if (movementEls.timesInput) movementEls.timesInput.value = times.length ? JSON.stringify(times) : '';
+    if (movementEls.bodyMapInput) movementEls.bodyMapInput.value = bodyMap.length ? JSON.stringify(bodyMap) : '';
+    if (movementEls.triggersInput) movementEls.triggersInput.value = triggers.length ? JSON.stringify(triggers) : '';
+    const hasKnownTriggers = triggers.length > 0 || !!data.movement_trigger_other;
+    setKnownTriggers(hasKnownTriggers);
+
+    const simpleFields = [
+      ['movement_notes', data.movement_notes],
+      ['movement_other_text', data.movement_other_text],
+      ['movement_trigger_other', data.movement_trigger_other],
+      ['movement_interfered_notes', data.movement_interfered_notes],
+      ['movement_safety_notes', data.movement_safety_notes],
+    ];
+    simpleFields.forEach(([id, value]) => {
+      const el = document.getElementById(id);
+      if (el && value != null) el.value = value;
+    });
+    ['movement_frequency','movement_interfered','movement_awareness','movement_safety_risk']
+      .forEach((name) => {
+        const val = data[name];
+        if (!val) return;
+        document.querySelectorAll(`input[name="${name}"]`).forEach((el) => {
+          el.checked = el.value === val;
+        });
+      });
+    setAwarenessExpanded(!!data.movement_awareness);
+    syncMovementArrays();
+  };
+
+  const hydrateTempFromData = (data = {}) => {
+    const present = String(data.temp_present || '').toLowerCase() === 'yes'
+      || data.temp_present === true;
+    document.querySelectorAll('input[name="temp_present"]').forEach((el) => {
+      el.checked = present ? el.value === 'yes' : false;
+    });
+    setTempPresent(present);
+    if (!present) return;
+
+    const fields = [
+      ['temp_value', data.temp_value],
+      ['temp_method', data.temp_method],
+      ['temp_prn_name', data.temp_prn_name],
+      ['temp_prn_time', data.temp_prn_time],
+      ['temp_symptom_other', data.temp_symptom_other],
+      ['temp_notes', data.temp_notes],
+    ];
+    fields.forEach(([id, value]) => {
+      const el = document.getElementById(id);
+      if (el && value != null) el.value = value;
+    });
+    const symptoms = parseJsonArray(data.temp_symptoms);
+    setTempCheckboxValues('[data-temp-symptom]', symptoms);
+    if (tempEls.symptomsInput) tempEls.symptomsInput.value = symptoms.length ? JSON.stringify(symptoms) : '';
+    syncTempArrays();
+  };
+
+  const hydrateMenstrualFromData = (data = {}) => {
+    const present = String(data.menstrual_present || '').toLowerCase() === 'yes'
+      || data.menstrual_present === true;
+    document.querySelectorAll('input[name="menstrual_present"]').forEach((el) => {
+      el.checked = present ? el.value === 'yes' : false;
+    });
+    setMenstrualPresent(present);
+    if (!present) return;
+
+    const fields = [
+      ['menstrual_symptom_other', data.menstrual_symptom_other],
+      ['menstrual_notes', data.menstrual_notes],
+    ];
+    fields.forEach(([id, value]) => {
+      const el = document.getElementById(id);
+      if (el && value != null) el.value = value;
+    });
+    const symptoms = parseJsonArray(data.menstrual_symptoms);
+    setTempCheckboxValues('[data-menstrual-symptom]', symptoms);
+    if (menstrualEls.symptomsInput) menstrualEls.symptomsInput.value = symptoms.length ? JSON.stringify(symptoms) : '';
+    syncMenstrualArrays();
+  };
+
+  const hydrateHomeCommunityFromData = (data = {}) => {
+    const homeTypes = parseMultiValue(data.home_activity_type);
+    const publicTypes = parseMultiValue(data.public_activity_type);
+    const interactionTypes = parseMultiValue(data.interaction_type);
+    setMultiCheckboxValues('[data-home-type]', homeTypes);
+    setMultiCheckboxValues('[data-public-type]', publicTypes);
+    setMultiCheckboxValues('[data-interaction-type]', interactionTypes);
+    syncMultiHiddenField(homeActivityTypeInput, homeTypes);
+    syncMultiHiddenField(publicActivityTypeInput, publicTypes);
+    syncMultiHiddenField(interactionTypeInput, interactionTypes);
+  };
+
+  const clearHomeCommunityAdlFields = () => {
+    setMultiCheckboxValues('[data-home-type]', []);
+    setMultiCheckboxValues('[data-public-type]', []);
+    setMultiCheckboxValues('[data-interaction-type]', []);
+    setMultiCheckboxValues('[data-adl-category]', []);
+    setMultiCheckboxValues('[data-adl-activity]', []);
+    syncMultiHiddenField(homeActivityTypeInput, []);
+    syncMultiHiddenField(publicActivityTypeInput, []);
+    syncMultiHiddenField(interactionTypeInput, []);
+    if (adlCategoryInput) adlCategoryInput.value = '';
+    if (adlActivityInput) adlActivityInput.value = '';
+  };
+
+  // 4) Start logic once DOM is ready
+  document.addEventListener('DOMContentLoaded', async () => {
+    formEl        = document.getElementById('cg-form');
+    submitBtn     = document.getElementById('submitAll');
+    reviewOverlay = document.getElementById('checkinSubmitPanel');
+    reviewSectionsEl = document.getElementById('reviewSections');
+    steps         = Array.from(document.querySelectorAll('.step'));
+      adlStepIndex  = steps.findIndex((step) => step.id === 'daily-living-step');
+      movementStepIndex = steps.findIndex((step) => step.dataset.step === '0');
+	    entryDateInput = document.getElementById('entryDateInput');
+	    toggleAllBtn  = document.getElementById('toggleAll');
+	    resumeDraftBtn = document.getElementById('resumeDraftBtn');
+	    discardDraftBtn = document.getElementById('discardDraftBtn');
+	    prnEntriesWrap = document.getElementById('prnEntriesWrap');
+	    prnEntryListEl = document.getElementById('prnEntryList');
+	    addPrnEntryBtn = document.getElementById('addPrnEntryBtn');
+	    prnEntriesField = document.getElementById('prn_entries');
+	    behaviorQuestionsWrap = document.getElementById('behaviorQuestionsWrap');
+    behaviorTrackingField = document.getElementById('behavior_tracking');
+    educationalQuestionsWrap = document.getElementById('educationalQuestionsWrap');
+    educationalTrackingField = document.getElementById('educational_tracking');
+    const progressEl = document.getElementById('progress');
+    progItems     = progressEl ? Array.from(progressEl.querySelectorAll('.prog-item')) : [];
+    segs          = progressEl ? Array.from(progressEl.querySelectorAll('.seg')) : [];
+
+    if (!formEl || !submitBtn || steps.length === 0) {
+      console.error('❌ Form, button, or steps not found!');
+      return;
+    }
+
+    // Guard native form submission before any asynchronous initialization.
+    formEl.addEventListener('submit', submitFinal);
+    const session = getSessionFromStorage();
+    try {
+      caregiverSetupState.forceLegacyMode = await userHasLegacyCaregiverCheckins(session?.user?.id || null);
+      if (caregiverSetupState.forceLegacyMode) onboardingActive = false;
+    } catch (error) {
+      console.warn('[cg] legacy caregiver checkin lookup failed', error?.message || error);
+    }
+    try {
+      caregiverSetupState.groupId = await ensureGroupId(session?.user?.id || null);
+      const storedGroupName = localStorage.getItem('currentGroupName') || '';
+      caregiverSetupState.groupName = storedGroupName;
+      await loadGroupCaregiverSetup(session?.user?.id || null);
+    } catch (error) {
+      console.warn('[cg] caregiver setup config unavailable', error?.message || error);
+    }
+
+    initAdlControls();
+    movementEls = {
+      bodyWrap: document.querySelector('[data-movement-body-wrap]'),
+      severityButtons: Array.from(document.querySelectorAll('[data-movement-severity] .movement-sev-btn')),
+      severityInput: document.getElementById('movement_severity'),
+      timesInput: document.getElementById('movement_times'),
+      bodyMapInput: document.getElementById('movement_body_map'),
+      triggersInput: document.getElementById('movement_triggers'),
+      triggersBody: document.getElementById('movementTriggersBody'),
+      knownTriggerButtons: Array.from(document.querySelectorAll('[data-known-trigger]')),
+      awarenessToggle: document.getElementById('movementAwarenessToggle'),
+      awarenessBody: document.getElementById('movementAwarenessBody'),
+      detailsToggle: document.getElementById('movementDetailsToggle'),
+      detailsPanel: document.getElementById('movementDetails'),
+      sameBtn: document.getElementById('movementSameBtn')
+    };
+    tempEls = {
+      bodyWrap: document.querySelector('[data-temp-body-wrap]'),
+      symptomsInput: document.getElementById('temp_symptoms')
+    };
+    menstrualEls = {
+      bodyWrap: document.querySelector('[data-menstrual-body-wrap]'),
+      symptomsInput: document.getElementById('menstrual_symptoms')
+    };
+    medEls = {
+      bodyWrap: document.querySelector('[data-med-body-wrap]'),
+      noteInput: document.getElementById('med_change_note'),
+      timeWindow: document.getElementById('med_change_time_window')
+    };
+    homeActivityTypeInput = document.getElementById('home_activity_type');
+    publicActivityTypeInput = document.getElementById('public_activity_type');
+    interactionTypeInput = document.getElementById('interaction_type');
+    hydratePromptingSelects();
+    resetFormValues();
+    updateSavedButtons();
+    updateProgress();
+    syncAggressionControls();
+    syncManiaControls();
+    syncAppetiteControls();
+    syncFixationControls();
+    syncMovementArrays();
+    syncTempArrays();
+    syncMenstrualArrays();
+    syncHomeActivityTypes();
+    syncPublicActivityTypes();
+    syncInteractionTypes();
+    syncAdlMultiFields({ silent: true });
+    if (movementEls.sameBtn) {
+      movementEls.sameBtn.disabled = true;
+      movementEls.sameBtn.title = 'Previous movement details are no longer stored on this device.';
+    }
+
+	    // Wire per-step buttons. Drafts are saved only by an explicit Save Draft click.
+	    steps.forEach((step, idx) => {
+	      step.querySelector('[data-next]')?.addEventListener('click', () => {
+	        if (idx === 0 && !validateCentralPrns()) return;
+	        markSectionDetailedComplete(step);
+	        continueGuidedFlow(idx);
+	      });
+	      step.querySelector('[data-prev]')?.addEventListener('click', () => {
+	        go(idx - 1, false);
+      });
+      step.querySelector('[data-save]')?.addEventListener('click', saveDraftExplicitly);
+      step.addEventListener('input', (e) => {
+        if (e.target?.name === 'aggression_intensity') {
+          const el = document.getElementById('intensityVal');
+          if (el) el.textContent = e.target.value;
+        }
+        if (e.target?.name === 'manic_intensity') {
+          const el = document.getElementById('manicIntensityVal');
+          if (el) el.textContent = e.target.value;
+        }
+      });
+    });
+
+    document.querySelectorAll('input[name="movement_present"]').forEach((el) => {
+      el.addEventListener('change', () => {
+        const present = el.value === 'yes';
+        setMovementPresent(present);
+      });
+    });
+    document.querySelectorAll('input[name="temp_present"]').forEach((el) => {
+      el.addEventListener('change', () => {
+        const present = el.value === 'yes';
+        setTempPresent(present);
+      });
+    });
+    document.querySelectorAll('input[name="menstrual_present"]').forEach((el) => {
+      el.addEventListener('change', () => {
+        const present = el.value === 'yes';
+        setMenstrualPresent(present);
+      });
+    });
+    document.querySelectorAll('input[name="med_change_flag"]').forEach((el) => {
+      el.addEventListener('change', () => {
+        const present = el.value === 'yes';
+        setMedChangePresent(present);
+      });
+    });
+    behaviorQuestionsWrap?.addEventListener('change', () => {
+      syncBehaviorQuestionStates();
+      syncBehaviorTrackingField({ dispatch: true });
+    });
+    behaviorQuestionsWrap?.addEventListener('input', () => {
+      syncBehaviorQuestionStates();
+      syncBehaviorTrackingField({ dispatch: true });
+    });
+	    behaviorQuestionsWrap?.addEventListener('input', (event) => {
+	      if (event.target?.matches('[data-behavior-intensity]')) {
+	        syncBehaviorIntensityDisplay(event.target.closest('[data-behavior-key]'));
+	      }
+	    });
+	    document.querySelectorAll('input[name="prn_used_today"]').forEach((input) => {
+	      input.addEventListener('change', () => {
+	        syncCentralPrnUI();
+	      });
+	    });
+	    prnEntryListEl?.addEventListener('input', () => {
+	      syncPrnEntriesField();
+	    });
+	    prnEntryListEl?.addEventListener('click', (event) => {
+	      const removeBtn = event.target.closest('[data-remove-prn]');
+	      if (!removeBtn) return;
+	      syncPrnEntriesField();
+	      prnEntries = prnEntries.filter((entry) => entry.id !== removeBtn.dataset.removePrn);
+	      renderPrnEntries();
+	    });
+	    addPrnEntryBtn?.addEventListener('click', () => {
+	      syncPrnEntriesField();
+	      prnEntries.push(emptyPrnEntry());
+	      renderPrnEntries();
+	    });
+	    behaviorQuestionsWrap?.addEventListener('click', async (event) => {
+      const editBtn = event.target.closest('[data-behavior-desc-edit]');
+      if (editBtn) {
+        const key = editBtn.dataset.behaviorDescEdit || '';
+        const editor = behaviorQuestionsWrap.querySelector(`[data-behavior-desc-editor="${key}"]`);
+        editor?.classList.toggle('is-hidden');
+        return;
+      }
+      const cancelBtn = event.target.closest('[data-behavior-desc-cancel]');
+      if (cancelBtn) {
+        const key = cancelBtn.dataset.behaviorDescCancel || '';
+        const editor = behaviorQuestionsWrap.querySelector(`[data-behavior-desc-editor="${key}"]`);
+        const textarea = behaviorQuestionsWrap.querySelector(`textarea[name="behavior_description__${key}"]`);
+        if (textarea) textarea.value = getBehaviorDescription(key, cancelBtn.closest('[data-behavior-key]')?.dataset.behaviorLabel || '');
+        editor?.classList.add('is-hidden');
+        return;
+      }
+      const saveBtn = event.target.closest('[data-behavior-desc-save]');
+      if (saveBtn) {
+        const key = saveBtn.dataset.behaviorDescSave || '';
+        const block = saveBtn.closest('[data-behavior-key]');
+        const textarea = behaviorQuestionsWrap.querySelector(`textarea[name="behavior_description__${key}"]`);
+        const display = behaviorQuestionsWrap.querySelector(`[data-behavior-description-text="${key}"]`);
+        try {
+          await saveBehaviorDescription(key, textarea?.value || '');
+          if (display) display.textContent = getBehaviorDescription(key, block?.dataset.behaviorLabel || '');
+          saveBtn.closest('[data-behavior-desc-editor]')?.classList.add('is-hidden');
+          toast('Behavior description saved');
+        } catch (error) {
+          console.error('[cg] description save failed', error);
+          alert('Could not save behavior description.');
+        }
+      }
+    });
+    educationalQuestionsWrap?.addEventListener('change', () => {
+      syncEducationalQuestionStates();
+      syncEducationalTrackingField({ dispatch: true });
+    });
+    educationalQuestionsWrap?.addEventListener('input', () => {
+      syncEducationalQuestionStates();
+      syncEducationalTrackingField({ dispatch: true });
+    });
+    educationalQuestionsWrap?.addEventListener('click', async (event) => {
+      const editBtn = event.target.closest('[data-educational-desc-edit]');
+      if (editBtn) {
+        const key = editBtn.dataset.educationalDescEdit || '';
+        const editor = educationalQuestionsWrap.querySelector(`[data-educational-desc-editor="${key}"]`);
+        editor?.classList.toggle('is-hidden');
+        return;
+      }
+      const cancelBtn = event.target.closest('[data-educational-desc-cancel]');
+      if (cancelBtn) {
+        const key = cancelBtn.dataset.educationalDescCancel || '';
+        const editor = educationalQuestionsWrap.querySelector(`[data-educational-desc-editor="${key}"]`);
+        const textarea = educationalQuestionsWrap.querySelector(`textarea[name="educational_description__${key}"]`);
+        if (textarea) textarea.value = getEducationalDescription(key, cancelBtn.closest('[data-educational-key]')?.dataset.educationalLabel || '');
+        editor?.classList.add('is-hidden');
+        return;
+      }
+      const saveBtn = event.target.closest('[data-educational-desc-save]');
+      if (saveBtn) {
+        const key = saveBtn.dataset.educationalDescSave || '';
+        const block = saveBtn.closest('[data-educational-key]');
+        const textarea = educationalQuestionsWrap.querySelector(`textarea[name="educational_description__${key}"]`);
+        const display = educationalQuestionsWrap.querySelector(`[data-educational-description-text="${key}"]`);
+        try {
+          await saveBehaviorDescription(key, textarea?.value || '');
+          if (display) display.textContent = getEducationalDescription(key, block?.dataset.educationalLabel || '');
+          saveBtn.closest('[data-educational-desc-editor]')?.classList.add('is-hidden');
+          toast('Skill description saved');
+        } catch (error) {
+          console.error('[cg] educational description save failed', error);
+          alert('Could not save skill description.');
+        }
+      }
+    });
+    medEls.timeWindow?.addEventListener('change', () => {
+      syncMedTimeWindow();
+    });
+    movementEls.severityButtons?.forEach((btn) => {
+      btn.addEventListener('click', () => setMovementSeverity(btn.dataset.sev));
+    });
+    movementEls.knownTriggerButtons?.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        setKnownTriggers(btn.dataset.knownTrigger === 'yes');
+      });
+    });
+    document.addEventListener('change', (event) => {
+      if (event.target?.matches('[data-movement-time],[data-movement-body],[data-movement-trigger]')) {
+        syncMovementArrays();
+      }
+      if (event.target?.matches('[data-home-type]')) {
+        syncHomeActivityTypes();
+      }
+      if (event.target?.matches('[data-public-type]')) {
+        syncPublicActivityTypes();
+      }
+      if (event.target?.matches('[data-interaction-type]')) {
+        syncInteractionTypes();
+      }
+      if (event.target?.matches('[data-temp-symptom]')) {
+        syncTempArrays();
+      }
+      if (event.target?.matches('[data-menstrual-symptom]')) {
+        syncMenstrualArrays();
+      }
+      if (event.target?.matches('#fixation_present')) {
+        syncFixationControls();
+      }
+    });
+    movementEls.detailsToggle?.addEventListener('click', () => {
+      const isHidden = movementEls.detailsPanel?.classList.contains('is-hidden');
+      movementEls.detailsPanel?.classList.toggle('is-hidden', !isHidden);
+      movementEls.detailsToggle.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+      movementEls.detailsToggle.textContent = isHidden
+        ? 'Hide body map & triggers'
+        : 'Show body map & triggers';
+    });
+    movementEls.sameBtn?.addEventListener('click', () => {});
+
+    const medFlagChecked = document.querySelector('input[name="med_change_flag"]:checked');
+    setMedChangePresent(medFlagChecked?.value === 'yes');
+    syncMedTimeWindow();
+
+    clearDadOnlySections();
+
+    // Progress nav + show all
+    progItems.forEach((pi) => pi.addEventListener('click', () =>
+      go(Number(pi.dataset.step), Number(pi.dataset.step) >= current)
+    ));
+    toggleAllBtn?.addEventListener('click', () => {
+      isExpanded = !isExpanded;
+      syncWizardView({ scroll: true });
+	    updateProgress();
+	    updateSectionLandingUI();
+    });
+
+    const markEntryDateSelected = () => {
+      entryDateSelectedThisSession = isValidEntryDate(entryDateInput?.value || '');
+    };
+    entryDateInput?.addEventListener('input', markEntryDateSelected);
+    entryDateInput?.addEventListener('change', markEntryDateSelected);
+    document.querySelectorAll('[data-review]').forEach(button => button.addEventListener('click', renderReviewBeforeSubmit));
+
+    // Initial position
+    go(0);
+    applyConditionalSections();
+    applyCaregiverSetupVisibility();
+    syncEducationalQuestionStates();
+
+    const ynFields = [
+      'behavior_anomaly_flag',
+      'vocational_participation',
+      'home_activity_flag',
+      'public_activity_flag',
+      'community_interaction_ok',
+      'aggression_flag',
+      'manic_flag',
+      'focus_trouble_flag',
+      'appetite_change_flag',
+      'pet_interaction_flag'
+    ];
+    document.addEventListener('change', (event) => {
+      if (event.target?.matches('input[name="night_wake_flag"]')) {
+        applyConditionalSections();
+        return;
+      }
+      if (event.target?.matches(ynFields.map((name) => `input[name="${name}"]`).join(','))) {
+        applyConditionalSections();
+      }
+    });
+    submissionUI = new CheckinSubmissionUI({
+      document, window,
+      context: {
+        userId: session?.user?.id || null,
+        groupId: caregiverSetupState.groupId,
+        caregiverLabel: session?.user?.user_metadata?.full_name || session?.user?.id || 'Not signed in',
+        groupLabel: caregiverSetupState.groupName || caregiverSetupState.groupId || 'Unavailable',
+        practice: isPractice
+      },
+      request: rest,
+      currentContext: () => ({ userId: getSessionFromStorage()?.user?.id,
+        groupId: localStorage.getItem(GROUP_KEY) }),
+      capture: () => { captureCurrentFormAsDraft(); return structuredClone(draft); },
+      restore: saved => {
+        draft = structuredClone(saved || createEmptyDraft());
+        applyDraftToForm();
+        entryDateSelectedThisSession = isValidEntryDate(entryDateInput?.value || '');
+      },
+      reset: resetForm,
+      changeDate: () => { openSectionDetailByIndex(0); entryDateInput?.focus(); }
+    });
+  }); // <-- end DOMContentLoaded
+
+  // Helper: normalize truthy/falsey
+  const toBool = (v) => {
+    if (v == null) return null;
+    const s = String(v).trim().toLowerCase();
+    return ['true','yes','y','1','on'].includes(s)
+      ? true
+      : ['false','no','n','0','off',''].includes(s)
+      ? false
+      : null;
+  };
+
+  const getYnValue = (field) => {
+    const sel = document.getElementById(field);
+    if (sel && sel.tagName === 'SELECT') return sel.value;
+    const checked = document.querySelector(`input[name="${field}"]:checked`);
+    return checked ? checked.value : '';
+  };
+
+
+
+ 
+    // Prompting scale (shared with planner)
+    function populatePromptingSelect(sel){
+      const prev = sel.value;
+      sel.innerHTML = PROMPT_SCALE.map(o=>`<option value="${o.value}">${o.label}</option>`).join('');
+      if (prev) sel.value = prev;
+    }
+    function hydratePromptingSelects(){
+      document.querySelectorAll('select[data-scale="prompting"]').forEach(populatePromptingSelect);
+    }
+
+    // Aggression enable/disable
+    const aType = document.getElementById('aggression_type');
+    const aInt  = document.getElementById('aggression_intensity');
+    const aInstances = document.getElementById('aggression_instances_today');
+    const aggressionDetails = document.getElementById('aggressionDetails');
+    const aggressionNotesWrap = document.getElementById('aggressionNotesWrap');
+    function syncAggressionControls(){
+      const yes = getYnValue('aggression_flag') === 'yes';
+      [aType,aInt,aInstances].forEach(el=>el && (el.disabled=!yes));
+      if(!yes){
+        if(aType) aType.value='';
+        if(aInstances) aInstances.value = '';
+        if(aInt){ aInt.value=0; const iv=document.getElementById('intensityVal'); if(iv) iv.textContent='0'; }
+      }
+      if (aggressionDetails) aggressionDetails.style.display = yes ? '' : 'none';
+      if (aggressionNotesWrap) aggressionNotesWrap.style.display = yes ? '' : 'none';
+    }
+    // Mania enable/disable
+    const manicInt  = document.getElementById('manic_intensity');
+    const appetiteDirectionWrap = document.getElementById('appetiteDirectionWrap');
+    const maniaIntensityWrap = document.getElementById('maniaIntensityWrap');
+    const maniaEpisodeStatusWrap = document.getElementById('maniaEpisodeStatusWrap');
+    const maniaSymptomsWrap = document.getElementById('maniaSymptomsWrap');
+    const fixationCategoryWrap = document.getElementById('fixationCategoryWrap');
+    function syncFixationControls(){
+      const focusYes = getYnValue('focus_trouble_flag') === 'yes';
+      const fixationYes = !!document.getElementById('fixation_present')?.checked;
+      if (maniaSymptomsWrap) maniaSymptomsWrap.style.display = focusYes ? '' : 'none';
+      if (fixationCategoryWrap) fixationCategoryWrap.style.display = focusYes && fixationYes ? '' : 'none';
+      if (!focusYes) {
+        [
+          'daydreaming_zoning_out_present',
+          'easily_distracted_environment_present',
+          'difficulty_staying_on_task_present',
+          'short_attention_span_present',
+          'fixation_present',
+          'repetitive_behavior_present',
+          'pressured_speech_present',
+          'grandiosity_present',
+          'difficulty_following_instructions_present',
+          'needs_frequent_redirection_present',
+          'hyperactive_restless_present',
+          'disengaged_low_motivation_present'
+        ].forEach((id) => {
+          const input = document.getElementById(id);
+          if (input) input.checked = false;
+        });
+      }
+      if (!focusYes || !fixationYes) {
+        const select = document.getElementById('fixation_category');
+        if (select) select.value = '';
+      }
+    }
+    function syncManiaControls(){
+      const yes = getYnValue('manic_flag') === 'yes';
+      if (manicInt) manicInt.disabled = !yes;
+      if (maniaIntensityWrap) maniaIntensityWrap.style.display = yes ? '' : 'none';
+      if (maniaEpisodeStatusWrap) maniaEpisodeStatusWrap.style.display = yes ? '' : 'none';
+      if (!yes && manicInt) {
+        manicInt.value = 0;
+        const iv = document.getElementById('manicIntensityVal');
+        if (iv) iv.textContent = '0';
+      }
+      if (!yes) {
+        const status = document.getElementById('mania_episode_status');
+        if (status) status.value = '';
+      }
+      syncFixationControls();
+    }
+    function syncAppetiteControls(){
+      const yes = getYnValue('appetite_change_flag') === 'yes';
+      if (appetiteDirectionWrap) appetiteDirectionWrap.style.display = yes ? '' : 'none';
+      if (!yes) {
+        const input = document.getElementById('appetite_change_direction');
+        if (input) input.value = '';
+      }
+    }
+
+    const toggleFieldGroup = (selectId, { showWhen = 'yes', targets = [] } = {}) => {
+      const isMatch = getYnValue(selectId) === showWhen;
+      targets.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = isMatch ? '' : 'none';
+      });
+    };
+    const applyConditionalSections = () => {
+      toggleFieldGroup('behavior_anomaly_flag', {
+        showWhen: 'yes',
+        targets: ['anomalyTriggerWrap', 'anomalyNotesWrap']
+      });
+      toggleFieldGroup('appetite_change_flag', {
+        showWhen: 'yes',
+        targets: ['appetiteDirectionWrap']
+      });
+      toggleFieldGroup('vocational_participation', {
+        showWhen: 'yes',
+        targets: ['vocationalDetails', 'vocationalNotesWrap']
+      });
+      toggleFieldGroup('home_activity_flag', {
+        showWhen: 'yes',
+        targets: ['homeDetails', 'homeDetailsNotes', 'homeNotesWrap']
+      });
+      toggleFieldGroup('public_activity_flag', {
+        showWhen: 'yes',
+        targets: ['publicDetails', 'publicDetailsNotes']
+      });
+      toggleFieldGroup('community_interaction_ok', {
+        showWhen: 'yes',
+        targets: ['interactionDetails', 'interactionDetailsNotes']
+      });
+      syncAggressionControls();
+      toggleFieldGroup('pet_interaction_flag', {
+        showWhen: 'yes',
+        targets: ['petDetails']
+      });
+      const petYes = getYnValue('pet_interaction_flag') === 'yes';
+      if (!petYes) {
+        const petType = document.querySelector('select[name="pet_activity_type"]');
+        const petNote = document.querySelector('input[name="pet_activity_note"]');
+        const petNotes = document.querySelector('textarea[name="pet_activity_notes"]');
+        if (petType) petType.value = '';
+        if (petNote) petNote.value = '';
+        if (petNotes) petNotes.value = '';
+      }
+      syncManiaControls();
+      syncAppetiteControls();
+      const nightWakeFlagYes = document.getElementById('night_wake_flag_yes');
+      const nightWrap = document.getElementById('nightWakeCountWrap');
+      const nightCount = document.getElementById('night_wake_count');
+      const nightChecked = !!nightWakeFlagYes?.checked;
+      if (nightWrap) nightWrap.style.display = nightChecked ? '' : 'none';
+      if (!nightChecked && nightCount) nightCount.value = '';
+
+      applyCaregiverSetupVisibility({ updateView: false });
+    };
+
+    // ADL activity options
+    const ADL_ACTIVITY_MAP = Object.entries(BASE_ADL_OPTIONS).reduce((acc, [cat, items]) => {
+      items.forEach((item) => { acc[item] = cat; });
+      return acc;
+    }, {});
+
+    function syncHomeActivityTypes(){
+      const values = getMultiCheckboxValues('[data-home-type]');
+      syncMultiHiddenField(homeActivityTypeInput, values);
+    }
+
+    function syncPublicActivityTypes(){
+      const values = getMultiCheckboxValues('[data-public-type]');
+      syncMultiHiddenField(publicActivityTypeInput, values);
+    }
+
+    function syncInteractionTypes(){
+      const values = getMultiCheckboxValues('[data-interaction-type]');
+      syncMultiHiddenField(interactionTypeInput, values);
+    }
+
+    function syncAdlMultiFields({ silent } = {}){
+      const activities = getMultiCheckboxValues('[data-adl-activity]');
+      const categories = Array.from(new Set(
+        activities
+          .map((activity) => ADL_ACTIVITY_MAP[activity] || '')
+          .filter(Boolean)
+      ));
+      if (adlCategoryInput) {
+        adlCategoryInput.value = categories.length ? JSON.stringify(categories) : '';
+        if (!silent) adlCategoryInput.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      if (adlActivityInput) {
+        adlActivityInput.value = activities.length ? JSON.stringify(activities) : '';
+        if (!silent) adlActivityInput.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    }
+
+    function renderAdlCategoryChips(){
+      if (adlCategoryWrap) adlCategoryWrap.innerHTML = '';
+    }
+
+	    function renderAdlActivityChips(){
+	      if (!adlActivityWrap) return;
+	      const selectedActivities = getMultiCheckboxValues('[data-adl-activity]');
+	      adlActivityWrap.innerHTML = '';
+
+      Object.entries(getConfiguredAdlOptions()).forEach(([cat, items]) => {
+        const group = document.createElement('div');
+        group.className = 'adl-activity-group';
+        const heading = document.createElement('div');
+        heading.className = 'movement-label';
+        heading.textContent = cat;
+        group.appendChild(heading);
+        const chips = document.createElement('div');
+        chips.className = 'movement-chips choice-grid';
+	        items.forEach((item) => {
+	          const label = document.createElement('label');
+	          label.className = 'movement-chip checkbox-card';
+	          if (item.length > 18 || /[/-]/.test(item)) {
+	            label.classList.add('is-wide');
+	          }
+	          const input = document.createElement('input');
+	          input.type = 'checkbox';
+	          input.value = item;
+	          input.setAttribute('data-adl-activity', 'true');
+	          if (selectedActivities.includes(item)) input.checked = true;
+	          label.appendChild(input);
+	          const text = document.createElement('span');
+	          text.textContent = item;
+	          label.appendChild(text);
+	          chips.appendChild(label);
+	        });
+        group.appendChild(chips);
+        adlActivityWrap.appendChild(group);
+      });
+    }
+
+    function renderAdlEntries(){
+      if (!adlEntryListEl) return;
+      adlEntryListEl.innerHTML = '';
+      if (!adlEntries.length){
+        const li = document.createElement('li');
+        li.className = 'muted';
+        li.textContent = 'No ADL entries added yet.';
+        adlEntryListEl.appendChild(li);
+        return;
+      }
+      adlEntries.forEach((entry, idx) => {
+        const li = document.createElement('li');
+        li.className = 'adl-entry';
+
+        const info = document.createElement('div');
+        const title = document.createElement('strong');
+        title.textContent = entry.category || 'ADL';
+        info.appendChild(title);
+        if (entry.activity){
+          const act = document.createElement('small');
+          act.textContent = entry.activity;
+          info.appendChild(act);
+        }
+        if (entry.note){
+          const note = document.createElement('small');
+          note.textContent = entry.note;
+          info.appendChild(note);
+        }
+
+        const actions = document.createElement('div');
+        actions.className = 'adl-entry-actions';
+        if (entry.prompting){
+          const prompt = document.createElement('small');
+          prompt.textContent = `Prompt: ${PROMPT_LABELS[entry.prompting] || entry.prompting}`;
+          actions.appendChild(prompt);
+        }
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'btn';
+        removeBtn.dataset.removeAdl = idx;
+        removeBtn.textContent = 'Remove';
+        actions.appendChild(removeBtn);
+
+        li.appendChild(info);
+        li.appendChild(actions);
+        adlEntryListEl.appendChild(li);
+      });
+    }
+
+    function syncAdlEntriesField({ silent } = {}){
+      if (adlEntriesField){
+        adlEntriesField.value = adlEntries.length ? JSON.stringify(adlEntries) : '';
+        if (!silent){
+          adlEntriesField.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      }
+      renderAdlEntries();
+    }
+
+    function resetAdlEntries(){
+      adlEntries = [];
+      syncAdlEntriesField({ silent: true });
+    }
+
+    function hydrateAdlFieldsFromData(stepData, { silent } = {}){
+      const activities = parseMultiValue(stepData?.adl_activity);
+      renderAdlActivityChips();
+      setMultiCheckboxValues('[data-adl-activity]', activities);
+      syncAdlMultiFields({ silent: true });
+      adlEntries = parseAdlEntries(stepData?.adl_entries);
+      syncAdlEntriesField({ silent: true });
+    }
+
+    function addAdlEntry(){
+      const activities = getMultiCheckboxValues('[data-adl-activity]');
+      const note = (adlNoteInput?.value || '').trim();
+      const prompting = adlPromptingSelect?.value || '';
+      if (!activities.length){
+        alert('Select at least one ADL activity before adding an entry.');
+        return;
+      }
+      activities.forEach((activity) => {
+        const category = ADL_ACTIVITY_MAP[activity] || '';
+        adlEntries.push({
+          category,
+          activity,
+          note,
+          prompting
+        });
+      });
+      syncAdlEntriesField();
+      setMultiCheckboxValues('[data-adl-activity]', []);
+      syncAdlMultiFields();
+      if (adlNoteInput) adlNoteInput.value = '';
+    }
+
+    function handleAdlRemoval(event){
+      const target = event.target.closest('[data-remove-adl]');
+      if (!target) return;
+      const idx = Number(target.dataset.removeAdl);
+      if (!Number.isFinite(idx)) return;
+      adlEntries.splice(idx, 1);
+      syncAdlEntriesField();
+    }
+
+    function initAdlControls(){
+      adlCategoryWrap = document.getElementById('adlCategoryChips');
+      adlActivityWrap = document.getElementById('adlActivityChips');
+      adlCategoryInput = document.getElementById('adl_category');
+      adlActivityInput = document.getElementById('adl_activity');
+      adlNoteInput = document.getElementById('adl_note');
+      adlPromptingSelect = document.getElementById('prompting_level');
+      adlEntryListEl = document.getElementById('adlEntryList');
+      addAdlEntryBtn = document.getElementById('addAdlEntry');
+      adlEntriesField = document.getElementById('adl_entries');
+      if (!adlHandlersBound){
+        renderAdlCategoryChips();
+        renderAdlActivityChips();
+        adlActivityWrap?.addEventListener('change', () => syncAdlMultiFields());
+        addAdlEntryBtn?.addEventListener('click', addAdlEntry);
+        adlEntryListEl?.addEventListener('click', handleAdlRemoval);
+        adlHandlersBound = true;
+      }
+      if (!adlEntries.length) resetAdlEntries();
+      else renderAdlEntries();
+    }
+
+  // Wizard state
+  let isExpanded = false;
+  let current = 0;
+  let draft = createEmptyDraft();
+  let isSubmittingFinal = false;
+    function clearDadOnlySections(){
+      document.querySelectorAll('.is-dad-only').forEach((el) => {
+        el.classList.remove('is-dad-active');
+      });
+    }
+    function normalizeStepIndex(target, preferForward = true){
+      if (!steps.length) return 0;
+      const clamped = Math.max(0, Math.min(target, steps.length - 1));
+      if (!isStepHidden(steps[clamped])) return clamped;
+
+      if (preferForward) {
+        for (let i = clamped + 1; i < steps.length; i++) {
+          if (!isStepHidden(steps[i])) return i;
+        }
+        for (let i = clamped - 1; i >= 0; i--) {
+          if (!isStepHidden(steps[i])) return i;
+        }
+      } else {
+        for (let i = clamped - 1; i >= 0; i--) {
+          if (!isStepHidden(steps[i])) return i;
+        }
+        for (let i = clamped + 1; i < steps.length; i++) {
+          if (!isStepHidden(steps[i])) return i;
+        }
+      }
+      return clamped;
+    }
+
+    // ---------- helpers ----------
+    function createEmptyDraft(){
+      return { data: {}, savedAt: {}, sectionStatuses: {} };
+    }
+    function getSectionDefForStep(step){
+      return step ? SECTION_STATUS_BY_STEP.get(step.id) : null;
+    }
+    function getSectionStatus(def){
+      if (!def) return 'needs_checkin';
+      return draft.sectionStatuses?.[def.key] || 'needs_checkin';
+    }
+    function isQuickClearedStatus(def, status = getSectionStatus(def)){
+      return !!def && status === def.quickStatus;
+    }
+    function isSectionDone(def){
+      const status = getSectionStatus(def);
+      return status === 'completed' || isQuickClearedStatus(def, status);
+    }
+    function setSectionStatus(def, status){
+      if (!def) return;
+      if (!draft.sectionStatuses || typeof draft.sectionStatuses !== 'object') draft.sectionStatuses = {};
+      if (!status || status === 'needs_checkin') delete draft.sectionStatuses[def.key];
+      else draft.sectionStatuses[def.key] = status;
+      updateSectionLandingUI();
+    }
+    function sectionStatusDisplay(def){
+      const status = getSectionStatus(def);
+      if (status === 'completed') return 'Completed ✓';
+      if (isQuickClearedStatus(def, status)) return `${def.statusLabel} ✓`;
+      return 'Needs check-in →';
+    }
+    function buildSectionStatusPayload(){
+      const payload = {};
+      SECTION_STATUS_DEFS.forEach((def) => {
+        const status = getSectionStatus(def);
+        const quick = isQuickClearedStatus(def, status);
+        payload[def.key] = {
+          status,
+          label: quick ? def.statusLabel : status === 'completed' ? 'Completed' : 'Needs check-in',
+          source: quick ? 'quick_clear' : status === 'completed' ? 'detailed' : 'unresolved'
+        };
+      });
+      return payload;
+    }
+    function updateSectionLandingUI(){
+      document.querySelectorAll('.section-list-item').forEach((item) => {
+        const def = SECTION_STATUS_BY_NAV.get(item.dataset.section || '');
+        if (!def) return;
+        const status = getSectionStatus(def);
+        const isQuick = isQuickClearedStatus(def, status);
+        item.classList.toggle('is-cleared', isQuick);
+        item.classList.toggle('is-completed', status === 'completed');
+        const statusEl = item.querySelector('.status');
+        if (statusEl) statusEl.textContent = sectionStatusDisplay(def);
+        const quickBtn = item.querySelector('[data-quick-clear]');
+        if (quickBtn) {
+          quickBtn.setAttribute('aria-pressed', isQuick ? 'true' : 'false');
+          quickBtn.textContent = isQuick ? `${def.statusLabel} ✓` : def.quickLabel;
+        }
+      });
+      const beginBtn = document.getElementById('beginGuidedCheckinBtn');
+      if (beginBtn) {
+        beginBtn.textContent = getNextNeededSectionIndex() >= 0 ? 'Begin Caregiver Check-in' : 'Review & Submit';
+      }
+    }
+    function markSectionDetailedComplete(step){
+      const def = getSectionDefForStep(step);
+      if (!def || isQuickClearedStatus(def)) return;
+      setSectionStatus(def, 'completed');
+    }
+    function getNextNeededSectionIndex(startAt = 0){
+      if (!steps.length) return -1;
+      for (let pass = 0; pass < 2; pass += 1) {
+        const from = pass === 0 ? Math.max(0, startAt) : 0;
+        const to = pass === 0 ? steps.length : Math.max(0, startAt);
+        for (let idx = from; idx < to; idx += 1) {
+          const step = steps[idx];
+          if (isStepHidden(step)) continue;
+          const def = getSectionDefForStep(step);
+          if (def && !isSectionDone(def)) return idx;
+        }
+      }
+      return -1;
+    }
+    function openSectionDetailByIndex(idx, behavior = 'smooth'){
+      if (!steps[idx]) return;
+      current = idx;
+      syncWizardView({ scroll: false });
+      showActiveSectionDetail();
+      updateProgress();
+      requestAnimationFrame(() => scrollToSectionTop(steps[idx], behavior));
+    }
+    function continueGuidedFlow(fromIdx){
+      const nextIdx = getNextNeededSectionIndex(fromIdx + 1);
+      if (nextIdx >= 0) {
+        openSectionDetailByIndex(nextIdx);
+        return;
+      }
+      showSectionList();
+      renderReviewBeforeSubmit();
+    }
+    function serialize(step){
+      const data={};
+      step.querySelectorAll('input,select,textarea').forEach(el=>{
+        if(!el.name) return;
+        if(el.type==='checkbox') data[el.name]=!!el.checked;
+        else if(el.type==='radio'){ if(el.checked) data[el.name]=el.value; }
+        else data[el.name]=el.value;
+      });
+      return data;
+    }
+    function hydrate(step,data){
+      if(!data) return;
+      step.querySelectorAll('input,select,textarea').forEach(el=>{
+        const v = data[el.name]; if(v===undefined) return;
+        if(el.type==='checkbox') el.checked = !!v;
+        else if(el.type==='radio'){
+          if (el.name === 'movement_present' || el.name === 'temp_present' || el.name === 'menstrual_present') return;
+          el.checked = (el.value===v);
+        }
+        else el.value = v;
+      });
+    }
+    function captureCurrentFormAsDraft(){
+      syncPrnEntriesField();
+      const data = {};
+      const savedAt = {};
+      const now = new Date().toISOString();
+      steps.forEach((step, idx) => {
+        data[idx] = serialize(step);
+        savedAt[idx] = now;
+      });
+      draft = {
+        data,
+        savedAt,
+        sectionStatuses: draft.sectionStatuses && typeof draft.sectionStatuses === 'object'
+          ? { ...draft.sectionStatuses }
+          : {}
+      };
+    }
+    function saveDraftExplicitly(){
+      if (submissionUI?.saveDraft()) steps.forEach((step, idx) => updateSavedAt(step, idx));
+    }
+    function restore(step,idx){
+      hydrate(step,draft.data[idx]);
+      updateSavedAt(step,idx);
+      if (step.querySelector('#behaviorQuestionsWrap')) {
+        syncBehaviorQuestionStates();
+        syncBehaviorTrackingField();
+      }
+      if (step.querySelector('#educationalQuestionsWrap')) {
+        syncEducationalQuestionStates();
+        syncEducationalTrackingField();
+      }
+	      if(idx===adlStepIndex){
+	        hydrateAdlFieldsFromData(draft.data[idx] || {}, { silent: true });
+	      }
+	      if (idx === 0) {
+	        hydratePrnFromData(draft.data[idx] || {});
+	      }
+	      if (idx === movementStepIndex) {
+        hydrateMovementFromData(draft.data[idx] || {});
+        hydrateTempFromData(draft.data[idx] || {});
+        hydrateMenstrualFromData(draft.data[idx] || {});
+        syncMedTimeWindow();
+        const medFlagChecked = step.querySelector('input[name="med_change_flag"]:checked');
+        setMedChangePresent(medFlagChecked?.value === 'yes');
+        syncHealthConcernsDisclosure(draft.data[idx] || {});
+      }
+      if (step.querySelector('[data-home-type]') || step.querySelector('[data-public-type]')) {
+        hydrateHomeCommunityFromData(draft.data[idx] || {});
+      }
+    }
+    function applyDraftToForm(){
+      steps.forEach((step, idx) => restore(step, idx));
+      syncAggressionControls();
+      syncManiaControls();
+      syncAppetiteControls();
+      syncFixationControls();
+      applyConditionalSections();
+      applyCaregiverSetupVisibility();
+      syncEducationalQuestionStates();
+    }
+    function clearEntryDateSelection(){
+      entryDateSelectedThisSession = false;
+      if (entryDateInput) entryDateInput.value = '';
+      if (!draft.data || typeof draft.data !== 'object') draft.data = {};
+      if (!draft.data[0] || typeof draft.data[0] !== 'object') draft.data[0] = {};
+      draft.data[0].entry_date = '';
+    }
+    function isValidEntryDate(value){
+      return validSelectedDate(value);
+    }
+    function currentExplicitEntryDate(){
+      const raw = entryDateInput?.value || '';
+      return entryDateSelectedThisSession && isValidEntryDate(raw) ? raw.trim() : '';
+    }
+    function requireExplicitEntryDate(){
+      if (currentExplicitEntryDate()) return true;
+      alert('Please select the check-in date before reviewing or submitting.');
+      go(0, false);
+      entryDateInput?.focus?.();
+      return false;
+    }
+    function formatDraftDateLabel(value){
+      if (typeof value !== 'string') return '';
+      const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (!match) return '';
+      const dt = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+      return Number.isNaN(dt.getTime())
+        ? ''
+        : dt.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
+    }
+    function updateSavedAt(step,idx){
+      const el=step.querySelector('[data-savedat]'); const ts=draft.savedAt[idx];
+      if(el) el.textContent = ts ? `Last saved: ${new Date(ts).toLocaleString()}` : '';
+    }
+    function updateSavedButtons(){
+      submissionUI?.refreshRecoveryList();
+    }
+
+	    function updateProgress(){
+      segs.forEach((seg,idx)=>{
+        const hidden = isStepHidden(steps[idx]);
+        seg.parentElement?.classList.toggle('config-hidden', !!hidden);
+        if (hidden) {
+          seg.classList.remove('active', 'done');
+          return;
+        }
+        seg.classList.toggle('active', idx===current);
+        const hasData = !!draft.data[idx] && Object.values(draft.data[idx]).some(v=>v!=='' && v!==false && v!==null && v!==undefined);
+        seg.classList.toggle('done', hasData && idx<current);
+	      });
+	      updateSectionLandingUI();
+	    }
+	    function syncWizardView({ scroll = false } = {}){
+	      current = normalizeStepIndex(current);
+	      const lastVisibleStepIndex = (() => {
+	        for (let idx = steps.length - 1; idx >= 0; idx -= 1) {
+	          if (!isStepHidden(steps[idx])) return idx;
+	        }
+	        return -1;
+	      })();
+	      steps.forEach((step, idx) => {
+	        const isVisible = !isStepHidden(step);
+	        const shouldShow = isVisible && idx === current;
+	        step.classList.toggle('active', shouldShow);
+	        step.querySelectorAll('button[type="submit"]').forEach((button) => {
+	          button.style.display = idx === lastVisibleStepIndex ? '' : 'none';
+	        });
+	      });
+	      if (scroll && steps[current]) {
+	        scrollToSectionTop(steps[current], 'smooth');
+	      }
+	    }
+    function go(i, preferForward = true){
+      current = normalizeStepIndex(i, preferForward);
+      syncWizardView({ scroll: true });
+      updateProgress();
+    }
+	    function buildPayload(){
+	      const payload={};
+	      steps.forEach((s,idx)=>{
+	        const data = serialize(s);
+	        const def = getSectionDefForStep(s);
+	        if (def && isQuickClearedStatus(def)) {
+	          if (def.key === 'physical') {
+	            if (data.entry_date) payload.entry_date = data.entry_date;
+	            if (data.caregiver_name) payload.caregiver_name = data.caregiver_name;
+	            if (data.prn_used_today) payload.prn_used_today = data.prn_used_today;
+	            if (data.prn_entries) payload.prn_entries = data.prn_entries;
+	          }
+	          return;
+	        }
+	        Object.assign(payload, data);
+	      });
+	      payload._saved_at = {};
+	      payload.section_statuses = buildSectionStatusPayload();
+	      payload._submitted_at = new Date().toISOString();
+	      return payload;
+	    }
+
+	    function getNormalizedPrnEntriesFromPayload(payload = {}) {
+	      const usedToday = String(payload.prn_used_today || '').toLowerCase() === 'yes';
+	      const entries = parseJsonArray(payload.prn_entries)
+	        .map(normalizePrnEntry)
+	        .filter((entry) => entry.time || entry.medication || entry.reason || entry.notes);
+	      return usedToday ? entries : [];
+	    }
+
+	    function reasonMatches(entry, patterns = []) {
+	      const haystack = `${entry.reason || ''} ${entry.notes || ''}`.toLowerCase();
+	      return patterns.some((pattern) => haystack.includes(pattern));
+	    }
+    function resetParticipationRadiosToSkip(){
+      ['vocational_participation', 'home_activity_flag', 'public_activity_flag'].forEach((name) => {
+        const skip = formEl.querySelector(`input[type="radio"][name="${name}"][value=""]`);
+        if (skip) skip.checked = false;
+      });
+    }
+    function resetFormValues(){
+      formEl.reset();
+      formEl.querySelectorAll('input[type="checkbox"]').forEach((el) => {
+        el.checked = false;
+      });
+      formEl.querySelectorAll('input[type="radio"]').forEach((el) => {
+        el.checked = false;
+      });
+	      resetParticipationRadiosToSkip();
+	      prnEntries = [];
+	      renderPrnEntries();
+	      syncCentralPrnUI();
+	      formEl.querySelectorAll('input[type="text"], input[type="time"], input[type="number"], textarea').forEach((el) => {
+        el.value = '';
+      });
+      formEl.querySelectorAll('select').forEach((el) => {
+        el.selectedIndex = 0;
+      });
+      formEl.querySelectorAll('input[type="range"]').forEach((el) => {
+        el.value = '0';
+      });
+      clearEntryDateSelection();
+      const iv=document.getElementById('intensityVal');
+      if(iv) iv.textContent='0';
+      const manicIv=document.getElementById('manicIntensityVal');
+      if(manicIv) manicIv.textContent='0';
+      resetAdlEntries();
+      hydratePromptingSelects();
+      clearMovementFields();
+      movementEls.detailsPanel?.classList.add('is-hidden');
+      movementEls.detailsToggle?.setAttribute('aria-expanded', 'false');
+      clearTempFields();
+      clearMenstrualFields();
+      clearMedFields();
+      if (healthConcernsPanel) healthConcernsPanel.open = false;
+      tempEls.bodyWrap?.classList.add('is-collapsed');
+      menstrualEls.bodyWrap?.classList.add('is-collapsed');
+      setMedChangePresent(false);
+      clearHomeCommunityAdlFields();
+      renderAdlActivityChips();
+      if (behaviorTrackingField) behaviorTrackingField.value = '';
+      if (educationalTrackingField) educationalTrackingField.value = '';
+      syncManiaControls();
+      syncAppetiteControls();
+      syncFixationControls();
+      applyConditionalSections();
+      applyCaregiverSetupVisibility();
+    }
+    function resetForm(){
+      clearDraftUI();
+      resetFormValues();
+      go(0);
+    }
+	    function clearDraftUI(){
+	      draft=createEmptyDraft();
+	      // Recovery removal is performed only by the scoped submission controller.
+	      steps.forEach((s,i)=>updateSavedAt(s,i));
+	      updateSavedButtons();
+	      updateSectionLandingUI();
+      resetAdlEntries();
+      clearMovementFields();
+      clearTempFields();
+      clearMenstrualFields();
+      setMedChangePresent(false);
+      if (healthConcernsPanel) healthConcernsPanel.open = false;
+      clearHomeCommunityAdlFields();
+      renderAdlActivityChips();
+      syncManiaControls();
+      syncAppetiteControls();
+      syncFixationControls();
+    }
+    function toast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.style.opacity='1'; clearTimeout(el._t); el._t=setTimeout(()=>el.style.opacity='0',1400); }
+    function prettifyFieldName(name = '') {
+      return String(name || '')
+        .replace(/[_-]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .replace(/\b\w/g, (char) => char.toUpperCase());
+    }
+
+    function extractLabelText(field) {
+      if (!field) return '';
+      const id = field.id;
+      if (id) {
+        const direct = document.querySelector(`label[for="${CSS.escape(id)}"]`);
+        if (direct) return direct.textContent.replace(/\s+/g, ' ').trim().replace(/:\s*$/, '');
+      }
+      const wrapped = field.closest('label');
+      if (wrapped) {
+        const clone = wrapped.cloneNode(true);
+        clone.querySelectorAll('input,select,textarea,button').forEach((el) => el.remove());
+        const text = clone.textContent.replace(/\s+/g, ' ').trim().replace(/:\s*$/, '');
+        if (text) return text;
+      }
+      return prettifyFieldName(field.name || field.id || 'Field');
+    }
+
+    function fieldDisplayValue(field, radioSeen) {
+      if (!field) return null;
+      if (field.disabled) return null;
+      const tag = field.tagName.toLowerCase();
+      const type = (field.type || '').toLowerCase();
+      if (tag === 'input' && ['hidden','button','submit','file'].includes(type)) return null;
+
+      if (type === 'radio') {
+        const group = field.name || field.id;
+        if (!group || radioSeen.has(group)) return null;
+        radioSeen.add(group);
+        const chosen = formEl?.querySelector(`input[type="radio"][name="${CSS.escape(group)}"]:checked`);
+        if (!chosen) return null;
+        const wrapped = chosen.closest('.yn-pill');
+        if (wrapped) return wrapped.textContent.trim();
+        if (chosen.value) return chosen.value;
+        return 'Yes';
+      }
+      if (type === 'checkbox') {
+        if (!field.checked) return null;
+        return 'Yes';
+      }
+      if (tag === 'select') {
+        const value = field.value;
+        if (!value) return null;
+        const opt = field.selectedOptions?.[0];
+        return (opt?.textContent || value).trim();
+      }
+      const raw = String(field.value ?? '').trim();
+      if (!raw) return null;
+      return raw;
+    }
+
+	    function collectSectionReviewItems(container) {
+      if (!container) return [];
+      const items = [];
+      const seenKeys = new Set();
+      const radioSeen = new Set();
+      const fields = container.querySelectorAll('input,select,textarea');
+      fields.forEach((field) => {
+        const value = fieldDisplayValue(field, radioSeen);
+        if (value === null || value === undefined || value === '') return;
+        const label = extractLabelText(field);
+        if (!label) return;
+        const key = `${label.toLowerCase()}::${String(value).toLowerCase()}`;
+        if (seenKeys.has(key)) return;
+        seenKeys.add(key);
+        items.push({ label, value: String(value) });
+      });
+	      return items;
+	    }
+
+	    function appendReviewItem(card, item) {
+	      const row = document.createElement('div');
+	      row.className = 'review-item';
+	      const labelEl = document.createElement('div');
+	      labelEl.className = 'review-label';
+	      labelEl.textContent = item.label;
+	      const valueEl = document.createElement('div');
+	      valueEl.className = 'review-value';
+	      valueEl.textContent = item.value;
+	      row.append(labelEl, valueEl);
+	      card.appendChild(row);
+	    }
+
+	    function renderReviewBeforeSubmit() {
+	      if (!reviewOverlay || !reviewSectionsEl) return;
+	      syncPrnEntriesField();
+	      reviewSectionsEl.innerHTML = '';
+	      const prnUsed = getYnValue('prn_used_today') === 'yes';
+	      const prnItems = prnUsed
+	        ? readPrnEntriesFromDom().map((entry, index) => ({
+	            label: `PRN ${index + 1}`,
+	            value: [entry.time, entry.medication, entry.reason].filter(Boolean).join(' — ') + (entry.notes ? `\n${entry.notes}` : '')
+	          }))
+	        : [{ label: 'PRN used today?', value: getYnValue('prn_used_today') === 'no' ? 'No' : 'Not answered' }];
+	      const prnCard = document.createElement('section');
+	      prnCard.className = 'review-section';
+	      const prnHeader = document.createElement('h3');
+	      prnHeader.textContent = 'PRN Medication';
+	      prnCard.appendChild(prnHeader);
+	      prnItems.forEach((item) => appendReviewItem(prnCard, item));
+	      reviewSectionsEl.appendChild(prnCard);
+	      SECTION_STATUS_DEFS.forEach((def) => {
+	        const sectionEl = document.getElementById(def.stepId);
+	        const status = getSectionStatus(def);
+	        const items = isQuickClearedStatus(def, status) ? [] : collectSectionReviewItems(sectionEl);
+	        if (isQuickClearedStatus(def, status)) {
+	          items.unshift({ label: 'Section status', value: def.statusLabel });
+	        } else if (status === 'completed') {
+	          items.unshift({ label: 'Section status', value: 'Completed with detailed answers' });
+	        }
+	        if (!items.length) return;
+	        const card = document.createElement('section');
+	        card.className = 'review-section';
+	        const header = document.createElement('h3');
+	        header.textContent = def.title;
+	        card.appendChild(header);
+        items.forEach((item) => appendReviewItem(card, item));
+        reviewSectionsEl.appendChild(card);
+      });
+      if (!reviewSectionsEl.children.length) {
+        const empty = document.createElement('p');
+        empty.className = 'review-empty';
+        empty.textContent = 'No values entered yet.';
+        reviewSectionsEl.appendChild(empty);
+      }
+      document.getElementById('checkinAnswersReview').open = true;
+      reviewOverlay.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    }
+
+    // ---------- FINAL SUBMIT ----------
+    async function submitFinal(e){
+      e?.preventDefault?.();
+      if (!submissionUI || isSubmittingFinal) return;
+      if (!validateCentralPrns()) return;
+      const entryDate = submissionUI.begin();
+      if (!entryDate) return;
+      if (isPractice) {
+        submissionUI.finish({ state: 'practice', date: entryDate });
+        return;
+      }
+      isSubmittingFinal = true;
+      try {
+        const user_id = submissionUI.context.userId;
+        const group_id = submissionUI.context.groupId;
+        const user = getSessionFromStorage()?.user;
+        const payload = buildPayload();
+	        const behaviorDef = SECTION_STATUS_BY_STEP.get('behaviorSection');
+	        const behaviorTracking = isQuickClearedStatus(behaviorDef) ? [] : collectBehaviorTracking();
+        const educationalTracking = collectEducationalTracking();
+        const educationalPayload = collectEducationalPayload();
+        payload.behavior_tracking = behaviorTracking;
+        payload.educational_tracking = educationalTracking;
+        payload.educational = educationalPayload;
+        if (behaviorTrackingField) {
+          behaviorTrackingField.value = behaviorTracking.length ? JSON.stringify(behaviorTracking) : '';
+        }
+        if (educationalTrackingField) {
+          educationalTrackingField.value = educationalTracking.length ? JSON.stringify(educationalTracking) : '';
+        }
+        payload.entry_date = entryDate;
+        const normalizeMovement = () => {
+          if (!shouldShowMovementSection()) {
+            const cleared = {
+              movement_present: false,
+              movement_type: null,
+              movement_main_type: null,
+              movement_severity: null,
+              movement_times: [],
+              movement_notes: null,
+              movement_body_map: [],
+              movement_other_text: null,
+              movement_frequency: null,
+              movement_triggers: [],
+              movement_trigger_other: null,
+              movement_interfered: null,
+              movement_interfered_notes: null,
+              movement_awareness: null,
+              movement_safety_risk: null,
+              movement_safety_notes: null,
+            };
+            Object.assign(payload, cleared);
+            return cleared;
+          }
+          const presentRaw = String(payload.movement_present || '').toLowerCase();
+          const movementPresent = presentRaw === 'yes' || presentRaw === 'true';
+          const severityVal = Number(payload.movement_severity);
+          const times = parseJsonArray(payload.movement_times);
+          const bodyMap = parseJsonArray(payload.movement_body_map);
+          const triggers = parseJsonArray(payload.movement_triggers);
+          const cleaned = {
+            movement_present: movementPresent,
+            movement_type: trimOrNull(payload.movement_main_type),
+            movement_main_type: trimOrNull(payload.movement_main_type),
+            movement_severity: Number.isFinite(severityVal) ? severityVal : null,
+            movement_times: times,
+            movement_notes: trimOrNull(payload.movement_notes),
+            movement_body_map: bodyMap,
+            movement_other_text: trimOrNull(payload.movement_other_text),
+            movement_frequency: trimOrNull(payload.movement_frequency),
+            movement_triggers: triggers,
+            movement_trigger_other: trimOrNull(payload.movement_trigger_other),
+            movement_interfered: trimOrNull(payload.movement_interfered),
+            movement_interfered_notes: trimOrNull(payload.movement_interfered_notes),
+            movement_awareness: trimOrNull(payload.movement_awareness),
+            movement_safety_risk: trimOrNull(payload.movement_safety_risk),
+            movement_safety_notes: trimOrNull(payload.movement_safety_notes),
+          };
+          if (!movementPresent) {
+            Object.keys(cleaned).forEach((key) => {
+              if (key === 'movement_present') return;
+              cleaned[key] = Array.isArray(cleaned[key]) ? [] : null;
+            });
+          }
+          Object.assign(payload, cleaned);
+          return cleaned;
+        };
+        const movementData = normalizeMovement();
+        const normalizeTemp = () => {
+          const presentRaw = String(payload.temp_present || '').toLowerCase();
+          const tempPresent = presentRaw === 'yes' || presentRaw === 'true';
+          const symptoms = parseJsonArray(payload.temp_symptoms);
+          const hasTempInfo = presentRaw === 'yes'
+            || presentRaw === 'no'
+            || symptoms.length > 0
+            || !!payload.prn_used_for_symptoms_discomfort
+            || [
+              payload.temp_value,
+              payload.temp_method,
+              payload.temp_prn_name,
+              payload.temp_prn_time,
+              payload.temp_symptom_other,
+              payload.temp_notes,
+            ].some((value) => !!trimOrNull(value));
+          const cleaned = {
+            temp_present: hasTempInfo ? tempPresent : null,
+            temp_value: trimOrNull(payload.temp_value),
+            temp_method: trimOrNull(payload.temp_method),
+            temp_prn_name: trimOrNull(payload.temp_prn_name),
+            temp_prn_time: trimOrNull(payload.temp_prn_time),
+            temp_symptoms: symptoms,
+            temp_symptom_other: trimOrNull(payload.temp_symptom_other),
+            temp_notes: trimOrNull(payload.temp_notes),
+          };
+          if (!hasTempInfo || !tempPresent) {
+            Object.keys(cleaned).forEach((key) => {
+              if (key === 'temp_present') return;
+              cleaned[key] = Array.isArray(cleaned[key]) ? [] : null;
+            });
+          }
+          Object.assign(payload, cleaned);
+          return cleaned;
+        };
+        normalizeTemp();
+        const normalizeMenstrual = () => {
+          if (!shouldShowMenstrualSection()) {
+            const cleared = {
+              menstrual_present: false,
+              menstrual_symptoms: [],
+              menstrual_symptom_other: null,
+              menstrual_notes: null,
+            };
+            Object.assign(payload, cleared);
+            return cleared;
+          }
+          const presentRaw = String(payload.menstrual_present || '').toLowerCase();
+          const present = presentRaw === 'yes' || presentRaw === 'true';
+          const symptoms = parseJsonArray(payload.menstrual_symptoms);
+          const cleaned = {
+            menstrual_present: present,
+            menstrual_symptoms: symptoms,
+            menstrual_symptom_other: trimOrNull(payload.menstrual_symptom_other),
+            menstrual_notes: trimOrNull(payload.menstrual_notes),
+          };
+          if (!present) {
+            Object.keys(cleaned).forEach((key) => {
+              if (key === 'menstrual_present') return;
+              cleaned[key] = Array.isArray(cleaned[key]) ? [] : null;
+            });
+          }
+          Object.assign(payload, cleaned);
+          return cleaned;
+        };
+        normalizeMenstrual();
+	        const normalizeMoodRegulation = () => {
+	          const engagementRaw = payload.mood_engagement;
+	          const engagementScore = optionalEngagement(engagementRaw);
+	          const speech = trimOrNull(payload.mood_speech);
+	          const attention = trimOrNull(payload.mood_attention);
+	          const pacing = trimOrNull(payload.mood_pacing);
+	          const cleaned = {
+	            mood_energy: trimOrNull(payload.mood_energy),
+	            mood_speech: speech,
+	            mood_attention: attention,
+	            mood_engagement: Number.isFinite(engagementScore) ? String(engagementScore) : null,
+	            mood_engagement_score: Number.isFinite(engagementScore) ? engagementScore : null,
+	            mood_pacing: pacing,
+	            mood_irritability: trimOrNull(payload.mood_irritability),
+	            mood_regulation_notes: trimOrNull(payload.mood_regulation_notes),
+	            manic_flag: null,
+	            manic_intensity: null,
+	            mania_instances_today: null,
+	            mania_episode_status: null,
+	            focus_trouble_flag: attention && attention !== 'typical' ? 'Yes' : null,
+	            fixation_present: false,
+	            fixation_category: null,
+	            repetitive_behavior_present: false,
+	            pressured_speech_present: speech === 'rapid_pressured' || speech === 'difficult_to_interrupt',
+	            grandiosity_present: false,
+	            hyperactive_restless_present: pacing === 'frequent' || pacing === 'nearly_constant',
+	            disengaged_low_motivation_present: Number.isFinite(engagementScore) && engagementScore >= 2,
+	            answer_quality_version: ANSWER_VERSION,
+	            appetite_change_flag: optionalYesNo(payload.appetite_change_flag),
+	            appetite_change_direction: isAffirmative(payload.appetite_change_flag)
+	              ? trimOrNull(payload.appetite_change_direction)
+	              : null
+	          };
+	          Object.assign(payload, cleaned);
+	          return cleaned;
+	        };
+	        normalizeMoodRegulation();
+	        const normalizePrn = () => {
+	          const entries = getNormalizedPrnEntriesFromPayload(payload);
+	          const administered = entries.length > 0;
+	          const reasonSleep = entries.some((entry) => reasonMatches(entry, ['sleep', 'settling']));
+	          const reasonAggression = entries.some((entry) => reasonMatches(entry, ['aggression', 'agitation', 'escalat']));
+	          const reasonAnxiety = entries.some((entry) => reasonMatches(entry, ['anxiety', 'anxious', 'pacing', 'restless']));
+	          const reasonPain = entries.some((entry) => reasonMatches(entry, ['pain', 'discomfort', 'headache', 'illness']));
+	          const firstEntry = entries[0] || {};
+	          const cleaned = {
+	            prn_used_today: administered ? 'yes' : optionalYesNo(payload.prn_used_today),
+	            prn_entries: entries,
+	            prn_administered: administered ? 'yes' : optionalYesNo(payload.prn_used_today),
+	            prn_count: administered ? entries.length : optionalYesNo(payload.prn_used_today) === 'no' ? 0 : null,
+	            prn_name: administered ? trimOrNull(firstEntry.medication) : null,
+	            prn_time: administered ? trimOrNull(firstEntry.time) : null,
+	            prn_reason: administered ? trimOrNull(firstEntry.reason) : null,
+	            prn_reason_sleep: reasonSleep,
+	            prn_reason_aggression: reasonAggression,
+	            prn_reason_mania: false,
+	            prn_used_for_anxiety: reasonAnxiety,
+	            prn_used_for_pain: reasonPain,
+	            prn_used_for_headache: reasonPain,
+	            prn_used_for_symptoms_discomfort: reasonPain,
+	            prn_given: administered ? 'yes' : 'no',
+	            prn_mania_given: 'no',
+	            prn_aggression_given: reasonAggression ? 'yes' : 'no',
+	            prn_mania_name: null,
+	            prn_mania_time: null,
+            prn_aggression_name: null,
+            prn_aggression_time: null
+          };
+          Object.assign(payload, cleaned);
+          return cleaned;
+        };
+        normalizePrn();
+        const adlEntriesFromPayload = parseAdlEntries(payload.adl_entries);
+        payload.adl_entries = adlEntriesFromPayload;
+        const had_bm =
+          payload.had_bm === true ||
+          /yes/i.test(String(payload.had_bm ?? payload.bm_today ?? ''));
+
+        if (!group_id) {
+          throw new Error('No active group found for this caregiver. Please join or select a group before submitting.');
+        }
+        const caregiverName = trimOrNull(payload.caregiver_name) ||
+          trimOrNull(user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email);
+
+        const adlCategorySet = new Set();
+        adlEntriesFromPayload.forEach(entry => {
+          if (entry?.category) adlCategorySet.add(entry.category);
+        });
+        if (!adlCategorySet.size && payload.adl_category) {
+          parseMultiValue(payload.adl_category).forEach((cat) => adlCategorySet.add(cat));
+        }
+        const adlCategories = Array.from(adlCategorySet);
+        const hygiene = adlCategories.some((category) => adlCategoryMatchesFlag(category, 'hygiene'));
+        const foodPrep = adlCategories.some((category) => adlCategoryMatchesFlag(category, 'food_prep'));
+        const cleanup = adlCategories.some((category) => adlCategoryMatchesFlag(category, 'cleanup'));
+
+        const vocationalMinutes = durationToMinutes(payload.vocational_time);
+        const homeMinutes = durationToMinutes(payload.home_activity_time);
+        const publicMinutes = durationToMinutes(payload.public_activity_time);
+        const communityMinutes = [homeMinutes, publicMinutes]
+          .filter((n) => Number.isFinite(n))
+          .reduce((sum, n) => sum + n, 0);
+        const community_time = Number.isFinite(communityMinutes) ? communityMinutes : null;
+
+        const newSkillScore = Number.isFinite(Number(payload.prompting_level))
+          ? Number(payload.prompting_level)
+          : null;
+
+        const behaviorTrackingNotes = behaviorTracking
+          .filter((entry) => entry.occurred || entry.prn_used || entry.notes)
+          .map((entry) => {
+            const details = [
+              entry.occurred ? 'occurred' : null,
+              entry.prn_used ? 'PRN used' : null,
+              entry.prn_reason ? `reason: ${entry.prn_reason}` : null,
+              entry.prn_name ? `used: ${entry.prn_name}` : null,
+              entry.prn_time ? `time: ${entry.prn_time}` : null,
+              entry.notes || null,
+            ].filter(Boolean).join(' - ');
+            return details ? `${entry.behavior_name}: ${details}` : null;
+          })
+          .filter(Boolean)
+          .join('\n');
+
+        const caregiverNotes = [
+          payload.physical_notes,
+          behaviorTrackingNotes,
+          payload.behavior_notes,
+          payload.vocational_notes,
+          payload.home_notes,
+          payload.public_activity_note,
+          payload.interaction_note,
+          payload.daily_living_notes,
+        ]
+          .map((note) => trimOrNull(note))
+          .filter(Boolean)
+          .join('\n\n');
+
+        const row = {
+          user_id,
+          group_id,
+          caregiver_name: caregiverName,
+          date: entryDate,
+          had_bm,
+          hygiene,
+          food_prep: foodPrep,
+          cleanup,
+          vocational_time: Number.isFinite(vocationalMinutes) ? vocationalMinutes : null,
+          community_time,
+          new_skill_score: newSkillScore,
+          caregiver_notes: caregiverNotes,
+          payload,
+          submitted_at: new Date().toISOString()
+        };
+
+        const result = await submissionUI.submit(row);
+        submissionUI.finish(result);
+      } catch (error) {
+        submissionUI.finish({ state: 'failed', message: error?.message || 'Please check your connection.' });
+      } finally {
+        isSubmittingFinal = false;
+      }
+    }
+
+	    const showSectionList = () => {
+	      document.querySelectorAll('.section-detail').forEach(s => {
+	        s.style.display = 'none';
+      });
+      document.querySelectorAll('.step').forEach(step => {
+        step.style.display = step.id === 'physicalSection' ? 'block' : 'none';
+      });
+	      const list = document.getElementById('sectionListView');
+	      if (list) list.style.display = 'block';
+	      updateSectionLandingUI();
+	      window.scrollTo({ top: 0, behavior: 'smooth' });
+	    };
+
+    const scrollToSectionTop = (section, behavior = 'smooth') => {
+      if (!section) return;
+      const top = Math.max(0, section.getBoundingClientRect().top + window.scrollY);
+      window.scrollTo({ top, behavior });
+    };
+
+    const showActiveSectionDetail = () => {
+      const list = document.getElementById('sectionListView');
+      if (list) list.style.display = 'none';
+      document.querySelectorAll('.section-detail').forEach(s => {
+        s.style.display = 'none';
+      });
+      document.querySelectorAll('.step').forEach(step => {
+        step.style.display = '';
+      });
+      const activeStep = document.querySelector('.step.active');
+      const detail = activeStep?.querySelector('.section-detail');
+      if (detail) detail.style.display = 'block';
+    };
+
+	    document.querySelectorAll('.section-list-item').forEach(item => {
+	      item.addEventListener('click', () => {
+	        const targetId = item.dataset.target || `${item.dataset.section}Section`;
+	        const targetStep = document.getElementById(targetId);
+	        const def = SECTION_STATUS_BY_NAV.get(item.dataset.section || '');
+	        const list = document.getElementById('sectionListView');
+
+	        if (list) list.style.display = 'none';
+
+        document.querySelectorAll('.section-detail').forEach(s => {
+          s.style.display = 'none';
+        });
+
+        document.querySelectorAll('.step').forEach(step => {
+          step.style.display = 'none';
+          step.classList.remove('active');
+        });
+
+	        if (targetStep) {
+	          if (def && isQuickClearedStatus(def)) {
+	            setSectionStatus(def, 'needs_checkin');
+	          }
+	          const targetIndex = steps.findIndex((step) => step === targetStep);
+	          if (targetIndex >= 0) current = targetIndex;
+	          targetStep.style.display = 'block';
+          targetStep.classList.add('active');
+          const detail = targetStep.querySelector('.section-detail');
+          if (detail) detail.style.display = 'block';
+          updateProgress();
+          requestAnimationFrame(() => {
+            scrollToSectionTop(targetStep, targetId === 'behaviorSection' ? 'auto' : 'smooth');
+          });
+        }
+	      });
+	    });
+
+	    document.querySelectorAll('[data-quick-clear]').forEach((button) => {
+	      button.addEventListener('click', (event) => {
+	        event.stopPropagation();
+	        const def = SECTION_STATUS_BY_NAV.get(button.dataset.quickClear || '');
+	        if (!def) return;
+	        const nextStatus = isQuickClearedStatus(def) ? 'needs_checkin' : def.quickStatus;
+	        setSectionStatus(def, nextStatus);
+	      });
+	    });
+
+	    document.getElementById('beginGuidedCheckinBtn')?.addEventListener('click', () => {
+	      const nextIdx = getNextNeededSectionIndex();
+	      if (nextIdx >= 0) {
+	        openSectionDetailByIndex(nextIdx);
+	      } else {
+	        renderReviewBeforeSubmit();
+	      }
+	    });
+
+    document.querySelectorAll('.back-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        showSectionList();
+      });
+    });
+
+	    document.querySelectorAll('[data-prev]').forEach(btn => {
+	      btn.addEventListener('click', () => {
+	        setTimeout(showActiveSectionDetail, 0);
+	      });
+    });
+
+    const goToNextSection = (fromSection) => {
+      const idx = steps.findIndex((step) => step === fromSection);
+      if (idx >= 0) {
+        go(idx + 1, true);
+        setTimeout(showActiveSectionDetail, 0);
+      }
+    };
+
+    document.querySelectorAll('[data-skip]').forEach((skipCheckbox) => {
+      const section = skipCheckbox.closest('.step');
+      if (!section) return;
+      const otherInputs = section.querySelectorAll('input:not([data-skip])');
+      const setOtherInputsDisabled = (disabled) => {
+        otherInputs.forEach(input => {
+          input.disabled = disabled;
+        });
+      };
+
+      skipCheckbox.addEventListener('click', (event) => {
+        if (skipCheckbox.checked && skipCheckbox.dataset.skipActive === 'true') {
+          event.preventDefault();
+          skipCheckbox.checked = false;
+          skipCheckbox.dataset.skipActive = 'false';
+          setOtherInputsDisabled(false);
+        }
+      });
+
+      skipCheckbox.addEventListener('change', () => {
+        if (skipCheckbox.checked) {
+          skipCheckbox.dataset.skipActive = 'true';
+
+          // uncheck all other inputs
+          otherInputs.forEach(input => {
+            input.checked = false;
+          });
+
+          // disable all other inputs
+          setOtherInputsDisabled(true);
+
+          // move to next section
+          goToNextSection(section);
+        } else {
+          skipCheckbox.dataset.skipActive = 'false';
+
+          // re-enable inputs if unselected
+          setOtherInputsDisabled(false);
+        }
+      });
+
+      otherInputs.forEach(input => {
+        input.addEventListener('change', () => {
+          if (input.checked) {
+            skipCheckbox.checked = false;
+            skipCheckbox.dataset.skipActive = 'false';
+            setOtherInputsDisabled(false);
+          }
+        });
+      });
+    });
+</script>
+<script>
+  (function(){
+    const version = window.STAR_BUILD_VERSION || '2026.10.20A';
+    if (!window.STAR_BUILD_VERSION) window.STAR_BUILD_VERSION = version;
+    const ensureBadge = () => {
+      if (document.getElementById('star-build-version')) return;
+      const badge = document.createElement('div');
+      badge.id = 'star-build-version';
+      badge.textContent = `Build ${version}`;
+      badge.style.cssText = `
+        position:fixed;
+        right:12px;
+        bottom:12px;
+        background:rgba(17,17,17,0.85);
+        color:#f9fafb;
+        font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+        font-size:11px;
+        font-weight:600;
+        letter-spacing:0.02em;
+        padding:6px 10px;
+        border-radius:10px;
+        box-shadow:0 6px 18px rgba(0,0,0,0.18);
+        z-index:998;
+        pointer-events:none;
+      `;
+      document.body.appendChild(badge);
+    };
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', ensureBadge, { once: true });
+    } else {
+      ensureBadge();
+    }
+  })();
+</script>
+<div id="tabbar"></div>
+<!-- Bottom tab bar + hamburger drawer -->
+<script defer src="./load-tabbar.js?v=2025.01.09E"></script>
+<script defer src="./ui-shell.js?v=2026.10.20A"></script>
+<script defer src="./scripts/appbar-drawer.js?v=2026.03.16B"></script>
+</body>
+</html>

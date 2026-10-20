@@ -186,67 +186,74 @@ export function analyzeProviderRecords(entries, { start, end, groupId, individua
 const LABELS = { sleep: 'Sleep difficulty', engagement: 'Reduced engagement', withdrawal: 'Marked withdrawal', pacing: 'Pacing', irritability: 'Irritability', attention: 'Attention difficulty', appetite: 'Appetite change', behavior: 'Other behavior observations' };
 const evidenceSentence = (label, metric) => `${label} was reported on ${metric.positive} of ${metric.answered} dates with an interpretable answer${metric.mixed ? `; ${metric.mixed} additional dates had conflicting answers` : ''}.`;
 export function renderProviderLetter(a, { includeQuotes = true } = {}) {
-  const blocks = ['Dear Healthcare Provider,'];
-  const shortDate = key => { const [y,m,d] = key.split('-'); return Number(m) + '/' + Number(d) + '/' + y.slice(2); };
-  const fmt = dates => [...new Set(dates)].sort().map(shortDate).join(', ');
-  const quote = (themes, limit = 2) => {
+  const short = key => { const [year, month, day] = key.split('-'); return Number(month) + '/' + Number(day) + '/' + year.slice(2); };
+  const dates = keys => [...new Set(keys)].sort().map(short).join(', ');
+  const blocks = ['To the Support Team,'];
+  const add = (heading, body) => { if (body.trim()) blocks.push(heading + '\n' + body.trim()); };
+  const samples = (themes, limit = 2) => {
     if (!includeQuotes) return '';
-    const seen = new Set();
-    const selected = a.notes.quotes.filter(q => q.date && q.themes.some(t => themes.includes(t)) && q.quote.trim().length >= 12 && q.quote.trim().length <= 200).filter(q => {
-      const key = q.date + q.quote.trim().toLowerCase();
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    }).slice(0, limit);
-    return selected.length ? ' Caregiver notes provide examples: ' + selected.map(q => 'On ' + shortDate(q.date) + ', a caregiver wrote, “' + q.quote.trim() + '”').join(' ') : '';
+    const selected = [];
+    const usedDates = new Set();
+    const usedExperiences = new Set();
+    for (const q of a.notes.quotes) {
+      if (!q.date || !q.themes.some(theme => themes.includes(theme))) continue;
+      const value = q.quote.trim();
+      if (value.length < 12 || value.length > 200 || usedDates.has(q.date)) continue;
+      // Avoid repeating multiple quotations about the same outing or activity.
+      const normalized = value.toLowerCase();
+      const topic = /orchard|apple/.test(normalized) ? 'orchard' : /walk/.test(normalized) ? 'walking' : /music|sing|guitar/.test(normalized) ? 'music' : /work|job|gym/.test(normalized) ? 'work' : /shopping|store/.test(normalized) ? 'shopping' : normalized.replace(/[^a-z]+/g, ' ').slice(0, 35);
+      if (usedExperiences.has(topic)) continue;
+      selected.push('On ' + short(q.date) + ': “' + value + '”');
+      usedDates.add(q.date); usedExperiences.add(topic);
+      if (selected.length === limit) break;
+    }
+    return selected.length ? ' Examples from caregiver notes: ' + selected.join(' ') : '';
   };
-  const section = (title, body) => { if (body.trim()) blocks.push(title + '\n' + body.trim()); };
-  blocks.push('I am sharing a summary of observations documented by caregivers between ' + shortDate(a.start) + ' and ' + shortDate(a.end) + '. The goal is to give the treatment team a clearer picture of daily experiences, areas of concern, and positive moments that may be helpful during our next discussion.');
+  blocks.push('This summary brings together observations recorded by caregivers from ' + short(a.start) + ' through ' + short(a.end) + '. It provides an overview of daily experiences, activities, strengths, and areas of concern during that time. Observations from all caregivers are included, with each calendar day counted once.');
   const sleep = a.metrics.sleep;
-  if (sleep.positive) {
-    let body = 'Caregivers documented difficulty falling asleep or waking during the night on ' + fmt(sleep.dates) + '. These are the dates when sleep concerns were recorded; other nights may not have been documented.';
-    body += ' Tracking sleep alongside daytime energy and engagement may help the care team understand these observations.';
-    section('Sleep and Energy', body);
-  } else {
-    section('Sleep and Energy', 'The available check-ins do not provide enough clearly answered sleep questions to describe a reliable pattern for this period.');
+  if (sleep.positive) add('Sleep and Energy', 'Difficulty falling asleep or waking during the night was documented on ' + dates(sleep.dates) + '.');
+  const moodParts = [];
+  for (const [key, label] of [['engagement', 'Reduced engagement'], ['withdrawal', 'Withdrawal'], ['pacing', 'Pacing or restlessness'], ['irritability', 'Irritability'], ['attention', 'Difficulty maintaining attention']]) {
+    if (a.metrics[key].positive) moodParts.push(label + ' was documented on ' + a.metrics[key].positive + ' calendar ' + (a.metrics[key].positive === 1 ? 'day' : 'days') + ': ' + dates(a.metrics[key].dates) + '.');
   }
-  const concerns = [
-    ['engagement', 'reduced engagement'], ['withdrawal', 'withdrawal'], ['pacing', 'pacing or restlessness'],
-    ['irritability', 'irritability'], ['attention', 'difficulty maintaining attention']
-  ].filter(([key]) => a.metrics[key].positive > 0);
-  let mood = '';
-  if (concerns.length) {
-    mood = 'Caregivers described concerns involving ' + concerns.map(([, name]) => name).join(', ') + '. ';
-    const pacing = a.metrics.pacing;
-    if (pacing.positive) mood += 'Pacing or restlessness was recorded on ' + fmt(pacing.dates) + '. ';
-    mood += 'These observations may help the team understand what daily functioning has looked like during this period.';
-  } else mood = 'The available structured answers do not establish a consistent pattern of behavioral or engagement concerns.';
-  mood += quote(['pacing or restlessness', 'reduced participation']);
-  section('Mood, Engagement, and Behavior', mood);
-  const positives = a.notes.themes.find(t => t.name === 'positive experiences');
-  let strengths = positives?.dates.length ? 'Caregivers also documented positive experiences on ' + fmt(positives.dates) + '. ' : '';
-  strengths += quote(['positive experiences', 'independence and coping']);
-  if (!strengths.trim()) strengths = 'The available notes contain limited detail about activities and successful moments during this period. Recording these alongside concerns may help provide a more balanced picture.';
-  section('Participation and Positive Experiences', strengths);
-  const prnDates = [...new Set(a.prnEntries.map(e => e.date))].sort();
-  let medication = '';
-  if (a.prnEntries.length) medication = 'PRN medication was documented on ' + prnDates.length + ' calendar days: ' + fmt(prnDates) + '. These dates may include observations from more than one caregiver.';
-  else if (a.metrics.prn.positive) medication = 'Caregivers indicated PRN medication use on ' + fmt(a.metrics.prn.dates) + ', although individual administration details were not available in these records.';
-  else medication = 'The available check-ins do not contain itemized PRN administrations; this does not establish that no PRN medication was given.';
-  if (a.possibleRepeatedPrn) medication += ' Some entries may refer to the same administration and should be verified.';
+  if (moodParts.length) add('Engagement and Behavior', moodParts.join('\n') + samples(['pacing or restlessness', 'reduced participation']));
+  const notes = a.notes.themes;
+  const positive = notes.find(t => t.name === 'positive experiences');
+  const independent = notes.find(t => t.name === 'independence and coping');
+  const goodDays = [...new Set([...(positive?.dates || []), ...(independent?.dates || [])])];
+  if (goodDays.length) add('Participation and Positive Experiences', 'Positive experiences or examples of independence were documented on ' + dates(goodDays) + '.' + samples(['positive experiences', 'independence and coping'], 3));
+  // Activities are drawn from original notes rather than inferring participation from blank fields.
+  const activityGroups = [
+    ['Vocational Activities', /\\b(work|worked|job|vocational|employment|shift|job coach)\\b/i],
+    ['Community Activities', /\\b(community|outing|orchard|store|shopping|library|restaurant|pizza|park|trip|walk|gym|yankee candle)\\b/i],
+    ['Home and Daily Living', /\\b(cook|cooking|meal|clean|laundry|dishes|hygiene|shower|household|home activit)\\b/i],
+  ];
+  for (const [heading, pattern] of activityGroups) {
+    const matches = a.notes.quotes.filter(q => q.date && pattern.test(q.quote) && !/\\b(will|planned|tomorrow|did not|didn't|refused|no outing)\\b/i.test(q.quote));
+    const activityDates = [...new Set(matches.map(q => q.date))];
+    if (activityDates.length) {
+      const examples = [];
+      const used = new Set();
+      for (const q of matches) {
+        if (used.has(q.date) || q.quote.trim().length > 170) continue;
+        used.add(q.date); examples.push('On ' + short(q.date) + ': “' + q.quote.trim() + '”');
+        if (examples.length >= 3) break;
+      }
+      add(heading, 'Caregiver notes described activities on ' + dates(activityDates) + '.' + (includeQuotes && examples.length ? ' Examples: ' + examples.join(' ') : ''));
+    }
+  }
+  const prnDates = [...new Set(a.prnEntries.map(e => e.date))];
+  let medication = prnDates.length ? 'PRN medication entries were recorded on ' + prnDates.length + ' calendar days: ' + dates(prnDates) + '.' : a.metrics.prn.positive ? 'PRN medication use was noted on ' + dates(a.metrics.prn.dates) + '.' : '';
   const changes = a.days.filter(d => d.records.some(r => r.values.medicationChange === true)).map(d => d.date);
-  if (changes.length) medication += ' Medication changes were flagged on ' + fmt(changes) + ', but the flags alone do not identify the medication, dose, or clinical effect.';
-  medication += ' We would welcome the provider’s guidance on what information about timing, response, sleep, and daily functioning would be most useful when reviewing medications.';
-  section('Medication and PRN Observations', medication);
-  blocks.push('We hope these observations help support a conversation about what is going well, what has been difficult, and what we should continue monitoring. Thank you for reviewing them with us.');
-  const recorded = new Set(a.days.map(day => day.date));
+  if (changes.length) medication += (medication ? ' ' : '') + 'Medication changes were noted on ' + dates(changes) + '.';
+  add('Medication Observations', medication);
   const missing = [];
+  const recorded = new Set(a.days.map(d => d.date));
   for (let day = ordinal(a.start); day <= ordinal(a.end); day++) {
-    const date = new Date(day * DAY).toISOString().slice(0, 10);
-    if (!recorded.has(date)) missing.push(date);
+    const key = new Date(day * DAY).toISOString().slice(0, 10);
+    if (!recorded.has(key)) missing.push(key);
   }
-  let coverage = 'Caregiver observations were available for ' + a.days.length + ' of the ' + a.totalDays + ' calendar days in this period. Observations from all caregivers were considered for each date.';
-  if (missing.length) coverage += ' No check-in was found for ' + fmt(missing) + '.';
-  blocks.push('Check-in coverage\n' + coverage);
+  add('Dates Covered', 'Caregiver observations were available for ' + a.days.length + ' of the ' + a.totalDays + ' calendar days in this period.' + (missing.length ? ' No check-in was recorded for ' + dates(missing) + '.' : ''));
+  blocks.push('This summary reflects caregiver-recorded observations and activities during the selected period.');
   return blocks.join('\n\n');
 }

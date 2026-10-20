@@ -249,6 +249,23 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
     text += ' The records describe periods of disrupted sleep and changes in energy, but do not establish a fixed recurring cycle.';
     add('Sleep and Changes in Energy', text);
   }
+  // Physical-health observations are quoted from original caregiver notes only.
+  // Do not infer symptoms from a medication, activity, or an unanswered field.
+  const physicalPattern = /\b(tummy|stomach|belly|nausea|nauseous|vomit|diarrhea|constipat|bowel|headache|migraine|pain|ache|aching|sore|fever|sick|illness|dizzy|rash|swelling|injur|hurt|fatigue|exhausted)\b/i;
+  const physicalQuotes = a.notes.quotes.filter(q => q.date && physicalPattern.test(q.quote) && q.quote.trim().length <= 190);
+  const physicalByDay = new Map();
+  for (const q of physicalQuotes) {
+    if (!physicalByDay.has(q.date)) physicalByDay.set(q.date, []);
+    if (!physicalByDay.get(q.date).some(existing => existing.quote.trim() === q.quote.trim())) physicalByDay.get(q.date).push(q);
+  }
+  if (physicalByDay.size) {
+    let physicalText = 'Caregivers noted physical health or comfort concerns on ' + dateList([...physicalByDay.keys()]) + '.';
+    if (includeQuotes) {
+      const samples = [...physicalByDay].slice(0, 4).map(([day, notes]) => 'On ' + fullDate(day) + ', a caregiver wrote, “' + notes[0].quote.trim() + '”');
+      physicalText += ' ' + samples.join(' ');
+    }
+    add('Physical Health and Well-Being', physicalText);
+  }
   const behavior = [];
   for (const [key, label] of [['engagement', 'Reduced engagement'], ['withdrawal', 'Withdrawal'], ['pacing', 'Pacing or restlessness'], ['irritability', 'Irritability'], ['attention', 'Difficulty maintaining attention']]) {
     const days = a.metrics[key].dates;

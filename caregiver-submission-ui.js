@@ -78,7 +78,7 @@ export class CheckinSubmissionUI {
       win.history.replaceState(null, '', cleaned.pathname + cleaned.search + cleaned.hash);
     }
     if (!context.userId || !context.groupId) this.status('Save Failed — sign in and open this form in the correct group before entering a check-in.', true);
-    else this.status(context.practice ? 'Practice Mode — completion does not save a real check-in.' : 'Choose the date being documented, then confirm it below.');
+    else if (!requestedDraft) this.status(context.practice ? 'Practice Mode — completion does not save a real check-in.' : 'Choose the date being documented, then confirm it below.');
     this.update();
   }
   setStore() {

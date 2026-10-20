@@ -1,3 +1,5 @@
+import { checkinDateKey } from './caregiver-dates.js';
+
 export const CALENDAR_EMOJI = {
   bm: '💩',
   sleep_concern: '😴',
@@ -62,13 +64,7 @@ export function summarizeParticipationHoursForLetter(totalMinutes, range) {
 }
 
 function defaultPrintFilterDayKey(entry = {}) {
-  const value = entry.date || entry.payload?.entry_date || entry.payload?.date || '';
-  if (typeof value === 'string') {
-    const match = value.match(/^(\d{4}-\d{2}-\d{2})/);
-    if (match) return match[1];
-  }
-  const date = value ? new Date(value) : null;
-  return date && !Number.isNaN(date.getTime()) ? date.toISOString().slice(0, 10) : '';
+  return checkinDateKey(entry);
 }
 
 function defaultPrintFilterCaregiver(entry = {}) {
@@ -232,18 +228,7 @@ function getCheckinDateValue(entry = {}) {
 }
 
 function getCheckinDayKeyFromEntry(entry = {}) {
-  const value = getCheckinDateValue(entry);
-  if (!value) return '';
-  if (typeof value === 'string') {
-    const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})(?:$|[T\s])/);
-    if (match) return `${match[1]}-${match[2]}-${match[3]}`;
-  }
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return '';
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
+  return checkinDateKey(entry);
 }
 
 function normalizeAdlEntriesForReport(entry = {}) {

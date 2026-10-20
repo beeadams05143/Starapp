@@ -59,7 +59,7 @@
     .seg{height:8px;background:#e9edf2;border-radius:999px}
     .seg.active{background:linear-gradient(90deg,#4ade80,#22c55e)}
     .seg.done{background:#c7f9d6}
-    .top-actions{display:flex;gap:8px;justify-content:flex-end;align-items:center;margin:4px 0 10px}
+    .top-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;align-items:center;margin:4px 0 10px}
     .btn{
       appearance:none;
       border:1px solid #e5e7eb;
@@ -1038,7 +1038,6 @@
     body > .page-wrap.main-container > h1,
     body > .page-wrap.main-container > .sub,
     body > .page-wrap.main-container > .progress,
-    body > .page-wrap.main-container > .top-actions,
     .start-helper {
       display: none !important;
     }
@@ -1878,7 +1877,19 @@
         grid-template-columns: repeat(3, 1fr);
       }
     }
-  </style>
+
+    .checkin-submit-panel { scroll-margin-top:90px; margin-top:24px; padding:20px; border:2px solid #64748b; }
+    .checkin-date-label { font-size:1.35rem; font-weight:800; }
+    .confirmation-choice { display:flex; align-items:flex-start; gap:12px; margin:18px 0; padding:12px; min-height:44px; }
+    .confirmation-choice input[type="checkbox"] { width:24px; height:24px; flex:0 0 24px; margin:0; }
+    #submissionStatus { padding:14px; background:#eff6ff; border:1px solid #64748b; overflow-wrap:anywhere; }
+    #submissionStatus[data-error="true"], #storageNotice, #duplicateNotice { padding:14px; border:2px solid #92400e; background:#fffbeb; color:#78350f; }
+    .checkin-submit-panel [hidden], .top-actions [hidden] { display:none !important; }
+    #checkinFields:disabled { opacity:.65; }
+    .checkin-submit-panel button { min-height:44px; white-space:normal; }
+    #submissionContext, #recoveryChoices { max-width:100%; overflow-wrap:anywhere; }
+    @media(max-width:600px) { .checkin-submit-panel { padding:14px; } .checkin-submit-panel > button { width:100%; margin:6px 0; } }
+</style>
 </head>
 <body>
   <section class="starfield-page-header">
@@ -1896,7 +1907,7 @@
       ⚠️ Practice mode — nothing you enter here will be saved to real records.
     </div>
     <h1>Caregiver Check-In</h1>
-    <div class="sub">This check-in starts blank. <strong>Save Draft</strong> saves your progress only when you press it. <strong>Next</strong> moves to the next section without saving a draft.</div>
+    <div class="sub">Every new check-in starts with a blank date. A recovery copy is kept in this browser when storage is available. <strong>Save Draft</strong> saves a local copy; only <strong>Submit Check-In</strong> saves to Supabase.</div>
 
     <div class="progress" id="progress">
       <div class="prog-item" data-step="0"><div class="prog-label">Physical</div><div class="seg active"></div></div>
@@ -1909,11 +1920,13 @@
     </div>
 
     <div class="top-actions">
-      <button class="btn" id="resumeDraftBtn" style="display:none" disabled>Resume last draft</button>
-      <button class="btn" id="discardDraftBtn" type="button" style="display:none" disabled>Discard draft</button>
+      <label>Recovery copies <select id="recoveryChoices" hidden aria-label="Choose a recovery copy"></select></label>
+      <button class="btn" id="resumeDraftBtn" type="button" hidden>Resume selected recovery</button>
+      <button class="btn" id="discardDraftBtn" type="button" disabled>Discard open form</button>
     </div>
 
     <form id="cg-form" novalidate>
+      <fieldset id="checkinFields" disabled inert style="border:0;padding:0;margin:0;min-width:0">
       <!-- STEP 1: Physical -->
       <div id="physicalSection" class="step active" data-step="0">
         <div class="top-card">
@@ -2397,8 +2410,8 @@
             </div>
           </div>
           <div class="controls">
-            <div class="left-actions"><button class="btn" type="button" data-save>Save Draft</button><span class="action-note">Saves a draft only when you press this button.</span><span class="savedAt" data-savedat></span></div>
-            <div class="left-actions"><span class="action-note">Opens the next section without saving a draft.</span><button class="btn primary save-next-btn" type="button" data-next>Next →</button></div>
+            <div class="left-actions"><button class="btn" type="button" data-save>Save Draft</button><span class="action-note">Save a local recovery copy. This does not submit the check-in.</span><span class="savedAt" data-savedat></span></div>
+            <div class="left-actions"><span class="action-note">Continue to the next section.</span><button class="btn primary save-next-btn" type="button" data-next>Next →</button></div>
           </div>
         </fieldset>
           </div>
@@ -2518,10 +2531,10 @@
             <label id="anomalyNotesWrap" style="display:none">Anomaly details:<textarea name="behavior_anomaly_notes" placeholder="Describe changes in movement, speech, behavior, mood, or anything else unusual; include how long it lasted and what helped"></textarea></label>
 	          </div>
           <div class="controls">
-            <div class="left-actions"><button class="btn" type="button" data-save>Save Draft</button><span class="action-note">Saves a draft only when you press this button.</span><span class="savedAt" data-savedat></span></div>
+            <div class="left-actions"><button class="btn" type="button" data-save>Save Draft</button><span class="action-note">Save a local recovery copy. This does not submit the check-in.</span><span class="savedAt" data-savedat></span></div>
             <div>
               <button class="btn" type="button" data-prev>← Back</button>
-              <span class="action-note">Opens the next section without saving a draft.</span>
+              <span class="action-note">Continue to the next section.</span>
               <button class="btn primary save-next-btn" type="button" data-next>Next →</button>
             </div>
           </div>
@@ -2561,8 +2574,8 @@
           </div>
           <label id="vocationalNotesWrap" style="display:none">Vocational notes:<textarea name="vocational_notes" placeholder="Describe tasks, progress, or challenges during vocational time."></textarea></label>
           <div class="controls">
-            <div class="left-actions"><button class="btn" type="button" data-save>Save Draft</button><span class="action-note">Saves a draft only when you press this button.</span><span class="savedAt" data-savedat></span></div>
-            <div class="left-actions"><button class="btn" type="button" data-prev>← Back</button><span class="action-note">Opens the next section without saving a draft.</span><button class="btn primary save-next-btn" type="button" data-next>Next →</button></div>
+            <div class="left-actions"><button class="btn" type="button" data-save>Save Draft</button><span class="action-note">Save a local recovery copy. This does not submit the check-in.</span><span class="savedAt" data-savedat></span></div>
+            <div class="left-actions"><button class="btn" type="button" data-prev>← Back</button><span class="action-note">Continue to the next section.</span><button class="btn primary save-next-btn" type="button" data-next>Next →</button></div>
           </div>
         </fieldset>
           </div>
@@ -2648,12 +2661,12 @@
           </div>
           <label id="homeNotesWrap" style="display:none">Home / family notes:<textarea name="home_notes" placeholder="Interactions, meals, visitors, or notable moments at home."></textarea></label>
           <div class="controls">
-            <div class="left-actions"><button class="btn" type="button" data-save>Save Draft</button><span class="action-note">Saves a draft only when you press this button.</span><span class="savedAt" data-savedat></span></div>
+            <div class="left-actions"><button class="btn" type="button" data-save>Save Draft</button><span class="action-note">Save a local recovery copy. This does not submit the check-in.</span><span class="savedAt" data-savedat></span></div>
             <div>
               <button class="btn" type="button" data-prev>← Back</button>
-              <span class="action-note">Opens the next section without saving a draft.</span>
+              <span class="action-note">Continue to the next section.</span>
               <button class="btn primary save-next-btn" type="button" data-next>Next →</button>
-              <button class="btn" type="submit">SUBMIT</button>
+              <button class="btn" type="button" data-review>Review &amp; Submit</button>
             </div>
           </div>
         </fieldset>
@@ -2754,8 +2767,8 @@
             <label>Interaction note:<input type="text" name="interaction_note" placeholder="e.g., greeted neighbor with 'Hi' and smile"/></label>
           </div>
           <div class="controls">
-            <div class="left-actions"><button class="btn" type="button" data-save>Save Draft</button><span class="action-note">Saves a draft only when you press this button.</span><span class="savedAt" data-savedat></span></div>
-            <div class="left-actions"><button class="btn" type="button" data-prev>← Back</button><span class="action-note">Opens the next section without saving a draft.</span><button class="btn primary save-next-btn" type="button" data-next>Next →</button></div>
+            <div class="left-actions"><button class="btn" type="button" data-save>Save Draft</button><span class="action-note">Save a local recovery copy. This does not submit the check-in.</span><span class="savedAt" data-savedat></span></div>
+            <div class="left-actions"><button class="btn" type="button" data-prev>← Back</button><span class="action-note">Continue to the next section.</span><button class="btn primary save-next-btn" type="button" data-next>Next →</button></div>
           </div>
         </fieldset>
           </div>
@@ -2792,13 +2805,13 @@
           <div class="controls">
             <div class="left-actions">
               <button class="btn" type="button" data-save>Save Draft</button>
-              <span class="action-note">Saves a draft only when you press this button.</span>
+              <span class="action-note">Save a local recovery copy. This does not submit the check-in.</span>
               <span class="savedAt" data-savedat></span>
               <span class="savedAt" id="finalSubmittedAt"></span>
             </div>
             <div>
               <button class="btn" type="button" data-prev>← Back</button>
-              <button class="btn primary" id="submitAll" type="submit">Submit Final</button>
+              <button class="btn primary" type="button" data-review>Review &amp; Submit</button>
             </div>
           </div>
         </fieldset>
@@ -2816,46 +2829,50 @@
           <div class="controls">
             <div class="left-actions">
               <button class="btn" type="button" data-save>Save Draft</button>
-              <span class="action-note">Saves a draft only when you press this button.</span>
+              <span class="action-note">Save a local recovery copy. This does not submit the check-in.</span>
               <span class="savedAt" data-savedat></span>
             </div>
             <div>
               <button class="btn" type="button" data-prev>← Back</button>
-              <button class="btn primary" type="submit">Submit Final</button>
+              <button class="btn primary" type="button" data-review>Review &amp; Submit</button>
             </div>
           </div>
         </fieldset>
       </div>
+      </fieldset>
+      <section id="checkinSubmitPanel" class="panel checkin-submit-panel" aria-labelledby="checkinDateTitle">
+        <p id="submissionContext">Loading caregiver and group… Questions remain disabled until ready.</p>
+        <details id="checkinAnswersReview"><summary>Review entered answers</summary><div id="reviewSections"></div></details>
+        <div id="duplicateNotice" role="alert" hidden>
+          <p id="duplicateDateLabel"></p>
+          <label class="confirmation-choice"><input type="checkbox" id="allowDuplicate" autocomplete="off"> I intend to create an additional check-in for this same date. Keep the existing record unchanged.</label>
+        </div>
+        <h2 id="checkinDateTitle">Review Your Check-In Date</h2>
+        <p>You're about to submit a caregiver check-in for:</p>
+        <p id="checkinDateLabel" class="checkin-date-label" aria-live="polite">Select the date being documented.</p>
+        <p><em>Date being documented — not necessarily today's date.</em></p>
+        <button class="btn" id="changeCheckinDate" type="button">Change date without losing answers</button>
+        <label class="confirmation-choice"><input type="checkbox" id="checkinDateConfirmed" autocomplete="off" required disabled> <strong>Yes, this is the correct date for this check-in.</strong></label>
+        <button class="btn primary" id="submitAll" type="submit" disabled>Submit Check-In</button>
+        <p id="submissionStatus" role="status" aria-live="assertive" aria-atomic="true" tabindex="-1">Loading submission safeguards…</p>
+        <button class="btn" id="checkSaveStatus" type="button" hidden>Check original save status — no new submission</button>
+        <button class="btn" id="startNewCheckin" type="button" hidden>Start a new blank check-in</button>
+        <a class="btn" href="caregiver-report.html">View Caregiver Report</a>
+        <p id="storageNotice" role="alert" hidden></p>
+        <button class="btn" id="downloadRecovery" type="button">Download recovery copy</button>
+      </section>
     </form>
   </div>
 
   <div id="toast"></div>
-  <div id="successBanner" role="status" aria-live="polite">Check-in submitted successfully</div>
-  <div id="postSubmitPrompt" role="status" aria-live="polite">
-    <p>Your caregiver check-in was submitted. Want to see how the data looks in the report?</p>
-    <a class="btn primary" href="/caregiver-report.html">View Caregiver Report</a>
-  </div>
-  <div id="reviewOverlay" class="review-overlay is-hidden" role="dialog" aria-modal="true" aria-labelledby="reviewTitle">
-    <div class="review-card">
-      <div class="review-head">
-        <h2 id="reviewTitle" class="review-title">Review Before Submit</h2>
-        <p class="review-sub">Please review this check-in before final submission.</p>
-      </div>
-      <div id="reviewSections"></div>
-      <div class="review-actions">
-        <button type="button" class="btn" id="reviewEditBtn">Edit</button>
-        <button type="button" class="btn primary" id="reviewSubmitBtn">Submit Check-In</button>
-      </div>
-    </div>
-  </div>
-
-
 <!-- App logic -->
 <script type="module">
   // 1) Imports MUST be first in the module
-  import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
+  import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.19B';
+  import { CheckinSubmissionUI } from './caregiver-submission-ui.js?v=2026.10.19B';
+  import { validSelectedDate } from './caregiver-submission.js';
+  import { ANSWER_VERSION, optionalEngagement, optionalYesNo } from './caregiver-answer-quality.js?v=2026.10.20A';
   import { ensureActiveGroupId } from './active-group.js?v=2026.10.07A';
-  import { advanceGuidedOnboarding } from './onboarding-flow.js?v=2026.03.16B';
 
   // 2) Optional: expose for console debugging
   window.rest = rest;
@@ -2870,8 +2887,8 @@
 
   // Define outer refs so other functions (e.g., submitFinal) can use them
   let formEl, submitBtn;
-  let reviewOverlay, reviewSectionsEl, reviewEditBtn, reviewSubmitBtn;
-  let reviewConfirmed = false;
+  let reviewOverlay, reviewSectionsEl;
+  let submissionUI = null;
   let steps = [];
   let toggleAllBtn, resumeDraftBtn, discardDraftBtn;
   let progItems = [];
@@ -2906,7 +2923,6 @@
     '4':'Dependent'
   };
 
-  const DRAFT_KEY = 'cg-checkin-draft-v1';
   const GROUP_KEY = 'currentGroupId';
   const APP_CONFIG_KEY = 'star_app_config';
   const GUIDED_ONBOARDING_KEY = 'star_guided_onboarding_v1';
@@ -4542,7 +4558,7 @@
   function applyLegacyCheckinVisibility({ updateView = true } = {}){
     const subtitle = document.querySelector('.sub');
     if (subtitle) {
-      subtitle.innerHTML = 'This check-in starts blank. <strong>Save Draft</strong> saves your progress only when you press it. <strong>Next</strong> moves to the next section without saving a draft.';
+      subtitle.innerHTML = 'Every new check-in starts with a blank date. A recovery copy is kept in this browser when storage is available. <strong>Save Draft</strong> saves a local copy; only <strong>Submit Check-In</strong> saves to Supabase.';
     }
 
     const physicalStep = document.querySelector('.step[data-step="0"]');
@@ -4600,7 +4616,7 @@
   function applyCaregiverSetupVisibility({ updateView = true } = {}){
     const subtitle = document.querySelector('.sub');
     if (subtitle && caregiverSetupState.groupName) {
-      subtitle.innerHTML = `This check-in starts blank. <strong>Save Draft</strong> saves your progress only when you press it. <strong>Next</strong> moves to the next section without saving a draft. Configured for ${caregiverSetupState.groupName}.`;
+      subtitle.innerHTML = `Every new check-in starts with a blank date. A recovery copy is kept in this browser when storage is available. <strong>Save Draft</strong> saves a local copy; only <strong>Submit Check-In</strong> saves to Supabase. Configured for ${caregiverSetupState.groupName}.`;
     }
     if (caregiverSetupState.forceLegacyMode || !caregiverSetupState.hasConfig) {
       applyLegacyCheckinVisibility({ updateView });
@@ -5332,10 +5348,8 @@
   document.addEventListener('DOMContentLoaded', async () => {
     formEl        = document.getElementById('cg-form');
     submitBtn     = document.getElementById('submitAll');
-    reviewOverlay = document.getElementById('reviewOverlay');
+    reviewOverlay = document.getElementById('checkinSubmitPanel');
     reviewSectionsEl = document.getElementById('reviewSections');
-    reviewEditBtn = document.getElementById('reviewEditBtn');
-    reviewSubmitBtn = document.getElementById('reviewSubmitBtn');
     steps         = Array.from(document.querySelectorAll('.step'));
       adlStepIndex  = steps.findIndex((step) => step.id === 'daily-living-step');
       movementStepIndex = steps.findIndex((step) => step.dataset.step === '0');
@@ -5360,7 +5374,8 @@
       return;
     }
 
-    console.log('✅ Form assets ready:', { formEl, submitBtn, steps });
+    // Guard native form submission before any asynchronous initialization.
+    formEl.addEventListener('submit', submitFinal);
     const session = getSessionFromStorage();
     try {
       caregiverSetupState.forceLegacyMode = await userHasLegacyCaregiverCheckins(session?.user?.id || null);
@@ -5646,39 +5661,12 @@
 	    updateSectionLandingUI();
     });
 
-    // Draft resume
-    resumeDraftBtn?.addEventListener('click', () => {
-      draft = loadDraft() || { data: {}, savedAt: {} };
-      hydratePromptingSelects();
-      applyDraftToForm();
-      const restoredDate = draft?.data?.[0]?.entry_date || entryDateInput?.value || '';
-      entryDateSelectedThisSession = isValidEntryDate(restoredDate);
-      const restoredLabel = formatDraftDateLabel(restoredDate);
-      toast(restoredLabel ? `Restored draft from ${restoredLabel}` : 'Draft restored');
-    });
-    discardDraftBtn?.addEventListener('click', () => {
-      clearDraftUI();
-      resetFormValues();
-      go(0, false);
-      toast('Draft discarded');
-    });
     const markEntryDateSelected = () => {
-      entryDateSelectedThisSession = isValidEntryDate(entryDateInput.value);
+      entryDateSelectedThisSession = isValidEntryDate(entryDateInput?.value || '');
     };
     entryDateInput?.addEventListener('input', markEntryDateSelected);
     entryDateInput?.addEventListener('change', markEntryDateSelected);
-
-    // Final submit handlers
-    submitBtn.addEventListener('click', submitFinal);
-    formEl.addEventListener('submit', submitFinal);
-    reviewEditBtn?.addEventListener('click', () => {
-      reviewConfirmed = false;
-      hideReviewBeforeSubmit();
-    });
-    reviewSubmitBtn?.addEventListener('click', () => {
-      reviewConfirmed = true;
-      submitFinal();
-    });
+    document.querySelectorAll('[data-review]').forEach(button => button.addEventListener('click', renderReviewBeforeSubmit));
 
     // Initial position
     go(0);
@@ -5706,6 +5694,27 @@
       if (event.target?.matches(ynFields.map((name) => `input[name="${name}"]`).join(','))) {
         applyConditionalSections();
       }
+    });
+    submissionUI = new CheckinSubmissionUI({
+      document, window,
+      context: {
+        userId: session?.user?.id || null,
+        groupId: caregiverSetupState.groupId,
+        caregiverLabel: session?.user?.user_metadata?.full_name || session?.user?.id || 'Not signed in',
+        groupLabel: caregiverSetupState.groupName || caregiverSetupState.groupId || 'Unavailable',
+        practice: isPractice
+      },
+      request: rest,
+      currentContext: () => ({ userId: getSessionFromStorage()?.user?.id,
+        groupId: localStorage.getItem(GROUP_KEY) }),
+      capture: () => { captureCurrentFormAsDraft(); return structuredClone(draft); },
+      restore: saved => {
+        draft = structuredClone(saved || createEmptyDraft());
+        applyDraftToForm();
+        entryDateSelectedThisSession = isValidEntryDate(entryDateInput?.value || '');
+      },
+      reset: resetForm,
+      changeDate: () => { openSectionDetailByIndex(0); entryDateInput?.focus(); }
     });
   }); // <-- end DOMContentLoaded
 
@@ -6118,13 +6127,6 @@
     function createEmptyDraft(){
       return { data: {}, savedAt: {}, sectionStatuses: {} };
     }
-    function persistDraft(){
-      try {
-        localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
-      } catch (err) {
-        console.warn('[Caregiver Check-In] Draft save failed', err);
-      }
-    }
     function getSectionDefForStep(step){
       return step ? SECTION_STATUS_BY_STEP.get(step.id) : null;
     }
@@ -6262,11 +6264,7 @@
       };
     }
     function saveDraftExplicitly(){
-      captureCurrentFormAsDraft();
-      persistDraft();
-      steps.forEach((step, idx) => updateSavedAt(step, idx));
-      updateSavedButtons();
-      toast('Draft saved');
+      if (submissionUI?.saveDraft()) steps.forEach((step, idx) => updateSavedAt(step, idx));
     }
     function restore(step,idx){
       hydrate(step,draft.data[idx]);
@@ -6316,7 +6314,7 @@
       draft.data[0].entry_date = '';
     }
     function isValidEntryDate(value){
-      return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value.trim());
+      return validSelectedDate(value);
     }
     function currentExplicitEntryDate(){
       const raw = entryDateInput?.value || '';
@@ -6338,44 +6336,14 @@
         ? ''
         : dt.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
     }
-    function loadDraft(){
-      try{
-        const raw=localStorage.getItem(DRAFT_KEY);
-        if(!raw) return null;
-        const parsed = JSON.parse(raw);
-	        return {
-	          data: parsed?.data && typeof parsed.data === 'object' ? parsed.data : {},
-	          savedAt: parsed?.savedAt && typeof parsed.savedAt === 'object' ? parsed.savedAt : {},
-	          sectionStatuses: parsed?.sectionStatuses && typeof parsed.sectionStatuses === 'object' ? parsed.sectionStatuses : {},
-	        };
-	      }catch{
-	        return null;
-      }
-    }
     function updateSavedAt(step,idx){
       const el=step.querySelector('[data-savedat]'); const ts=draft.savedAt[idx];
       if(el) el.textContent = ts ? `Last saved: ${new Date(ts).toLocaleString()}` : '';
     }
     function updateSavedButtons(){
-      let hasDraft = false;
-      let draftLabel = '';
-      try { hasDraft = !!localStorage.getItem(DRAFT_KEY); } catch {}
-      if (hasDraft) {
-        const savedDraft = loadDraft();
-        draftLabel = formatDraftDateLabel(savedDraft?.data?.[0]?.entry_date || '');
-      }
-      if (resumeDraftBtn){
-        resumeDraftBtn.style.display = hasDraft ? '' : 'none';
-        resumeDraftBtn.disabled = !hasDraft;
-        resumeDraftBtn.textContent = draftLabel
-          ? `Resume draft from ${draftLabel}`
-          : 'Resume unfinished draft';
-      }
-      if (discardDraftBtn){
-        discardDraftBtn.style.display = hasDraft ? '' : 'none';
-        discardDraftBtn.disabled = !hasDraft;
-      }
+      submissionUI?.refreshRecoveryList();
     }
+
 	    function updateProgress(){
       segs.forEach((seg,idx)=>{
         const hidden = isStepHidden(steps[idx]);
@@ -6510,7 +6478,7 @@
     }
 	    function clearDraftUI(){
 	      draft=createEmptyDraft();
-	      localStorage.removeItem(DRAFT_KEY);
+	      // Recovery removal is performed only by the scoped submission controller.
 	      steps.forEach((s,i)=>updateSavedAt(s,i));
 	      updateSavedButtons();
 	      updateSectionLandingUI();
@@ -6527,21 +6495,6 @@
       syncFixationControls();
     }
     function toast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.style.opacity='1'; clearTimeout(el._t); el._t=setTimeout(()=>el.style.opacity='0',1400); }
-    function showSuccessBanner(msg = 'Check-in submitted successfully'){
-      const el = document.getElementById('successBanner');
-      if (!el) return;
-      el.textContent = msg;
-      el.classList.add('is-visible');
-      clearTimeout(el._t);
-      el._t = setTimeout(() => {
-        el.classList.remove('is-visible');
-      }, 3000);
-    }
-    function showPostSubmitPrompt(){
-      const el = document.getElementById('postSubmitPrompt');
-      if (el) el.classList.add('is-visible');
-    }
-
     function prettifyFieldName(name = '') {
       return String(name || '')
         .replace(/[_-]+/g, ' ')
@@ -6642,7 +6595,7 @@
 	            label: `PRN ${index + 1}`,
 	            value: [entry.time, entry.medication, entry.reason].filter(Boolean).join(' — ') + (entry.notes ? `\n${entry.notes}` : '')
 	          }))
-	        : [{ label: 'PRN used today?', value: 'No' }];
+	        : [{ label: 'PRN used today?', value: getYnValue('prn_used_today') === 'no' ? 'No' : 'Not answered' }];
 	      const prnCard = document.createElement('section');
 	      prnCard.className = 'review-section';
 	      const prnHeader = document.createElement('h3');
@@ -6674,47 +6627,26 @@
         empty.textContent = 'No values entered yet.';
         reviewSectionsEl.appendChild(empty);
       }
-      reviewOverlay.classList.remove('is-hidden');
-    }
-
-    function hideReviewBeforeSubmit() {
-      reviewOverlay?.classList.add('is-hidden');
+      document.getElementById('checkinAnswersReview').open = true;
+      reviewOverlay.scrollIntoView({ block: 'start', behavior: 'smooth' });
     }
 
     // ---------- FINAL SUBMIT ----------
     async function submitFinal(e){
       e?.preventDefault?.();
+      if (!submissionUI || isSubmittingFinal) return;
+      if (!validateCentralPrns()) return;
+      const entryDate = submissionUI.begin();
+      if (!entryDate) return;
       if (isPractice) {
-        window.location.href = 'dashboard.html?onboarding=complete';
+        submissionUI.finish({ state: 'practice', date: entryDate });
         return;
       }
-	      if (!reviewConfirmed) {
-	        if (!requireExplicitEntryDate()) return;
-	        if (!validateCentralPrns()) return;
-	        renderReviewBeforeSubmit();
-	        return;
-	      }
-      if (isSubmittingFinal) return;
       isSubmittingFinal = true;
-      let submissionSucceeded = false;
-      reviewConfirmed = false;
-      hideReviewBeforeSubmit();
-      if (submitBtn) { submitBtn.disabled=true; submitBtn.textContent='Submitting…'; }
-      if (reviewSubmitBtn) { reviewSubmitBtn.disabled = true; reviewSubmitBtn.textContent = 'Submitting...'; }
       try {
-	        const activeStep = steps[current];
-	        if (activeStep) {
-	          if (current === 0 && !validateCentralPrns()) {
-	            reviewConfirmed = false;
-	            return;
-	          }
-	        }
-
-        const session = getSessionFromStorage();
-        const user = session?.user || null;
-        const user_id = user?.id;
-        if (!user_id) throw new Error('Not signed in');
-
+        const user_id = submissionUI.context.userId;
+        const group_id = submissionUI.context.groupId;
+        const user = getSessionFromStorage()?.user;
         const payload = buildPayload();
 	        const behaviorDef = SECTION_STATUS_BY_STEP.get('behaviorSection');
 	        const behaviorTracking = isQuickClearedStatus(behaviorDef) ? [] : collectBehaviorTracking();
@@ -6728,10 +6660,6 @@
         }
         if (educationalTrackingField) {
           educationalTrackingField.value = educationalTracking.length ? JSON.stringify(educationalTracking) : '';
-        }
-        const entryDate = currentExplicitEntryDate();
-        if (!entryDate) {
-          throw new Error('Please select the check-in date before submitting.');
         }
         payload.entry_date = entryDate;
         const normalizeMovement = () => {
@@ -6859,7 +6787,7 @@
         normalizeMenstrual();
 	        const normalizeMoodRegulation = () => {
 	          const engagementRaw = payload.mood_engagement;
-	          const engagementScore = Number(engagementRaw);
+	          const engagementScore = optionalEngagement(engagementRaw);
 	          const speech = trimOrNull(payload.mood_speech);
 	          const attention = trimOrNull(payload.mood_attention);
 	          const pacing = trimOrNull(payload.mood_pacing);
@@ -6884,7 +6812,8 @@
 	            grandiosity_present: false,
 	            hyperactive_restless_present: pacing === 'frequent' || pacing === 'nearly_constant',
 	            disengaged_low_motivation_present: Number.isFinite(engagementScore) && engagementScore >= 2,
-	            appetite_change_flag: isAffirmative(payload.appetite_change_flag) ? 'Yes' : 'No',
+	            answer_quality_version: ANSWER_VERSION,
+	            appetite_change_flag: optionalYesNo(payload.appetite_change_flag),
 	            appetite_change_direction: isAffirmative(payload.appetite_change_flag)
 	              ? trimOrNull(payload.appetite_change_direction)
 	              : null
@@ -6902,10 +6831,10 @@
 	          const reasonPain = entries.some((entry) => reasonMatches(entry, ['pain', 'discomfort', 'headache', 'illness']));
 	          const firstEntry = entries[0] || {};
 	          const cleaned = {
-	            prn_used_today: administered ? 'yes' : 'no',
+	            prn_used_today: administered ? 'yes' : optionalYesNo(payload.prn_used_today),
 	            prn_entries: entries,
-	            prn_administered: administered ? 'yes' : 'no',
-	            prn_count: entries.length,
+	            prn_administered: administered ? 'yes' : optionalYesNo(payload.prn_used_today),
+	            prn_count: administered ? entries.length : optionalYesNo(payload.prn_used_today) === 'no' ? 0 : null,
 	            prn_name: administered ? trimOrNull(firstEntry.medication) : null,
 	            prn_time: administered ? trimOrNull(firstEntry.time) : null,
 	            prn_reason: administered ? trimOrNull(firstEntry.reason) : null,
@@ -6934,7 +6863,6 @@
           payload.had_bm === true ||
           /yes/i.test(String(payload.had_bm ?? payload.bm_today ?? ''));
 
-        const group_id = await ensureGroupId(user_id);
         if (!group_id) {
           throw new Error('No active group found for this caregiver. Please join or select a group before submitting.');
         }
@@ -7012,62 +6940,12 @@
           submitted_at: new Date().toISOString()
         };
 
-        let inserted = null;
-        try {
-          console.log('[cg] final row before save:', row);
-          inserted = await rest('caregiver_checkins', {
-            method: 'POST',
-            headers: { Prefer: 'return=representation' },
-            body: JSON.stringify([row]),
-          });
-        } catch (error) {
-          console.log('ROW SENT TO SUPABASE:', row);
-          console.error('PRIMARY INSERT ERROR FULL:', error);
-          console.error('MESSAGE:', error?.message);
-          console.error('DETAILS:', error?.details);
-          console.error('HINT:', error?.hint);
-          throw error;
-        }
-        console.log('[cg] save result:', inserted);
-        const data = Array.isArray(inserted) ? inserted[0] : inserted;
-        if (!data?.id) {
-          throw new Error('Supabase did not return the saved caregiver check-in. Please try again before leaving this page.');
-        }
-        const savedRows = await rest(
-          `caregiver_checkins?select=id,user_id,group_id,date,submitted_at&` +
-          `id=eq.${encodeURIComponent(data.id)}&limit=1`
-        );
-        const savedRow = Array.isArray(savedRows) ? savedRows[0] : null;
-        if (!savedRow?.id) {
-          throw new Error('The caregiver check-in could not be read back from Supabase after saving. Please try again.');
-        }
-        if (String(savedRow.user_id || '') !== String(user_id) || String(savedRow.group_id || '') !== String(group_id)) {
-          throw new Error('The saved caregiver check-in did not match the current caregiver/group. Please contact support before submitting again.');
-        }
-
-        const when = new Date(data?.submitted_at || row.submitted_at).toLocaleString();
-        const slot = document.getElementById('finalSubmittedAt');
-        if (slot) slot.textContent = `SUBMITTED: ${when}`;
-
-        resetForm();
-        showSuccessBanner();
-        showPostSubmitPrompt();
-        if (onboardingActive) {
-          advanceGuidedOnboarding(user_id, 'view_report');
-        }
-        submissionSucceeded = true;
-        setTimeout(() => {
-          window.location.href = 'caregiver-report.html';
-        }, 900);
-      } catch (err) {
-        console.error('[cg] submit error:', err);
-        alert('Could not submit. ' + (err?.message || 'Check your connection and try again.'));
+        const result = await submissionUI.submit(row);
+        submissionUI.finish(result);
+      } catch (error) {
+        submissionUI.finish({ state: 'failed', message: error?.message || 'Please check your connection.' });
       } finally {
-        if (!submissionSucceeded) {
-          isSubmittingFinal = false;
-          if (submitBtn) { submitBtn.disabled=false; submitBtn.textContent='Submit Final'; }
-          if (reviewSubmitBtn) { reviewSubmitBtn.disabled = false; reviewSubmitBtn.textContent = 'Submit Check-In'; }
-        }
+        isSubmittingFinal = false;
       }
     }
 
@@ -7233,7 +7111,7 @@
 </script>
 <script>
   (function(){
-    const version = window.STAR_BUILD_VERSION || '2026.10.07I';
+    const version = window.STAR_BUILD_VERSION || '2026.10.20A';
     if (!window.STAR_BUILD_VERSION) window.STAR_BUILD_VERSION = version;
     const ensureBadge = () => {
       if (document.getElementById('star-build-version')) return;
@@ -7268,7 +7146,7 @@
 <div id="tabbar"></div>
 <!-- Bottom tab bar + hamburger drawer -->
 <script defer src="./load-tabbar.js?v=2025.01.09E"></script>
-<script defer src="./ui-shell.js?v=2026.03.16B"></script>
+<script defer src="./ui-shell.js?v=2026.10.20A"></script>
 <script defer src="./scripts/appbar-drawer.js?v=2026.03.16B"></script>
 </body>
 </html>

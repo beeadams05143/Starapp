@@ -67,10 +67,10 @@ assert.deepEqual(
 );
 
 const html = await readFile(new URL('./caregiver-report.html', import.meta.url), 'utf8');
-assert.match(html, /summarizeParticipationForParentLetter/);
-assert.match(html, /participationSentence\('Community', communitySummary\)/);
-assert.match(html, /Behavior & Mental Health/);
-assert.match(html, /Community Activities & Notable Experiences/);
+assert.match(html, /analyzeProviderRecords/);
+assert.match(html, /renderProviderLetter/);
+assert.match(html, /Provider Letter/);
+assert.match(html, /providerIncludeQuotes/);
 assert.doesNotMatch(html, /Community participation averaged \$\{communityHours\.averageHoursText\} per week/);
 assert.doesNotMatch(html, /Vocational participation averaged \$\{vocationalHours\.averageHoursText\} per week/);
 assert.doesNotMatch(html, /Community time this period totaled \$\{totalCom\} minutes/);

@@ -1,3 +1,5 @@
+import { NOTE_FIELDS } from './caregiver-provider-letter.js?v=2026.10.20A';
+import { checkinDateKey } from './caregiver-dates.js';
 // caregiver-report-supabase.js — PRODUCTION SAFE (group-scoped; no user_id filter) v=2026.05.03D
 import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 import { resolveActiveGroup } from './active-group.js?v=2026.10.07A';
@@ -35,16 +37,7 @@ const DURATION_MAP = new Map([
 
 const DATE_ONLY_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
 
-const selectedDateValue = (e) => {
-  if (!e) return null;
-  return (
-    e.date ||
-    e.payload?.entry_date ||
-    e.payload?.date ||
-    e.payload?.shiftDate ||
-    null
-  );
-};
+const selectedDateValue = (e) => checkinDateKey(e) || null;
 
 const getCheckinDateValue = (e) => selectedDateValue(e);
 
@@ -252,8 +245,7 @@ const hasProvidedValue = (value) => {
 const isYesValue = (value) => parseBoolean(value) === true;
 
 const dayKeyFromEntry = (entry = {}) => {
-  const ts = normTs(entry);
-  return Number.isNaN(ts.getTime()) ? null : ts.toISOString().slice(0, 10);
+  return checkinDateKey(entry) || null;
 };
 
 const normalizeActivityLabel = (label) => {
@@ -507,12 +499,9 @@ const derivePromptScore = (row, payload) => {
   return null;
 };
 
-const normalizeSupabaseEntry = (row = {}) => {
+export const normalizeSupabaseEntry = (row = {}) => {
   const payload = ensurePayload(row);
-  const rawRowDate = row.date != null ? String(row.date).trim() : '';
-  const dateFromRow = /^\d{4}-\d{2}-\d{2}$/.test(rawRowDate) ? rawRowDate : null;
-
-  const selectedDate = dateFromRow || selectedDateValue(row);
+  const selectedDate = selectedDateValue(row);
   const timestampIso = selectedDate
     ? toISODate(parseCheckinDate(selectedDate))
     : null;
@@ -606,13 +595,14 @@ const normalizeSupabaseEntry = (row = {}) => {
     ...row,
     id: uniqueId,
     timestamp: timestampIso,
-    date: dateFromRow || (timestampIso ? timestampIso.slice(0, 10) : row.date ?? null),
+    date: checkinDateKey(row) || null,
     created_at: createdIso,
     submitted_at: row.submitted_at ?? null,
     caregiver_name: (() => {
       const r = getCaregiverName(row);
       return r === 'Unknown' ? null : r;
     })(),
+    original_note_fields: Object.fromEntries(NOTE_FIELDS.filter(key => typeof row[key] === 'string').map(key => [key, row[key]])),
     caregiver_notes: caregiverNotes,
     group_id: row.group_id ?? payload.group_id ?? payload.group ?? null,
     payload,
@@ -882,44 +872,10 @@ export async function loadCaregiverCheckins(
     const rows = await keepAuthorizedGroupRows(hydratedRows, activeGroupId);
 
     console.log('[STAGE 1 raw rows]', rows.length);
-    console.log(
-      '[STAGE 1 Shirley raw]',
-      rows
-        .filter((e) => getCaregiverName(e).toLowerCase().includes('shirley'))
-        .map((e) => ({
-          id: e.id,
-          caregiver: getCaregiverName(e),
-          group_id: e.group_id,
-          individual_id: rowIndividualId(e),
-          user_id: e.user_id,
-          date: e.date,
-          timestamp: e.timestamp,
-          submitted_at: e.submitted_at,
-          created_at: e.created_at,
-          resolvedDate: getCheckinDate(e),
-          payload: e.payload,
-        }))
-    );
 
     const normalized = rows.map(normalizeSupabaseEntry);
 
     console.log('[STAGE 2 normalized rows]', normalized.length);
-    console.log(
-      '[STAGE 2 Shirley normalized]',
-      normalized
-        .filter((e) => getCaregiverName(e).toLowerCase().includes('shirley'))
-        .map((e) => ({
-          id: e.id,
-          caregiver: getCaregiverName(e),
-          group_id: e.group_id,
-          individual_id: rowIndividualId(e),
-          date: e.date,
-          timestamp: e.timestamp,
-          submitted_at: e.submitted_at,
-          created_at: e.created_at,
-          resolvedDate: getCheckinDate(e),
-        }))
-    );
 
     const groupFiltered = activeGroupId
       ? normalized.filter((row) => {
@@ -933,12 +889,6 @@ export async function loadCaregiverCheckins(
       : normalized.slice();
 
     console.log('[STAGE 3 after group filter]', groupFiltered.length);
-    console.log(
-      '[STAGE 3 Shirley after group filter]',
-      groupFiltered.filter((e) =>
-        getCaregiverName(e).toLowerCase().includes('shirley')
-      )
-    );
 
     const individualFiltered = groupFiltered;
     console.log('[STAGE 4 bypassed individual filter]', normalized.length);
@@ -947,7 +897,7 @@ export async function loadCaregiverCheckins(
       const ts = normTs(row);
       const time = ts.getTime();
       if (Number.isNaN(time)) return false;
-      return ts >= start;
+      return range === 'all' || ts >= start;
     });
 
     const deduped = [];
@@ -962,14 +912,10 @@ export async function loadCaregiverCheckins(
     deduped.sort((a, b) => normTs(b) - normTs(a));
 
     console.log('[LOADER rows returned to caregiver-report]', deduped.length);
-    console.log(
-      '[LOADER Shirley returned to caregiver-report]',
-      deduped.filter((e) =>
-        getCaregiverName(e).toLowerCase().includes('shirley')
-      )
-    );
 
     return {
+      loadComplete: true,
+      undatedEntries: individualFiltered.filter(row => !checkinDateKey(row)),
       entries: deduped,
       summary: summarize(deduped),
       charts: buildSeries(deduped),

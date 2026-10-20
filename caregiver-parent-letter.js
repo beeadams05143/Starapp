@@ -1,3 +1,4 @@
+import { checkinDateKey } from './caregiver-dates.js';
 const DAY_MS = 86400000;
 
 const BEHAVIOR_FIELDS = [
@@ -191,14 +192,7 @@ function pickMinutes(...values) {
 }
 
 function getDayKey(entry = {}) {
-  const value = entry.date || entry.payload?.entry_date || entry.payload?.date || '';
-  if (typeof value === 'string') {
-    const match = value.match(/^(\d{4}-\d{2}-\d{2})/);
-    if (match) return match[1];
-  }
-  const date = value ? new Date(value) : null;
-  if (!date || Number.isNaN(date.getTime())) return '';
-  return date.toISOString().slice(0, 10);
+  return checkinDateKey(entry);
 }
 
 function inclusiveRangeDays(range) {

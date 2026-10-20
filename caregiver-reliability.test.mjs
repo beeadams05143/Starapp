@@ -10,55 +10,18 @@ const checkinHtml = await readFile(new URL('./caregiver-checkin.html', import.me
 const reportHtml = await readFile(new URL('./caregiver-report.html', import.meta.url), 'utf8');
 const reportLoader = await readFile(new URL('./caregiver-report-supabase.js', import.meta.url), 'utf8');
 
-assert.match(checkinHtml, /let isSubmittingFinal = false;/);
-assert.match(checkinHtml, /if \(isSubmittingFinal\) return;/);
-assert.match(checkinHtml, /reviewSubmitBtn\.disabled = true/);
-assert.match(checkinHtml, /reviewSubmitBtn\.disabled = false/);
-assert.match(checkinHtml, /Supabase did not return the saved caregiver check-in/);
-assert.match(checkinHtml, /caregiver_checkins\?select=id,user_id,group_id,date,submitted_at&/);
-assert.match(checkinHtml, /Restored draft from/);
-assert.match(checkinHtml, /let draft = createEmptyDraft\(\);/);
-assert.match(checkinHtml, /resetFormValues\(\);\s*updateSavedButtons\(\);/);
-assert.match(checkinHtml, /function clearEntryDateSelection\(\)[\s\S]*entryDateInput\) entryDateInput\.value = '';/);
-assert.match(checkinHtml, /function requireExplicitEntryDate\(\)[\s\S]*Please select the check-in date before reviewing or submitting/);
-assert.match(checkinHtml, /const entryDate = currentExplicitEntryDate\(\);[\s\S]*Please select the check-in date before submitting/);
-assert.match(checkinHtml, /discardDraftBtn\?\.addEventListener\('click'/);
-assert.match(checkinHtml, /function saveDraftExplicitly\(\)[\s\S]*captureCurrentFormAsDraft\(\);[\s\S]*persistDraft\(\);/);
-assert.match(checkinHtml, /step\.querySelector\('\[data-save\]'\)\?\.addEventListener\('click', saveDraftExplicitly\)/);
-assert.match(checkinHtml, /const data = serialize\(s\);/);
-assert.ok(
-  checkinHtml.indexOf('resetFormValues();\n    updateSavedButtons();') < checkinHtml.indexOf("resumeDraftBtn?.addEventListener('click'"),
-  'new check-in initialization must reset blank before offering explicit draft resume'
-);
-assert.ok(
-  checkinHtml.indexOf("resumeDraftBtn?.addEventListener('click'") < checkinHtml.indexOf('applyDraftToForm();'),
-  'draft hydration must only happen from the explicit Resume action'
-);
-assert.doesNotMatch(checkinHtml, /entryDateInput\.value = todayISO\(\)/);
-assert.doesNotMatch(checkinHtml, /: todayISO\(\)/);
+// Submission behavior is exercised in caregiver-submission.test.mjs and the browser suite.
+assert.match(checkinHtml, /formEl.addEventListener\('submit', submitFinal\)/);
+assert.match(checkinHtml, /payload.entry_date = entryDate/);
+assert.match(checkinHtml, /date: entryDate/);
+assert.match(checkinHtml, /submissionUI.context.groupId/);
 assert.doesNotMatch(checkinHtml, /todayISO/);
-assert.doesNotMatch(checkinHtml, /autosaves/i);
-assert.doesNotMatch(checkinHtml, /Save &amp; Next/);
-assert.doesNotMatch(checkinHtml, /setTimeout\(\(\) => save/);
-assert.doesNotMatch(checkinHtml, /SUBMISSION_COMPLETE_KEY/);
-assert.doesNotMatch(checkinHtml, /MOVEMENT_LAST_KEY/);
-assert.doesNotMatch(checkinHtml, /localStorage\.setItem\(SUBMISSION/);
-assert.doesNotMatch(checkinHtml, /localStorage\.setItem\(MOVEMENT/);
-assert.ok(
-  checkinHtml.indexOf('persistDraft();') > checkinHtml.indexOf('function saveDraftExplicitly()'),
-  'draft persistence must be reached through explicit Save Draft'
-);
-assert.ok(
-  checkinHtml.indexOf('const markEntryDateSelected = () =>') < checkinHtml.indexOf("entryDateInput?.addEventListener('change', markEntryDateSelected);"),
-  'date changes may update only current-session validation state'
-);
-assert.doesNotMatch(
-  checkinHtml.slice(
-    checkinHtml.indexOf('const markEntryDateSelected = () =>'),
-    checkinHtml.indexOf("entryDateInput?.addEventListener('change', markEntryDateSelected);")
-  ),
-  /persistDraft|localStorage|setItem/
-);
+assert.doesNotMatch(checkinHtml, /entryDateInput.value = new Date/);
+assert.doesNotMatch(checkinHtml, /window.location.href = 'caregiver-report.html'/);
+assert.match(checkinHtml, /id="checkinFields" disabled/);
+assert.match(checkinHtml, /id="checkinDateConfirmed" autocomplete="off" required disabled/);
+assert.match(checkinHtml, /id="submitAll" type="submit" disabled/);
+assert.doesNotMatch(checkinHtml, /id="reviewOverlay"/);
 
 assert.match(reportHtml, /STAR_ENABLE_REPORT_SMOKE_INSERT/);
 assert.match(reportHtml, /localhost', '127\.0\.0\.1/);
@@ -73,7 +36,7 @@ assert.doesNotMatch(reportLoader, /memberIds\.has\(userId\) \|\| profileGroupId 
 assert.doesNotMatch(reportLoader, /const getCheckinDateValue = \(e\) => \{[\s\S]*e\.submitted_at[\s\S]*\};/);
 assert.match(reportLoader, /order=date\.desc,submitted_at\.desc\.nullslast,created_at\.desc\.nullslast/);
 assert.match(reportLoader, /offset=\$\{offset\}/);
-assert.match(reportHtml, /No check-in recorded/);
+assert.match(reportHtml, /calendarEmptyLabel\(checkinLoadState, key, todayKey, rec.has_checkin\)/);
 assert.match(reportHtml, /<th>Check-In Date<\/th>/);
 assert.doesNotMatch(reportHtml, /<th>Timestamp<\/th>\s*<th>Caregiver<\/th>/);
 assert.match(reportHtml, /const localDayKey = \(date = new Date\(\)\) =>/);

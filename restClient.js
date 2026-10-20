@@ -15,8 +15,12 @@ export async function requireSession() {
   return session;
 }
 
-export async function rest(path, { method = 'GET', headers = {}, body } = {}) {
+export async function rest(path, { method = 'GET', headers = {}, body, signal, expectedUserId } = {}) {
   const send = async (session) => {
+    signal?.throwIfAborted();
+    if (expectedUserId && session?.user?.id !== expectedUserId) {
+      throw new Error('The signed-in caregiver changed. Return to the original account before submitting.');
+    }
     const authHeaders = {
       apikey: SUPABASE_ANON_KEY,
       Authorization: `Bearer ${session.access_token}`,
@@ -24,7 +28,7 @@ export async function rest(path, { method = 'GET', headers = {}, body } = {}) {
       ...headers,
     };
     if (authHeaders['Content-Type'] === undefined) delete authHeaders['Content-Type'];
-    return fetch(`${SUPABASE_URL}/rest/v1/${path}`, { method, headers: authHeaders, body });
+    return fetch(`${SUPABASE_URL}/rest/v1/${path}`, { method, headers: authHeaders, body, signal });
   };
 
   let session = await requireSession();
@@ -42,9 +46,10 @@ export async function rest(path, { method = 'GET', headers = {}, body } = {}) {
       console.error('Could not parse error body');
     }
 
-    console.error('SUPABASE ERROR BODY:', errBody);
+    console.error('Supabase request failed with HTTP status', response.status);
 
     const error = new Error(errBody.message || 'Request failed');
+    error.status = response.status;
     error.details = errBody.details;
     error.hint = errBody.hint;
 

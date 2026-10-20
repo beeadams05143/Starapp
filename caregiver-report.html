@@ -997,7 +997,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 </script>
 
 <!-- Shared navigation shell -->
-<script defer src="./ui-shell.js?v=2026.10.07I"></script>
+<script defer src="./ui-shell.js?v=2026.10.20A"></script>
 <script defer src="./scripts/appbar-drawer.js?v=2026.03.29A"></script>
 
   <div id="navbar"></div>
@@ -1489,12 +1489,12 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     </div>
     <div class="chart report-summary-inline" id="parentLetterCard">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <h4>Parent Letter</h4>
+        <h4>Provider Letter</h4>
         <div style="display:flex;gap:8px">
           <button id="parentLetterPrint" class="btn" style="font-size:13px">🖨️ Print Letter</button>
         </div>
       </div>
-      <div class="parent-letter-range-control" aria-label="Parent Letter Range">
+      <div class="parent-letter-range-control" aria-label="Provider Letter Range">
         <label>Start date
           <input type="date" id="parentLetterStart">
         </label>
@@ -1503,8 +1503,13 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         </label>
         <button id="parentLetterApply" class="btn" type="button" disabled>Generate Letter</button>
       </div>
+      <label>Individual records
+        <select id="providerIndividual" style="max-width:100%"><option value="">Generate to load available individuals</option></select>
+      </label>
+      <label style="display:block;margin:10px 0"><input type="checkbox" id="providerIncludeQuotes" checked> Include exact caregiver quotations (review for privacy)</label>
+      <p class="muted">Review the letter below before printing or sharing. You can omit quotations with the option above.</p>
       <p class="muted" id="parentLetterRange">Choose a start and end date.</p>
-      <div id="parentLetterBody" style="font-size:15px;line-height:1.7;color:#1a1a2e;white-space:pre-wrap;font-family:Georgia,serif"></div>
+      <div id="parentLetterBody" style="font-size:15px;line-height:1.7;color:#1a1a2e;white-space:pre-wrap;overflow-wrap:anywhere;font-family:Georgia,serif"></div>
       <p id="parentLetterDisclaimer" style="margin-top:16px;font-size:12px;color:#9ca3af;font-style:italic">
         This letter was generated from caregiver check-in data recorded
         in the STAR app. It is intended as a communication tool for
@@ -1649,16 +1654,16 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabaseClient.js?v=2026.03.29A';
     import { ensureActiveGroupId } from './active-group.js?v=2026.10.07A';
     import { openCompactCaregiverCheckinPrintWindow } from './caregiver-checkin-print.js?v=2026.09.02A';
-    import { CALENDAR_QUICK_LOOK_ITEMS, filterCaregiverCheckinsForPrint, normalizeCaregiverCheckinForCalendar, normalizeCaregiverCheckinRecord } from './caregiver-report-shared.js?v=2026.10.07I';
+    import { CALENDAR_QUICK_LOOK_ITEMS, filterCaregiverCheckinsForPrint, normalizeCaregiverCheckinForCalendar, normalizeCaregiverCheckinRecord } from './caregiver-report-shared.js?v=2026.10.19A';
     import { renderPrintableCaregiverReport } from './caregiver-report-print.js?v=2026.07.01B';
-    import { collectNotableActivities, filterParentLetterEntries, formatBehaviorFindings, participationSentence, summarizeBehaviorForParentLetter, summarizeParticipationForParentLetter } from './caregiver-parent-letter.js?v=2026.09.04A';
+    import { analyzeProviderRecords, renderProviderLetter, individualKey, groupKey } from './caregiver-provider-letter.js?v=2026.10.20A';
     import { buildWeeklyPromptSeries, defaultGraphRange, filterRecordsByRange, formatGraphRange, rangeFromInputs } from './caregiver-report-graphs.js?v=2026.09.04A';
 
     /* =============== Optional live data =============== */
     let loadFromSupabase = null;
     let formatEntryForList = null;
     try {
-      const mod = await import('./caregiver-report-supabase.js?v=2026.10.07I');
+      const mod = await import('./caregiver-report-supabase.js?v=2026.10.20A');
       loadFromSupabase = mod.loadCaregiverCheckins;
       formatEntryForList = mod.formatEntryForList;
     } catch (err) {
@@ -2737,276 +2742,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       if (parentRange && parentBody) {
         updateParentLetterControls();
       }
-    }
-
-    function generateParentLetter({
-      caregiverEntries = [],
-      moodEntries = [],
-      range = null,
-      rangeKey = 'month',
-      summary = null,
-      movementInsights = null,
-      profile = null
-    } = {}){
-      const safeSummary = summary || summarizeEntries(caregiverEntries);
-      const safeProfile = profile || reportConfigState.individual_profile || reportConfigState.individualProfile || null;
-      const name = safeProfile?.preferred_name || 'your person';
-      const pronouns = safeProfile?.pronouns || 'they';
-      const [subj, obj, poss] = {
-        he: ['He', 'him', 'his'],
-        she: ['She', 'her', 'her'],
-        they: ['They', 'them', 'their'],
-        name_only: [name, name, `${name}'s`]
-      }[pronouns] || ['They', 'them', 'their'];
-      const rangeLabel = range?.label || 'this period';
-      const paragraphs = [];
-      const entryCount = caregiverEntries.length;
-      const caregiverNames = [...new Set(
-        caregiverEntries.map((entry) => caregiverViewLabel(entry)).filter((v) => v && v !== '—')
-      )];
-      const caregiverText = caregiverNames.length ? caregiverNames.join(', ') : 'the support team';
-      const dateKeyFor = (entry = {}) => getCheckinDayKey(entry) || null;
-      const parseJsonishArray = (value) => {
-        if (Array.isArray(value)) return value;
-        if (!value) return [];
-        if (typeof value === 'string') {
-          try {
-            const parsed = JSON.parse(value);
-            return Array.isArray(parsed) ? parsed : [];
-          } catch {
-            return [];
-          }
-        }
-        return [];
-      };
-      const parseBehaviorTracking = (entry = {}) => parseJsonishArray(
-        entry?.payload?.behavior_tracking ?? entry?.behavior_tracking
-      );
-      const parseAdlEntriesLocal = (value) => parseJsonishArray(value).map((item) => {
-        if (!item || typeof item !== 'object') return null;
-        return {
-          category: item.category || item.name || item.label || item.skill || '',
-          ...item
-        };
-      }).filter(Boolean);
-      const formatCount = (count, singular, plural = `${singular}s`) => `${count} ${count === 1 ? singular : plural}`;
-      const joinList = (items = []) => {
-        const values = items.filter(Boolean);
-        if (values.length <= 1) return values[0] || '';
-        if (values.length === 2) return `${values[0]} and ${values[1]}`;
-        return `${values.slice(0, -1).join(', ')}, and ${values[values.length - 1]}`;
-      };
-      const dailyLivingStat = (flag) => {
-        const values = caregiverEntries
-          .map((entry) => resolveDailyLivingBool(entry, flag))
-          .filter((value) => value !== null);
-        const yes = values.filter(Boolean).length;
-        return { yes, answered: values.length, pct: values.length ? Math.round((yes / values.length) * 100) : null };
-      };
-      const supportSentence = (label, stat) => {
-        if (!stat || !stat.answered) return '';
-        if (stat.yes === stat.answered) return `${label} was completed on all ${stat.answered} applicable check-in${stat.answered === 1 ? '' : 's'}.`;
-        if (stat.yes > 0) return `${label} was completed on ${stat.yes} of ${stat.answered} applicable check-in${stat.answered === 1 ? '' : 's'} (${stat.pct}%).`;
-        return '';
-      };
-      const positiveBehaviorLabels = {
-        identifies_feelings: 'naming feelings',
-        tolerates_frustration: 'working through frustration',
-        uses_coping_strategy: 'using coping strategies',
-        accepts_redirection: 'accepting redirection',
-        requests_break: 'asking for a break',
-        recovers_after_distress: 'recovering after hard moments',
-        tolerates_waiting: 'waiting with support',
-        tolerates_denial: 'handling "no" more calmly',
-        tolerates_change: 'adjusting to change',
-        responds_to_staff_direction: 'responding to caregiver direction',
-        returns_to_activity: 'returning to activities after a pause'
-      };
-      const positiveBehaviorKeys = Object.keys(positiveBehaviorLabels);
-
-      paragraphs.push(`Dear Family,\n\nThis report covers ${rangeLabel} and includes ${entryCount} caregiver check-in${entryCount !== 1 ? 's' : ''} logged by ${caregiverText}.`);
-
-      const aggDays = safeSummary.behavior?.aggression?.days ?? 0;
-	      const prnBehaviorDays = caregiverEntries.filter((entry) => {
-	        const payload = entry?.payload || {};
-	        const prnEntries = parsePrnEntries(payload.prn_entries);
-	        return String(payload.prn_administered || '').toLowerCase() === 'yes'
-	          || isAffirmative(payload.prn_used_for_aggression)
-	          || isAffirmative(payload.prn_used_for_behavior_other)
-	          || Boolean(payload.behavior_support_prn_name)
-	          || prnEntriesInclude(prnEntries, ['aggression', 'agitation', 'anxiety', 'pacing', 'irritability', 'escalat']);
-	      }).length;
-      const anomalyDays = caregiverEntries.filter((entry) => isAffirmative(entry?.payload?.anomaly_flag)).length;
-      const behaviorFindings = summarizeBehaviorForParentLetter(caregiverEntries);
-      const behaviorLines = formatBehaviorFindings(behaviorFindings);
-      const safetyLines = [];
-      if (aggDays > 0) {
-        safetyLines.push(`Caregivers noted some challenging behaviors toward others on ${formatCount(aggDays, 'day')}.`);
-      }
-      if (prnBehaviorDays > 0) {
-        safetyLines.push(`A support medication was used for behavioral reasons on ${formatCount(prnBehaviorDays, 'occasion')}.`);
-      }
-      if (anomalyDays > 0) {
-        safetyLines.push(`Caregivers flagged something unexpected on ${formatCount(anomalyDays, 'day')}.`);
-      }
-      if (behaviorLines.length || safetyLines.length) {
-        const sectionLines = ['Behavior & Mental Health'];
-        sectionLines.push(...behaviorLines.map((line) => `${line}.`));
-        if (safetyLines.length) sectionLines.push(...safetyLines);
-        else sectionLines.push('No aggression or safety concerns were recorded in applicable behavior fields during this period.');
-        paragraphs.push(sectionLines.join('\n'));
-      }
-
-      const sleepValues = caregiverEntries
-        .map((entry) => pickNumber(entry?.hours_sleep, entry?.payload?.hours_sleep))
-        .filter((value) => Number.isFinite(value));
-      const avgSleep = sleepValues.length
-        ? Math.round((sleepValues.reduce((sum, value) => sum + value, 0) / sleepValues.length) * 10) / 10
-        : null;
-      const illnessDays = caregiverEntries.filter((entry) => {
-        const payload = entry?.payload || {};
-        return payload.temp_present === true
-          || /yes|true/i.test(String(payload.temp_present || ''))
-          || Boolean(payload.temp_value)
-          || isAffirmative(payload.sick_flag)
-          || isAffirmative(payload.appears_sick)
-          || ((payload.appears_good_health === false) || /no/i.test(String(payload.appears_good_health || '')));
-      }).length;
-      const appetiteDays = caregiverEntries.filter((entry) => hasAppetiteChange(entry) || hasAppetiteChange(entry?.payload)).length;
-	      const prnMedicalDays = caregiverEntries.filter((entry) => {
-	        const payload = entry?.payload || {};
-	        const prnEntries = parsePrnEntries(payload.prn_entries);
-	        return isAffirmative(payload.prn_used_for_sleep_disturbance)
-	          || isAffirmative(payload.prn_used_for_symptoms_discomfort)
-	          || prnEntriesInclude(prnEntries, ['sleep', 'settling', 'pain', 'discomfort', 'headache', 'illness']);
-	      }).length;
-      const nightWakingDays = caregiverEntries.filter((entry) => {
-        const payload = entry?.payload || {};
-        return isAffirmative(payload.night_wake_flag)
-          || isAffirmative(payload.night_waking)
-          || pickNumber(payload.night_wake_count) > 0;
-      }).length;
-      const physicalLines = [];
-      if (avgSleep != null) physicalLines.push(`Sleep averaged around ${avgSleep} hours this period.`);
-      if (nightWakingDays > 0) physicalLines.push(`Night waking was noted on ${formatCount(nightWakingDays, 'day')}.`);
-      if (illnessDays > 0) physicalLines.push(`${subj} was not feeling well on ${formatCount(illnessDays, 'day')}.`);
-      if (appetiteDays > 0) physicalLines.push(`Caregivers noted a change in appetite on ${formatCount(appetiteDays, 'day')}.`);
-      if (prnMedicalDays > 0) physicalLines.push(`A support medication was used for physical comfort on ${formatCount(prnMedicalDays, 'occasion')}.`);
-      if (physicalLines.length) paragraphs.push(`Physical Health & Sleep\n${physicalLines.join(' ')}`);
-
-      const hygieneStat = dailyLivingStat('hygiene');
-      const foodStat = dailyLivingStat('food_prep');
-      const cleanupStat = dailyLivingStat('cleanup');
-      const adlCounts = {};
-      caregiverEntries.forEach((entry) => {
-        const adlEntries = parseAdlEntriesLocal(entry?.adl_entries || entry?.payload?.adl_entries);
-        adlEntries.forEach((adl) => {
-          if (!adl.category) return;
-          adlCounts[adl.category] = (adlCounts[adl.category] || 0) + 1;
-        });
-      });
-      const sortedAdl = Object.entries(adlCounts).sort((a, b) => b[1] - a[1]);
-      const dailyLines = [];
-      const hygieneSentence = supportSentence('Personal hygiene', hygieneStat);
-      const foodSentence = supportSentence('Food preparation', foodStat);
-      const cleanupSentence = supportSentence('Clean-up routines', cleanupStat);
-      if (hygieneSentence || foodSentence || cleanupSentence || sortedAdl.length) {
-        if (hygieneSentence) dailyLines.push(hygieneSentence);
-        if (foodSentence) dailyLines.push(foodSentence);
-        if (cleanupSentence) dailyLines.push(cleanupSentence);
-        if (sortedAdl.length) {
-          dailyLines.push(`The most frequently supported daily living activity was ${sortedAdl[0][0]} (${formatCount(sortedAdl[0][1], 'time')}).`);
-        }
-      }
-      if (dailyLines.length) paragraphs.push(`Daily Living Skills\n${dailyLines.join(' ')}`);
-
-      const positiveCounts = {};
-      caregiverEntries.forEach((entry) => {
-        parseBehaviorTracking(entry).forEach((item) => {
-          const key = item?.item_key || item?.key;
-          if (item?.occurred === true && positiveBehaviorLabels[key]) {
-            positiveCounts[key] = (positiveCounts[key] || 0) + 1;
-          }
-        });
-      });
-      const topPositiveSkills = Object.entries(positiveCounts)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 2)
-        .map(([key]) => positiveBehaviorLabels[key]);
-
-      const focusAreas = Array.isArray(safeProfile?.focus_areas)
-        ? safeProfile.focus_areas.map((item) => String(item || '').trim()).filter(Boolean).slice(0, 3)
-        : [];
-      const positivePromptValues = caregiverEntries
-        .filter((entry) => parseBehaviorTracking(entry).some((item) => positiveBehaviorKeys.includes(item?.item_key || item?.key) && item?.occurred === true))
-        .map((entry) => getPromptValue(entry))
-        .filter((value) => Number.isFinite(value));
-      const promptAvg = positivePromptValues.length
-        ? positivePromptValues.reduce((sum, value) => sum + value, 0) / positivePromptValues.length
-        : null;
-      const promptLabel = {
-        0: 'independently',
-        1: 'with minimal support',
-        2: 'with some support',
-        3: 'with frequent support',
-        4: 'with full support'
-      }[Math.round(promptAvg)] || 'with support';
-      const goalLines = [];
-      if (focusAreas.length) {
-        goalLines.push(`Current focus areas for ${name} include ${joinList(focusAreas)}.`);
-      }
-      if (topPositiveSkills.length) {
-        goalLines.push(`Caregivers recorded regulation or participation skills including ${joinList(topPositiveSkills)}.`);
-      }
-      if (promptAvg != null) {
-        goalLines.push(`Skills were practiced ${promptLabel} on average this period.`);
-      }
-      if (goalLines.length) paragraphs.push(goalLines.join(' '));
-
-      const communitySummary = summarizeParticipationForParentLetter(caregiverEntries, range, 'community');
-      const vocationalSummary = summarizeParticipationForParentLetter(caregiverEntries, range, 'vocational');
-      const vocationalLines = [];
-      const communitySentence = participationSentence('Community', communitySummary);
-      const vocationalSentence = participationSentence('Vocational', vocationalSummary);
-      if (communitySentence) vocationalLines.push(communitySentence);
-      if (vocationalSentence) vocationalLines.push(vocationalSentence);
-      if (vocationalLines.length) paragraphs.push(`Community & Vocational Participation\n${vocationalLines.join(' ')}`);
-
-      const notableActivities = collectNotableActivities(caregiverEntries);
-      if (notableActivities.length) {
-        const activityLines = notableActivities.slice(0, 5).map((activity) =>
-          activity.successful
-            ? `${activity.label}, which caregivers documented as successful`
-            : activity.label
-        );
-        paragraphs.push(`Community Activities & Notable Experiences\nAdditional documented activities included ${joinList(activityLines)}.`);
-      }
-
-      const poorSleepDays = new Set(
-        caregiverEntries
-          .filter((entry) => {
-            const hours = pickNumber(entry?.hours_sleep, entry?.payload?.hours_sleep);
-            return (Number.isFinite(hours) && hours < 8)
-              || isAffirmative(entry?.payload?.night_wake_flag)
-              || isAffirmative(entry?.payload?.night_waking)
-              || pickNumber(entry?.payload?.night_wake_count) > 0;
-          })
-          .map((entry) => dateKeyFor(entry))
-          .filter(Boolean)
-      );
-      const allConcernDaysCount = behaviorFindings.some((item) => item.yes > 0);
-      const noSafetyFlags = aggDays === 0 && prnBehaviorDays === 0 && anomalyDays === 0;
-      let patternParagraph = '';
-      if (poorSleepDays.size > 2 && allConcernDaysCount) {
-        patternParagraph = 'Sleep disruption and behavioral observations were both documented during this reporting period. This may be useful for the support team to review alongside the underlying check-ins.';
-      } else if (noSafetyFlags && !allConcernDaysCount && promptAvg != null && promptAvg <= 2) {
-        patternParagraph = 'During this reporting period, applicable check-ins did not record safety concerns or behavior/mental-health concerns, and recorded prompt levels were low.';
-      }
-      if (patternParagraph) paragraphs.push(patternParagraph);
-
-      paragraphs.push(`Thank you for trusting the STAR team to support ${name}. Please don't hesitate to reach out with any questions about this report.\n\nWith care,\n${caregiverText}`);
-
-      return paragraphs.filter(Boolean).join('\n\n');
     }
 
     function applyChartRange(){
@@ -6265,6 +6000,9 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         } catch {}
       }
 
+      cgState.providerReady = res?.loadComplete === true;
+      cgState.providerUndated = res?.undatedEntries || [];
+
       // If no rows from Supabase, keep structures valid
       if (!res || !Array.isArray(res.entries)) {
         const entries = [];
@@ -7082,7 +6820,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     document.getElementById('parentLetterApply')?.addEventListener('click', () => {
       renderParentLetterFromInputs({ scroll: true });
     });
-    ['parentLetterStart', 'parentLetterEnd'].forEach((id) => {
+    ['parentLetterStart', 'parentLetterEnd', 'providerIndividual', 'providerIncludeQuotes'].forEach((id) => {
       document.getElementById(id)?.addEventListener('change', () => {
         const bodyEl = document.getElementById('parentLetterBody');
         if (bodyEl) bodyEl.textContent = '';
@@ -7094,12 +6832,16 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       if (cardEl) cardEl.style.display = 'none';
     });
     document.getElementById('parentLetterPrint')?.addEventListener('click', () => {
-      if (!renderParentLetterFromInputs()) return;
+      const generatedGroup = document.getElementById('parentLetterBody')?.dataset.groupId;
+      if (generatedGroup !== localStorage.getItem('currentGroupId')) {
+        alert('The active group changed. Reload the report and generate a new letter before printing.');
+        return;
+      }
       const rangeText = document.getElementById('parentLetterRange')?.textContent || '';
       const bodyText = document.getElementById('parentLetterBody')?.textContent || '';
       const disclaimerText = document.getElementById('parentLetterDisclaimer')?.textContent || '';
       if (!bodyText.trim()) {
-        alert('Generate the Parent Letter first, then print it.');
+        alert('Generate the Provider Letter first, then print it.');
         return;
       }
       window.starPrintParentLetterOnly?.({ rangeText, bodyText, disclaimerText });
@@ -7228,21 +6970,33 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         updateParentLetterControls();
         return false;
       }
-      const caregiverEntries = filterParentLetterEntries(cgState.entries || [], range);
-      const moodEntries = printRangeMoods(window.latestMoodEntries || [], range);
-      const summary = summarizeEntries(caregiverEntries);
-      const movementInsights = buildMovementInsights(caregiverEntries);
-      const profile = reportConfigState.individual_profile || reportConfigState.individualProfile || null;
-      rangeEl.textContent = `Range: ${range.label}`;
-      bodyEl.textContent = generateParentLetter({
-        caregiverEntries,
-        moodEntries,
-        range,
-        rangeKey: 'custom',
-        summary,
-        movementInsights,
-        profile,
-      });
+      try {
+        if (!cgState.providerReady) throw new Error('Check-ins could not be fully loaded. Reload the report before generating a letter.');
+        const groupId = reportConfigState.groupId;
+        if (String(groupId) !== localStorage.getItem('currentGroupId')) throw new Error('The active group changed. Reload the report before generating a letter.');
+        const entries = [...(cgState.entries || []), ...(cgState.providerUndated || [])];
+        const identities = [...new Set(entries.filter(row => groupKey(row) === String(groupId)).map(individualKey))].sort();
+        const selector = document.getElementById('providerIndividual');
+        const signature = JSON.stringify([groupId, identities]);
+        if (selector.dataset.scope !== signature) {
+          selector.replaceChildren();
+          if (identities.length > 1) selector.add(new Option('Choose one individual', '__choose__'));
+          for (const id of identities) selector.add(new Option(id ? `Individual ${id}` : 'Records without an individual identifier', id));
+          selector.dataset.scope = signature;
+        }
+        if (selector.value === '__choose__') throw new Error('Choose one individual or the records without an individual identifier, then generate again.');
+        const analysis = analyzeProviderRecords(entries, {
+          start: range.startInput, end: range.endInput, groupId, individualId: selector.value,
+        });
+        rangeEl.textContent = `Range: ${range.label}`;
+        bodyEl.textContent = renderProviderLetter(analysis, { includeQuotes: document.getElementById('providerIncludeQuotes').checked });
+        bodyEl.dataset.groupId = String(groupId);
+      } catch (error) {
+        rangeEl.textContent = error.message;
+        bodyEl.textContent = '';
+        updateParentLetterControls();
+        return false;
+      }
       cardEl.style.display = '';
       updateParentLetterControls();
       if (scroll) cardEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -7882,7 +7636,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       .kicker{margin:0 0 3pt;color:#8a5a25;font-size:8pt;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
       h1{margin:0;color:#20324f;font-family:Georgia,"Times New Roman",serif;font-size:22pt;line-height:1.1}
       .range{margin:7pt 0 0;color:#4f5e75;font-size:10pt;font-weight:700}
-      .body{white-space:pre-wrap}
+      .body{white-space:pre-wrap;overflow-wrap:anywhere}
       .disclaimer{margin-top:18pt;padding-top:9pt;border-top:1px solid #d9dee7;color:#657086;font-family:"Avenir Next","Segoe UI",Arial,sans-serif;font-size:8.5pt;font-style:italic;line-height:1.35}
       @media print{.letter{break-inside:auto}}
     `;
@@ -7890,10 +7644,10 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 
   window.starPrintParentLetterOnly = ({ rangeText = '', bodyText = '', disclaimerText = '' } = {}) => {
     const bodyHtml = `
-      <article class="letter" aria-label="STAR Parent Letter">
+      <article class="letter" aria-label="STAR Provider Letter">
         <header class="letter-header">
-          <p class="kicker">STAR Parent Letter</p>
-          <h1>Parent Letter</h1>
+          <p class="kicker">STAR Provider Letter</p>
+          <h1>Provider Letter</h1>
           <p class="range">${escapePrintHtml(rangeText || 'Range: selected dates')}</p>
         </header>
         <div class="body">${escapePrintHtml(bodyText)}</div>
@@ -7901,7 +7655,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       </article>
     `;
     openIsolatedPrintWindow({
-      title: 'STAR Parent Letter',
+      title: 'STAR Provider Letter',
       bodyHtml,
       styles: parentLetterPrintStyles()
     });
@@ -8002,7 +7756,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 
 <script>
   (function(){
-    const version = window.STAR_BUILD_VERSION || '2026.10.07I';
+    const version = window.STAR_BUILD_VERSION || '2026.10.20A';
     if (!window.STAR_BUILD_VERSION) window.STAR_BUILD_VERSION = version;
     const ensureBadge = () => {
       if (document.getElementById('star-build-version')) return;
@@ -8038,7 +7792,9 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 <script type="module">
 import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 import { ensureActiveGroupId } from './active-group.js?v=2026.10.07A';
-import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinForCalendar } from './caregiver-report-shared.js?v=2026.10.07I';
+import { formatCheckinDate } from './caregiver-dates.js';
+import { loadCalendarCheckins, calendarEmptyLabel } from './caregiver-calendar-data.js';
+import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinForCalendar } from './caregiver-report-shared.js?v=2026.10.19A';
 
 (() => {
   // Bail out quietly if the calendar HTML isn't present
@@ -8279,6 +8035,8 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinFor
   let Y = (new Date()).getFullYear();
   let M = (new Date()).getMonth(); // 0-11
   let MAP = {};
+  let checkinLoadState = { complete: false, unresolved: 0, legacy: 0 };
+  let monthLoadSequence = 0;
   let EVENT_MAP = {};              // meetings/appointments
   let HEALTH_FLAGS = {};           // persisted manual flags
   const layers = { bm:true, sleep_concern:true, prn:true, illness:true, appetite:true, med_change:true, moon:true, anomaly:true };
@@ -8300,10 +8058,7 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinFor
     const end   = new Date(Date.UTC(m===11?y+1:y, (m+1)%12, 1)).toISOString();
     return { start, end };
   }
-  const humanDate = (key) => {
-    const dt = new Date(key);
-    return Number.isNaN(dt.getTime()) ? key : dt.toLocaleDateString(undefined, { weekday:'short', month:'short', day:'numeric' });
-  };
+  const humanDate = (key) => formatCheckinDate(key);
   const localDayKey = (date = new Date()) => {
     const dt = date instanceof Date ? date : new Date(date);
     if (Number.isNaN(dt.getTime())) return '';
@@ -8355,7 +8110,7 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinFor
         const e=document.createElement('div');
         e.className='hc-empty';
         const todayKey = localDayKey(new Date());
-        e.textContent = key <= todayKey && !rec.has_checkin ? 'No check-in recorded' : '—';
+        e.textContent = calendarEmptyLabel(checkinLoadState, key, todayKey, rec.has_checkin);
         cell.appendChild(e);
       }
 
@@ -8551,60 +8306,6 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinFor
     };
   }
 
-  function collectReportLoadedCalendarRows(startDate, endDate){
-    const rows = Array.isArray(window.latestCaregiverEntries) ? window.latestCaregiverEntries : [];
-    return rows.filter((row) => {
-      const calendarRecord = normalizeCaregiverCheckinForCalendar(row);
-      const key = calendarRecord.dateKey;
-      return key && key >= startDate && key < endDate;
-    });
-  }
-
-  function dedupeCalendarRows(...groups){
-    const seen = new Set();
-    const rows = [];
-    groups.flat().forEach((row) => {
-      if (!row) return;
-      const key = row.id ? `id:${row.id}` : `row:${JSON.stringify(row)}`;
-      if (seen.has(key)) return;
-      seen.add(key);
-      rows.push(row);
-    });
-    return rows;
-  }
-
-  async function loadMonthFlagMap(y, m){
-    const map = {};
-    const { start, end } = monthBoundsUTC(y, m);
-    const startDate = start.slice(0,10);
-    const endDate = end.slice(0,10);
-    try{
-      const params = [
-        'caregiver_checkins?select=id,user_id,created_at,submitted_at,date,had_bm,payload',
-        `date=gte.${encodeURIComponent(startDate)}`,
-        `date=lt.${encodeURIComponent(endDate)}`,
-        'order=date.asc'
-      ];
-      const data = await rest(params.join('&'));
-      const reportRows = collectReportLoadedCalendarRows(startDate, endDate);
-      dedupeCalendarRows(Array.isArray(data) ? data : [], reportRows).forEach((row) => {
-        mergeCalendarObservation(map, normalizeCaregiverCheckinForCalendar(row));
-      });
-      if (Array.isArray(data) || reportRows.length) {
-        console.log('[caregiver calendar] month rows normalized', {
-          restRows: Array.isArray(data) ? data.length : 0,
-          reportRows: reportRows.length,
-          days: Object.keys(map).length
-        });
-      }
-    }catch(error){
-      console.warn('month flags load error', error?.message || error);
-    }
-
-    applyLocalAnnotationsToMap(start, end, map);
-    return map;
-  }
-
   function buildMonthCounts(y, m, map){
     const counts = {};
     QUICK_LOOK_ITEMS.forEach(item => { counts[item.key] = 0; });
@@ -8630,32 +8331,14 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinFor
     counts: buildMonthCounts(Y, M, MAP)
   });
 
-  async function loadCaregiverFlags(start, end){
-    try{
-      const startDate = start.slice(0,10);
-      const endDate = end.slice(0,10);
-      const params = [
-        'caregiver_checkins?select=id,user_id,created_at,submitted_at,date,had_bm,payload',
-        `date=gte.${encodeURIComponent(startDate)}`,
-        `date=lt.${encodeURIComponent(endDate)}`,
-        'order=date.asc'
-      ];
-      const data = await rest(params.join('&'));
-      const reportRows = collectReportLoadedCalendarRows(startDate, endDate);
-      dedupeCalendarRows(Array.isArray(data) ? data : [], reportRows).forEach((row) => {
-        mergeCalendarObservation(MAP, normalizeCaregiverCheckinForCalendar(row));
-      });
-      if (Array.isArray(data) || reportRows.length) {
-        console.log('[caregiver calendar] visible month rows normalized', {
-          restRows: Array.isArray(data) ? data.length : 0,
-          reportRows: reportRows.length,
-          days: Object.keys(MAP).length
-        });
-      }
-    }catch(error){
-      console.warn('caregiver flags load error', error?.message || error);
-    }
-
+  async function loadCaregiverFlags(start, end, groupId){
+    const result = await loadCalendarCheckins({
+      request: rest, groupId, startDate: start.slice(0, 10), endDate: end.slice(0, 10),
+      reportRows: window.latestCaregiverEntries || []
+    });
+    const map = {};
+    result.rows.forEach(row => mergeCalendarObservation(map, normalizeCaregiverCheckinForCalendar(row)));
+    return { ...result, map };
   }
 
   function applyLocalAnnotations(startIso, endIso){
@@ -8670,9 +8353,8 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinFor
     });
   }
 
-  async function loadCalendarEventsInRange(start, end){
+  async function loadCalendarEventsInRange(start, end, groupId, sequence){
     EVENT_MAP = {};
-    const groupId = await ensureGroupId();
     if (!groupId) {
       setCalendarStatus('No active group is selected, so shared calendar items cannot load yet.', 'error');
       applyLocalAnnotations(start, end);
@@ -8690,6 +8372,7 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinFor
         'order=start_date.asc'
       ];
       const rows = await rest(params.join('&'));
+      if (sequence !== monthLoadSequence) return;
       (rows || []).forEach(evt => {
         const key = evt.start_date;
         if (!key) return;
@@ -8704,21 +8387,36 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinFor
         }
       });
     } catch (error) {
+      if (sequence !== monthLoadSequence) return;
       console.warn('calendar events error', error?.message || error);
     }
     applyLocalAnnotations(start, end);
   }
 
   async function loadMonth(){
+    const sequence = ++monthLoadSequence;
     MAP = {};
     EVENT_MAP = {};
     HEALTH_FLAGS = {};
+    checkinLoadState = { complete: false, unresolved: 0, legacy: 0 };
+    renderCalendarNotice('Loading check-ins…');
     const { start, end } = monthBoundsUTC(Y, M);
     try {
-      await loadCaregiverFlags(start, end);
-      await loadCalendarEventsInRange(start, end);
+      const groupId = await ensureGroupId();
+      const result = await loadCaregiverFlags(start, end, groupId);
+      if (sequence !== monthLoadSequence) return;
+      MAP = result.map;
+      checkinLoadState = result;
+      await loadCalendarEventsInRange(start, end, groupId, sequence);
+      if (sequence !== monthLoadSequence) return;
+      const notices = [];
+      if (!result.complete) notices.push('Check-ins could not be fully loaded. Missing days cannot be confirmed; please retry.');
+      if (result.unresolved) notices.push(`${result.unresolved} check-in(s) have no valid selected date and need review.`);
+      if (result.legacy) notices.push(`${result.legacy} legacy check-in date(s) normalized for display. Saved records are unchanged.`);
+      if (notices.length) setCalendarStatus(notices.join(' '), !result.complete || result.unresolved ? 'error' : 'info');
       render();
     } catch (error) {
+      if (sequence !== monthLoadSequence) return;
       console.error('[caregiver-report] calendar month load failed', error);
       setCalendarStatus('Calendar data could not be loaded right now. Please refresh or reselect your group.', 'error');
       renderCalendarNotice('Calendar unavailable');

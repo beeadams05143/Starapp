@@ -833,6 +833,13 @@
     }
     #services-summary-panel,
     #weekly-averages-panel{display:none!important}
+    #parentLetterCard{max-width:920px;margin-inline:auto;padding:20px 24px}
+    #parentLetterCard h4{font-size:22px;margin:0}
+    #parentLetterCard .parent-letter-range-control{grid-template-columns:minmax(135px,190px) minmax(135px,190px) auto;justify-content:start;gap:12px;align-items:end}
+    #parentLetterCard .parent-letter-range-control input{box-sizing:border-box;width:100%;max-width:190px}
+    #parentLetterCard #parentLetterApply{white-space:nowrap}
+    #parentLetterCard #parentLetterBody{max-width:760px;margin:22px auto 0;padding:24px;background:white;border:1px solid #e8e2d9;border-radius:12px}
+    @media(max-width:650px){#parentLetterCard{padding:16px}#parentLetterCard .parent-letter-range-control{grid-template-columns:1fr 1fr}#parentLetterCard #parentLetterApply{grid-column:1/-1;width:100%}#parentLetterCard #parentLetterBody{padding:16px}}
     .parent-letter-range-control{
       display:grid;
       grid-template-columns:repeat(2,minmax(0,1fr)) auto;
@@ -1489,12 +1496,12 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     </div>
     <div class="chart report-summary-inline" id="parentLetterCard">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <h4>Provider Letter</h4>
+        <h4>Caregiver Summary Letter</h4>
         <div style="display:flex;gap:8px">
           <button id="parentLetterPrint" class="btn" style="font-size:13px">🖨️ Print Letter</button>
         </div>
       </div>
-      <div class="parent-letter-range-control" aria-label="Provider Letter Range">
+      <div class="parent-letter-range-control" aria-label="Caregiver summary date range">
         <label>Start date
           <input type="date" id="parentLetterStart">
         </label>
@@ -1503,17 +1510,17 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         </label>
         <button id="parentLetterApply" class="btn" type="button" disabled>Generate Letter</button>
       </div>
-      <label>Individual records
+      <label id="providerIndividualLabel" style="display:none">Individual records
         <select id="providerIndividual" style="max-width:100%"><option value="">Generate to load available individuals</option></select>
       </label>
       <label style="display:block;margin:10px 0"><input type="checkbox" id="providerIncludeQuotes" checked> Include exact caregiver quotations (review for privacy)</label>
-      <p class="muted">Review the letter below before printing or sharing. You can omit quotations with the option above.</p>
+      <p class="muted">Generate a summary of caregiver observations and activities for the selected dates.</p>
       <p class="muted" id="parentLetterRange">Choose a start and end date.</p>
       <div id="parentLetterBody" style="font-size:15px;line-height:1.7;color:#1a1a2e;white-space:pre-wrap;overflow-wrap:anywhere;font-family:Georgia,serif"></div>
       <p id="parentLetterDisclaimer" style="margin-top:16px;font-size:12px;color:#9ca3af;font-style:italic">
         This letter was generated from caregiver check-in data recorded
-        in the STAR app. It is intended as a communication tool for
-        families and support teams, not a clinical document.
+        in the STAR app. It is intended to share caregiver observations with
+        families, case managers, healthcare providers, and support teams.
       </p>
     </div>
     <div class="chart report-graph" data-graph-id="health" data-graph-title="Physical & Daily Living Overview" data-graph-canvas="healthChart">
@@ -1656,7 +1663,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     import { openCompactCaregiverCheckinPrintWindow } from './caregiver-checkin-print.js?v=2026.09.02A';
     import { CALENDAR_QUICK_LOOK_ITEMS, filterCaregiverCheckinsForPrint, normalizeCaregiverCheckinForCalendar, normalizeCaregiverCheckinRecord } from './caregiver-report-shared.js?v=2026.10.19A';
     import { renderPrintableCaregiverReport } from './caregiver-report-print.js?v=2026.07.01B';
-    import { analyzeProviderRecords, renderProviderLetter, individualKey, groupKey } from './caregiver-provider-letter.js?v=2026.10.20D';
+    import { analyzeProviderRecords, renderProviderLetter, individualKey, groupKey } from './caregiver-provider-letter.js?v=2026.10.20F';
     import { buildWeeklyPromptSeries, defaultGraphRange, filterRecordsByRange, formatGraphRange, rangeFromInputs } from './caregiver-report-graphs.js?v=2026.09.04A';
 
     /* =============== Optional live data =============== */

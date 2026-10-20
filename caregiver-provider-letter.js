@@ -224,12 +224,12 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
   if (goodDays.length) add('Participation and Positive Experiences', 'Positive experiences or examples of independence were documented on ' + dates(goodDays) + '.' + samples(['positive experiences', 'independence and coping'], 3));
   // Activities are drawn from original notes rather than inferring participation from blank fields.
   const activityGroups = [
-    ['Vocational Activities', /\\b(work|worked|job|vocational|employment|shift|job coach)\\b/i],
-    ['Community Activities', /\\b(community|outing|orchard|store|shopping|library|restaurant|pizza|park|trip|walk|gym|yankee candle)\\b/i],
-    ['Home and Daily Living', /\\b(cook|cooking|meal|clean|laundry|dishes|hygiene|shower|household|home activit)\\b/i],
+    ['Vocational Activities', /\b(work|worked|job|vocational|employment|shift|job coach)\b/i],
+    ['Community Activities', /\b(community|outing|orchard|store|shopping|library|restaurant|pizza|park|trip|walk|gym|yankee candle)\b/i],
+    ['Home and Daily Living', /\b(cook|cooking|meal|clean|laundry|dishes|hygiene|shower|household|home activit)\b/i],
   ];
   for (const [heading, pattern] of activityGroups) {
-    const matches = a.notes.quotes.filter(q => q.date && pattern.test(q.quote) && !/\\b(will|planned|tomorrow|did not|didn't|refused|no outing)\\b/i.test(q.quote));
+    const matches = a.notes.quotes.filter(q => q.date && pattern.test(q.quote) && !/\b(will|planned|tomorrow|did not|didn't|refused|no outing)\b/i.test(q.quote));
     const activityDates = [...new Set(matches.map(q => q.date))];
     if (activityDates.length) {
       const examples = [];

@@ -340,6 +340,14 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
     if (social.length) highlights.push(experience(social, 'A caregiver described this social interaction: “' + social[0].quote.trim() + '”'));
     const other = relevant(/\b(library|zoo|parade|birthday party|hiking trail)\b/i);
     if (other.length) highlights.push(experience(other, 'Another experience noted by a caregiver'));
+    // Family routines are meaningful memory cues too, even when they are not
+    // unusual destinations. Use an original caregiver observation, once only.
+    const family = relevant(/\b(family|sunday dinner|dinner|living room|grandma|grandmother|dad|brother|movie|coloring|craft|walk with|walked with)\b/i);
+    const familyExample = family.find(q => !usedQuotes.has(q.date + ':' + q.quote.trim().toLowerCase()) && !/\b(work|job|maintenance|PRN|medication)\b/i.test(q.quote));
+    if (familyExample && includeQuotes) {
+      const detail = familyExample.quote.trim();
+      highlights.push(experience([familyExample], 'A caregiver also described time with family: “' + detail + '”'));
+    }
     if (highlights.filter(Boolean).length) parts.push(highlights.filter(Boolean).join(' '));
     add('Community and Family Participation', parts);
   }

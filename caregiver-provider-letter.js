@@ -296,44 +296,50 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
     add('Vocational Participation', parts);
   }
 
-  // Highlight specific experiences in notes, rather than treating every routine
-  // walk or store visit as equally notable. Match actual caregiver text only.
-  const notableRules = [
-    { id: 'orchard', pattern: /\b(orchard|apple picking|pumpkin patch)\b/i },
-    { id: 'new-person', pattern: /\b(met (?:a |the )?new|new (?:person|staff|employee|maintenance|friend)|introduced (?:himself|herself|themselves))\b/i },
-    { id: 'event', pattern: /\b(festival|fair|concert|show|museum|zoo|field trip|birthday party|holiday event|parade)\b/i },
-    { id: 'social', pattern: /\b(greeted|said hello|made conversation|introduced himself|ordered (?:his|their|her) own|asked (?:for|someone))\b/i },
-    { id: 'outing', pattern: /\b(yankee candle|christmas village|halloween village|library|farm|hiking trail|nature center)\b/i },
-  ];
-  const notable = [];
-  const seenNotable = new Set();
-  for (const q of a.notes.quotes) {
-    if (!q.date || q.quote.trim().length > 180) continue;
-    const value = q.quote.trim();
-    if (/\b(will|tomorrow|planned|might|didn't|did not|refused)\b/i.test(value)) continue;
-    const rule = notableRules.find(rule => rule.pattern.test(value));
-    if (!rule || seenNotable.has(rule.id)) continue;
-    notable.push({ date: q.date, value, id: rule.id });
-    seenNotable.add(rule.id);
-  }
   const home = activity('home_activity_flag', 'home_activity_type');
   const community = activity('public_activity_flag', 'public_activity_type');
+  const cleanActivity = value => ({
+    'Walk / Stroll': 'walks', 'Movie in living room': 'watching movies together',
+    'Art / craft project': 'arts and crafts', 'Outside time in yard / neighborhood': 'time outdoors',
+    'Restaurant/Café': 'restaurants and cafés', 'Went to store': 'shopping and errands',
+    'Shopping – grocery/retail': 'shopping and errands', 'Went to recycling': 'recycling errands',
+  })[value] || value.toLowerCase();
+  const activitiesText = data => [...new Set([...data.types].sort((a, b) => b[1].size - a[1].size).map(([name]) => cleanActivity(name)))].slice(0, 7).join(', ');
+  const allNotes = a.notes.quotes.filter(q => q.date && q.quote.trim().length <= 200);
+  const relevant = (pattern, exclude = /$^/) => allNotes.filter(q => pattern.test(q.quote) && !exclude.test(q.quote) && !/\b(will|tomorrow|planned|might|didn't|did not|refused)\b/i.test(q.quote));
+  const experience = (matches, phrase) => {
+    if (!matches.length) return '';
+    const q = matches[0];
+    const id = q.date + ':' + q.quote.trim().toLowerCase();
+    if (usedQuotes.has(id)) return '';
+    usedQuotes.add(id);
+    return phrase + ' (' + short(q.date) + ').';
+  };
   if (home.days.length || community.days.length) {
     const parts = [];
-    const summarize = (name, data) => {
-      if (!data.days.length) return '';
-      const examples = [...data.types].sort((a, b) => b[1].size - a[1].size).slice(0, 7).map(([type]) => type);
-      return name + ' was documented on ' + data.days.length + ' ' + (data.days.length === 1 ? 'day' : 'days') + (examples.length ? ', including ' + examples.join(', ') : '') + '.';
-    };
-    parts.push(summarize('At-home and family activities', home));
-    parts.push(summarize('Participation in the wider community', community));
-    if (notable.length) {
-      const selected = notable.slice(0, 4);
-      parts.push('Noteworthy experiences and social interactions described in caregiver notes included: ' + selected.map(item => short(item.date) + ' — “' + item.value + '”').join('; ') + '.');
-      for (const item of selected) usedQuotes.add(item.date + ':' + item.value.toLowerCase());
-    } else {
-      parts.push(quote(/\b(orchard|outing|shopping|store|library|restaurant|pizza|park|walk|community)\b/i, { max: 1 }));
+    if (home.days.length) parts.push('At home and with family, participation was documented on ' + home.days.length + ' ' + (home.days.length === 1 ? 'day' : 'days') + (home.types.size ? '. Activities included ' + activitiesText(home) + '.' : '.'));
+    if (community.days.length) parts.push('Participation in the wider community was documented on ' + community.days.length + ' ' + (community.days.length === 1 ? 'day' : 'days') + (community.types.size ? ', with regular activities such as ' + activitiesText(community) + '.' : '.'));
+    const highlights = [];
+    const orchard = relevant(/\b(orchard|apple picking|pumpkin patch)\b/i).sort((a, b) => {
+      const visit = q => /\b(went|going|visited|visit|trip|at the orchard)\b/i.test(q.quote) ? 0 : 1;
+      return visit(a) - visit(b);
+    });
+    if (orchard.length) {
+      const q = orchard[0];
+      const visit = /\b(went|going|visited|visit|trip|at the orchard)\b/i.test(q.quote);
+      highlights.push(experience([q], visit ? 'A caregiver described an orchard visit' : 'A caregiver mentioned an experience involving the orchard'));
     }
+    const destinations = relevant(/\b(yankee candle|christmas village|halloween village|museum|festival|fair|concert|field trip|farm|nature center)\b/i);
+    if (destinations.length) {
+      const q = destinations[0];
+      const mention = q.quote.trim();
+      highlights.push(experience([q], 'Another noteworthy outing was described as “' + mention + '”'));
+    }
+    const social = relevant(/\b(greeted|said hello|made conversation|introduced himself|ordered (?:his|their|her) own)\b/i, /\b(work|job|maintenance)\b/i);
+    if (social.length) highlights.push(experience(social, 'Caregivers also noted positive social interactions in the community'));
+    const other = relevant(/\b(library|zoo|parade|birthday party|hiking trail)\b/i);
+    if (other.length) highlights.push(experience(other, 'Another experience noted by a caregiver'));
+    if (highlights.filter(Boolean).length) parts.push('Notable experiences included the following. ' + highlights.filter(Boolean).join(' '));
     add('Community and Family Participation', parts);
   }
 

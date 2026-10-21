@@ -720,8 +720,20 @@ export function normalizeCaregiverCheckinForCalendar(record = {}) {
     participation.length ? participation.join(' + ') : '',
     ...physicalDetails,
   ];
-  const summaryLines = compactCalendarLines([caregiver, ...signalLines], caregiver ? 4 : 3);
-  if (!summaryLines.length || (caregiver && summaryLines.length === 1)) {
+  const meaningfulNote = [
+    payload.public_activity_note, payload.community_notes, payload.vocational_notes,
+    payload.home_notes, payload.caregiver_notes, payload.behavior_notes,
+    payload.physical_notes, payload.daily_living_notes,
+  ].map(value => String(value || '').trim().replace(/\\s+/g, ' ')).find(value => value.length >= 12 && value.length <= 145);
+  const activityTypes = [payload.public_activity_type, payload.home_activity_type, payload.vocational_activity_type]
+    .flatMap(value => { if (Array.isArray(value)) return value; if (typeof value !== 'string') return []; try { const parsed = JSON.parse(value); if (Array.isArray(parsed)) return parsed; } catch {} return value.split(/[;,|]/); })
+    .map(value => String(value).trim()).filter(value => value && value.toLowerCase() !== 'other');
+  const meaningfulActivity = [...new Set(activityTypes)].slice(0, 2).join(', ');
+  const summaryLines = compactCalendarLines([
+    ...signalLines.filter(line => !/^(Home|Community|Vocational)( \\+ (Home|Community|Vocational))*$/.test(line)),
+    meaningfulNote || meaningfulActivity || (participation.length ? participation.join(' + ') : ''),
+  ], 4);
+  if (!summaryLines.length) {
     summaryLines.push('No notable concerns');
   }
   if (parseBooleanLoose(payload.pet_interaction_flag) === true || payload.pet_activity_type) {

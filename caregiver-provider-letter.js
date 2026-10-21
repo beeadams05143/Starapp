@@ -342,8 +342,11 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
     if (other.length) highlights.push(experience(other, 'Another experience noted by a caregiver'));
     // Family routines are meaningful memory cues too, even when they are not
     // unusual destinations. Use an original caregiver observation, once only.
-    const family = relevant(/\b(family|sunday dinner|dinner|living room|grandma|grandmother|dad|brother|movie|coloring|craft|walk with|walked with)\b/i);
-    const familyExample = family.find(q => !usedQuotes.has(q.date + ':' + q.quote.trim().toLowerCase()) && !/\b(work|job|maintenance|PRN|medication)\b/i.test(q.quote));
+    const family = relevant(/\b(sunday dinner|dinner|living room|grandma|grandmother|family visit|with family|movie|coloring|craft|walk with|walked with)\b/i);
+    const familyExample = family.find(q =>
+      !usedQuotes.has(q.date + ':' + q.quote.trim().toLowerCase()) &&
+      !/\b(work|job|maintenance|PRN|medication|sleep|night|overnight|awake|woke|tired|manic|anxiety|up and down)\b/i.test(q.quote)
+    );
     if (familyExample && includeQuotes) {
       const detail = familyExample.quote.trim();
       highlights.push(experience([familyExample], 'A caregiver also described time with family: “' + detail + '”'));

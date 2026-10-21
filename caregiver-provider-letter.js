@@ -371,6 +371,6 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
     const key = new Date(day * DAY).toISOString().slice(0, 10);
     if (!covered.has(key)) missing.push(key);
   }
-  if (missing.length) sections.push('Record coverage\nNo caregiver records were available for ' + dates(missing) + '.'');
+  if (missing.length) sections.push('Record coverage\nNo caregiver records were available for ' + dates(missing) + '.');
   return sections.join('\n\n');
 }

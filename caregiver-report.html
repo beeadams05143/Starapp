@@ -1666,7 +1666,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     import { openCompactCaregiverCheckinPrintWindow } from './caregiver-checkin-print.js?v=2026.09.02A';
     import { CALENDAR_QUICK_LOOK_ITEMS, filterCaregiverCheckinsForPrint, normalizeCaregiverCheckinForCalendar, normalizeCaregiverCheckinRecord } from './caregiver-report-shared.js?v=2026.10.20C';
     import { renderPrintableCaregiverReport } from './caregiver-report-print.js?v=2026.07.01B';
-    import { analyzeProviderRecords, renderProviderLetter, individualKey, groupKey } from './caregiver-provider-letter.js?v=2026.10.20O';
+    import { analyzeProviderRecords, renderProviderLetter, individualKey, groupKey } from './caregiver-provider-letter.js?v=2026.10.20P';
     import { buildWeeklyPromptSeries, defaultGraphRange, filterRecordsByRange, formatGraphRange, rangeFromInputs } from './caregiver-report-graphs.js?v=2026.09.04A';
 
     /* =============== Optional live data =============== */
@@ -8121,7 +8121,7 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinFor
     heading.style.cssText = 'margin:0 0 14px;font-size:19px;';
     const content = document.createElement('div');
     content.style.cssText = 'white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.65;font-size:15px;';
-    content.textContent = lines.join('\\n');
+    content.textContent = lines.join('\n');
     const footer = document.createElement('div');
     footer.style.cssText = 'display:flex;justify-content:flex-end;margin-top:22px;';
     const close = document.createElement('button');

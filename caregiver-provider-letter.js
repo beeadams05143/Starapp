@@ -200,6 +200,7 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
     return [...groups].map(([month, days]) => month + ' ' + (days.length === 1 ? days[0] : days.slice(0, -1).join(', ') + ' and ' + days.at(-1))).join('; ');
   };
   const prepared = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  const joinNatural = items => items.length < 3 ? items.join(' and ') : items.slice(0, -1).join(', ') + ', and ' + items.at(-1);
   const sections = ['Caregiver Observation Summary\nDate Prepared: ' + prepared, 'Dear Support Team,'];
   const add = (title, paragraphs) => {
     const content = paragraphs.filter(Boolean).join('\n\n').trim();
@@ -276,8 +277,8 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
     const parts = [];
     const engagement = behavior.filter(([key]) => key === 'engagement' || key === 'withdrawal');
     const regulation = behavior.filter(([key]) => key !== 'engagement' && key !== 'withdrawal');
-    if (engagement.length) parts.push('Caregivers recorded changes in participation and engagement, including ' + engagement.map(([, label]) => label).join(' and ') + '. These observations appeared on multiple days during the reporting period.');
-    if (regulation.length) parts.push('Other observations included ' + regulation.map(([, label]) => label).join(', ').replace(/, ([^,]*)$/, ', and $1') + '.');
+    if (engagement.length) parts.push('Caregivers recorded changes in participation and engagement, including ' + engagement.map(([key, label]) => label + ' on ' + a.metrics[key].dates.length + ' days').join(' and ') + '. These observations appeared on multiple days during the reporting period.');
+    if (regulation.length) parts.push('Other observations included ' + joinNatural(regulation.map(([key, label]) => label + ' on ' + a.metrics[key].dates.length + ' days')) + '.');
     const behaviorQuote = quote(/\b(pacing|paced|restless|snappy|irritab|withdrawn|engag)\b/i, { max: 2 });
     if (behaviorQuote) parts.push(behaviorQuote);
     add('Mood, Engagement, and Behavior', parts);
@@ -302,9 +303,9 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
     'Walk / Stroll': 'walks', 'Movie in living room': 'watching movies together',
     'Art / craft project': 'arts and crafts', 'Outside time in yard / neighborhood': 'time outdoors',
     'Restaurant/Café': 'restaurants and cafés', 'Went to store': 'shopping and errands',
-    'Shopping – grocery/retail': 'shopping and errands', 'Went to recycling': 'recycling errands',
+    'Shopping – grocery/retail': 'shopping and errands', 'Went to recycling': 'recycling trips',
   })[value] || value.toLowerCase();
-  const activitiesText = data => [...new Set([...data.types].sort((a, b) => b[1].size - a[1].size).map(([name]) => cleanActivity(name)))].slice(0, 7).join(', ');
+  const activitiesText = data => joinNatural([...new Set([...data.types].sort((a, b) => b[1].size - a[1].size).map(([name]) => cleanActivity(name)))].slice(0, 7));
   const allNotes = a.notes.quotes.filter(q => q.date && q.quote.trim().length <= 200);
   const relevant = (pattern, exclude = /$^/) => allNotes.filter(q => pattern.test(q.quote) && !exclude.test(q.quote) && !/\b(will|tomorrow|planned|might|didn't|did not|refused)\b/i.test(q.quote));
   const experience = (matches, phrase) => {
@@ -339,7 +340,7 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
     if (social.length) highlights.push(experience(social, 'Caregivers also noted positive social interactions in the community'));
     const other = relevant(/\b(library|zoo|parade|birthday party|hiking trail)\b/i);
     if (other.length) highlights.push(experience(other, 'Another experience noted by a caregiver'));
-    if (highlights.filter(Boolean).length) parts.push('Notable experiences included the following. ' + highlights.filter(Boolean).join(' '));
+    if (highlights.filter(Boolean).length) parts.push(highlights.filter(Boolean).join(' '));
     add('Community and Family Participation', parts);
   }
 
@@ -349,7 +350,7 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
   if (strengths.length || positive?.dates.length || independent?.dates.length) {
     const parts = [];
     if (strengths.length) parts.push('Caregivers documented examples of coping, participation, or independence, including ' + strengths.slice(0, 6).map(key => key.replace(/_/g, ' ')).join(', ') + '.');
-    const positiveQuote = quote(/\b(enjoyed|happy|successful|independent|greeted|good outing|went well)\b/i, { max: 2, exclude: /\b(anxiety|worried|tired|snappy|did sleep|sleep good)\b/i });
+    const positiveQuote = quote(/\b(enjoyed|happy|successful|independent|greeted|good outing|went well|polite|excuse me|proud)\b/i, { max: 2, exclude: /\b(anxiety|worried|tired|snappy|did sleep|sleep good|orchard|apple)\b/i });
     if (positiveQuote) parts.push(positiveQuote);
     if (!parts.length) parts.push('Caregiver notes included positive experiences and moments of participation during this period.');
     add('Strengths and Positive Experiences', parts);
@@ -370,6 +371,6 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
     const key = new Date(day * DAY).toISOString().slice(0, 10);
     if (!covered.has(key)) missing.push(key);
   }
-  if (missing.length) sections.push('Record coverage\nThere were no caregiver records for ' + dates(missing) + '. This does not mean that no activities or concerns occurred on those days.');
+  if (missing.length) sections.push('Record coverage\nNo caregiver records were available for ' + dates(missing) + '.'');
   return sections.join('\n\n');
 }

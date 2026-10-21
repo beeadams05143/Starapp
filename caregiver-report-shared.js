@@ -730,7 +730,9 @@ export function normalizeCaregiverCheckinForCalendar(record = {}) {
     .map(value => String(value).trim()).filter(value => value && value.toLowerCase() !== 'other');
   const meaningfulActivity = [...new Set(activityTypes)].slice(0, 2).join(', ');
   const summaryLines = compactCalendarLines([
-    ...signalLines.filter(line => !/^(Home|Community|Vocational)( \\+ (Home|Community|Vocational))*$/.test(line)),
+    ...compactCalendarLines(moodDetails, 2),
+    prnLine,
+    ...physicalDetails,
     meaningfulNote || meaningfulActivity || (participation.length ? participation.join(' + ') : ''),
   ], 4);
   if (!summaryLines.length) {

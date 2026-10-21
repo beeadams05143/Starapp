@@ -1666,7 +1666,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     import { openCompactCaregiverCheckinPrintWindow } from './caregiver-checkin-print.js?v=2026.09.02A';
     import { CALENDAR_QUICK_LOOK_ITEMS, filterCaregiverCheckinsForPrint, normalizeCaregiverCheckinForCalendar, normalizeCaregiverCheckinRecord } from './caregiver-report-shared.js?v=2026.10.20C';
     import { renderPrintableCaregiverReport } from './caregiver-report-print.js?v=2026.07.01B';
-    import { analyzeProviderRecords, renderProviderLetter, individualKey, groupKey } from './caregiver-provider-letter.js?v=2026.10.20N';
+    import { analyzeProviderRecords, renderProviderLetter, individualKey, groupKey } from './caregiver-provider-letter.js?v=2026.10.20O';
     import { buildWeeklyPromptSeries, defaultGraphRange, filterRecordsByRange, formatGraphRange, rangeFromInputs } from './caregiver-report-graphs.js?v=2026.09.04A';
 
     /* =============== Optional live data =============== */
@@ -8184,6 +8184,8 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinFor
         const noteBlock = document.createElement('div');
         noteBlock.className = 'hc-note';
         noteBlock.textContent = summaryLines.slice(0, 6).join('\n');
+        noteBlock.title = summaryLines.join('\n');
+        noteBlock.setAttribute('aria-label', 'Daily observations: ' + summaryLines.join('; '));
         cell.appendChild(noteBlock);
       }
 

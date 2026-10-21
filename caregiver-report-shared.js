@@ -718,7 +718,7 @@ export function normalizeCaregiverCheckinForCalendar(record = {}) {
     payload.public_activity_note, payload.community_notes, payload.vocational_notes,
     payload.home_notes, payload.caregiver_notes, payload.behavior_notes,
     payload.physical_notes, payload.daily_living_notes,
-  ].map(value => String(value || '').trim().replace(/\\s+/g, ' ')).find(value => value.length >= 12 && value.length <= 180);
+  ].map(value => String(value || '').trim().replace(/\s+/g, ' ')).find(value => value.length >= 12 && value.length <= 180);
   const activityTypes = [payload.public_activity_type, payload.home_activity_type, payload.vocational_activity_type]
     .flatMap(value => { if (Array.isArray(value)) return value; if (typeof value !== 'string') return []; try { const parsed = JSON.parse(value); if (Array.isArray(parsed)) return parsed; } catch {} return value.split(/[;,|]/); })
     .map(value => String(value).trim()).filter(value => value && value.toLowerCase() !== 'other');

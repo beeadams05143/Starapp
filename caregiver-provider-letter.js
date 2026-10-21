@@ -337,7 +337,7 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
       highlights.push(experience([q], 'Another noteworthy outing was described as “' + mention + '”'));
     }
     const social = relevant(/\b(greeted|said hello|made conversation|introduced himself|ordered (?:his|their|her) own)\b/i, /\b(work|job|maintenance)\b/i);
-    if (social.length) highlights.push(experience(social, 'Caregivers also noted positive social interactions in the community'));
+    if (social.length) highlights.push(experience(social, 'A caregiver described this social interaction: “' + social[0].quote.trim() + '”'));
     const other = relevant(/\b(library|zoo|parade|birthday party|hiking trail)\b/i);
     if (other.length) highlights.push(experience(other, 'Another experience noted by a caregiver'));
     if (highlights.filter(Boolean).length) parts.push(highlights.filter(Boolean).join(' '));

@@ -882,6 +882,23 @@
     #parentLetterCard .parent-letter-range-control input{box-sizing:border-box;width:100%;max-width:190px}
     #parentLetterCard #parentLetterApply{white-space:nowrap}
     #parentLetterCard #parentLetterBody{max-width:760px;margin:22px auto 0;padding:24px;background:white;border:1px solid #e8e2d9;border-radius:12px}
+    #parentLetterCard #parentLetterBody.star-letter-formatted{white-space:normal!important;font-family:"Avenir Next","Segoe UI",Arial,sans-serif!important;font-size:14px!important;line-height:1.5!important;color:#172033}
+    .star-letter-content{max-width:100%;overflow-wrap:anywhere}
+    .star-letter-intro{padding-bottom:12px;border-bottom:2px solid #a4763f}
+    .star-letter-title{font-family:Georgia,"Times New Roman",serif;font-size:23px;line-height:1.15;margin:0 0 10px;color:#20324f}
+    .star-letter-intro .star-letter-date{font-size:12px;color:#66758b;font-weight:700}
+    .star-letter-section{margin-top:18px;padding:14px 0 0;border-top:1px solid #e2e7ee}
+    .star-letter-heading{font-family:Georgia,"Times New Roman",serif;font-size:17px;line-height:1.2;color:#20324f;margin:0 0 10px;font-weight:750}
+    .star-letter-section[data-tone="safety"]{border-left:4px solid #ad3434;padding-left:14px;border-top-color:#d9b1b1}
+    .star-letter-section[data-tone="health"]{border-left:4px solid #267d87;padding-left:14px}
+    .star-letter-section[data-tone="gold"]{border-left:4px solid #bb8a25;padding-left:14px}
+    .star-letter-section[data-tone="learning"]{border-left:4px solid #3c7654;padding-left:14px}
+    .star-letter-section[data-tone="coverage"]{border-top:1px dashed #a4acb9}
+    .star-letter-paragraph{white-space:pre-line;margin:0 0 10px;overflow-wrap:anywhere}
+    .star-letter-gold-entry{border:1px solid #e7d7a9;border-radius:8px;background:#fffaf0;padding:10px 12px;margin:0 0 9px;break-inside:avoid;page-break-inside:avoid}
+    .star-letter-gold-entry::before{content:"★";font-weight:800;color:#b38624;margin-right:8px}
+    .star-letter-content h2,.star-letter-content h3{break-after:avoid-page}
+    @media(max-width:650px){.star-letter-heading{font-size:16px}.star-letter-title{font-size:21px}}
     @media(max-width:650px){#parentLetterCard{padding:16px}#parentLetterCard .parent-letter-range-control{grid-template-columns:1fr 1fr}#parentLetterCard #parentLetterApply{grid-column:1/-1;width:100%}#parentLetterCard #parentLetterBody{padding:16px}}
     .parent-letter-range-control{
       display:grid;
@@ -1708,6 +1725,93 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
   </div>
 
   <div id="print-report" aria-hidden="true"></div>
+
+  <script>
+    // Presentation only: raw caregiver observations remain unchanged for copying
+    // and for any downstream use. All caregiver-supplied text enters via textContent.
+    (function () {
+      const headings = new Set([
+        'Caregiver Observation Summary', 'Sleep and Energy',
+        'Physical Health and Well-Being', 'Behavior & Safety Incidents',
+        'Mood, Engagement, and Behavior', 'Vocational Participation',
+        'Community and Family Participation', 'Education & Skill Development',
+        'Notable Observations and Experiences', 'Strengths and Positive Experiences',
+        'Medication and PRN Observations', 'Record coverage'
+      ]);
+      const originalText = new WeakMap();
+      function parse(text) {
+        const chunks = [];
+        let block = { heading: '', lines: [] };
+        for (const line of String(text || '').replace(/\r\n?/g, '\n').split('\n')) {
+          const title = line.trim();
+          if (headings.has(title)) {
+            if (block.heading || block.lines.some(part => part.trim())) chunks.push(block);
+            block = { heading: title, lines: [] };
+          } else {
+            block.lines.push(line);
+          }
+        }
+        if (block.heading || block.lines.some(part => part.trim())) chunks.push(block);
+        return chunks;
+      }
+      function paragraphs(lines) {
+        const result = [];
+        let buffer = [];
+        const flush = () => {
+          if (buffer.some(line => line.trim())) result.push(buffer.join('\n').trim());
+          buffer = [];
+        };
+        for (const line of lines) {
+          if (!line.trim()) flush();
+          else buffer.push(line);
+        }
+        flush();
+        return result;
+      }
+      function node(tag, cls, value) {
+        const el = document.createElement(tag);
+        if (cls) el.className = cls;
+        if (value !== undefined) el.textContent = value;
+        return el;
+      }
+      function toneOf(title) {
+        if (title === 'Behavior & Safety Incidents') return 'safety';
+        if (/^(Sleep and Energy|Physical Health and Well-Being|Medication and PRN Observations)$/.test(title)) return 'health';
+        if (title === 'Notable Observations and Experiences') return 'gold';
+        if (title === 'Education & Skill Development') return 'learning';
+        if (title === 'Record coverage') return 'coverage';
+        return 'standard';
+      }
+      function render(root, raw) {
+        const content = node('div', 'star-letter-content');
+        for (const item of parse(raw)) {
+          const isIntro = item.heading === 'Caregiver Observation Summary';
+          const section = node(isIntro ? 'header' : 'section', isIntro ? 'star-letter-intro' : 'star-letter-section');
+          if (!isIntro) section.dataset.tone = toneOf(item.heading);
+          if (item.heading) {
+            const display = item.heading === 'Notable Observations and Experiences'
+              ? 'Gold-Star Observations & Experiences' : item.heading;
+            section.appendChild(node(isIntro ? 'h2' : 'h3', isIntro ? 'star-letter-title' : 'star-letter-heading', display));
+          }
+          const isGold = item.heading === 'Notable Observations and Experiences';
+          for (const value of paragraphs(item.lines)) {
+            const kind = isGold ? 'star-letter-gold-entry' :
+              (isIntro && /^Date Prepared:/i.test(value) ? 'star-letter-date star-letter-paragraph' : 'star-letter-paragraph');
+            section.appendChild(node('p', kind, value));
+          }
+          content.appendChild(section);
+        }
+        root.replaceChildren(content);
+        root.classList.add('star-letter-formatted');
+        originalText.set(root, String(raw || ''));
+      }
+      window.starProviderLetterLayout = {
+        render,
+        parse,
+        original: root => originalText.get(root) || root?.textContent || '',
+      };
+    })();
+  </script>
 
   <!-- Single, clean module script -->
   <script type="module">
@@ -6914,7 +7018,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         return;
       }
       try {
-        await navigator.clipboard.writeText(body.textContent);
+        await navigator.clipboard.writeText(window.starProviderLetterLayout.original(body));
         button.textContent = '✓ Copied!';
         setTimeout(() => { button.textContent = '▢▢ Copy Letter'; }, 2200);
       } catch {
@@ -6928,13 +7032,16 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         return;
       }
       const rangeText = document.getElementById('parentLetterRange')?.textContent || '';
-      const bodyText = document.getElementById('parentLetterBody')?.textContent || '';
+      const letterBody = document.getElementById('parentLetterBody');
+      const bodyText = window.starProviderLetterLayout.original(letterBody);
+      // Safe markup built only with textContent from the original observations.
+      const bodyMarkup = letterBody?.querySelector('.star-letter-content')?.outerHTML || '';
       const disclaimerText = document.getElementById('parentLetterDisclaimer')?.textContent || '';
       if (!bodyText.trim()) {
         alert('Generate the Provider Letter first, then print it.');
         return;
       }
-      window.starPrintParentLetterOnly?.({ rangeText, bodyText, disclaimerText });
+      window.starPrintParentLetterOnly?.({ rangeText, bodyText, bodyMarkup, disclaimerText });
     });
     quickLookUi.toggle?.addEventListener('click', () => toggleQuickLook());
     quickLookUi.close?.addEventListener('click', () => toggleQuickLook(false));
@@ -7081,7 +7188,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
           start: range.startInput, end: range.endInput, groupId, individualId: selector.value,
         });
         rangeEl.textContent = `Range: ${range.label}`;
-        bodyEl.textContent = renderProviderLetter(analysis, { includeQuotes: document.getElementById('providerIncludeQuotes').checked });
+        const letterText = renderProviderLetter(analysis, { includeQuotes: document.getElementById('providerIncludeQuotes').checked });
+        window.starProviderLetterLayout.render(bodyEl, letterText);
         document.getElementById('parentLetterCopy').disabled = false;
         bodyEl.dataset.groupId = String(groupId);
       } catch (error) {
@@ -7729,13 +7837,25 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       .kicker{margin:0 0 3pt;color:#8a5a25;font-size:8pt;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
       h1{margin:0;color:#20324f;font-family:Georgia,"Times New Roman",serif;font-size:22pt;line-height:1.1}
       .range{margin:7pt 0 0;color:#4f5e75;font-size:10pt;font-weight:700}
-      .body{white-space:pre-wrap;overflow-wrap:anywhere}
+      .body{white-space:normal;overflow-wrap:anywhere;font-family:"Avenir Next","Segoe UI",Arial,sans-serif;font-size:9.6pt;line-height:1.42}
+      .star-letter-intro{padding-bottom:8pt;border-bottom:1.5pt solid #a4763f}
+      .star-letter-title{font-family:Georgia,"Times New Roman",serif;font-size:17pt;color:#20324f;margin:0 0 8pt}
+      .star-letter-intro .star-letter-date{font-size:9pt;color:#66758b;font-weight:700}
+      .star-letter-section{margin-top:13pt;padding:9pt 0 0;border-top:.6pt solid #d7dee7}
+      .star-letter-heading{font-family:Georgia,"Times New Roman",serif;font-size:12pt;color:#20324f;margin:0 0 7pt;break-after:avoid-page}
+      .star-letter-section[data-tone="safety"]{border-left:2.5pt solid #ad3434;padding-left:9pt;border-top-color:#d9b1b1}
+      .star-letter-section[data-tone="health"]{border-left:2.5pt solid #267d87;padding-left:9pt}
+      .star-letter-section[data-tone="gold"]{border-left:2.5pt solid #bb8a25;padding-left:9pt}
+      .star-letter-section[data-tone="learning"]{border-left:2.5pt solid #3c7654;padding-left:9pt}
+      .star-letter-paragraph{white-space:pre-line;margin:0 0 7pt;overflow-wrap:anywhere}
+      .star-letter-gold-entry{border:.6pt solid #e7d7a9;background:#fffaf0;padding:6pt 8pt;margin:0 0 6pt;break-inside:avoid}
+      .star-letter-gold-entry::before{content:"★";font-weight:bold;color:#b38624;margin-right:6pt}
       .disclaimer{margin-top:18pt;padding-top:9pt;border-top:1px solid #d9dee7;color:#657086;font-family:"Avenir Next","Segoe UI",Arial,sans-serif;font-size:8.5pt;font-style:italic;line-height:1.35}
       @media print{.letter{break-inside:auto}}
     `;
   }
 
-  window.starPrintParentLetterOnly = ({ rangeText = '', bodyText = '', disclaimerText = '' } = {}) => {
+  window.starPrintParentLetterOnly = ({ rangeText = '', bodyText = '', bodyMarkup = '', disclaimerText = '' } = {}) => {
     const bodyHtml = `
       <article class="letter" aria-label="STAR Provider Letter">
         <header class="letter-header">
@@ -7743,7 +7863,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
           <h1>Provider Letter</h1>
           <p class="range">${escapePrintHtml(rangeText || 'Range: selected dates')}</p>
         </header>
-        <div class="body">${escapePrintHtml(bodyText)}</div>
+        <div class="body">${bodyMarkup || escapePrintHtml(bodyText)}</div>
         <p class="disclaimer">${escapePrintHtml(disclaimerText)}</p>
       </article>
     `;

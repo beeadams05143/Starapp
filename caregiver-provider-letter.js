@@ -488,6 +488,9 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
         item.time && (label !== 'follow-up/observation' || name === 'Unspecified medication') ? 'at ' + item.time : '',
         note && !isGoldStarRepeat(item.date, note) && !bedtimeRegimenQuoted(item.date, note) ? '“' + note + '”' : '',
       ].filter(Boolean).join(' — ');
+      // If the full bedtime note has already appeared in Sleep and Energy,
+      // omit a content-free "follow-up/observation" line in this section.
+      if (!context && label === 'follow-up/observation' && bedtimeRegimenQuoted(item.date, note)) continue;
       const entry = short(item.date) + ': ' + label + (context ? ' — ' + context : '');
       if (!used.has(entry)) { used.add(entry); lines.push(entry); }
     }

@@ -333,7 +333,29 @@
     .cg-edit-actions{position:sticky;bottom:-16px;z-index:5;background:#fff;border-top:1px solid #e2e8f0;padding:12px 0 max(16px,env(safe-area-inset-bottom));display:grid;grid-template-columns:1fr 1fr;gap:10px}
     .cg-edit-actions button{min-height:46px}
     .cg-edit-actions #cgEditDelete{grid-column:1/-1;justify-self:start;font-size:12px;min-height:36px}
-    @media(max-width:540px){.cg-edit-form .cg-edit-grid{grid-template-columns:minmax(0,1fr)}.cg-edit-form{max-height:calc(100dvh - 16px)}}
+    /* iOS Safari: use one scroll container for the editor rather than a nested
+       fixed-height form, which can trap touch scrolling below the viewport. */
+    @media(max-width:540px){
+      .cg-edit-overlay{
+        display:block;
+        box-sizing:border-box;
+        height:100dvh;
+        max-height:100dvh;
+        overflow-y:auto;
+        -webkit-overflow-scrolling:touch;
+        overscroll-behavior:contain;
+        padding:8px 8px calc(24px + env(safe-area-inset-bottom));
+      }
+      .cg-edit-form{
+        width:100%;
+        max-height:none;
+        min-height:0;
+        overflow:visible;
+        margin:0 auto;
+      }
+      .cg-edit-form .cg-edit-grid{grid-template-columns:minmax(0,1fr)}
+      .cg-edit-actions{bottom:0}
+    }
 
     .cg-print-overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(15,23,42,.55);z-index:10002;padding:16px}
     .cg-print-overlay.is-hidden{display:none!important}

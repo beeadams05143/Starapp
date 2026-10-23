@@ -2018,6 +2018,29 @@
       .step .controls [data-prev], .step .controls [data-next],
       .step .controls [data-review] { padding:11px 9px !important; font-size:14px !important; }
     }
+
+    /* Mobile ADL choices: fill the available panel width with two readable columns. */
+    #daily-living-step .row, #daily-living-step .row > div,
+    #daily-living-step .adl-activity-list, #daily-living-step .adl-activity-group {
+      width:100%; min-width:0; max-width:none;
+    }
+    #daily-living-step .adl-activity-list { grid-template-columns:minmax(0,1fr) !important; }
+    #daily-living-step .adl-activity-group .movement-chips {
+      display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+      gap:10px !important; width:100%; min-width:0;
+    }
+    #daily-living-step .adl-activity-group .movement-chip,
+    #daily-living-step .adl-activity-group .movement-chip.is-wide {
+      grid-column:auto !important; width:100% !important; min-width:0 !important;
+      max-width:none !important; height:auto !important; min-height:76px;
+      padding:12px 8px !important; overflow-wrap:anywhere; word-break:normal;
+      white-space:normal; font-size:clamp(13px,3.6vw,16px);
+    }
+    #daily-living-step .adl-activity-group .movement-chip span {
+      overflow-wrap:anywhere; word-break:normal; white-space:normal;
+    }
+    #summaryHighlightBox { border:2px solid #d5a64d !important; background:#fff7df !important; }
+    #summaryHighlightBox .summary-star { color:#b7791f; font-size:24px; margin-right:6px; }
 </style>
 </head>
 <body>
@@ -2900,8 +2923,8 @@
           <div id="interactionDetailsNotes" class="row" style="display:none;grid-template-columns:minmax(0,1fr)">
             <label for="interaction_note" style="display:block;width:100%;min-width:0">Interaction note:<textarea id="interaction_note" name="interaction_note" rows="5" style="display:block;width:100%;min-height:130px;box-sizing:border-box;resize:vertical" placeholder="Describe who they interacted with, what happened, any prompting needed, and how they responded."></textarea></label>
           </div>
-          <div style="margin:18px 0;padding:14px;border:1px solid #d9ccb8;border-radius:12px;background:#fffaf2">
-            <label for="summary_highlight_note" style="display:block;font-weight:700">Important observation for the caregiver summary (optional)</label>
+          <div id="summaryHighlightBox" style="margin:18px 0;padding:14px;border:1px solid #d9ccb8;border-radius:12px;background:#fffaf2">
+            <label for="summary_highlight_note" style="display:block;font-weight:700"><span class="summary-star" aria-hidden="true">★</span> Important observation for the monthly team letter (optional)</label>
             <p class="muted" style="margin:6px 0 10px">Anything important that should appear in the monthly team letter: a special outing, new experience, milestone, first day of a medication change, unusual sleep, or another meaningful event. Everything written in this box will be included in the monthly team letter with its date. Keep it brief: 180 characters maximum.</p>
             <textarea id="summary_highlight_note" name="summary_highlight_note" maxlength="180" rows="4" style="width:100%;min-height:110px;box-sizing:border-box;resize:vertical" placeholder="For example: Hiked the new trail at the state park today. First day of a medication change. Fell asleep at 8:15 PM."></textarea>
             <div id="summaryHighlightCount" class="muted" style="text-align:right;margin-top:5px" aria-live="polite">0 / 180 characters</div>

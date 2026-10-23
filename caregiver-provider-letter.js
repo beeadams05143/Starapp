@@ -250,10 +250,21 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
   sections.push('We would like to share observations from caregiver records covering ' + short(a.start) + ' through ' + short(a.end) + '. This summary brings together the observations of all caregivers to provide an overall picture of sleep, physical health, mood, daily routines, work, and participation at home and in the wider community.');
 
   const sleep = a.metrics.sleep.dates;
+  const bedtime = a.days.flatMap(day => day.records.map(({ row }) => {
+    const raw = String(p(row).sleep_fell_asleep_time || '').trim();
+    if (!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(raw)) return null;
+    const [hour, minute] = raw.split(':').map(Number);
+    const formatted = (hour % 12 || 12) + ':' + String(minute).padStart(2, '0') + ' ' + (hour >= 12 ? 'PM' : 'AM');
+    return { date: day.date, formatted };
+  }).filter(Boolean)).sort((x, y) => y.date.localeCompare(x.date));
   const fatigue = a.notes.quotes.filter(q => /\b(tired|fatigue|exhausted|low energy|little sleep|did not sleep|didn't sleep)\b/i.test(q.quote));
-  if (sleep.length || fatigue.length) {
+  if (sleep.length || fatigue.length || bedtime.length) {
     const paragraphs = [];
     if (sleep.length) paragraphs.push('Sleep difficulties or nighttime waking were recorded on ' + dates(sleep) + '.');
+    if (bedtime.length) {
+      const latest = bedtime[0];
+      paragraphs.push('A caregiver recorded falling asleep at ' + latest.formatted + ' on ' + short(latest.date) + '.');
+    }
     const energyQuote = quote(/\b(tired|fatigue|exhausted|low energy|manic)\b/i, { max: 2, exclude: /\b(tummy|stomach|shots)\b/i });
     if (energyQuote) paragraphs.push('Caregivers also described changes in daytime energy and activity. ' + energyQuote);
     add('Sleep and Energy', paragraphs);

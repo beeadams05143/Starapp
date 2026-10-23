@@ -318,6 +318,23 @@
     .cg-edit-actions button{padding:8px 14px;border-radius:10px;border:1px solid #d4d4d8;background:#fff;font-weight:600;cursor:pointer}
     .cg-edit-actions .primary{background:#111827;color:#fff;border-color:#111827}
     .cg-edit-actions .danger{background:#fff1f2;color:#b91c1c;border-color:#fecdd3}
+    /* Mobile-friendly edit dialog: keep save controls accessible while the form scrolls. */
+    .cg-edit-overlay{padding:8px;align-items:center}
+    .cg-edit-form{box-sizing:border-box;width:min(640px,100%);max-height:calc(100dvh - 24px);overflow-y:auto;overscroll-behavior:contain;padding:16px;gap:12px}
+    .cg-edit-form input,.cg-edit-form select,.cg-edit-form textarea{box-sizing:border-box;min-width:0}
+    .cg-edit-form .cg-edit-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .cg-edit-help{font-size:13px;line-height:1.45;color:#475569;margin:0}
+    .cg-edit-sleep-first{border:1px solid #e5d4b2;border-radius:12px;padding:12px;background:#fffaf1}
+    .cg-edit-sleep-first h4{margin:0 0 6px}
+    .cg-edit-sleep-first p{margin:0 0 10px}
+    .cg-edit-more{border:1px solid #e2e8f0;border-radius:10px;padding:10px}
+    .cg-edit-more summary{font-weight:700;cursor:pointer}
+    .cg-edit-more .cg-edit-grid{margin-top:12px}
+    .cg-edit-actions{position:sticky;bottom:-16px;z-index:5;background:#fff;border-top:1px solid #e2e8f0;padding:12px 0 max(16px,env(safe-area-inset-bottom));display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .cg-edit-actions button{min-height:46px}
+    .cg-edit-actions #cgEditDelete{grid-column:1/-1;justify-self:start;font-size:12px;min-height:36px}
+    @media(max-width:540px){.cg-edit-form .cg-edit-grid{grid-template-columns:minmax(0,1fr)}.cg-edit-form{max-height:calc(100dvh - 16px)}}
+
     .cg-print-overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(15,23,42,.55);z-index:10002;padding:16px}
     .cg-print-overlay.is-hidden{display:none!important}
     .cg-print-modal{background:#fff;border-radius:18px;padding:18px;width:min(680px,96vw);max-height:90vh;overflow:auto;box-shadow:0 25px 65px rgba(15,23,42,.35);display:flex;flex-direction:column;gap:14px}
@@ -1276,16 +1293,36 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       <form id="cgEditForm" class="cg-edit-form">
         <h3 id="cgEditTitle">Edit Caregiver Check-In</h3>
         <p id="cgEditStatus" class="cg-edit-status">Select a row to load its Supabase data.</p>
+        <p class="cg-edit-help">Correct the sleep time or medication details below, then tap Save Changes. Other details can be expanded if needed.</p>
         <div class="cg-edit-grid">
           <label>Entry date
             <input type="date" id="cgEditDate" name="entry_date">
           </label>
-          <label>Entry time
-            <input type="time" id="cgEditTime" name="entry_time" step="60">
-          </label>
           <label>Fell asleep at
             <input type="time" id="cgEditSleepTime" name="sleep_onset_time" step="60">
           </label>
+        </div>
+        <div class="cg-edit-prn-section cg-edit-sleep-first">
+          <h4>Sleep and medication updates</h4>
+          <p class="muted">Record what was given and when. Use the sleep time above to document when sleep began.</p>
+          <div class="cg-edit-grid">
+            <label>Sleep PRN: what was used?
+              <input type="text" id="cgEditSleepPrnName" name="sleep_prn_name" placeholder="Medication or support used">
+            </label>
+            <label>Sleep PRN: time given
+              <input type="time" id="cgEditSleepPrnTime" name="sleep_prn_time" step="60">
+            </label>
+            <label>Symptom PRN: what was used?
+              <input type="text" id="cgEditTempPrnName" name="temp_prn_name" placeholder="Medication or support used">
+            </label>
+            <label>Symptom PRN: time given
+              <input type="time" id="cgEditTempPrnTime" name="temp_prn_time" step="60">
+            </label>
+          </div>
+        </div>
+        <details class="cg-edit-more">
+          <summary>Other check-in details</summary>
+          <div class="cg-edit-grid">
           <label>Had a BM?
             <select id="cgEditBm" name="had_bm">
               <option value="">Select…</option>
@@ -1331,6 +1368,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
             <input type="number" id="cgEditSkill" name="new_skill_score" min="0" max="4" step="1" placeholder="0–4">
           </label>
         </div>
+          </div>
+        </details>
         <label>Caregiver notes
           <textarea id="cgEditNotes" name="caregiver_notes" placeholder="Add notes about the day…"></textarea>
         </label>
@@ -1362,18 +1401,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
               <input type="checkbox" id="cgEditPrnHeadache" name="prn_used_for_headache" style="width:auto">
               <span>PRN used for headache or illness symptoms</span>
             </label>
-            <label>Sleep PRN: what was used?
-              <input type="text" id="cgEditSleepPrnName" name="sleep_prn_name" placeholder="Medication or support used">
-            </label>
-            <label>Sleep PRN: time given
-              <input type="time" id="cgEditSleepPrnTime" name="sleep_prn_time" step="60">
-            </label>
-            <label>Symptom PRN: what was used?
-              <input type="text" id="cgEditTempPrnName" name="temp_prn_name" placeholder="Medication or support used">
-            </label>
-            <label>Symptom PRN: time given
-              <input type="time" id="cgEditTempPrnTime" name="temp_prn_time" step="60">
-            </label>
+
           </div>
         </div>
         <label>Attachment
@@ -1382,9 +1410,9 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         </label>
         <input type="hidden" id="cgEditId" name="checkin_id">
         <div class="cg-edit-actions">
-          <button type="button" class="danger" id="cgEditDelete">Delete Entry</button>
           <button type="button" id="cgEditCancel">Cancel</button>
           <button type="submit" class="primary" id="cgEditSave">Save Changes</button>
+          <button type="button" class="danger" id="cgEditDelete">Delete Entry</button>
         </div>
       </form>
     </div>
@@ -5343,8 +5371,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 
       try {
         const dateValue = editUi.date?.value || '';
-        const timeValue = editUi.time?.value || '';
-        const timestampIso = buildTimestampFromInputs(editState.record, dateValue, timeValue);
         const hadBmValue = fieldValueToBool(editUi.bm?.value || '');
         const anomalyValue = fieldValueToBool(editUi.anomaly?.value || '');
         const updates = {
@@ -5358,9 +5384,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
           date: dateValue || null,
           had_bm: hadBmValue
         };
-        if (timestampIso) {
-          updates.submitted_at = timestampIso;
-        }
+        // Editing the check-in date must not rewrite its original submission audit timestamp.
         const sleepTimeValue = editUi.sleepTime?.value || '';
         const prnSleep = !!editUi.prnSleep?.checked;
         const prnAggression = !!editUi.prnAggression?.checked;

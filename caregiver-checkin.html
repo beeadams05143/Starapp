@@ -2885,6 +2885,11 @@
           <div id="interactionDetailsNotes" class="row" style="display:none;grid-template-columns:minmax(0,1fr)">
             <label for="interaction_note" style="display:block;width:100%;min-width:0">Interaction note:<textarea id="interaction_note" name="interaction_note" rows="5" style="display:block;width:100%;min-height:130px;box-sizing:border-box;resize:vertical" placeholder="Describe who they interacted with, what happened, any prompting needed, and how they responded."></textarea></label>
           </div>
+          <div style="margin:18px 0;padding:14px;border:1px solid #d9ccb8;border-radius:12px;background:#fffaf2">
+            <label for="summary_highlight_note" style="display:block;font-weight:700">Important observation for the caregiver summary (optional)</label>
+            <p class="muted" style="margin:6px 0 10px">A new experience, milestone, unusual sleep pattern, or meaningful change. Describe what you actually observed, not what you think caused it. This will be included in the summary with its date.</p>
+            <textarea id="summary_highlight_note" name="summary_highlight_note" rows="4" style="width:100%;min-height:110px;box-sizing:border-box;resize:vertical" placeholder="For example: Walked a new hiking trail today and completed the route. Fell asleep at 8:15 PM."></textarea>
+          </div>
           <div class="controls">
             <div class="left-actions"><button class="btn" type="button" data-save>Save Draft</button><span class="action-note">Save a local recovery copy. This does not submit the check-in.</span><span class="savedAt" data-savedat></span></div>
             <div class="left-actions"><button class="btn" type="button" data-prev>← Back</button><span class="action-note">Continue to the next section.</span><button class="btn primary save-next-btn" type="button" data-next>Next →</button></div>

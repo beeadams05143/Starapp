@@ -1587,7 +1587,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       <p class="muted">Generate a summary of caregiver observations and activities for the selected dates.</p>
       <p class="muted" id="parentLetterRange">Choose a start and end date.</p>
       <div style="display:flex;justify-content:flex-end;margin:12px 0 6px">
-        <button id="parentLetterCopy" class="btn" type="button" disabled title="Copy the entire generated letter">▢▢ Copy Letter</button>
+        <button id="parentLetterCopy" class="btn" type="button" disabled title="Copy the letter with headings and colors for pasting into Google Docs (when supported)">▢▢ Copy Formatted Letter</button>
       </div>
       <div id="parentLetterBody" style="font-size:15px;line-height:1.7;color:#1a1a2e;white-space:pre-wrap;overflow-wrap:anywhere;font-family:Georgia,serif"></div>
       <p id="parentLetterDisclaimer" style="margin-top:16px;font-size:12px;color:#9ca3af;font-style:italic">
@@ -1736,7 +1736,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         'Mood, Engagement, and Behavior', 'Vocational Participation',
         'Community and Family Participation', 'Education & Skill Development',
         'Notable Observations and Experiences', 'Strengths and Positive Experiences',
-        'Medication and PRN Observations', 'Record coverage'
+        'Medication Changes', 'Medication and PRN Observations', 'Record coverage'
       ]);
       const originalText = new WeakMap();
       function parse(text) {
@@ -1776,7 +1776,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       }
       function toneOf(title) {
         if (title === 'Behavior & Safety Incidents') return 'safety';
-        if (/^(Sleep and Energy|Physical Health and Well-Being|Medication and PRN Observations)$/.test(title)) return 'health';
+        if (/^(Sleep and Energy|Physical Health and Well-Being|Medication Changes|Medication and PRN Observations)$/.test(title)) return 'health';
         if (title === 'Notable Observations and Experiences') return 'gold';
         if (title === 'Education & Skill Development') return 'learning';
         if (title === 'Record coverage') return 'coverage';
@@ -1805,9 +1805,48 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         root.classList.add('star-letter-formatted');
         originalText.set(root, String(raw || ''));
       }
+      // Rich HTML clipboard payload for pasting into Google Docs. Use inline
+      // presentation styles because browser CSS classes don't travel in a paste.
+      function richHtml(root) {
+        const content = root?.querySelector('.star-letter-content');
+        if (!content) return '';
+        const copy = content.cloneNode(true);
+        copy.style.cssText = 'font-family:Arial,sans-serif;font-size:11pt;line-height:1.45;color:#172033;';
+        const set = (selector, style) =>
+          copy.querySelectorAll(selector).forEach(el => { el.style.cssText = style; });
+        set('.star-letter-intro',
+          'padding-bottom:10px;border-bottom:2px solid #a4763f;');
+        set('.star-letter-title',
+          'font-family:Georgia,serif;font-size:20pt;font-weight:bold;color:#20324f;margin:0 0 9px;');
+        set('.star-letter-intro .star-letter-date',
+          'font-size:9pt;color:#66758b;font-weight:bold;');
+        set('.star-letter-section',
+          'margin-top:16px;padding:12px 0 0;border-top:1px solid #e2e7ee;');
+        set('.star-letter-heading',
+          'font-family:Georgia,serif;font-size:14pt;font-weight:bold;color:#20324f;margin:0 0 8px;');
+        set('.star-letter-paragraph',
+          'white-space:pre-line;margin:0 0 9px;font-size:11pt;');
+        set('.star-letter-section[data-tone="safety"]',
+          'margin-top:16px;border-top:1px solid #d9b1b1;border-left:4px solid #ad3434;padding:12px 0 0 12px;');
+        set('.star-letter-section[data-tone="health"]',
+          'margin-top:16px;border-top:1px solid #e2e7ee;border-left:4px solid #267d87;padding:12px 0 0 12px;');
+        set('.star-letter-section[data-tone="gold"]',
+          'margin-top:16px;border-top:1px solid #e2e7ee;border-left:4px solid #bb8a25;padding:12px 0 0 12px;');
+        set('.star-letter-section[data-tone="learning"]',
+          'margin-top:16px;border-top:1px solid #e2e7ee;border-left:4px solid #3c7654;padding:12px 0 0 12px;');
+        copy.querySelectorAll('.star-letter-gold-entry').forEach(entry => {
+          entry.style.cssText = 'border:1px solid #e7d7a9;background:#fffaf0;padding:9px 12px;margin:0 0 8px;font-size:11pt;';
+          const star = document.createElement('strong');
+          star.textContent = '★ ';
+          star.style.cssText = 'color:#b38624;';
+          entry.prepend(star);
+        });
+        return copy.outerHTML;
+      }
       window.starProviderLetterLayout = {
         render,
         parse,
+        richHtml,
         original: root => root?.textContent?.trim() ? (originalText.get(root) || root.textContent) : '',
       };
     })();
@@ -1823,7 +1862,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     import { openCompactCaregiverCheckinPrintWindow } from './caregiver-checkin-print.js?v=2026.09.02A';
     import { CALENDAR_QUICK_LOOK_ITEMS, filterCaregiverCheckinsForPrint, normalizeCaregiverCheckinForCalendar, normalizeCaregiverCheckinRecord } from './caregiver-report-shared.js?v=2026.10.20C';
     import { renderPrintableCaregiverReport } from './caregiver-report-print.js?v=2026.07.01B';
-    import { analyzeProviderRecords, renderProviderLetter, individualKey, groupKey } from './caregiver-provider-letter.js?v=2026.10.23E';
+    import { analyzeProviderRecords, renderProviderLetter, individualKey, groupKey } from './caregiver-provider-letter.js?v=2026.10.23F';
     import { buildWeeklyPromptSeries, defaultGraphRange, filterRecordsByRange, formatGraphRange, rangeFromInputs } from './caregiver-report-graphs.js?v=2026.09.04A';
 
     /* =============== Optional live data =============== */
@@ -7017,13 +7056,30 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         alert('The active group changed. Generate a new summary before copying.');
         return;
       }
+      const text = window.starProviderLetterLayout.original(body);
+      const html = window.starProviderLetterLayout.richHtml(body);
+      const resetLabel = '▢▢ Copy Formatted Letter';
       try {
-        await navigator.clipboard.writeText(window.starProviderLetterLayout.original(body));
-        button.textContent = '✓ Copied!';
-        setTimeout(() => { button.textContent = '▢▢ Copy Letter'; }, 2200);
+        if (html && navigator.clipboard?.write && typeof ClipboardItem !== 'undefined') {
+          await navigator.clipboard.write([new ClipboardItem({
+            'text/html': new Blob([html], { type: 'text/html' }),
+            'text/plain': new Blob([text], { type: 'text/plain' })
+          })]);
+          button.textContent = '✓ Copied with formatting';
+        } else {
+          await navigator.clipboard.writeText(text);
+          button.textContent = '✓ Text copied only';
+        }
       } catch {
-        alert('Could not copy automatically. Select the letter text and use Copy.');
+        try {
+          await navigator.clipboard.writeText(text);
+          button.textContent = '✓ Text copied only';
+        } catch {
+          alert('Copy was blocked by this browser. Select the displayed letter and use Copy instead.');
+          return;
+        }
       }
+      setTimeout(() => { button.textContent = resetLabel; }, 2600);
     });
     document.getElementById('parentLetterPrint')?.addEventListener('click', () => {
       const generatedGroup = document.getElementById('parentLetterBody')?.dataset.groupId;

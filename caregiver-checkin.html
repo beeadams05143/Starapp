@@ -1954,6 +1954,22 @@
       #adlActivityChips .adl-activity-group .movement-chips {grid-template-columns:minmax(0,1fr)}
     }
 
+    /* Activity types should use the whole form width, not half of a nested row. */
+    @media (max-width:768px) {
+      #homeDetailsNotes, #publicDetailsNotes {display:grid;grid-template-columns:minmax(0,1fr) !important}
+      #homeDetailsNotes > div, #publicDetailsNotes > div {grid-column:1 / -1;width:100%;min-width:0}
+      #homeDetailsNotes .household-checkbox-grid,
+      #publicDetailsNotes .community-checkbox-grid {
+        grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+        width:100% !important;
+      }
+      #homeDetailsNotes .household-checkbox-grid > label,
+      #publicDetailsNotes .community-checkbox-grid > label {
+        display:flex;flex-direction:column;justify-content:center;align-items:center;
+        width:100% !important;min-width:0 !important;max-width:none !important;
+        box-sizing:border-box;overflow-wrap:break-word;white-space:normal;
+      }
+    }
     /* Consistent two-column choice cards across check-in sections on phones. */
     @media (max-width:768px) {
       .step .choice-grid,

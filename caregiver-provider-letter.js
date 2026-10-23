@@ -264,7 +264,7 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
   const sleep = a.metrics.sleep.dates;
   const bedtime = a.days.flatMap(day => day.records.map(({ row }) => {
     const raw = String(p(row).sleep_fell_asleep_time || '').trim();
-    if (!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(raw)) return null;
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(raw)) return null;
     const [hour, minute] = raw.split(':').map(Number);
     const formatted = (hour % 12 || 12) + ':' + String(minute).padStart(2, '0') + ' ' + (hour >= 12 ? 'PM' : 'AM');
     return { date: day.date, formatted };

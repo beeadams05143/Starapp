@@ -320,6 +320,46 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
     quote(physicalPattern, { max: 2 }),
   ]);
 
+  // A safety incident is an event, not a routine behavior rating. Show
+  // documented incidents independently of gold-star notes and general trends.
+  // Count dates, not distinct events, because separate check-ins on one day may
+  // refer to the same event and should not inflate the incident count.
+  const safetyIncidents = [];
+  const safetyKeys = new Set();
+  for (const day of a.days) for (const { row } of day.records) {
+    const data = p(row);
+    if (bool(data.safety_incident_occurred) !== true) continue;
+    const location = String(data.safety_incident_location || '').trim();
+    const source = String(data.safety_incident_source || '').trim();
+    const reporter = String(data.safety_incident_reporter || '').trim();
+    const detail = String(data.safety_incident_details || '').trim();
+    const signature = [day.date, location, source, reporter, detail]
+      .map(part => normalized(part)).join('|');
+    if (safetyKeys.has(signature)) continue;
+    safetyKeys.add(signature);
+    safetyIncidents.push({ date: day.date, location, source, reporter, detail });
+  }
+  if (safetyIncidents.length) {
+    const datesWithIncidents = [...new Set(safetyIncidents.map(item => item.date))];
+    const paragraphs = [
+      'A behavior or safety incident was documented on ' +
+      (datesWithIncidents.length === 1 ? 'the following date: ' : 'the following dates: ') +
+      dates(datesWithIncidents) + '.'
+    ];
+    for (const incident of safetyIncidents) {
+      const context = [
+        incident.location ? 'Location: ' + incident.location : '',
+        incident.source === 'reported_by_other' ? 'Reported to the documenting caregiver' :
+          incident.source === 'direct_observation' ? 'Observed by the documenting caregiver' : '',
+        incident.reporter ? 'Observer/reporter: ' + incident.reporter : ''
+      ].filter(Boolean).join('; ');
+      paragraphs.push(short(incident.date) + ' — ' +
+        (incident.detail || 'Incident reported; no description was provided.') +
+        (context ? ' (' + context + ')' : ''));
+    }
+    add('Behavior & Safety Incidents', paragraphs);
+  }
+
   const behaviorLabels = [
     ['engagement', 'reduced engagement'], ['withdrawal', 'withdrawal'],
     ['pacing', 'pacing or restlessness'], ['irritability', 'irritability'],

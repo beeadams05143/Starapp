@@ -2729,7 +2729,7 @@
               <select name="public_activity_prompting" data-scale="prompting"></select>
             </label>
           </div>
-          <div id="publicDetailsNotes" class="row cols-2" style="display:none">
+          <div id="publicDetailsNotes" class="row" style="display:none;grid-template-columns:minmax(0,1fr)">
             <div>
               <div class="movement-label">Community activity type</div>
               <div class="movement-grid checkbox-grid community-checkbox-grid choice-grid">
@@ -2752,7 +2752,7 @@
               </div>
               <input type="hidden" name="public_activity_type" id="public_activity_type" value=""/>
             </div>
-            <label>Community activity note:<input type="text" name="public_activity_note" placeholder="e.g., went to library, checked out 2 books"/></label>
+            <label for="public_activity_note" style="display:block;width:100%;min-width:0">Community activity note:<textarea id="public_activity_note" name="public_activity_note" rows="5" style="display:block;width:100%;min-height:130px;box-sizing:border-box;resize:vertical" placeholder="Describe where you went, what happened, how the individual participated, and any memorable moments."></textarea></label>
           </div>
           <hr class="soft"/>
           <div class="subcap">Interactions</div>

@@ -4,6 +4,14 @@ import { optionalYesNo, optionalEngagement } from './caregiver-answer-quality.js
 const DAY = 86400000;
 const ordinal = key => Date.parse(`${key}T12:00:00Z`) / DAY;
 const dateLabel = key => formatCheckinDate(key, 'en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+// Human-facing time format. Supabase may continue storing 24-hour HH:mm.
+export const formatCaregiverClockTime = value => {
+  const raw = String(value ?? '').trim();
+  const match = raw.match(/^([01]?\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?$/);
+  if (!match) return raw; // Preserve unusual/ambiguous input rather than guessing.
+  const hour = Number(match[1]);
+  return `${hour % 12 || 12}:${match[2]} ${hour >= 12 ? 'PM' : 'AM'}`;
+};
 const bool = value => optionalYesNo(value) === 'yes' ? true : optionalYesNo(value) === 'no' ? false : null;
 const list = value => {
   if (Array.isArray(value)) return value;
@@ -247,6 +255,9 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
     const selected = [], topics = new Set();
     for (const q of a.notes.quotes) {
       const value = q.quote.trim();
+      // Medication-purpose and PRN notes belong in medication reporting,
+      // not reinterpreted as general symptoms by keyword matching.
+      if (/prn_entries\[|med_change_note|summary_highlight_note/.test(q.field)) continue;
       if (!q.date || value.length > 180 || !pattern.test(value) || exclude?.test(value) || isGoldStarRepeat(q.date, value)) continue;
       if (/\b(will|planned|tomorrow|maybe|probably not)\b/i.test(value)) continue;
       const id = q.date + ':' + value.toLowerCase();
@@ -307,7 +318,7 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
       const latest = bedtime[0];
       paragraphs.push('A caregiver recorded falling asleep at ' + latest.formatted + ' on ' + short(latest.date) + '.');
     }
-    const energyQuote = quote(/\b(tired|fatigue|exhausted|low energy|manic)\b/i, { max: 2, exclude: /\b(tummy|stomach|shots)\b/i });
+    const energyQuote = quote(/\b(tired|fatigue|exhausted|low energy)\b/i, { max: 2, exclude: /\b(tummy|stomach|shots)\b/i });
     if (energyQuote) paragraphs.push('Caregivers also described changes in daytime energy and activity. ' + energyQuote);
     add('Sleep and Energy', paragraphs);
   }
@@ -372,7 +383,9 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
     const regulation = behavior.filter(([key]) => key !== 'engagement' && key !== 'withdrawal');
     if (engagement.length) parts.push('Caregivers recorded changes in participation and engagement, including ' + engagement.map(([key, label]) => label + ' on ' + a.metrics[key].dates.length + ' days').join(' and ') + '. These observations appeared on multiple days during the reporting period.');
     if (regulation.length) parts.push('Other observations included ' + joinNatural(regulation.map(([key, label]) => label + ' on ' + a.metrics[key].dates.length + ' days')) + '.');
-    const behaviorQuote = quote(/\b(pacing|paced|restless|snappy|irritab|withdrawn|engag)\b/i, { max: 2 });
+    const behaviorQuote = quote(/\b(pacing|paced|restless|snappy|irritab|withdrawn|engag|manic|pressured speech)\b/i, {
+      max: 2, exclude: /\b(stopping manic cycles|preventing mania|to prevent manic symptoms)\b/i
+    });
     if (behaviorQuote) parts.push(behaviorQuote);
     add('Mood, Engagement, and Behavior', parts);
   }
@@ -468,6 +481,10 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
   if (goldStarObservations.length) {
     add('Notable Observations and Experiences',
       goldStarObservations.map(item => short(item.date) + ': “' + item.note + '”'));
+  } else {
+    add('Notable Observations and Experiences', [
+      'No entries were found in the dedicated gold-star observation field for this date range. Other positive experiences are summarized separately.'
+    ]);
   }
 
   const strengths = [...new Set(a.days.flatMap(day => day.records.flatMap(record => record.values.strengths)))];
@@ -544,7 +561,7 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
         : 'follow-up/observation';
       const context = [
         label !== 'follow-up/observation' && item.dose ? item.dose : '',
-        item.time && (label !== 'follow-up/observation' || name === 'Unspecified medication') ? 'at ' + item.time : '',
+        item.time && (label !== 'follow-up/observation' || name === 'Unspecified medication') ? 'at ' + formatCaregiverClockTime(item.time) : '',
         note && !isGoldStarRepeat(item.date, note) && !bedtimeRegimenQuoted(item.date, note) ? '“' + note + '”' : '',
       ].filter(Boolean).join(' — ');
       // If the full bedtime note has already appeared in Sleep and Energy,
@@ -585,7 +602,7 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
       }
       const words = [
         medication || 'medication unspecified',
-        time ? 'at ' + time : 'time not recorded',
+        time ? 'at ' + formatCaregiverClockTime(time) : 'time not recorded',
         reason ? 'recorded reason: ' + reason : 'reason not recorded',
       ];
       if (notes && includeQuotes && notes.toLowerCase() !== reason.toLowerCase() &&
@@ -608,8 +625,14 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
       }
     }
   } else if (a.metrics.prn.dates.length) med.push('Caregivers reported PRN use on ' + dates(a.metrics.prn.dates) + '; individual administration details were not available for these dates.');
-  med.push(...medicationTimeline);
+  // Medication changes have their own prominent section, not a trailing line
+  // after a potentially long PRN administration log.
   add('Medication and PRN Observations', med);
+  if (medicationTimeline.length) {
+    const intro = sections.findIndex(section => section.startsWith('We would like to share observations'));
+    sections.splice(intro >= 0 ? intro + 1 : 2, 0,
+      'Medication Changes\n' + medicationTimeline.join('\n\n'));
+  }
 
   sections.push('We hope this summary provides a useful picture of daily experiences, challenges, activities, and successes during this period. Thank you for taking the time to review these caregiver observations.');
   const covered = new Set(a.days.map(day => day.date));

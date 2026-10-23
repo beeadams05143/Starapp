@@ -2059,6 +2059,27 @@
       overflow-wrap:break-word !important; word-break:normal !important;
     }
     #final-notes-step textarea {font-size:16px;}
+
+    /* Keep one final highlight note; medication and physical-health notes remain available. */
+    #daily-living-step label:has([name="adl_note"]),
+    #daily-living-step label:has([name="daily_living_notes"]),
+    #communitySection label:has([name="public_activity_note"]),
+    #communitySection label:has([name="interaction_note"]),
+    #homeFamilySection label:has([name="home_notes"]),
+    .step label:has([name="vocational_notes"]),
+    .step label:has([name="mood_regulation_notes"]),
+    .step label:has([name="aggression_notes"]),
+    .step label:has([name="behavior_anomaly_notes"]),
+    .step label:has([name="pet_activity_note"]),
+    .step label:has([name="pet_activity_notes"]),
+    .step .behavior-card-notes,
+    .step .educational-card-notes {display:none !important;}
+    #daily-living-step .row.cols-2:has(#adl_note) {display:block !important;}
+    #daily-living-step .row.cols-2:has(#adl_note) > label:has(#prompting_level) {
+      display:block !important; width:100% !important; max-width:none !important;
+    }
+    #daily-living-step #adlEntryList,
+    #daily-living-step #adlEntryList + input[name="adl_entries"] {display:none !important;}
 </style>
 </head>
 <body>
@@ -3021,9 +3042,8 @@
           <div class="section-content">
             <fieldset class="panel">
               <div class="section-title">Notes &amp; Important Observations</div>
-              <p class="muted">Share anything else important about the day. Medication and physical-health details can still be recorded in their own sections.</p>
-              <label for="caregiver_notes">Additional daily notes (optional)</label>
-              <textarea id="caregiver_notes" name="caregiver_notes" rows="5" style="display:block;width:100%;min-height:135px;box-sizing:border-box;resize:vertical" placeholder="Other details about the day that the team should know."></textarea>
+              <p class="muted">Use the gold-star box for the one important observation you want included in the monthly team letter (180 characters maximum).</p>
+
           <div id="summaryHighlightBox" style="margin:18px 0;padding:14px;border:1px solid #d9ccb8;border-radius:12px;background:#fffaf2">
             <label for="summary_highlight_note" style="display:block;font-weight:700"><span class="summary-star" aria-hidden="true">★</span> Important observation for the monthly team letter (optional)</label>
             <p class="muted" style="margin:6px 0 10px">Anything important that should appear in the monthly team letter: a special outing, new experience, milestone, first day of a medication change, unusual sleep, or another meaningful event. Everything written in this box will be included in the monthly team letter with its date. Keep it brief: 180 characters maximum.</p>

@@ -302,6 +302,8 @@
     .hc-editor .actions button{padding:8px 14px;border-radius:8px;border:1px solid #d4d4d8;background:#fff;cursor:pointer;font-weight:600}
     .hc-editor .actions button.primary{background:#111827;color:#fff;border-color:#111827}
 
+    /* Keep report-only print controls out of the check-in editor. */
+    body:has(#cgEditOverlay:not(.is-hidden)) .top-actions{display:none!important}
     .cg-edit-overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(15,23,42,.55);z-index:10000;padding:16px}
     .cg-edit-overlay.is-hidden{display:none!important}
     .cg-edit-form{background:#fff;border-radius:18px;padding:20px;width:min(540px,95vw);max-height:90vh;overflow:auto;box-shadow:0 25px 65px rgba(15,23,42,.35);display:flex;flex-direction:column;gap:14px}

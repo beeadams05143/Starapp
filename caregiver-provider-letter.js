@@ -400,8 +400,25 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
   const prnDays = [...new Set(a.prnEntries.map(e => e.date))];
   const changes = a.days.filter(day => day.records.some(record => record.values.medicationChange === true)).map(day => day.date);
   const med = [];
-  if (prnDays.length) med.push('PRN medication entries appeared on ' + prnDays.length + ' different ' + (prnDays.length === 1 ? 'day' : 'days') + ', including ' + dates(prnDays) + '. These reflect caregiver documentation and may include more than one entry for a day.');
-  else if (a.metrics.prn.dates.length) med.push('Caregivers reported PRN use on ' + dates(a.metrics.prn.dates) + '.');
+  if (prnDays.length) {
+    med.push('Caregivers documented that PRN medications were administered on ' + prnDays.length + ' different ' + (prnDays.length === 1 ? 'day' : 'days') + ': ' + dates(prnDays) + '. Multiple administrations on the same date are counted as one calendar day.');
+    const reasonGroups = new Map();
+    const classified = [
+      ['Anxiety', /\\b(anxiety|anxious|worried|worry|panic|fear|nervous)\\b/i],
+      ['Irritability or agitation', /\\b(irritab|agitat|snappy|aggress|anger|angry|upset|restless|pacing)\\w*/i],
+      ['Difficulty settling or sleeping', /\\b(sleep|insomnia|awake|settle|bedtime|nighttime|night waking)\\b/i],
+    ];
+    for (const entry of a.prnEntries) {
+      const reason = String(entry.item?.reason || '').trim();
+      const category = classified.find(([, pattern]) => pattern.test(reason))?.[0] || (reason ? 'Other documented reasons' : 'Reason not documented');
+      if (!reasonGroups.has(category)) reasonGroups.set(category, new Set());
+      reasonGroups.get(category).add(entry.date);
+    }
+    if (reasonGroups.size) {
+      med.push('Reasons recorded with PRN administrations (the same date may appear in more than one category):');
+      for (const [label, daySet] of reasonGroups) med.push(label + ': ' + dates([...daySet]) + '.');
+    }
+  } else if (a.metrics.prn.dates.length) med.push('Caregivers reported PRN use on ' + dates(a.metrics.prn.dates) + '; individual administration details were not available for these dates.');
   if (changes.length) med.push('Medication changes were noted on ' + dates(changes) + '.');
   add('Medication and PRN Observations', med);
 

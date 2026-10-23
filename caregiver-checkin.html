@@ -1908,6 +1908,11 @@
 .prn-quick-row button{cursor:pointer}
 .prn-quick-row .prn-quick-no{background:#edf6ef;border:1px solid #cfe5d5;border-radius:9px;padding:12px;text-align:left;color:#25563f;font-weight:700}
 .prn-quick-row .prn-open{background:none;border:0;color:#7547e8;font-weight:750}
+    #interactionDetails .interaction-choice-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;width:100%}
+    #interactionDetails .interaction-choice-grid .checkbox-card {min-width:0;min-height:92px;padding:12px 10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;text-align:center;white-space:normal;overflow-wrap:break-word;font-size:15px;line-height:1.3}
+    #interactionDetails .interaction-choice-grid .checkbox-card input {width:20px !important;height:20px;margin:0}
+    #interactionDetails > label {display:block;width:100%;min-width:0}
+    @media(max-width:380px){#interactionDetails .interaction-choice-grid{grid-template-columns:minmax(0,1fr)}}
 </style>
 </head>
 <body>
@@ -2765,10 +2770,10 @@
               </div>
             </div>
           </div>
-          <div id="interactionDetails" class="row cols-3 compact" style="display:none">
+          <div id="interactionDetails" class="row" style="display:none;grid-template-columns:minmax(0,1fr)">
             <div>
               <div class="movement-label">Interaction type</div>
-              <div class="movement-grid checkbox-grid">
+              <div class="movement-grid checkbox-grid interaction-choice-grid">
                 <label class="movement-chip checkbox-card"><input type="checkbox" data-interaction-type value="Greeting">Greeting</label>
                 <label class="movement-chip checkbox-card"><input type="checkbox" data-interaction-type value="Compliment">Compliment</label>
                 <label class="movement-chip checkbox-card"><input type="checkbox" data-interaction-type value="Introduced self/family">Introduced self/family</label>
@@ -2788,8 +2793,8 @@
               <select name="interaction_prompting" data-scale="prompting"></select>
             </label>
           </div>
-          <div id="interactionDetailsNotes" class="row cols-2" style="display:none">
-            <label>Interaction note:<input type="text" name="interaction_note" placeholder="e.g., greeted neighbor with 'Hi' and smile"/></label>
+          <div id="interactionDetailsNotes" class="row" style="display:none;grid-template-columns:minmax(0,1fr)">
+            <label for="interaction_note" style="display:block;width:100%;min-width:0">Interaction note:<textarea id="interaction_note" name="interaction_note" rows="5" style="display:block;width:100%;min-height:130px;box-sizing:border-box;resize:vertical" placeholder="Describe who they interacted with, what happened, any prompting needed, and how they responded."></textarea></label>
           </div>
           <div class="controls">
             <div class="left-actions"><button class="btn" type="button" data-save>Save Draft</button><span class="action-note">Save a local recovery copy. This does not submit the check-in.</span><span class="savedAt" data-savedat></span></div>

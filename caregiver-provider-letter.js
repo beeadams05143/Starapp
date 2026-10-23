@@ -408,6 +408,21 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
     add('Community and Family Participation', parts);
   }
 
+  // Educational/skill-development notes are a separate, optional 180-character
+  // narrative field. Retain every dated entry from the selected caregiver records.
+  const educationNotes = a.days.flatMap(day => day.records.flatMap(({ row }) => {
+    const note = String(p(row).educational_note || '').trim();
+    return note ? [{ date: day.date, note }] : [];
+  }));
+  if (educationNotes.length) {
+    const independent = educationNotes.filter(item => !isGoldStarRepeat(item.date, item.note));
+    const overlapping = educationNotes.filter(item => isGoldStarRepeat(item.date, item.note));
+    const paragraphs = independent.map(item => short(item.date) + ': “' + item.note + '”');
+    if (overlapping.length) paragraphs.push('Educational observations also appear in the dated gold-star highlights on ' +
+      dates(overlapping.map(item => item.date)) + '.');
+    add('Education & Skill Development', paragraphs);
+  }
+
   // Every explicitly entered gold-star observation is retained, including
   // separate caregiver entries on the same day. Do not cap or deduplicate them.
   if (goldStarObservations.length) {

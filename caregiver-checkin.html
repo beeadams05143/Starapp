@@ -2080,6 +2080,18 @@
     }
     #daily-living-step #adlEntryList,
     #daily-living-step #adlEntryList + input[name="adl_entries"] {display:none !important;}
+    /* Simple landing: the seven-category checklist remains in the DOM for legacy status
+       handling, but must not be shown ahead of the guided one-section-at-a-time form. */
+    #sectionListView { display:none !important; }
+    #cg-form.is-guided .landing-actions { display:none !important; }
+    #cg-form:not(.is-guided) .section-detail { display:none !important; }
+    .guided-checkin-navigation { display:none; margin:0 0 14px; padding:12px; border:1px solid #e7ddcd; border-radius:12px; background:#fff; gap:10px; align-items:end; }
+    #cg-form.is-guided .guided-checkin-navigation { display:flex; }
+    .guided-checkin-navigation label { flex:1; min-width:0; font-weight:700; font-size:14px; color:#273449; }
+    .guided-checkin-navigation select { display:block; width:100%; margin-top:6px; min-height:44px; border:1px solid #d9d9d9; border-radius:9px; background:#fff; padding:9px; font-size:16px; }
+    .guided-checkin-navigation button { min-height:44px; background:#f4f1ea; color:#273449; border:1px solid #ddd6c9; font-size:14px; }
+    .guided-checkin-navigation button[hidden] { display:none !important; }
+    @media(max-width:420px) { .guided-checkin-navigation { flex-direction:column; align-items:stretch; } .guided-checkin-navigation label { width:100%; } }
 </style>
 </head>
 <body>
@@ -2120,6 +2132,12 @@
 
     <form id="cg-form" novalidate>
       <fieldset id="checkinFields" disabled inert style="border:0;padding:0;margin:0;min-width:0">
+      <nav id="guidedCheckinNavigation" class="guided-checkin-navigation" aria-label="Check-in section navigation">
+        <label for="guidedSectionSelect">Go to section
+          <select id="guidedSectionSelect" aria-label="Go to check-in section"></select>
+        </label>
+        <button type="button" id="skipGuidedSection">Skip this section for now →</button>
+      </nav>
       <!-- STEP 1: Physical -->
       <div id="physicalSection" class="step active" data-step="0">
         <div class="top-card">
@@ -6482,10 +6500,15 @@
       requestAnimationFrame(() => scrollToSectionTop(steps[idx], behavior));
     }
     function continueGuidedFlow(fromIdx){
-      const nextIdx = getNextNeededSectionIndex(fromIdx + 1);
-      if (nextIdx >= 0) {
-        openSectionDetailByIndex(nextIdx);
-        return;
+      // Move forward only. A caregiver who deliberately skipped an earlier section
+      // should not be forced back into it before reviewing the check-in.
+      for (let idx = fromIdx + 1; idx < steps.length; idx += 1) {
+        const step = steps[idx];
+        const def = getSectionDefForStep(step);
+        if (!isStepHidden(step) && def && !isSectionDone(def)) {
+          openSectionDetailByIndex(idx);
+          return;
+        }
       }
       openSectionDetailByIndex(steps.findIndex(step => step.id === 'final-notes-step'));
     }
@@ -6640,6 +6663,21 @@
 	    }
 	    function syncWizardView({ scroll = false } = {}){
 	      current = normalizeStepIndex(current);
+          const sectionSelect = document.getElementById('guidedSectionSelect');
+          if (sectionSelect) {
+            sectionSelect.replaceChildren();
+            steps.forEach((step, idx) => {
+              if (isStepHidden(step)) return;
+              const option = document.createElement('option');
+              option.value = String(idx);
+              option.textContent = getSectionDefForStep(step)?.title ||
+                (step.id === 'final-notes-step' ? 'Important observation' : 'Notes');
+              sectionSelect.appendChild(option);
+            });
+            sectionSelect.value = String(current);
+          }
+          const skipButton = document.getElementById('skipGuidedSection');
+          if (skipButton) skipButton.hidden = steps[current]?.id === 'final-notes-step';
 	      const lastVisibleStepIndex = (() => {
 	        for (let idx = steps.length - 1; idx >= 0; idx -= 1) {
 	          if (!isStepHidden(steps[idx])) return idx;
@@ -6754,6 +6792,7 @@
     function resetForm(){
       clearDraftUI();
       resetFormValues();
+      formEl?.classList.remove('is-guided');
       go(0);
     }
 	    function clearDraftUI(){
@@ -6885,12 +6924,15 @@
 	      reviewSectionsEl.appendChild(prnCard);
 	      SECTION_STATUS_DEFS.forEach((def) => {
 	        const sectionEl = document.getElementById(def.stepId);
+        if (isStepHidden(sectionEl)) return;
 	        const status = getSectionStatus(def);
 	        const items = isQuickClearedStatus(def, status) ? [] : collectSectionReviewItems(sectionEl);
 	        if (isQuickClearedStatus(def, status)) {
 	          items.unshift({ label: 'Section status', value: def.statusLabel });
 	        } else if (status === 'completed') {
 	          items.unshift({ label: 'Section status', value: 'Completed with detailed answers' });
+        } else {
+          items.unshift({ label: 'Section status', value: 'Not completed' });
 	        }
 	        if (!items.length) return;
 	        const card = document.createElement('section');
@@ -7231,6 +7273,7 @@
     }
 
 	    const showSectionList = () => {
+      formEl?.classList.remove('is-guided');
       reviewOverlay?.classList.remove('is-reviewing');
 	      document.querySelectorAll('.section-detail').forEach(s => {
 	        s.style.display = 'none';
@@ -7251,6 +7294,7 @@
     };
 
     const showActiveSectionDetail = () => {
+      formEl?.classList.add('is-guided');
       const list = document.getElementById('sectionListView');
       if (list) list.style.display = 'none';
       document.querySelectorAll('.section-detail').forEach(s => {
@@ -7343,6 +7387,24 @@
 	      }
 	    });
 
+    document.getElementById('guidedSectionSelect')?.addEventListener('change', (event) => {
+      const idx = Number(event.target.value);
+      if (Number.isInteger(idx) && steps[idx] && !isStepHidden(steps[idx])) {
+        openSectionDetailByIndex(idx);
+      }
+    });
+
+    document.getElementById('skipGuidedSection')?.addEventListener('click', () => {
+      // Skip leaves this section unanswered; it does not record a negative finding.
+      for (let idx = current + 1; idx < steps.length; idx += 1) {
+        if (!isStepHidden(steps[idx])) {
+          openSectionDetailByIndex(idx);
+          return;
+        }
+      }
+      renderReviewBeforeSubmit();
+    });
+
     document.querySelectorAll('.back-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         showSectionList();
@@ -7417,7 +7479,7 @@
 </script>
 <script>
   (function(){
-    const version = window.STAR_BUILD_VERSION || '2026.10.20A';
+    const version = window.STAR_BUILD_VERSION || '2026.10.23A';
     if (!window.STAR_BUILD_VERSION) window.STAR_BUILD_VERSION = version;
     const ensureBadge = () => {
       if (document.getElementById('star-build-version')) return;

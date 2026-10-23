@@ -1719,7 +1719,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     import { openCompactCaregiverCheckinPrintWindow } from './caregiver-checkin-print.js?v=2026.09.02A';
     import { CALENDAR_QUICK_LOOK_ITEMS, filterCaregiverCheckinsForPrint, normalizeCaregiverCheckinForCalendar, normalizeCaregiverCheckinRecord } from './caregiver-report-shared.js?v=2026.10.20C';
     import { renderPrintableCaregiverReport } from './caregiver-report-print.js?v=2026.07.01B';
-    import { analyzeProviderRecords, renderProviderLetter, individualKey, groupKey } from './caregiver-provider-letter.js?v=2026.10.23D';
+    import { analyzeProviderRecords, renderProviderLetter, individualKey, groupKey } from './caregiver-provider-letter.js?v=2026.10.23E';
     import { buildWeeklyPromptSeries, defaultGraphRange, filterRecordsByRange, formatGraphRange, rangeFromInputs } from './caregiver-report-graphs.js?v=2026.09.04A';
 
     /* =============== Optional live data =============== */
@@ -5000,6 +5000,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       prompting_level: 'Prompting / independence',
       adl_entries: 'ADL activities',
       daily_living_notes: 'Daily living notes',
+      educational_note: 'Education / skill development note',
       educational_tracking: 'Educational tracking',
       focus_goal_logs: 'Weekly focus logs',
       caregiver_notes: 'Caregiver notes',
@@ -5118,8 +5119,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 	        keys: ['adl_entries','adl_category','adl_activity','adl_note','prompting_level','daily_living_notes']
       },
       {
-        title: 'Educational',
-        keys: ['educational_tracking']
+        title: 'Education & Skill Development',
+        keys: ['educational_note','educational_tracking']
       },
       {
         title: 'Notes',

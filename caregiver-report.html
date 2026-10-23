@@ -304,6 +304,8 @@
 
     /* Keep report-only print controls out of the check-in editor. */
     body:has(#cgEditOverlay:not(.is-hidden)) .top-actions{display:none!important}
+    /* The edit dialog has its own scrolling area and must not expose report controls. */
+    #cgEditOverlay:not(.is-hidden) ~ .top-actions{display:none!important}
     .cg-edit-overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(15,23,42,.55);z-index:10000;padding:16px}
     .cg-edit-overlay.is-hidden{display:none!important}
     .cg-edit-form{background:#fff;border-radius:18px;padding:20px;width:min(540px,95vw);max-height:90vh;overflow:auto;box-shadow:0 25px 65px rgba(15,23,42,.35);display:flex;flex-direction:column;gap:14px}
@@ -1317,7 +1319,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       <form id="cgEditForm" class="cg-edit-form">
         <h3 id="cgEditTitle">Edit Caregiver Check-In</h3>
         <p id="cgEditStatus" class="cg-edit-status">Select a row to load its Supabase data.</p>
-        <p class="cg-edit-help">Correct the sleep time or medication details below, then tap Save Changes. Other details can be expanded if needed.</p>
+        <p class="cg-edit-help">Review the saved answers and correct any details needed. A PRN's purpose is only shown when it was specifically documented. Save Changes when finished.</p>
         <div class="cg-edit-grid">
           <label>Entry date
             <input type="date" id="cgEditDate" name="entry_date">
@@ -1345,7 +1347,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
           </div>
         </div>
         <details class="cg-edit-more">
-          <summary>Other check-in details</summary>
+          <summary>Additional check-in details (BM, activities, notes and more)</summary>
           <div class="cg-edit-grid">
           <label>Had a BM?
             <select id="cgEditBm" name="had_bm">
@@ -4766,7 +4768,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         editUi.prnSleep.checked = parseLooseBoolean(
           payload.prn_used_for_sleep_disturbance ??
           payload.prn_reason_sleep ??
-          checkinData.prn_given ??
           checkinData.prn_sleep
         ) === true;
       }
@@ -4796,10 +4797,11 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         editUi.prnHeadache.checked = parseLooseBoolean(payload.prn_used_for_headache) === true;
       }
       if (editUi.sleepPrnName) {
-        editUi.sleepPrnName.value = payload.sleep_prn_name ?? payload.prn_name ?? '';
+        // Legacy general PRNs have no established sleep purpose; never relabel them as sleep PRNs.
+        editUi.sleepPrnName.value = payload.sleep_prn_name ?? '';
       }
       if (editUi.sleepPrnTime) {
-        editUi.sleepPrnTime.value = payload.sleep_prn_time ?? payload.prn_time ?? '';
+        editUi.sleepPrnTime.value = payload.sleep_prn_time ?? '';
       }
       if (editUi.tempPrnName) {
         editUi.tempPrnName.value = payload.temp_prn_name ?? '';

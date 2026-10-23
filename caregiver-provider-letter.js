@@ -519,7 +519,7 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
       const matches = categories.filter(([, pattern]) => pattern.test(reason)).map(([label]) => label);
       // If unmatched, preserve precisely what was entered instead of
       // suggesting anxiety, sleep problems, or any other unrecorded cause.
-      const labels = matches.length ? matches : [reason ? 'Other: ' + reason : 'Reason not recorded'];
+      const labels = matches.length ? matches : [reason ? (reason.toLowerCase() === 'other' ? 'Other reason (unspecified)' : 'Other: ' + reason) : 'Reason not recorded'];
       for (const label of labels) {
         if (!reasonGroups.has(label)) reasonGroups.set(label, new Set());
         reasonGroups.get(label).add(entry.date);
@@ -527,7 +527,7 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
       const words = [
         medication || 'medication unspecified',
         time ? 'at ' + time : 'time not recorded',
-        reason ? 'for ' + reason : 'reason not recorded',
+        reason ? 'recorded reason: ' + reason : 'reason not recorded',
       ];
       if (notes && includeQuotes && notes.toLowerCase() !== reason.toLowerCase() &&
           !isGoldStarRepeat(entry.date, notes) && !bedtimeRegimenQuoted(entry.date, notes)) {

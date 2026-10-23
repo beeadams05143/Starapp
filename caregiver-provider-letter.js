@@ -10,7 +10,7 @@ const list = value => {
   try { const result = JSON.parse(value); return Array.isArray(result) ? result : []; } catch { return []; }
 };
 export const NOTE_FIELDS = [
-  'caregiver_notes', 'physical_notes', 'behavior_notes', 'mood_regulation_notes',
+  'caregiver_notes', 'summary_highlight_note', 'physical_notes', 'behavior_notes', 'mood_regulation_notes',
   'community_notes', 'daily_living_notes', 'notes', 'public_activity_note',
   'interaction_note', 'home_notes', 'vocational_notes', 'med_change_note',
   'pet_activity_note', 'pet_activity_notes',
@@ -364,6 +364,25 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
     }
     if (highlights.filter(Boolean).length) parts.push(highlights.filter(Boolean).join(' '));
     add('Community and Family Participation', parts);
+  }
+
+  // Explicit highlights are selected by caregivers, not keyword heuristics.
+  // Keep every dated highlight, including multiple caregivers on the same day.
+  const highlightsByDate = new Map();
+  for (const day of a.days) {
+    for (const { row } of day.records) {
+      const value = String(p(row).summary_highlight_note || '').trim();
+      if (!value) continue;
+      if (!highlightsByDate.has(day.date)) highlightsByDate.set(day.date, new Set());
+      highlightsByDate.get(day.date).add(value);
+    }
+  }
+  if (highlightsByDate.size) {
+    const lines = [];
+    for (const [date, notes] of highlightsByDate) {
+      for (const note of notes) lines.push(short(date) + ': “' + note + '”');
+    }
+    add('Notable Observations and Experiences', lines);
   }
 
   const strengths = [...new Set(a.days.flatMap(day => day.records.flatMap(record => record.values.strengths)))];

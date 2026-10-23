@@ -398,7 +398,24 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
   }
 
   const prnDays = [...new Set(a.prnEntries.map(e => e.date))];
-  const changes = a.days.filter(day => day.records.some(record => record.values.medicationChange === true)).map(day => day.date);
+  // Preserve the recorded details of medication/regimen updates, not only dates.
+  // An explicitly written update should remain visible even if its change flag was left blank.
+  const medicationUpdates = a.days.flatMap(day => day.records.map(({ row }) => {
+    const data = p(row);
+    const changeFlag = bool(data.med_change_flag) === true;
+    const name = String(data.med_change_name || '').trim();
+    const dose = String(data.med_change_dose || '').trim();
+    const note = String(data.med_change_note || '').trim();
+    const time = String(data.med_change_time_other || data.med_change_time_window || '').trim();
+    if (!changeFlag && !name && !dose && !note) return null;
+    const details = [
+      name && 'Medication(s): ' + name,
+      dose && 'Dose/change details: ' + dose,
+      time && 'Time: ' + time,
+      note && !isGoldStarRepeat(day.date, note) && 'Caregiver note: “' + note + '”',
+    ].filter(Boolean);
+    return { date: day.date, changeFlag, details };
+  }).filter(Boolean));
   const med = [];
   if (prnDays.length) {
     med.push('Caregivers documented that PRN medications were administered on ' + prnDays.length + ' different ' + (prnDays.length === 1 ? 'day' : 'days') + ': ' + dates(prnDays) + '. Multiple administrations on the same date are counted as one calendar day.');
@@ -419,7 +436,13 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
       for (const [label, daySet] of reasonGroups) med.push(label + ': ' + dates([...daySet]) + '.');
     }
   } else if (a.metrics.prn.dates.length) med.push('Caregivers reported PRN use on ' + dates(a.metrics.prn.dates) + '; individual administration details were not available for these dates.');
-  if (changes.length) med.push('Medication changes were noted on ' + dates(changes) + '.');
+  for (const update of medicationUpdates.filter(item => item.details.length)) {
+    med.push('On ' + short(update.date) + ', a caregiver documented ' +
+      (update.changeFlag ? 'a medication change' : 'a medication update') +
+      ': ' + update.details.join('; ') + '.');
+  }
+  const changesWithoutDetails = medicationUpdates.filter(item => item.changeFlag && !item.details.length).map(item => item.date);
+  if (changesWithoutDetails.length) med.push('Medication changes without additional details were noted on ' + dates(changesWithoutDetails) + '.');
   add('Medication and PRN Observations', med);
 
   sections.push('We hope this summary provides a useful picture of daily experiences, challenges, activities, and successes during this period. Thank you for taking the time to review these caregiver observations.');

@@ -3018,10 +3018,17 @@
       <!-- STEP 7: Educational -->
       <div class="step" data-step="6" id="educational-step">
         <fieldset class="panel">
-          <div class="section-title">Educational</div>
-          <p class="muted">Only the educational items selected in caregiver setup will appear here.</p>
+          <div class="section-title">Education &amp; Skill Development</div>
+          <p class="muted">Optional: briefly describe what you practiced or taught today. Your note will appear in the monthly caregiver letter.</p>
+          <label for="educational_note">Education / skill development note (optional)
+            <textarea name="educational_note" id="educational_note" maxlength="180" rows="4" placeholder="For example: Practiced fire safety, using Siri to make calls, or read a social story."></textarea>
+          </label>
+          <div class="muted" style="text-align:right">Up to 180 characters per check-in</div>
           <input type="hidden" name="educational_tracking" id="educational_tracking" value=""/>
-          <div id="educationalQuestionsWrap" class="row"></div>
+          <details id="educationalAdvanced" class="health-concerns">
+            <summary>Additional configured educational tracking (optional)</summary>
+            <div id="educationalQuestionsWrap" class="row"></div>
+          </details>
           <div class="controls">
             <div class="left-actions">
               <button class="btn" type="button" data-save>Save Draft</button>
@@ -3153,7 +3160,8 @@
     { key: 'vocational', navKey: 'vocational', stepId: 'vocationalSection', title: 'Vocational', quickStatus: 'did_not_participate', quickLabel: 'Did not participate', statusLabel: 'Did not participate' },
     { key: 'home_family', navKey: 'homeFamily', stepId: 'homeFamilySection', title: 'Home / Family', quickStatus: 'no_notable_activity', quickLabel: 'No notable home/family activity', statusLabel: 'No notable activity' },
     { key: 'community', navKey: 'community', stepId: 'communitySection', title: 'Community', quickStatus: 'did_not_participate', quickLabel: 'Did not participate', statusLabel: 'Did not participate' },
-    { key: 'daily_living', navKey: 'dailyLiving', stepId: 'daily-living-step', title: 'Daily Living', quickStatus: 'did_not_participate', quickLabel: 'Did not participate', statusLabel: 'Did not participate' }
+    { key: 'daily_living', navKey: 'dailyLiving', stepId: 'daily-living-step', title: 'Daily Living', quickStatus: 'did_not_participate', quickLabel: 'Did not participate', statusLabel: 'Did not participate' },
+    { key: 'educational', navKey: 'educational', stepId: 'educational-step', title: 'Education & Skill Development', quickStatus: 'no_education', quickLabel: 'No educational activity recorded', statusLabel: 'No educational activity' }
   ];
   const SECTION_STATUS_BY_NAV = new Map(SECTION_STATUS_DEFS.map((def) => [def.navKey, def]));
   const SECTION_STATUS_BY_STEP = new Map(SECTION_STATUS_DEFS.map((def) => [def.stepId, def]));
@@ -4808,9 +4816,10 @@
     setStepAndNavHidden(homeFamilyStep, progressItems.home_family, false);
     setStepAndNavHidden(communityStep, progressItems.community, false);
     setStepAndNavHidden(dailyLivingStep, progressItems.daily_living, false);
-    setStepAndNavHidden(educationalStep, progressItems.educational, true);
+    setStepAndNavHidden(educationalStep, progressItems.educational, false);
 
     setConfigHidden([
+      document.getElementById('educationalAdvanced'),
       educationalQuestionsWrap,
     ], true);
     setConfigHidden([behaviorQuestionsWrap], true);
@@ -4901,7 +4910,9 @@
     setStepAndNavHidden(homeFamilyStep, progressItems.home_family, true);
     setStepAndNavHidden(communityStep, progressItems.community, !communityVisible);
     setStepAndNavHidden(dailyLivingStep, progressItems.daily_living, !dailyLivingVisible);
-    setStepAndNavHidden(educationalStep, progressItems.educational, !(educationalVisible && educationalItemsVisible));
+    // The short optional educational note is available regardless of setup.
+    // Detailed educational tracking remains conditional on caregiver setup.
+    setStepAndNavHidden(educationalStep, progressItems.educational, false);
 
     setConfigHidden([
       labelForName('hours_sleep'),
@@ -4965,6 +4976,7 @@
 
     renderEducationalQuestions();
     setConfigHidden([
+      document.getElementById('educationalAdvanced'),
       educationalQuestionsWrap,
     ], !(educationalVisible && educationalItemsVisible));
 

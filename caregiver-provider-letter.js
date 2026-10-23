@@ -446,6 +446,13 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
         ? 'dose:' + item.dose.toLowerCase().replace(/\s+/g, ' ') : '';
       const duplicateAction = actionKey && seenActions.has(actionKey);
       if (actionKey) seenActions.add(actionKey);
+      // A repeated "discontinued X" entry from another caregiver is not a
+      // second medication stop. Keep distinct clinical details, not a second
+      // rendering of the exact same stop statement.
+      const repeatedStopOnly = duplicateAction && kind === 'stopped' &&
+        /^\s*(?:discontinu(?:e|ed|ing)|stopp(?:ed|ing))\s+(?:the\s+)?(?:medication\s+)?[\w -]+[.!]?\s*$/i.test(note) &&
+        !/\b(?:because|due to|after|since|for|side effect|reaction|concern|improv)\b/i.test(note);
+      if (repeatedStopOnly) continue;
       const label = kind === 'stopped' && !duplicateAction ? 'discontinued'
         : kind === 'started' && !duplicateAction ? 'started'
         : kind === 'dose' && !duplicateAction ? 'dose adjustment'

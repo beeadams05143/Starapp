@@ -2321,7 +2321,7 @@
                 <div class="med-head">
                   <div>
                     <div class="med-title">Medication change</div>
-	                    <div class="med-desc">Note any new meds, dose changes, or stops.</div>
+	                    <div class="med-desc">Record starts, dose changes, and stops here so they appear in the monthly letter's Medication Changes section. Do not duplicate them in general notes.</div>
                   </div>
                 </div>
                 <div class="med-yn" role="group" aria-label="Medication change today">
@@ -2364,7 +2364,7 @@
                     </label>
                   </div>
                   <label>Notes (optional)
-                    <textarea name="med_change_note" id="med_change_note" placeholder="Short note about the change or reason."></textarea>
+                    <textarea name="med_change_note" id="med_change_note" placeholder="Reason stated by the care team, if known; otherwise leave blank. Include relevant instructions or observations without guessing why the change was made."></textarea>
                   </label>
                 </div>
               </div>
@@ -3104,12 +3104,12 @@
           <div class="section-content">
             <fieldset class="panel">
               <div class="section-title">Notes &amp; Important Observations</div>
-              <p class="muted">Use the gold-star box for the one important observation you want included in the monthly team letter (180 characters maximum).</p>
+              <p class="muted">Use the gold-star box to preserve one important experience, accomplishment, or observation in the monthly team letter (180 characters maximum). Medication changes, PRNs, and safety incidents already have their own sections.</p>
 
           <div id="summaryHighlightBox" style="margin:18px 0;padding:14px;border:1px solid #d9ccb8;border-radius:12px;background:#fffaf2">
             <label for="summary_highlight_note" style="display:block;font-weight:700"><span class="summary-star" aria-hidden="true">★</span> Important observation for the monthly team letter (optional)</label>
-            <p class="muted" style="margin:6px 0 10px">Anything important that should appear in the monthly team letter: a special outing, new experience, milestone, first day of a medication change, unusual sleep, or another meaningful event. Everything written in this box will be included in the monthly team letter with its date. Keep it brief: 180 characters maximum.</p>
-            <textarea id="summary_highlight_note" name="summary_highlight_note" maxlength="180" rows="4" style="width:100%;min-height:110px;box-sizing:border-box;resize:vertical" placeholder="For example: Hiked the new trail at the state park today. First day of a medication change. Fell asleep at 8:15 PM."></textarea>
+            <p class="muted" style="margin:6px 0 10px">Highlight a meaningful accomplishment, new experience, or important observation worth preserving in the monthly letter. If medication or safety details were already documented elsewhere, avoid repeating them here. Every gold-star entry is shown with its date. Maximum 180 characters.</p>
+            <textarea id="summary_highlight_note" name="summary_highlight_note" maxlength="180" rows="4" style="width:100%;min-height:110px;box-sizing:border-box;resize:vertical" placeholder="For example: Tried a new hiking trail, independently greeted a neighbor, or made progress toward a personal goal."></textarea>
             <div id="summaryHighlightCount" class="muted" style="text-align:right;margin-top:5px" aria-live="polite">0 / 180 characters</div>
           </div>
 
@@ -5169,11 +5169,11 @@
 	          <label>Medication / PRN
 	            <input type="text" data-prn-medication value="${escapeHtml(entry.medication)}" placeholder="Medication or PRN" required>
 	          </label>
-	          <label>What was it given for?
-	            <input type="text" data-prn-reason value="${escapeHtml(entry.reason)}" list="prnReasonOptions" placeholder="e.g., anxiety, pacing, agitation, sleep" required>
+	          <label>Reason or observed signs before PRN
+	            <input type="text" data-prn-reason value="${escapeHtml(entry.reason)}" list="prnReasonOptions" placeholder="e.g., pacing and rapid speech; or preventative per care plan" required>
 	          </label>
-	          <label>Notes
-	            <textarea data-prn-notes placeholder="Optional brief note">${escapeHtml(entry.notes)}</textarea>
+	          <label>Details / response (optional)
+	            <textarea data-prn-notes placeholder="What was observed, what the plan called for, and any response afterward. Do not assume the medication caused a change.">${escapeHtml(entry.notes)}</textarea>
 	          </label>
 	        </div>
 	      </article>

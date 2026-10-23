@@ -499,21 +499,54 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
   const med = [];
   if (prnDays.length) {
     med.push('Caregivers documented that PRN medications were administered on ' + prnDays.length + ' different ' + (prnDays.length === 1 ? 'day' : 'days') + ': ' + dates(prnDays) + '. Multiple administrations on the same date are counted as one calendar day.');
-    const reasonGroups = new Map();
-    const classified = [
-      ['Anxiety', /\\b(anxiety|anxious|worried|worry|panic|fear|nervous)\\b/i],
-      ['Irritability or agitation', /\\b(irritab|agitat|snappy|aggress|anger|angry|upset|restless|pacing)\\w*/i],
-      ['Difficulty settling or sleeping', /\\b(sleep|insomnia|awake|settle|bedtime|nighttime|night waking)\\b/i],
+    // Categorize using the entered reason, not nearby behavior notes.
+    // Preserve every entered reason and time for clinical review.
+    const categories = [
+      ['Anxiety', /\b(anxiety|anxious|worried|worry|panic|fear|nervous)\b/i],
+      ['Irritability or agitation', /\b(irritab\w*|agitat\w*|snapp\w*|aggress\w*|anger|angry|upset|restless|pacing|paced|escalat\w*)\b/i],
+      ['Difficulty settling or sleeping', /\b(sleep\w*|insomnia|awake|settle|settling|bedtime|nighttime|night waking)\b/i],
+      ['Pain or physical discomfort', /\b(pain|discomfort|headache|migraine|sore|stomach|tummy|nausea|aching|aches?)\b/i],
+      ['Manic symptoms', /\b(mania|manic|cycling)\b/i],
     ];
+    const reasonGroups = new Map();
+    const perDate = new Map();
     for (const entry of a.prnEntries) {
-      const reason = String(entry.item?.reason || '').trim();
-      const category = classified.find(([, pattern]) => pattern.test(reason))?.[0] || (reason ? 'Other documented reasons' : 'Reason not documented');
-      if (!reasonGroups.has(category)) reasonGroups.set(category, new Set());
-      reasonGroups.get(category).add(entry.date);
+      const detail = entry.item || {};
+      const reason = String(detail.reason || '').trim();
+      const medication = String(detail.medication || '').trim();
+      const time = String(detail.time || '').trim();
+      const notes = String(detail.notes || '').trim();
+      const matches = categories.filter(([, pattern]) => pattern.test(reason)).map(([label]) => label);
+      // If unmatched, preserve precisely what was entered instead of
+      // suggesting anxiety, sleep problems, or any other unrecorded cause.
+      const labels = matches.length ? matches : [reason ? 'Other: ' + reason : 'Reason not recorded'];
+      for (const label of labels) {
+        if (!reasonGroups.has(label)) reasonGroups.set(label, new Set());
+        reasonGroups.get(label).add(entry.date);
+      }
+      const words = [
+        medication || 'medication unspecified',
+        time ? 'at ' + time : 'time not recorded',
+        reason ? 'for ' + reason : 'reason not recorded',
+      ];
+      if (notes && includeQuotes && notes.toLowerCase() !== reason.toLowerCase() &&
+          !isGoldStarRepeat(entry.date, notes) && !bedtimeRegimenQuoted(entry.date, notes)) {
+        words.push('note: “' + notes + '”');
+      }
+      if (!perDate.has(entry.date)) perDate.set(entry.date, []);
+      perDate.get(entry.date).push(words.join(', '));
     }
     if (reasonGroups.size) {
-      med.push('Reasons recorded with PRN administrations (the same date may appear in more than one category):');
-      for (const [label, daySet] of reasonGroups) med.push(label + ': ' + dates([...daySet]) + '.');
+      med.push('Reasons caregivers recorded for PRN use (a day can belong to more than one category):');
+      for (const [label, daySet] of reasonGroups) {
+        med.push(label + ': ' + dates([...daySet]) + '.');
+      }
+    }
+    if (perDate.size) {
+      med.push('Individual PRN entries, including medication, time, and the recorded reason:');
+      for (const [date, descriptions] of [...perDate].sort(([a], [b]) => a.localeCompare(b))) {
+        med.push(short(date) + ': ' + descriptions.join('; ') + '.');
+      }
     }
   } else if (a.metrics.prn.dates.length) med.push('Caregivers reported PRN use on ' + dates(a.metrics.prn.dates) + '; individual administration details were not available for these dates.');
   med.push(...medicationTimeline);

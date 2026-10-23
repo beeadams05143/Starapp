@@ -2083,6 +2083,13 @@
     /* Simple landing: the seven-category checklist remains in the DOM for legacy status
        handling, but must not be shown ahead of the guided one-section-at-a-time form. */
     #sectionListView { display:none !important; }
+    #behaviorSafetyIncidentCard { margin:0 0 20px; padding:16px; border:1px solid #d9cdbf; border-radius:12px; background:#fff; }
+    #behaviorSafetyIncidentCard h3 { margin:0 0 8px; font-size:18px; color:#273449; }
+    #behaviorSafetyIncidentDetails[hidden] { display:none !important; }
+    #behaviorSafetyIncidentDetails { display:grid; gap:12px; margin-top:15px; }
+    #behaviorSafetyIncidentDetails input, #behaviorSafetyIncidentDetails select, #behaviorSafetyIncidentDetails textarea { box-sizing:border-box; width:100%; }
+    #behaviorSafetyIncidentDetails label { display:block; }
+
     #cg-form.is-guided .landing-actions { display:none !important; }
     #cg-form:not(.is-guided) .section-detail { display:none !important; }
     .guided-checkin-navigation { display:none; margin:0 0 14px; padding:12px; border:1px solid #e7ddcd; border-radius:12px; background:#fff; gap:10px; align-items:end; }
@@ -2643,6 +2650,35 @@
           <div class="section-title">Behavior / Mental Health</div>
           <p class="muted">Only the behaviors selected in caregiver setup will appear here.</p>
           <input type="hidden" name="behavior_tracking" id="behavior_tracking" value=""/>
+          <section id="behaviorSafetyIncidentCard" class="panel" aria-labelledby="behaviorSafetyIncidentHeading">
+            <h3 id="behaviorSafetyIncidentHeading">Behavior &amp; Safety Incidents</h3>
+            <p class="muted">Document an incident factually, whether you observed it or another caregiver reported it. Routine behaviors and skill progress can still be tracked below.</p>
+            <div class="question-block">
+              <div class="movement-label">Was a behavior or safety incident observed or reported for this date?</div>
+              <div class="yn-pill-group" role="group" aria-label="Behavior or safety incident observed or reported">
+                <label class="yn-pill"><input type="radio" name="safety_incident_occurred" value="yes"> Yes</label>
+                <label class="yn-pill"><input type="radio" name="safety_incident_occurred" value="no"> No</label>
+              </div>
+            </div>
+            <div id="behaviorSafetyIncidentDetails" hidden>
+              <label>Where did it happen? (optional)
+                <input type="text" name="safety_incident_location" placeholder="For example: workplace, home, or community" />
+              </label>
+              <label>How was the incident documented?
+                <select name="safety_incident_source">
+                  <option value="">Select, if known</option>
+                  <option value="direct_observation">I observed it</option>
+                  <option value="reported_by_other">Someone else reported it</option>
+                </select>
+              </label>
+              <label>Who observed or reported it? (optional)
+                <input type="text" name="safety_incident_reporter" placeholder="Caregiver or reporting person's name" />
+              </label>
+              <label>What happened? (Include what preceded it, staff response, and outcome if known)
+                <textarea name="safety_incident_details" rows="4" placeholder="Describe what was observed or reported. Only include details that are known."></textarea>
+              </label>
+            </div>
+          </section>
           <div id="behaviorQuestionsWrap" class="row"></div>
           <div id="legacyBehaviorQuestions" class="config-hidden" aria-hidden="true">
             <div class="behavior-legacy-section">
@@ -6033,6 +6069,17 @@
       document.querySelectorAll('select[data-scale="prompting"]').forEach(populatePromptingSelect);
     }
 
+    // Incident entries are separate from behavior skill tracking and aggression-specific fields.
+    function syncBehaviorSafetyIncidentDetails(){
+      const yes = getYnValue('safety_incident_occurred') === 'yes';
+      const details = document.getElementById('behaviorSafetyIncidentDetails');
+      if (details) details.hidden = !yes;
+    }
+    document.querySelectorAll('input[name="safety_incident_occurred"]').forEach(input => {
+      input.addEventListener('change', syncBehaviorSafetyIncidentDetails);
+    });
+    syncBehaviorSafetyIncidentDetails();
+
     // Aggression enable/disable
     const aType = document.getElementById('aggression_type');
     const aInt  = document.getElementById('aggression_intensity');
@@ -6574,6 +6621,7 @@
       hydrate(step,draft.data[idx]);
       updateSavedAt(step,idx);
       if (step.querySelector('#behaviorQuestionsWrap')) {
+        syncBehaviorSafetyIncidentDetails();
         syncBehaviorQuestionStates();
         syncBehaviorTrackingField();
       }
@@ -6603,6 +6651,7 @@
     function applyDraftToForm(){
       steps.forEach((step, idx) => restore(step, idx));
       syncAggressionControls();
+      syncBehaviorSafetyIncidentDetails();
       syncManiaControls();
       syncAppetiteControls();
       syncFixationControls();
@@ -6764,6 +6813,7 @@
         el.value = '0';
       });
       clearEntryDateSelection();
+      syncBehaviorSafetyIncidentDetails();
       const iv=document.getElementById('intensityVal');
       if(iv) iv.textContent='0';
       const manicIv=document.getElementById('manicIntensityVal');

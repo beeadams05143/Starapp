@@ -1808,7 +1808,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       window.starProviderLetterLayout = {
         render,
         parse,
-        original: root => originalText.get(root) || root?.textContent || '',
+        original: root => root?.textContent?.trim() ? (originalText.get(root) || root.textContent) : '',
       };
     })();
   </script>

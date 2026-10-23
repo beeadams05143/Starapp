@@ -1913,6 +1913,46 @@
     #interactionDetails .interaction-choice-grid .checkbox-card input {width:20px !important;height:20px;margin:0}
     #interactionDetails > label {display:block;width:100%;min-width:0}
     @media(max-width:380px){#interactionDetails .interaction-choice-grid{grid-template-columns:minmax(0,1fr)}}
+
+    /* Keep Save Draft in its single, existing top toolbar. */
+    .step .controls .left-actions:has(> [data-save]) {display:none !important}
+    /* Daily living categories must use the entire available form width. */
+    #adlActivityChips {display:grid;grid-template-columns:minmax(0,1fr);gap:16px;width:100%}
+    #adlActivityChips .adl-activity-group {width:100%;box-sizing:border-box;min-width:0;padding:16px}
+    #adlActivityChips .adl-activity-group .movement-chips {
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr));
+      gap:12px;
+      width:100%;
+    }
+    #adlActivityChips .adl-activity-group .movement-chip {
+      min-width:0;
+      min-height:76px;
+      padding:12px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      text-align:center;
+      white-space:normal;
+      overflow-wrap:normal;
+      word-break:normal;
+      font-size:15px;
+      line-height:1.35;
+    }
+    #adlActivityChips .adl-activity-group .movement-chip span {
+      overflow-wrap:normal;
+      word-break:normal;
+      hyphens:none;
+      white-space:normal;
+    }
+    #adlActivityChips .adl-activity-group .movement-chip input {width:20px !important;height:20px;margin:0}
+    #adlActivityChips .adl-activity-group .movement-chip.is-wide {grid-column:auto}
+    #daily-living-step .row > div {min-width:0;width:100%}
+    @media(max-width:420px) {
+      #adlActivityChips .adl-activity-group .movement-chips {grid-template-columns:minmax(0,1fr)}
+    }
 </style>
 </head>
 <body>
@@ -2822,7 +2862,7 @@
             </div>
           </div>
           <div class="row cols-2">
-            <label>ADL note:<input type="text" name="adl_note" id="adl_note" placeholder="e.g., wiped table and brought dishes to sink"/></label>
+            <label>ADL note:<textarea name="adl_note" id="adl_note" rows="4" style="display:block;width:100%;min-height:110px;box-sizing:border-box;resize:vertical" placeholder="Describe what was completed, any help or prompting, and how the individual participated."></textarea></label>
             <label>Prompting / independence:
               <select name="prompting_level" id="prompting_level" data-scale="prompting"></select>
             </label>

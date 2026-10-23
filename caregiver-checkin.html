@@ -2041,6 +2041,24 @@
     }
     #summaryHighlightBox { border:2px solid #d5a64d !important; background:#fff7df !important; }
     #summaryHighlightBox .summary-star { color:#b7791f; font-size:24px; margin-right:6px; }
+
+    /* The ADL row was inheriting narrow multi-column sizing from the shared form grid. */
+    #daily-living-step .section-content > fieldset.panel > .row:first-of-type {
+      display:block !important; width:100% !important; max-width:none !important;
+    }
+    #daily-living-step .section-content > fieldset.panel > .row:first-of-type > div {
+      display:block !important; width:100% !important; max-width:none !important;
+    }
+    #daily-living-step #adlActivityChips,
+    #daily-living-step #adlActivityChips .adl-activity-group,
+    #daily-living-step #adlActivityChips .movement-chips {
+      box-sizing:border-box !important; width:100% !important; max-width:100% !important;
+    }
+    #daily-living-step #adlActivityChips .movement-chip {
+      box-sizing:border-box !important; width:100% !important; min-width:0 !important;
+      overflow-wrap:break-word !important; word-break:normal !important;
+    }
+    #final-notes-step textarea {font-size:16px;}
 </style>
 </head>
 <body>
@@ -2923,12 +2941,6 @@
           <div id="interactionDetailsNotes" class="row" style="display:none;grid-template-columns:minmax(0,1fr)">
             <label for="interaction_note" style="display:block;width:100%;min-width:0">Interaction note:<textarea id="interaction_note" name="interaction_note" rows="5" style="display:block;width:100%;min-height:130px;box-sizing:border-box;resize:vertical" placeholder="Describe who they interacted with, what happened, any prompting needed, and how they responded."></textarea></label>
           </div>
-          <div id="summaryHighlightBox" style="margin:18px 0;padding:14px;border:1px solid #d9ccb8;border-radius:12px;background:#fffaf2">
-            <label for="summary_highlight_note" style="display:block;font-weight:700"><span class="summary-star" aria-hidden="true">★</span> Important observation for the monthly team letter (optional)</label>
-            <p class="muted" style="margin:6px 0 10px">Anything important that should appear in the monthly team letter: a special outing, new experience, milestone, first day of a medication change, unusual sleep, or another meaningful event. Everything written in this box will be included in the monthly team letter with its date. Keep it brief: 180 characters maximum.</p>
-            <textarea id="summary_highlight_note" name="summary_highlight_note" maxlength="180" rows="4" style="width:100%;min-height:110px;box-sizing:border-box;resize:vertical" placeholder="For example: Hiked the new trail at the state park today. First day of a medication change. Fell asleep at 8:15 PM."></textarea>
-            <div id="summaryHighlightCount" class="muted" style="text-align:right;margin-top:5px" aria-live="polite">0 / 180 characters</div>
-          </div>
           <div class="controls">
             <div class="left-actions"><button class="btn" type="button" data-save>Save Draft</button><span class="action-note">Save a local recovery copy. This does not submit the check-in.</span><span class="savedAt" data-savedat></span></div>
             <div class="left-actions"><button class="btn" type="button" data-prev>← Back</button><span class="action-note">Continue to the next section.</span><button class="btn primary save-next-btn" type="button" data-next>Next →</button></div>
@@ -2974,7 +2986,7 @@
             </div>
             <div>
               <button class="btn" type="button" data-prev>← Back</button>
-              <button class="btn primary" type="button" data-review>Review &amp; Submit</button>
+              <button class="btn primary" type="button" data-open-final-notes>Next →</button>
             </div>
           </div>
         </fieldset>
@@ -2997,11 +3009,37 @@
             </div>
             <div>
               <button class="btn" type="button" data-prev>← Back</button>
-              <button class="btn primary" type="button" data-review>Review &amp; Submit</button>
+              <button class="btn primary" type="button" data-open-final-notes>Next →</button>
             </div>
           </div>
         </fieldset>
       </div>
+      <!-- Final notes are always available, regardless of configured tracking categories. -->
+      <div class="step" data-step="7" id="final-notes-step">
+        <div class="section-card section-detail">
+          <div class="section-header">Notes &amp; Important Observations <span>★</span></div>
+          <div class="section-content">
+            <fieldset class="panel">
+              <div class="section-title">Notes &amp; Important Observations</div>
+              <p class="muted">Share anything else important about the day. Medication and physical-health details can still be recorded in their own sections.</p>
+              <label for="caregiver_notes">Additional daily notes (optional)</label>
+              <textarea id="caregiver_notes" name="caregiver_notes" rows="5" style="display:block;width:100%;min-height:135px;box-sizing:border-box;resize:vertical" placeholder="Other details about the day that the team should know."></textarea>
+          <div id="summaryHighlightBox" style="margin:18px 0;padding:14px;border:1px solid #d9ccb8;border-radius:12px;background:#fffaf2">
+            <label for="summary_highlight_note" style="display:block;font-weight:700"><span class="summary-star" aria-hidden="true">★</span> Important observation for the monthly team letter (optional)</label>
+            <p class="muted" style="margin:6px 0 10px">Anything important that should appear in the monthly team letter: a special outing, new experience, milestone, first day of a medication change, unusual sleep, or another meaningful event. Everything written in this box will be included in the monthly team letter with its date. Keep it brief: 180 characters maximum.</p>
+            <textarea id="summary_highlight_note" name="summary_highlight_note" maxlength="180" rows="4" style="width:100%;min-height:110px;box-sizing:border-box;resize:vertical" placeholder="For example: Hiked the new trail at the state park today. First day of a medication change. Fell asleep at 8:15 PM."></textarea>
+            <div id="summaryHighlightCount" class="muted" style="text-align:right;margin-top:5px" aria-live="polite">0 / 180 characters</div>
+          </div>
+
+              <div class="controls" style="display:flex;gap:12px;flex-wrap:nowrap">
+                <button class="btn" type="button" id="finalNotesBack" style="flex:1;min-width:0">← Back</button>
+                <button class="btn primary" type="button" id="finalNotesReview" style="flex:1;min-width:0">Review &amp; Submit</button>
+              </div>
+            </fieldset>
+          </div>
+        </div>
+      </div>
+
       </fieldset>
       <section id="checkinSubmitPanel" class="panel checkin-submit-panel" aria-labelledby="checkinDateTitle">
         <p id="submissionContext">Loading caregiver and group… Questions remain disabled until ready.</p>
@@ -5847,6 +5885,18 @@
     entryDateInput?.addEventListener('change', markEntryDateSelected);
     document.querySelectorAll('[data-review]').forEach(button => button.addEventListener('click', renderReviewBeforeSubmit));
 
+    document.querySelectorAll('[data-open-final-notes]').forEach(button => button.addEventListener('click', () => {
+      const index = steps.findIndex(step => step.id === 'final-notes-step');
+      if (index >= 0) openSectionDetailByIndex(index);
+    }));
+    document.getElementById('finalNotesBack')?.addEventListener('click', () => {
+      const index = steps.findIndex(step => step.id === 'final-notes-step');
+      for (let i=index-1; i>=0; i--) {
+        if (!isStepHidden(steps[i])) { openSectionDetailByIndex(i); return; }
+      }
+      showSectionList();
+    });
+    document.getElementById('finalNotesReview')?.addEventListener('click', renderReviewBeforeSubmit);
     // Initial position
     go(0);
     applyConditionalSections();
@@ -6401,8 +6451,7 @@
         openSectionDetailByIndex(nextIdx);
         return;
       }
-      showSectionList();
-      renderReviewBeforeSubmit();
+      openSectionDetailByIndex(steps.findIndex(step => step.id === 'final-notes-step'));
     }
     function serialize(step){
       const data={};

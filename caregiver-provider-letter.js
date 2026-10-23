@@ -271,8 +271,12 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
     for (const source of originalNotes(row)) {
       if (source.field.includes('prn_entries')) continue;
       const note = String(source.text || '').trim();
-      if (!/\b(?:benadryl|benedryl|diphenhydramine|magnesium)\b/i.test(note) ||
-          !/\b(?:bedtime|sleep|night|evening|regimen|routine)\b/i.test(note)) continue;
+      const namesMedication = /\b(?:benadryl|benedryl|diphenhydramine|magnesium)\b/i.test(note);
+      const bedtimeContext = /\b(?:bedtime|sleep|night|nightly|evening|regimen|routine)\b/i.test(note);
+      const scheduledTime = /\b6(?::|\.|\s)30\b/i.test(note);
+      const startsRegimen = /\b(?:new|start(?:ed|ing)?|began|beginning|added|changed)\b/i.test(note) &&
+        /\b(?:bedtime|nightly|evening)\s+(?:medications?|meds?|regimen|routine|support)\b/i.test(note);
+      if (!(namesMedication && (bedtimeContext || scheduledTime)) && !startsRegimen) continue;
       const key = day.date + ':' + normalized(note);
       if (bedtimeSeen.has(key)) continue;
       bedtimeSeen.add(key);

@@ -262,6 +262,26 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
   sections.push('We would like to share observations from caregiver records covering ' + short(a.start) + ' through ' + short(a.end) + '. This summary brings together the observations of all caregivers to provide an overall picture of sleep, physical health, mood, daily routines, work, and participation at home and in the wider community.');
 
   const sleep = a.metrics.sleep.dates;
+  // Detect documented bedtime-regimen updates in original caregiver notes,
+  // even when no separate medication-change flag was selected. Do not infer a
+  // scheduled bedtime regimen from a PRN administration.
+  const bedtimeRegimenNotes = [];
+  const bedtimeSeen = new Set();
+  for (const day of a.days) for (const { row } of day.records) {
+    for (const source of originalNotes(row)) {
+      if (source.field.includes('prn_entries')) continue;
+      const note = String(source.text || '').trim();
+      if (!/\b(?:benadryl|benedryl|diphenhydramine|magnesium)\b/i.test(note) ||
+          !/\b(?:bedtime|sleep|night|evening|regimen|routine)\b/i.test(note)) continue;
+      const key = day.date + ':' + normalized(note);
+      if (bedtimeSeen.has(key)) continue;
+      bedtimeSeen.add(key);
+      bedtimeRegimenNotes.push({ date: day.date, note });
+    }
+  }
+  const bedtimeRegimenQuoted = (date, note) => bedtimeRegimenNotes.some(
+    entry => entry.date === date && normalized(entry.note) === normalized(note)
+  );
   const bedtime = a.days.flatMap(day => day.records.map(({ row }) => {
     const raw = String(p(row).sleep_fell_asleep_time || '').trim();
     if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(raw)) return null;
@@ -270,9 +290,15 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
     return { date: day.date, formatted };
   }).filter(Boolean)).sort((x, y) => y.date.localeCompare(x.date));
   const fatigue = a.notes.quotes.filter(q => /\b(tired|fatigue|exhausted|low energy|little sleep|did not sleep|didn't sleep)\b/i.test(q.quote));
-  if (sleep.length || fatigue.length || bedtime.length) {
+  if (sleep.length || fatigue.length || bedtime.length || bedtimeRegimenNotes.length) {
     const paragraphs = [];
     if (sleep.length) paragraphs.push('Sleep difficulties or nighttime waking were recorded on ' + dates(sleep) + '.');
+    const documentedRegimens = bedtimeRegimenNotes.filter(item => !isGoldStarRepeat(item.date, item.note));
+    if (documentedRegimens.length) {
+      paragraphs.push(...documentedRegimens.map(item => 'On ' + short(item.date) +
+        ', a caregiver documented bedtime medication/routine information' +
+        (includeQuotes ? ': “' + item.note + '”' : '.') ));
+    }
     if (bedtime.length) {
       const latest = bedtime[0];
       paragraphs.push('A caregiver recorded falling asleep at ' + latest.formatted + ' on ' + short(latest.date) + '.');
@@ -460,7 +486,7 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
       const context = [
         label !== 'follow-up/observation' && item.dose ? item.dose : '',
         item.time && (label !== 'follow-up/observation' || name === 'Unspecified medication') ? 'at ' + item.time : '',
-        note && !isGoldStarRepeat(item.date, note) ? '“' + note + '”' : '',
+        note && !isGoldStarRepeat(item.date, note) && !bedtimeRegimenQuoted(item.date, note) ? '“' + note + '”' : '',
       ].filter(Boolean).join(' — ');
       const entry = short(item.date) + ': ' + label + (context ? ' — ' + context : '');
       if (!used.has(entry)) { used.add(entry); lines.push(entry); }

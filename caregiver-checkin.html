@@ -5918,8 +5918,12 @@
     document.querySelectorAll('[data-review]').forEach(button => button.addEventListener('click', renderReviewBeforeSubmit));
 
     document.querySelectorAll('[data-open-final-notes]').forEach(button => button.addEventListener('click', () => {
-      const index = steps.findIndex(step => step.id === 'final-notes-step');
-      if (index >= 0) openSectionDetailByIndex(index);
+      const step = button.closest('.step');
+      if (!step) return;
+      markSectionDetailedComplete(step);
+      // From Daily Living continue through the optional Education note,
+      // then proceed to the existing gold-star review.
+      continueGuidedFlow(steps.indexOf(step));
     }));
     document.getElementById('finalNotesBack')?.addEventListener('click', () => {
       const index = steps.findIndex(step => step.id === 'final-notes-step');

@@ -2647,14 +2647,15 @@
           <div id="legacyBehaviorQuestions" class="config-hidden" aria-hidden="true">
             <div class="behavior-legacy-section">
               <div id="question-aggression-flag" class="behavior-legacy-question-line">
-                <div class="movement-label">Did the individual display any aggression?</div>
-                <div class="yn-pill-group" role="group" aria-label="Aggression observed">
+                <div class="movement-label">Behavior &amp; Safety Incidents</div>
+                <p class="muted">Was there an incident involving physical or verbal aggression today?</p>
+                <div class="yn-pill-group" role="group" aria-label="Incident involving physical or verbal aggression">
                   <label class="yn-pill"><input type="radio" name="aggression_flag" value="yes"> Yes</label>
                   <label class="yn-pill"><input type="radio" name="aggression_flag" value="no"> No</label>
                 </div>
               </div>
               <div id="aggressionDetails" class="behavior-legacy-paired-row" style="display:none">
-                <label>Aggression type:
+                <label>Incident type:
                   <select name="aggression_type" id="aggression_type" disabled>
                     <option value="">Select type</option>
                     <option>Posturing</option><option>Physical</option><option>Verbal</option><option>Self-harm</option>
@@ -2666,8 +2667,8 @@
                 </label>
               </div>
             </div>
-            <label id="aggressionNotesWrap">Aggression notes:
-              <textarea name="aggression_notes" placeholder="What happened, what helped"></textarea>
+            <label id="aggressionNotesWrap">Incident details:
+              <textarea name="aggression_notes" placeholder="What happened, where, what led up to it, and how the situation resolved"></textarea>
             </label>
 	            <hr class="soft"/>
 	            <div class="section-subtitle">Mood &amp; Regulation</div>

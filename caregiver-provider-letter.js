@@ -228,6 +228,18 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
     }
     return { days, types };
   };
+  // Gold-star observations are preserved verbatim later in the letter. Keep
+  // other sections focused on trends and distinct experiences, not repeats.
+  const goldStarObservations = a.days.flatMap(day => day.records.flatMap(({ row }) => {
+    const note = String(p(row).summary_highlight_note || '').trim();
+    return note ? [{ date: day.date, note }] : [];
+  }));
+  const normalized = value => String(value || '').toLowerCase().replace(/[“”"'.,!?;:()]/g, '').replace(/\s+/g, ' ').trim();
+  const isGoldStarRepeat = (date, value) => goldStarObservations.some(item => {
+    if (item.date !== date) return false;
+    const gold = normalized(item.note), candidate = normalized(value);
+    return !!candidate && (gold === candidate || (candidate.length >= 24 && gold.includes(candidate)));
+  });
   // A quote belongs to one section only, even when its wording matches several.
   const usedQuotes = new Set();
   const quote = (pattern, { max = 1, exclude = null } = {}) => {
@@ -235,7 +247,7 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
     const selected = [], topics = new Set();
     for (const q of a.notes.quotes) {
       const value = q.quote.trim();
-      if (!q.date || value.length > 180 || !pattern.test(value) || exclude?.test(value)) continue;
+      if (!q.date || value.length > 180 || !pattern.test(value) || exclude?.test(value) || isGoldStarRepeat(q.date, value)) continue;
       if (/\b(will|planned|tomorrow|maybe|probably not)\b/i.test(value)) continue;
       const id = q.date + ':' + value.toLowerCase();
       if (usedQuotes.has(id)) continue;
@@ -301,7 +313,7 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
     if (vocational.types.size) parts.push('Recorded activities included ' + [...vocational.types.keys()].slice(0, 7).join(', ') + '.');
     const workNotes = a.notes.quotes.filter(q => q.date && /\b(work|job|maintenance|employment|job coach|vocational)\b/i.test(q.quote) && q.quote.trim().length <= 180 && !/\b(will|planned|tomorrow|did not|didn't)\b/i.test(q.quote));
     const distinctiveWork = workNotes.find(q => /\b(met|new|learned|helped|completed|independent|task|coach)\b/i.test(q.quote));
-    if (distinctiveWork && includeQuotes) {
+    if (distinctiveWork && includeQuotes && !isGoldStarRepeat(distinctiveWork.date, distinctiveWork.quote)) {
       parts.push('A specific workplace experience noted on ' + short(distinctiveWork.date) + ' was: “' + distinctiveWork.quote.trim() + '”');
       usedQuotes.add(distinctiveWork.date + ':' + distinctiveWork.quote.trim().toLowerCase());
     } else parts.push(quote(/\b(work|job|maintenance|employment|job coach)\b/i, { max: 1 }));
@@ -323,7 +335,7 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
     if (!matches.length) return '';
     const q = matches[0];
     const id = q.date + ':' + q.quote.trim().toLowerCase();
-    if (usedQuotes.has(id)) return '';
+    if (usedQuotes.has(id) || isGoldStarRepeat(q.date, q.quote)) return '';
     usedQuotes.add(id);
     return phrase + ' (' + short(q.date) + ').';
   };
@@ -355,7 +367,7 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
     // unusual destinations. Use an original caregiver observation, once only.
     const family = relevant(/\b(sunday dinner|dinner|living room|grandma|grandmother|family visit|with family|movie|coloring|craft|walk with|walked with)\b/i);
     const familyExample = family.find(q =>
-      !usedQuotes.has(q.date + ':' + q.quote.trim().toLowerCase()) &&
+      !usedQuotes.has(q.date + ':' + q.quote.trim().toLowerCase()) && !isGoldStarRepeat(q.date, q.quote) &&
       !/\b(work|job|maintenance|PRN|medication|sleep|night|overnight|awake|woke|tired|manic|anxiety|up and down)\b/i.test(q.quote)
     );
     if (familyExample && includeQuotes) {
@@ -366,23 +378,11 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
     add('Community and Family Participation', parts);
   }
 
-  // Explicit highlights are selected by caregivers, not keyword heuristics.
-  // Keep every dated highlight, including multiple caregivers on the same day.
-  const highlightsByDate = new Map();
-  for (const day of a.days) {
-    for (const { row } of day.records) {
-      const value = String(p(row).summary_highlight_note || '').trim();
-      if (!value) continue;
-      if (!highlightsByDate.has(day.date)) highlightsByDate.set(day.date, new Set());
-      highlightsByDate.get(day.date).add(value);
-    }
-  }
-  if (highlightsByDate.size) {
-    const lines = [];
-    for (const [date, notes] of highlightsByDate) {
-      for (const note of notes) lines.push(short(date) + ': “' + note + '”');
-    }
-    add('Notable Observations and Experiences', lines);
+  // Every explicitly entered gold-star observation is retained, including
+  // separate caregiver entries on the same day. Do not cap or deduplicate them.
+  if (goldStarObservations.length) {
+    add('Notable Observations and Experiences',
+      goldStarObservations.map(item => short(item.date) + ': “' + item.note + '”'));
   }
 
   const strengths = [...new Set(a.days.flatMap(day => day.records.flatMap(record => record.values.strengths)))];

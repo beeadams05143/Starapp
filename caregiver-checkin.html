@@ -2043,10 +2043,10 @@
     #summaryHighlightBox .summary-star { color:#b7791f; font-size:24px; margin-right:6px; }
 
     /* The ADL row was inheriting narrow multi-column sizing from the shared form grid. */
-    #daily-living-step .section-content > fieldset.panel > .row:first-of-type {
+    #daily-living-step .section-content > fieldset.panel > .row:has(#adlActivityChips) {
       display:block !important; width:100% !important; max-width:none !important;
     }
-    #daily-living-step .section-content > fieldset.panel > .row:first-of-type > div {
+    #daily-living-step .section-content > fieldset.panel > .row:has(#adlActivityChips) > div {
       display:block !important; width:100% !important; max-width:none !important;
     }
     #daily-living-step #adlActivityChips,

@@ -408,14 +408,58 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
     const note = String(data.med_change_note || '').trim();
     const time = String(data.med_change_time_other || data.med_change_time_window || '').trim();
     if (!changeFlag && !name && !dose && !note) return null;
-    const details = [
-      name && 'Medication(s): ' + name,
-      dose && 'Dose/change details: ' + dose,
-      time && 'Time: ' + time,
-      note && !isGoldStarRepeat(day.date, note) && 'Caregiver note: “' + note + '”',
-    ].filter(Boolean);
-    return { date: day.date, changeFlag, details };
+    return {
+      date: day.date, name, dose, note, time, changeFlag,
+      stopped: bool(data.med_change_type_stopped) === true,
+      doseChanged: bool(data.med_change_type_dose) === true,
+      started: bool(data.med_change_type_new) === true,
+    };
   }).filter(Boolean));
+  // Associate a follow-up note lacking the name field with an explicitly named
+  // medication only when the original text actually mentions that medication.
+  const knownMedications = [...new Set(medicationUpdates.map(item => item.name).filter(Boolean))];
+  const medicationGroups = new Map();
+  for (const update of medicationUpdates) {
+    const name = update.name || knownMedications.find(candidate =>
+      update.note.toLowerCase().includes(candidate.toLowerCase())) || 'Unspecified medication';
+    const key = name.toLowerCase().replace(/\s+/g, ' ');
+    if (!medicationGroups.has(key)) medicationGroups.set(key, { name, updates: [] });
+    medicationGroups.get(key).updates.push(update);
+  }
+  const medicationTimeline = [];
+  for (const { name, updates } of medicationGroups.values()) {
+    const lines = [], used = new Set(), seenActions = new Set();
+    for (const item of updates) {
+      const note = item.note;
+      const isFollowUp = /\b(?:\d+(?:st|nd|rd|th)?\s+(?:morning|day|night)|follow.?up|since|after\s+the\s+(?:change|decrease))\b/i.test(note);
+      const stopText = /\b(?:discontinu(?:e|ed|ing)|stopp(?:ed|ing))\b/i.test(note)
+        && !/\b(?:stopping|stopped)\s+(?:manic|cycles|symptoms|behavior|behaviour|episodes)\b/i.test(note);
+      const decreaseText = /\b(?:decreas(?:e|ed|ing)|reduc(?:e|ed|ing)|lower(?:ed|ing)?)\b/i.test(note + ' ' + item.dose);
+      const increaseText = /\b(?:increas(?:e|ed|ing)|rais(?:e|ed|ing))\b/i.test(note + ' ' + item.dose);
+      const kind = isFollowUp ? 'follow-up'
+        : (item.stopped || stopText) ? 'stopped'
+        : (item.doseChanged || decreaseText || increaseText) ? 'dose'
+        : item.started ? 'started' : 'observation';
+      // Multiple check-ins may describe the same stop or start. Include the
+      // event only once, and retain separate dated observations as follow-ups.
+      const actionKey = kind === 'stopped' || kind === 'started' ? kind : kind === 'dose'
+        ? 'dose:' + item.dose.toLowerCase().replace(/\s+/g, ' ') : '';
+      const duplicateAction = actionKey && seenActions.has(actionKey);
+      if (actionKey) seenActions.add(actionKey);
+      const label = kind === 'stopped' && !duplicateAction ? 'discontinued'
+        : kind === 'started' && !duplicateAction ? 'started'
+        : kind === 'dose' && !duplicateAction ? 'dose adjustment'
+        : 'follow-up/observation';
+      const context = [
+        label !== 'follow-up/observation' && item.dose ? item.dose : '',
+        item.time && (label !== 'follow-up/observation' || name === 'Unspecified medication') ? 'at ' + item.time : '',
+        note && !isGoldStarRepeat(item.date, note) ? '“' + note + '”' : '',
+      ].filter(Boolean).join(' — ');
+      const entry = short(item.date) + ': ' + label + (context ? ' — ' + context : '');
+      if (!used.has(entry)) { used.add(entry); lines.push(entry); }
+    }
+    if (lines.length) medicationTimeline.push(name + ': ' + lines.join('; ') + '.');
+  }
   const med = [];
   if (prnDays.length) {
     med.push('Caregivers documented that PRN medications were administered on ' + prnDays.length + ' different ' + (prnDays.length === 1 ? 'day' : 'days') + ': ' + dates(prnDays) + '. Multiple administrations on the same date are counted as one calendar day.');
@@ -436,13 +480,7 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
       for (const [label, daySet] of reasonGroups) med.push(label + ': ' + dates([...daySet]) + '.');
     }
   } else if (a.metrics.prn.dates.length) med.push('Caregivers reported PRN use on ' + dates(a.metrics.prn.dates) + '; individual administration details were not available for these dates.');
-  for (const update of medicationUpdates.filter(item => item.details.length)) {
-    med.push('On ' + short(update.date) + ', a caregiver documented ' +
-      (update.changeFlag ? 'a medication change' : 'a medication update') +
-      ': ' + update.details.join('; ') + '.');
-  }
-  const changesWithoutDetails = medicationUpdates.filter(item => item.changeFlag && !item.details.length).map(item => item.date);
-  if (changesWithoutDetails.length) med.push('Medication changes without additional details were noted on ' + dates(changesWithoutDetails) + '.');
+  med.push(...medicationTimeline);
   add('Medication and PRN Observations', med);
 
   sections.push('We hope this summary provides a useful picture of daily experiences, challenges, activities, and successes during this period. Thank you for taking the time to review these caregiver observations.');

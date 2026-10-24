@@ -108,6 +108,9 @@
     .action-card svg {
       color: #5F5E5A;
     }
+    .action-card .action-description{font-size:13px;line-height:1.35;font-weight:500;letter-spacing:0;color:#5f5e5a;display:block;margin-top:-16px}
+    .action-card:has(.action-description){gap:18px}
+    @media(max-width:390px){.action-card{padding:18px 14px;font-size:22px}.action-card .action-description{font-size:12px}}
     .action-card.active {
       background: #FAEEDA;
       border: 1px solid #FAC775;
@@ -286,6 +289,15 @@
             <path d="M8 8h8M8 12h8M8 16h5"></path>
           </svg>
           <span>Saved Drafts</span>
+        </a>
+
+        <a class="action-card" href="team-updates.html" aria-label="Team Updates: medications, learning goals and other important changes">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M8 4h11v17H5V7z"></path>
+            <path d="M8 4v3H5M9 12h6M12 9v6M9 18h7"></path>
+          </svg>
+          <span>Team Updates</span>
+          <small class="action-description">Medications, learning goals &amp; important changes</small>
         </a>
       </div>
 

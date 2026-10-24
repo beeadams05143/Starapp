@@ -167,8 +167,32 @@ function formatPrimitive(value, key = '') {
   return text;
 }
 
+function formatPrnAdministrations(entries) {
+  return entries.map((entry, index) => {
+    if (!entry || typeof entry !== 'object') return `PRN ${index + 1}: ${formatPrimitive(entry)}`;
+    const medication = entry.medication || entry.prn_name || entry.name || '';
+    const time = formatClockTime(entry.time || entry.prn_time) || String(entry.time || entry.prn_time || '').trim();
+    const reason = entry.reason || entry.prn_reason || '';
+    const notes = entry.notes || entry.note || '';
+    const heading = [`PRN ${index + 1}`, medication, time].filter(Boolean).join(' — ');
+    const extra = Object.entries(entry)
+      .filter(([key, val]) => !isEmpty(val) &&
+        !/^(?:id|uuid|(?:client|local|temp)_id|created_at|updated_at|_saved_at)$/i.test(key) &&
+        !['medication','prn_name','name','time','prn_time','reason','prn_reason','notes','note'].includes(key))
+      .map(([key, val]) => `${humanize(key)}: ${formatValue(val, key)}`);
+    return [heading, reason ? `Reason: ${reason}` : '', notes ? `Notes: ${notes}` : '', ...extra].filter(Boolean).join('\n');
+  }).join('\n\n');
+}
+
 function formatValue(value, key = '') {
   if (isEmpty(value)) return '—';
+  if (key === 'prn_entries') {
+    let entries = value;
+    if (typeof entries === 'string') {
+      try { entries = JSON.parse(entries); } catch { return entries; }
+    }
+    if (Array.isArray(entries)) return formatPrnAdministrations(entries);
+  }
   if (typeof value === 'string' && /^\s*[\[{]/.test(value)) {
     try { return formatValue(JSON.parse(value), key); } catch { /* use plain text */ }
   }

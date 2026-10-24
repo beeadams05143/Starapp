@@ -488,13 +488,52 @@ export async function createGroupForUser(userId, groupName) {
   return group;
 }
 
+// Families created before invite_code was introduced still have a join_code.
+// Accept either field so existing family groups never need to be recreated.
 export async function joinGroupForUser(userId, joinCode) {
-  const code = (joinCode || '').trim().toUpperCase();
-  if (!code) throw new Error('Enter an invite code.');
-  const rows = await rest(`groups?invite_code=eq.${encodeURIComponent(code)}&select=id,name,invite_code&limit=1`);
-  const group = rows?.[0] || null;
-  if (!group?.id) throw new Error('Invalid invite code.');
-  await insertMembership(userId, group.id, 'member');
+  const suppliedCode = String(joinCode || '').trim();
+  if (!userId) throw new Error('Please sign in before joining a group.');
+  if (!suppliedCode) throw new Error('Enter an invite code.');
+
+  const newerCode = suppliedCode.toUpperCase();
+  const legacyCode = suppliedCode.toLowerCase();
+  const newerMatches = await rest(
+    `groups?invite_code=eq.${encodeURIComponent(newerCode)}&select=id,name,invite_code,join_code&limit=1`
+  );
+  let group = newerMatches?.[0] || null;
+  if (!group) {
+    const legacyMatches = await rest(
+      `groups?join_code=eq.${encodeURIComponent(legacyCode)}&select=id,name,invite_code,join_code&limit=1`
+    );
+    group = legacyMatches?.[0] || null;
+  }
+
+  if (group?.id) {
+    await insertMembership(userId, group.id, 'member');
+  } else {
+    // Older deployments may allow joining via the security-definer RPC
+    // even when RLS prevents looking up the group before membership.
+    let result;
+    try {
+      result = await rest('rpc/join_group', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_code: suppliedCode }),
+      });
+    } catch (error) {
+      if (error?.status === 400 && /invalid.*code|not found/i.test(error?.message || '')) {
+        throw new Error('Invalid invite code.');
+      }
+      throw error;
+    }
+    const joinedId = Array.isArray(result) ? result[0]?.group_id : result?.group_id;
+    if (!joinedId) throw new Error('Invalid invite code.');
+    const joinedGroups = await rest(
+      `groups?id=eq.${encodeURIComponent(joinedId)}&select=id,name,invite_code,join_code&limit=1`
+    );
+    group = joinedGroups?.[0] || { id: joinedId, name: '' };
+  }
+
   cacheActiveGroup(group.id, group.name || '');
   return group;
 }

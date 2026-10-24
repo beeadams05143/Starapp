@@ -57,7 +57,8 @@ function setFormVisible(on) {
 function resetForm() {
   state.editing = null;
   $('teamUpdateForm').reset();
-  $('updateEffective').value = new Date().toLocaleDateString('en-CA');
+  const today = new Date();
+  $('updateEffective').value = [today.getFullYear(), String(today.getMonth()+1).padStart(2,'0'), String(today.getDate()).padStart(2,'0')].join('-');
   $('updateCategory').value = 'medication';
   $('updateStatus').value = 'active';
   $('updateClosedOn').value = '';

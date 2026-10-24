@@ -33,6 +33,7 @@ const LABELS = {
   sleep_onset_difficulty: 'Difficulty falling asleep?', night_wake_flag: 'Woke during the night?',
   night_waking: 'Night waking?', night_wake_count: 'Number of night wakings',
   prn_used_for_sleep_disturbance: 'PRN used for sleep disturbance', prn_name: 'PRN medication', prn_time: 'PRN time',
+  prn_entries: 'PRN administrations', prn_count: 'Number of PRN administrations', prn_used_today: 'PRN medication used?',
   appetite_change_flag: 'Appetite changed?', appetite_change_direction: 'Appetite change direction',
   med_change_flag: 'Medication change?', movement_present: 'Unusual movement present?',
   temp_present: 'Temperature / illness concern?', menstrual_present: 'Menstrual cycle present?', physical_notes: 'Physical health notes',
@@ -233,8 +234,33 @@ function formatPrimitive(value, key = '') {
   return text;
 }
 
+function formatPrnAdministrations(entries) {
+  return entries.map((entry, index) => {
+    if (!entry || typeof entry !== 'object') return `PRN ${index + 1}: ${formatPrimitive(entry)}`;
+    const medication = entry.medication || entry.prn_name || entry.name || '';
+    const time = formatClockTime(entry.time || entry.prn_time) || String(entry.time || entry.prn_time || '').trim();
+    const reason = entry.reason || entry.prn_reason || '';
+    const notes = entry.notes || entry.note || '';
+    const heading = [`PRN ${index + 1}`, medication, time].filter(Boolean).join(' — ');
+    const clinicalExtras = Object.entries(entry)
+      .filter(([key, val]) => !isEmpty(val) &&
+        !/^(?:id|uuid|(?:client|local|temp)_id|created_at|updated_at|_saved_at)$/i.test(key) &&
+        !['medication','prn_name','name','time','prn_time','reason','prn_reason','notes','note'].includes(key))
+      .map(([key, val]) => `${humanize(key)}: ${formatValue(val, 1, key)}`);
+    return [heading, reason ? `Reason: ${reason}` : '', notes ? `Notes: ${notes}` : '', ...clinicalExtras]
+      .filter(Boolean).join('\n');
+  }).join('\n\n');
+}
+
 function formatValue(value, depth = 0, key = '') {
   if (isEmpty(value)) return 'Not answered';
+  if (key === 'prn_entries') {
+    let entries = value;
+    if (typeof entries === 'string') {
+      try { entries = JSON.parse(entries); } catch (_) { return entries; }
+    }
+    if (Array.isArray(entries)) return formatPrnAdministrations(entries);
+  }
   if (typeof value === 'string' && /^\s*[\[{]/.test(value)) {
     try { return formatValue(JSON.parse(value), depth, key); } catch (_) { /* plain text */ }
   }

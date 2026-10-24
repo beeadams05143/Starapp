@@ -1,4 +1,4 @@
-import { openCompactCaregiverCheckinPrintWindow } from './caregiver-checkin-print.js?v=2026.09.02A';
+import { openCompactCaregiverCheckinPrintWindow } from './caregiver-checkin-print.js?v=2026.10.24A';
 import { rest } from './restClient.js?v=2026.07.03A';
 
 const NOTE_KEYS = new Set([

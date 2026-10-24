@@ -106,6 +106,7 @@
 
   <div class="card">
     <h3>Invite people</h3>
+    <div id="activeGroupName" class="status" role="status" aria-live="polite">Checking your active group…</div>
     <div class="row">
       <label class="mono">Invite code:</label>
       <input id="inviteCode" type="text" readonly value="loading..."/>
@@ -139,10 +140,13 @@
       buildInviteMessage,
       deriveInviterContact,
       resolveInviteCodeValue,
-    } from './onboarding-flow.js?v=2026.03.16B';
+      joinGroupForUser,
+      saveProfileDefaultGroup,
+    } from './onboarding-flow.js?v=2026.10.24G';
 
     const GROUP_KEY = 'currentGroupId';
     const inviteCodeEl = document.getElementById('inviteCode');
+    const activeGroupNameEl = document.getElementById('activeGroupName');
     const copyMessageBtn = document.getElementById('copyMessageBtn');
     const copyBtn      = document.getElementById('copyBtn');
     const joinCodeEl   = document.getElementById('joinCode');
@@ -175,20 +179,26 @@
     }
 
     async function loadInviteCode(){
-      const gid = getActiveGroupId() || await syncActiveGroupId();
+      // Resolve membership for the signed-in account; never trust another account's cached group.
+      const gid = await syncActiveGroupId();
       if (!gid) {
         currentInviteGroup = null;
         inviteCodeEl.value = 'no active group';
+        activeGroupNameEl.textContent = 'No active group selected.';
         return;
       }
       try {
         const rows = await rest(`groups?id=eq.${encodeURIComponent(gid)}&select=id,name,invite_code,join_code`);
         currentInviteGroup = rows?.[0] || null;
         inviteCodeEl.value = resolveInviteCodeValue(currentInviteGroup) || '(none)';
+        activeGroupNameEl.textContent = currentInviteGroup?.name
+          ? `Current group: ${currentInviteGroup.name}`
+          : 'Could not identify the current group.';
       } catch (error){
         console.error(error);
         currentInviteGroup = null;
         inviteCodeEl.value='(error)';
+        activeGroupNameEl.textContent = 'Could not load group details.';
       }
     }
 
@@ -252,23 +262,25 @@
     joinBtn.addEventListener('click', async () => {
       const code = (joinCodeEl.value || '').trim();
       if (!code) return alert('Enter a code.');
-      await requireSession();
+      const session = await requireSession();
+      joinBtn.disabled = true;
+      setInviteStatus('');
       try {
-        const rows = await rest('rpc/join_group', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ p_code: code }),
-        });
-        const newGroupId = rows?.[0]?.group_id;
-        if (newGroupId) {
-          localStorage.setItem(GROUP_KEY, newGroupId);
-          window.loadGroupsIntoSwitcher?.();   // refresh navbar switcher if present
-          alert('Joined group!');
-          await loadInviteCode();
-        }
+        const joinedGroup = await joinGroupForUser(session.user.id, code);
+        // Set the default group as well as the membership so the dashboard
+        // won't silently switch this caregiver back to the previous family.
+        await saveProfileDefaultGroup(session.user.id, joinedGroup.id);
+        window.loadGroupsIntoSwitcher?.();
+        await loadInviteCode();
+        joinCodeEl.value = '';
+        const joinedName = joinedGroup.name || 'the selected family';
+        setInviteStatus(`Joined ${joinedName}! This is now your active group.`);
+        alert(`Joined ${joinedName}!`);
       } catch (error) {
         console.error(error);
-        alert(error?.message || 'Join failed');
+        setInviteStatus(error?.message || 'Join failed', true);
+      } finally {
+        joinBtn.disabled = false;
       }
     });
 

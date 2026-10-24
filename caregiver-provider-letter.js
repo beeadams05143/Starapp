@@ -608,7 +608,10 @@ export function renderProviderLetter(a, { includeQuotes = true, teamUpdates = []
     }
     if (lines.length) medicationTimeline.push(name + ': ' + lines.join('; ') + '.');
   }
-  const teamEntries = teamUpdateSectionsForLetter(teamUpdates, a.start, a.end);
+  const teamEntries = teamUpdateSectionsForLetter((teamUpdates || []).filter(item =>
+    String(item.group_id || '') === String(a.groupId) &&
+    String(item.individual_id || '') === String(a.individualId || '')
+  ), a.start, a.end);
   if (teamEntries.learning.length) {
     add('Learning & Skill Development', teamEntries.learning);
   }

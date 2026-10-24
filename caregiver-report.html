@@ -1736,7 +1736,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         'Mood, Engagement, and Behavior', 'Vocational Participation',
         'Community and Family Participation', 'Education & Skill Development',
         'Notable Observations and Experiences', 'Strengths and Positive Experiences',
-        'Medication Changes', 'Medication and PRN Observations', 'Record coverage'
+        'Medication Changes', 'Medication and PRN Observations',
+        'Learning & Skill Development', 'Other Important Team Updates', 'Record coverage'
       ]);
       const originalText = new WeakMap();
       function parse(text) {
@@ -1778,7 +1779,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         if (title === 'Behavior & Safety Incidents') return 'safety';
         if (/^(Sleep and Energy|Physical Health and Well-Being|Medication Changes|Medication and PRN Observations)$/.test(title)) return 'health';
         if (title === 'Notable Observations and Experiences') return 'gold';
-        if (title === 'Education & Skill Development') return 'learning';
+        if (title === 'Education & Skill Development' || title === 'Learning & Skill Development') return 'learning';
         if (title === 'Record coverage') return 'coverage';
         return 'standard';
       }
@@ -1862,7 +1863,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     import { openCompactCaregiverCheckinPrintWindow } from './caregiver-checkin-print.js?v=2026.10.24A';
     import { CALENDAR_QUICK_LOOK_ITEMS, filterCaregiverCheckinsForPrint, normalizeCaregiverCheckinForCalendar, normalizeCaregiverCheckinRecord } from './caregiver-report-shared.js?v=2026.10.20C';
     import { renderPrintableCaregiverReport } from './caregiver-report-print.js?v=2026.07.01B';
-    import { analyzeProviderRecords, renderProviderLetter, individualKey, groupKey } from './caregiver-provider-letter.js?v=2026.10.24B';
+    import { analyzeProviderRecords, renderProviderLetter, individualKey, groupKey } from './caregiver-provider-letter.js?v=2026.10.24C';
     import { buildWeeklyPromptSeries, defaultGraphRange, filterRecordsByRange, formatGraphRange, rangeFromInputs } from './caregiver-report-graphs.js?v=2026.09.04A';
 
     /* =============== Optional live data =============== */
@@ -7211,7 +7212,24 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       };
     }
 
-    function renderParentLetterFromInputs({ scroll = false } = {}) {
+    let letterRequestSequence = 0;
+    async function fetchTeamUpdatesForLetter(groupId, individualId, endDate) {
+      const selected = [];
+      for (let offset = 0; offset <= 10000; offset += 1000) {
+        const path = 'star_team_updates?select=id,individual_id,category,title,details,source_note,effective_date,status,closed_on' +
+          '&group_id=eq.' + encodeURIComponent(groupId) +
+          '&individual_id=eq.' + encodeURIComponent(individualId) +
+          '&effective_date=lte.' + encodeURIComponent(endDate) +
+          '&order=effective_date.asc,id.asc&limit=1000&offset=' + offset;
+        const rows = await rest(path);
+        if (!Array.isArray(rows)) throw new Error('Could not confirm Team Updates records for this letter.');
+        selected.push(...rows);
+        if (rows.length < 1000) return selected;
+      }
+      throw new Error('Too many Team Updates to include safely. Contact the administrator before generating the letter.');
+    }
+    async function renderParentLetterFromInputs({ scroll = false } = {}) {
+      const requestSequence = ++letterRequestSequence;
       const range = buildParentLetterRangeFromInputs();
       const rangeEl = document.getElementById('parentLetterRange');
       const bodyEl = document.getElementById('parentLetterBody');
@@ -7224,6 +7242,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         return false;
       }
       try {
+        bodyEl.replaceChildren();
+        document.getElementById('parentLetterCopy').disabled = true;
         if (!cgState.providerReady) throw new Error('Check-ins could not be fully loaded. Reload the report before generating a letter.');
         const groupId = reportConfigState.groupId;
         if (String(groupId) !== localStorage.getItem('currentGroupId')) throw new Error('The active group changed. Reload the report before generating a letter.');
@@ -7244,7 +7264,18 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
           start: range.startInput, end: range.endInput, groupId, individualId: selector.value,
         });
         rangeEl.textContent = `Range: ${range.label}`;
-        const letterText = renderProviderLetter(analysis, { includeQuotes: document.getElementById('providerIncludeQuotes').checked });
+        rangeEl.textContent = 'Loading Team Updates for the chosen date range…';
+        const teamUpdates = await fetchTeamUpdatesForLetter(groupId, selector.value, range.endInput);
+        if (requestSequence !== letterRequestSequence ||
+            String(groupId) !== localStorage.getItem('currentGroupId') ||
+            selector.value !== analysis.individualId) {
+          throw new Error('The selected group or individual changed. Generate the letter again.');
+        }
+        const letterText = renderProviderLetter(analysis, {
+          includeQuotes: document.getElementById('providerIncludeQuotes').checked,
+          teamUpdates
+        });
+        rangeEl.textContent = `Range: ${range.label}`;
         window.starProviderLetterLayout.render(bodyEl, letterText);
         document.getElementById('parentLetterCopy').disabled = false;
         bodyEl.dataset.groupId = String(groupId);

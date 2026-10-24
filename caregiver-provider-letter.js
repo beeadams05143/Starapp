@@ -193,7 +193,32 @@ export function analyzeProviderRecords(entries, { start, end, groupId, individua
 
 const LABELS = { sleep: 'Sleep difficulty', engagement: 'Reduced engagement', withdrawal: 'Marked withdrawal', pacing: 'Pacing', irritability: 'Irritability', attention: 'Attention difficulty', appetite: 'Appetite change', behavior: 'Other behavior observations' };
 const evidenceSentence = (label, metric) => `${label} was reported on ${metric.positive} of ${metric.answered} dates with an interpretable answer${metric.mixed ? `; ${metric.mixed} additional dates had conflicting answers` : ''}.`;
-export function renderProviderLetter(a, { includeQuotes = true } = {}) {
+// Admin-authored Team Updates stay separate from shift check-ins. Summarize
+// without omitting any saved item relevant to the chosen reporting period.
+export function teamUpdateSectionsForLetter(updates = [], start = '', end = '') {
+  const sections = { medication: [], learning: [], other: [] };
+  const order = [...(updates || [])].filter(item => item && sections[item.category] &&
+    /^\\d{4}-\\d{2}-\\d{2}$/.test(item.effective_date || '') &&
+    item.effective_date <= end &&
+    (item.category === 'learning'
+      ? (!item.closed_on || item.closed_on >= start)
+      : item.effective_date >= start)
+  ).sort((a,b) => (a.effective_date || '').localeCompare(b.effective_date || '') ||
+    String(a.id || '').localeCompare(String(b.id || '')));
+  for (const item of order) {
+    const heading = (item.category === 'learning' && item.effective_date < start
+      ? 'Ongoing since ' : 'Effective ') + dateLabel(item.effective_date) + ' — ' + String(item.title || '').trim();
+    const lines = [
+      heading,
+      String(item.details || '').trim(),
+      item.source_note ? 'Source / context: ' + String(item.source_note).trim() : '',
+      item.status === 'closed' && item.closed_on ? 'Closed effective ' + dateLabel(item.closed_on) : ''
+    ].filter(Boolean);
+    sections[item.category].push(lines.join('\\n'));
+  }
+  return sections;
+}
+export function renderProviderLetter(a, { includeQuotes = true, teamUpdates = [] } = {}) {
   const short = key => {
     const [year, month, day] = key.split('-').map(Number);
     return new Date(Date.UTC(year, month - 1, day)).toLocaleDateString('en-US', { month: 'long', day: 'numeric', timeZone: 'UTC' });
@@ -583,6 +608,14 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
     }
     if (lines.length) medicationTimeline.push(name + ': ' + lines.join('; ') + '.');
   }
+  const teamEntries = teamUpdateSectionsForLetter(teamUpdates, a.start, a.end);
+  if (teamEntries.learning.length) {
+    add('Learning & Skill Development', teamEntries.learning);
+  }
+  if (teamEntries.other.length) {
+    add('Other Important Team Updates', teamEntries.other);
+  }
+
   const med = [];
   if (prnDays.length) {
     med.push('Caregivers documented that PRN medications were administered on ' + prnDays.length + ' different ' + (prnDays.length === 1 ? 'day' : 'days') + ': ' + dates(prnDays) + '. Multiple administrations on the same date are counted as one calendar day.');
@@ -639,10 +672,11 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
   // Medication changes have their own prominent section, not a trailing line
   // after a potentially long PRN administration log.
   add('Medication and PRN Observations', med);
-  if (medicationTimeline.length) {
+  const medicationSectionItems = [...medicationTimeline, ...teamEntries.medication];
+  if (medicationSectionItems.length) {
     const intro = sections.findIndex(section => section.startsWith('We would like to share observations'));
     sections.splice(intro >= 0 ? intro + 1 : 2, 0,
-      'Medication Changes\n' + medicationTimeline.join('\n\n'));
+      'Medication Changes\\n' + medicationSectionItems.join('\\n\\n'));
   }
 
   sections.push('We hope this summary provides a useful picture of daily experiences, challenges, activities, and successes during this period. Thank you for taking the time to review these caregiver observations.');

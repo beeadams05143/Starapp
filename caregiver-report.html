@@ -1737,7 +1737,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         'Community and Family Participation', 'Education & Skill Development',
         'Notable Observations and Experiences', 'Strengths and Positive Experiences',
         'Medication Changes', 'Medication and PRN Observations',
-        'Learning & Skill Development', 'Other Important Team Updates', 'Record coverage'
+        'Learning & Skill Development', 'Other Important Team Updates', 'Team Updates availability', 'Record coverage'
       ]);
       const originalText = new WeakMap();
       function parse(text) {
@@ -7265,17 +7265,29 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         });
         rangeEl.textContent = `Range: ${range.label}`;
         rangeEl.textContent = 'Loading Team Updates for the chosen date range…';
-        const teamUpdates = await fetchTeamUpdatesForLetter(groupId, selector.value, range.endInput);
+        let teamUpdates = [];
+        let teamSetupPending = false;
+        try {
+          teamUpdates = await fetchTeamUpdatesForLetter(groupId, selector.value, range.endInput);
+        } catch (error) {
+          const missingTable = error?.status === 404 &&
+            /star_team_updates|schema cache|relation/i.test(error?.message || '');
+          if (!missingTable) throw error; // never silently omit records on a transient failure
+          teamSetupPending = true;
+        }
         if (requestSequence !== letterRequestSequence ||
             String(groupId) !== localStorage.getItem('currentGroupId') ||
             selector.value !== analysis.individualId) {
           throw new Error('The selected group or individual changed. Generate the letter again.');
         }
-        const letterText = renderProviderLetter(analysis, {
+        const originalLetter = renderProviderLetter(analysis, {
           includeQuotes: document.getElementById('providerIncludeQuotes').checked,
           teamUpdates
         });
-        rangeEl.textContent = `Range: ${range.label}`;
+        const letterText = teamSetupPending
+          ? originalLetter + '\\n\\nTeam Updates availability\\nThe Team Updates database setup has not been completed, so administrator-entered Team Updates could not be included in this letter.'
+          : originalLetter;
+        rangeEl.textContent = `Range: ${range.label}` + (teamSetupPending ? ' · Team Updates setup pending' : '');
         window.starProviderLetterLayout.render(bodyEl, letterText);
         document.getElementById('parentLetterCopy').disabled = false;
         bodyEl.dataset.groupId = String(groupId);

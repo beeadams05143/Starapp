@@ -7216,7 +7216,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     async function fetchTeamUpdatesForLetter(groupId, individualId, endDate) {
       const selected = [];
       for (let offset = 0; offset <= 10000; offset += 1000) {
-        const path = 'star_team_updates?select=id,individual_id,category,title,details,source_note,effective_date,status,closed_on' +
+        const path = 'star_team_updates?select=id,group_id,individual_id,category,title,details,source_note,effective_date,status,closed_on' +
           '&group_id=eq.' + encodeURIComponent(groupId) +
           '&individual_id=eq.' + encodeURIComponent(individualId) +
           '&effective_date=lte.' + encodeURIComponent(endDate) +

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Team Updates | STAR</title>
+  <link rel="stylesheet" href="./style.css?v=2026.03.29A">
+  <style>
+    :root{--ink:#25334b;--muted:#606a79;--gold:#996715;--paper:#f6f3ed;--line:#ded9ce}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--paper);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+    main{max-width:860px;margin:0 auto;padding:116px 16px 110px}
+    .page-header{background:#fff;border:1px solid var(--line);border-radius:18px;padding:24px;margin-bottom:16px}
+    .eyebrow{color:#82511d;letter-spacing:.08em;font-weight:750;font-size:12px;text-transform:uppercase}
+    h1{font-family:Georgia,serif;margin:9px 0;font-size:32px;line-height:1.14}
+    h2{font-family:Georgia,serif;font-size:22px;margin:0}
+    h3{margin:0;font-size:17px}
+    p{line-height:1.5}
+    .muted,small{color:var(--muted)}
+    .permission{background:#f1eee7;border-radius:9px;padding:12px;font-weight:650}
+    .toolbar{display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap;margin-top:20px}
+    .toolbar label{display:grid;gap:4px;font-size:13px;font-weight:650}
+    input,select,textarea{font:inherit;color:inherit;border:1px solid #c9cbd0;background:#fff;border-radius:9px;padding:11px 12px;width:100%;min-height:44px}
+    textarea{min-height:120px;resize:vertical;line-height:1.5}
+    label{display:grid;gap:6px;font-weight:650}
+    button,.button-link{font:inherit;font-weight:750;color:#fff;background:#315848;border:0;border-radius:10px;padding:12px 16px;min-height:44px;cursor:pointer}
+    button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid #b8954a;outline-offset:2px}
+    button[hidden],section[hidden],div[hidden]{display:none!important}
+    button.secondary{color:#314357;background:#e9e9e5}
+    button:disabled{opacity:.55;cursor:default}
+    .panel{border:1px solid var(--line);background:#fff;border-radius:17px;padding:21px;margin-bottom:16px}
+    .update-entry{background:#faf9f6;border:1px solid #e4ded3;border-radius:12px;padding:15px;margin-top:12px}
+    .entry-head{display:flex;justify-content:space-between;align-items:start;gap:10px}
+    .entry-head h3{margin-bottom:5px}
+    .entry-head small{font-weight:600}
+    .entry-head button{background:#ede8de;color:#394c5b;font-size:13px;padding:7px 12px;min-height:36px}
+    .update-details{white-space:pre-line;overflow-wrap:anywhere;margin:11px 0}
+    .update-meta{font-size:13px;color:#556173}
+    .panel[data-kind="medication"]{border-top:4px solid #337e86}
+    .panel[data-kind="learning"]{border-top:4px solid #4f8362}
+    .panel[data-kind="other"]{border-top:4px solid #b48a36}
+    .editor{border:2px solid #bb9a61}
+    .fields{display:grid;gap:14px;margin:16px 0}
+    .two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    .status{min-height:24px;margin:12px 0;color:#306747;font-weight:600}
+    .status.is-error{color:#b03030}
+    .hint{font-size:13px;color:#626e7f}
+    .back{display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:#2b514b;font-weight:700;margin-bottom:12px}
+    @media(max-width:520px){main{padding:100px 10px 105px}.page-header,.panel{padding:17px}.two{grid-template-columns:1fr}h1{font-size:28px}}
+    @media print{.back,button,.editor,.permission,#teamStatus{display:none!important}body{background:#fff}main{padding:0}.panel{break-inside:avoid}}
+  </style>
+</head>
+<body>
+  <main>
+    <a class="back" href="./dashboard.html">← Back to Dashboard</a>
+    <header class="page-header">
+      <div class="eyebrow">STAR · Important information</div>
+      <h1>Team Updates</h1>
+      <p>Medication changes, individualized learning goals, and other important updates. Everyone on the authorized team can read these records. Only group administrators can change them.</p>
+      <p class="muted" id="teamGroupName"></p>
+      <p class="permission" id="teamPermission">Checking your group permissions…</p>
+      <div class="toolbar">
+        <label id="individualPickerWrap" hidden>Individual
+          <select id="teamIndividual" aria-label="Choose individual"></select>
+        </label>
+        <button type="button" id="newUpdateButton" hidden>+ Add Team Update</button>
+      </div>
+      <p id="teamStatus" class="status" role="status" aria-live="polite">Loading Team Updates…</p>
+    </header>
+    <section class="panel editor" id="updateFormCard" hidden aria-labelledby="updateFormTitle">
+      <h2 id="updateFormTitle">New Team Update</h2>
+      <p class="hint">Effective dates identify when a plan changed. A plan is not a record of actual medication administration. Record actual PRN use in the caregiver check-in.</p>
+      <form id="teamUpdateForm">
+        <div class="fields">
+          <div class="two">
+            <label>Type of update
+              <select id="updateCategory" required>
+                <option value="medication">Medication & Regimen Change</option>
+                <option value="learning">Learning & Skill Development</option>
+                <option value="other">Other Important Update</option>
+              </select>
+            </label>
+            <label>Effective date
+              <input id="updateEffective" type="date" required>
+            </label>
+          </div>
+          <label id="updateIndividualWrap" hidden>Individual
+            <select id="updateIndividual" disabled aria-label="Individual this update belongs to"></select>
+          </label>
+          <label>Title
+            <input id="updateTitle" maxlength="160" required placeholder="e.g., Updated evening medication routine">
+          </label>
+          <label><span id="updateDetailsLabel">What changed? Include medications, doses, planned times, and scheduled vs PRN instructions</span>
+            <textarea id="updateDetails" maxlength="5000" required></textarea>
+          </label>
+          <label>Source / context (optional)
+            <textarea id="updateSource" maxlength="500" rows="2" placeholder="e.g., Discussed with prescribing clinician on [date]. Only record confirmed information."></textarea>
+          </label>
+          <div class="two">
+            <label>Status
+              <select id="updateStatus">
+                <option value="active">Active</option>
+                <option value="closed">Closed / replaced</option>
+              </select>
+            </label>
+            <label id="closedOnWrap" hidden>Closed effective
+              <input id="updateClosedOn" type="date">
+            </label>
+          </div>
+        </div>
+        <div class="actions">
+          <button type="submit" id="saveUpdate">Save update</button>
+          <button type="button" id="cancelUpdate" class="secondary">Cancel</button>
+        </div>
+      </form>
+    </section>
+    <section class="panel" data-kind="medication" aria-labelledby="medHeading">
+      <h2 id="medHeading">Medication & Regimen Changes</h2>
+      <p class="muted">Starts, stops, dose adjustments, and updated schedules. Plans are not proof that a dose was given.</p>
+      <div id="updates-medication"></div>
+    </section>
+    <section class="panel" data-kind="learning" aria-labelledby="learningHeading">
+      <h2 id="learningHeading">Learning & Skill Development</h2>
+      <p class="muted">Goals are set for this individual by the administrator; STAR does not load generic skills.</p>
+      <div id="updates-learning"></div>
+    </section>
+    <section class="panel" data-kind="other" aria-labelledby="otherHeading">
+      <h2 id="otherHeading">Other Important Updates</h2>
+      <p class="muted">Routines, support strategies, and important team information.</p>
+      <div id="updates-other"></div>
+    </section>
+    <p class="hint">Team Updates are included in monthly caregiver letters based on their effective dates. Active learning goals are included while they remain current. Changing a record preserves revision history.</p>
+  </main>
+  <script type="module" src="./team-updates.js?v=2026.10.24A"></script>
+  <script defer src="./ui-shell.js?v=2026.10.20A"></script>
+  <script defer src="./scripts/appbar-drawer.js?v=2026.03.29A"></script>
+</body>
+</html>

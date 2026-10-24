@@ -7285,7 +7285,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
           teamUpdates
         });
         const letterText = teamSetupPending
-          ? originalLetter + '\\n\\nTeam Updates availability\\nThe Team Updates database setup has not been completed, so administrator-entered Team Updates could not be included in this letter.'
+          ? originalLetter + '\n\nTeam Updates availability\nThe Team Updates database setup has not been completed, so administrator-entered Team Updates could not be included in this letter.'
           : originalLetter;
         rangeEl.textContent = `Range: ${range.label}` + (teamSetupPending ? ' · Team Updates setup pending' : '');
         window.starProviderLetterLayout.render(bodyEl, letterText);

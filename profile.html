@@ -85,6 +85,24 @@
       color: #6f7b93;
       font-style: italic;
     }
+    .avatar-file-input {
+      display: block;
+      max-width: min(100%, 360px);
+      font: inherit;
+      font-size: 14px;
+      color: var(--text);
+      margin: 8px 0;
+    }
+    .avatar-file-input::file-selector-button {
+      border: 1px solid var(--color-border-secondary);
+      border-radius: 10px;
+      padding: 9px 12px;
+      margin-right: 10px;
+      background: var(--color-background-secondary);
+      color: var(--text);
+      cursor: pointer;
+      font: inherit;
+    }
     .form {
       margin: 12px 0 18px;
       display: grid;
@@ -296,13 +314,13 @@
   </div>
 
   <div class="avatar-block">
-    <img id="avatarPreview" src="IMG/default-avatar.png" alt="Your avatar" class="avatar-big">
+    <img id="avatarPreview" src="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2096%2096%22%3E%3Crect%20width%3D%2296%22%20height%3D%2296%22%20rx%3D%2248%22%20fill%3D%22%23F5F2EC%22%2F%3E%3Ccircle%20cx%3D%2248%22%20cy%3D%2234%22%20r%3D%2217%22%20fill%3D%22%23D8D2C8%22%2F%3E%3Cpath%20d%3D%22M14%2090c0-23%2015-35%2034-35s34%2012%2034%2035%22%20fill%3D%22%23D8D2C8%22%2F%3E%3C%2Fsvg%3E" alt="Profile picture preview" class="avatar-big">
     <label class="avatar-edit-row" for="avatarFile" title="Choose a profile picture">
       <span class="edit-avatar-btn" aria-hidden="true">✏️</span>
       <span class="avatar-edit-label">Upload a profile pic</span>
     </label>
-    <input id="avatarFile" type="file" accept="image/*"
-      style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;" />
+    <input id="avatarFile" class="avatar-file-input" type="file" accept="image/*" aria-label="Choose a profile picture from your device" />
+    <small>Choose a picture above, then check the agreement and tap Save Profile.</small>
   </div>
 
   <div class="form">
@@ -335,7 +353,7 @@
   import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
   import { resolveActiveGroup } from './active-group.js?v=2026.03.29A';
   import { loadAndRunRouter } from './routerLoader.js?v=2026.05.07';
-  const defaultAvatar     = 'IMG/default-avatar.png';
+  const defaultAvatar     = 'data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2096%2096%22%3E%3Crect%20width%3D%2296%22%20height%3D%2296%22%20rx%3D%2248%22%20fill%3D%22%23F5F2EC%22%2F%3E%3Ccircle%20cx%3D%2248%22%20cy%3D%2234%22%20r%3D%2217%22%20fill%3D%22%23D8D2C8%22%2F%3E%3Cpath%20d%3D%22M14%2090c0-23%2015-35%2034-35s34%2012%2034%2035%22%20fill%3D%22%23D8D2C8%22%2F%3E%3C%2Fsvg%3E';
   const avatarPreview     = document.getElementById('avatarPreview');
   const avatarFile        = document.getElementById('avatarFile');
   const displayNameEl     = document.getElementById('displayName');
@@ -587,7 +605,10 @@
   avatarFile.addEventListener('change', () => {
     const file = avatarFile.files?.[0];
     if (file) {
-      avatarPreview.src = URL.createObjectURL(file);
+      const previewUrl = URL.createObjectURL(file);
+      avatarPreview.onload = () => URL.revokeObjectURL(previewUrl);
+      avatarPreview.src = previewUrl;
+      showMessage('Photo selected. Check the agreement below, then tap Save Profile.', true);
     } else if (currentAvatarUrl) {
       avatarPreview.src = currentAvatarUrl;
     } else {

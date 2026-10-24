@@ -108,11 +108,15 @@
     .action-card svg {
       color: #5F5E5A;
     }
-    .action-card[href="saved-drafts.html"] { position: relative; }
+    .draft-icon-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+    }
     .draft-count-badge {
-      position: absolute;
-      top: 12px;
-      right: 12px;
+      position: static;
+      flex: 0 0 auto;
       min-width: 28px;
       height: 28px;
       padding: 0 7px;
@@ -303,12 +307,14 @@
         </a>
 
         <a class="action-card" id="savedDraftLink" href="saved-drafts.html">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <rect x="4" y="3" width="16" height="18" rx="2"></rect>
-            <path d="M8 8h8M8 12h8M8 16h5"></path>
-          </svg>
+          <span class="draft-icon-row">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <rect x="4" y="3" width="16" height="18" rx="2"></rect>
+              <path d="M8 8h8M8 12h8M8 16h5"></path>
+            </svg>
+            <span id="savedDraftCount" class="draft-count-badge" hidden></span>
+          </span>
           <span>Saved Drafts</span>
-          <span id="savedDraftCount" class="draft-count-badge" hidden></span>
         </a>
 
         <a class="action-card" href="team-updates.html" aria-label="Team Updates: medications, learning goals and other important changes">

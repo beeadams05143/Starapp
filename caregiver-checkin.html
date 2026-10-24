@@ -2317,57 +2317,6 @@
           <details class="health-concerns" id="healthConcernsPanel">
             <summary>Health changes or concerns</summary>
             <div class="health-concerns-body">
-              <div class="med-panel" id="medChangePanel">
-                <div class="med-head">
-                  <div>
-                    <div class="med-title">Medication change</div>
-	                    <div class="med-desc">Record medication starts, stops, dose adjustments, and changes to a medication routine here. For a new bedtime plan, choose "Other / regimen or schedule change" and describe the planned steps in Notes. Record actual PRN doses separately.</div>
-                  </div>
-                </div>
-                <div class="med-yn" role="group" aria-label="Medication change today">
-                  <label class="med-pill"><input type="radio" name="med_change_flag" value="no"> No</label>
-                  <label class="med-pill"><input type="radio" name="med_change_flag" value="yes"> Yes</label>
-                </div>
-                <div class="med-body is-collapsed" data-med-body-wrap>
-                  <div>
-                    <div class="med-label">Change type</div>
-                    <div class="med-type-grid checkbox-grid" role="group" aria-label="Change type">
-                      <label class="med-type-chip checkbox-card"><input type="checkbox" name="med_change_type_new" /> New medication</label>
-                      <label class="med-type-chip checkbox-card"><input type="checkbox" name="med_change_type_dose" /> Dose change</label>
-                      <label class="med-type-chip checkbox-card"><input type="checkbox" name="med_change_type_stopped" /> Stopped medication</label>
-                      <label class="med-type-chip checkbox-card"><input type="checkbox" name="med_change_type_other" /> Other / regimen or schedule change</label>
-                    </div>
-                  </div>
-                  <div class="med-row">
-                    <label>Time / window
-                      <select name="med_change_time_window" id="med_change_time_window">
-                        <option value="">Select</option>
-                        <option>Morning</option>
-                        <option>Late morning</option>
-                        <option>Afternoon</option>
-                        <option>Evening</option>
-                        <option>Night</option>
-                        <option>Overnight</option>
-                        <option>Other</option>
-                      </select>
-                    </label>
-                    <label id="medChangeTimeOtherWrap" style="display:none">Time detail (optional)
-                      <input type="text" name="med_change_time_other" id="med_change_time_other" placeholder="e.g., 8:30am, after lunch" />
-                    </label>
-                  </div>
-                  <div class="med-row">
-                    <label>Medication name(s) (optional)
-                      <input type="text" name="med_change_name" id="med_change_name" placeholder="e.g., Zoloft, Melatonin" />
-                    </label>
-                    <label>Dose / change details (optional)
-                      <input type="text" name="med_change_dose" id="med_change_dose" placeholder="e.g., 25mg → 50mg" />
-                    </label>
-                  </div>
-                  <label>Notes (optional)
-                    <textarea name="med_change_note" id="med_change_note" placeholder="For a new medication routine: list the planned times and medications in order, and note any PRN conditions. Only state a reason if confirmed by the care team. Actual administrations belong in the PRN log."></textarea>
-                  </label>
-                </div>
-              </div>
               <div class="temp-panel" id="tempPanel">
                 <div class="temp-head">
                   <div>
@@ -4955,7 +4904,8 @@
     const painEnabled = visibility.pain;
     const symptomPanelEnabled = illnessEnabled || painEnabled;
     const menstrualEnabled = visibility.menstrual;
-    const medicationEnabled = visibility.medicationChanges;
+    // Medication plans are managed by group admins in Team Updates,
+    // never in caregiver shift check-ins. The PRN administration log stays here.
     const prnEnabled = visibility.prn;
     const movementEnabled = visibility.movement;
 
@@ -5005,10 +4955,6 @@
     setConfigHidden([
       document.getElementById('menstrualPanel'),
     ], !menstrualEnabled);
-
-    setConfigHidden([
-      document.getElementById('medChangePanel'),
-    ], !medicationEnabled);
 
     setConfigHidden([
       document.getElementById('question-had-bm'),
@@ -5380,19 +5326,7 @@
   };
 
   const hasHealthConcernData = (data = {}) => {
-    const medFlag = String(data.med_change_flag || '').toLowerCase();
     const tempFlag = String(data.temp_present || '').toLowerCase();
-    const medValues = [
-      data.med_change_type_new,
-      data.med_change_type_dose,
-      data.med_change_type_stopped,
-      data.med_change_type_other,
-      data.med_change_time_window,
-      data.med_change_time_other,
-      data.med_change_name,
-      data.med_change_dose,
-      data.med_change_note,
-    ];
     const tempValues = [
       data.temp_value,
       data.temp_method,
@@ -5402,11 +5336,8 @@
       data.temp_notes,
       data.prn_used_for_symptoms_discomfort,
     ];
-    return medFlag === 'yes'
-      || medFlag === 'no'
-      || tempFlag === 'yes'
+    return tempFlag === 'yes'
       || tempFlag === 'no'
-      || medValues.some((value) => value === true || !!trimOrNull(value))
       || tempValues.some((value) => value === true || !!trimOrNull(value))
       || parseJsonArray(data.temp_symptoms).length > 0;
   };
@@ -7022,6 +6953,29 @@
         const group_id = submissionUI.context.groupId;
         const user = getSessionFromStorage()?.user;
         const payload = buildPayload();
+        // Preserve older saved caregiver check-ins in Supabase, but prevent
+        // new submissions (including restored legacy drafts) from creating
+        // medication-plan records now owned by admin-only Team Updates.
+        const legacyMedFields = [
+          'med_change_flag', 'med_change_type_new', 'med_change_type_dose',
+          'med_change_type_stopped', 'med_change_type_other',
+          'med_change_time_window', 'med_change_time_other',
+          'med_change_name', 'med_change_dose', 'med_change_note'
+        ];
+        const legacyMedDetails = legacyMedFields.some(key =>
+          key === 'med_change_flag'
+            ? String(payload[key] || '').toLowerCase() === 'yes'
+            : payload[key] === true ||
+              (typeof payload[key] === 'string' && payload[key].trim().length > 0)
+        );
+        if (legacyMedDetails && !window.confirm(
+          'This older draft contains medication-change information. Medication plans now belong in Team Updates and will NOT be included in this check-in. Copy that information into Team Updates first. Select OK only after you have recorded it there; Cancel keeps this draft unchanged.'
+        )) {
+          submissionUI.finish({ state: 'failed', message: 'Keep this draft until its medication change is copied to Team Updates.' });
+          isSubmittingFinal = false;
+          return;
+        }
+        legacyMedFields.forEach(key => delete payload[key]);
 	        const behaviorDef = SECTION_STATUS_BY_STEP.get('behaviorSection');
 	        const behaviorTracking = isQuickClearedStatus(behaviorDef) ? [] : collectBehaviorTracking();
         const educationalTracking = collectEducationalTracking();

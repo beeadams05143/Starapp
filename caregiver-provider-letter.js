@@ -344,11 +344,14 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
     const source = String(data.safety_incident_source || '').trim();
     const reporter = String(data.safety_incident_reporter || '').trim();
     const detail = String(data.safety_incident_details || '').trim();
+    // A name may be present in an actual check-in, but a generic "Caregiver"
+    // is not an identifying name. Never invent who witnessed an incident.
+    const author = String(data.caregiver_name || row.caregiver_name || '').trim();
     const signature = [day.date, location, source, reporter, detail]
       .map(part => normalized(part)).join('|');
     if (safetyKeys.has(signature)) continue;
     safetyKeys.add(signature);
-    safetyIncidents.push({ date: day.date, location, source, reporter, detail });
+    safetyIncidents.push({ date: day.date, location, source, reporter, author, detail });
   }
   if (safetyIncidents.length) {
     const datesWithIncidents = [...new Set(safetyIncidents.map(item => item.date))];
@@ -357,16 +360,17 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
       (datesWithIncidents.length === 1 ? 'the following date: ' : 'the following dates: ') +
       dates(datesWithIncidents) + '.'
     ];
+    const usableName = name => /^(?!caregiver$|staff$|unknown$|n\/?a$|not specified$).+/i.test(String(name || '').trim());
     for (const incident of safetyIncidents) {
-      const context = [
-        incident.location ? 'Location: ' + incident.location : '',
-        incident.source === 'reported_by_other' ? 'Reported to the documenting caregiver' :
-          incident.source === 'direct_observation' ? 'Observed by the documenting caregiver' : '',
-        incident.reporter ? 'Observer/reporter: ' + incident.reporter : ''
-      ].filter(Boolean).join('; ');
-      paragraphs.push(short(incident.date) + ' — ' +
-        (incident.detail || 'Incident reported; no description was provided.') +
-        (context ? ' (' + context + ')' : ''));
+      const title = short(incident.date) + (incident.location ? ' — ' + incident.location : '');
+      const observer = usableName(incident.reporter) ? incident.reporter
+        : incident.source === 'direct_observation' && usableName(incident.author) ? incident.author : '';
+      const attribution = observer
+        ? (incident.source === 'reported_by_other' ? 'Reported by ' : 'Observed by ') + observer
+        : incident.source === 'reported_by_other' ? 'Reported by another person' : '';
+      paragraphs.push(title + '\n' +
+        (attribution ? attribution + '\n' : '') +
+        (incident.detail || 'Incident reported; no description was provided.'));
     }
     add('Behavior & Safety Incidents', paragraphs);
   }

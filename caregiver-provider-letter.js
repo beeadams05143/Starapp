@@ -280,7 +280,9 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
   const bedtimeSeen = new Set();
   for (const day of a.days) for (const { row } of day.records) {
     for (const source of originalNotes(row)) {
-      if (source.field.includes('prn_entries')) continue;
+      // A recorded medication change belongs in Medication Changes. Do not
+      // reclassify the same medication-plan note as a sleep observation.
+      if (source.field.includes('prn_entries') || source.field.endsWith('med_change_note')) continue;
       const note = String(source.text || '').trim();
       const namesMedication = /\b(?:benadryl|benedryl|diphenhydramine|magnesium)\b/i.test(note);
       const bedtimeContext = /\b(?:bedtime|sleep|night|nightly|evening|regimen|routine)\b/i.test(note);
@@ -519,6 +521,7 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
       stopped: bool(data.med_change_type_stopped) === true,
       doseChanged: bool(data.med_change_type_dose) === true,
       started: bool(data.med_change_type_new) === true,
+      other: bool(data.med_change_type_other) === true,
     };
   }).filter(Boolean));
   // Associate a follow-up note lacking the name field with an explicitly named
@@ -545,7 +548,7 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
       const kind = isFollowUp ? 'follow-up'
         : (item.stopped || stopText) ? 'stopped'
         : (item.doseChanged || decreaseText || increaseText) ? 'dose'
-        : item.started ? 'started' : 'observation';
+        : item.started ? 'started' : item.other ? 'regimen' : 'observation';
       // Multiple check-ins may describe the same stop or start. Include the
       // event only once, and retain separate dated observations as follow-ups.
       const actionKey = kind === 'stopped' || kind === 'started' ? kind : kind === 'dose'
@@ -562,6 +565,7 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
       const label = kind === 'stopped' && !duplicateAction ? 'discontinued'
         : kind === 'started' && !duplicateAction ? 'started'
         : kind === 'dose' && !duplicateAction ? 'dose adjustment'
+        : kind === 'regimen' ? 'regimen / schedule update'
         : 'follow-up/observation';
       const context = [
         label !== 'follow-up/observation' && item.dose ? item.dose : '',

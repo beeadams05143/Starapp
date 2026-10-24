@@ -569,7 +569,10 @@ export function renderProviderLetter(a, { includeQuotes = true } = {}) {
         : 'follow-up/observation';
       const context = [
         label !== 'follow-up/observation' && item.dose ? item.dose : '',
-        item.time && (label !== 'follow-up/observation' || name === 'Unspecified medication') ? 'at ' + formatCaregiverClockTime(item.time) : '',
+        item.time && (label !== 'follow-up/observation' || name === 'Unspecified medication')
+          ? (/^([01]?\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/.test(item.time)
+            ? 'at ' + formatCaregiverClockTime(item.time) : 'time/window: ' + item.time)
+          : '',
         note && !isGoldStarRepeat(item.date, note) && !bedtimeRegimenQuoted(item.date, note) ? '“' + note + '”' : '',
       ].filter(Boolean).join(' — ');
       // If the full bedtime note has already appeared in Sleep and Energy,

@@ -160,7 +160,7 @@
         <form id="joinGroupForm" novalidate>
           <label for="joinCode">Join Group</label>
           <input id="joinCode" type="text" placeholder="Enter invite code" autocapitalize="characters" />
-          <p class="muted">Use the invite code shared with you by the group admin.</p>
+          <p class="muted">Use the code your family administrator shares with you. Both 6-character invite codes and older 12-character family codes work.</p>
           <button id="joinGroupBtn" type="submit">Join Group</button>
         </form>
       </div>
@@ -190,7 +190,7 @@
       createGroupForUser,
       joinGroupForUser,
       resolveInviteCodeValue,
-    } from './onboarding-flow.js?v=2026.03.29A';
+    } from './onboarding-flow.js?v=2026.10.24G';
     import { loadAndRunRouter } from './routerLoader.js?v=2026.05.07';
 
     const groupNameEl = document.getElementById('groupName');
@@ -300,6 +300,7 @@
             onboarding_step: 'profile',
           }),
         });
+        setStatus(`Joined ${group.name || 'your family group'}! Continuing to your profile…`, true);
         void loadAndRunRouter();
       } catch (error) {
         console.error('[GROUP SETUP] join failed', error);

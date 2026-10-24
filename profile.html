@@ -297,10 +297,10 @@
 
   <div class="avatar-block">
     <img id="avatarPreview" src="IMG/default-avatar.png" alt="Your avatar" class="avatar-big">
-    <div class="avatar-edit-row">
-      <button id="editAvatarBtn" type="button" class="edit-avatar-btn" title="Change avatar">✏️</button>
+    <label class="avatar-edit-row" for="avatarFile" title="Choose a profile picture">
+      <span class="edit-avatar-btn" aria-hidden="true">✏️</span>
       <span class="avatar-edit-label">Upload a profile pic</span>
-    </div>
+    </label>
     <input id="avatarFile" type="file" accept="image/*"
       style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;" />
   </div>
@@ -337,7 +337,6 @@
   import { loadAndRunRouter } from './routerLoader.js?v=2026.05.07';
   const defaultAvatar     = 'IMG/default-avatar.png';
   const avatarPreview     = document.getElementById('avatarPreview');
-  const editAvatarBtn     = document.getElementById('editAvatarBtn');
   const avatarFile        = document.getElementById('avatarFile');
   const displayNameEl     = document.getElementById('displayName');
   const groupSelectEl     = document.getElementById('profile-group-select');
@@ -584,23 +583,6 @@
       saveBtn.textContent = originalLabel;
     }
   }
-
-  function triggerAvatarPicker() {
-    try {
-      if (typeof avatarFile.showPicker === 'function') {
-        avatarFile.showPicker();
-        return;
-      }
-    } catch (err) {
-      console.warn('[PROFILE] showPicker unavailable', err);
-    }
-    avatarFile.click();
-  }
-
-  editAvatarBtn.addEventListener('click', (evt) => {
-    evt.preventDefault();
-    triggerAvatarPicker();
-  });
 
   avatarFile.addEventListener('change', () => {
     const file = avatarFile.files?.[0];

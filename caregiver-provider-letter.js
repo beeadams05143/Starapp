@@ -198,7 +198,7 @@ const evidenceSentence = (label, metric) => `${label} was reported on ${metric.p
 export function teamUpdateSectionsForLetter(updates = [], start = '', end = '') {
   const sections = { medication: [], learning: [], other: [] };
   const order = [...(updates || [])].filter(item => item && sections[item.category] &&
-    /^\\d{4}-\\d{2}-\\d{2}$/.test(item.effective_date || '') &&
+    /^\d{4}-\d{2}-\d{2}$/.test(item.effective_date || '') &&
     item.effective_date <= end &&
     (item.category === 'learning'
       ? (!item.closed_on || item.closed_on >= start)
@@ -214,7 +214,7 @@ export function teamUpdateSectionsForLetter(updates = [], start = '', end = '') 
       item.source_note ? 'Source / context: ' + String(item.source_note).trim() : '',
       item.status === 'closed' && item.closed_on ? 'Closed effective ' + dateLabel(item.closed_on) : ''
     ].filter(Boolean);
-    sections[item.category].push(lines.join('\\n'));
+    sections[item.category].push(lines.join('\n'));
   }
   return sections;
 }
@@ -676,7 +676,7 @@ export function renderProviderLetter(a, { includeQuotes = true, teamUpdates = []
   if (medicationSectionItems.length) {
     const intro = sections.findIndex(section => section.startsWith('We would like to share observations'));
     sections.splice(intro >= 0 ? intro + 1 : 2, 0,
-      'Medication Changes\\n' + medicationSectionItems.join('\\n\\n'));
+      'Medication Changes\n' + medicationSectionItems.join('\n\n'));
   }
 
   sections.push('We hope this summary provides a useful picture of daily experiences, challenges, activities, and successes during this period. Thank you for taking the time to review these caregiver observations.');

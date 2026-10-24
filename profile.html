@@ -604,16 +604,35 @@
 
   avatarFile.addEventListener('change', () => {
     const file = avatarFile.files?.[0];
-    if (file) {
-      const previewUrl = URL.createObjectURL(file);
-      avatarPreview.onload = () => URL.revokeObjectURL(previewUrl);
-      avatarPreview.src = previewUrl;
-      showMessage('Photo selected. Check the agreement below, then tap Save Profile.', true);
-    } else if (currentAvatarUrl) {
-      avatarPreview.src = currentAvatarUrl;
-    } else {
-      avatarPreview.src = defaultAvatar;
+    if (!file) {
+      avatarPreview.src = currentAvatarUrl || defaultAvatar;
+      return;
     }
+    if (!file.type.startsWith('image/')) {
+      showMessage('Please choose a photo file, such as JPEG or PNG.', false);
+      return;
+    }
+
+    // Netlify CSP allows data: images but not blob: images. A FileReader preview
+    // works in Safari without weakening the site's security policy.
+    const reader = new FileReader();
+    reader.onerror = () => showMessage('Could not read that photo. Please select it again.', false);
+    reader.onload = () => {
+      if (avatarFile.files?.[0] !== file) return;
+      avatarPreview.onerror = () => {
+        avatarPreview.onerror = null;
+        avatarPreview.onload = null;
+        avatarPreview.src = currentAvatarUrl || defaultAvatar;
+        showMessage('This photo could not be displayed. Please try a JPEG or PNG image.', false);
+      };
+      avatarPreview.onload = () => {
+        avatarPreview.onload = null;
+        avatarPreview.onerror = null;
+        showMessage('Photo preview ready. Check the agreement, then tap Save Profile.', true);
+      };
+      avatarPreview.src = reader.result;
+    };
+    reader.readAsDataURL(file);
   });
 
   saveBtn.addEventListener('click', saveProfile);

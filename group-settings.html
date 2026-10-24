@@ -269,7 +269,10 @@
         const joinedGroup = await joinGroupForUser(session.user.id, code);
         // Set the default group as well as the membership so the dashboard
         // won't silently switch this caregiver back to the previous family.
-        await saveProfileDefaultGroup(session.user.id, joinedGroup.id);
+        const savedDefault = await saveProfileDefaultGroup(session.user.id, joinedGroup.id);
+        if (savedDefault?.group_id !== joinedGroup.id) {
+          throw new Error('Your membership was added, but STAR could not make this your active family. Please contact the group administrator.');
+        }
         window.loadGroupsIntoSwitcher?.();
         await loadInviteCode();
         joinCodeEl.value = '';

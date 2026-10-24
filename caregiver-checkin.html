@@ -2083,6 +2083,12 @@
     /* Simple landing: the seven-category checklist remains in the DOM for legacy status
        handling, but must not be shown ahead of the guided one-section-at-a-time form. */
     #sectionListView { display:none !important; }
+    .legacy-med-note{margin:12px 0;padding:14px;border:1px solid #c5964c;background:#fff8e9;border-radius:12px}
+    .legacy-med-note p{margin:8px 0;line-height:1.45}
+    .legacy-med-note pre{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;font-size:13px}
+    .legacy-med-note a{display:inline-block;margin-left:12px;color:#345948;font-weight:700}
+    .legacy-med-note[hidden]{display:none!important}
+
     #behaviorSafetyIncidentCard { margin:0 0 20px; padding:16px; border:1px solid #d9cdbf; border-radius:12px; background:#fff; }
     #behaviorSafetyIncidentCard h3 { margin:0 0 8px; font-size:18px; color:#273449; }
     #behaviorSafetyIncidentDetails[hidden] { display:none !important; }
@@ -2130,6 +2136,13 @@
     </div>
 
     <div class="draft-save-bar" id="draftSaveBar"><button type="button" id="saveDraftAlways" disabled>Save Draft</button><span id="draftSaveFeedback" role="status" aria-live="polite">Available once your check-in opens.</span></div>
+    <section id="legacyMedChangeNotice" hidden role="status" class="legacy-med-note">
+      <strong>Medication-change information found in this older draft</strong>
+      <p>Medication plans now belong in Team Updates. Copy these details into Team Updates before submitting; they will not be included in this new caregiver check-in.</p>
+      <pre id="legacyMedChangeDetails"></pre>
+      <button type="button" id="copyLegacyMedChange">Copy medication-change details</button>
+      <a href="team-updates.html">Open Team Updates</a>
+    </section>
 
     <div class="top-actions">
       <label>Recovery copies <select id="recoveryChoices" hidden aria-label="Choose a recovery copy"></select></label>
@@ -6386,6 +6399,42 @@
     }
 
     // ---------- helpers ----------
+    const LEGACY_MED_FIELDS = [
+      'med_change_flag', 'med_change_type_new', 'med_change_type_dose',
+      'med_change_type_stopped', 'med_change_type_other',
+      'med_change_time_window', 'med_change_time_other',
+      'med_change_name', 'med_change_dose', 'med_change_note'
+    ];
+    function getLegacyMedDraftText(sourceDraft = draft) {
+      const chunks = [];
+      for (const data of Object.values(sourceDraft?.data || {})) {
+        if (!data || typeof data !== 'object') continue;
+        const details = LEGACY_MED_FIELDS.filter(key =>
+          key === 'med_change_flag' ? String(data[key] || '').toLowerCase() === 'yes'
+            : data[key] === true || (typeof data[key] === 'string' && data[key].trim().length > 0)
+        ).map(key => key.replace(/^med_change_/, '').replace(/_/g, ' ') + ': ' + String(data[key]));
+        if (details.length) chunks.push(details.join('\n'));
+      }
+      return chunks.join('\n\n');
+    }
+    function showLegacyMedDraftNotice() {
+      const notice = document.getElementById('legacyMedChangeNotice');
+      const pre = document.getElementById('legacyMedChangeDetails');
+      const value = getLegacyMedDraftText();
+      if (notice) notice.hidden = !value;
+      if (pre) pre.textContent = value;
+    }
+    document.getElementById('copyLegacyMedChange')?.addEventListener('click', async () => {
+      const value = getLegacyMedDraftText();
+      if (!value) return;
+      try {
+        await navigator.clipboard.writeText(value);
+        const feedback = document.getElementById('draftSaveFeedback');
+        if (feedback) feedback.textContent = 'Medication-change details copied. Add them to Team Updates.';
+      } catch {
+        window.prompt('Copy these medication-change details into Team Updates:', value);
+      }
+    });
     function createEmptyDraft(){
       return { data: {}, savedAt: {}, sectionStatuses: {} };
     }
@@ -6517,9 +6566,17 @@
       syncPrnEntriesField();
       const data = {};
       const savedAt = {};
+      const priorData = draft?.data || {};
       const now = new Date().toISOString();
       steps.forEach((step, idx) => {
         data[idx] = serialize(step);
+        // Older recovery drafts can contain medication changes. Preserve these
+        // read-only notes when resaving a draft until the admin has copied them.
+        for (const key of LEGACY_MED_FIELDS) {
+          if (priorData[idx] && Object.prototype.hasOwnProperty.call(priorData[idx], key)) {
+            data[idx][key] = priorData[idx][key];
+          }
+        }
         savedAt[idx] = now;
       });
       draft = {
@@ -6581,6 +6638,7 @@
     }
     function applyDraftToForm(){
       steps.forEach((step, idx) => restore(step, idx));
+      showLegacyMedDraftNotice();
       syncAggressionControls();
       syncBehaviorSafetyIncidentDetails();
       syncManiaControls();
@@ -6779,6 +6837,7 @@
     }
 	    function clearDraftUI(){
 	      draft=createEmptyDraft();
+          showLegacyMedDraftNotice();
 	      // Recovery removal is performed only by the scoped submission controller.
 	      steps.forEach((s,i)=>updateSavedAt(s,i));
 	      updateSavedButtons();
@@ -6941,6 +7000,10 @@
       e?.preventDefault?.();
       if (!submissionUI || isSubmittingFinal) return;
       if (!validateCentralPrns()) return;
+      const legacyMedDraft = getLegacyMedDraftText();
+      if (legacyMedDraft && !window.confirm(
+        'This recovered draft has medication-change details that will not be submitted. Copy them into the admin-only Team Updates area first. Choose OK only after copying them, or Cancel to keep editing and preserve the draft.'
+      )) return;
       const entryDate = submissionUI.begin();
       if (!entryDate) return;
       if (isPractice) {
@@ -6953,29 +7016,9 @@
         const group_id = submissionUI.context.groupId;
         const user = getSessionFromStorage()?.user;
         const payload = buildPayload();
-        // Preserve older saved caregiver check-ins in Supabase, but prevent
-        // new submissions (including restored legacy drafts) from creating
-        // medication-plan records now owned by admin-only Team Updates.
-        const legacyMedFields = [
-          'med_change_flag', 'med_change_type_new', 'med_change_type_dose',
-          'med_change_type_stopped', 'med_change_type_other',
-          'med_change_time_window', 'med_change_time_other',
-          'med_change_name', 'med_change_dose', 'med_change_note'
-        ];
-        const legacyMedDetails = legacyMedFields.some(key =>
-          key === 'med_change_flag'
-            ? String(payload[key] || '').toLowerCase() === 'yes'
-            : payload[key] === true ||
-              (typeof payload[key] === 'string' && payload[key].trim().length > 0)
-        );
-        if (legacyMedDetails && !window.confirm(
-          'This older draft contains medication-change information. Medication plans now belong in Team Updates and will NOT be included in this check-in. Copy that information into Team Updates first. Select OK only after you have recorded it there; Cancel keeps this draft unchanged.'
-        )) {
-          submissionUI.finish({ state: 'failed', message: 'Keep this draft until its medication change is copied to Team Updates.' });
-          isSubmittingFinal = false;
-          return;
-        }
-        legacyMedFields.forEach(key => delete payload[key]);
+        // New check-ins never create medication-plan entries. Historical
+        // submitted check-ins remain untouched, and PRN fields are unaffected.
+        LEGACY_MED_FIELDS.forEach(key => delete payload[key]);
 	        const behaviorDef = SECTION_STATUS_BY_STEP.get('behaviorSection');
 	        const behaviorTracking = isQuickClearedStatus(behaviorDef) ? [] : collectBehaviorTracking();
         const educationalTracking = collectEducationalTracking();

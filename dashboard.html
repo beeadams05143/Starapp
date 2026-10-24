@@ -108,6 +108,25 @@
     .action-card svg {
       color: #5F5E5A;
     }
+    .action-card[href="saved-drafts.html"] { position: relative; }
+    .draft-count-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      min-width: 28px;
+      height: 28px;
+      padding: 0 7px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #854F0B;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 750;
+      line-height: 1;
+    }
+    .draft-count-badge[hidden] { display: none; }
     .action-card .action-description{font-size:13px;line-height:1.35;font-weight:500;letter-spacing:0;color:#5f5e5a;display:block;margin-top:-16px}
     .action-card:has(.action-description){gap:18px}
     @media(max-width:390px){.action-card{padding:18px 14px;font-size:22px}.action-card .action-description{font-size:12px}}
@@ -283,12 +302,13 @@
           <span>Docs</span>
         </a>
 
-        <a class="action-card" href="saved-drafts.html">
+        <a class="action-card" id="savedDraftLink" href="saved-drafts.html">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <rect x="4" y="3" width="16" height="18" rx="2"></rect>
             <path d="M8 8h8M8 12h8M8 16h5"></path>
           </svg>
           <span>Saved Drafts</span>
+          <span id="savedDraftCount" class="draft-count-badge" hidden></span>
         </a>
 
         <a class="action-card" href="team-updates.html" aria-label="Team Updates: medications, learning goals and other important changes">
@@ -374,6 +394,43 @@
     }
   })();
 
+</script>
+
+
+<!-- Counts only drafts belonging to the signed-in caregiver in the active group, on this device. -->
+<script type="module">
+  import { getSessionFromStorage } from './restClient.js?v=2025.01.09E';
+  import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
+  import { listHomeDrafts } from './home-saved-drafts.js?v=2026.10.24A';
+
+  const badge = document.getElementById('savedDraftCount');
+  const link = document.getElementById('savedDraftLink');
+
+  async function refreshSavedDraftCount() {
+    if (!badge || !link) return;
+    badge.hidden = true;
+    link.removeAttribute('aria-label');
+    const userId = getSessionFromStorage()?.user?.id;
+    if (!userId) return;
+
+    try {
+      const groupId = await ensureActiveGroupId(userId);
+      if (!groupId || getSessionFromStorage()?.user?.id !== userId) return;
+      const count = listHomeDrafts(window.localStorage, userId, groupId).length;
+      if (count > 0) {
+        badge.textContent = count > 99 ? '99+' : String(count);
+        badge.hidden = false;
+        link.setAttribute('aria-label', 'Saved Drafts, ' + count + (count === 1 ? ' saved draft' : ' saved drafts'));
+      }
+    } catch (error) {
+      console.warn('[dashboard] Draft count unavailable', error);
+    }
+  }
+
+  refreshSavedDraftCount();
+  window.addEventListener('pageshow', refreshSavedDraftCount);
+  window.addEventListener('focus', refreshSavedDraftCount);
+  window.addEventListener('storage', refreshSavedDraftCount);
 </script>
 
 <!-- ✅ Restore original hamburger menu + bottom tabbar -->

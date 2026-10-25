@@ -92,17 +92,51 @@ function showForm(record = null) {
 function populateIndividualSelectors() {
   for (const select of [$('teamIndividual'), $('updateIndividual')]) {
     select.replaceChildren();
-    if (state.individuals.length === 1) {
-      select.add(new Option(state.individuals[0] ? 'Individual ' + state.individuals[0] : 'Group records without an individual ID', state.individuals[0]));
-    } else {
-      for (const id of state.individuals) {
-        select.add(new Option(id ? 'Individual ' + id : 'Records without an individual ID', id));
-      }
+    for (const person of state.individuals) {
+      select.add(new Option(person.name, person.id));
     }
     select.value = state.individualId;
   }
-  $('individualPickerWrap').hidden = state.individuals.length < 2;
+  // Show the person's name even when there is only one supported individual.
+  $('individualPickerWrap').hidden = !state.individuals.length;
+  // Only the top-level picker changes the record scope; the form displays the selected person.
   $('updateIndividualWrap').hidden = state.individuals.length < 2;
+}
+function configuredIndividualName(selectedItems) {
+  let config = selectedItems;
+  if (typeof config === 'string') {
+    try { config = JSON.parse(config); } catch { return ''; }
+  }
+  const profile = config?.__individual_profile__;
+  if (!profile || typeof profile !== 'object') return '';
+  return value(profile.preferred_name || profile.display_name || profile.full_name || profile.public_name || profile.name);
+}
+async function loadSupportedIndividualName() {
+  // The report already uses this group-scoped profile for the supported person's name.
+  // It can be read by authorized group members without relying on an admin's private records.
+  try {
+    const configs = await rest('caregiver_checkin_configs?select=selected_items&group_id=eq.' +
+      encodeURIComponent(state.groupId) + '&order=updated_at.desc&limit=20');
+    for (const config of configs || []) {
+      const name = configuredIndividualName(config.selected_items);
+      if (name) return name;
+    }
+  } catch (error) {
+    console.warn('[TEAM UPDATES] Could not read supported individual name from group configuration:', error);
+  }
+  // Existing Emergency Medical forms store the person's name in the signed-in
+  // admin's own record. Use only the name, and only for that admin's display.
+  if (state.admin) {
+    try {
+      const rows = await rest('emergency_medical?select=name&id=eq.' +
+        encodeURIComponent(state.userId) + '&limit=1');
+      const name = value(rows?.[0]?.name);
+      if (name) return name;
+    } catch (error) {
+      console.warn('[TEAM UPDATES] Could not read individual name from Emergency Medical:', error);
+    }
+  }
+  return '';
 }
 async function loadScope() {
   const session = getSessionFromStorage();
@@ -115,11 +149,15 @@ async function loadScope() {
   state.admin = memberships?.[0]?.role === 'admin';
   $('teamPermission').textContent = state.admin ? 'Administrator: you can create and edit updates.' : 'Read-only: only your group administrator can make changes.';
   $('newUpdateButton').hidden = !state.admin;
-  const records = await rest('caregiver_checkins?select=individual_id&group_id=eq.' + encodeURIComponent(state.groupId) + '&limit=1000');
-  state.individuals = [...new Set((records || []).map(row => value(row.individual_id)))].sort();
-  if (!state.individuals.length) state.individuals = [''];
-  state.individualId = state.individuals[0];
-  if (records?.length >= 1000) status('Showing individual identifiers from the first 1,000 available check-ins; confirm the individual before saving.');
+
+  // The current caregiver_checkins schema has NO individual_id column. The
+  // existing provider letter scopes these records with individual_id = ''.
+  // Keep that same scope so Team Updates continue to appear in provider letters.
+  // A future multi-individual roster must introduce distinct, validated person
+  // IDs shared by check-ins, updates, and reports before additional IDs are used.
+  const name = await loadSupportedIndividualName();
+  state.individuals = [{ id: '', name: name || 'Individual (name not yet set)' }];
+  state.individualId = state.individuals[0].id;
   populateIndividualSelectors();
 }
 async function loadUpdates() {

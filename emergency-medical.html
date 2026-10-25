@@ -917,7 +917,7 @@
           const rows=await rest('star_emergency_records?select=data&group_id=eq.'+encodeURIComponent(groupId)+'&individual_id=eq.&limit=1');
           sharedTableReady=true;data=rows?.[0]?.data||null;
         }catch(err){
-          if(err?.status!==404 && !/(?:star_emergency_records|schema cache|could not find the table)/i.test(err?.message||''))throw err;
+          if(err?.status!==404 && !/(?:relation .*star_emergency_records.*does not exist|could not find the table .*star_emergency_records.*schema cache)/i.test(err?.message||''))throw err;
           sharedTableReady=false;
         }
         if(data){hydrateForm(data);document.getElementById('cloudStatus').textContent='Shared emergency information loaded ✓';}

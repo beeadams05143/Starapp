@@ -258,7 +258,18 @@ $('teamIndividual').addEventListener('change',async event=>{
   try {await loadUpdates();status('');}catch(err){status(errorMessage(err),true);}
 });
 async function boot() {
-  try {await loadScope();await loadUpdates();status(state.admin?'Entries are included in the monthly caregiver letter.':'Entries are read-only. Ask your administrator to request a correction.');}
-  catch(err){$('newUpdateButton').hidden=true;status(errorMessage(err),true);}
+  try {
+    await loadScope();
+    await loadUpdates();
+    // Make it obvious where an administrator can type on an empty Team Updates page.
+    if (state.admin && !state.updates.length) showForm();
+    status(state.admin
+      ? 'Use the entry form to add medication changes, learning goals, or important updates. Saved entries are included in the monthly caregiver letter.'
+      : 'View only: ask your group administrator to request a correction.');
+  } catch (err) {
+    $('newUpdateButton').hidden = true;
+    setFormVisible(false);
+    status(errorMessage(err), true);
+  }
 }
 boot();

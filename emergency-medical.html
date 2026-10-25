@@ -112,6 +112,7 @@
     .list-item{ padding:12px; border:1px dashed #e5e7eb; border-radius:10px; background:#fff; display:flex; align-items:center; justify-content:space-between; gap:10px; }
     .pill { font-size: 12px; padding:4px 8px; border-radius:999px; background:#f3f4f6; }
 
+    [hidden]{display:none!important}
     /* status line */
     .statusline{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; color:#555; margin-top:6px; }
   </style>
@@ -134,6 +135,7 @@
 
     <div class="page-wrap">
 
+    <p id="emergencyPermission" role="status" aria-live="polite" style="padding:12px;background:#eeede7;border-radius:9px">Checking group permissions…</p>
     <!-- ===== Profile Photo ===== -->
     <div class="photo-row">
       <div id="photoDrop" class="photo-uploader" aria-label="Profile photo dropzone">
@@ -237,7 +239,7 @@
     <fieldset>
       <legend>Emergency Contacts</legend>
 
-      <div class="row cols-2">
+      <div class="row cols-2" id="contactEntryFields">
         <div>
           <label for="ecName">Name</label>
           <input type="text" id="ecName" placeholder="Contact Name">
@@ -259,7 +261,7 @@
         </div>
       </div>
 
-      <div class="actions-inline">
+      <div class="actions-inline" id="contactEntryActions">
         <button class="btn" id="addEmergency" type="button">Add Emergency Contact</button>
         <button class="btn secondary" id="cancelEmergencyEdit" type="button" style="display:none">Cancel Edit</button>
         <button class="btn secondary" id="removeEmergencyContact" type="button" style="display:none">Remove Contact</button>
@@ -272,7 +274,7 @@
     <!-- ===== Medications ===== -->
     <fieldset>
       <legend>Medications</legend>
-      <div class="row cols-3-med">
+      <div class="row cols-3-med" id="medicationEntryFields">
         <div>
           <label for="medName">Name</label>
           <input type="text" id="medName" placeholder="Medication name">
@@ -286,7 +288,7 @@
           <input type="text" id="medFreq" placeholder="e.g., 2× daily with meals">
         </div>
       </div>
-      <div class="actions-inline">
+      <div class="actions-inline" id="medicationEntryActions">
         <button class="btn" id="addMedication" type="button">Add Medication</button>
         <button class="btn secondary" id="cancelMedEdit" type="button" style="display:none">Cancel Edit</button>
         <button class="btn secondary" id="removeMedication" type="button" style="display:none">Remove Medication</button>
@@ -318,6 +320,7 @@
   <script type="module">
     import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
     import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabaseClient.js?v=2025.01.09E';
+    import { ensureActiveGroupId } from './active-group.js?v=2026.10.07A';
 
     // ---------- PHOTO ----------
     const drop    = document.getElementById('photoDrop');
@@ -336,7 +339,18 @@
     const currentUserId = session?.user?.id || null;
 
     let pendingFile = null;
-    let canEdit = true;
+    let canEdit = false, groupId = null, sharedTableReady = false;
+    const emergencyPermission = document.getElementById('emergencyPermission');
+    function permission(text){ emergencyPermission.textContent=text; }
+    async function checkRole(){
+      const sessionNow = getSessionFromStorage();
+      if(!sessionNow?.user?.id || sessionNow.user.id !== currentUserId) throw Error('Sign-in changed. Reload the page.');
+      const gid=await ensureActiveGroupId(currentUserId);
+      if(!gid) throw Error('Select a family group.');
+      const m=await rest('group_members?select=role&group_id=eq.'+encodeURIComponent(gid)+'&user_id=eq.'+encodeURIComponent(currentUserId)+'&limit=1');
+      if(!m?.length) throw Error('Not a member of the active group.');
+      return {gid,admin:m[0].role==='admin'};
+    }
 
     function applyEditMode(editable){
       canEdit = !!editable;
@@ -361,6 +375,9 @@
       toggleBtn(document.getElementById('removeMedication'), true);
       toggleBtn(document.getElementById('saveDraftBtn'), true);
       toggleBtn(document.getElementById('saveCloudBtn'), true);
+      for(const id of ['contactEntryFields','contactEntryActions','medicationEntryFields','medicationEntryActions']) {
+        const e=document.getElementById(id);if(e)e.hidden=readOnly;
+      }
 
       const lastSaved = document.getElementById('lastSaved');
       if (lastSaved) lastSaved.textContent = readOnly ? 'View only' : '';
@@ -514,7 +531,7 @@
       } finally { saveBtn.disabled = false; }
     });
     function fileToBase64(file) { return new Promise((resolve, reject) => { const r = new FileReader(); r.onload = () => resolve(r.result); r.onerror = reject; r.readAsDataURL(file); }); }
-    initExistingPhoto();
+    // Supported-person photo is loaded from the emergency record, not the viewer profile.
 
     // ---------- FORM (draft + Supabase) ----------
     const getDraftKey = () => `${STORAGE_NS}:draft:${currentUserId || 'anonymous'}`;
@@ -858,48 +875,71 @@
       }catch{}
     }
 
-    // Cloud save/load
+    // Cloud save/load. The current individual uses the same empty-ID scope
+    // as Team Updates and the caregiver letter.
     async function saveToCloud(){
-      if (!canEdit) { alert('View-only mode: only the owner can update this record.'); return; }
-      document.getElementById('cloudStatus').textContent = 'Saving…';
+      if(!canEdit){alert('Only group administrators can edit emergency information.');return;}
+      document.getElementById('cloudStatus').textContent='Saving…';
       try{
-        const uid = session?.user?.id;
-        if(!uid) throw new Error('Not signed in');
-        const payload = buildPayload();
-        const row = { id: uid, ...payload, updated_at: new Date().toISOString() };
-        await rest('emergency_medical?on_conflict=id', {
-          method: 'POST',
-          headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
-          body: JSON.stringify([row]),
-        });
-        document.getElementById('cloudStatus').textContent = 'Saved to your account ✓';
+        const {gid,admin}=await checkRole();
+        if(!admin || gid!==groupId) throw Error('Group or administrator permission changed. Reload the page.');
+        const payload=buildPayload();
+        if(sharedTableReady){
+          await rest('star_emergency_records?on_conflict=group_id,individual_id',{
+            method:'POST',expectedUserId:currentUserId,
+            headers:{Prefer:'resolution=merge-duplicates,return=minimal'},
+            body:JSON.stringify([{group_id:gid,individual_id:'',data:payload}])
+          });
+          document.getElementById('cloudStatus').textContent='Saved for the authorized team ✓';
+        }else{
+          // Keep existing admin records editable until the SQL setup is applied.
+          await rest('emergency_medical?on_conflict=id',{
+            method:'POST',expectedUserId:currentUserId,
+            headers:{Prefer:'resolution=merge-duplicates,return=minimal'},
+            body:JSON.stringify([{id:currentUserId,...payload,updated_at:new Date().toISOString()}])
+          });
+          document.getElementById('cloudStatus').textContent='Saved to older personal record only';
+          permission('Administrator access. Shared records require the Supabase database setup; this older record is NOT shared.');
+        }
       }catch(err){
-        console.error(err);
-        document.getElementById('cloudStatus').textContent = 'Cloud save failed';
-        alert(err.message || 'Saving to cloud failed.');
+        console.error('[EMERGENCY] save failed',err);
+        document.getElementById('cloudStatus').textContent='Save failed';
+        alert(err.message||'Save failed.');
       }
     }
-
     async function loadFromCloud(){
-      document.getElementById('cloudStatus').textContent = 'Loading…';
+      applyEditMode(false); clearForm({preservePhoto:false});
+      document.getElementById('cloudStatus').textContent='Loading…';
       try{
-        const uid = session?.user?.id;
-        if(!uid) throw new Error('Not signed in');
-        const rows = await rest(`emergency_medical?id=eq.${encodeURIComponent(uid)}&select=*&limit=1`);
-        const record = rows?.[0] || null;
-        if (record) {
-          hydrateForm(payloadFromRow(record));
-          document.getElementById('cloudStatus').textContent = 'Loaded your emergency info ✓';
-        } else {
-          clearForm();
-          document.getElementById('cloudStatus').textContent = 'No emergency information available for this account.';
+        const role=await checkRole();groupId=role.gid;
+        let data=null;
+        try{
+          const rows=await rest('star_emergency_records?select=data&group_id=eq.'+encodeURIComponent(groupId)+'&individual_id=eq.&limit=1');
+          sharedTableReady=true;data=rows?.[0]?.data||null;
+        }catch(err){
+          if(err?.status!==404 && !/(?:star_emergency_records|schema cache|could not find the table)/i.test(err?.message||''))throw err;
+          sharedTableReady=false;
         }
-        applyEditMode(true);
-        if (canEdit) loadDraft();
+        if(data){hydrateForm(data);document.getElementById('cloudStatus').textContent='Shared emergency information loaded ✓';}
+        else if(role.admin){
+          const rows=await rest('emergency_medical?id=eq.'+encodeURIComponent(currentUserId)+'&select=*&limit=1');
+          if(rows?.[0]){
+            hydrateForm(payloadFromRow(rows[0]));
+            document.getElementById('cloudStatus').textContent=sharedTableReady?'Older record loaded—Save to Cloud to share':'Older personal record loaded';
+          }else{
+            document.getElementById('cloudStatus').textContent='No emergency record entered yet.';
+          }
+        }else document.getElementById('cloudStatus').textContent='No shared emergency record available yet.';
+        applyEditMode(role.admin);
+        permission(sharedTableReady
+          ? (role.admin?'Administrator: you can add and edit records.':'View only: only your group administrator can change emergency information.')
+          : (role.admin?'Administrator: older record available. Shared access requires the Supabase database setup.':'View only: shared emergency information has not been configured. Ask your administrator.'));
+        // Local drafts never replace a cloud record automatically.
       }catch(err){
-        console.error(err);
-        document.getElementById('cloudStatus').textContent = 'Cloud load failed';
-        alert(err.message || 'Loading from cloud failed.');
+        console.error('[EMERGENCY] load/permissions failed',err);
+        applyEditMode(false);groupId=null;sharedTableReady=false;
+        document.getElementById('cloudStatus').textContent='Emergency information unavailable';
+        permission('Could not verify group permissions. Editing is locked.');
       }
     }
 

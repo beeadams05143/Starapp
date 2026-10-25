@@ -1,2 +1,2 @@
-STAR 2026.10.20A
-Caregiver save safeguards, local dashboard clock, and evidence-based provider letters.
+STAR 2026.10.25B
+Team Updates admin form and group-scoped Emergency Medical permissions; Supabase migrations required for full shared access.

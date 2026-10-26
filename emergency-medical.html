@@ -123,6 +123,16 @@
     .medication-editor .actions-inline{margin-top:12px}
     .medication-history{margin:22px 0 16px}
     .medication-history summary{font-weight:600;cursor:pointer;padding:12px;background:#f1efea;border-radius:10px}
+    .discontinued-card > summary{cursor:pointer;padding:4px 2px;line-height:1.4;overflow-wrap:anywhere}
+    .discontinued-card > summary::marker{font-size:14px;color:#6f6a5f}
+    .discontinued-name{font-size:1.03em}
+    .discontinued-date{margin-top:8px;color:#575757;font-size:.9em}
+    .discontinued-reason{margin-top:6px;font-weight:600;font-size:.93em}
+    .discontinued-hint{display:block;margin-top:8px;color:#646464;font-size:.83em;font-weight:400}
+    .discontinued-expanded{border-top:1px solid #e8e4df;margin-top:12px;padding:12px 2px 4px;overflow-wrap:anywhere}
+    .discontinued-expanded p{margin:0 0 8px}
+    .discontinued-expanded ul{margin:8px 0 14px;padding-left:24px}
+    .discontinued-expanded li{margin-bottom:7px}
     .medication-note{color:#656565;font-size:14px;margin-top:6px;white-space:pre-wrap}
     #medicationPrintSheet{display:none}
     @media print {
@@ -619,6 +629,73 @@
         const container = stopped ? medHistoryList : medList;
         const item = document.createElement('article');
         item.className = 'medication-item';
+        if (stopped) {
+          const expanded = document.createElement('details');
+          expanded.className = 'discontinued-card';
+          expanded.open = editMedIndex === idx;
+          const summary = document.createElement('summary');
+          const name = document.createElement('strong');
+          name.className = 'discontinued-name';
+          name.textContent = med.name || 'Unnamed medication';
+          summary.appendChild(name);
+          const date = document.createElement('div');
+          date.className = 'discontinued-date';
+          date.textContent = 'Discontinued: ' + (med.discontinued_on || 'Date not recorded');
+          summary.appendChild(date);
+          const reason = document.createElement('div');
+          reason.className = 'discontinued-reason';
+          reason.textContent = 'Reason: ' + (String(med.discontinued_reason || '').trim() || 'Not recorded');
+          summary.appendChild(reason);
+          const hint = document.createElement('span');
+          hint.className = 'discontinued-hint';
+          hint.textContent = 'Tap to view last dose and medication history';
+          summary.appendChild(hint);
+          expanded.appendChild(summary);
+          const details = document.createElement('div');
+          details.className = 'discontinued-expanded';
+          const dose = document.createElement('p');
+          dose.textContent = 'Last recorded dose: ' + (med.dosage || 'Not recorded');
+          details.appendChild(dose);
+          const schedule = document.createElement('p');
+          schedule.textContent = 'Last recorded schedule: ' + (med.frequency || 'Not recorded');
+          details.appendChild(schedule);
+          if (med.dose_history.length) {
+            const heading = document.createElement('strong');
+            heading.textContent = 'Previous dose and schedule changes';
+            details.appendChild(heading);
+            const changes = document.createElement('ul');
+            for (const change of med.dose_history) {
+              const entry = document.createElement('li');
+              entry.textContent = (change.date || 'Date not recorded') + ': ' +
+                [change.previous_dosage, change.previous_frequency].filter(Boolean).join(' / ') +
+                ' → ' + [change.new_dosage, change.new_frequency].filter(Boolean).join(' / ') +
+                (change.reason ? ' — ' + change.reason : '');
+              changes.appendChild(entry);
+            }
+            details.appendChild(changes);
+          }
+          if (canEdit) {
+            const edit = document.createElement('button');
+            edit.type = 'button';
+            edit.className = 'btn secondary medication-edit';
+            edit.textContent = 'Edit history';
+            edit.addEventListener('click', () => {
+              editMedIndex = editMedIndex === idx ? null : idx;
+              renderLists();
+              if (editMedIndex !== null) {
+                const editor = document.getElementById('inlineMedicationEditor');
+                editor?.scrollIntoView({block:'nearest', behavior:'smooth'});
+                editor?.querySelector('input')?.focus({preventScroll:true});
+              }
+            });
+            details.appendChild(edit);
+          }
+          if (editMedIndex === idx && canEdit) details.appendChild(buildInlineMedicationEditor(idx));
+          expanded.appendChild(details);
+          item.appendChild(expanded);
+          container.appendChild(item);
+          continue;
+        }
         const row = document.createElement('div');
         row.className = 'medication-row';
         const description = document.createElement('div');

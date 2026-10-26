@@ -112,12 +112,33 @@
     .list-item{ padding:12px; border:1px dashed #e5e7eb; border-radius:10px; background:#fff; display:flex; align-items:center; justify-content:space-between; gap:10px; }
     .pill { font-size: 12px; padding:4px 8px; border-radius:999px; background:#f3f4f6; }
 
+    .medication-heading{font-size:17px;margin:20px 0 8px}
+    .medication-item{padding:12px;border:1px solid #e5e7eb;border-radius:12px;margin-bottom:8px;background:white}
+    .medication-row{display:flex;justify-content:space-between;align-items:center;gap:12px}
+    .medication-description{min-width:0;overflow-wrap:anywhere;line-height:1.5}
+    .medication-edit{flex-shrink:0}
+    .medication-editor{margin:12px 0 4px;padding:14px;border-radius:12px;background:#f9f7f3;border:1px solid #d8d2c8}
+    .medication-editor .row{margin-bottom:8px}
+    .medication-editor input,.medication-editor textarea{box-sizing:border-box;max-width:100%;width:100%;padding:10px;border:1px solid #ccc;border-radius:8px;font:inherit}
+    .medication-editor .actions-inline{margin-top:12px}
+    .medication-history{margin:22px 0 16px}
+    .medication-history summary{font-weight:600;cursor:pointer;padding:12px;background:#f1efea;border-radius:10px}
+    .medication-note{color:#656565;font-size:14px;margin-top:6px;white-space:pre-wrap}
+    #medicationPrintSheet{display:none}
+    @media print {
+      body *{visibility:hidden!important}
+      #medicationPrintSheet,#medicationPrintSheet *{visibility:visible!important}
+      #medicationPrintSheet{display:block!important;position:absolute;top:0;left:0;width:100%;padding:16px;color:black;background:white}
+      #medicationPrintSheet h2{margin-top:26px}
+      #medicationPrintSheet li{margin:8px 0}
+    }
     [hidden]{display:none!important}
     /* status line */
     .statusline{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; color:#555; margin-top:6px; }
   </style>
 </head>
 <body>
+  <section id="medicationPrintSheet" aria-label="Printable medication summary"></section>
   <!-- ✅ Navbar mount -->
   <div id="navbar-container"></div>
 
@@ -274,6 +295,7 @@
     <!-- ===== Medications ===== -->
     <fieldset>
       <legend>Medications</legend>
+      <p class="helper">Tap Edit beside a medication to update it here, or discontinue it with the date and reason. Older medications remain in the history.</p>
       <div class="row cols-3-med" id="medicationEntryFields">
         <div>
           <label for="medName">Name</label>
@@ -290,12 +312,16 @@
       </div>
       <div class="actions-inline" id="medicationEntryActions">
         <button class="btn" id="addMedication" type="button">Add Medication</button>
-        <button class="btn secondary" id="cancelMedEdit" type="button" style="display:none">Cancel Edit</button>
-        <button class="btn secondary" id="removeMedication" type="button" style="display:none">Remove Medication</button>
-        <small class="helper" id="medEditHint" style="display:none"></small>
-        <small class="helper">Added medications appear below. You can remove any before saving.</small>
+        <small class="helper">New medication? Add it here. Changes to existing medications are made directly below.</small>
       </div>
+      <h3 class="medication-heading">Current medications</h3>
       <div id="medList" class="list" aria-live="polite"></div>
+      <details id="discontinuedMedicationSection" class="medication-history">
+        <summary>Discontinued medications (<span id="medHistoryCount">0</span>)</summary>
+        <div id="medHistoryList" class="list" aria-live="polite"></div>
+      </details>
+      <button class="btn secondary" id="printMedicationHistory" type="button">Print medication list and history</button>
+      <p class="helper" id="medicationSaveFeedback" role="status" aria-live="polite"></p>
     </fieldset>
 
     <!-- ===== Save controls ===== -->
@@ -321,6 +347,7 @@
     import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
     import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabaseClient.js?v=2025.01.09E';
     import { ensureActiveGroupId } from './active-group.js?v=2026.10.07A';
+    import { normalizedMedication, isDiscontinued, editMedication, discontinueMedication, editDiscontinuedDetails } from './medication-records.mjs?v=2026.10.25C';
 
     // ---------- PHOTO ----------
     const drop    = document.getElementById('photoDrop');

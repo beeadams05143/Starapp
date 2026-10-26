@@ -70,6 +70,8 @@ begin
  return new;
 end;
 $$;
+-- The audit function is trigger-only; do not expose it through the public API.
+revoke all on function public.star_isa_outcomes_audit() from public, anon, authenticated;
 drop trigger if exists star_isa_outcomes_audit_write on public.star_isa_outcomes;
 create trigger star_isa_outcomes_audit_write
 after insert or update on public.star_isa_outcomes

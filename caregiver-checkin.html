@@ -3068,6 +3068,8 @@
               <div class="section-title">Notes &amp; Important Observations</div>
               <p class="muted">Use the gold-star box to preserve one important experience, accomplishment, or observation in the monthly team letter (180 characters maximum). Medication changes, PRNs, and safety incidents already have their own sections.</p>
 
+          <section id="starIsaCheckin" hidden style="margin:14px 0;padding:15px;background:#faf8f2;border:1px solid #ddcead;border-radius:16px" aria-label="Assigned ISA outcome measurements"></section>
+          <input type="hidden" id="isa_entries" name="isa_entries" value="[]" />
           <div id="summaryHighlightBox" style="margin:18px 0;padding:14px;border:1px solid #d9ccb8;border-radius:12px;background:#fffaf2">
             <label for="summary_highlight_note" style="display:block;font-weight:700"><span class="summary-star" aria-hidden="true">★</span> Important observation for the monthly team letter (optional)</label>
             <p class="muted" style="margin:6px 0 10px">Highlight a meaningful accomplishment, new experience, or important observation worth preserving in the monthly letter. If medication or safety details were already documented elsewhere, avoid repeating them here. Every gold-star entry is shown with its date. Maximum 180 characters.</p>
@@ -3110,6 +3112,7 @@
   </div>
 
   <div id="toast"></div>
+<script type="module" src="./isa-checkin.js?v=2026.10.26A"></script>
 <!-- App logic -->
 <script type="module">
   // 1) Imports MUST be first in the module
@@ -7016,6 +7019,8 @@
         const group_id = submissionUI.context.groupId;
         const user = getSessionFromStorage()?.user;
         const payload = buildPayload();
+        // ISA answers are a separate typed collection; do not alter existing health fields.
+        payload.isa_entries = window.starIsaCollectEntries?.() || [];
         // New check-ins never create medication-plan entries. Historical
         // submitted check-ins remain untouched, and PRN fields are unaffected.
         LEGACY_MED_FIELDS.forEach(key => delete payload[key]);

@@ -605,8 +605,8 @@
       medHistoryList.replaceChildren();
       const ranked = (record) => {
         const freq = String(record.frequency || '').toLowerCase();
-        const am = /(^|\\b)(am|morning)(\\b|$)/.test(freq);
-        const pm = /(^|\\b)(pm|evening|night)(\\b|$)/.test(freq);
+        const am = /(^|\b)(am|morning)(\b|$)/.test(freq);
+        const pm = /(^|\b)(pm|evening|night)(\b|$)/.test(freq);
         return am && !pm ? 0 : pm && !am ? 2 : 1;
       };
       const sorted = medications.map((med, idx) => ({ med: normalizedMedication(med), idx }))

@@ -25,6 +25,17 @@ function collectEntries(){
  }
  return items;
 }
+function restoreEntries(){
+ const hidden=$('isa_entries');if(!loaded||!hidden)return;
+ let entries=[];
+ try{entries=JSON.parse(hidden.value||'[]');}catch{entries=[];}
+ if(!Array.isArray(entries))entries=[];
+ for(const {card,measurement,control} of rendered){
+  const found=entries.find(e=>e.outcome_id===card.id&&e.measurement_id===measurement.id);
+  control.value=found&&found.value!==null&&found.value!==undefined?String(found.value):'';
+ }
+ syncStored();
+}
 function syncStored(){
  const field=$('isa_entries');
  if(field)field.value=JSON.stringify(collectEntries());
@@ -74,7 +85,7 @@ function render(){
   host.append(area);
  }
  const note=el('p','','You may leave questions blank if the activity was not observed. Nothing is automatically recorded as No.');
- note.style.cssText='font-size:13px;color:#666';host.append(note);syncStored();
+ note.style.cssText='font-size:13px;color:#666';host.append(note);restoreEntries();
 }
 async function init(){
  const host=$('starIsaCheckin');if(!host)return;
@@ -93,6 +104,7 @@ async function init(){
 }
 document.addEventListener('DOMContentLoaded',()=>{
  window.starIsaCollectEntries=collectEntries;
+ window.starIsaRestoreEntries=restoreEntries;
  init().catch(error=>{
   const host=$('starIsaCheckin');if(!host)return;
   host.hidden=false;host.replaceChildren(el('p','','ISA outcome questions could not load ('+(error?.message||'connection error')+'). Your health check-in remains available. Refresh to retry.'));

@@ -865,6 +865,25 @@
       } finally { medicationSaveInFlight = false; }
     });
 
+    function renderMedicationPrintSheet() {
+      const sheet=$('medicationPrintSheet');
+      sheet.replaceChildren();
+      const title=document.createElement('h1');
+      title.textContent='Medication list and history';
+      sheet.appendChild(title);
+      const person=document.createElement('p');
+      person.textContent='Individual: '+($('indivName').value.trim()||'Not specified');
+      sheet.appendChild(person);
+      const stamp=document.createElement('p');
+      stamp.textContent='Prepared: '+new Date().toLocaleDateString();
+      sheet.appendChild(stamp);
+      // PRINT_MEDICATION_ENTRIES_HERE
+    }
+    $('printMedicationHistory').addEventListener('click',()=>{
+      renderMedicationPrintSheet();
+      window.print();
+    });
+
     // Build/restore payload
     function buildPayload(){
       return {

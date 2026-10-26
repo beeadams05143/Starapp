@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ISA Outcomes | STAR</title><link rel="stylesheet" href="./style.css?v=2026.03.29A">
+<style>
+:root{--ink:#28364a;--muted:#626d78;--paper:#f6f3ed;--line:#dfd9cf;--green:#315848;--cream:#faf0db}
+*{box-sizing:border-box}body{background:var(--paper);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;margin:0}
+main{max-width:900px;margin:auto;padding:106px 14px 100px}
+h1,h2,h3{font-family:Georgia,serif}h1{font-size:32px;margin:5px 0 10px}h2{font-size:23px}h3{font-size:18px}
+p{line-height:1.55}.panel{background:#fff;border:1px solid var(--line);border-radius:17px;padding:20px;margin-bottom:16px}
+.eyebrow{letter-spacing:.09em;text-transform:uppercase;color:#84560f;font-size:12px;font-weight:750}
+.back{color:var(--green);font-weight:700;text-decoration:none;display:inline-block;margin-bottom:14px}
+.muted,small,.hint{color:var(--muted)}.hint{font-size:13px}.fields{display:grid;gap:14px}.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label{display:grid;gap:6px;font-weight:650;font-size:14px}
+input,select,textarea{font:inherit;color:inherit;border:1px solid #bfc6c9;border-radius:9px;padding:10px 12px;min-height:44px;width:100%;background:#fff}
+textarea{min-height:92px;resize:vertical}button{font:inherit;cursor:pointer;border:0;background:var(--green);color:white;padding:11px 15px;border-radius:10px;font-weight:700;min-height:44px}button.alt{background:#ecebe7;color:#28364a}button:disabled{opacity:.5;cursor:default}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid #b9974a;outline-offset:2px}
+.bar{display:flex;gap:9px;align-items:center;flex-wrap:wrap}.bar>button{flex:0 1 auto}
+.status{font-weight:650;color:#28583b}.status.error{color:#a32e2e}.subpanel{padding:16px;background:#faf9f6;border:1px solid #e1dfd9;border-radius:12px;margin:12px 0}
+.tag{font-size:12px;color:#82551d;font-weight:750;text-transform:uppercase;letter-spacing:.06em}
+.entry{padding:13px 0;border-bottom:1px solid #e4e4df}.entry:last-child{border-bottom:0}
+.entry button{padding:7px 12px;min-height:36px;font-size:13px}
+.entry h3{margin:5px 0}.entry p{margin:5px 0}.checks{display:grid;gap:9px}.checks label{display:flex;align-items:center;gap:9px;font-size:14px}
+.checks input{width:19px;height:19px;min-height:0}.outline{border:1px solid #b59b6b;background:var(--cream);padding:14px;border-radius:12px}
+[hidden]{display:none!important}.pill{display:inline-block;padding:3px 8px;background:#eee9e1;border-radius:20px;color:#46505a;font-size:12px}
+@media(max-width:580px){main{padding:98px 10px 100px}.panel{padding:17px}.row{grid-template-columns:1fr}h1{font-size:29px}}
+</style></head><body>
+<main>
+<a class="back" href="./dashboard.html">← Dashboard</a>
+<header class="panel"><div class="eyebrow">STAR · Personalized planning</div><h1>⭐ ISA Outcomes</h1>
+<p>Personal goals, support strategies, and progress tracking. These cards guide relevant caregiver check-in questions; STAR does not change an individual's official ISA.</p>
+<p id="isaGroup" class="muted"></p>
+<label>Individual<select id="isaIndividual"><option value="">Loading individual…</option></select></label>
+<p id="isaPermission" class="hint"></p>
+<p id="isaStatus" class="status" role="status" aria-live="polite">Loading outcomes…</p>
+</header>
+<section class="panel"><div class="bar" style="justify-content:space-between"><h2 style="margin:0">My ISA Outcomes</h2><button id="isaNew" hidden>+ Add Outcome</button></div>
+<div id="isaList"></div><p class="hint">Draft outcomes stay out of caregiver check-ins until activated. You can archive an outcome without deleting historical evidence.</p></section>
+<section class="panel" id="isaEditor" hidden><h2 id="isaEditorTitle">Personal Outcome Card</h2>
+<p class="hint">Use your approved ISA as the reference. Bank examples are editable suggestions, never automatically approved ISA language.</p>
+<div class="subpanel" id="isaBank">
+  <div class="tag">Choose a starting point</div>
+  <div class="row" style="margin-top:10px">
+  <label>Browse bank category<select id="isaBankCategory"></select></label>
+  <label>Suggested outcome<select id="isaBankExample"></select></label>
+  </div><div class="bar" style="margin-top:12px"><button type="button" id="isaUseExample" class="alt">Use This Example</button><button type="button" id="isaBlank" class="alt">Create My Own Outcome</button></div>
+</div>
+<form id="isaForm" class="fields">
+ <div class="row"><label>Category<input id="isaCategory" maxlength="120" required placeholder="e.g., Communication"></label><label>Card status<select id="isaCardStatus"><option value="draft">Draft / not yet in check-ins</option><option value="active">Active in caregiver check-ins</option><option value="archived">Archived</option></select></label></div>
+ <label>Outcome title<input id="isaTitle" maxlength="160" required placeholder="e.g., Expressing needs and preferences"></label>
+ <label>Personalized outcome description<textarea id="isaDescription" maxlength="5000" placeholder="What is the individual's outcome? Include approved language if you choose to enter it."></textarea></label>
+ <div class="subpanel"><h3>What matters to the individual?</h3>
+  <label>Source of this information<select id="isaVoiceSource"><option value="none">Not documented yet</option><option value="individual">The individual's own words</option><option value="observed">Observed preference (caregiver / team)</option></select></label>
+  <label>Person's words or observed preferences<textarea id="isaVoice" maxlength="3000" placeholder="Use actual words or clearly identified observations."></textarea></label>
+ </div>
+ <div class="subpanel"><h3>Support Strategies & Responsibilities</h3>
+  <p class="hint">Add as many strategies as needed. Names entered here describe responsibility and do not give account access.</p>
+  <label>What will the support person do?<textarea id="isaStrategyText" placeholder="Support approach / strategy"></textarea></label>
+  <div class="row"><label>Who provides support?<input id="isaStrategyWho" placeholder="e.g., Family, Josh, job coach"></label><label>When / how often?<input id="isaStrategyWhen" placeholder="e.g., During relevant activities"></label></div>
+  <label>Where? (editable)<input id="isaStrategyWhere" placeholder="e.g., Home, work, specific location"></label>
+  <button type="button" id="isaAddStrategy" class="alt">+ Add Support Strategy</button><div id="isaStrategies"></div>
+ </div>
+ <div class="subpanel"><h3>How Progress Is Documented</h3>
+ <p class="hint">Add an activity and the measurement type. STAR needs the type to know how to record and report even completely custom activities.</p>
+ <label>Activity or context<input id="isaActivity" maxlength="160" placeholder="e.g., Using Siri to make a call"></label>
+ <label>What should caregivers record?<input id="isaMetricLabel" maxlength="160" placeholder="e.g., Number of calls completed"></label>
+ <div class="row"><label>Answer type<select id="isaMetricKind"><option value="note">Written observation</option><option value="choice">Participation / multiple choice</option><option value="boolean">Yes / No</option><option value="count">Number / count</option><option value="duration">Duration / hours or minutes</option><option value="rating">Rating scale</option></select></label>
+ <label>Frequency<select id="isaMetricFrequency"><option value="when_occurs">When activity occurs</option><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select></label></div>
+ <div class="row"><label id="isaChoicesWrap" hidden>Answer choices (comma-separated)<input id="isaChoices" placeholder="Participated, Declined, Not offered"></label>
+ <label id="isaUnitWrap" hidden>Unit<select id="isaUnit"><option value="minutes">Minutes</option><option value="hours">Hours</option><option value="times">Times</option><option value="steps">Steps</option><option value="other">Other (describe in label)</option></select></label></div>
+ <label>Reporting style<select id="isaReportMode"><option value="summary">Summary appropriate to answer type</option><option value="chart">Graph when numerically supported</option><option value="narrative">Dated observations</option></select></label>
+ <button type="button" id="isaAddMetric" class="alt">+ Add Measurement</button><div id="isaMetrics"></div>
+ </div>
+ <div class="subpanel"><h3>Which caregivers see this in check-ins?</h3>
+ <p class="hint">When none are selected, all caregivers in this group can document an active outcome. Select names to limit the check-in question to those members.</p>
+ <div id="isaAssignees" class="checks"></div>
+ </div>
+ <div class="bar"><button type="submit" id="isaSave">Save Outcome Card</button><button type="button" class="alt" id="isaCancel">Cancel</button></div>
+</form></section>
+<section class="panel outline"><h3 style="margin-top:0">Caregiver connection</h3><p>Activated outcome cards generate questions from their measurements inside the caregiver check-in. Health and medication recording stay separate.</p><a href="./caregiver-checkin.html">Open Caregiver Check-In</a></section>
+</main>
+<script type="module" src="./isa-outcomes.js?v=2026.10.26A"></script>
+<script defer src="./ui-shell.js?v=2026.10.25B"></script>
+<script defer src="./scripts/appbar-drawer.js?v=2026.03.29A"></script></body></html>

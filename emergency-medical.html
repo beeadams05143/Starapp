@@ -597,40 +597,65 @@
         });
       });
 
-      // medications
-      const medList = $('medList'); medList.innerHTML = '';
-      const medDisplay = medications
-        .map((m, i) => ({ ...m, _idx: i }))
-        .sort((a, b) => {
-          const rank = (item) => {
-            const freq = String(item.frequency || '').toLowerCase();
-            const hasAM = /(^|\\b)(am|morning)(\\b|$)/.test(freq);
-            const hasPM = /(^|\\b)(pm|evening|night)(\\b|$)/.test(freq);
-            if (hasAM && !hasPM) return 0;
-            if (hasPM && !hasAM) return 2;
-            return 1;
-          };
-          const r = rank(a) - rank(b);
-          if (r !== 0) return r;
-          return String(a.name || '').localeCompare(String(b.name || ''));
-        });
-      medDisplay.forEach((m) => {
-        const el = document.createElement('div'); el.className = 'list-item';
-        el.innerHTML = `<div>${m.name || ''}${m.dosage ? ' — '+m.dosage : ''}${m.frequency ? ' — '+m.frequency : ''}</div>
-                        ${canEdit ? `<button class="btn secondary" data-edit-med="${m._idx}" type="button">Edit</button>` : ''}`;
-        medList.appendChild(el);
-      });
-      medList.querySelectorAll('[data-edit-med]').forEach(btn => {
-        btn.addEventListener('click', e => {
-          const idx = +e.currentTarget.getAttribute('data-edit-med');
-          const med = medications[idx];
-          if (!med) return;
-          $('medName').value = med.name || '';
-          $('medDose').value = med.dosage || '';
-          $('medFreq').value = med.frequency || '';
-          setMedEditState(idx);
-        });
-      });
+      // Medication entries are always edited beside the selected item.
+      // Keep array positions stable when sorting so a change never targets another medication.
+      const medList = $('medList');
+      const medHistoryList = $('medHistoryList');
+      medList.replaceChildren();
+      medHistoryList.replaceChildren();
+      const ranked = (record) => {
+        const freq = String(record.frequency || '').toLowerCase();
+        const am = /(^|\\b)(am|morning)(\\b|$)/.test(freq);
+        const pm = /(^|\\b)(pm|evening|night)(\\b|$)/.test(freq);
+        return am && !pm ? 0 : pm && !am ? 2 : 1;
+      };
+      const sorted = medications.map((med, idx) => ({ med: normalizedMedication(med), idx }))
+        .sort((a, b) => ranked(a.med) - ranked(b.med) ||
+          a.med.name.localeCompare(b.med.name));
+      let stoppedCount = 0, activeCount = 0;
+      for (const { med, idx } of sorted) {
+        const stopped = isDiscontinued(med);
+        if (stopped) stoppedCount++; else activeCount++;
+        const container = stopped ? medHistoryList : medList;
+        const item = document.createElement('article');
+        item.className = 'medication-item';
+        const row = document.createElement('div');
+        row.className = 'medication-row';
+        const description = document.createElement('div');
+        description.className = 'medication-description';
+        description.textContent = [med.name, med.dosage, med.frequency].filter(Boolean).join(' — ');
+        row.appendChild(description);
+        if (canEdit) {
+          const button = document.createElement('button');
+          button.className = 'btn secondary medication-edit';
+          button.type = 'button';
+          button.textContent = stopped ? 'Edit history' : 'Edit';
+          button.setAttribute('aria-expanded', String(editMedIndex === idx));
+          button.addEventListener('click', () => {
+            editMedIndex = editMedIndex === idx ? null : idx;
+            renderLists();
+            if (editMedIndex !== null) {
+              const editor = document.getElementById('inlineMedicationEditor');
+              editor?.scrollIntoView({block:'nearest', behavior:'smooth'});
+              editor?.querySelector('input')?.focus({preventScroll:true});
+            }
+          });
+          row.appendChild(button);
+        }
+        item.appendChild(row);
+        if (stopped) {
+          const info = document.createElement('div');
+          info.className = 'medication-note';
+          info.textContent = 'Discontinued: ' + (med.discontinued_on || 'Date not recorded') +
+            (med.discontinued_reason ? ' — Reason: ' + med.discontinued_reason : '');
+          item.appendChild(info);
+        }
+        if (editMedIndex === idx && canEdit) item.appendChild(buildInlineMedicationEditor(idx));
+        container.appendChild(item);
+      }
+      $('medHistoryCount').textContent = String(stoppedCount);
+      if (!activeCount) medList.textContent = 'No current medications listed.';
+      if (!stoppedCount) medHistoryList.textContent = 'No discontinued medications recorded yet.';
     }
 
     const addEmergencyBtn = $('addEmergency');

@@ -650,6 +650,22 @@
             (med.discontinued_reason ? ' — Reason: ' + med.discontinued_reason : '');
           item.appendChild(info);
         }
+        if (med.dose_history.length) {
+          const history=document.createElement('details');
+          const summary=document.createElement('summary');
+          summary.textContent='Previous dose/schedule changes ('+med.dose_history.length+')';
+          history.appendChild(summary);
+          for(const change of med.dose_history) {
+            const entry=document.createElement('p');
+            entry.className='medication-note';
+            entry.textContent=(change.date||'Date not recorded')+': '+
+              [change.previous_dosage,change.previous_frequency].filter(Boolean).join(' / ')+
+              ' → '+[change.new_dosage,change.new_frequency].filter(Boolean).join(' / ')+
+              (change.reason?' — '+change.reason:'');
+            history.appendChild(entry);
+          }
+          item.appendChild(history);
+        }
         if (editMedIndex === idx && canEdit) item.appendChild(buildInlineMedicationEditor(idx));
         container.appendChild(item);
       }

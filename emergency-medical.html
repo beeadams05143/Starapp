@@ -421,7 +421,7 @@
       });
 
       setContactEditState(null);
-      setMedEditState(null);
+      editMedIndex = null;
       setIndividualEditState(false, { silent: true });
       renderLists();
     }
@@ -747,57 +747,54 @@
     });
 
     const addMedicationBtn = $('addMedication');
-    const cancelMedEditBtn = $('cancelMedEdit');
-    const removeMedicationBtn = $('removeMedication');
-    const medEditHint = $('medEditHint');
-
-    function setMedEditState(idx){
-      editMedIndex = Number.isFinite(idx) ? idx : null;
-      const editing = editMedIndex !== null;
-      if (addMedicationBtn) addMedicationBtn.textContent = editing ? 'Save Changes' : 'Add Medication';
-      if (cancelMedEditBtn) cancelMedEditBtn.style.display = editing ? '' : 'none';
-      if (removeMedicationBtn) removeMedicationBtn.style.display = editing && canEdit ? '' : 'none';
-      if (medEditHint) {
-        if (editing) {
-          const med = medications[editMedIndex];
-          medEditHint.textContent = med?.name ? `Editing: ${med.name}` : 'Editing medication';
-          medEditHint.style.display = '';
-        } else {
-          medEditHint.textContent = '';
-          medEditHint.style.display = 'none';
-        }
-      }
+    let medicationSaveInFlight = false;
+    function medicationDateToday() {
+      const d = new Date();
+      return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
     }
-
-    addMedicationBtn.addEventListener('click', () => {
-      if (!canEdit) return;
-      const m = { name: $('medName').value.trim(), dosage: $('medDose').value.trim(), frequency: $('medFreq').value.trim() };
-      if(!m.name){ alert('Add a medication name first.'); return; }
-      if (editMedIndex !== null) {
-        medications[editMedIndex] = m;
-      } else {
-        medications.push(m);
-      }
-      ['medName','medDose','medFreq'].forEach(id => $(id).value='');
-      setMedEditState(null);
-      renderLists(); saveDraft();
-    });
-
-    cancelMedEditBtn?.addEventListener('click', () => {
-      ['medName','medDose','medFreq'].forEach(id => $(id).value='');
-      setMedEditState(null);
-    });
-
-    removeMedicationBtn?.addEventListener('click', () => {
-      if (!canEdit || editMedIndex === null) return;
-      const med = medications[editMedIndex];
-      const label = med?.name ? `Remove ${med.name}?` : 'Remove this medication?';
-      if (!confirm(label)) return;
-      medications.splice(editMedIndex, 1);
-      ['medName','medDose','medFreq'].forEach(id => $(id).value='');
-      setMedEditState(null);
-      renderLists();
-      saveDraft();
+    async function persistMedication(index, next) {
+      if (!canEdit || medicationSaveInFlight) return;
+      medicationSaveInFlight = true;
+      const prior = medications[index];
+      medications[index] = next;
+      $('medicationSaveFeedback').textContent = 'Saving medication to shared record…';
+      try {
+        const success = await saveToCloud();
+        if (!success) {
+          medications[index] = prior;
+          $('medicationSaveFeedback').textContent = 'Not saved; please try again.';
+          renderLists();
+          return;
+        }
+        editMedIndex = null;
+        saveDraft();
+        renderLists();
+        $('medicationSaveFeedback').textContent = 'Medication changes saved to the shared record.';
+      } finally { medicationSaveInFlight = false; }
+    }
+    addMedicationBtn.addEventListener('click', async () => {
+      if (!canEdit || medicationSaveInFlight) return;
+      const med = normalizedMedication({
+        name: $('medName').value.trim(),
+        dosage: $('medDose').value.trim(),
+        frequency: $('medFreq').value.trim()
+      });
+      if (!med.name) { alert('Enter a medication name.'); return; }
+      medicationSaveInFlight = true;
+      medications.push(med);
+      $('medicationSaveFeedback').textContent = 'Adding medication to shared record…';
+      try {
+        const success = await saveToCloud();
+        if (!success) {
+          medications.pop();
+          $('medicationSaveFeedback').textContent = 'Not saved; please try again.';
+          return;
+        }
+        ['medName','medDose','medFreq'].forEach(id => $(id).value='');
+        saveDraft();
+        renderLists();
+        $('medicationSaveFeedback').textContent = 'New medication saved to the shared record.';
+      } finally { medicationSaveInFlight = false; }
     });
 
     // Build/restore payload
@@ -859,7 +856,7 @@
       contacts = Array.isArray(data.contacts) ? data.contacts : [];
       medications = Array.isArray(data.medications) ? data.medications : [];
       setContactEditState(null);
-      setMedEditState(null);
+      editMedIndex = null;
       setIndividualEditState(false, { silent: true });
       renderLists();
     }
@@ -882,7 +879,7 @@
       contacts = [];
       medications = [];
       setContactEditState(null);
-      setMedEditState(null);
+      editMedIndex = null;
       setIndividualEditState(false, { silent: true });
       renderLists();
       if (!preservePhoto) clearPreview();
@@ -953,10 +950,12 @@
           document.getElementById('cloudStatus').textContent='Saved to older personal record only';
           permission('Administrator access. Shared records require the Supabase database setup; this older record is NOT shared.');
         }
+        return true;
       }catch(err){
         console.error('[EMERGENCY] save failed',err);
         document.getElementById('cloudStatus').textContent='Save failed';
         alert(err.message||'Save failed.');
+        return false;
       }
     }
     async function loadFromCloud(){

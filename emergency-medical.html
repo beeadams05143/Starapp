@@ -894,7 +894,20 @@
           const detail=document.createElement('div');
           detail.textContent=[med.dosage,med.frequency].filter(Boolean).join(' — ');
           item.appendChild(detail);
-          // PRINT_HISTORY_DETAILS_HERE
+          if(status==='discontinued') {
+            const stop=document.createElement('div');
+            stop.textContent='Discontinued: '+(med.discontinued_on||'Date not recorded')+
+              ' | Reason: '+(med.discontinued_reason||'Not recorded');
+            item.appendChild(stop);
+          }
+          for(const change of med.dose_history) {
+            const line=document.createElement('div');
+            line.textContent='Changed '+(change.date||'date not recorded')+': '+
+              [change.previous_dosage,change.previous_frequency].filter(Boolean).join(' / ')+
+              ' → '+[change.new_dosage,change.new_frequency].filter(Boolean).join(' / ')+
+              (change.reason?' — '+change.reason:'');
+            item.appendChild(line);
+          }
           list.appendChild(item);
         }
         sheet.appendChild(list);

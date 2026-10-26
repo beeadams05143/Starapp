@@ -67,7 +67,7 @@ function render(){
    if(m.activity){const activity=el('div','',m.activity);activity.style.cssText='font-size:13px;color:#606875';item.append(activity);}
    const label=el('label','',m.label);label.style.cssText='display:block;font-weight:650;font-size:15px;margin:5px 0 8px';
    const control=answerControl(m);item.append(label,control);
-   const hint=el('p','',m.kind==='duration'?'Unit: '+(m.unit||'minutes'):m.kind==='note'?'Keep the individual's experience in your own words.':'Only recorded answers are counted; blank does not mean No.');
+   const hint=el('p','',m.kind==='duration'?'Unit: '+(m.unit||'minutes'):m.kind==='note'?"Keep the individual\'s experience in your own words.":'Only recorded answers are counted; blank does not mean No.');
    hint.style.cssText='font-size:12px;color:#666;margin:5px 0';item.append(hint);area.append(item);
    rendered.push({card,measurement:m,control});
   }

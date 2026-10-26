@@ -877,7 +877,28 @@
       const stamp=document.createElement('p');
       stamp.textContent='Prepared: '+new Date().toLocaleDateString();
       sheet.appendChild(stamp);
-      // PRINT_MEDICATION_ENTRIES_HERE
+      for(const status of ['active','discontinued']) {
+        const heading=document.createElement('h2');
+        heading.textContent=status==='active'?'Current medications':'Discontinued medications';
+        sheet.appendChild(heading);
+        const entries=medications.map(normalizedMedication).filter(m=>m.status===status);
+        if(!entries.length) {
+          const empty=document.createElement('p'); empty.textContent='None recorded.';
+          sheet.appendChild(empty); continue;
+        }
+        const list=document.createElement('ul');
+        for(const med of entries) {
+          const item=document.createElement('li');
+          const name=document.createElement('strong');
+          name.textContent=med.name||'Unnamed medication'; item.appendChild(name);
+          const detail=document.createElement('div');
+          detail.textContent=[med.dosage,med.frequency].filter(Boolean).join(' — ');
+          item.appendChild(detail);
+          // PRINT_HISTORY_DETAILS_HERE
+          list.appendChild(item);
+        }
+        sheet.appendChild(list);
+      }
     }
     $('printMedicationHistory').addEventListener('click',()=>{
       renderMedicationPrintSheet();

@@ -787,7 +787,28 @@
         const frequency=medField(editor,'Frequency / schedule',med.frequency);
         const date=medField(editor,'Date of dose/schedule change',medicationDateToday(),'date');
         const reason=medField(editor,'Reason for dose/schedule change (optional)','','textarea');
-        // MEDICATION_ACTIONS_HERE
+        const newValues=()=>({name:name.value,dosage:dose.value,frequency:frequency.value,date:date.value,reason:reason.value});
+        medButton(editor,'Save changes',async ()=>{
+          try { await persistMedication(index,editMedication(med,newValues())); }
+          catch(error) { alert(error.message); }
+        });
+        const stopPanel=document.createElement('div');
+        stopPanel.className='medication-editor';
+        stopPanel.hidden=true;
+        const stopDate=medField(stopPanel,'Date discontinued',medicationDateToday(),'date');
+        const stopReason=medField(stopPanel,'Reason for discontinuation (optional)','','textarea');
+        medButton(stopPanel,'Confirm discontinuation',async ()=>{
+          if(!confirm('Move this medication into the discontinued history?')) return;
+          try {
+            const edited=editMedication(med,newValues());
+            await persistMedication(index,discontinueMedication(edited,{date:stopDate.value,reason:stopReason.value}));
+          } catch(error) { alert(error.message); }
+        });
+        medButton(editor,'Discontinue medication',()=>{
+          stopPanel.hidden=!stopPanel.hidden;
+          if(!stopPanel.hidden) stopDate.focus();
+        },true);
+        editor.appendChild(stopPanel);
       }
       medButton(editor,'Cancel',()=>{editMedIndex=null;renderLists();},true);
       return editor;

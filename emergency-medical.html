@@ -746,6 +746,53 @@
       saveDraft();
     });
 
+    function medField(parent, caption, value='', type='text') {
+      const label=document.createElement('label');
+      label.textContent=caption;
+      const control=document.createElement(type==='textarea'?'textarea':'input');
+      if(type!=='textarea') control.type=type;
+      control.value=value||'';
+      label.appendChild(control);
+      parent.appendChild(label);
+      return control;
+    }
+    function medButton(parent, text, click, secondary=false) {
+      const button=document.createElement('button');
+      button.type='button';
+      button.className=secondary?'btn secondary':'btn';
+      button.textContent=text;
+      button.addEventListener('click',click);
+      parent.appendChild(button);
+      return button;
+    }
+    function buildInlineMedicationEditor(index) {
+      const med=normalizedMedication(medications[index]);
+      const stopped=isDiscontinued(med);
+      const editor=document.createElement('section');
+      editor.id='inlineMedicationEditor';
+      editor.className='medication-editor';
+      const heading=document.createElement('strong');
+      heading.textContent=stopped?'Edit discontinued details':'Edit medication';
+      editor.appendChild(heading);
+      if(stopped) {
+        const date=medField(editor,'Date discontinued',med.discontinued_on,'date');
+        const reason=medField(editor,'Reason for discontinuation (optional)',med.discontinued_reason,'textarea');
+        medButton(editor,'Save history details',async ()=>{
+          try { await persistMedication(index,editDiscontinuedDetails(med,{date:date.value,reason:reason.value})); }
+          catch(error) { alert(error.message); }
+        });
+      } else {
+        const name=medField(editor,'Medication name',med.name);
+        const dose=medField(editor,'Dose',med.dosage);
+        const frequency=medField(editor,'Frequency / schedule',med.frequency);
+        const date=medField(editor,'Date of dose/schedule change',medicationDateToday(),'date');
+        const reason=medField(editor,'Reason for dose/schedule change (optional)','','textarea');
+        // MEDICATION_ACTIONS_HERE
+      }
+      medButton(editor,'Cancel',()=>{editMedIndex=null;renderLists();},true);
+      return editor;
+    }
+
     const addMedicationBtn = $('addMedication');
     let medicationSaveInFlight = false;
     function medicationDateToday() {

@@ -6641,6 +6641,7 @@
     }
     function applyDraftToForm(){
       steps.forEach((step, idx) => restore(step, idx));
+      window.starIsaRestoreEntries?.();
       showLegacyMedDraftNotice();
       syncAggressionControls();
       syncBehaviorSafetyIncidentDetails();
@@ -6987,6 +6988,19 @@
         items.forEach((item) => appendReviewItem(card, item));
         reviewSectionsEl.appendChild(card);
       });
+      // Present ISA answers alongside existing health answers for review.
+      const isaReviewEntries = window.starIsaCollectEntries?.() || [];
+      if(isaReviewEntries.length){
+        const isaCard=document.createElement('section');
+        isaCard.className='review-section';
+        const heading=document.createElement('h3');heading.textContent='ISA Activities & Progress';
+        isaCard.appendChild(heading);
+        isaReviewEntries.forEach(entry=>appendReviewItem(isaCard,{
+          label:entry.outcome_title+' — '+entry.measurement_label,
+          value:String(entry.value)+(entry.unit?' '+entry.unit:'')
+        }));
+        reviewSectionsEl.appendChild(isaCard);
+      }
       if (!reviewSectionsEl.children.length) {
         const empty = document.createElement('p');
         empty.className = 'review-empty';

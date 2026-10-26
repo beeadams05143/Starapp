@@ -2,12 +2,12 @@
 // Replaces @supabase/supabase-js which was hanging in certain browsers.
 
 export const BUILD_VERSION = '2026.03.16B';
-export const SUPABASE_URL = 'https://okfsobfyhpforyqogjea.supabase.co';
-export const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9rZnNvYmZ5aHBmb3J5cW9namVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2MTg3NDAsImV4cCI6MjA2ODE5NDc0MH0.qtuG1_LbSPdeRtnyElo-F0agTSGclqQQyap-USHKWFw';
+export const SUPABASE_URL = 'https://unconfigured-star-test.invalid';
+export const SUPABASE_ANON_KEY = 'SANDBOX_NOT_CONFIGURED';
 
 const AUTH_STORAGE_PREFIX = 'supabase.auth.token';
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
-const APP_ID = 'starapp';
+const APP_ID = 'starapp-intern-sandbox';
 
 function extractProjectRef(url) {
   try {

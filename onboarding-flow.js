@@ -556,7 +556,10 @@ export async function saveCheckinConfig(groupId, selectedCategories = []) {
   const defaults = ['movements', 'medication', 'illness'];
   const categories = selectedCategories.length > 0 ? selectedCategories : defaults;
 
-  const rows = await rest('caregiver_checkin_configs', {
+  // The database enforces one configuration per group (UNIQUE group_id).
+  // PostgREST defaults to conflicting on primary key id, which creates a
+  // duplicate-group error on repeat setup. Explicitly upsert by group_id.
+  const rows = await rest('caregiver_checkin_configs?on_conflict=group_id', {
     method: 'POST',
     headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
     body: JSON.stringify([{

@@ -911,6 +911,9 @@
       left:50%;
       transform:translateX(-50%) translateY(-10px);
       z-index:10000;
+      width:min(640px, calc(100% - 32px));
+      box-sizing:border-box;
+      text-align:center;
       padding:14px 18px;
       border-radius:14px;
       border:1px solid #86efac;
@@ -925,6 +928,9 @@
     #successBanner.is-visible{
       opacity:1;
       transform:translateX(-50%) translateY(0);
+    }
+    @media(max-width:600px){
+      #successBanner{top:calc(env(safe-area-inset-top, 0px) + 78px)}
     }
     @media (max-width: 600px) {
       .behavior-card-question {
@@ -1883,6 +1889,15 @@
     .confirmation-choice { display:flex; align-items:flex-start; gap:12px; margin:18px 0; padding:12px; min-height:44px; }
     .confirmation-choice input[type="checkbox"] { width:24px; height:24px; flex:0 0 24px; margin:0; }
     #submissionStatus { padding:14px; background:#eff6ff; border:1px solid #64748b; overflow-wrap:anywhere; }
+    #submissionStatus[data-state="verified"] {
+      padding:16px 18px;
+      border:1px solid #86efac;
+      border-radius:14px;
+      background:linear-gradient(180deg,#dcfce7,#bbf7d0);
+      color:#166534;
+      font-weight:800;
+      box-shadow:0 6px 18px rgba(22,101,52,.12);
+    }
     #submissionStatus[data-error="true"], #storageNotice, #duplicateNotice { padding:14px; border:2px solid #92400e; background:#fffbeb; color:#78350f; }
     .checkin-submit-panel [hidden], .top-actions [hidden] { display:none !important; }
     #checkinFields:disabled { opacity:.65; }
@@ -3112,12 +3127,13 @@
   </div>
 
   <div id="toast"></div>
+  <div id="successBanner" role="status" aria-live="polite" aria-atomic="true"></div>
 <script type="module" src="./isa-checkin.js?v=2026.10.26A"></script>
 <!-- App logic -->
 <script type="module">
   // 1) Imports MUST be first in the module
   import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.19B';
-  import { CheckinSubmissionUI } from './caregiver-submission-ui.js?v=2026.10.20F';
+  import { CheckinSubmissionUI } from './caregiver-submission-ui.js?v=2026.10.27A';
   import { validSelectedDate } from './caregiver-submission.js';
   import { ANSWER_VERSION, optionalEngagement, optionalYesNo } from './caregiver-answer-quality.js?v=2026.10.20A';
   import { ensureActiveGroupId } from './active-group.js?v=2026.10.07A';

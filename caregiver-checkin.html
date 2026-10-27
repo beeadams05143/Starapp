@@ -7418,6 +7418,8 @@
 	        if (!def) return;
 	        const nextStatus = isQuickClearedStatus(def) ? 'needs_checkin' : def.quickStatus;
 	        setSectionStatus(def, nextStatus);
+	        // Quick-clear records a real answer; navigation taps must not make drafts.
+	        submissionUI?.changed();
 	      });
 	    });
 

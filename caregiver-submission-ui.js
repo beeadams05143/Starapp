@@ -60,13 +60,18 @@ export class CheckinSubmissionUI {
     this.el.checkSaveStatus.addEventListener('click', () => this.checkStatus());
     this.el.downloadRecovery.addEventListener('click', () => this.download());
     const form = doc.getElementById('cg-form');
+    // Only actual answer changes create a recovery copy. Navigating the guided
+    // check-in (including the jump menu) must never spawn an empty draft.
     for (const event of ['input', 'change']) form.addEventListener(event, e => {
-      if (e.target.closest?.('#checkinFields')) this.changed();
+      const target = e.target;
+      if (!target?.closest?.('#checkinFields')) return;
+      if (target.id === 'guidedSectionSelect' || target.matches?.('input[type="hidden"],button')) return;
+      this.changed();
     });
-    // Save after click-driven question controls have updated their hidden fields.
-    form.addEventListener('click', e => {
-      if (e.target.closest?.('#checkinFields')) queueMicrotask(() => this.changed());
-    });
+    // Do NOT track every click: buttons for Back, Next, Skip and section
+    // navigation previously generated ghost drafts without any answers.
+    // Controls that record a value dispatch input/change; quick-clear buttons
+    // explicitly call changed() after updating the section status.
     win.addEventListener('beforeunload', e => {
       if (this.done || (!this.dirty && !this.service.attempt?.sent)) return;
       if (!this.done) this.saveRecovery();

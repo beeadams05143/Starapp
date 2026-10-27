@@ -2446,11 +2446,12 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         const ts = getCheckinDate(entry);
         if (!ts) continue;
         const monthKey = `${ts.getFullYear()}-${String(ts.getMonth() + 1).padStart(2, '0')}`;
-        const bucket = byMonth.get(monthKey) || { h:0, f:0, c:0, prompts: [], total:0 };
+        const bucket = byMonth.get(monthKey) || { h:0, f:0, c:0, p:0, prompts: [], total:0 };
         bucket.total += 1;
         if (resolveDailyLivingBool(entry, 'hygiene') === true) bucket.h += 1;
         if (resolveDailyLivingBool(entry, 'food_prep') === true) bucket.f += 1;
         if (resolveDailyLivingBool(entry, 'cleanup') === true) bucket.c += 1;
+        if (entry?.payload?.pet_care === true || entry?.pet_care === true) bucket.p += 1;
         const prompt = getPromptValue(entry);
         if (Number.isFinite(prompt)) bucket.prompts.push(prompt);
         byMonth.set(monthKey, bucket);
@@ -2470,6 +2471,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
           hygiene_yes: bucket.h,
           food_prep_yes: bucket.f,
           cleanup_yes: bucket.c,
+          pet_care_yes: bucket.p,
           avg_new_skill_score: bucket.prompts.length
             ? Math.round(bucket.prompts.reduce((sum,v)=>sum+v,0)/bucket.prompts.length)
             : null,
@@ -6381,6 +6383,25 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         if (!byKey.has(key) || row.source === 'supabase') byKey.set(key, row);
       });
 
+      // STAR TEST ONLY: legacy standalone mood_entries can be absent in the
+      // fictional sandbox. Use explicitly marked fictional daily mood samples,
+      // never infer a mood from caregiver notes or substitute real users' data.
+      if (!byKey.size) {
+        for (const entry of (cgState.entries || [])) {
+          const payload = entry?.payload || {};
+          if (payload.fictional_test_data !== true || !payload.fictional_mood_for_graphs) continue;
+          const dateObj = getCheckinDate(entry);
+          if (!dateObj || dateObj < start || dateObj > end) continue;
+          const mood = String(payload.fictional_mood_for_graphs);
+          const timestamp = dateObj.toISOString();
+          byKey.set(`demo:${getCheckinDayKey(entry)}`, {
+            id: `demo:${getCheckinDayKey(entry)}`,
+            timestamp, dateObj, mood, intensity: null,
+            notes: 'Fictional STAR TEST check-in mood sample',
+            sleep_hours: null, source: 'fictional-test'
+          });
+        }
+      }
       return [...byKey.values()].sort((a,b) => a.dateObj - b.dateObj);
     }
 
@@ -6685,6 +6706,17 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       }
       if (!rows.length){
         rows = (JSON.parse(localStorage.getItem('wyrEntries')||'[]')).map(r=>({ ts:new Date(r.timestamp), label:r.label }));
+      }
+      // STAR TEST ONLY: provide a fictional practice choice when the separate
+      // WYR feature has no rows. Only explicitly marked fictional records qualify.
+      if (!rows.length) {
+        rows = (cgState.entries || [])
+          .filter(e => e?.payload?.fictional_test_data === true && e?.payload?.fictional_wyr_pick)
+          .map(e => ({
+            ts: new Date(`${getCheckinDayKey(e)}T12:00:00`),
+            label: String(e.payload.fictional_wyr_pick)
+          }))
+          .filter(r => !Number.isNaN(r.ts.getTime()));
       }
       return rows;
     }

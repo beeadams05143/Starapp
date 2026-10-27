@@ -62,30 +62,51 @@ function answerControl(m){
 function render(){
  const host=$('starIsaCheckin');if(!host)return;
  host.replaceChildren();rendered=[];
- if(!cards.length){host.hidden=true;syncStored();return;}
+ if(!cards.length){host.hidden=true;return;}
  host.hidden=false;
- const heading=el('h2','','⭐ ISA Activities & Progress');heading.style.fontSize='23px';
- host.append(heading,el('p','','Only your assigned outcomes appear here. These questions are separate from Health & Well-Being.'));
- for(const card of cards){
-  const area=el('section');area.style.cssText='margin:12px 0;padding:14px;background:#fffdf8;border:1px solid #dfd8c9;border-radius:14px';
-  const title=el('h3','',card.title);title.style.margin='0 0 8px';area.append(title);
-  if(card.outcome_text){const description=el('p','',card.outcome_text);description.style.fontSize='14px';area.append(description);}
-  const supports=Array.isArray(card.strategies)?card.strategies:[];
-  supports.forEach(s=>{const p=el('p','',s.text+(s.when?' · '+s.when:''));p.style.cssText='color:#5c6370;font-size:13px;margin:6px 0';area.append(p);});
+ const intro=el('p','','Record only what you observed. Leave other questions blank.');
+ intro.style.cssText='font-size:14px;line-height:1.5;color:#596270;margin:0 0 12px';
+ host.append(intro);
+ const total=cards.length;
+ cards.forEach((card,i)=>{
+  const area=el('details','isa-outcome-card');
+  area.open=i===0;
+  area.style.cssText='margin:10px 0;padding:0;background:#fffdf8;border:1px solid #dfd8c9;border-radius:12px;overflow:hidden';
+  const summary=el('summary','',card.title);
+  summary.style.cssText='padding:14px 15px;font:700 16px/1.4 system-ui,sans-serif;color:#273449;cursor:pointer;list-style-position:inside';
+  summary.setAttribute('aria-label', 'Outcome '+(i+1)+' of '+total+': '+card.title);
+  area.append(summary);
+  const body=el('div');body.style.cssText='padding:0 15px 13px';
+  if(card.outcome_text||(Array.isArray(card.strategies)&&card.strategies.length)){
+   const more=el('details');more.style.cssText='margin:5px 0 12px;font-size:13px;color:#58616d';
+   const moreTitle=el('summary','','View goal and support strategies (optional)');
+   moreTitle.style.cssText='padding:5px 0;cursor:pointer';
+   more.append(moreTitle);
+   if(card.outcome_text){const p=el('p','',card.outcome_text);p.style.cssText='font-size:13px;line-height:1.5;margin:8px 0';more.append(p);}
+   (Array.isArray(card.strategies)?card.strategies:[]).forEach(s=>{
+    const p=el('p','',s.text+(s.when?' · '+s.when:''));
+    p.style.cssText='font-size:13px;line-height:1.5;margin:6px 0';more.append(p);
+   });
+   body.append(more);
+  }
   for(const m of (Array.isArray(card.measurements)?card.measurements:[])){
    if(!m?.id||!m.label)continue;
-   const item=el('div');item.style.cssText='padding:10px 0;border-top:1px solid #eee7dc';
-   if(m.activity){const activity=el('div','',m.activity);activity.style.cssText='font-size:13px;color:#606875';item.append(activity);}
-   const label=el('label','',m.label);label.style.cssText='display:block;font-weight:650;font-size:15px;margin:5px 0 8px';
-   const control=answerControl(m);item.append(label,control);
-   const hint=el('p','',m.kind==='duration'?'Unit: '+(m.unit||'minutes'):m.kind==='note'?"Keep the individual\'s experience in your own words.":'Only recorded answers are counted; blank does not mean No.');
-   hint.style.cssText='font-size:12px;color:#666;margin:5px 0';item.append(hint);area.append(item);
+   const item=el('div');item.style.cssText='padding:9px 0 5px;border-top:1px solid #ece6dd';
+   if(m.activity){const context=el('div','',m.activity);context.style.cssText='font-size:13px;color:#626a75;margin:0 0 5px';item.append(context);}
+   const label=el('label','',m.label+(m.kind==='duration'?' ('+(m.unit||'minutes')+')':''));
+   label.style.cssText='display:block;font-weight:650;font-size:15px;margin:4px 0 8px';
+   const control=answerControl(m);
+   label.append(control);item.append(label);body.append(item);
    rendered.push({card,measurement:m,control});
   }
+  area.append(body);
+  area.addEventListener('toggle',()=>{
+   if(!area.open)return;
+   host.querySelectorAll('details.isa-outcome-card').forEach(other=>{if(other!==area)other.open=false;});
+  });
   host.append(area);
- }
- const note=el('p','','You may leave questions blank if the activity was not observed. Nothing is automatically recorded as No.');
- note.style.cssText='font-size:13px;color:#666';host.append(note);restoreEntries();
+ });
+ restoreEntries();
 }
 async function init(){
  const host=$('starIsaCheckin');if(!host)return;
@@ -101,12 +122,20 @@ async function init(){
   return !assigned.length||assigned.includes(session.user.id);
  });
  loaded=true;render();
+ window.starIsaHasAssignedOutcomes=cards.length>0;
+ window.starIsaReady=true;
+ window.dispatchEvent(new Event('star-isa-outcomes-ready'));
 }
 document.addEventListener('DOMContentLoaded',()=>{
  window.starIsaCollectEntries=collectEntries;
  window.starIsaRestoreEntries=restoreEntries;
+ window.starIsaReady=false;
+ window.starIsaLoadFailed=false;
  init().catch(error=>{
   const host=$('starIsaCheckin');if(!host)return;
-  host.hidden=false;host.replaceChildren(el('p','','ISA outcome questions could not load ('+(error?.message||'connection error')+'). Your health check-in remains available. Refresh to retry.'));
+  host.hidden=false;host.replaceChildren(el('p','','ISA questions could not load. Refresh this page to try again. You can skip the ISA step if needed.'));
+  window.starIsaLoadFailed=true;
+  window.starIsaReady=true;
+  window.dispatchEvent(new Event('star-isa-outcomes-ready'));
  });
 });

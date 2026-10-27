@@ -2113,13 +2113,44 @@
 
     #cg-form.is-guided .landing-actions { display:none !important; }
     #cg-form:not(.is-guided) .section-detail { display:none !important; }
-    .guided-checkin-navigation { display:none; margin:0 0 14px; padding:12px; border:1px solid #e7ddcd; border-radius:12px; background:#fff; gap:10px; align-items:end; }
+    /* Shared check-in dropdown appearance; preserves native accessible picker. */
+    #cg-form select:not([multiple]) {
+      -webkit-appearance:none;
+      appearance:none;
+      display:block;
+      box-sizing:border-box;
+      width:100%;
+      max-width:100%;
+      min-width:0;
+      min-height:46px;
+      padding:11px 42px 11px 13px;
+      border:1px solid #d9cdb8;
+      border-radius:12px;
+      background-color:#fffdf9;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' viewBox='0 0 24 24' stroke='%2333473f' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 10 5 5 5-5'/%3E%3C/svg%3E");
+      background-position:right 13px center;
+      background-repeat:no-repeat;
+      background-size:18px 18px;
+      color:#273449;
+      font-family:var(--font-sans);
+      font-size:16px;
+      font-weight:600;
+      line-height:1.4;
+      text-overflow:ellipsis;
+    }
+    #cg-form select:not([multiple]):focus-visible { outline:3px solid #8cbaca; outline-offset:2px; }
+    .guided-checkin-navigation { display:none; margin:0 0 14px; padding:14px; border:1px solid #e7ddcd; border-radius:12px; background:#fff; gap:12px; align-items:end; }
     #cg-form.is-guided .guided-checkin-navigation { display:flex; }
-    .guided-checkin-navigation label { flex:1; min-width:0; font-weight:700; font-size:14px; color:#273449; }
-    .guided-checkin-navigation select { display:block; width:100%; margin-top:6px; min-height:44px; border:1px solid #d9d9d9; border-radius:9px; background:#fff; padding:9px; font-size:16px; }
-    .guided-checkin-navigation button { min-height:44px; background:#f4f1ea; color:#273449; border:1px solid #ddd6c9; font-size:14px; }
+    .guided-checkin-navigation label { flex:1; min-width:0; font-weight:700; font-size:15px; color:#273449; }
+    #cg-form .guided-checkin-navigation select { margin-top:8px; }
+    .guided-checkin-navigation button { min-height:46px; background:#f4f1ea; color:#273449; border:1px solid #ddd6c9; font-size:14px; }
     .guided-checkin-navigation button[hidden] { display:none !important; }
-    @media(max-width:420px) { .guided-checkin-navigation { flex-direction:column; align-items:stretch; } .guided-checkin-navigation label { width:100%; } }
+    /* Don't squeeze the selector beside Skip on larger iPhones. */
+    @media(max-width:640px) {
+      #cg-form.is-guided .guided-checkin-navigation { flex-direction:column; align-items:stretch; }
+      .guided-checkin-navigation label { width:100%; }
+      .guided-checkin-navigation button { width:100%; }
+    }
 </style>
 </head>
 <body>
@@ -3083,8 +3114,6 @@
               <div class="section-title">Notes &amp; Important Observations</div>
               <p class="muted">Use the gold-star box to preserve one important experience, accomplishment, or observation in the monthly team letter (180 characters maximum). Medication changes, PRNs, and safety incidents already have their own sections.</p>
 
-          <section id="starIsaCheckin" hidden style="margin:14px 0;padding:15px;background:#faf8f2;border:1px solid #ddcead;border-radius:16px" aria-label="Assigned ISA outcome measurements"></section>
-          <input type="hidden" id="isa_entries" name="isa_entries" value="[]" />
           <div id="summaryHighlightBox" style="margin:18px 0;padding:14px;border:1px solid #d9ccb8;border-radius:12px;background:#fffaf2">
             <label for="summary_highlight_note" style="display:block;font-weight:700"><span class="summary-star" aria-hidden="true">★</span> Important observation for the monthly team letter (optional)</label>
             <p class="muted" style="margin:6px 0 10px">Highlight a meaningful accomplishment, new experience, or important observation worth preserving in the monthly letter. If medication or safety details were already documented elsewhere, avoid repeating them here. Every gold-star entry is shown with its date. Maximum 180 characters.</p>
@@ -3095,6 +3124,22 @@
               <div class="controls" style="display:flex;gap:12px;flex-wrap:nowrap">
                 <button class="btn" type="button" id="finalNotesBack" style="flex:1;min-width:0">← Back</button>
                 <button class="btn primary" type="button" id="finalNotesReview" style="flex:1;min-width:0">Review &amp; Submit</button>
+              </div>
+            </fieldset>
+          </div>
+        </div>
+      </div>
+      <!-- ISA questions have their own optional guided step, separate from the gold star. -->
+      <div class="step" data-step="8" id="isa-outcomes-step" hidden aria-hidden="true">
+        <div class="section-card section-detail">
+          <div class="section-header">ISA Activities &amp; Progress</div>
+          <div class="section-content">
+            <fieldset class="panel">
+              <section id="starIsaCheckin" hidden aria-label="Assigned ISA outcome measurements"></section>
+              <input type="hidden" id="isa_entries" name="isa_entries" value="[]" />
+              <div class="controls" style="display:flex;gap:12px;flex-wrap:nowrap">
+                <button class="btn" type="button" id="isaStepBack" style="flex:1;min-width:0">← Back</button>
+                <button class="btn primary" type="button" id="isaStepReview" style="flex:1;min-width:0">Review &amp; Submit</button>
               </div>
             </fieldset>
           </div>
@@ -3128,7 +3173,7 @@
 
   <div id="toast"></div>
   <div id="successBanner" role="status" aria-live="polite" aria-atomic="true"></div>
-<script type="module" src="./isa-checkin.js?v=2026.10.26A"></script>
+<script type="module" src="./isa-checkin.js?v=2026.10.27LIVEA"></script>
 <!-- App logic -->
 <script type="module">
   // 1) Imports MUST be first in the module
@@ -5950,12 +5995,43 @@
       }
       showSectionList();
     });
-    document.getElementById('finalNotesReview')?.addEventListener('click', renderReviewBeforeSubmit);
+    document.getElementById('finalNotesReview')?.addEventListener('click', () => {
+      if (!window.starIsaReady) {
+        alert('ISA activities are still loading. Please try again shortly.');
+        return;
+      }
+      const isaStep=document.getElementById('isa-outcomes-step');
+      if (!isStepHidden(isaStep)) openSectionDetailByIndex(steps.indexOf(isaStep));
+      else renderReviewBeforeSubmit();
+    });
+    document.getElementById('isaStepBack')?.addEventListener('click', () => {
+      const idx=steps.findIndex(step=>step.id==='final-notes-step');
+      if(idx>=0)openSectionDetailByIndex(idx);
+    });
+    document.getElementById('isaStepReview')?.addEventListener('click',renderReviewBeforeSubmit);
     // Initial position
     go(0);
     applyConditionalSections();
     applyCaregiverSetupVisibility();
     syncEducationalQuestionStates();
+    // Keep ISA as a separate, optional guided screen, only when assigned cards exist.
+    const isaStep=document.getElementById('isa-outcomes-step');
+    const updateIsaStepVisibility=()=>{
+      const showIsa=window.starIsaHasAssignedOutcomes===true || window.starIsaLoadFailed===true;
+      if (isaStep) {
+        isaStep.hidden=!showIsa;
+        isaStep.setAttribute('aria-hidden',String(!showIsa));
+      }
+      const button=document.getElementById('finalNotesReview');
+      if(button)button.textContent=showIsa?'Next: ISA Activities →':'Review & Submit';
+      if(!showIsa && steps[current]?.id==='isa-outcomes-step'){
+        current=steps.findIndex(step=>step.id==='final-notes-step');
+      }
+      syncWizardView();
+      updateProgress();
+    };
+    window.addEventListener('star-isa-outcomes-ready',updateIsaStepVisibility);
+    updateIsaStepVisibility();
 
     const ynFields = [
       'behavior_anomaly_flag',
@@ -6657,6 +6733,10 @@
     }
     function applyDraftToForm(){
       steps.forEach((step, idx) => restore(step, idx));
+      // Recover ISA answers from drafts made before ISA had its own step.
+      const oldIsa=draft.data?.[7]?.isa_entries;
+      const isaField=document.getElementById('isa_entries');
+      if(isaField && oldIsa && !draft.data?.[8]?.isa_entries)isaField.value=oldIsa;
       window.starIsaRestoreEntries?.();
       showLegacyMedDraftNotice();
       syncAggressionControls();
@@ -6730,10 +6810,16 @@
               const option = document.createElement('option');
               option.value = String(idx);
               option.textContent = getSectionDefForStep(step)?.title ||
-                (step.id === 'final-notes-step' ? 'Important observation' : 'Notes');
+                (step.id === 'final-notes-step' ? 'Important observation' :
+                 step.id === 'isa-outcomes-step' ? 'ISA Activities & Progress' : 'Notes');
               sectionSelect.appendChild(option);
             });
-            sectionSelect.value = String(current);
+            const reviewOption = document.createElement('option');
+            reviewOption.value = 'review';
+            reviewOption.textContent = 'Review & Submit';
+            sectionSelect.appendChild(reviewOption);
+            sectionSelect.value = reviewOverlay?.classList.contains('is-reviewing')
+              ? 'review' : String(current);
           }
           const skipButton = document.getElementById('skipGuidedSection');
           if (skipButton) skipButton.hidden = steps[current]?.id === 'final-notes-step';
@@ -7025,6 +7111,8 @@
       }
       document.getElementById('checkinAnswersReview').open = false;
       reviewOverlay.classList.add('is-reviewing');
+      const sectionSelect = document.getElementById('guidedSectionSelect');
+      if (sectionSelect?.querySelector('option[value="review"]')) sectionSelect.value = 'review';
       reviewOverlay.scrollIntoView({ block: 'start', behavior: 'smooth' });
     }
 
@@ -7473,8 +7561,14 @@
 	    });
 
     document.getElementById('guidedSectionSelect')?.addEventListener('change', (event) => {
-      const idx = Number(event.target.value);
-      if (Number.isInteger(idx) && steps[idx] && !isStepHidden(steps[idx])) {
+      const destination = event.target.value;
+      if (destination === 'review') {
+        // Jump to review; a separate date confirmation is still required to submit.
+        renderReviewBeforeSubmit();
+        return;
+      }
+      const idx = Number(destination);
+      if (destination !== '' && Number.isInteger(idx) && steps[idx] && !isStepHidden(steps[idx])) {
         openSectionDetailByIndex(idx);
       }
     });
@@ -7599,7 +7693,7 @@
 <div id="tabbar"></div>
 <!-- Bottom tab bar + hamburger drawer -->
 <script defer src="./load-tabbar.js?v=2025.01.09E"></script>
-<script defer src="./ui-shell.js?v=2026.10.20A"></script>
-<script defer src="./scripts/appbar-drawer.js?v=2026.03.16B"></script>
+<script defer src="./ui-shell.js?v=2026.10.27LIVEA"></script>
+<script defer src="./scripts/appbar-drawer.js?v=2026.10.27LIVEA"></script>
 </body>
 </html>

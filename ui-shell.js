@@ -195,28 +195,14 @@
   });
 
 
-  // ----- build version footer -----
+  // Version info lives inside the hamburger drawer, not over the form.
+  // Keep a hidden marker so page-level fallback badges cannot reappear.
   if (!document.getElementById('star-build-version')) {
-    const footer = document.createElement('footer');
-    footer.id = 'star-build-version';
-    footer.style.cssText = `
-      position:fixed;
-      right:12px;
-      bottom:calc(var(--tabbar-h,72px) + 12px);
-      background:rgba(17,17,17,0.85);
-      color:#f9fafb;
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-      font-size:11px;
-      font-weight:600;
-      letter-spacing:0.02em;
-      padding:6px 10px;
-      border-radius:10px;
-      box-shadow:0 6px 18px rgba(0,0,0,0.18);
-      z-index:998;
-      pointer-events:none;
-    `;
-    footer.textContent = `Build ${BUILD_VERSION}`;
-    document.body.appendChild(footer);
+    const versionMarker = document.createElement('span');
+    versionMarker.id = 'star-build-version';
+    versionMarker.hidden = true;
+    versionMarker.textContent = `Build ${BUILD_VERSION}`;
+    document.body.appendChild(versionMarker);
   }
 
 })();

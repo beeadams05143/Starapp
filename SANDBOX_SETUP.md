@@ -1,12 +1,12 @@
 # STAR sandbox — UVM interns (staging only)
 
-Status: **Free organization and test database created; staging backend not yet authorized/configured or deployed.** New isolated project URL: `https://rjozzwmkvlndanoaghtc.supabase.co`. The staging branch must NOT use the production Supabase project or production auth accounts.
+Status: **Free organization and test database created; foundation and ISA schema installed, staging public key connected; test site not deployed.** Isolated project URL: `https://rjozzwmkvlndanoaghtc.supabase.co`. The staging branch must NOT use the production Supabase project or production auth accounts.
 
 ## Isolation requirements
 - Staging source: `staging/uvm-intern-sandbox` (not production `main`).
 - Netlify: create a NEW staging site or branch preview with a clearly distinct hostname and deploy only this branch. Do not repoint the production site.
 - Supabase: an independent Free organization `STAR Sandbox — UVM Testing` and project `STAR Test Database` have been created; never clone personal or caregiver production data.
-- `supabaseClient.js` points to the new test project's URL but intentionally uses the INVALID `SANDBOX_NOT_CONFIGURED` key pending Supabase connector authorization and safe database setup. Its auth localStorage scope is `starapp-intern-sandbox`.
+- `supabaseClient.js` points to the test URL and its **public publishable API key** (never a service role key). Browser auth localStorage scope is `starapp-intern-sandbox`. The login screen now supports separate email-confirmed STAR TEST accounts.
 - No `service_role` key in GitHub, browser code, Netlify static files or intern messages. Only the staging project's publishable (public) key is permitted in the browser.
 - Before deployment, search staging code for ALL direct production project URLs, production secrets and data-bearing endpoints, and replace or disable every path. Confirm no requests hit production in a browser network test.
 - Configure staging Auth site URL, allowed redirect URLs, sign-up email confirmation, password reset, and email sender. Users create their own private passwords.
@@ -34,8 +34,8 @@ Status: **Free organization and test database created; staging backend not yet a
 10. Reset/clear test data without affecting other test groups or production.
 
 ## Unfinished dependencies
-- Owner approval of $10/month additional Supabase project cost AND choice of organization.
-- New project provisioning, minimal schema migrations, RLS/security and Auth verification.
-- Separate Netlify staging deployment or Netlify branch-preview configuration.
-- Secure email signup / password-setting per test user (no hardcoded credentials).
+- Completed: independent Free Supabase organization and project; no additional Supabase project charge was authorized.
+- Completed: minimal groups, membership, profiles, check-ins/drafts/configs and ISA cards schema, all with RLS. Pending: manual browser authentication and two-user cross-group authorization tests.
+- Pending: separate Netlify staging deployment from **staging/uvm-intern-sandbox** (never point live site at this branch); then configure Supabase Auth Site URL and allowed redirect URLs.
+- Ready in staged login: separate email signup/confirmation; individual testers must register their own credentials on the staging site. No hardcoded passwords.
 - Manual signed-in mobile and desktop testing, and intern acceptance test run.

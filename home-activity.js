@@ -24,100 +24,19 @@ function boot(){
 
   const seenMap = readSeenMap();
 
-  const SOURCES = [
-    {
-      key: 'caregiver',
-      label: 'Fictional caregiver check-in',
-      query: (gid) => gid
-        ? `caregiver_checkins?select=submitted_at,created_at&group_id=eq.${encodeURIComponent(gid)}&order=submitted_at.desc&limit=1`
-        : null,
-      fields: ['submitted_at', 'created_at'],
-      detail: (row) => row?.submitted_at || row?.created_at || null,
-    },
-    {
-      key: 'chat',
-      label: 'Chat message',
-      query: (gid) => gid ? `messages?select=created_at,message&group_id=eq.${encodeURIComponent(gid)}&order=created_at.desc&limit=1` : null,
-      fields: ['created_at'],
-      detail: (row) => row?.message || null,
-    },
-    {
-      key: 'calendar',
-      label: 'Calendar update',
-      query: (gid) => gid ? [
-        'calendar_events?select=updated_at,created_at,title',
-        `group_id=eq.${encodeURIComponent(gid)}`,
-        'type=not.eq.health-flag',
-        'order=updated_at.desc.nullslast',
-        'order=created_at.desc.nullslast',
-        'limit=1',
-      ].join('&') : null,
-      fields: ['updated_at', 'created_at'],
-      detail: (row) => row?.title || null,
-    },
-    {
-      key: 'behavior',
-      label: 'Health calendar note',
-      query: (gid) => gid ? [
-        'calendar_events?select=updated_at,created_at,title',
-        `group_id=eq.${encodeURIComponent(gid)}`,
-        'type=eq.health-flag',
-        'order=updated_at.desc.nullslast',
-        'order=created_at.desc.nullslast',
-        'limit=1',
-      ].join('&') : null,
-      fields: ['updated_at', 'created_at'],
-      detail: (row) => row?.title || null,
-    },
-    {
-      key: 'mood',
-      label: 'Mood check-in',
-      query: (gid) => gid
-        ? `mood_entries?select=updated_at,created_at,mood&group_id=eq.${encodeURIComponent(gid)}&order=updated_at.desc.nullslast&order=created_at.desc.nullslast&limit=1`
-        : null,
-      fields: ['updated_at', 'created_at'],
-      detail: (row) => row?.mood || null,
-    },
-    {
-      key: 'documentsDb',
-      label: 'Document saved',
-      query: (gid) => gid ? [
-        'documents?select=updated_at,created_at,title',
-        `group_id=eq.${encodeURIComponent(gid)}`,
-        'order=updated_at.desc.nullslast',
-        'order=created_at.desc.nullslast',
-        'limit=1',
-      ].join('&') : null,
-      fields: ['updated_at', 'created_at'],
-      detail: (row) => row?.title || null,
-    },
-    {
-      key: 'emergencyDb',
-      label: 'Emergency info update',
-      query: (gid) => gid
-        ? `emergency_medical?select=updated_at,id&group_id=eq.${encodeURIComponent(gid)}&order=updated_at.desc&limit=1`
-        : null,
-      fields: ['updated_at'],
-      detail: () => null,
-    },
-  ];
-
-  const STORAGE_SOURCES = [
-    {
-      key: 'documentsShared',
-      label: 'Shared document library',
-      path: (gid) => gid ? `${DOCS_PREFIX}/${gid}.json` : null,
-    },
-    {
-      key: 'emergencyShared',
-      label: 'Shared emergency sheet',
-      path: (gid) => gid ? `${EMERGENCY_PREFIX}/${gid}.json` : null,
-    },
-  ];
-
-  const LOCAL_SOURCES = [
-    { key: 'healthLocal', label: 'Health calendar note', storageKey: HEALTH_STAMP_KEY },
-  ];
+  // Sandbox dashboard: show genuine activity from fictional check-ins only.
+  // Do not surface production-looking document, medical or chat activity.
+  const SOURCES = [{
+    key: 'caregiver',
+    label: 'Fictional caregiver check-in',
+    query: (gid) => gid
+      ? `caregiver_checkins?select=submitted_at,created_at&group_id=eq.${encodeURIComponent(gid)}&order=submitted_at.desc&limit=1`
+      : null,
+    fields: ['submitted_at','created_at'],
+    detail: () => 'Cedar Grove demonstration data',
+  }];
+  const STORAGE_SOURCES = [];
+  const LOCAL_SOURCES = [];
 
   init().catch((err) => console.warn('home activity init failed', err));
 

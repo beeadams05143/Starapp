@@ -26,6 +26,9 @@ function bankOptions(){
 function bankChanged(){
  const category=val('isaBankCategory');
  const box=$('isaBankExample');box.replaceChildren();
+ // The bank category is also the category of the card being created.
+ // Selecting a different bank category intentionally updates the editable field.
+ if (!$('isaEditor').hidden) $('isaCategory').value=category==='__custom'?'':category;
  if(category==='__custom'){box.add(new Option('Enter your own outcome below',''));return;}
  (categories[category]||[]).forEach(k=>box.add(new Option(k,k)));
 }
@@ -46,7 +49,7 @@ function renderList(){
 function blankCard(){
  state.editing=null;state.strategies=[];state.measurements=[];state.selectedAssignees=[];
  $('isaForm').reset();$('isaEditorTitle').textContent='New Personal Outcome Card';
- $('isaCategory').value='Communication';$('isaCardStatus').value='draft';$('isaVoiceSource').value='none';
+ $('isaCategory').value=val('isaBankCategory')==='__custom'?'':val('isaBankCategory');$('isaCardStatus').value='draft';$('isaVoiceSource').value='none';
  renderStrategies();renderMeasurements();renderAssignees();updateKind();setEditor(true);
 }
 function openCard(card){
@@ -173,7 +176,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   $('isaCategory').value=category;$('isaTitle').value=title;
   $('isaDescription').value='';$('isaTitle').focus();
  });
- $('isaBlank').addEventListener('click',()=>{$('isaCategory').value='';$('isaTitle').value='';$('isaDescription').value='';$('isaCategory').focus();});
+ $('isaBlank').addEventListener('click',()=>{const category=val('isaBankCategory');$('isaCategory').value=category==='__custom'?'':category;$('isaTitle').value='';$('isaDescription').value='';(category==='__custom'?$('isaCategory'):$('isaTitle')).focus();});
  $('isaNew').addEventListener('click',blankCard);
  $('isaCancel').addEventListener('click',()=>setEditor(false));
  $('isaAddStrategy').addEventListener('click',addStrategy);

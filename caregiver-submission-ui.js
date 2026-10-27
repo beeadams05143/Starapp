@@ -162,6 +162,13 @@ export class CheckinSubmissionUI {
     this.el.submissionStatus.textContent = message;
     this.el.submissionStatus.dataset.error = String(error);
     this.el.submissionStatus.dataset.state = state;
+    // A past success must not remain visible after starting a new check-in.
+    if (state !== 'verified') {
+      const banner = this.doc.getElementById('successBanner');
+      banner?.classList.remove('is-visible');
+      if (this.successBannerTimer) this.win.clearTimeout(this.successBannerTimer);
+      this.successBannerTimer = null;
+    }
   }
   showSuccessBanner() {
     const banner = this.doc.getElementById('successBanner');

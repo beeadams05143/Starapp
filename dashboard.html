@@ -145,6 +145,23 @@
     .action-card.active svg {
       color: #854F0B;
     }
+    /* Live recent-activity banners: no hardcoded production-like sample entries. */
+    .recent-activity .activity-banner {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 12px;
+      padding: 16px 18px;
+      border-bottom: 1px solid #E7E2D8;
+    }
+    .recent-activity .activity-banner:last-child { border-bottom: 0; }
+    .recent-activity .banner-copy { display: grid; gap: 4px; min-width: 0; line-height: 1.45; }
+    .recent-activity .banner-copy strong { color: #191919; font-size: 16px; }
+    .recent-activity .banner-copy span { color: #3A3A37; font-size: 14px; overflow-wrap: anywhere; }
+    .recent-activity .activity-banner button {
+      border: 0; background: transparent; color: #5F5E5A;
+      padding: 0 4px; font-size: 22px; cursor: pointer;
+    }
     .recent-activity {
       border: 1px solid #D8D2C8;
       border-radius: 16px;
@@ -338,40 +355,9 @@
         </a>
       </div>
 
-      <div class="section-label">Recent activity</div>
-      <div class="recent-activity">
-        <div class="activity-row">
-          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <path d="M7 3h7l4 4v14H7z"></path>
-            <path d="M14 3v5h5M10 12h5M10 16h5M10 8h1"></path>
-          </svg>
-          <div>
-            <p class="activity-title">Document saved</p>
-            <p class="activity-meta">Med check · 3/26/2026</p>
-          </div>
-          <button class="activity-dismiss" type="button" aria-label="Dismiss document saved">×</button>
-        </div>
-        <div class="activity-row">
-          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <path d="M5 4h4v16H5zM10 7h4v13h-4zM15 5l4 14"></path>
-          </svg>
-          <div>
-            <p class="activity-title">Shared document library</p>
-            <p class="activity-meta">3/11/2026</p>
-          </div>
-          <button class="activity-dismiss" type="button" aria-label="Dismiss shared document library">×</button>
-        </div>
-        <div class="activity-row">
-          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <path d="M4 5h16v11H8l-4 4z"></path>
-            <path d="M8 9h8M8 13h5"></path>
-          </svg>
-          <div>
-            <p class="activity-title">Chat message</p>
-            <p class="activity-meta">11/7/2025</p>
-          </div>
-          <button class="activity-dismiss" type="button" aria-label="Dismiss chat message">×</button>
-        </div>
+      <div class="section-label">Recent activity — STAR TEST</div>
+      <div class="recent-activity" id="activityBannerHost" aria-live="polite">
+        <div class="activity-banner"><div class="banner-copy"><strong>Loading fictional activity…</strong></div></div>
       </div>
     </section>
   </main>
@@ -379,7 +365,7 @@
 <!-- Page logic that populates #user-email etc. -->
 <script type="module" src="./script.js?v=2026.03.29A"></script>
 <script type="module" src="./avatar-float.js?v=2026.03.29A"></script>
-<script type="module" src="./home-activity.js?v=2026.03.29A"></script>
+<script type="module" src="./home-activity.js?v=2026.10.27UVM1"></script>
 <script type="module" src="./dashboard-clock.js?v=2026.10.20A"></script>
 
 <script type="module">

@@ -81,6 +81,7 @@
       <button id="caregiverBtn" type="button">I am a Caregiver</button>
       <button id="individualBtn" type="button">I am an Individual</button>
     </div>
+    <p id="roleError" role="alert" aria-live="polite" style="color:#b42318; margin:18px 0 0;"></p>
   </main>
   <script type="module">
     import { rest, getSessionFromStorage } from './restClient.js';
@@ -89,33 +90,45 @@
     const caregiverBtn = document.getElementById('caregiverBtn');
     const individualBtn = document.getElementById('individualBtn');
 
-    caregiverBtn.addEventListener('click', async () => {
-      const session = getSessionFromStorage();
-      if (!session?.user?.id) return;
-      await rest(`profiles?id=eq.${encodeURIComponent(session.user.id)}`, {
-        method: 'PATCH',
-        headers: { Prefer: 'return=representation' },
-        body: JSON.stringify({
-          role: 'caregiver',
-          onboarding_step: 'group',
-        }),
-      });
-      void loadAndRunRouter();
-    });
+    const roleError = document.getElementById('roleError');
 
-    individualBtn.addEventListener('click', async () => {
+    async function chooseRole(role) {
       const session = getSessionFromStorage();
-      if (!session?.user?.id) return;
-      await rest(`profiles?id=eq.${encodeURIComponent(session.user.id)}`, {
-        method: 'PATCH',
-        headers: { Prefer: 'return=representation' },
-        body: JSON.stringify({
-          role: 'individual',
-          onboarding_step: 'group',
-        }),
-      });
-      void loadAndRunRouter();
-    });
+      if (!session?.user?.id) {
+        roleError.textContent = 'Please sign in again before choosing a role.';
+        return;
+      }
+      caregiverBtn.disabled = true;
+      individualBtn.disabled = true;
+      roleError.textContent = '';
+      try {
+        // New test users do not yet have a profiles row. PATCH silently updated
+        // zero rows and returned them to role selection. Upsert creates the
+        // missing row while preserving the existing row for returning users.
+        const saved = await rest('profiles?on_conflict=id', {
+          method: 'POST',
+          headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
+          body: JSON.stringify([{
+            id: session.user.id,
+            role,
+            onboarding_step: 'group',
+          }]),
+        });
+        if (!Array.isArray(saved) || saved[0]?.id !== session.user.id || saved[0]?.role !== role) {
+          throw new Error('The profile was not saved.');
+        }
+        await loadAndRunRouter();
+      } catch (error) {
+        console.error('[ROLE SELECT] failed to save test profile', error);
+        roleError.textContent = 'Could not save your role. ' + (error?.message || 'Please try again.');
+      } finally {
+        caregiverBtn.disabled = false;
+        individualBtn.disabled = false;
+      }
+    }
+
+    caregiverBtn.addEventListener('click', () => void chooseRole('caregiver'));
+    individualBtn.addEventListener('click', () => void chooseRole('individual'));
   </script>
 </body>
 </html>

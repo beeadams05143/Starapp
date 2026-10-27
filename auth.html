@@ -168,7 +168,9 @@
           </span>
         </label>
 
-        <button id="continueBtn" class="primary-btn" type="submit">Continue</button>
+        <button id="continueBtn" class="primary-btn" type="submit">Sign in to STAR TEST</button>
+        <button id="registerBtn" class="primary-btn" type="button" style="margin-top:10px;background:#fff1cf;border:1px solid #b78d45">Create my test account</button>
+        <p style="font-size:12px;line-height:1.5;color:#62584b">This is a separate testing login. Use a new password, never your live STAR password. Only fictional records belong here.</p>
       </form>
       <div id="message" role="status" aria-live="polite"></div>
     </div>
@@ -188,6 +190,7 @@
     const emailEl = document.getElementById('email');
     const passwordEl = document.getElementById('password');
     const continueBtn = document.getElementById('continueBtn');
+    const registerBtn = document.getElementById('registerBtn');
     const messageEl = document.getElementById('message');
     const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -198,6 +201,7 @@
 
     function setBusy(on) {
       continueBtn.disabled = on;
+      registerBtn.disabled = on;
     }
 
     function validateEmail(email) {
@@ -262,47 +266,15 @@
       return requestAuth('/auth/v1/signup', { email, password });
     }
 
-    function shouldAttemptSignup(error) {
-      const message = String(error?.message || '').toLowerCase();
-      return message.includes('invalid login credentials') ||
-             message.includes('user not found') ||
-             message.includes('invalid credentials');
-    }
-
-    async function authenticate(email, password) {
-      try {
-        await logIn(email, password);
-        return;
-      } catch (loginError) {
-        if (!shouldAttemptSignup(loginError)) throw loginError;
-        try {
-          await signUp(email, password);
-        } catch (signupError) {
-          const message = String(signupError?.message || '').toLowerCase();
-          if (message.includes('already registered') || message.includes('already been registered')) {
-            throw loginError;
-          }
-          throw signupError;
-        }
-        await logIn(email, password);
-      }
-    }
-
     if (getSessionFromStorage()?.user?.id) {
       void loadAndRunRouter();
     }
-
-    form.addEventListener('submit', async (event) => {
-      event.preventDefault();
+    async function handleCredentials(mode) {
       setMessage('');
       setBusy(true);
       try {
         const consentCheck = document.getElementById('consentCheck');
-        if (!consentCheck.checked) {
-          setBusy(false);
-          setMessage('Please agree to the Privacy Policy and Terms of Service to continue.');
-          return;
-        }
+        if (!consentCheck.checked) throw new Error('Please agree to the Privacy Policy and Terms of Service to continue.');
         const email = (emailEl.value || '').trim();
         const password = passwordEl.value || '';
         const emailError = validateEmail(email);
@@ -310,19 +282,30 @@
         const passwordError = validatePassword(password);
         if (passwordError) throw new Error(passwordError);
 
-        await authenticate(email, password);
+        if (mode === 'register') {
+          // New Supabase projects generally require email confirmation.
+          const response = await signUp(email,password);
+          if (!response?.access_token && !response?.session) {
+            setMessage('Check your email for the STAR TEST verification link. After confirming, return here and choose Sign in.',true);
+            return;
+          }
+        } else {
+          await logIn(email,password);
+        }
         const session = getSessionFromStorage();
-        if (!session?.user?.id) throw new Error('Authentication did not return a valid session.');
+        if (!session?.user?.id) throw new Error('Account created, but sign-in still requires email confirmation.');
         try { localStorage.setItem('user_id', session.user.id); } catch {}
-        setMessage('Success! Redirecting…', true);
+        setMessage('STAR TEST sign-in successful! Redirecting…',true);
         void loadAndRunRouter();
       } catch (error) {
-        console.error('[AUTH] continue failed', error);
-        setMessage(error?.message || 'Authentication failed.');
+        console.error('[STAR TEST AUTH]',error?.message||error);
+        setMessage(error?.message || 'Sign-in was not completed.');
       } finally {
         setBusy(false);
       }
-    });
+    }
+    form.addEventListener('submit',event=>{event.preventDefault();void handleCredentials('login')});
+    registerBtn.addEventListener('click',()=>{void handleCredentials('register')});
   </script>
 <script defer src="/sandbox-ribbon.js?v=2026.10.26A"></script>
 </body>

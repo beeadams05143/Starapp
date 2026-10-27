@@ -153,9 +153,25 @@ export class CheckinSubmissionUI {
     if (toggle) toggle.disabled = locked;
     this.update();
   }
-  status(message, error = false) {
+  status(message, error = false, state = '') {
     this.el.submissionStatus.textContent = message;
     this.el.submissionStatus.dataset.error = String(error);
+    this.el.submissionStatus.dataset.state = state;
+    // A past success must not remain visible after starting a new check-in.
+    if (state !== 'verified') {
+      const banner = this.doc.getElementById('successBanner');
+      banner?.classList.remove('is-visible');
+      if (this.successBannerTimer) this.win.clearTimeout(this.successBannerTimer);
+      this.successBannerTimer = null;
+    }
+  }
+  showSuccessBanner() {
+    const banner = this.doc.getElementById('successBanner');
+    if (!banner) return;
+    banner.textContent = '✓ Check-In Submitted Successfully!';
+    banner.classList.add('is-visible');
+    if (this.successBannerTimer) this.win.clearTimeout(this.successBannerTimer);
+    this.successBannerTimer = this.win.setTimeout(() => banner.classList.remove('is-visible'), 4500);
   }
   storageWarning() {
     this.el.storageNotice.hidden = false;
@@ -344,7 +360,10 @@ export class CheckinSubmissionUI {
       this.setLocked(true);
       this.status(result.state === 'practice'
         ? `Practice complete for ${fullDate(date)} — NOT saved to Supabase. This is not a real check-in.`
-        : `Saved and Verified — ${fullDate(date)}. Record ID: ${result.row.id}.`);
+        : `✓ Check-In Submitted Successfully! — ${fullDate(date)}. Your check-in is saved and available in STAR Reports.`,
+        false, result.state === 'verified' ? 'verified' : 'practice');
+      // Show the original green ribbon only after the database confirms a save.
+      if (result.state === 'verified') this.showSuccessBanner();
       // Database success is never downgraded by local cleanup failure.
       try { this.store?.complete({ context: this.context, recordId: result.row?.id, date }); }
       catch {

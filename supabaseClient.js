@@ -2,7 +2,7 @@
 // Replaces @supabase/supabase-js which was hanging in certain browsers.
 
 export const BUILD_VERSION = '2026.03.16B';
-export const SUPABASE_URL = 'https://unconfigured-star-test.invalid';
+export const SUPABASE_URL = 'https://rjozzwmkvlndanoaghtc.supabase.co';
 export const SUPABASE_ANON_KEY = 'SANDBOX_NOT_CONFIGURED';
 
 const AUTH_STORAGE_PREFIX = 'supabase.auth.token';

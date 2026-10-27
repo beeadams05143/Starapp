@@ -47,6 +47,20 @@ export async function next() {
   }
 
   if (profile.onboarding_step === 'caregiver-setup') {
+    // Returning test users may have saved their configuration already while
+    // their onboarding_step still says caregiver-setup. Don't loop back into
+    // setup or force a second write to the group's unique config row.
+    try {
+      const configs = await rest(
+        `caregiver_checkin_configs?group_id=eq.${encodeURIComponent(profile.group_id)}&select=id&limit=1`
+      );
+      if (Array.isArray(configs) && configs.length > 0) {
+        window.location.href = 'dashboard.html';
+        return;
+      }
+    } catch (error) {
+      console.warn('[ROUTER] could not check saved caregiver setup', error);
+    }
     window.location.href = 'caregiver-setup-wizard.html';
     return;
   }

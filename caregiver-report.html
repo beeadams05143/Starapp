@@ -1634,7 +1634,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
           </div>
         </div>
       </div>
-      <div class="chart report-graph" data-graph-id="mood" data-graph-title="Individual Mood Share" data-graph-canvas="moodPieMain">
+      <div class="chart report-graph" hidden style="display:none" data-feature-status="paused" data-graph-id="mood" data-graph-title="Individual Mood Share" data-graph-canvas="moodPieMain">
         <h2>Individual Mood Share (Pie)</h2>
         <p class="muted chart-range-label" id="moodGraphRangeLabel">Range: Recent 3 months</p>
         <canvas id="moodPieMain"></canvas>
@@ -1649,7 +1649,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         </div>
       </div>
 
-      <div class="chart small report-graph" data-graph-id="wyr" data-graph-title="Leisure Would-You-Rather" data-graph-canvas="wyrBar">
+      <div class="chart small report-graph" hidden style="display:none" data-feature-status="paused" data-graph-id="wyr" data-graph-title="Leisure Would-You-Rather" data-graph-canvas="wyrBar">
         <h2 style="margin:0 0 8px;">Leisure (Would-You-Rather) — Minutes & Picks</h2>
         <p class="muted chart-range-label" id="wyrRangeLabel">Range: Recent 3 months</p>
         <canvas id="wyrBar" height="220"></canvas>
@@ -6383,25 +6383,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         if (!byKey.has(key) || row.source === 'supabase') byKey.set(key, row);
       });
 
-      // STAR TEST ONLY: legacy standalone mood_entries can be absent in the
-      // fictional sandbox. Use explicitly marked fictional daily mood samples,
-      // never infer a mood from caregiver notes or substitute real users' data.
-      if (!byKey.size) {
-        for (const entry of (cgState.entries || [])) {
-          const payload = entry?.payload || {};
-          if (payload.fictional_test_data !== true || !payload.fictional_mood_for_graphs) continue;
-          const dateObj = getCheckinDate(entry);
-          if (!dateObj || dateObj < start || dateObj > end) continue;
-          const mood = String(payload.fictional_mood_for_graphs);
-          const timestamp = dateObj.toISOString();
-          byKey.set(`demo:${getCheckinDayKey(entry)}`, {
-            id: `demo:${getCheckinDayKey(entry)}`,
-            timestamp, dateObj, mood, intensity: null,
-            notes: 'Fictional STAR TEST check-in mood sample',
-            sleep_hours: null, source: 'fictional-test'
-          });
-        }
-      }
       return [...byKey.values()].sort((a,b) => a.dateObj - b.dateObj);
     }
 
@@ -6706,17 +6687,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       }
       if (!rows.length){
         rows = (JSON.parse(localStorage.getItem('wyrEntries')||'[]')).map(r=>({ ts:new Date(r.timestamp), label:r.label }));
-      }
-      // STAR TEST ONLY: provide a fictional practice choice when the separate
-      // WYR feature has no rows. Only explicitly marked fictional records qualify.
-      if (!rows.length) {
-        rows = (cgState.entries || [])
-          .filter(e => e?.payload?.fictional_test_data === true && e?.payload?.fictional_wyr_pick)
-          .map(e => ({
-            ts: new Date(`${getCheckinDayKey(e)}T12:00:00`),
-            label: String(e.payload.fictional_wyr_pick)
-          }))
-          .filter(r => !Number.isNaN(r.ts.getTime()));
       }
       return rows;
     }

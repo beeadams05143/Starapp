@@ -2564,6 +2564,9 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     }
 
     function renderGraphById(graphId) {
+      // Paused individual-facing features have no graph in the caregiver-first
+      // report. Preserve their code/data for reactivation without rendering.
+      if (document.querySelector(`.report-graph[data-graph-id="${graphId}"]`)?.hidden) return;
       const range = ensureGraphRange(graphId);
       const caregiverSource = cgState.entries || [];
       const filteredCaregiver = filterRecordsByRange(caregiverSource, range, getCheckinDate);

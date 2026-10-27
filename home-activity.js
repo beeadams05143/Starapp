@@ -27,9 +27,11 @@ function boot(){
   const SOURCES = [
     {
       key: 'caregiver',
-      label: 'Caregiver check-in',
-      query: () => 'caregiver_checkins?select=updated_at,submitted_at,created_at&order=updated_at.desc.nullslast&order=created_at.desc.nullslast&limit=1',
-      fields: ['updated_at', 'submitted_at', 'created_at'],
+      label: 'Fictional caregiver check-in',
+      query: (gid) => gid
+        ? `caregiver_checkins?select=submitted_at,created_at&group_id=eq.${encodeURIComponent(gid)}&order=submitted_at.desc&limit=1`
+        : null,
+      fields: ['submitted_at', 'created_at'],
       detail: (row) => row?.submitted_at || row?.created_at || null,
     },
     {
@@ -138,12 +140,16 @@ function boot(){
     host.innerHTML = '';
     host.classList.remove('is-hidden');
     const latestTs = updates.reduce((max, entry) => Math.max(max, entry.ts || 0), 0);
-    const when = latestTs ? new Date(latestTs).toLocaleString() : 'No updates yet';
+    const when = latestTs ? new Date(latestTs).toLocaleString() : 'No fictional updates yet';
     const card = document.createElement('article');
     card.className = 'activity-banner';
     const copy = document.createElement('div');
     copy.className = 'banner-copy';
-    copy.innerHTML = `<strong>All caught up</strong><span>We&rsquo;ll alert you when something new happens.<br><small>Last activity: ${when}</small></span>`;
+    const strong = document.createElement('strong');
+    strong.textContent = 'No new test activity';
+    const span = document.createElement('span');
+    span.textContent = `Recent test activity: ${when}`;
+    copy.append(strong, span);
     card.appendChild(copy);
     host.appendChild(card);
   }
@@ -158,7 +164,11 @@ function boot(){
 
       const copy = document.createElement('div');
       copy.className = 'banner-copy';
-      copy.innerHTML = `<strong>${entry.label}</strong><span>${formatEntry(entry)}</span>`;
+      const strong = document.createElement('strong');
+      strong.textContent = entry.label;
+      const span = document.createElement('span');
+      span.textContent = formatEntry(entry);
+      copy.append(strong, span);
 
       const dismiss = document.createElement('button');
       dismiss.type = 'button';

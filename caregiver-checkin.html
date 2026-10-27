@@ -3080,14 +3080,11 @@
           <div class="section-header">Notes &amp; Important Observations <span>★</span></div>
           <div class="section-content">
             <fieldset class="panel">
-              <div class="section-title">Notes &amp; Important Observations</div>
-              <p class="muted">Use the gold-star box to preserve one important experience, accomplishment, or observation in the monthly team letter (180 characters maximum). Medication changes, PRNs, and safety incidents already have their own sections.</p>
+              <p class="muted">Save a meaningful moment for the monthly team letter. This is separate from ISA progress.</p>
 
-          <section id="starIsaCheckin" hidden style="margin:14px 0;padding:15px;background:#faf8f2;border:1px solid #ddcead;border-radius:16px" aria-label="Assigned ISA outcome measurements"></section>
-          <input type="hidden" id="isa_entries" name="isa_entries" value="[]" />
           <div id="summaryHighlightBox" style="margin:18px 0;padding:14px;border:1px solid #d9ccb8;border-radius:12px;background:#fffaf2">
-            <label for="summary_highlight_note" style="display:block;font-weight:700"><span class="summary-star" aria-hidden="true">★</span> Important observation for the monthly team letter (optional)</label>
-            <p class="muted" style="margin:6px 0 10px">Highlight a meaningful accomplishment, new experience, or important observation worth preserving in the monthly letter. If medication or safety details were already documented elsewhere, avoid repeating them here. Every gold-star entry is shown with its date. Maximum 180 characters.</p>
+            <label for="summary_highlight_note" style="display:block;font-weight:700"><span class="summary-star" aria-hidden="true">★</span> Gold-star observation (optional)</label>
+            <p class="muted" style="margin:6px 0 10px">One meaningful moment, included with its date in the monthly letter. Up to 180 characters.</p>
             <textarea id="summary_highlight_note" name="summary_highlight_note" maxlength="180" rows="4" style="width:100%;min-height:110px;box-sizing:border-box;resize:vertical" placeholder="For example: Tried a new hiking trail, independently greeted a neighbor, or made progress toward a personal goal."></textarea>
             <div id="summaryHighlightCount" class="muted" style="text-align:right;margin-top:5px" aria-live="polite">0 / 180 characters</div>
           </div>
@@ -3095,6 +3092,22 @@
               <div class="controls" style="display:flex;gap:12px;flex-wrap:nowrap">
                 <button class="btn" type="button" id="finalNotesBack" style="flex:1;min-width:0">← Back</button>
                 <button class="btn primary" type="button" id="finalNotesReview" style="flex:1;min-width:0">Review &amp; Submit</button>
+              </div>
+            </fieldset>
+          </div>
+        </div>
+      </div>
+      <!-- ISA questions have their own optional guided step, separate from the gold star. -->
+      <div class="step" data-step="8" id="isa-outcomes-step" hidden aria-hidden="true">
+        <div class="section-card section-detail">
+          <div class="section-header">ISA Activities &amp; Progress</div>
+          <div class="section-content">
+            <fieldset class="panel">
+              <section id="starIsaCheckin" hidden aria-label="Assigned ISA outcome measurements"></section>
+              <input type="hidden" id="isa_entries" name="isa_entries" value="[]" />
+              <div class="controls" style="display:flex;gap:12px;flex-wrap:nowrap">
+                <button class="btn" type="button" id="isaStepBack" style="flex:1;min-width:0">← Back</button>
+                <button class="btn primary" type="button" id="isaStepReview" style="flex:1;min-width:0">Review &amp; Submit</button>
               </div>
             </fieldset>
           </div>
@@ -3128,7 +3141,7 @@
 
   <div id="toast"></div>
   <div id="successBanner" role="status" aria-live="polite" aria-atomic="true"></div>
-<script type="module" src="./isa-checkin.js?v=2026.10.26A"></script>
+<script type="module" src="./isa-checkin.js?v=2026.10.27D"></script>
 <!-- App logic -->
 <script type="module">
   // 1) Imports MUST be first in the module
@@ -5950,12 +5963,43 @@
       }
       showSectionList();
     });
-    document.getElementById('finalNotesReview')?.addEventListener('click', renderReviewBeforeSubmit);
+    document.getElementById('finalNotesReview')?.addEventListener('click', () => {
+      if (!window.starIsaReady) {
+        alert('ISA activities are still loading. Please try again shortly.');
+        return;
+      }
+      const isaStep=document.getElementById('isa-outcomes-step');
+      if (!isStepHidden(isaStep)) openSectionDetailByIndex(steps.indexOf(isaStep));
+      else renderReviewBeforeSubmit();
+    });
+    document.getElementById('isaStepBack')?.addEventListener('click', () => {
+      const idx=steps.findIndex(step=>step.id==='final-notes-step');
+      if(idx>=0)openSectionDetailByIndex(idx);
+    });
+    document.getElementById('isaStepReview')?.addEventListener('click',renderReviewBeforeSubmit);
     // Initial position
     go(0);
     applyConditionalSections();
     applyCaregiverSetupVisibility();
     syncEducationalQuestionStates();
+    // Keep ISA as a separate, optional guided screen, only when assigned cards exist.
+    const isaStep=document.getElementById('isa-outcomes-step');
+    const updateIsaStepVisibility=()=>{
+      const showIsa=window.starIsaHasAssignedOutcomes===true || window.starIsaLoadFailed===true;
+      if (isaStep) {
+        isaStep.hidden=!showIsa;
+        isaStep.setAttribute('aria-hidden',String(!showIsa));
+      }
+      const button=document.getElementById('finalNotesReview');
+      if(button)button.textContent=showIsa?'Next: ISA Activities →':'Review & Submit';
+      if(!showIsa && steps[current]?.id==='isa-outcomes-step'){
+        current=steps.findIndex(step=>step.id==='final-notes-step');
+      }
+      syncWizardView();
+      updateProgress();
+    };
+    window.addEventListener('star-isa-outcomes-ready',updateIsaStepVisibility);
+    updateIsaStepVisibility();
 
     const ynFields = [
       'behavior_anomaly_flag',
@@ -6657,6 +6701,10 @@
     }
     function applyDraftToForm(){
       steps.forEach((step, idx) => restore(step, idx));
+      // Recover ISA answers from drafts made before ISA had its own step.
+      const oldIsa=draft.data?.[7]?.isa_entries;
+      const isaField=document.getElementById('isa_entries');
+      if(isaField && oldIsa && !draft.data?.[8]?.isa_entries)isaField.value=oldIsa;
       window.starIsaRestoreEntries?.();
       showLegacyMedDraftNotice();
       syncAggressionControls();
@@ -6730,7 +6778,8 @@
               const option = document.createElement('option');
               option.value = String(idx);
               option.textContent = getSectionDefForStep(step)?.title ||
-                (step.id === 'final-notes-step' ? 'Important observation' : 'Notes');
+                (step.id === 'final-notes-step' ? 'Important observation' :
+                 step.id === 'isa-outcomes-step' ? 'ISA Activities & Progress' : 'Notes');
               sectionSelect.appendChild(option);
             });
             sectionSelect.value = String(current);

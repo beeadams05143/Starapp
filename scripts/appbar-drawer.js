@@ -465,6 +465,12 @@
       <div class="drawer-item" data-role="shared">
         <a href="/emergency-medical.html"><i class="ti ti-alert-triangle nav-icon" aria-hidden="true"></i><span class="nav-text">Emergency</span></a>
       </div>
+      <details data-role="shared">
+        <summary><i class="ti ti-info-circle nav-icon" aria-hidden="true"></i><span class="nav-text">App Information</span><i class="ti ti-chevron-down drawer-chevron" aria-hidden="true"></i></summary>
+        <div class="detail-body"><div class="detail-body-inner">
+          <p id="appBuildInfo" style="padding:0 20px 12px;color:#64748b;font-size:14px;margin:0"></p>
+        </div></div>
+      </details>
       <div class="drawer-item" data-role="shared">
         <div class="helper">Legal</div>
         <div class="sub">
@@ -477,6 +483,11 @@
 
   // put the overlay into the page
   document.body.appendChild(overlay);
+  const buildInfo = overlay.querySelector('#appBuildInfo');
+  if (buildInfo) {
+    buildInfo.textContent = document.getElementById('star-build-version')?.textContent
+      || `Build ${window.STAR_BUILD_VERSION || 'testing'}`;
+  }
 
   function buildAuthHeaders(token) {
     if (!SUPABASE_ANON_KEY) return { 'Content-Type': 'application/json' };

@@ -3,7 +3,7 @@
 
 export const BUILD_VERSION = '2026.03.16B';
 export const SUPABASE_URL = 'https://rjozzwmkvlndanoaghtc.supabase.co';
-export const SUPABASE_ANON_KEY = 'SANDBOX_NOT_CONFIGURED';
+export const SUPABASE_ANON_KEY = 'sb_publishable_KM77xAyUsDI21h9AP81FwQ_dWitSHkP';
 
 const AUTH_STORAGE_PREFIX = 'supabase.auth.token';
 const JSON_HEADERS = { 'Content-Type': 'application/json' };

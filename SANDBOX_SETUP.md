@@ -1,12 +1,12 @@
 # STAR sandbox — UVM interns (staging only)
 
-Status: **Prepared, not yet provisioned or deployed.** The staging branch must NOT use the production Supabase project or production auth accounts.
+Status: **Free organization and test database created; staging backend not yet authorized/configured or deployed.** New isolated project URL: `https://rjozzwmkvlndanoaghtc.supabase.co`. The staging branch must NOT use the production Supabase project or production auth accounts.
 
 ## Isolation requirements
 - Staging source: `staging/uvm-intern-sandbox` (not production `main`).
 - Netlify: create a NEW staging site or branch preview with a clearly distinct hostname and deploy only this branch. Do not repoint the production site.
-- Supabase: use an independently owned, EMPTY staging project (new project quoted at $10/month in owner's existing Pro organization on 2026-10-26). Do not clone personal or caregiver production data.
-- `supabaseClient.js` intentionally points to an INVALID hostname with an INVALID key until the isolated project is approved and provisioned. Its auth localStorage scope is `starapp-intern-sandbox`.
+- Supabase: an independent Free organization `STAR Sandbox — UVM Testing` and project `STAR Test Database` have been created; never clone personal or caregiver production data.
+- `supabaseClient.js` points to the new test project's URL but intentionally uses the INVALID `SANDBOX_NOT_CONFIGURED` key pending Supabase connector authorization and safe database setup. Its auth localStorage scope is `starapp-intern-sandbox`.
 - No `service_role` key in GitHub, browser code, Netlify static files or intern messages. Only the staging project's publishable (public) key is permitted in the browser.
 - Before deployment, search staging code for ALL direct production project URLs, production secrets and data-bearing endpoints, and replace or disable every path. Confirm no requests hit production in a browser network test.
 - Configure staging Auth site URL, allowed redirect URLs, sign-up email confirmation, password reset, and email sender. Users create their own private passwords.

@@ -1,12 +1,12 @@
 // STAGING ONLY — show sandbox warning on app pages.
 (function () {
   const script = document.createElement('script');
-  script.src = '/sandbox-ribbon.js?v=2026.10.26A';
+  script.src = '/sandbox-ribbon.js?v=2026.10.27B';
   document.head.appendChild(script);
 })();
 // ui-shell.js  — injects top app bar + bottom tab bar (with Emergency)
 (() => {
-  const BUILD_VERSION = (typeof window !== 'undefined' && window.STAR_BUILD_VERSION) || '2026.10.26A';
+  const BUILD_VERSION = (typeof window !== 'undefined' && window.STAR_BUILD_VERSION) || '2026.10.27B';
   if (typeof window !== 'undefined' && !window.STAR_BUILD_VERSION) {
     window.STAR_BUILD_VERSION = BUILD_VERSION;
   }

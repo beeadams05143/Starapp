@@ -61,7 +61,7 @@ function outcomePreview(card,host){
   }
 }
 async function saveDecision(row,decision,outcomeId,note){
-  if(busy||!isAdmin)throw Error('Only an authorized STAR TEST administrator can review this observation.');
+  if(!isAdmin)throw Error('Only an authorized STAR TEST administrator can review this observation.');
   const session=getSessionFromStorage();
   if(!session?.user?.id||!groupId)throw Error('Please sign in to your STAR TEST account.');
   if(await ensureActiveGroupId(session.user.id)!==groupId||getSessionFromStorage()?.user?.id!==session.user.id)
@@ -92,7 +92,7 @@ async function act(row,decision,cardId,note){
   feedback('Saving your decision…');
   render();
   try{
-    await saveDecisionAllowBusy(row,decision,cardId,note);
+    await saveDecision(row,decision,cardId,note);
     focusId=null;
     await load();
     const title=decision==='linked_observation'
@@ -111,13 +111,6 @@ async function act(row,decision,cardId,note){
     busy=false;
     render();
   }
-}
-// Keep the busy guard while using a single awaited database call.
-async function saveDecisionAllowBusy(row,decision,cardId,note){
-  const wasBusy=busy;
-  busy=false;
-  try{await saveDecision(row,decision,cardId,note)}
-  finally{busy=wasBusy}
 }
 function renderCurrent(row,pending){
   const panel=el('section','','panel active-review');

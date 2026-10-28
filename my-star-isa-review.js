@@ -1,153 +1,255 @@
 import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
 import { ensureActiveGroupId } from './active-group.js';
+
 const queue=document.getElementById('queue');
 const status=document.getElementById('queueStatus');
-let groupId=null,isAdmin=false,cards=[],records=[];
-function text(tag,value,cls=''){const e=document.createElement(tag);e.textContent=String(value||'');if(cls)e.className=cls;return e}
-function message(v,bad=false){status.textContent=v;status.style.color=bad?'#962923':'#345e48'}
-function stateLabel(s){return ({pending:'Pending review',linked_observation:'Linked as an observation (NOT progress)',needs_details:'Needs more details',unlinked:'No ISA link'})[s]||s}
-function matchCard(row){
- const suggestions=window.StarIsaMatcher.evaluate(row,cards),area=text('div','','');
- area.append(text('h3','Possible goal matches'));
- if(!suggestions.length)area.append(text('p','No clear match. This report should remain an unlinked personal observation unless a reviewer has evidence to connect it.','muted'));
- suggestions.forEach(item=>{
-  const box=text('div','','match');box.append(text('strong',item.title));
-  box.append(text('p',item.reason));
-  item.missing_detail.forEach(detail=>box.append(text('p',detail,'notes')));
-  area.append(box);
- });
- return {area,suggestions};
-}
-async function updateReview(row,review_status,linked_outcome_id,note){
- if(!isAdmin)return;
- if(groupId!==await ensureActiveGroupId())throw Error('Your STAR test group changed. Refresh before reviewing.');
- const values={review_status,linked_outcome_id:linked_outcome_id||null,reviewer_note:(note||'').trim().slice(0,2000)};
- await rest('star_individual_observations_test?id=eq.'+encodeURIComponent(row.id)+'&group_id=eq.'+encodeURIComponent(groupId),
-  {method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify(values)});
- await load();
-}
+const flash=document.getElementById('reviewFeedback');
+let groupId=null,isAdmin=false,cards=[],records=[],focusId=null,busy=false;
 
-// Testing tools exist only in this admin view, never in My STAR's individual pages.
-function renderFictionalMatches(){
- const input=document.getElementById('fictionalWords'),host=document.getElementById('fictionalMatches');
- if(!input||!host)return;
- host.replaceChildren();
- const words=input.value.trim();
- if(!words)return;
- const matches=window.StarIsaMatcher.evaluate({original_words:words},cards);
- host.append(text('h3',matches.length?'Possible ISA connections':'No clear ISA match'));
- if(!matches.length){
-  host.append(text('p','It is still a meaningful accomplishment. STAR should not invent a goal link.','muted'));
- }else{
-  matches.forEach(candidate=>{
-   const box=text('div','','match');
-   box.append(text('strong',candidate.title),text('p',candidate.reason));
-   for(const missing of candidate.missing_detail)box.append(text('p',missing,'notes'));
-   host.append(box);
-  });
- }
- host.append(text('p','These are suggestions only, not verified goal progress.','muted'));
+function el(tag,words='',className=''){
+  const node=document.createElement(tag);
+  node.textContent=String(words??'');
+  if(className)node.className=className;
+  return node;
 }
-async function addFictionalReport(){
- const btn=document.getElementById('addFictionalReport');
- const input=document.getElementById('fictionalWords');
- const notice=document.getElementById('fictionalStatus');
- if(!isAdmin||!input||!btn)return;
- const raw=input.value.trim();
- if(!raw){notice.textContent='Choose an example or write a fictional accomplishment first.';return}
- if(raw.length>1900){notice.textContent='Please shorten the fictional example.';return}
- const identity=getSessionFromStorage()?.user?.id;
- if(!identity){notice.textContent='Sign in to STAR TEST again.';return}
- btn.disabled=true;notice.textContent='Checking test permissions…';
- try{
-  const active=await ensureActiveGroupId(identity);
-  const members=await rest('group_members?select=role&group_id=eq.'+encodeURIComponent(groupId)+'&user_id=eq.'+encodeURIComponent(identity)+'&limit=1');
-  if(active!==groupId||getSessionFromStorage()?.user?.id!==identity||members?.[0]?.role!=='admin')
-   throw Error('Only the administrator for this test group can submit fictional scenarios here.');
-  const words=/^FICTIONAL:/i.test(raw)?raw:'FICTIONAL: '+raw;
-  const matches=window.StarIsaMatcher.evaluate({original_words:words},cards);
-  await rest('star_individual_observations_test',{
-   method:'POST',headers:{Prefer:'return=minimal'},
-   body:JSON.stringify({
-    group_id:groupId,individual_id:'',author_user_id:identity,original_words:words,
-    expression_type:'accomplishment',response_choice:'',support_kind:'not_reported',
-    possible_matches:matches.map(({outcome_id,outcome_version,reason})=>({outcome_id,outcome_version,reason}))
-   })
-  });
-  input.value='';document.getElementById('samplePicker').value='';
-  renderFictionalMatches();await load();
-  notice.textContent='Fictional report added below for review. No ISA progress was awarded.';
- }catch(error){notice.textContent=error.message||'Could not add the fictional example.'}
- finally{btn.disabled=false}
+function feedback(words='',bad=false){
+  if(!flash)return;
+  flash.hidden=!words;
+  flash.textContent=words;
+  flash.dataset.error=String(bad);
 }
-function showAdminTesting(){
- if(!isAdmin)return;
- const workbench=document.getElementById('fictionalWorkbench');
- if(!workbench)return;
- workbench.hidden=false;
- const sample=document.getElementById('samplePicker');
- const input=document.getElementById('fictionalWords');
- sample.addEventListener('change',()=>{
-  if(sample.value)input.value=sample.value;
-  renderFictionalMatches();
- });
- input.addEventListener('input',renderFictionalMatches);
- document.getElementById('addFictionalReport').addEventListener('click',addFictionalReport);
+function stateLabel(s){
+  return ({
+    pending:'Waiting for review',
+    linked_observation:'Linked to ISA goal',
+    needs_details:'Needs more information',
+    unlinked:'Not related to an ISA goal'
+  })[s]||'Review pending';
 }
+function selectedOutcomeLabel(card){
+  return card ? [card.category,card.title].filter(Boolean).join(' — ') : '';
+}
+function supportLabel(kind){
+  if(!kind||kind==='not_reported')return 'Not reported';
+  return String(kind).replace(/_/g,' ');
+}
+function fieldLabel(value){
+  return String(value||'').trim();
+}
+function makeButton(label,kind,handler){
+  const button=el('button',label,kind);
+  button.type='button';
+  button.disabled=busy;
+  button.addEventListener('click',handler);
+  return button;
+}
+function recommendations(row){
+  if(!window.StarIsaMatcher)return [];
+  return window.StarIsaMatcher.evaluate(row,cards);
+}
+function outcomePreview(card,host){
+  host.replaceChildren();
+  if(!card){host.hidden=true;return}
+  host.hidden=false;
+  host.append(el('div','Selected ISA Outcome Card','card-caption'));
+  host.append(el('strong',card.title,'outcome-title'));
+  if(card.outcome_text)host.append(el('p',card.outcome_text,'outcome-words'));
+  const measurements=Array.isArray(card.measurements)?card.measurements:[];
+  if(measurements.length){
+    const names=measurements.map(m=>[m.label,m.unit&&'('+m.unit+')'].filter(Boolean).join(' ')).filter(Boolean);
+    if(names.length)host.append(el('p','Tracked separately: '+names.join(' · '),'muted'));
+  }
+}
+async function saveDecision(row,decision,outcomeId,note){
+  if(busy||!isAdmin)throw Error('Only an authorized STAR TEST administrator can review this observation.');
+  const session=getSessionFromStorage();
+  if(!session?.user?.id||!groupId)throw Error('Please sign in to your STAR TEST account.');
+  if(await ensureActiveGroupId(session.user.id)!==groupId||getSessionFromStorage()?.user?.id!==session.user.id)
+    throw Error('Your test group or account changed. Refresh this page.');
+  const card=decision==='linked_observation'?cards.find(c=>c.id===outcomeId):null;
+  if(decision==='linked_observation'&&!card)throw Error('Select an active ISA goal card first.');
+  const values={
+    review_status:decision,
+    linked_outcome_id:card?.id||null,
+    linked_outcome_version:card?.version||null,
+    reviewer_note:String(note||'').trim().slice(0,600)
+  };
+  const result=await rest(
+    'star_individual_observations_test?id=eq.'+encodeURIComponent(row.id)+
+    '&group_id=eq.'+encodeURIComponent(groupId),{
+      method:'PATCH',
+      expectedUserId:session.user.id,
+      headers:{Prefer:'return=representation'},
+      body:JSON.stringify(values)
+    });
+  if(!Array.isArray(result)||result.length!==1||result[0]?.id!==row.id||
+     result[0]?.review_status!==decision||result[0]?.linked_outcome_id!==(card?.id||null))
+    throw Error('The review could not be verified. Nothing has been marked complete.');
+}
+async function act(row,decision,cardId,note){
+  if(busy)return;
+  busy=true;
+  feedback('Saving your decision…');
+  render();
+  try{
+    await saveDecisionAllowBusy(row,decision,cardId,note);
+    focusId=null;
+    await load();
+    const title=decision==='linked_observation'
+      ? cards.find(c=>c.id===cardId)?.title
+      : null;
+    feedback(
+      decision==='linked_observation'
+        ? '✓ Linked to '+(title||'the selected ISA goal')+'. The person’s words are preserved; no measured progress was awarded.'
+        : decision==='unlinked'
+          ? '✓ Saved as a personal observation, without an ISA goal link.'
+          : '✓ Saved for follow-up. The person’s own words are preserved.'
+    );
+  }catch(error){
+    feedback(error?.message||'Could not save the review.',true);
+  }finally{
+    busy=false;
+    render();
+  }
+}
+// Keep the busy guard while using a single awaited database call.
+async function saveDecisionAllowBusy(row,decision,cardId,note){
+  const wasBusy=busy;
+  busy=false;
+  try{await saveDecision(row,decision,cardId,note)}
+  finally{busy=wasBusy}
+}
+function renderCurrent(row,pending){
+  const panel=el('section','','panel active-review');
+  panel.append(el('div',new Date(row.created_at).toLocaleString()+' · '+stateLabel(row.review_status),'review-meta'));
+  panel.append(el('div','What the person said','prompt-label'));
+  panel.append(el('blockquote',row.original_words,'words'));
+  const details=[row.response_choice&&'They selected: '+row.response_choice,
+    'Help with answering: '+supportLabel(row.support_kind)].filter(Boolean);
+  panel.append(el('p',details.join(' · '),'muted'));
 
+  const heading=el('h2','Does this relate to an ISA goal?','review-question');
+  panel.append(heading);
+  const pickLabel=el('label','Choose an ISA Outcome Card');
+  const pick=el('select');
+  const pickerId='reviewOutcomePicker';
+  pick.id=pickerId;
+  pickLabel.htmlFor=pickerId;
+  const empty=el('option','Select a goal, if it fits…');empty.value='';
+  pick.append(empty);
+  const suggested=recommendations(row);
+  const suggestedIds=new Set(suggested.map(s=>s.outcome_id));
+  const ordered=[...cards.filter(c=>suggestedIds.has(c.id)),...cards.filter(c=>!suggestedIds.has(c.id))];
+  for(const card of ordered){
+    const option=el('option',(suggestedIds.has(card.id)?'★ Possible match · ':'')+selectedOutcomeLabel(card));
+    option.value=card.id;
+    pick.append(option);
+  }
+  const currentlyLinked=row.review_status==='linked_observation'&&cards.some(c=>c.id===row.linked_outcome_id)
+    ?row.linked_outcome_id:'';
+  pick.value=currentlyLinked;
+  const hint=el('p',
+    suggested.length
+      ? 'STAR highlighted a possible match. You decide whether the actual ISA goal fits.'
+      : 'Choose from all active ISA Outcome Cards. No match is required.',
+    'picker-hint');
+  const cardInfo=el('div','','selected-outcome');
+  outcomePreview(cards.find(c=>c.id===pick.value),cardInfo);
+  pick.addEventListener('change',()=>{
+    outcomePreview(cards.find(c=>c.id===pick.value),cardInfo);
+    yes.disabled=busy||!pick.value;
+  });
+  panel.append(pickLabel,pick,hint,cardInfo);
+  const noteLabel=el('label','Caregiver note (optional)');
+  noteLabel.htmlFor='reviewNote';
+  const note=el('textarea');
+  note.id='reviewNote';
+  note.rows=2;
+  note.maxLength=600;
+  note.value=row.reviewer_note||'';
+  note.placeholder='Anything helpful to explain this connection?';
+  panel.append(noteLabel,note);
+  panel.append(el('p','This links their words to a goal. It does not record steps, duration, or award ISA progress.','safety-note'));
+  const controls=el('div','','decision-actions');
+  const yes=makeButton('✓ Yes, link to this goal','primary',()=>{
+    if(!pick.value){feedback('Select an ISA Outcome Card first.',true);pick.focus();return}
+    act(row,'linked_observation',pick.value,note.value);
+  });
+  yes.disabled=busy||!pick.value;
+  controls.append(yes);
+  const secondary=el('div','','secondary-actions');
+  secondary.append(
+    makeButton('No — no goal link','alt',()=>act(row,'unlinked',null,note.value)),
+    makeButton('Need more information','text-action',()=>act(row,'needs_details',null,note.value))
+  );
+  controls.append(secondary);panel.append(controls);
+  if(!isAdmin){
+    controls.hidden=true;pick.disabled=true;note.readOnly=true;
+    panel.append(el('p','An administrator will review this observation.','muted'));
+  }
+  return panel;
+}
+function renderHistory(history){
+  if(!history.length)return;
+  const details=el('details','','history');
+  details.append(el('summary','Previously reviewed ('+history.length+')'));
+  const list=el('div','','history-list');
+  history.forEach(row=>{
+    const item=el('div','','history-item');
+    item.append(el('strong',row.original_words,'history-words'));
+    const linked=cards.find(c=>c.id===row.linked_outcome_id);
+    item.append(el('p',stateLabel(row.review_status)+(linked?' · '+linked.title:''),'muted'));
+    if(isAdmin)item.append(makeButton('Review / change','alt',()=>{focusId=row.id;feedback();render();window.scrollTo({top:0,behavior:'smooth'})}));
+    list.append(item);
+  });
+  details.append(list);queue.append(details);
+}
 function render(){
- queue.replaceChildren();
- if(!records.length){queue.append(text('p','No fictional self-reports are in this group yet.'));return;}
- records.forEach(row=>{
-  const panel=text('section','','panel');
-  panel.append(text('small',new Date(row.created_at).toLocaleString()+' · '+stateLabel(row.review_status)));
-  panel.append(text('p',row.original_words,'words'));
-  panel.append(text('p','Original response: '+(row.response_choice||'Not selected')+' · Support: '+(row.support_kind||'Not reported'),'muted'));
-  const {area,suggestions}=matchCard(row);panel.append(area);
-  if(row.review_status==='linked_observation'){
-   const card=cards.find(x=>x.id===row.linked_outcome_id);
-   panel.append(text('p','Reviewed link: '+(card?.title||'Archived/missing card')+' · outcome version '+row.linked_outcome_version,'status'));
-  }
-  if(row.reviewer_note)panel.append(text('p','Reviewer note: '+row.reviewer_note,'muted'));
-  if(isAdmin){
-    const pick=document.createElement('select');pick.setAttribute('aria-label','Proposed ISA outcome for '+row.original_words.slice(0,45));
-    const first=document.createElement('option');first.value='';first.textContent='Select a possible goal';pick.append(first);
-    suggestions.forEach(item=>{const opt=document.createElement('option');opt.value=item.outcome_id;opt.textContent=item.title;pick.append(opt)});
-    if(row.linked_outcome_id && suggestions.some(x=>x.outcome_id===row.linked_outcome_id))pick.value=row.linked_outcome_id;
-    const note=document.createElement('textarea');note.value=row.reviewer_note||'';note.maxLength=2000;note.placeholder='Reviewer notes (optional)';note.setAttribute('aria-label','Reviewer notes');
-    panel.append(text('label','Review decision'));panel.append(pick,note);
-    const controls=text('div','','actions');
-    function act(label,newStatus,newId,style){
-      const b=text('button',label,style||'');b.type='button';
-      b.addEventListener('click',async()=>{
-       if(newStatus==='linked_observation'&&!pick.value){message('Select a suggested goal card first.',true);return;}
-       controls.querySelectorAll('button').forEach(x=>x.disabled=true);
-       try{await updateReview(row,newStatus,newStatus==='linked_observation'?pick.value:null,note.value);message('Fictional observation review updated. No ISA progress was credited.')}
-       catch(e){message(e.message||'Could not save review.',true);controls.querySelectorAll('button').forEach(x=>x.disabled=false)}
-      });controls.append(b);
+  queue.replaceChildren();
+  if(!groupId){status.textContent='Checking STAR TEST permissions…';return}
+  const pending=records.filter(r=>r.review_status==='pending');
+  const history=records.filter(r=>r.review_status!=='pending');
+  const current=records.find(r=>r.id===focusId)||pending[0]||null;
+  status.textContent=pending.length
+    ? pending.length+' observation'+(pending.length===1?'':'s')+' to review'
+    : 'All caught up — no observations waiting for review.';
+  const intro=document.getElementById('reviewIntro');
+  if(intro)intro.textContent='Read the person’s words, then decide whether an ISA Outcome Card fits.';
+  if(current){
+    if(focusId){
+      const goBack=makeButton('← Back to pending observations','alt',()=>{focusId=null;feedback();render()});
+      queue.append(goBack);
     }
-    act('Link as observation (not progress)','linked_observation',pick.value);
-    act('Need more details','needs_details',null,'alt');
-    act('No goal link','unlinked',null,'alt');
-    panel.append(controls);
+    queue.append(renderCurrent(current,pending));
+  }else{
+    queue.append(el('p','⭐ You’re all caught up. New My STAR observations will appear here.','empty'));
   }
-  queue.append(panel);
- });
+  renderHistory(history);
 }
 async function load(){
- const [outcomes,rows]=await Promise.all([
-  rest('star_isa_outcomes?select=id,group_id,individual_id,title,category,outcome_text,measurements,status,version&group_id=eq.'+encodeURIComponent(groupId)+'&individual_id=eq.&status=eq.active&limit=100'),
-  rest('star_individual_observations_test?select=*&group_id=eq.'+encodeURIComponent(groupId)+'&order=created_at.desc&limit=100')
- ]);
- cards=outcomes||[];records=rows||[];render();message(records.length+' fictional self-report(s). '+(isAdmin?'Review available.':'Read-only view.'));
+  const [outcomes,rows]=await Promise.all([
+    rest('star_isa_outcomes?select=id,group_id,individual_id,title,category,outcome_text,measurements,status,version&group_id=eq.'+
+      encodeURIComponent(groupId)+'&individual_id=eq.&status=eq.active&order=title.asc&limit=100'),
+    rest('star_individual_observations_test?select=*&group_id=eq.'+
+      encodeURIComponent(groupId)+'&order=created_at.desc&limit=100')
+  ]);
+  if(!Array.isArray(outcomes)||!Array.isArray(rows))throw Error('Could not read the ISA goals and observations.');
+  cards=outcomes;
+  records=rows;
 }
 (async()=>{
- try{
-  const session=getSessionFromStorage();if(!session?.user?.id)throw Error('Sign into STAR TEST before viewing.');
-  groupId=await ensureActiveGroupId(session.user.id);if(!groupId)throw Error('Select your fictional test group first.');
-  const members=await rest('group_members?select=role&group_id=eq.'+encodeURIComponent(groupId)+'&user_id=eq.'+encodeURIComponent(session.user.id));
-  isAdmin=members?.[0]?.role==='admin';
-  await load();
-  showAdminTesting();
- }catch(e){message(e.message||'Unable to open fictional review queue.',true)}
+  try{
+    const session=getSessionFromStorage();
+    if(!session?.user?.id)throw Error('Sign in to STAR TEST first.');
+    groupId=await ensureActiveGroupId(session.user.id);
+    if(!groupId)throw Error('Select your fictional test group first.');
+    const members=await rest('group_members?select=role&group_id=eq.'+encodeURIComponent(groupId)+
+      '&user_id=eq.'+encodeURIComponent(session.user.id)+'&limit=1');
+    isAdmin=members?.[0]?.role==='admin';
+    await load();
+    render();
+  }catch(error){
+    status.textContent=error?.message||'Unable to open this review page.';
+    feedback('The observation queue could not be loaded.',true);
+  }
 })();

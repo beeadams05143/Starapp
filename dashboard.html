@@ -274,10 +274,6 @@
       <a href="my-star.html">⭐ My STAR</a>
       <a href="dashboard.html" aria-current="page">👥 Caregiver / Admin</a>
     </nav>
-    <section class="star-review-shortcut" id="starReviewShortcut" hidden aria-label="My STAR observation reviews">
-      <a href="./my-star-isa-review.html">⭐ Review My STAR observations</a>
-      <p id="starReviewCount">Fictional observation review queue · admin only</p>
-    </section>
     <section class="dashboard-header starfield-page-header">
       <svg class="starfield-bg" viewBox="0 0 420 110" aria-hidden="true">
         <circle cx="28" cy="18" r="1" fill="#2C2C2A" opacity="0.15"></circle>
@@ -339,6 +335,12 @@
           </svg>
           <span>ISA Outcomes</span>
           <small class="action-description">Personal goals &amp; progress tracking</small>
+        </a>
+
+        <a class="action-card" id="starReviewCard" href="my-star-isa-review.html" aria-label="Review My STAR Observations in STAR TEST">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><polygon points="12 2 14.8 8.6 22 9.2 16.5 14 18.3 21 12 17 5.7 21 7.5 14 2 9.2 9.2 8.6 12 2"></polygon><path d="M9 12.2l2 2 4-4"></path></svg>
+          <span>Review My STAR Observations</span>
+          <small class="action-description" id="starReviewCount" role="status">Admin review · Fictional individual responses</small>
         </a>
 
         <a class="action-card" href="focus-week.html">
@@ -462,7 +464,6 @@
   // UI shortcut only; all review permissions remain enforced by Supabase RLS.
   import { getSessionFromStorage, rest } from './restClient.js?v=2025.01.09E';
   import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
-  const shortcut=document.getElementById('starReviewShortcut');
   const counter=document.getElementById('starReviewCount');
   (async()=>{
     const userId=getSessionFromStorage()?.user?.id;
@@ -471,8 +472,7 @@
     if(!groupId||getSessionFromStorage()?.user?.id!==userId)return;
     const members=await rest('group_members?select=role&group_id=eq.'+
       encodeURIComponent(groupId)+'&user_id=eq.'+encodeURIComponent(userId)+'&limit=1');
-    if(members?.[0]?.role!=='admin')return;
-    shortcut.hidden=false;
+    if(members?.[0]?.role!=='admin'){counter.textContent='Administrator review · Access required';return;}
     try{
       const pending=await rest('star_individual_observations_test?select=id&group_id=eq.'+
         encodeURIComponent(groupId)+'&review_status=eq.pending&limit=101');
@@ -482,7 +482,7 @@
     }catch(error){
       counter.textContent='Open fictional observation review queue · admin only';
     }
-  })().catch(()=>{if(shortcut)shortcut.hidden=true});
+  })().catch(()=>{if(counter)counter.textContent='Open observation review · Sign in as admin';});
 </script>
 
 <!-- ✅ Restore original hamburger menu + bottom tabbar -->

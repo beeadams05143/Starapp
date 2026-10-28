@@ -78,6 +78,7 @@
     .progress-label{font-size:16px;font-weight:800;color:#63594e;margin-bottom:9px}
     .wyr-summary{font-size:20px;line-height:1.5;font-weight:700;background:#f5f0e6;border:2px solid #d3c9b8;border-radius:14px;padding:14px}
     .text-entry{width:100%;font:inherit;font-size:18px;padding:12px;border:2px solid #b6aa96;border-radius:12px}
+    .notice.preview-notice{font-size:14px;padding:10px 12px;margin:9px 0 15px;font-weight:650}
     .dictate-btn{width:100%;min-height:78px;font-size:23px;border:3px solid #46664e;border-radius:20px;background:#e9f3e9;color:#22412d;display:flex;gap:12px;align-items:center;justify-content:center;font-weight:850;margin:13px 0 6px}
     .dictate-btn[aria-pressed="true"]{background:#fcecd9;border-color:#aa5531;color:#75391c}
     .dictate-hint{margin:5px 0 16px;font-size:16px;font-weight:650;color:#535a4e;line-height:1.45;min-height:23px}
@@ -104,7 +105,7 @@
     <button class="small-btn" id="homeBtn" type="button">⌂ My STAR Home</button>
     <button class="small-btn" id="hearBtn" type="button" aria-pressed="false" aria-label="Turn reading aloud on or off">🔇 Read Aloud: OFF</button>
   </div>
-  <div class="notice">STAR TEST PREVIEW — answers here are not saved or sent to anyone. No alerts, reports, or ISA achievements are created.</div>
+  <div class="notice preview-notice">STAR TEST — Nothing here is saved or sent. No alerts are sent.</div>
   <section id="screen" aria-live="polite"></section>
   <p class="footer-note">My STAR is voluntary. The person can stop, skip or ask for help at any time. This is not an emergency response service.</p>
 </main>
@@ -414,7 +415,7 @@
     el.setAttribute('aria-pressed','true');el.classList.add('selected');
     speak(value==='Something hurts'?'Something hurts':value);
     var location=document.getElementById('painLocation');if(location)location.textContent='You chose: '+value;
-    status('You chose: '+value+'. This is only a preview and is not saved.');
+    if(current!=='goals')status('You chose: '+value+'. This is only a preview and is not saved.');
   }
   screen.addEventListener('click',function(e){
     var dictate=e.target.closest('[data-dictate]');

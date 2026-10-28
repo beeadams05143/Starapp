@@ -6,7 +6,7 @@
    report:/\b(phone|call|called|calling|dial|dialed|facetime)\b/i,
    reason:'Reported something related to a phone call or dialing.'},
   {kind:'community',card:/\b(community|outing|outings|participation|destination)\b/i,
-   report:/\b(went to|visited|attended|participated|walked|went out|traveled|travelled|went with)\b.{0,55}\b(park|community|library|store|shop|museum|pool|center|event|market|out|walk|recreation)\b|\b(park|library|store|museum|community|center|pool|market|shop)\b.{0,50}\b(went|visited|attended|walked|with)\b/i,
+   report:/\b(went to|visited|attended|participated at|participated in|walked to|went out to|traveled to|travelled to)\b.{0,55}\b(park|community|library|store|shop|museum|pool|center|event|market|recreation)\b/i,
    reason:'Reported visiting or participating somewhere in the community.'},
   {kind:'preference',card:/\b(choose|choice|chosen|preferred|preference|leisure|self.direction|select)\b/i,
    report:/\b(chose|choose|choosing|picked|pick|selected|decided|rather|prefer|preferred|choice)\b/i,
@@ -22,8 +22,13 @@
   for(const card of cards){
    if(!card||card.status!=='active'||!card.id)continue;
    const cardText=[card.title,card.category,card.outcome_text,...(Array.isArray(card.measurements)?card.measurements.map(m=>[m.label,m.activity].join(' ')):[])].join(' ');
+   const category=String(card.category||'').toLowerCase();
+   const title=String(card.title||'').toLowerCase();
    let reason='',basis='';
    for(const rule of rules){
+    if(rule.kind==='community' && !(/community/.test(category)||/community|outing/.test(title)))continue;
+    if(rule.kind==='preference' && !(/self.direction|leisure/.test(category)||/leisure|preferred/.test(title)))continue;
+    if(rule.kind==='phone' && !/phone|call|dial/.test(title+' '+category))continue;
     if(rule.card.test(cardText)&&rule.report.test(raw)){reason=rule.reason;basis=rule.kind;break}
    }
    // Other ISA cards can be proposed when the individual actually names two meaningful terms.

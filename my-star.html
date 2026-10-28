@@ -82,6 +82,11 @@
     #isaPreview{line-height:1.45;margin-top:14px}
     #isaPreview p{margin:8px 0}
     @media(max-width:420px){.body-poster{height:clamp(420px,125vw,530px)}.pain-point{width:44px;height:44px}.photo-frame{height:100px}}
+    .star-view-switch{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:5px;border:2px solid #cfbf9f;border-radius:17px;background:#ede6d8;margin:0 0 15px;max-width:100%}
+    .star-view-switch a{min-height:56px;display:flex;align-items:center;justify-content:center;text-align:center;padding:9px 6px;text-decoration:none;color:#304035;border-radius:12px;font-weight:800;font-size:15px;line-height:1.2}
+    .star-view-switch a[aria-current="page"]{background:#365940;color:#fff;box-shadow:0 1px 4px #25362622}
+    .star-view-switch a:focus-visible{outline:3px solid #164a70;outline-offset:2px}
+    @media(max-width:390px){.star-view-switch a{font-size:14px}}
   </style>
 </head>
 <body>
@@ -90,10 +95,13 @@
   <div class="test-label">STAR TEST · FICTIONAL DATA</div>
 </header>
 <main>
+  <nav class="star-view-switch" aria-label="Switch between My STAR and caregiver or administrator view">
+    <a href="my-star.html" aria-current="page">⭐ My STAR</a>
+    <a href="dashboard.html">👥 Caregiver / Admin</a>
+  </nav>
   <div class="top-actions">
     <button class="small-btn" id="homeBtn" type="button">⌂ My STAR Home</button>
     <button class="small-btn" id="hearBtn" type="button" aria-pressed="false" aria-label="Turn reading aloud on or off">🔇 Read Aloud: OFF</button>
-    <a class="small-btn inline-link" href="dashboard.html">Return to test dashboard</a>
   </div>
   <div class="notice">This is a STAR TEST preview. Regular answers are NOT saved, sent, or included in reports. ONLY the explicit “Save fictional example” button stores made-up text in the separate test review queue. No ISA progress, caregiver reports, emergency alerts, or texts are created.</div>
   <section id="screen" aria-live="polite"></section>

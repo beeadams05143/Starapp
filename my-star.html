@@ -83,6 +83,17 @@
     .dictate-btn[aria-pressed="true"]{background:#fcecd9;border-color:#aa5531;color:#75391c}
     .dictate-hint{margin:5px 0 16px;font-size:16px;font-weight:650;color:#535a4e;line-height:1.45;min-height:23px}
     .voice-input{font-size:20px;min-height:110px}
+    /* Gentle, silent completion animation: a small starburst, never a progress award. */
+    .star-complete{position:relative;min-height:360px;display:grid;place-items:center;overflow:hidden;border-radius:24px;background:radial-gradient(circle at center,#fff9df 0%,#f7f1e6 75%);text-align:center}
+    .star-complete-inner{position:relative;z-index:2;padding:24px}
+    .star-complete-symbol{display:block;font-size:65px;line-height:1.2;animation:completeGlow 1.3s ease-out both}
+    .star-complete strong{display:block;font-size:clamp(27px,7vw,42px);color:#365940;margin-top:12px}
+    .star-complete small{display:block;font-size:16px;margin-top:12px;color:#555b53}
+    .star-spark{position:absolute;top:50%;left:50%;font-size:clamp(24px,6vw,40px);opacity:0;animation:starBurst 1.35s ease-out both;animation-delay:var(--delay)}
+    @keyframes starBurst {0%{opacity:0;transform:translate(-50%,-50%) scale(.25) rotate(0deg)}25%{opacity:1}70%{opacity:1}100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(.8) rotate(70deg)}}
+    @keyframes completeGlow{0%{transform:scale(.35);opacity:.3}55%{transform:scale(1.16);opacity:1}100%{transform:scale(1);opacity:1}}
+    @media(prefers-reduced-motion:reduce){.star-complete-symbol{animation:none}.star-spark{animation:none;opacity:0}.star-complete{min-height:240px}}
+
     @media(max-width:420px){.body-poster{height:clamp(420px,125vw,530px)}.pain-point{width:44px;height:44px}.photo-frame{height:100px}}
     .star-view-switch{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:5px;border:2px solid #cfbf9f;border-radius:17px;background:#ede6d8;margin:0 0 15px;max-width:100%}
     .star-view-switch a{min-height:56px;display:flex;align-items:center;justify-content:center;text-align:center;padding:9px 6px;text-decoration:none;color:#304035;border-radius:12px;font-weight:800;font-size:15px;line-height:1.2}
@@ -105,7 +116,7 @@
     <button class="small-btn" id="homeBtn" type="button">⌂ My STAR Home</button>
     <button class="small-btn" id="hearBtn" type="button" aria-pressed="false" aria-label="Turn reading aloud on or off">🔇 Read Aloud: OFF</button>
   </div>
-  <div class="notice preview-notice">STAR TEST — Nothing here is saved or sent. No alerts are sent.</div>
+  <div class="notice preview-notice">STAR TEST — Fictional “Something I Did” answers can be saved for caregiver review. Other My STAR pages are previews. No alerts or ISA progress are created.</div>
   <section id="screen" aria-live="polite"></section>
   <p class="footer-note">My STAR is voluntary. The person can stop, skip or ask for help at any time. This is not an emergency response service.</p>
 </main>
@@ -152,7 +163,7 @@
       var u=new SpeechSynthesisUtterance(String(text||''));
       selectedVoice=preferVoice()||selectedVoice;
       if(selectedVoice)u.voice=selectedVoice;
-      u.lang='en-US';u.rate=.80;u.pitch=1;u.volume=1;
+      u.lang='en-US';u.rate=.80;u.pitch=1;u.volume=.35;
       window.speechSynthesis.speak(u);
     }catch(e){status('Could not play sound on this device.')}
   }
@@ -244,6 +255,9 @@
     };
     recognition.onerror=function(event){
       if(activeRecognition!==recognition)return;
+      // Some iPhones report an end-of-session error even after transcribing words.
+      // A recognized answer should never be replaced by a misleading failure notice.
+      if(dictationGotWords){setDictateHint('Your words appeared in the box. Check them before tapping Done.');return;}
       dictationHadError=true;
       var error=event.error||'';
       if(error==='no-speech')setDictateHint('I did not hear any words. Tap Talk Instead to try again.');
@@ -268,6 +282,23 @@
       btn.setAttribute('aria-pressed','false');btn.textContent='🎤 Talk Instead';
       setDictateHint('Speech-to-text did not start. Check microphone permission and try again.');
     }
+  }
+  function showSilentStars(){
+    // Completion is intentionally silent; read-aloud is not triggered by Done.
+    window.speechSynthesis?.cancel();
+    stopDictation();
+    var dots=[
+      [-136,-92,0],[-96,-137,.06],[-18,-147,.09],[87,-131,.03],
+      [142,-63,.06],[145,38,.09],[92,119,.02],[9,143,.08],
+      [-95,122,.05],[-149,47,.04],[-159,-20,.07],[35,-105,.12]
+    ];
+    var stars=dots.map(function(v,i){
+      var star=i%3===0?'✦':i%3===1?'⭐':'✧';
+      return '<span class="star-spark" aria-hidden="true" style="--dx:'+v[0]+'px;--dy:'+v[1]+'px;--delay:'+v[2]+'s">'+star+'</span>';
+    }).join('');
+    screen.innerHTML='<div class="star-complete" role="status" aria-label="All done!">'+stars+
+      '<div class="star-complete-inner"><span class="star-complete-symbol" aria-hidden="true">🌟</span><strong>All done!</strong></div></div>';
+    setTimeout(function(){if(screen.querySelector('.star-complete'))render('home')},1750);
   }
   function support(){return '<label style="display:flex;align-items:center;gap:12px;font-weight:700;margin:20px 0"><input id="withSupport" type="checkbox" style="width:25px;height:25px"> Someone helped me answer</label><div id="supportOptions" hidden><label for="supportKind">How did they help?</label><select id="supportKind" class="large-action secondary" style="width:100%;margin-top:8px"><option value="Read a question aloud">Read a question aloud</option><option value="Helped me choose">Helped me choose</option><option value="Entered my answer">Entered my answer</option></select></div>'}
   function choice(value,emoji,words){return '<button type="button" class="choice" aria-pressed="false" data-choice="'+value+'"><span class="scene" aria-hidden="true">'+emoji+'</span><span>'+words+'</span></button>'}
@@ -485,11 +516,26 @@
       if(activeRecognition){finishDictation();setDictateHint('Finish speaking, check that your words are correct, then tap Done again.');return}
       var messageField=document.getElementById('myMessage');
       var accomplishment=document.getElementById('accomplishmentText');
-      var val=chosen||(messageField?.value.trim()||accomplishment?.value.trim()||'');
-      if(current==='goals'&&accomplishment?.value.trim())val=(chosen?chosen+': ':'')+accomplishment.value.trim();
+      var words=accomplishment?.value.trim()||'';
+      var val=words||chosen||(messageField?.value.trim()||'');
       if(!val){status('You can choose an answer, or stop for now. Nothing is required.');return}
-      var supportText=document.getElementById('withSupport')?.checked?' — completed with support ('+document.getElementById('supportKind').value+')':' — independently';
-      stopDictation();status('Thanks for sharing: '+val+supportText+'. TEST ONLY: not saved, sent, or linked to an ISA goal.');speak('Thank you for sharing.');return
+      if(current==='goals'){
+        // Preserve the exact words and selected picture separately. No ISA links or credit.
+        var btn=a, chosenNow=chosen, supportBox=document.getElementById('withSupport');
+        var kind=supportBox?.checked?(document.getElementById('supportKind')?.value||'Help reported'):'not_reported';
+        btn.disabled=true;btn.textContent='Saving…';
+        status('Saving your fictional answer for the team to review…');
+        import('./my-star-observation-test.js?v=2026.10.28UVM3')
+          .then(function(mod){return mod.saveFictionalMyStarObservation({words:words,choice:chosenNow,supportKind:kind})})
+          .then(function(){showSilentStars()})
+          .catch(function(err){
+            btn.disabled=false;btn.textContent='Done';
+            status('Not saved yet. '+(err?.message||'There was a problem. Please try Done again.')+' Your words are still here.');
+          });
+        return;
+      }
+      // Other optional screens are still preview-only, with no misleading saved status.
+      stopDictation();window.speechSynthesis?.cancel();render('home');return;
     }
   });
   document.getElementById('homeBtn').addEventListener('click',function(){render('home')});

@@ -46,6 +46,17 @@ export class CaregiverDraftService {
     }
     return this.get(id);
   }
+  async delete(id) {
+    if (!uuid(id)) throw new Error('Invalid draft identifier.');
+    const rows = await this.request(this.path('id=eq.' + encode(id) + '&author_user_id=eq.' +
+      encode(this.userId) + '&group_id=eq.' + encode(this.groupId)), {
+      method: 'DELETE', headers: { Prefer: 'return=representation' },
+    });
+    if (!Array.isArray(rows) || rows.length !== 1 || rows[0]?.id !== id) {
+      throw new Error('Draft deletion was not confirmed. The draft was not removed from the list.');
+    }
+    return true;
+  }
   async update({ id, version, date = null, data }) {
     if (!uuid(id) || !Number.isSafeInteger(version) || version < 1) throw new Error('Invalid draft or version.');
     const selectedDate = date === null || date === '' ? null : normalizeCheckinDate(date);

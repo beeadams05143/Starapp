@@ -205,7 +205,7 @@
     })[wyr.stage]||readText.rather;
   }
   function wyStopTimer(){if(wyrTimer){clearInterval(wyrTimer);wyrTimer=null}}
-  function wyReset(){wyStopTimer();wyr={stage:'where',where:'',withWho:'',people:'',category:'',choice:'',elapsed:0,startAt:0,mood:'',offered:[],offset:0}}
+  function wyReset(){wyStopTimer();supported=false;wyr={stage:'where',where:'',withWho:'',people:'',category:'',choice:'',elapsed:0,startAt:0,mood:'',offered:[],offset:0}}
   function wyExtras(){
     return '<div class="actions">'+button('Neither','wyr-neither')+button('Something else','wyr-other')+button('Not now','skip')+'</div>';
   }
@@ -236,6 +236,8 @@
     }
     wyr.offered=(stage==='category'||stage==='sub')?items.slice(wyr.offset,wyr.offset+2):items.slice();
     wrap('Would You Rather?',html);
+    var supportBox=document.getElementById('withSupport');
+    if(supportBox)supportBox.addEventListener('change',function(){supported=supportBox.checked;document.getElementById('supportOptions').hidden=!supported});
   }
   function formatWyTime(sec){return String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0')}
   function pickWyr(answer){
@@ -313,7 +315,7 @@
     if(action==='wyr-prev'){wyr.offset=Math.max(0,wyr.offset-2);renderWouldRather();speak(wyPrompt());return}
     if(action==='wyr-neither'){wyStopTimer();wyr.stage='declined';renderWouldRather();speak(wyPrompt());return}
     if(action==='wyr-other'){var other=prompt('What would you rather do? (optional)');if(other&&other.trim()){wyr.category='Something else';wyr.choice=other.trim().slice(0,160);wyr.stage='summary';renderWouldRather();speak(wyPrompt())}return}
-    if(action==='wyr-chosen'){status('Your choice: '+[wyr.where,wyr.withWho,wyr.people,wyr.choice||wyr.category].filter(Boolean).join(' · ')+'. TEST ONLY: nothing was saved.');speak('Thank you for choosing.');return}
+    if(action==='wyr-chosen'){var withSupport=document.getElementById('withSupport')?.checked;var method=withSupport?(' · Supported: '+document.getElementById('supportKind').value):' · Chosen independently';status('Your choice: '+[wyr.where,wyr.withWho,wyr.people,wyr.choice||wyr.category].filter(Boolean).join(' · ')+method+'. TEST ONLY: nothing was saved.');speak('Thank you for choosing.');return}
     if(action==='wyr-start'){wyr.elapsed=0;wyr.startAt=Date.now();wyr.stage='timer';renderWouldRather();wyStopTimer();wyrTimer=setInterval(function(){wyr.elapsed=Math.floor((Date.now()-wyr.startAt)/1000);var clock=document.getElementById('wyrClock');if(clock)clock.textContent=formatWyTime(wyr.elapsed)},1000);speak('Activity started. Stop when you are ready.');return}
     if(action==='wyr-stop'){wyStopTimer();wyr.stage='finish';renderWouldRather();speak(wyPrompt());return}
     if(action==='wyr-finish'){status('Thank you for sharing'+(wyr.mood?': '+wyr.mood:'')+'. TEST ONLY: not saved or sent.');speak('Thank you for sharing.');return}

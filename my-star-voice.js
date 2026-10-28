@@ -4,9 +4,9 @@ import { uploadJsonToBucket, downloadJsonFromBucket } from './shared-storage.js?
 const BUCKET = 'star-voice';
 const SETTINGS_KEY = 'star_voice_settings_v1';
 const DEFAULT_SETTINGS = {
-  rate: 1.0,
+  rate: 0.85,
   pitch: 1.0,
-  autoSpeak: true,
+  autoSpeak: false,
   autoSpeakStarters: false,
   clearAfterSpeak: false,
   pinFavoritesHome: true,
@@ -285,7 +285,7 @@ let settings = loadSettings();
 let hiddenDefaults = new Set();
 let starters = [];
 let starterEditId = null;
-let cardVoiceOn = true;
+let cardVoiceOn = false;
 let favorites = new Set();
 let usageCounts = {};
 let addCardContext = null;
@@ -417,16 +417,19 @@ class SpeechController {
   }
 
   pickVoice(voices) {
-    const preferred = [
-      'Google US English',
-      'Samantha',
-      'Alex',
-      'Microsoft Aria',
-      'Microsoft Zira'
-    ];
-    const english = voices.filter(v => /en/i.test(v.lang));
-    const byName = english.find(v => preferred.some(p => v.name.includes(p)));
-    return byName || english[0] || voices[0] || null;
+    const english = voices.filter(v => /^en(-|$)/i.test(v.lang || ''));
+    english.sort((a,b) => {
+      const score = v => {
+        const name=(v.name || '').toLowerCase();
+        return (/enhanced|premium|natural/.test(name)?90:0)
+          + (/samantha|ava|allison|jenny|aria|google us english/.test(name)?35:0)
+          + (/^en-us/i.test(v.lang)?15:0)
+          + (v.localService?5:0)
+          - (/compact|novelty|whisper|bells|bad news/.test(name)?110:0);
+      };
+      return score(b) - score(a);
+    });
+    return english[0] || voices[0] || null;
   }
 
   async speak(text, { rate, pitch } = {}) {
@@ -435,8 +438,8 @@ class SpeechController {
     window.speechSynthesis.cancel();
     const utter = new SpeechSynthesisUtterance(text);
     if (this.voice) utter.voice = this.voice;
-    utter.rate = rate || 1;
-    utter.pitch = pitch || 1;
+    utter.rate = typeof rate==='number' ? rate : 0.85;
+    utter.pitch = typeof pitch==='number' ? pitch : 1;
     window.speechSynthesis.speak(utter);
   }
 }
@@ -446,7 +449,11 @@ const speech = new SpeechController();
 function loadSettings() {
   try {
     const stored = JSON.parse(localStorage.getItem(SETTINGS_KEY));
-    return { ...DEFAULT_SETTINGS, ...(stored || {}) };
+    const merged={ ...DEFAULT_SETTINGS, ...(stored || {}) };
+    // This explicit preference must be set by a user, not by previous autoplay defaults.
+    merged.autoSpeak=localStorage.getItem('star_my_star_read_aloud_enabled')==='on';
+    if (typeof stored?.rate !== 'number' || stored.rate === 1.0) merged.rate = 0.85;
+    return merged;
   } catch {
     return { ...DEFAULT_SETTINGS };
   }
@@ -475,10 +482,10 @@ function showToast(message) {
 
 function loadCardVoiceSetting() {
   try {
-    const stored = localStorage.getItem(CARD_VOICE_KEY);
-    cardVoiceOn = stored !== 'off';
+    const stored = localStorage.getItem('star_my_star_read_aloud_enabled');
+    cardVoiceOn = stored === 'on';
   } catch {
-    cardVoiceOn = true;
+    cardVoiceOn = false;
   }
   updateCardVoiceToggle();
 }
@@ -486,13 +493,18 @@ function loadCardVoiceSetting() {
 function updateCardVoiceToggle() {
   if (!soundToggle) return;
   soundToggle.textContent = cardVoiceOn ? '🔊' : '🔇';
-  soundToggle.title = cardVoiceOn ? 'Card voice on' : 'Card voice off';
+  soundToggle.title = cardVoiceOn ? 'Automatic card speech on' : 'Automatic card speech off';
+  soundToggle.setAttribute('aria-pressed',String(cardVoiceOn));
+  soundToggle.setAttribute('aria-label',cardVoiceOn?'Turn automatic card speech off':'Turn automatic card speech on');
 }
 
 function setCardVoiceOn(value) {
   cardVoiceOn = !!value;
   try {
     localStorage.setItem(CARD_VOICE_KEY, cardVoiceOn ? 'on' : 'off');
+    localStorage.setItem('star_my_star_read_aloud_enabled', cardVoiceOn ? 'on' : 'off');
+    settings.autoSpeak = cardVoiceOn;
+    saveSettings();
   } catch {}
   updateCardVoiceToggle();
 }
@@ -775,7 +787,7 @@ function handleCardTap(entry, { allowSpeak = true, returnToFolders = false } = {
     usageCounts[entry.id] = (usageCounts[entry.id] || 0) + 1;
     saveUsage();
   }
-  if (allowSpeak && settings.autoSpeak && cardVoiceOn) {
+  if (allowSpeak && cardVoiceOn) {
     speech.speak(payload.phrase, settings);
   }
   sentence.push(payload);
@@ -1430,7 +1442,7 @@ quickNeeds?.addEventListener('click', (event) => {
   };
   const entry = map[key];
   if (!entry) return;
-  speech.speak(entry.phrase, settings);
+  if(cardVoiceOn)speech.speak(entry.phrase, settings);
   sentence.push({ text: entry.text, emoji: entry.emoji, phrase: entry.phrase });
   renderSentence();
 });

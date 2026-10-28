@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>My STAR — Accessible Experience (STAR TEST)</title>
+  <meta name="theme-color" content="#f7f1e6">
+  <style>
+    :root {font-family:system-ui,-apple-system,Arial,sans-serif;color:#272b29;background:#f7f1e6}
+    * {box-sizing:border-box}
+    body {margin:0;min-height:100vh}
+    header {background:#fffaf0;border-bottom:2px solid #dfd5c1;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .brand {font-weight:850;font-size:24px;letter-spacing:.035em}
+    .test-label {font-weight:800;color:#713f24;background:#fce8c5;padding:8px 10px;border-radius:12px;font-size:12px}
+    main {width:min(860px,100%);margin:auto;padding:16px 15px 64px}
+    h1,h2 {line-height:1.17;margin:12px 0}
+    h1 {font-size:clamp(26px,6vw,38px)}
+    h2 {font-size:clamp(23px,5vw,30px)}
+    p {line-height:1.5}
+    .intro {font-size:17px;margin:7px 0 18px}
+    button,a.tile {touch-action:manipulation;cursor:pointer}
+    button {font:inherit}
+    button:focus-visible,a:focus-visible {outline:4px solid #2c5f75;outline-offset:3px}
+    .top-actions {display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+    .small-btn {border:2px solid #c8bda7;background:white;color:#272b29;border-radius:15px;padding:12px 15px;font-size:16px;font-weight:750;min-height:48px}
+    .tiles {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+    .tile {min-height:176px;border:2px solid #d5c8b1;border-radius:22px;background:#fffdf7;padding:16px 10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;text-decoration:none;color:inherit;box-shadow:0 2px 6px #392e1610}
+    .tile:active,.choice:active {transform:scale(.98)}
+    .tile .scene {font-size:50px;line-height:1.3;letter-spacing:-8px;white-space:nowrap;padding-right:8px}
+    .tile strong {font-size:clamp(17px,3vw,23px);line-height:1.2}
+    .tile small {font-size:13px;line-height:1.3}
+    .tile.help {border:3px solid #9c3029;background:#fff0e9;color:#842820}
+    .help-row {width:100%;min-height:110px;margin:16px 0}
+    .help-row .scene {font-size:46px}
+    .panel {background:#fffdfa;border:2px solid #d6cbb8;border-radius:22px;padding:18px;margin-top:12px}
+    .notice {border-left:5px solid #b46a46;background:#fff3de;padding:12px 14px;border-radius:9px;margin:14px 0;font-size:14px;line-height:1.45}
+    .notice.urgent {border-color:#b12823;background:#ffede9}
+    .choices {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:16px 0}
+    .choice {min-height:140px;border:3px solid #d5c8b1;border-radius:18px;background:#fffef9;padding:12px;display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center;font-weight:800;font-size:19px}
+    .choice[aria-pressed="true"] {border-color:#366c48;background:#e8f3e7}
+    .choice .scene {font-size:55px;line-height:1.3}
+    .choice .picture {width:100%;height:165px}
+    .choice .picture svg {width:100%;height:100%;border-radius:14px;background:#eff4e7}
+    .actions {display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .primary {background:#3d614c;color:#fff;border:2px solid #3d614c}
+    .secondary {background:white;color:#252d26;border:2px solid #bbb2a1}
+    .large-action {border-radius:16px;padding:15px 18px;min-height:58px;font-size:19px;font-weight:800}
+    .back {margin-bottom:15px}
+    .message {margin-top:14px;border-radius:15px;background:#ebf4e9;padding:16px;font-size:19px;font-weight:700}
+    .body-layout {display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+    .body-card {background:#f8f3e9;border-radius:18px;border:2px solid #d3c9b8;padding:10px;text-align:center}
+    .body-card strong {font-size:20px}
+    .body-poster {height:330px;max-width:230px;position:relative;margin:8px auto}
+    .body-poster svg {width:100%;height:100%}
+    .pain-point {position:absolute;transform:translate(-50%,-50%);width:43px;height:43px;border-radius:50%;border:3px solid #833b28;background:#fce4cf;color:#401b11;font-size:22px;font-weight:900}
+    .pain-point.selected {background:#b42e26;color:white;border-color:#fff;box-shadow:0 0 0 4px #b42e26}
+    .voice-input {width:100%;min-height:110px;border:2px solid #b6aa96;border-radius:14px;font:inherit;font-size:19px;padding:13px}
+    .footer-note {font-size:13px;color:#625e55;margin:20px 4px}
+    .inline-link {color:#245675;font-weight:750}
+    [hidden] {display:none!important}
+    @media(max-width:420px) {.tile {min-height:154px}.tile .scene{font-size:42px}.tile small{font-size:12px}.body-layout{gap:7px}.body-poster{height:300px}.pain-point{width:38px;height:38px}}
+  </style>
+</head>
+<body>
+<header>
+  <div class="brand">⭐ My STAR</div>
+  <div class="test-label">STAR TEST · FICTIONAL DATA</div>
+</header>
+<main>
+  <div class="top-actions">
+    <button class="small-btn" id="homeBtn" type="button">⌂ My STAR Home</button>
+    <button class="small-btn" id="hearBtn" type="button">🔊 Hear this screen</button>
+    <a class="small-btn inline-link" href="dashboard.html">Return to test dashboard</a>
+  </div>
+  <div class="notice">This is an interactive design test. Answers are NOT saved, sent to caregivers, or included in reports. No emergency alerts or texts are sent.</div>
+  <section id="screen" aria-live="polite"></section>
+  <p class="footer-note">My STAR is voluntary. The person can stop, skip or ask for help at any time. This is not an emergency response service.</p>
+</main>
+<script>
+(function(){
+  'use strict';
+  var screen=document.getElementById('screen'), current='home', chosen='', supported=false, supportKind='';
+  var readText={
+    home:'Welcome to My STAR. Pick what you want to do. You can choose not now.',
+    feel:'How are you feeling? Pick a face. You can stop any time.',
+    pain:'Where does it hurt? Tap a spot on the body.',
+    day:'How was your activity? You can choose not now.',
+    goals:'My goals. You can practice a goal or celebrate something you did.',
+    tell:'I want to tell you something. You can speak, type, or open your picture communication cards.',
+    rather:'Would you rather go swimming or listen to music? Pick one, neither, or not now.',
+    urgent:'Help now. This is only a test. It will not send an alert.'
+  };
+  function speak(text){
+    if(!('speechSynthesis' in window)){status('Spoken prompts are unavailable on this device.');return}
+    try{window.speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(String(text||''));u.rate=.86;window.speechSynthesis.speak(u)}catch(e){status('Could not play sound on this device.')}
+  }
+  function status(msg){var el=document.getElementById('result');if(el){el.hidden=false;el.textContent=msg}}
+  function tile(id,picture,title,detail,urgent){return '<button type="button" class="tile'+(urgent?' help':'')+'" data-open="'+id+'"><span class="scene" aria-hidden="true">'+picture+'</span><strong>'+title+'</strong><small>'+detail+'</small></button>'}
+  function button(label,id,kind){return '<button class="large-action '+(kind||'secondary')+'" type="button" data-action="'+id+'">'+label+'</button>'}
+  function wrap(title,body){screen.innerHTML='<button type="button" class="small-btn back" data-open="home">← Back to My STAR</button><h1>'+title+'</h1><div class="panel">'+body+'<div class="message" id="result" role="status" hidden></div></div>'}
+  function support(){return '<label style="display:flex;align-items:center;gap:12px;font-weight:700;margin:20px 0"><input id="withSupport" type="checkbox" style="width:25px;height:25px"> Someone helped me answer</label><div id="supportOptions" hidden><label for="supportKind">How did they help?</label><select id="supportKind" class="large-action secondary" style="width:100%;margin-top:8px"><option value="Read a question aloud">Read a question aloud</option><option value="Helped me choose">Helped me choose</option><option value="Entered my answer">Entered my answer</option></select></div>'}
+  function choice(value,emoji,words){return '<button type="button" class="choice" aria-pressed="false" data-choice="'+value+'"><span class="scene" aria-hidden="true">'+emoji+'</span><span>'+words+'</span></button>'}
+  function bodyPoster(front){
+    var parts=front?[
+      ['Head',50,11],['Throat',50,23],['Chest',50,36],['Stomach',50,47],['Left arm',21,43],['Right arm',79,43],['Left leg',41,73],['Right leg',59,73]
+    ]:[['Back of head',50,11],['Neck',50,23],['Back',50,37],['Lower back',50,51],['Left leg',41,73],['Right leg',59,73]];
+    return '<div class="body-card"><strong>'+(front?'FRONT':'BACK')+'</strong><div class="body-poster"><svg viewBox="0 0 190 340" role="img" aria-label="'+(front?'Front':'Back')+' outline of a whole person"><circle cx="95" cy="35" r="23" fill="#eacaaa" stroke="#775d48" stroke-width="2"/><rect x="87" y="58" width="16" height="20" rx="5" fill="#eacaaa"/><path d="M71 76 Q56 75 52 91 L41 174 Q39 189 47 192 Q55 194 60 177 L75 116 L75 205 L71 313 Q70 330 80 332 Q91 331 92 315 L96 232 L101 315 Q104 330 115 332 Q125 330 120 312 L115 205 L115 116 L131 177 Q134 194 144 192 Q151 189 148 174 L138 91 Q134 75 118 76Z" fill="#eacaaa" stroke="#775d48" stroke-width="2"/><path d="M76 205 Q96 217 114 205" fill="none" stroke="#a88968" stroke-width="2"/></svg>'+
+      parts.map(function(a){return '<button type="button" class="pain-point" data-pain="'+a[0]+'" aria-label="'+a[0]+'" style="left:'+a[1]+'%;top:'+a[2]+'%">•</button>'}).join('')+'</div></div>'
+  }
+  function picture(kind){
+    if(kind==='swim')return '<svg viewBox="0 0 220 160" role="img" aria-label="Person swimming in a blue pool"><rect x="0" y="0" width="220" height="160" fill="#b9e6ed"/><rect x="0" y="99" width="220" height="61" fill="#51a7c3"/><circle cx="73" cy="62" r="17" fill="#b87949"/><path d="M88 85L139 98 163 72" fill="none" stroke="#6d3b2c" stroke-width="15" stroke-linecap="round"/><path d="M0 117Q20 105 40 117T80 117T120 117T160 117T200 117" stroke="white" fill="none" stroke-width="5"/><path d="M0 140Q20 128 40 140T80 140T120 140T160 140T200 140" stroke="white" fill="none" stroke-width="5"/></svg>';
+    return '<svg viewBox="0 0 220 160" role="img" aria-label="Person listening to music with headphones"><rect width="220" height="160" fill="#f2dbb2"/><circle cx="110" cy="75" r="37" fill="#d49b6c"/><path d="M64 72A46 46 0 0 1 156 72" fill="none" stroke="#3f536a" stroke-width="11"/><rect x="60" y="66" width="17" height="35" rx="8" fill="#3f536a"/><rect x="143" y="66" width="17" height="35" rx="8" fill="#3f536a"/><path d="M98 98Q110 109 123 98" stroke="#7a3b27" fill="none" stroke-width="4"/><path d="M173 22v45q-8-7-16 0-7 12 6 15 17 1 17-16V35l18-5v-12z" fill="#3f536a"/></svg>'
+  }
+  function render(page){
+    chosen='';current=page;window.speechSynthesis?.cancel();
+    if(page==='home'){
+      screen.innerHTML='<h1>My STAR</h1><p class="intro">What would you like to do? Nothing is required.</p>'+
+        '<div class="tiles">'+
+          tile('feel','😊 😐 😟','How I Feel','Pick how I feel')+
+          tile('pain','🧍 🩹','Something Hurts','Point to my body')+
+          tile('day','🏊 🌳','My Day','Tell how my day went')+
+          tile('goals','⭐ 🙌','My Goals','Practice and celebrate')+
+          tile('tell','🗣️ 💬','Tell You Something','Share a message')+
+          tile('rather','🏊 🎵','Would You Rather?','Choose what I like')+
+        '</div>'+
+        '<div class="tiles" style="margin-top:14px">'+
+          tile('chat','👨‍👩‍👦 💬','Group Chat','See who is talking')+
+          tile('voice','🖼️ 🗣️','Picture Communication','Use my existing picture cards')+
+        '</div>'+
+        '<div class="help-row">'+tile('urgent','🚨 ‼️','HELP NOW','Important: I need help',true)+'</div>'+
+        '<div class="actions">'+button('Not now — I am done','skip','secondary')+'</div>'+
+        '<div id="result" class="message" hidden></div>';
+    } else if(page==='feel'){
+      wrap('How I Feel','<p>Pick a face. You do not have to answer.</p><div class="choices">'+choice('Happy','😊','Happy')+choice('Okay','😐','Okay')+choice('Sad','😢','Sad')+choice('Upset','😠','Upset')+choice('Tired','😴','Tired')+choice('Unwell','🤒','Not feeling good')+'</div>'+support()+'<div class="actions">'+button('Done','done','primary')+button('Not now','skip')+'</div>');
+    } else if(page==='pain'){
+      wrap('Something Hurts','<p>Tap a spot on the person where something hurts. You can choose front or back.</p><div class="body-layout">'+bodyPoster(true)+bodyPoster(false)+'</div>'+support()+'<div class="actions">'+button('Done','done','primary')+button('Not now','skip')+'</div>');
+    } else if(page==='day'){
+      wrap('My Day','<p>Did you like your activity today?</p><div class="choices">'+choice('Liked it','😊','I liked it')+choice('Okay','😐','It was okay')+choice('Did not like','😞','I did not like it')+choice('No activity','🙅','Not today')+'</div>'+support()+'<div class="actions">'+button('Done','done','primary')+button('Not now','skip')+'</div>');
+    } else if(page==='goals'){
+      wrap('My Goals ⭐','<p>My goals are about things I want to learn or do.</p><div class="choices">'+choice('Practiced','🌟','I practiced')+choice('Help','🤝','I needed help')+choice('Star','⭐','I earned a star')+choice('Not now','✋','Not now')+'</div>'+support()+'<div class="actions">'+button('Done','done','primary')+'</div><p style="font-size:14px">This is only a preview. It does not add an ISA achievement or change progress reports.</p>');
+    } else if(page==='tell'){
+      wrap('Tell You Something','<p>I can speak, type, or use my communication cards.</p><label for="myMessage">My message (optional)</label><textarea class="voice-input" id="myMessage" placeholder="Tap here and use the keyboard microphone to dictate"></textarea>'+support()+'<div class="actions">'+button('Hear my message','hear-message')+button('Open my picture cards','open-voice','primary')+button('Done','done')+'</div><p style="font-size:14px">Messages typed here stay on this preview screen and are not sent or saved.</p>');
+    } else if(page==='rather'){
+      wrap('Would You Rather?','<p>What would you like to do?</p><div class="choices">'+
+        '<button class="choice" type="button" data-choice="Go swimming" aria-pressed="false"><span class="picture">'+picture('swim')+'</span>Go swimming</button>'+
+        '<button class="choice" type="button" data-choice="Listen to music" aria-pressed="false"><span class="picture">'+picture('music')+'</span>Listen to music</button>'+
+        '</div><div class="actions">'+button('Neither','neither')+button('Something else','other')+button('Not now','skip')+'</div>'+support()+'<div class="actions">'+button('Done','done','primary')+'</div><p>Existing STAR activity planner: <a class="inline-link" href="wouldyourather.html">Open the original activity choices and timer</a>.</p>');
+    } else if(page==='urgent'){
+      wrap('🚨 HELP NOW','<div class="notice urgent"><strong>TEST ONLY — NO ALERT IS SENT.</strong> This screen does not contact caregivers, text anyone, or request emergency services. In a real emergency, get help directly.</div><p>What do you need to tell someone?</p><div class="choices">'+choice('Something hurts','🩹','Something hurts')+choice('I am scared','😨','I am scared')+choice('I need someone','🙋','I need someone')+choice('Something happened','❗','Something happened')+'</div><label for="urgentMessage">Add more (optional)</label><textarea id="urgentMessage" class="voice-input" placeholder="Type or dictate"></textarea><div class="actions">'+button('Preview help request','preview-help','primary')+button('Cancel','skip')+'</div>');
+    } else if(page==='chat') {window.location.href='chat.html';return}
+    else if(page==='voice'){window.location.href='my-star-voice.html';return}
+    var input=document.getElementById('withSupport');
+    if(input)input.addEventListener('change',function(){supported=input.checked;document.getElementById('supportOptions').hidden=!supported});
+  }
+  function choose(el,value){
+    chosen=value;
+    document.querySelectorAll('[data-choice],[data-pain]').forEach(function(b){b.setAttribute('aria-pressed','false');b.classList.remove('selected')});
+    el.setAttribute('aria-pressed','true');el.classList.add('selected');
+    speak(value==='Something hurts'?'Something hurts':value);
+    status('You chose: '+value+'. This is only a preview and is not saved.');
+  }
+  screen.addEventListener('click',function(e){
+    var open=e.target.closest('[data-open]');
+    if(open){render(open.getAttribute('data-open'));speak(readText[current]||'My STAR');return}
+    var ch=e.target.closest('[data-choice],[data-pain]');
+    if(ch){choose(ch,ch.getAttribute('data-choice')||ch.getAttribute('data-pain'));return}
+    var a=e.target.closest('[data-action]');
+    if(!a)return;
+    var action=a.getAttribute('data-action');
+    if(action==='skip'){if(current==='home')status('That is okay. You do not have to check in.');else {render('home');speak('That is okay. You can come back whenever you want.')}return}
+    if(action==='open-voice'){render('voice');return}
+    if(action==='hear-message'){var message=document.getElementById('myMessage');speak(message?.value||'No message entered');return}
+    if(action==='neither'||action==='other'){chosen=action==='neither'?'Neither':'Something else';speak(chosen);status('You chose: '+chosen+'. Not saved.');return}
+    if(action==='preview-help'){
+      if(!chosen){status('Choose a picture first, or ask someone for help. No message has been sent.');return}
+      var extra=document.getElementById('urgentMessage')?.value||'';
+      status('🚨 TEST PREVIEW ONLY: '+chosen+(extra?' — '+extra:'')+'. Nothing was sent.');return
+    }
+    if(action==='done'){
+      var messageField=document.getElementById('myMessage');
+      var val=chosen||(messageField?.value.trim()||'');
+      if(!val){status('You can choose an answer, or stop for now. Nothing is required.');return}
+      var supportText=document.getElementById('withSupport')?.checked?' — completed with support ('+document.getElementById('supportKind').value+')':' — independently';
+      status('Thanks for sharing: '+val+supportText+'. TEST ONLY: not saved or sent.');speak('Thank you for sharing.');return
+    }
+  });
+  document.getElementById('homeBtn').addEventListener('click',function(){render('home')});
+  document.getElementById('hearBtn').addEventListener('click',function(){speak(readText[current]||'My STAR')});
+  render('home');
+})();
+</script>
+</body>
+</html>

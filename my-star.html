@@ -161,30 +161,42 @@
   function button(label,id,kind){return '<button class="large-action '+(kind||'secondary')+'" type="button" data-action="'+id+'">'+label+'</button>'}
   function wrap(title,body){screen.innerHTML='<button type="button" class="small-btn back" data-open="home">← Back to My STAR</button><h1>'+title+'</h1><div class="panel">'+body+'<div class="message" id="result" role="status" hidden></div></div>'}
   // Speech-to-text is separate from the Read Aloud option. Listening starts ONLY on a tap.
-  var activeRecognition=null, dictationField=null, dictationButton=null, dictationStopped=false;
+  var activeRecognition=null, dictationField=null, dictationButton=null;
+  var dictationBaseText='', dictationGotWords=false, dictationHadError=false, dictationStopping=false;
   function dictateControls(id){
-    return '<button type="button" class="dictate-btn" data-dictate="'+id+'" aria-pressed="false">🎤 Talk Instead</button>'+
-      '<p class="dictate-hint" id="dictateHint" role="status" aria-live="polite">Tap the microphone to tell us what happened.</p>';
+    return '<button type="button" class="dictate-btn" data-dictate="'+id+'" aria-pressed="false" aria-label="Talk instead of typing">🎤 Talk Instead</button>'+
+      '<p class="dictate-hint" id="dictateHint" role="status" aria-live="polite">Tap Talk Instead, say your words, and check that they appear in the box.</p>';
   }
   function setDictateHint(msg){
     var hint=document.getElementById('dictateHint');
     if(hint)hint.textContent=msg;
   }
+  // Aborting is for navigation/cancellation only. Tapping Stop must use .stop()
+  // so Safari/iPhone can return the final speech result before ending.
   function stopDictation(){
-    var active=activeRecognition;
-    activeRecognition=null;
-    if(active){
-      dictationStopped=true;
-      try{active.abort()}catch(e){}
+    var active=activeRecognition, btn=dictationButton;
+    activeRecognition=null;dictationField=null;dictationButton=null;dictationStopping=false;
+    if(active){try{active.abort()}catch(e){}}
+    if(btn&&btn.isConnected){
+      btn.setAttribute('aria-pressed','false');
+      btn.textContent='🎤 Talk Instead';
     }
+  }
+  function finishDictation(){
+    if(!activeRecognition||dictationStopping)return;
+    dictationStopping=true;
     if(dictationButton&&dictationButton.isConnected){
+      dictationButton.textContent='⌛ Finishing…';
       dictationButton.setAttribute('aria-pressed','false');
-      dictationButton.textContent='🎤 Talk Instead';
     }
-    dictationButton=null;dictationField=null;
+    setDictateHint('Finishing your words… check the text box before tapping Done.');
+    try{activeRecognition.stop()}catch(e){
+      setDictateHint('Could not finish listening. Check your words or try the microphone again.');
+      stopDictation();
+    }
   }
   function toggleDictation(btn){
-    if(activeRecognition){stopDictation();setDictateHint('Stopped listening. You can talk again or tap Done.');return}
+    if(activeRecognition){finishDictation();return}
     var field=document.getElementById(btn.getAttribute('data-dictate'));
     if(!field)return;
     var Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
@@ -192,51 +204,69 @@
       setDictateHint('Voice typing is unavailable in this browser. You can type, use picture cards, or ask someone to help.');
       return;
     }
-    var recognition=new Recognition();
-    recognition.lang='en-US';recognition.continuous=false;recognition.interimResults=false;recognition.maxAlternatives=1;
-    dictationStopped=false;activeRecognition=recognition;dictationField=field;dictationButton=btn;
-    // Do not speak through the microphone: this is not automatic narration.
+    var recognition;
+    try{recognition=new Recognition()}catch(e){
+      setDictateHint('This browser could not open the microphone. You can type or ask someone to help.');
+      return;
+    }
+    recognition.lang='en-US';
+    recognition.continuous=false;
+    // Show interim words immediately; some iPhones take time to send a final result.
+    recognition.interimResults=true;
+    recognition.maxAlternatives=1;
+    dictationBaseText=field.value.trim();
+    dictationGotWords=false;dictationHadError=false;dictationStopping=false;
+    activeRecognition=recognition;dictationField=field;dictationButton=btn;
     window.speechSynthesis?.cancel();
+    setDictateHint('Starting microphone… allow access if asked, then speak.');
     recognition.onstart=function(){
       if(activeRecognition!==recognition)return;
       btn.setAttribute('aria-pressed','true');
       btn.textContent='⏹ Stop Listening';
-      setDictateHint('Listening… say what you did. Tap Stop Listening to stop.');
+      setDictateHint('Listening… say what you did. Your words should appear as you speak.');
     };
     recognition.onresult=function(event){
-      if(activeRecognition!==recognition||dictationStopped)return;
-      var words='';
-      for(var i=event.resultIndex;i<event.results.length;i++){
-        if(event.results[i].isFinal)words+=event.results[i][0].transcript+' ';
+      if(activeRecognition!==recognition)return;
+      // Rebuild the current utterance from ALL results so interim corrections
+      // replace earlier guesses rather than duplicating the same words.
+      var parts=[];
+      for(var i=0;i<event.results.length;i++){
+        var item=event.results[i];
+        var transcript=item&&item[0]&&item[0].transcript;
+        if(transcript&&transcript.trim())parts.push(transcript.trim());
       }
-      words=words.trim();
-      if(!words)return;
-      if(field.isConnected){
-        var existing=field.value.trim();
-        field.value=(existing?existing+' ':'')+words;
-        field.dispatchEvent(new Event('input',{bubbles:true}));
-        setDictateHint('I heard: '+words+'. Tap again to say more, or tap Done.');
-      }
+      var words=parts.join(' ').trim();
+      if(!words||!field.isConnected)return;
+      dictationGotWords=true;
+      field.value=(dictationBaseText?dictationBaseText+' ':'')+words;
+      field.dispatchEvent(new Event('input',{bubbles:true}));
+      setDictateHint('I heard: “'+words+'”. Check the words, and tap Stop Listening when finished.');
     };
     recognition.onerror=function(event){
-      if(activeRecognition!==recognition||dictationStopped)return;
+      if(activeRecognition!==recognition)return;
+      dictationHadError=true;
       var error=event.error||'';
-      if(error==='no-speech')setDictateHint('I did not hear anything. You can try again.');
-      else if(error==='not-allowed'||error==='service-not-allowed')setDictateHint('Microphone permission is off. Allow microphone access in browser settings, or type instead.');
-      else setDictateHint('The microphone did not work this time. You can try again or type instead.');
+      if(error==='no-speech')setDictateHint('I did not hear any words. Tap Talk Instead to try again.');
+      else if(error==='not-allowed'||error==='service-not-allowed')setDictateHint('Microphone access was blocked. Allow microphone permission for this site in your browser settings.');
+      else if(error==='audio-capture')setDictateHint('The microphone could not be accessed. Check your device microphone permission.');
+      else if(error==='network')setDictateHint('Speech recognition needs a connection on this device. Check internet access and try again.');
+      else setDictateHint('Speech recognition did not work. You can try again or type your answer.');
     };
     recognition.onend=function(){
       if(activeRecognition!==recognition)return;
-      activeRecognition=null;dictationField=null;dictationButton=null;
+      activeRecognition=null;dictationField=null;dictationButton=null;dictationStopping=false;
       if(btn.isConnected){
         btn.textContent='🎤 Talk Instead';btn.setAttribute('aria-pressed','false');
-        var hint=document.getElementById('dictateHint');
-        if(hint&&/^Listening/.test(hint.textContent))setDictateHint('Stopped listening. Tap Talk Instead to try again, or tap Done.');
+      }
+      if(!dictationHadError){
+        if(dictationGotWords)setDictateHint('Your words are in the box. Check them, then tap Done. Tap Talk Instead to add more.');
+        else setDictateHint('No words appeared. Tap Talk Instead to try again, and check microphone permission if needed.');
       }
     };
     try{recognition.start()}catch(e){
-      activeRecognition=null;dictationField=null;dictationButton=null;
-      setDictateHint('Speech-to-text did not start. You can try again or type instead.');
+      activeRecognition=null;dictationField=null;dictationButton=null;dictationStopping=false;
+      btn.setAttribute('aria-pressed','false');btn.textContent='🎤 Talk Instead';
+      setDictateHint('Speech-to-text did not start. Check microphone permission and try again.');
     }
   }
   function support(){return '<label style="display:flex;align-items:center;gap:12px;font-weight:700;margin:20px 0"><input id="withSupport" type="checkbox" style="width:25px;height:25px"> Someone helped me answer</label><div id="supportOptions" hidden><label for="supportKind">How did they help?</label><select id="supportKind" class="large-action secondary" style="width:100%;margin-top:8px"><option value="Read a question aloud">Read a question aloud</option><option value="Helped me choose">Helped me choose</option><option value="Entered my answer">Entered my answer</option></select></div>'}
@@ -452,6 +482,7 @@
       status('🚨 TEST PREVIEW ONLY: '+chosen+(extra?' — '+extra:'')+'. Nothing was sent.');return
     }
     if(action==='done'){
+      if(activeRecognition){finishDictation();setDictateHint('Finish speaking, check that your words are correct, then tap Done again.');return}
       var messageField=document.getElementById('myMessage');
       var accomplishment=document.getElementById('accomplishmentText');
       var val=chosen||(messageField?.value.trim()||accomplishment?.value.trim()||'');

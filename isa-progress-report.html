@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f7f1e6">
+<title>ISA Progress &amp; Observations · STAR TEST</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#28332b;background:#f7f1e6}
+*{box-sizing:border-box}
+body{margin:0} main{max-width:830px;padding:20px 16px 90px;margin:auto}
+h1{font-size:clamp(27px,7vw,40px);line-height:1.15;margin:14px 0}
+h2{font-size:21px;line-height:1.3;margin:2px 0 9px}
+h3{font-size:17px;margin:0 0 9px}
+p{line-height:1.5}a{color:#315940}
+a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid #276e84;outline-offset:3px}
+.back{display:inline-flex;padding:9px 0;font-weight:750;text-decoration:none}
+.eyebrow{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:#774b2b;font-weight:800}
+.lede{color:#48564d;line-height:1.55}
+.topcard,.outcome-section{background:#fffdfa;border:2px solid #d5ccb9;border-radius:20px;padding:20px;margin:14px 0}
+.filters{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+.filters label{font-size:13px;font-weight:800;display:grid;gap:7px}
+.filters input{border:1px solid #b5b7ab;border-radius:10px;padding:12px;background:#fff;color:#28332b;font:inherit;width:100%;min-width:0}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button{border:2px solid #365940;background:#365940;color:white;border-radius:12px;font-size:15px;font-weight:750;padding:12px 15px;min-height:48px;cursor:pointer}
+button.secondary{background:white;color:#365940}
+button:disabled{opacity:.6;cursor:default}
+.counts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:15px 0}
+.metric{background:#f0f2eb;border-radius:13px;padding:12px 8px;text-align:center;display:grid;gap:7px}
+.metric strong{font-size:27px;line-height:1;color:#365940}
+.metric span{font-size:12px;color:#4f594d;font-weight:700}
+#reportStatus{color:#365940;font-weight:750;font-size:15px}
+#reportStatus[data-error=true]{color:#912f26}
+.report-note,.muted,.source-meta{color:#59635b;font-size:14px}
+.category{color:#59635b;font-weight:750;font-size:13px}
+.section-count{font-size:13px;font-weight:800;color:#466850;margin:12px 0}
+.outcome-text{white-space:pre-line;font-size:14px;color:#4b574e}
+.evidence-section{border-top:1px solid #dcd8ca;padding-top:17px;margin-top:17px}
+.evidence{padding:12px 13px;border-radius:12px;background:#f6f4ed;margin:9px 0}
+.evidence.observation{background:#eff5ed;border-left:4px solid #668671}
+.evidence.measure{border-left:4px solid #9e8562}
+.source-label{display:block;color:#435a4c;font-weight:850;font-size:13px}
+.person-words{font-size:18px;font-weight:700;margin:11px 0;padding:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.measure-value{margin:9px 0;font-size:16px;overflow-wrap:anywhere}
+.review-note{font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}
+.disclaimer{font-size:12px;color:#59635b;margin:9px 0 0}
+.warning{color:#8a291e;font-weight:750}
+.star-view-switch{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:5px;border:2px solid #cfbf9f;border-radius:17px;background:#ede6d8;margin:0 0 13px}
+.star-view-switch a{min-height:54px;display:flex;align-items:center;justify-content:center;text-align:center;padding:8px 6px;text-decoration:none;color:#304035;border-radius:12px;font-size:14px;font-weight:800}
+.star-view-switch a[aria-current="page"]{background:#365940;color:#fff}
+@media(max-width:420px){.topcard,.outcome-section{padding:15px}.filters{gap:8px}.counts{gap:7px}.metric strong{font-size:24px}.metric span{font-size:11px}}
+@media print{
+  :root{background:white;color:black}
+  main{padding:0;max-width:100%}
+  nav,.back,.toolbar,.filters,.print-hide{display:none!important}
+  .topcard,.outcome-section{border:0;border-radius:0;padding:0;margin:15px 0}
+  .outcome-section{break-inside:avoid}
+  .evidence{break-inside:avoid}
+  .metric,.evidence{background:white!important;border:1px solid #aaa}
+}
+</style>
+</head>
+<body><main>
+<nav class="star-view-switch" aria-label="Switch between My STAR and caregiver or administrator">
+  <a href="./my-star.html">⭐ My STAR</a>
+  <a href="./dashboard.html" aria-current="page">👥 Caregiver / Admin</a>
+</nav>
+<a class="back" href="./isa-outcomes.html">← Back to ISA Outcomes</a>
+<div class="eyebrow">STAR UVM TEST · FICTIONAL DATA ONLY</div>
+<h1>⭐ ISA Progress &amp; Observations</h1>
+<p class="lede">See the individual's reviewed My STAR reports alongside the ISA measurements entered by caregivers. A linked statement is meaningful evidence, <strong>not an automatically completed goal or progress score</strong>.</p>
+<section class="topcard">
+  <div class="filters print-hide">
+    <label>From<input id="dateFrom" type="date"></label>
+    <label>Through<input id="dateTo" type="date"></label>
+  </div>
+  <div class="toolbar print-hide">
+    <button type="button" id="loadReport">Show report</button>
+    <button type="button" id="showAll" class="secondary">All dates</button>
+    <button type="button" id="printReport" class="secondary">Print / Save PDF</button>
+  </div>
+  <div id="reportCounts" class="counts" aria-live="polite"></div>
+  <p id="reportStatus" role="status" aria-live="polite">Loading report…</p>
+</section>
+<div id="outcomeReport"></div>
+</main>
+<script type="module" src="./isa-progress-report.js?v=2026.10.28A"></script>
+</body></html>

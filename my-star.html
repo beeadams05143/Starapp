@@ -152,10 +152,10 @@
   };
   // Photo IDs are from free-to-use Pexels photos; only preview images are loaded.
   var wyPhotos={
-    'Inside':6297091,'Outside':8704681,'Music':5077420,'Art':7859031,
+    'Inside':6297091,'Outside':8704681,'Music':5077420,'Art':7859031,'Water Play':8688166,
     'Cards & Games':8111356,'Cooking':7964666,'Walk':9533800,
     'Garden':8704681,'My Playlist':5077420,'Painting':7859031,
-    'Car Trip':19765895
+    'Car Trip':11942041
   };
   var wyIcons={
     'Inside':'🏠','Outside':'🌳','Car Trip':'🚗','Just Me':'🧍','One Person':'👥','Group':'👪',
@@ -205,7 +205,7 @@
     })[wyr.stage]||readText.rather;
   }
   function wyStopTimer(){if(wyrTimer){clearInterval(wyrTimer);wyrTimer=null}}
-  function wyReset(){wyStopTimer();wyr={stage:'where',where:'',withWho:'',people:'',category:'',choice:'',elapsed:0,startAt:0,mood:'',offered:[]}}
+  function wyReset(){wyStopTimer();wyr={stage:'where',where:'',withWho:'',people:'',category:'',choice:'',elapsed:0,startAt:0,mood:'',offered:[],offset:0}}
   function wyExtras(){
     return '<div class="actions">'+button('Neither','wyr-neither')+button('Something else','wyr-other')+button('Not now','skip')+'</div>';
   }
@@ -222,9 +222,9 @@
     }else if(stage==='people'){
       html='<p>Who would you like to do this with? You can leave this empty.</p><label for="wyrPeople">Name or names (optional)</label><input class="text-entry" id="wyrPeople" placeholder="Who? (optional)" value="'+safeHtml(wyr.people)+'"><div class="actions">'+button('Continue','wyr-people','primary')+button('Skip','wyr-people')+button('Not now','skip')+'</div>';
     }else if(stage==='category'){
-      items=wyFamilies[wyr.where]||[];html='<p class="progress-label">3 · What kind?</p><p>What sounds fun?</p>'+wyCards(items)+wyExtras();
+      items=wyFamilies[wyr.where]||[];html='<p class="progress-label">3 · What kind?</p><p>What sounds fun?</p>'+wyCards(items.slice(wyr.offset,wyr.offset+2))+'<div class="actions">'+(wyr.offset>0?button('Previous choices','wyr-prev'):'')+(wyr.offset+2<items.length?button('More choices','wyr-more','primary'):'')+'</div>'+wyExtras();
     }else if(stage==='sub'){
-      items=wySub[wyr.category]||[];html='<p class="progress-label">4 · Which activity?</p><p>Choose what you would like.</p>'+wyCards(items)+wyExtras();
+      items=wySub[wyr.category]||[];html='<p class="progress-label">4 · Which activity?</p><p>Choose what you would like.</p>'+wyCards(items.slice(wyr.offset,wyr.offset+2))+'<div class="actions">'+(wyr.offset>0?button('Previous choices','wyr-prev'):'')+(wyr.offset+2<items.length?button('More choices','wyr-more','primary'):'')+'</div>'+wyExtras();
     }else if(stage==='summary'){
       html='<p>Would you like to try this?</p>'+wySummary()+'<div class="actions">'+button('Start activity timer','wyr-start','primary')+button('Just choosing','wyr-chosen')+button('Change my choice','wyr-restart')+button('Not now','skip')+'</div>'+support()+'<p style="font-size:14px">TEST ONLY. This is a preference, not proof the activity happened. No records are saved.</p>';
     }else if(stage==='timer'){
@@ -234,16 +234,16 @@
     }else if(stage==='declined'){
       html='<p>That is okay. You do not have to choose anything.</p><div class="actions">'+button('Try again','wyr-restart','primary')+button('Back to My STAR','skip')+'</div>';
     }
-    wyr.offered=items.slice();
+    wyr.offered=(stage==='category'||stage==='sub')?items.slice(wyr.offset,wyr.offset+2):items.slice();
     wrap('Would You Rather?',html);
   }
   function formatWyTime(sec){return String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0')}
   function pickWyr(answer){
     if(wyr.stage==='where'){wyr.where=answer;wyr.stage='withWho'}
     else if(wyr.stage==='withWho'){
-      wyr.withWho=answer;wyr.stage=answer==='Just Me'?'category':'people';
+      wyr.withWho=answer;wyr.offset=0;wyr.stage=answer==='Just Me'?'category':'people';
     }else if(wyr.stage==='category'){
-      wyr.category=answer;wyr.stage=wySub[answer]?'sub':'summary';
+      wyr.category=answer;wyr.offset=0;wyr.stage=wySub[answer]?'sub':'summary';
     }else if(wyr.stage==='sub'){wyr.choice=answer;wyr.stage='summary'}
     else if(wyr.stage==='finish'){wyr.mood=answer;status('You chose: '+answer+'. TEST ONLY: Not saved.');speak(answer);return}
     renderWouldRather();speak(wyPrompt());
@@ -309,6 +309,8 @@
     if(action==='skip'){if(current==='home')status('That is okay. You do not have to check in.');else {render('home');speak('That is okay. You can come back whenever you want.')}return}
     if(action==='wyr-people'){wyr.people=document.getElementById('wyrPeople')?.value.trim()||'';wyr.stage='category';renderWouldRather();speak(wyPrompt());return}
     if(action==='wyr-restart'){wyReset();renderWouldRather();speak(wyPrompt());return}
+    if(action==='wyr-more'){wyr.offset+=2;renderWouldRather();speak(wyPrompt());return}
+    if(action==='wyr-prev'){wyr.offset=Math.max(0,wyr.offset-2);renderWouldRather();speak(wyPrompt());return}
     if(action==='wyr-neither'){wyStopTimer();wyr.stage='declined';renderWouldRather();speak(wyPrompt());return}
     if(action==='wyr-other'){var other=prompt('What would you rather do? (optional)');if(other&&other.trim()){wyr.category='Something else';wyr.choice=other.trim().slice(0,160);wyr.stage='summary';renderWouldRather();speak(wyPrompt())}return}
     if(action==='wyr-chosen'){status('Your choice: '+[wyr.where,wyr.withWho,wyr.people,wyr.choice||wyr.category].filter(Boolean).join(' · ')+'. TEST ONLY: nothing was saved.');speak('Thank you for choosing.');return}

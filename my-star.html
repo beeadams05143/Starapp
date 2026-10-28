@@ -89,7 +89,7 @@
 <main>
   <div class="top-actions">
     <button class="small-btn" id="homeBtn" type="button">⌂ My STAR Home</button>
-    <button class="small-btn" id="hearBtn" type="button">🔊 Hear this screen</button>
+    <button class="small-btn" id="hearBtn" type="button" aria-pressed="false" aria-label="Turn reading aloud on or off">🔇 Read Aloud: OFF</button>
     <a class="small-btn inline-link" href="dashboard.html">Return to test dashboard</a>
   </div>
   <div class="notice">This is an interactive design test. Answers are NOT saved, sent to caregivers, or included in reports. No emergency alerts or texts are sent.</div>
@@ -110,9 +110,38 @@
     rather:'Would you rather do something inside, outside, or go somewhere? You can pick something else or not now.',
     urgent:'Help now. This is only a test. It will not send an alert.'
   };
+  // A deliberate opt-in is required before My STAR narrates anything.
+  var readAloudKey='star_my_star_read_aloud_enabled', readAloudOn=false, selectedVoice=null;
+  try {readAloudOn=localStorage.getItem(readAloudKey)==='on'}catch(e){}
+  function preferVoice(){
+    if(!('speechSynthesis' in window))return null;
+    var voices=window.speechSynthesis.getVoices().filter(function(v){return /^en(-|$)/i.test(v.lang||'')});
+    voices.sort(function(a,b){
+      function rank(v){
+        var n=(v.name||'').toLowerCase();
+        return (/enhanced|premium|natural/.test(n)?90:0)+(/samantha|ava|allison|jenny|aria|google us english/.test(n)?35:0)
+           +(/^en-us/i.test(v.lang)?15:0)+(v.localService?5:0)-(/compact|novelty|whisper|bells|bad news/.test(n)?110:0);
+      }
+      return rank(b)-rank(a);
+    });
+    return voices[0]||null;
+  }
+  function updateReadButton(){
+    var b=document.getElementById('hearBtn');if(!b)return;
+    b.textContent=readAloudOn?'🔊 Read Aloud: ON':'🔇 Read Aloud: OFF';
+    b.setAttribute('aria-pressed',String(readAloudOn));
+  }
   function speak(text){
+    if(!readAloudOn)return;
     if(!('speechSynthesis' in window)){status('Spoken prompts are unavailable on this device.');return}
-    try{window.speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(String(text||''));u.rate=.86;window.speechSynthesis.speak(u)}catch(e){status('Could not play sound on this device.')}
+    try{
+      window.speechSynthesis.cancel();
+      var u=new SpeechSynthesisUtterance(String(text||''));
+      selectedVoice=preferVoice()||selectedVoice;
+      if(selectedVoice)u.voice=selectedVoice;
+      u.lang='en-US';u.rate=.80;u.pitch=1;u.volume=1;
+      window.speechSynthesis.speak(u);
+    }catch(e){status('Could not play sound on this device.')}
   }
   function status(msg){var el=document.getElementById('result');if(el){el.hidden=false;el.textContent=msg}}
   function tile(id,picture,title,detail,urgent){return '<button type="button" class="tile'+(urgent?' help':'')+'" data-open="'+id+'"><span class="scene" aria-hidden="true">'+picture+'</span><strong>'+title+'</strong><small>'+detail+'</small></button>'}
@@ -339,7 +368,15 @@
     }
   });
   document.getElementById('homeBtn').addEventListener('click',function(){render('home')});
-  document.getElementById('hearBtn').addEventListener('click',function(){speak(current==='rather'?wyPrompt():(readText[current]||'My STAR'))});
+  document.getElementById('hearBtn').addEventListener('click',function(){
+    readAloudOn=!readAloudOn;
+    try{localStorage.setItem(readAloudKey,readAloudOn?'on':'off')}catch(e){}
+    updateReadButton();
+    if(readAloudOn)speak(current==='rather'?wyPrompt():(readText[current]||'My STAR'));
+    else window.speechSynthesis?.cancel();
+  });
+  if('speechSynthesis' in window)window.speechSynthesis.addEventListener?.('voiceschanged',function(){selectedVoice=preferVoice()});
+  updateReadButton();
   render('home');
 })();
 </script>

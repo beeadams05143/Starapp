@@ -87,20 +87,24 @@
     }
     .quick-actions {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(2,minmax(0,1fr));
       gap: 12px;
       margin-bottom: 20px;
     }
     .action-card {
       border-radius: 12px;
-      padding: 28px 24px;
+      padding: 18px 14px;
+      min-width: 0;
+      max-width: 100%;
+      overflow-wrap: anywhere;
+      line-height: 1.2;
       display: flex;
       flex-direction: column;
       align-items: flex-start;
       justify-content: center;
-      gap: 24px;
+      gap: 12px;
       min-height: 146px;
-      font-size: 28px;
+      font-size: clamp(17px,4.6vw,22px);
       font-weight: 700;
       cursor: pointer;
       background: #E9E6DF;
@@ -134,9 +138,11 @@
       line-height: 1;
     }
     .draft-count-badge[hidden] { display: none; }
-    .action-card .action-description{font-size:13px;line-height:1.35;font-weight:500;letter-spacing:0;color:#5f5e5a;display:block;margin-top:-16px}
-    .action-card:has(.action-description){gap:18px}
-    @media(max-width:390px){.action-card{padding:18px 14px;font-size:22px}.action-card .action-description{font-size:12px}}
+    .quick-actions>*{min-width:0;width:100%}
+    .action-card > span{min-width:0;max-width:100%;overflow-wrap:anywhere}
+    .action-card .action-description{font-size:13px;line-height:1.35;font-weight:500;letter-spacing:0;color:#5f5e5a;display:block;margin-top:0;overflow-wrap:anywhere}
+    @media(max-width:390px){.dashboard-card{padding-inline:12px}.quick-actions{gap:10px}.action-card{padding:16px 11px;font-size:18px}.action-card .action-description{font-size:12px}}
+    @media(max-width:330px){.action-card{font-size:16px;padding-inline:8px}}
     .action-card.active {
       background: #FAEEDA;
       border: 1px solid #FAC775;

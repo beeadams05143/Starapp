@@ -3,69 +3,74 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#f7f1e6">
-<title>Fictional ISA Observation Review · STAR TEST</title>
+<title>Review My STAR Observations · STAR TEST</title>
 <style>
-:root{font-family:system-ui,-apple-system,sans-serif;color:#282b29;background:#f7f1e6}
-*{box-sizing:border-box}body{margin:0}main{max-width:830px;margin:auto;padding:22px 15px 80px}
-h1{font-size:clamp(27px,6vw,39px);line-height:1.17}h2{font-size:23px}p{line-height:1.55}
-a{color:#284d3b}a:focus-visible,button:focus-visible,select:focus-visible,textarea:focus-visible{outline:4px solid #38826b;outline-offset:3px}
-.panel{background:#fffdfa;border:2px solid #d5c8b1;border-radius:20px;padding:18px;margin:14px 0}
-.eyebrow{font-size:14px;font-weight:800;letter-spacing:.04em;color:#75411d}
-.banner{background:#fff0c9;border:2px solid #ad8132;padding:12px;border-radius:14px;font-weight:750}
-.words{font-size:22px;font-weight:750;background:#f7f1e6;border-left:5px solid #64806a;padding:15px;border-radius:8px;overflow-wrap:anywhere}
-small,.muted{color:#575c58}.muted{font-size:15px}.match{padding:12px;margin:9px 0;background:#f1f6ee;border-radius:11px;border:1px solid #c4d3c1}
-.match strong{font-size:18px}.notes{font-size:14px;margin-top:6px}
-button{border:2px solid #365940;background:#365940;color:white;border-radius:12px;min-height:48px;font:inherit;font-weight:750;padding:10px 12px;cursor:pointer}
-button.alt{background:white;color:#293c2f}button:disabled{opacity:.55;cursor:default}
-.actions{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}
-label{display:block;font-weight:700;margin:13px 0 6px}
-.test-workbench{background:#fff6e6;border-color:#d1b784}
-.test-workbench h2{margin-top:0}
-.test-workbench .example-hint{color:#624b27;font-weight:650;font-size:15px}
-.test-workbench textarea{min-height:100px;font-size:19px}
-.test-workbench button{width:100%;font-size:18px;min-height:58px}
-.test-workbench .match{background:white}
-select,textarea{font:inherit;font-size:17px;width:100%;padding:12px;border:2px solid #bab4a9;background:white;border-radius:11px}
-textarea{min-height:88px}.status{font-weight:700;color:#345e48}
+:root{font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;color:#283029;background:#f7f1e6}
+*{box-sizing:border-box}body{margin:0}
+main{max-width:750px;margin:auto;padding:20px 15px 75px}
+h1{font-size:clamp(28px,7vw,40px);line-height:1.13;margin:16px 0 8px}
+h2{font-size:clamp(21px,5vw,26px);line-height:1.25;margin:20px 0 13px}
+p{line-height:1.5;margin:10px 0}
+a{color:#315540}
+button,select,textarea{font:inherit}
+button,select{touch-action:manipulation}
+a:focus-visible,button:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #226a84;outline-offset:3px}
+a.back{display:inline-flex;padding:10px 2px;text-decoration:none;font-weight:800;font-size:16px}
+.eyebrow{font-size:13px;font-weight:800;color:#734522;letter-spacing:.04em;margin:12px 0}
+#reviewIntro{font-size:17px;color:#484f47;margin:10px 0 16px}
+#queueStatus{font-size:17px;font-weight:850;color:#365940;padding:10px 0;margin:0}
+.panel{background:#fffdfa;border:2px solid #d3c8b5;border-radius:22px;padding:20px;margin:15px 0 18px}
+.review-meta{font-size:13px;font-weight:750;color:#5b5f59;margin-bottom:18px}
+.prompt-label,.card-caption{font-size:14px;font-weight:800;color:#536453}
+.words{font-size:clamp(21px,5.5vw,29px);font-weight:800;line-height:1.4;margin:10px 0 14px;padding:18px;background:#f4efe4;border-left:5px solid #66816a;border-radius:12px;overflow-wrap:anywhere}
+.muted{font-size:14px;color:#555d54;overflow-wrap:anywhere}
+.review-question{margin:22px 0 16px}
+label{display:block;font-size:17px;font-weight:800;margin:14px 0 8px}
+select,textarea{display:block;width:100%;border:2px solid #b8b2a6;border-radius:13px;background:#fff;padding:14px;color:#272e28}
+select{min-height:62px;font-size:17px}
+textarea{min-height:90px;font-size:17px;resize:vertical}
+.picker-hint{font-size:13px;line-height:1.35;color:#61675d;margin:7px 0 13px}
+.selected-outcome{border:1px solid #c1d2bd;border-radius:13px;background:#f0f5ee;padding:15px;margin:12px 0}
+.outcome-title{font-size:19px;display:block;margin:9px 0}
+.outcome-words{font-size:15px;white-space:pre-line}
+.safety-note{font-size:13px;line-height:1.45;color:#59635b;margin:14px 0;padding-left:10px;border-left:3px solid #7f9a7b}
+button{font-size:16px;font-weight:800;border:2px solid #365940;background:#365940;color:#fff;border-radius:13px;padding:14px;min-height:54px;cursor:pointer}
+button.primary{width:100%;font-size:18px;min-height:65px}
+button.alt{background:#fff;color:#365940}
+button.text-action{border-color:#c5cabe;background:#f7f8f3;color:#3c5243}
+button:disabled{opacity:.5;cursor:not-allowed}
+.secondary-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:11px}
+.secondary-actions button{font-size:14px;line-height:1.25}
+#reviewFeedback{font-size:15px;font-weight:750;padding:13px 14px;border:1px solid #b6cbb4;border-radius:12px;background:#eaf3e8;margin:14px 0}
+#reviewFeedback[data-error=true]{color:#862b27;background:#fff0e9;border-color:#c28d87}
+.history{margin-top:22px}
+.history summary{font-weight:850;font-size:17px;padding:15px 4px;cursor:pointer;color:#365940}
+.history-item{background:#fffcf5;border:1px solid #ded5c5;padding:14px;border-radius:13px;margin:12px 0}
+.history-words{display:block;font-size:17px;overflow-wrap:anywhere}
+.history-item button{font-size:14px;margin-top:10px;min-height:44px}
+.empty{background:#ecf4e9;padding:18px;border-radius:15px;font-weight:700}
 [hidden]{display:none!important}
-.star-view-switch{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:5px;border:2px solid #cfbf9f;border-radius:17px;background:#ede6d8;margin:0 0 15px;max-width:100%}
-.star-view-switch a{min-height:56px;display:flex;align-items:center;justify-content:center;text-align:center;padding:9px 6px;text-decoration:none;color:#304035;border-radius:12px;font-weight:800;font-size:15px;line-height:1.2}
-.star-view-switch a[aria-current="page"]{background:#365940;color:#fff;box-shadow:0 1px 4px #25362622}
-.star-view-switch a:focus-visible{outline:3px solid #164a70;outline-offset:2px}
-@media(max-width:390px){.star-view-switch a{font-size:14px}}
-</style></head>
-<body><main>
-<nav class="star-view-switch" aria-label="Switch between My STAR and caregiver or administrator view">
+.star-view-switch{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:5px;border:2px solid #cfbf9f;border-radius:17px;background:#ede6d8;margin:0 0 13px}
+.star-view-switch a{min-height:54px;display:flex;align-items:center;justify-content:center;text-align:center;padding:9px 6px;text-decoration:none;color:#304035;border-radius:12px;font-size:14px;font-weight:800}
+.star-view-switch a[aria-current="page"]{background:#365940;color:white}
+@media(max-width:390px){.secondary-actions{grid-template-columns:1fr}.panel{padding:15px}}
+</style>
+</head>
+<body>
+<main>
+<nav class="star-view-switch" aria-label="Switch between individual and caregiver view">
   <a href="my-star.html">⭐ My STAR</a>
   <a href="dashboard.html" aria-current="page">👥 Caregiver / Admin</a>
 </nav>
-<a href="./isa-outcomes.html">← ISA Outcome Cards</a>
-<h1>Individual’s Own Words</h1>
-<p class="eyebrow">STAR TEST · Fictional data only</p>
-<p class="banner">Reviewer demonstration. A suggested goal match is NOT a measurement, achievement, or verified change to an ISA. Nothing here enters caregiver reports.</p>
-<p>Keep the individual’s exact report. Review possible links to a goal card, then choose whether to link the words as an observation, request more details, or leave unlinked.</p>
-<section id="fictionalWorkbench" class="panel test-workbench" hidden>
-  <h2>🧪 Try a Fictional Accomplishment</h2>
-  <p class="example-hint">Admin testing only. Use made-up examples, never real individual information.</p>
-  <label for="samplePicker">Choose an example (optional)</label>
-  <select id="samplePicker">
-    <option value="">Write my own example</option>
-    <option value="I used Siri to call a family member.">Used Siri to call someone</option>
-    <option value="I went to the park with a group.">Went to the park</option>
-    <option value="I chose painting instead of music.">Chose a leisure activity</option>
-    <option value="I helped wash the dishes.">An accomplishment outside current goals</option>
-  </select>
-  <label for="fictionalWords">What did the fictional person say?</label>
-  <textarea id="fictionalWords" maxlength="1980" placeholder="Example: I used Siri to call a family member."></textarea>
-  <div id="fictionalMatches" aria-live="polite"></div>
-  <button id="addFictionalReport" type="button">Add Fictional Report for Review</button>
-  <p class="muted">STAR will suggest possible goals automatically, but will never assign progress. The report stays in this test queue for your review.</p>
-  <p class="status" id="fictionalStatus" role="status" aria-live="polite"></p>
-</section>
-<h2>Fictional Reports to Review</h2>
-<p id="queueStatus" role="status" class="status">Loading fictional reports…</p>
+<a class="back" href="dashboard.html">← Back to caregiver dashboard</a>
+<p class="eyebrow">STAR TEST · FICTIONAL DATA ONLY</p>
+<h1>⭐ Review My STAR</h1>
+<p id="reviewIntro">Read the person's words, then decide whether an ISA Outcome Card fits.</p>
+<p id="queueStatus" role="status" aria-live="polite">Loading observations…</p>
+<p id="reviewFeedback" role="status" aria-live="polite" hidden></p>
 <div id="queue"></div>
 </main>
 <script src="./star-individual-isa-matcher.js?v=2026.10.28B"></script>
-<script type="module" src="./my-star-isa-review.js?v=2026.10.28A"></script>
-</body></html>
+<script type="module" src="./my-star-isa-review.js?v=2026.10.28C"></script>
+</body>
+</html>

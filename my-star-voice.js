@@ -500,6 +500,7 @@ function updateCardVoiceToggle() {
 
 function setCardVoiceOn(value) {
   cardVoiceOn = !!value;
+  if(!cardVoiceOn)window.speechSynthesis?.cancel();
   try {
     localStorage.setItem(CARD_VOICE_KEY, cardVoiceOn ? 'on' : 'off');
     localStorage.setItem('star_my_star_read_aloud_enabled', cardVoiceOn ? 'on' : 'off');

@@ -78,9 +78,10 @@
     .progress-label{font-size:16px;font-weight:800;color:#63594e;margin-bottom:9px}
     .wyr-summary{font-size:20px;line-height:1.5;font-weight:700;background:#f5f0e6;border:2px solid #d3c9b8;border-radius:14px;padding:14px}
     .text-entry{width:100%;font:inherit;font-size:18px;padding:12px;border:2px solid #b6aa96;border-radius:12px}
-    .match-preview{padding:12px;border:2px solid #c7d8c5;border-radius:12px;background:#f1f6ee;margin:8px 0}
-    #isaPreview{line-height:1.45;margin-top:14px}
-    #isaPreview p{margin:8px 0}
+    .dictate-btn{width:100%;min-height:78px;font-size:23px;border:3px solid #46664e;border-radius:20px;background:#e9f3e9;color:#22412d;display:flex;gap:12px;align-items:center;justify-content:center;font-weight:850;margin:13px 0 6px}
+    .dictate-btn[aria-pressed="true"]{background:#fcecd9;border-color:#aa5531;color:#75391c}
+    .dictate-hint{margin:5px 0 16px;font-size:16px;font-weight:650;color:#535a4e;line-height:1.45;min-height:23px}
+    .voice-input{font-size:20px;min-height:110px}
     @media(max-width:420px){.body-poster{height:clamp(420px,125vw,530px)}.pain-point{width:44px;height:44px}.photo-frame{height:100px}}
     .star-view-switch{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:5px;border:2px solid #cfbf9f;border-radius:17px;background:#ede6d8;margin:0 0 15px;max-width:100%}
     .star-view-switch a{min-height:56px;display:flex;align-items:center;justify-content:center;text-align:center;padding:9px 6px;text-decoration:none;color:#304035;border-radius:12px;font-weight:800;font-size:15px;line-height:1.2}
@@ -103,7 +104,7 @@
     <button class="small-btn" id="homeBtn" type="button">⌂ My STAR Home</button>
     <button class="small-btn" id="hearBtn" type="button" aria-pressed="false" aria-label="Turn reading aloud on or off">🔇 Read Aloud: OFF</button>
   </div>
-  <div class="notice">This is a STAR TEST preview. Regular answers are NOT saved, sent, or included in reports. ONLY the explicit “Save fictional example” button stores made-up text in the separate test review queue. No ISA progress, caregiver reports, emergency alerts, or texts are created.</div>
+  <div class="notice">STAR TEST PREVIEW — answers here are not saved or sent to anyone. No alerts, reports, or ISA achievements are created.</div>
   <section id="screen" aria-live="polite"></section>
   <p class="footer-note">My STAR is voluntary. The person can stop, skip or ask for help at any time. This is not an emergency response service.</p>
 </main>
@@ -158,6 +159,85 @@
   function tile(id,picture,title,detail,urgent){return '<button type="button" class="tile'+(urgent?' help':'')+'" data-open="'+id+'"><span class="scene" aria-hidden="true">'+picture+'</span><strong>'+title+'</strong><small>'+detail+'</small></button>'}
   function button(label,id,kind){return '<button class="large-action '+(kind||'secondary')+'" type="button" data-action="'+id+'">'+label+'</button>'}
   function wrap(title,body){screen.innerHTML='<button type="button" class="small-btn back" data-open="home">← Back to My STAR</button><h1>'+title+'</h1><div class="panel">'+body+'<div class="message" id="result" role="status" hidden></div></div>'}
+  // Speech-to-text is separate from the Read Aloud option. Listening starts ONLY on a tap.
+  var activeRecognition=null, dictationField=null, dictationButton=null, dictationStopped=false;
+  function dictateControls(id){
+    return '<button type="button" class="dictate-btn" data-dictate="'+id+'" aria-pressed="false">🎤 Talk Instead</button>'+
+      '<p class="dictate-hint" id="dictateHint" role="status" aria-live="polite">Tap the microphone to tell us what happened.</p>';
+  }
+  function setDictateHint(msg){
+    var hint=document.getElementById('dictateHint');
+    if(hint)hint.textContent=msg;
+  }
+  function stopDictation(){
+    var active=activeRecognition;
+    activeRecognition=null;
+    if(active){
+      dictationStopped=true;
+      try{active.abort()}catch(e){}
+    }
+    if(dictationButton&&dictationButton.isConnected){
+      dictationButton.setAttribute('aria-pressed','false');
+      dictationButton.textContent='🎤 Talk Instead';
+    }
+    dictationButton=null;dictationField=null;
+  }
+  function toggleDictation(btn){
+    if(activeRecognition){stopDictation();setDictateHint('Stopped listening. You can talk again or tap Done.');return}
+    var field=document.getElementById(btn.getAttribute('data-dictate'));
+    if(!field)return;
+    var Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!Recognition){
+      setDictateHint('Voice typing is unavailable in this browser. You can type, use picture cards, or ask someone to help.');
+      return;
+    }
+    var recognition=new Recognition();
+    recognition.lang='en-US';recognition.continuous=false;recognition.interimResults=false;recognition.maxAlternatives=1;
+    dictationStopped=false;activeRecognition=recognition;dictationField=field;dictationButton=btn;
+    // Do not speak through the microphone: this is not automatic narration.
+    window.speechSynthesis?.cancel();
+    recognition.onstart=function(){
+      if(activeRecognition!==recognition)return;
+      btn.setAttribute('aria-pressed','true');
+      btn.textContent='⏹ Stop Listening';
+      setDictateHint('Listening… say what you did. Tap Stop Listening to stop.');
+    };
+    recognition.onresult=function(event){
+      if(activeRecognition!==recognition||dictationStopped)return;
+      var words='';
+      for(var i=event.resultIndex;i<event.results.length;i++){
+        if(event.results[i].isFinal)words+=event.results[i][0].transcript+' ';
+      }
+      words=words.trim();
+      if(!words)return;
+      if(field.isConnected){
+        var existing=field.value.trim();
+        field.value=(existing?existing+' ':'')+words;
+        field.dispatchEvent(new Event('input',{bubbles:true}));
+        setDictateHint('I heard: '+words+'. Tap again to say more, or tap Done.');
+      }
+    };
+    recognition.onerror=function(event){
+      if(activeRecognition!==recognition||dictationStopped)return;
+      var error=event.error||'';
+      if(error==='no-speech')setDictateHint('I did not hear anything. You can try again.');
+      else if(error==='not-allowed'||error==='service-not-allowed')setDictateHint('Microphone permission is off. Allow microphone access in browser settings, or type instead.');
+      else setDictateHint('The microphone did not work this time. You can try again or type instead.');
+    };
+    recognition.onend=function(){
+      if(activeRecognition!==recognition)return;
+      activeRecognition=null;dictationField=null;dictationButton=null;
+      if(btn.isConnected){
+        btn.textContent='🎤 Talk Instead';btn.setAttribute('aria-pressed','false');
+        var hint=document.getElementById('dictateHint');
+        if(hint&&/^Listening/.test(hint.textContent))setDictateHint('Stopped listening. Tap Talk Instead to try again, or tap Done.');
+      }
+    };
+    try{recognition.start()}catch(e){
+      activeRecognition=null;dictationField=null;dictationButton=null;
+      setDictateHint('Speech-to-text did not start. You can try again or type instead.');
+    }
+  }
   function support(){return '<label style="display:flex;align-items:center;gap:12px;font-weight:700;margin:20px 0"><input id="withSupport" type="checkbox" style="width:25px;height:25px"> Someone helped me answer</label><div id="supportOptions" hidden><label for="supportKind">How did they help?</label><select id="supportKind" class="large-action secondary" style="width:100%;margin-top:8px"><option value="Read a question aloud">Read a question aloud</option><option value="Helped me choose">Helped me choose</option><option value="Entered my answer">Entered my answer</option></select></div>'}
   function choice(value,emoji,words){return '<button type="button" class="choice" aria-pressed="false" data-choice="'+value+'"><span class="scene" aria-hidden="true">'+emoji+'</span><span>'+words+'</span></button>'}
   function bodyPoster(front){
@@ -292,7 +372,7 @@
   }
 
   function render(page){
-    wyStopTimer();chosen='';current=page;window.speechSynthesis?.cancel();
+    stopDictation();wyStopTimer();chosen='';current=page;window.speechSynthesis?.cancel();
     if(page==='home'){
       screen.innerHTML='<h1>My STAR</h1><p class="intro">What would you like to do? Nothing is required.</p>'+
         '<div class="tiles">'+
@@ -316,9 +396,9 @@
     } else if(page==='day'){
       wrap('My Day','<p>Did you like your activity today?</p><div class="choices">'+choice('Liked it','😊','I liked it')+choice('Okay','😐','It was okay')+choice('Did not like','😞','I did not like it')+choice('No activity','🙅','Not today')+'</div>'+support()+'<div class="actions">'+button('Done','done','primary')+button('Not now','skip')+'</div>');
     } else if(page==='goals'){
-      wrap('Something I Did 🌟','<p>Did you do something you want to share?</p><div class="choices">'+choice('I did something','🌟','I did it!')+choice('I tried something','🙌','I tried!')+choice('I learned something','💡','I learned!')+choice('Someone helped me','🤝','I had help')+'</div><label for="accomplishmentText">What did you do? (optional)</label><textarea class="voice-input" id="accomplishmentText" placeholder="Type or use the keyboard microphone"></textarea>'+support()+'<div class="actions">'+button('Done','done','primary')+button('Not now','skip')+'</div><div class="notice"><strong>Fictional data test for designers:</strong> Try a made-up example to see possible ISA goal links. Nothing gets credited as progress.</div><div class="actions">'+button('Fill fictional example','isa-example')+button('Find possible goal links','isa-preview')+button('Save fictional example to review queue','isa-save')+'</div><div id="isaPreview" aria-live="polite"></div><p style="font-size:14px">In STAR TEST, only text beginning with FICTIONAL: can be saved to the separate review queue. Regular Done is never saved. An administrator must review each possible link before it is recorded as an observation, not an achievement.</p>');
+      wrap('Something I Did 🌟','<p>Did you do something you want to share?</p><div class="choices">'+choice('I did something','🌟','I did it!')+choice('I tried something','🙌','I tried!')+choice('I learned something','💡','I learned!')+choice('Someone helped me','🤝','I had help')+'</div><label for="accomplishmentText">What did you do? (optional)</label>'+dictateControls('accomplishmentText')+'<textarea class="voice-input" id="accomplishmentText" placeholder="Tell me what you did, or type here" maxlength="2000"></textarea>'+support()+'<div class="actions">'+button('Done','done','primary')+button('Not now','skip')+'</div>');
     } else if(page==='tell'){
-      wrap('Talk to My Team','<p>Tell someone something or look at the group chat.</p><label for="myMessage">My message (optional)</label><textarea class="voice-input" id="myMessage" placeholder="Type or use the keyboard microphone"></textarea>'+support()+'<div class="actions">'+button('Hear my message','hear-message')+button('Open Group Chat','open-chat','primary')+button('Open picture cards','open-voice')+button('Done','done')+button('Not now','skip')+'</div><p style="font-size:14px">This preview does not send or save messages. Group Chat is separate test functionality.</p>');
+      wrap('Talk to My Team','<p>Tell someone something or look at the group chat.</p><label for="myMessage">My message (optional)</label>'+dictateControls('myMessage')+'<textarea class="voice-input" id="myMessage" placeholder="Tell me your message, or type here" maxlength="2000"></textarea>'+support()+'<div class="actions">'+button('Hear my message','hear-message')+button('Open Group Chat','open-chat','primary')+button('Open picture cards','open-voice')+button('Done','done')+button('Not now','skip')+'</div><p style="font-size:14px">This preview does not send or save messages. Group Chat is separate test functionality.</p>');
     } else if(page==='rather'){
       wyReset();renderWouldRather();
     } else if(page==='urgent'){
@@ -337,6 +417,8 @@
     status('You chose: '+value+'. This is only a preview and is not saved.');
   }
   screen.addEventListener('click',function(e){
+    var dictate=e.target.closest('[data-dictate]');
+    if(dictate){toggleDictation(dictate);return}
     var side=e.target.closest('[data-side]');
     if(side){painSide=side.getAttribute('data-side');document.querySelectorAll('[data-side]').forEach(function(b){b.setAttribute('aria-pressed',String(b===side))});document.getElementById('painPoster').innerHTML=bodyPoster(painSide==='front');return}
     var pick=e.target.closest('[data-wyr-pick]');
@@ -348,7 +430,7 @@
     var a=e.target.closest('[data-action]');
     if(!a)return;
     var action=a.getAttribute('data-action');
-    if(action==='skip'){if(current==='home')status('That is okay. You do not have to check in.');else {render('home');speak('That is okay. You can come back whenever you want.')}return}
+    if(action==='skip'){stopDictation();if(current==='home')status('That is okay. You do not have to check in.');else {render('home');speak('That is okay. You can come back whenever you want.')}return}
     if(action==='wyr-people'){wyr.people=document.getElementById('wyrPeople')?.value.trim()||'';wyr.stage='category';renderWouldRather();speak(wyPrompt());return}
     if(action==='wyr-restart'){wyReset();renderWouldRather();speak(wyPrompt());return}
     if(action==='wyr-more'){wyr.offset+=2;renderWouldRather();speak(wyPrompt());return}
@@ -361,29 +443,6 @@
     if(action==='wyr-finish'){status('Thank you for sharing'+(wyr.mood?': '+wyr.mood:'')+'. TEST ONLY: not saved or sent.');speak('Thank you for sharing.');return}
     if(action==='open-voice'){render('voice');return}
     if(action==='open-chat'){render('chat');return}
-    if(action==='isa-example'){
-      document.getElementById('accomplishmentText').value='FICTIONAL: I practiced calling the library with a helper.';
-      status('Fictional example entered. Tap Find possible goal links to see suggestions.');return;
-    }
-    if(action==='isa-preview'||action==='isa-save'){
-      var textBox=document.getElementById('accomplishmentText');
-      var raw=textBox?.value.trim()||'';
-      if(!raw){status('Enter a fictional example first. Nothing was saved.');return}
-      var assisted=document.getElementById('withSupport')?.checked;
-      var details=assisted?(document.getElementById('supportKind')?.value||'Support reported'):'not_reported';
-      var payload={words:raw,response_choice:chosen||'',support_kind:details};
-      if(!window.StarIsaTest){status('ISA testing is not ready yet. Refresh the page and try again.');return}
-      a.disabled=true;
-      (action==='isa-preview'?window.StarIsaTest.preview(payload):window.StarIsaTest.save(payload))
-        .then(function(res){
-          if(current!=='goals')return;
-          if(action==='isa-save'){
-            status('FICTIONAL TEST saved to the review queue as PENDING. No ISA progress was credited.');
-          }else status('Possible matches displayed below. These are NOT confirmed outcomes.');
-        }).catch(function(err){if(current==='goals')status(err.message||'The fictional ISA test could not run. Nothing was saved.')})
-        .finally(function(){a.disabled=false});
-      return;
-    }
     if(action==='hear-message'){var message=document.getElementById('myMessage');speak(message?.value||'No message entered');return}
     if(action==='neither'||action==='other'){chosen=action==='neither'?'Neither':'Something else';speak(chosen);status('You chose: '+chosen+'. Not saved.');return}
     if(action==='preview-help'){
@@ -398,7 +457,7 @@
       if(current==='goals'&&accomplishment?.value.trim())val=(chosen?chosen+': ':'')+accomplishment.value.trim();
       if(!val){status('You can choose an answer, or stop for now. Nothing is required.');return}
       var supportText=document.getElementById('withSupport')?.checked?' — completed with support ('+document.getElementById('supportKind').value+')':' — independently';
-      status('Thanks for sharing: '+val+supportText+'. TEST ONLY: not saved, sent, or linked to an ISA goal.');speak('Thank you for sharing.');return
+      stopDictation();status('Thanks for sharing: '+val+supportText+'. TEST ONLY: not saved, sent, or linked to an ISA goal.');speak('Thank you for sharing.');return
     }
   });
   document.getElementById('homeBtn').addEventListener('click',function(){render('home')});
@@ -414,7 +473,5 @@
   render('home');
 })();
 </script>
-<script src="./star-individual-isa-matcher.js?v=2026.10.28B"></script>
-<script type="module" src="./my-star-isa-preview.js?v=2026.10.28A"></script>
 </body>
 </html>

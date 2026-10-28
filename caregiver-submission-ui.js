@@ -105,8 +105,16 @@ export class CheckinSubmissionUI {
       cleaned.searchParams.delete('resumeDraft');
       win.history.replaceState(null, '', cleaned.pathname + cleaned.search + cleaned.hash);
     }
+    const cloudDraftParam = new URLSearchParams(win.location.search).get('resumeCloudDraft');
+    if (cloudDraftParam) {
+      const cleaned = new URL(win.location.href);
+      cleaned.searchParams.delete('resumeCloudDraft');
+      win.history.replaceState(null, '', cleaned.pathname + cleaned.search + cleaned.hash);
+      // Read from the correct logged-in user's group. Never restore a cross-group draft.
+      this.resumeCloudDraft(cloudDraftParam).catch(error => this.status('Cloud draft not restored: '+(error?.message||'Please try again.'), true));
+    }
     if (!context.userId || !context.groupId) this.status('Save Failed — sign in and open this form in the correct group before entering a check-in.', true);
-    else if (!requestedDraft) this.status(context.practice ? 'Practice Mode — completion does not save a real check-in.' : 'Choose the date being documented, then confirm it below.');
+    else if (!requestedDraft && !cloudDraftParam) this.status(context.practice ? 'Practice Mode — completion does not save a real check-in.' : 'Choose the date being documented, then confirm it below.');
     this.update();
   }
   setStore() {
@@ -181,6 +189,7 @@ export class CheckinSubmissionUI {
   snapshot() {
     return { context: this.context, draft: this.capture(),
       intentionalDraft: this.intentionalDraftSaved === true,
+      cloudDraftId: this.cloudDraftId || null,
       attempt: this.service?.attempt || null, phase: this.service?.attempt?.sent ? 'pending' : 'draft' };
   }
   saveRecovery(required = false) {
@@ -188,7 +197,9 @@ export class CheckinSubmissionUI {
       if (!this.store) throw new Error('No recovery storage');
       // An intentionally deleted draft must not be recreated by an old open tab,
       // background autosave, visibilitychange or pagehide event.
-      if (this.win.localStorage.getItem('star-deleted-draft-v1:' + this.store.key)) {
+      const deletedCloud = this.cloudDraftId && this.win.localStorage.getItem('star-deleted-draft-v1:cloud:'+
+        this.context.userId+':'+this.context.groupId+':'+this.cloudDraftId);
+      if (deletedCloud || this.win.localStorage.getItem('star-deleted-draft-v1:' + this.store.key)) {
         this.setStore();
         this.intentionalDraftSaved = false;
         this.cloudDraftId = null;
@@ -304,6 +315,25 @@ export class CheckinSubmissionUI {
     this.status(this.service.attempt?.sent
       ? 'Save Status Uncertain — recovered a pending submission. Do not resubmit; check its save status.'
       : `Draft restored${validSelectedDate(date) ? ` for ${fullDate(date)}` : ''}. Review the answers and confirm the date again.`);
+  }
+  async resumeCloudDraft(id) {
+    if (!this.cloudDraftService || this.context.practice || this.dirty || this.done)
+      throw new Error('You must open a new, blank real check-in to resume a cloud draft.');
+    const row = await this.cloudDraftService.get(id);
+    if (row.author_user_id !== this.context.userId || row.group_id !== this.context.groupId)
+      throw new Error('This saved draft does not belong to the active account and group.');
+    if (this.win.localStorage.getItem('star-deleted-draft-v1:cloud:'+
+        this.context.userId+':'+this.context.groupId+':'+id))
+      throw new Error('This saved draft has already been deleted on this device.');
+    this.reset();
+    this.restore(row.draft_data);
+    this.cloudDraftId = row.id;
+    this.cloudDraftVersion = row.version;
+    this.intentionalDraftSaved = true;
+    this.dirty = true;
+    this.saveRecovery();
+    this.dateChanged();
+    this.status('Cloud draft restored. Review your answers and confirm the check-in date.');
   }
   discard() {
     if (this.busy || this.done || this.service.attempt?.sent || !this.win.confirm('Discard the answers in this open form? Other recovery copies will remain.')) return;

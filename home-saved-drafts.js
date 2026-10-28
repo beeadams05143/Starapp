@@ -1,118 +1,119 @@
-import { getSessionFromStorage } from './restClient.js?v=2025.01.09E';
-import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
+import { getSessionFromStorage, rest } from './restClient.js?v=2026.10.28D';
+import { ensureActiveGroupId } from './active-group.js?v=2026.10.28D';
 import { validSelectedDate } from './caregiver-submission.js';
 import { formatCheckinDate } from './caregiver-dates.js';
+import { CaregiverDraftService } from './caregiver-draft-service.js?v=2026.10.28D';
 
-// Browser-local recovery copies only. Server-backed drafts will be added later.
-export function listHomeDrafts(storage, userId, groupId) {
-  if (!storage || !userId || !groupId) return [];
-  const prefix = 'star-checkin-recovery-v2:real:' + userId + ':' + groupId + ':';
-  const drafts = [];
-  for (let i = 0; i < storage.length; i++) {
-    const key = storage.key(i);
-    if (!key?.startsWith(prefix)) continue;
-    try {
-      const item = JSON.parse(storage.getItem(key));
-      if (!item || item.phase === 'verified') continue;
-      const date = item.draft?.data?.[0]?.entry_date;
-      drafts.push({
-        key, date: validSelectedDate(date) ? date : null,
-        updatedAt: item.updatedAt || '',
-        pending: !!item.attempt?.sent,
-      });
-    } catch { /* One damaged recovery copy must not hide other drafts. */ }
+const DELETED_PREFIX = 'star-deleted-draft-v1:';
+const browserPrefix = (userId,groupId) => 'star-checkin-recovery-v2:real:' + userId + ':' + groupId + ':';
+
+// Browser recovery is automatic; Saved Drafts lists ONLY explicitly saved work.
+// Automatic recovery remains intact for interruption protection, but is not a saved draft.
+export function listHomeDrafts(storage,userId,groupId){
+  if(!storage||!userId||!groupId)return [];
+  const prefix=browserPrefix(userId,groupId),drafts=[];
+  for(let i=0;i<storage.length;i++){
+    const key=storage.key(i);
+    if(!key?.startsWith(prefix)||storage.getItem(DELETED_PREFIX+key))continue;
+    try{
+      const item=JSON.parse(storage.getItem(key));
+      if(!item||item.phase==='verified'||item.attempt?.sent||item.intentionalDraft!==true)continue;
+      if(item.context?.userId!==userId||item.context?.groupId!==groupId||item.context?.practice)continue;
+      const date=item.draft?.data?.[0]?.entry_date;
+      drafts.push({key,id:key.slice(prefix.length),date:validSelectedDate(date)?date:null,
+        updatedAt:item.updatedAt||'',pending:false,source:'browser'});
+    }catch{ /* Damaged recovery data is never silently discarded. */ }
   }
-  return drafts.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  return drafts.sort((a,b)=>String(b.updatedAt).localeCompare(String(a.updatedAt)));
 }
 
-export async function showHomeDrafts(doc = document, win = window) {
-  const host = doc.getElementById('homeSavedDrafts');
-  if (!host) return;
-  const session = getSessionFromStorage();
-  if (!session?.user?.id) {
-    win.location.replace('auth.html');
-    return;
-  }
-  host.replaceChildren();
-  try {
-    const groupId = await ensureActiveGroupId(session.user.id);
-    if (!groupId) return;
-    const drafts = listHomeDrafts(win.localStorage, session.user.id, groupId);
-    if (!drafts.length) {
-      const empty = doc.createElement('p');
-      empty.textContent = 'No saved drafts on this device yet. Start a new check-in and choose Save Draft to see it here.';
-      empty.style.cssText = 'padding:18px;background:#fff;border:1px solid #d8d2c8;border-radius:12px;line-height:1.5';
-      host.appendChild(empty);
-      host.hidden = false;
+async function loadDrafts(win,userId,groupId){
+  const local=listHomeDrafts(win.localStorage,userId,groupId);
+  const service=new CaregiverDraftService({request:rest,userId,groupId});
+  let cloud=[],cloudError=null;
+  try{
+    cloud=await service.list();
+  }catch(error){cloudError=error}
+  // Cloud drafts are verified records, never fictional samples or production imports.
+  const saved=cloud.map(row=>({
+    id:row.id,key:browserPrefix(userId,groupId)+row.id,
+    date:validSelectedDate(row.checkin_date)?row.checkin_date:null,
+    updatedAt:row.updated_at||'',source:'cloud'
+  }));
+  const ids=new Set(saved.map(d=>d.id));
+  return {drafts:[...saved,...local.filter(d=>!ids.has(d.id))]
+    .sort((a,b)=>String(b.updatedAt).localeCompare(String(a.updatedAt))),service,cloudError};
+}
+
+export async function getSavedDraftCount(win=window){
+  const userId=getSessionFromStorage()?.user?.id;
+  if(!userId)return 0;
+  const groupId=await ensureActiveGroupId(userId);
+  if(!groupId||getSessionFromStorage()?.user?.id!==userId)return 0;
+  const result=await loadDrafts(win,userId,groupId);
+  return result.drafts.length;
+}
+
+function el(doc,tag,text,className){
+  const node=doc.createElement(tag);
+  if(text!==undefined)node.textContent=text;
+  if(className)node.className=className;
+  return node;
+}
+export async function showHomeDrafts(doc=document,win=window){
+  const host=doc.getElementById('homeSavedDrafts');if(!host)return;
+  const session=getSessionFromStorage(),userId=session?.user?.id;
+  if(!userId){win.location.replace('auth.html');return}
+  host.replaceChildren(el(doc,'p','Checking your saved drafts…'));
+  try{
+    const groupId=await ensureActiveGroupId(userId);
+    if(!groupId||getSessionFromStorage()?.user?.id!==userId)return;
+    const result=await loadDrafts(win,userId,groupId);
+    if(getSessionFromStorage()?.user?.id!==userId)return;
+    host.replaceChildren();
+    if(result.cloudError){
+      const warn=el(doc,'p','Could not check cloud drafts. Only drafts on this device may appear. Refresh to try again.');
+      warn.setAttribute('role','alert');host.append(warn);
+    }
+    if(!result.drafts.length){
+      host.append(el(doc,'p','No saved drafts. An unfinished check-in only appears here after you choose Save Draft.'));
       return;
     }
-    const heading = doc.createElement('h2');
-    heading.textContent = 'My Saved Drafts';
-    heading.style.cssText = 'font-size:20px;margin:0 0 8px;color:#2c2c2a';
-    host.appendChild(heading);
-    const info = doc.createElement('p');
-    info.textContent = 'Saved on this device · Only drafts from this browser appear here.';
-    info.style.cssText = 'font-size:14px;color:#5f5e5a;margin:0 0 12px';
-    host.appendChild(info);
-    for (const draft of drafts) {
-      const link = doc.createElement('a');
-      const params = new URLSearchParams({ resumeDraft: draft.key });
-      link.href = 'caregiver-checkin.html?' + params.toString();
-      link.style.cssText = 'display:block;padding:14px 16px;margin:8px 0;background:#fff;border:1px solid #d8d2c8;border-radius:12px;color:#2c2c2a;text-decoration:none';
-      const title = doc.createElement('strong');
-      title.textContent = draft.pending ? 'Check save status — do not resubmit' : 'Continue check-in';
-      const detail = doc.createElement('div');
-      detail.style.cssText = 'margin-top:4px;color:#5f5e5a;font-size:14px';
-      detail.textContent = (draft.date ? formatCheckinDate(draft.date, 'en-US', { weekday:'long',month:'long',day:'numeric',year:'numeric' }) : 'Date not selected') +
-        ' · Saved ' + (draft.updatedAt ? new Date(draft.updatedAt).toLocaleString() : 'on this device');
-      link.append(title, detail);
-      const row = doc.createElement('div');
-      row.className = 'saved-draft-row';
-      row.style.cssText = 'display:flex;gap:8px;align-items:stretch;margin:8px 0';
-      link.style.margin = '0';
-      link.style.flex = '1';
-      link.style.minWidth = '0';
-      const actions = doc.createElement('div');
-      actions.style.cssText = 'display:flex;flex-direction:column;align-items:stretch;justify-content:center;gap:6px';
-      const menu = doc.createElement('button');
-      menu.type = 'button';
-      menu.textContent = '•••';
-      menu.setAttribute('aria-label', 'Options for this draft');
-      menu.setAttribute('aria-expanded', 'false');
-      menu.style.cssText = 'display:block;visibility:visible;opacity:1;color:#35312d!important;-webkit-text-fill-color:#35312d;font-family:Arial,sans-serif;font-weight:900;letter-spacing:2px;line-height:1;border:1px solid #d8d2c8;background:#fff;border-radius:12px;font-size:19px;padding:16px 10px;min-width:58px;min-height:54px;cursor:pointer';
-      const option = doc.createElement('button');
-      option.type = 'button';
-      option.textContent = 'Delete draft';
-      option.hidden = true;
-      option.style.display = 'none';
-      option.style.cssText = 'display:none;white-space:nowrap;border:1px solid #d8d2c8;background:#fff;color:#9a2525!important;-webkit-text-fill-color:#9a2525;border-radius:10px;padding:10px;font-weight:700;cursor:pointer';
-      menu.addEventListener('click', () => {
-        option.hidden = !option.hidden;
-        option.style.display = option.hidden ? 'none' : 'block';
-        menu.setAttribute('aria-expanded', String(!option.hidden));
-      });
-      option.addEventListener('click', () => {
-        if (draft.pending) {
-          win.alert('This check-in may have been sent already. Please verify its submission status before deleting its recovery copy.');
-          return;
-        }
-        if (!win.confirm('Delete this unfinished draft? This cannot be undone.')) return;
-        try {
+    host.append(el(doc,'p','Only check-ins intentionally saved as drafts appear here. Automatic recovery copies are separate.'));
+    for(const draft of result.drafts){
+      const row=el(doc,'div',undefined,'saved-draft-row');
+      row.style.cssText='display:flex;gap:9px;margin:12px 0;align-items:stretch';
+      const link=el(doc,'a');
+      const query=new URLSearchParams({resumeDraft:draft.key});
+      link.href='caregiver-checkin.html?'+query;
+      link.style.cssText='flex:1;min-width:0;display:block;padding:14px;background:white;border:1px solid #d8d2c8;border-radius:12px;color:#2c2c2a;text-decoration:none';
+      link.append(el(doc,'strong','Continue check-in'),el(doc,'div',
+        (draft.date?formatCheckinDate(draft.date,'en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}):'Date not selected')+
+        ' · '+(draft.source==='cloud'?'Saved securely':'Saved on this device')));
+      const del=el(doc,'button','Delete');
+      del.type='button';del.setAttribute('aria-label','Delete this saved draft');
+      del.style.cssText='padding:12px;min-width:73px;border:1px solid #cc9b9b;border-radius:12px;background:white;color:#8f2424;font-weight:800';
+      del.addEventListener('click',async()=>{
+        if(!win.confirm('Permanently delete this unfinished saved draft?'))return;
+        del.disabled=true;del.textContent='Deleting…';
+        try{
+          // Never hide a cloud draft unless its deletion was verified on the server.
+          if(draft.source==='cloud')await result.service.delete(draft.id);
+          // A tombstone prevents stale open check-in tabs from restoring this slot.
+          win.localStorage.setItem(DELETED_PREFIX+draft.key,new Date().toISOString());
           win.localStorage.removeItem(draft.key);
           row.remove();
-          if (!host.querySelector('.saved-draft-row')) showHomeDrafts(doc, win);
-        } catch (error) {
-          win.alert('Unable to delete this draft. Please try again.');
+          if(!host.querySelector('.saved-draft-row'))showHomeDrafts(doc,win);
+        }catch(error){
+          del.disabled=false;del.textContent='Delete';
+          win.alert('Deletion could not be confirmed. '+(error?.message||'Please try again.'));
         }
       });
-      actions.append(menu, option);
-      row.append(link, actions);
-      host.appendChild(row);
+      row.append(link,del);host.append(row);
     }
-    host.hidden = false;
-  } catch (error) {
-    console.warn('[home drafts] Cannot display browser recovery copies', error);
+  }catch(error){
+    host.replaceChildren(el(doc,'p','Could not load saved drafts. Your drafts were not deleted.'));
+    console.warn('[saved drafts] failed to load',error);
   }
 }
-
-if (typeof document !== 'undefined') showHomeDrafts();
+if(typeof document!=='undefined')showHomeDrafts();

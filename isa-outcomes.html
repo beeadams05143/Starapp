@@ -23,6 +23,10 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .checks input{width:19px;height:19px;min-height:0}.outline{border:1px solid #b59b6b;background:var(--cream);padding:14px;border-radius:12px}
 [hidden]{display:none!important}.pill{display:inline-block;padding:3px 8px;background:#eee9e1;border-radius:20px;color:#46505a;font-size:12px}
 @media(max-width:580px){main{padding:98px 10px 100px}.panel{padding:17px}.row{grid-template-columns:1fr}h1{font-size:29px}}
+.isa-evidence-links{display:grid;gap:10px;margin:17px 0 9px}
+.isa-report-link,.isa-review-link{display:block;padding:15px 14px;text-align:center;border-radius:13px;font-size:16px;font-weight:800;line-height:1.35;text-decoration:none}
+.isa-report-link{color:#fff;background:#365940}
+.isa-review-link{color:#365940;border:2px solid #365940;background:#fff}
 .star-view-switch{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:5px;border:2px solid #cfbf9f;border-radius:17px;background:#ede6d8;margin:0 0 15px;max-width:100%}
 .star-view-switch a{min-height:56px;display:flex;align-items:center;justify-content:center;text-align:center;padding:9px 6px;text-decoration:none;color:#304035;border-radius:12px;font-weight:800;font-size:15px;line-height:1.2}
 .star-view-switch a[aria-current="page"]{background:#365940;color:#fff;box-shadow:0 1px 4px #25362622}
@@ -40,7 +44,10 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 <p id="isaGroup" class="muted"></p>
 <label>Individual<select id="isaIndividual"><option value="">Loading individual…</option></select></label>
 <p id="isaPermission" class="hint"></p>
-<p><a id="isaTestReview" class="back" href="./my-star-isa-review.html" hidden>⭐ Review fictional My STAR observations (test only)</a></p>
+<div class="isa-evidence-links" id="isaEvidenceLinks" hidden>
+  <a class="isa-report-link" href="./isa-progress-report.html">📊 View Progress &amp; Observations</a>
+  <a class="isa-review-link" href="./my-star-isa-review.html">⭐ Review new My STAR observations</a>
+</div>
 <p id="isaStatus" class="status" role="status" aria-live="polite">Loading outcomes…</p>
 </header>
 <section class="panel"><div class="bar" style="justify-content:space-between"><h2 style="margin:0">My ISA Outcomes</h2><button id="isaNew" hidden>+ Add Outcome</button></div>

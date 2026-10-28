@@ -59,6 +59,26 @@
     .inline-link {color:#245675;font-weight:750}
     [hidden] {display:none!important}
     @media(max-width:420px) {.tile {min-height:154px}.tile .scene{font-size:42px}.tile small{font-size:12px}.body-layout{gap:7px}.body-poster{height:300px}.pain-point{width:38px;height:38px}}
+
+    /* Full-size body map with touch-friendly but visually small markers. */
+    .body-layout{display:block}
+    .body-switch{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+    .body-switch button{min-height:58px;border:3px solid #c7b9a1;background:white;border-radius:15px;font-size:22px;font-weight:850}
+    .body-switch button[aria-pressed=true]{border-color:#356848;background:#e5f1e7}
+    .body-poster{height:clamp(430px,120vw,565px);width:min(100%,315px);max-width:315px;margin:10px auto}
+    .pain-point{width:44px;height:44px;border:0;background:transparent;color:transparent;display:grid;place-items:center}
+    .pain-point:after{content:"";display:block;width:16px;height:16px;border:3px solid #803e2a;background:#fce5d2;border-radius:50%;box-shadow:0 1px 3px #49332455}
+    .pain-point.selected{background:transparent;border:0;box-shadow:none;color:transparent}
+    .pain-point.selected:after{width:20px;height:20px;background:#b52e27;border-color:white;box-shadow:0 0 0 3px #b52e27}
+    .selected-location{font-size:20px;font-weight:800;color:#315c44;margin:10px 0}
+    .photo-choice{padding:8px;font-size:19px;min-height:168px}
+    .photo-frame{display:flex;align-items:center;justify-content:center;position:relative;width:100%;height:112px;background:#f3e9d9;border-radius:10px;overflow:hidden}
+    .photo-frame img{width:100%;height:100%;object-fit:cover}
+    .photo-fallback{font-size:54px;line-height:1}
+    .progress-label{font-size:16px;font-weight:800;color:#63594e;margin-bottom:9px}
+    .wyr-summary{font-size:20px;line-height:1.5;font-weight:700;background:#f5f0e6;border:2px solid #d3c9b8;border-radius:14px;padding:14px}
+    .text-entry{width:100%;font:inherit;font-size:18px;padding:12px;border:2px solid #b6aa96;border-radius:12px}
+    @media(max-width:420px){.body-poster{height:clamp(420px,125vw,530px)}.pain-point{width:44px;height:44px}.photo-frame{height:100px}}
   </style>
 </head>
 <body>
@@ -79,15 +99,15 @@
 <script>
 (function(){
   'use strict';
-  var screen=document.getElementById('screen'), current='home', chosen='', supported=false, supportKind='';
+  var screen=document.getElementById('screen'), current='home', chosen='', supported=false, supportKind='', painSide='front', wyr=null, wyrTimer=null;
   var readText={
     home:'Welcome to My STAR. Pick what you want to do. You can choose not now.',
     feel:'How are you feeling? Pick a face. You can stop any time.',
     pain:'Where does it hurt? Tap a spot on the body.',
     day:'How was your activity? You can choose not now.',
-    goals:'My goals. You can practice a goal or celebrate something you did.',
-    tell:'I want to tell you something. You can speak, type, or open your picture communication cards.',
-    rather:'Would you rather go swimming or listen to music? Pick one, neither, or not now.',
+    goals:'Something I did. Tell us about something you did, tried or learned.',
+    tell:'Talk to my team. Share a message or open group chat.',
+    rather:'Would you rather do something inside, outside, or go somewhere? You can pick something else or not now.',
     urgent:'Help now. This is only a test. It will not send an alert.'
   };
   function speak(text){
@@ -119,13 +139,12 @@
           tile('feel','😊 😐 😟','How I Feel','Pick how I feel')+
           tile('pain','🧍 🩹','Something Hurts','Point to my body')+
           tile('day','🏊 🌳','My Day','Tell how my day went')+
-          tile('goals','⭐ 🙌','My Goals','Practice and celebrate')+
-          tile('tell','🗣️ 💬','Tell You Something','Share a message')+
-          tile('rather','🏊 🎵','Would You Rather?','Choose what I like')+
+          tile('goals','🌟 🙌','Something I Did','Tell what I did')+
+          tile('tell','🗣️ 💬','Talk to My Team','Share a message or chat')+
+          tile('rather','🏠 🌳','Would You Rather?','Choose what I like')+
         '</div>'+
         '<div class="tiles" style="margin-top:14px">'+
-          tile('chat','👨‍👩‍👦 💬','Group Chat','See who is talking')+
-          tile('voice','🖼️ 🗣️','Picture Communication','Use my existing picture cards')+
+          tile('voice','🖼️ 🗣️','Picture Communication','Use my picture cards')+
         '</div>'+
         '<div class="help-row">'+tile('urgent','🚨 ‼️','HELP NOW','Important: I need help',true)+'</div>'+
         '<div class="actions">'+button('Not now — I am done','skip','secondary')+'</div>'+
@@ -133,13 +152,13 @@
     } else if(page==='feel'){
       wrap('How I Feel','<p>Pick a face. You do not have to answer.</p><div class="choices">'+choice('Happy','😊','Happy')+choice('Okay','😐','Okay')+choice('Sad','😢','Sad')+choice('Upset','😠','Upset')+choice('Tired','😴','Tired')+choice('Unwell','🤒','Not feeling good')+'</div>'+support()+'<div class="actions">'+button('Done','done','primary')+button('Not now','skip')+'</div>');
     } else if(page==='pain'){
-      wrap('Something Hurts','<p>Tap a spot on the person where something hurts. You can choose front or back.</p><div class="body-layout">'+bodyPoster(true)+bodyPoster(false)+'</div>'+support()+'<div class="actions">'+button('Done','done','primary')+button('Not now','skip')+'</div>');
+      painSide='front';wrap('Something Hurts','<p>Tap where it hurts. Pick front or back.</p><div class="body-switch"><button type="button" data-side="front" aria-pressed="true">FRONT</button><button type="button" data-side="back" aria-pressed="false">BACK</button></div><div class="body-layout" id="painPoster">'+bodyPoster(true)+'</div><p id="painLocation" class="selected-location" role="status">Choose a body part</p>'+support()+'<div class="actions">'+button('Done','done','primary')+button('Not now','skip')+'</div>');
     } else if(page==='day'){
       wrap('My Day','<p>Did you like your activity today?</p><div class="choices">'+choice('Liked it','😊','I liked it')+choice('Okay','😐','It was okay')+choice('Did not like','😞','I did not like it')+choice('No activity','🙅','Not today')+'</div>'+support()+'<div class="actions">'+button('Done','done','primary')+button('Not now','skip')+'</div>');
     } else if(page==='goals'){
-      wrap('My Goals ⭐','<p>My goals are about things I want to learn or do.</p><div class="choices">'+choice('Practiced','🌟','I practiced')+choice('Help','🤝','I needed help')+choice('Star','⭐','I earned a star')+choice('Not now','✋','Not now')+'</div>'+support()+'<div class="actions">'+button('Done','done','primary')+'</div><p style="font-size:14px">This is only a preview. It does not add an ISA achievement or change progress reports.</p>');
+      wrap('Something I Did 🌟','<p>Did you do something you want to share?</p><div class="choices">'+choice('I did something','🌟','I did it!')+choice('I tried something','🙌','I tried!')+choice('I learned something','💡','I learned!')+choice('Someone helped me','🤝','I had help')+'</div><label for="accomplishmentText">What did you do? (optional)</label><textarea class="voice-input" id="accomplishmentText" placeholder="Type or use the keyboard microphone"></textarea>'+support()+'<div class="actions">'+button('Done','done','primary')+button('Not now','skip')+'</div><p style="font-size:14px">TEST PREVIEW: Nothing is saved or credited toward an ISA goal. In the future, STAR can suggest possible goal matches for team review, without changing what you said.</p>');
     } else if(page==='tell'){
-      wrap('Tell You Something','<p>I can speak, type, or use my communication cards.</p><label for="myMessage">My message (optional)</label><textarea class="voice-input" id="myMessage" placeholder="Tap here and use the keyboard microphone to dictate"></textarea>'+support()+'<div class="actions">'+button('Hear my message','hear-message')+button('Open my picture cards','open-voice','primary')+button('Done','done')+'</div><p style="font-size:14px">Messages typed here stay on this preview screen and are not sent or saved.</p>');
+      wrap('Talk to My Team','<p>Tell someone something or look at the group chat.</p><label for="myMessage">My message (optional)</label><textarea class="voice-input" id="myMessage" placeholder="Type or use the keyboard microphone"></textarea>'+support()+'<div class="actions">'+button('Hear my message','hear-message')+button('Open Group Chat','open-chat','primary')+button('Open picture cards','open-voice')+button('Done','done')+button('Not now','skip')+'</div><p style="font-size:14px">This preview does not send or save messages. Group Chat is separate test functionality.</p>');
     } else if(page==='rather'){
       wrap('Would You Rather?','<p>What would you like to do?</p><div class="choices">'+
         '<button class="choice" type="button" data-choice="Go swimming" aria-pressed="false"><span class="picture">'+picture('swim')+'</span>Go swimming</button>'+
@@ -157,9 +176,12 @@
     document.querySelectorAll('[data-choice],[data-pain]').forEach(function(b){b.setAttribute('aria-pressed','false');b.classList.remove('selected')});
     el.setAttribute('aria-pressed','true');el.classList.add('selected');
     speak(value==='Something hurts'?'Something hurts':value);
+    var location=document.getElementById('painLocation');if(location)location.textContent='You chose: '+value;
     status('You chose: '+value+'. This is only a preview and is not saved.');
   }
   screen.addEventListener('click',function(e){
+    var side=e.target.closest('[data-side]');
+    if(side){painSide=side.getAttribute('data-side');document.querySelectorAll('[data-side]').forEach(function(b){b.setAttribute('aria-pressed',String(b===side))});document.getElementById('painPoster').innerHTML=bodyPoster(painSide==='front');return}
     var open=e.target.closest('[data-open]');
     if(open){render(open.getAttribute('data-open'));speak(readText[current]||'My STAR');return}
     var ch=e.target.closest('[data-choice],[data-pain]');
@@ -169,6 +191,7 @@
     var action=a.getAttribute('data-action');
     if(action==='skip'){if(current==='home')status('That is okay. You do not have to check in.');else {render('home');speak('That is okay. You can come back whenever you want.')}return}
     if(action==='open-voice'){render('voice');return}
+    if(action==='open-chat'){render('chat');return}
     if(action==='hear-message'){var message=document.getElementById('myMessage');speak(message?.value||'No message entered');return}
     if(action==='neither'||action==='other'){chosen=action==='neither'?'Neither':'Something else';speak(chosen);status('You chose: '+chosen+'. Not saved.');return}
     if(action==='preview-help'){
@@ -178,10 +201,12 @@
     }
     if(action==='done'){
       var messageField=document.getElementById('myMessage');
-      var val=chosen||(messageField?.value.trim()||'');
+      var accomplishment=document.getElementById('accomplishmentText');
+      var val=chosen||(messageField?.value.trim()||accomplishment?.value.trim()||'');
+      if(current==='goals'&&accomplishment?.value.trim())val=(chosen?chosen+': ':'')+accomplishment.value.trim();
       if(!val){status('You can choose an answer, or stop for now. Nothing is required.');return}
       var supportText=document.getElementById('withSupport')?.checked?' — completed with support ('+document.getElementById('supportKind').value+')':' — independently';
-      status('Thanks for sharing: '+val+supportText+'. TEST ONLY: not saved or sent.');speak('Thank you for sharing.');return
+      status('Thanks for sharing: '+val+supportText+'. TEST ONLY: not saved, sent, or linked to an ISA goal.');speak('Thank you for sharing.');return
     }
   });
   document.getElementById('homeBtn').addEventListener('click',function(){render('home')});

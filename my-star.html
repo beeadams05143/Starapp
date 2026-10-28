@@ -131,8 +131,126 @@
     if(kind==='swim')return '<svg viewBox="0 0 220 160" role="img" aria-label="Person swimming in a blue pool"><rect x="0" y="0" width="220" height="160" fill="#b9e6ed"/><rect x="0" y="99" width="220" height="61" fill="#51a7c3"/><circle cx="73" cy="62" r="17" fill="#b87949"/><path d="M88 85L139 98 163 72" fill="none" stroke="#6d3b2c" stroke-width="15" stroke-linecap="round"/><path d="M0 117Q20 105 40 117T80 117T120 117T160 117T200 117" stroke="white" fill="none" stroke-width="5"/><path d="M0 140Q20 128 40 140T80 140T120 140T160 140T200 140" stroke="white" fill="none" stroke-width="5"/></svg>';
     return '<svg viewBox="0 0 220 160" role="img" aria-label="Person listening to music with headphones"><rect width="220" height="160" fill="#f2dbb2"/><circle cx="110" cy="75" r="37" fill="#d49b6c"/><path d="M64 72A46 46 0 0 1 156 72" fill="none" stroke="#3f536a" stroke-width="11"/><rect x="60" y="66" width="17" height="35" rx="8" fill="#3f536a"/><rect x="143" y="66" width="17" height="35" rx="8" fill="#3f536a"/><path d="M98 98Q110 109 123 98" stroke="#7a3b27" fill="none" stroke-width="4"/><path d="M173 22v45q-8-7-16 0-7 12 6 15 17 1 17-16V35l18-5v-12z" fill="#3f536a"/></svg>'
   }
+
+  // Preserve the original Would You Rather? categories and optional custom photo cards.
+  // This preview deliberately does not send activity sessions to Supabase.
+  var wyFamilies={
+    'Inside':['Music','Puzzles','Books','Art','Cards & Games','Video Games','Cooking','Computers','Sensory Space'],
+    'Outside':['Walk','Playground','Nature Hunt','Sports','Water Play','Garden','Chalk','Bike/Scooter'],
+    'Car Trip':['Library','Shop','Food Shop','Clothes Shop','Out to Eat','Get Coffee','Museum','Park Trip','Errands','Other Car Trip']
+  };
+  var wySub={
+    'Art':['Coloring','Painting','Playdoh','Clay','Build','Cut & Paste','Collage','Sewing','Glue & Glitter'],
+    'Music':['My Playlist','Drums','Keyboard'],
+    'Puzzles':['Big Pieces','Standard','Floor Puzzle','Puzzle Blocks','3D Puzzle'],
+    'Books':['Picture Book','Audiobook','Story Time'],
+    'Walk':['Short Block','Park Loop','Trail'],
+    'Playground':['Swing','Slide','Climb'],
+    'Sports':['Catch','Kick','Hoops'],
+    'Sensory Space':['Weighted Blanket','Bean Bag','Calm Lights'],
+    'Cards & Games':['UNO','Go Fish','War','Memory','Yahtzee','Candy Land','Connect Four','Jenga','Dominoes','Dice Games']
+  };
+  // Photo IDs are from free-to-use Pexels photos; only preview images are loaded.
+  var wyPhotos={
+    'Inside':6297091,'Outside':8704681,'Music':5077420,'Art':7859031,
+    'Cards & Games':8111356,'Cooking':7964666,'Walk':9533800,
+    'Garden':8704681,'My Playlist':5077420,'Painting':7859031,
+    'Car Trip':19765895
+  };
+  var wyIcons={
+    'Inside':'🏠','Outside':'🌳','Car Trip':'🚗','Just Me':'🧍','One Person':'👥','Group':'👪',
+    'Music':'🎵','Puzzles':'🧩','Books':'📚','Art':'🎨','Cards & Games':'🃏','Video Games':'🎮',
+    'Cooking':'🍳','Computers':'💻','Sensory Space':'🧸','Walk':'🚶','Playground':'🛝',
+    'Nature Hunt':'🍃','Sports':'⚽','Water Play':'💦','Garden':'🌻','Chalk':'🖍️',
+    'Bike/Scooter':'🚲','Library':'📚','Shop':'🛍️','Food Shop':'🛒','Clothes Shop':'👕',
+    'Out to Eat':'🍽️','Get Coffee':'☕','Museum':'🏛️','Park Trip':'🌲','Errands':'📝',
+    'Other Car Trip':'🚗','Coloring':'🖍️','Painting':'🎨','Playdoh':'🟨','Clay':'🏺',
+    'Build':'🧱','Cut & Paste':'✂️','Collage':'🖼️','Sewing':'🧵','Glue & Glitter':'✨',
+    'My Playlist':'🎧','Drums':'🥁','Keyboard':'🎹','Big Pieces':'🧩','Standard':'🧩',
+    'Floor Puzzle':'🧩','Puzzle Blocks':'🧱','3D Puzzle':'🧩','Picture Book':'📖',
+    'Audiobook':'🎧','Story Time':'📖','Short Block':'🚶','Park Loop':'🌲','Trail':'🥾',
+    'Swing':'🛝','Slide':'🛝','Climb':'🧗','Catch':'⚾','Kick':'⚽','Hoops':'🏀',
+    'Weighted Blanket':'🧸','Bean Bag':'🛋️','Calm Lights':'💡','UNO':'🃏',
+    'Go Fish':'🎣','War':'🃏','Memory':'🧠','Yahtzee':'🎲','Candy Land':'🍬',
+    'Connect Four':'🟡','Jenga':'🧱','Dominoes':'🁣','Dice Games':'🎲'
+  };
+  function safeHtml(v){return String(v||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+  function wyImage(label){
+    var custom=null;
+    try{
+      var images=JSON.parse(localStorage.getItem('wy_custom_icons')||'{}');
+      if(typeof images[label]==='string' && /^data:image\/(png|jpeg|webp|gif);base64,/.test(images[label]))custom=images[label];
+    }catch(e){}
+    var id=wyPhotos[label],src=custom||(id?'https://images.pexels.com/photos/'+id+'/pexels-photo-'+id+'.jpeg?auto=compress&w=480':null);
+    var fallback=safeHtml(wyIcons[label]||'✨');
+    if(!src)return '<span class="photo-fallback" aria-hidden="true">'+fallback+'</span>';
+    return '<img src="'+safeHtml(src)+'" alt="" loading="lazy" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span class="photo-fallback" aria-hidden="true" hidden>'+fallback+'</span>';
+  }
+  function wyCard(label){
+    return '<button type="button" class="choice photo-choice" data-wyr-pick="'+safeHtml(label)+'"><span class="photo-frame">'+wyImage(label)+'</span><span>'+safeHtml(label)+'</span></button>';
+  }
+  function wyCards(options){return '<div class="choices">'+options.map(wyCard).join('')+'</div>'}
+  function wyPrompt(){
+    if(!wyr)return readText.rather;
+    return ({
+      where:'Would you rather do something inside, outside, or go somewhere?',
+      withWho:'Would you rather be by yourself, with one person, or in a group?',
+      people:'Who would you like to spend time with? You can skip this question.',
+      category:'What kind of activity would you like to do?',
+      sub:'Which one sounds good to you?',
+      summary:'Here is what you chose. You can change it or stop.',
+      timer:'You can stop the timer at any time.',
+      finish:'How was your activity?',
+      declined:'Neither is okay. You do not have to choose.'
+    })[wyr.stage]||readText.rather;
+  }
+  function wyStopTimer(){if(wyrTimer){clearInterval(wyrTimer);wyrTimer=null}}
+  function wyReset(){wyStopTimer();wyr={stage:'where',where:'',withWho:'',people:'',category:'',choice:'',elapsed:0,startAt:0,mood:'',offered:[]}}
+  function wyExtras(){
+    return '<div class="actions">'+button('Neither','wyr-neither')+button('Something else','wyr-other')+button('Not now','skip')+'</div>';
+  }
+  function wySummary(){
+    return '<div class="wyr-summary">📍 '+safeHtml(wyr.where)+'<p>👥 '+safeHtml(wyr.withWho)+(wyr.people?' — '+safeHtml(wyr.people):'')+'</p><p>🎯 '+safeHtml(wyr.choice||wyr.category||'No activity chosen')+'</p></div>';
+  }
+  function renderWouldRather(){
+    current='rather';chosen='';
+    var html='',stage=wyr.stage,items=[];
+    if(stage==='where'){
+      items=['Inside','Outside','Car Trip'];html='<p class="progress-label">1 · Where?</p><p>Would you rather stay inside, go outside, or take a trip?</p>'+wyCards(items)+wyExtras();
+    }else if(stage==='withWho'){
+      items=['Just Me','One Person','Group'];html='<p class="progress-label">2 · With who?</p><p>Would you rather be alone, with one person, or with a group?</p>'+wyCards(items)+wyExtras();
+    }else if(stage==='people'){
+      html='<p>Who would you like to do this with? You can leave this empty.</p><label for="wyrPeople">Name or names (optional)</label><input class="text-entry" id="wyrPeople" placeholder="Who? (optional)" value="'+safeHtml(wyr.people)+'"><div class="actions">'+button('Continue','wyr-people','primary')+button('Skip','wyr-people')+button('Not now','skip')+'</div>';
+    }else if(stage==='category'){
+      items=wyFamilies[wyr.where]||[];html='<p class="progress-label">3 · What kind?</p><p>What sounds fun?</p>'+wyCards(items)+wyExtras();
+    }else if(stage==='sub'){
+      items=wySub[wyr.category]||[];html='<p class="progress-label">4 · Which activity?</p><p>Choose what you would like.</p>'+wyCards(items)+wyExtras();
+    }else if(stage==='summary'){
+      html='<p>Would you like to try this?</p>'+wySummary()+'<div class="actions">'+button('Start activity timer','wyr-start','primary')+button('Just choosing','wyr-chosen')+button('Change my choice','wyr-restart')+button('Not now','skip')+'</div>'+support()+'<p style="font-size:14px">TEST ONLY. This is a preference, not proof the activity happened. No records are saved.</p>';
+    }else if(stage==='timer'){
+      html=wySummary()+'<h2 id="wyrClock" role="timer" style="text-align:center;font-size:46px">'+formatWyTime(wyr.elapsed)+'</h2><p>Enjoy the activity. Stop when you want.</p><div class="actions">'+button('Stop timer','wyr-stop','primary')+'</div>';
+    }else if(stage==='finish'){
+      items=['I liked it','It was okay','I did not like it'];html=wySummary()+'<p>How did you like it?</p>'+wyCards(items)+'<div class="actions">'+button('Done','wyr-finish','primary')+button('Not now','skip')+'</div><p style="font-size:14px">TEST ONLY. Nothing is saved or sent to a caregiver.</p>';
+    }else if(stage==='declined'){
+      html='<p>That is okay. You do not have to choose anything.</p><div class="actions">'+button('Try again','wyr-restart','primary')+button('Back to My STAR','skip')+'</div>';
+    }
+    wyr.offered=items.slice();
+    wrap('Would You Rather?',html);
+  }
+  function formatWyTime(sec){return String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0')}
+  function pickWyr(answer){
+    if(wyr.stage==='where'){wyr.where=answer;wyr.stage='withWho'}
+    else if(wyr.stage==='withWho'){
+      wyr.withWho=answer;wyr.stage=answer==='Just Me'?'category':'people';
+    }else if(wyr.stage==='category'){
+      wyr.category=answer;wyr.stage=wySub[answer]?'sub':'summary';
+    }else if(wyr.stage==='sub'){wyr.choice=answer;wyr.stage='summary'}
+    else if(wyr.stage==='finish'){wyr.mood=answer;status('You chose: '+answer+'. TEST ONLY: Not saved.');speak(answer);return}
+    renderWouldRather();speak(wyPrompt());
+  }
+
   function render(page){
-    chosen='';current=page;window.speechSynthesis?.cancel();
+    wyStopTimer();chosen='';current=page;window.speechSynthesis?.cancel();
     if(page==='home'){
       screen.innerHTML='<h1>My STAR</h1><p class="intro">What would you like to do? Nothing is required.</p>'+
         '<div class="tiles">'+
@@ -160,10 +278,7 @@
     } else if(page==='tell'){
       wrap('Talk to My Team','<p>Tell someone something or look at the group chat.</p><label for="myMessage">My message (optional)</label><textarea class="voice-input" id="myMessage" placeholder="Type or use the keyboard microphone"></textarea>'+support()+'<div class="actions">'+button('Hear my message','hear-message')+button('Open Group Chat','open-chat','primary')+button('Open picture cards','open-voice')+button('Done','done')+button('Not now','skip')+'</div><p style="font-size:14px">This preview does not send or save messages. Group Chat is separate test functionality.</p>');
     } else if(page==='rather'){
-      wrap('Would You Rather?','<p>What would you like to do?</p><div class="choices">'+
-        '<button class="choice" type="button" data-choice="Go swimming" aria-pressed="false"><span class="picture">'+picture('swim')+'</span>Go swimming</button>'+
-        '<button class="choice" type="button" data-choice="Listen to music" aria-pressed="false"><span class="picture">'+picture('music')+'</span>Listen to music</button>'+
-        '</div><div class="actions">'+button('Neither','neither')+button('Something else','other')+button('Not now','skip')+'</div>'+support()+'<div class="actions">'+button('Done','done','primary')+'</div><p>Existing STAR activity planner: <a class="inline-link" href="wouldyourather.html">Open the original activity choices and timer</a>.</p>');
+      wyReset();renderWouldRather();
     } else if(page==='urgent'){
       wrap('🚨 HELP NOW','<div class="notice urgent"><strong>TEST ONLY — NO ALERT IS SENT.</strong> This screen does not contact caregivers, text anyone, or request emergency services. In a real emergency, get help directly.</div><p>What do you need to tell someone?</p><div class="choices">'+choice('Something hurts','🩹','Something hurts')+choice('I am scared','😨','I am scared')+choice('I need someone','🙋','I need someone')+choice('Something happened','❗','Something happened')+'</div><label for="urgentMessage">Add more (optional)</label><textarea id="urgentMessage" class="voice-input" placeholder="Type or dictate"></textarea><div class="actions">'+button('Preview help request','preview-help','primary')+button('Cancel','skip')+'</div>');
     } else if(page==='chat') {window.location.href='chat.html';return}
@@ -182,6 +297,8 @@
   screen.addEventListener('click',function(e){
     var side=e.target.closest('[data-side]');
     if(side){painSide=side.getAttribute('data-side');document.querySelectorAll('[data-side]').forEach(function(b){b.setAttribute('aria-pressed',String(b===side))});document.getElementById('painPoster').innerHTML=bodyPoster(painSide==='front');return}
+    var pick=e.target.closest('[data-wyr-pick]');
+    if(pick){pickWyr(pick.getAttribute('data-wyr-pick'));return}
     var open=e.target.closest('[data-open]');
     if(open){render(open.getAttribute('data-open'));speak(readText[current]||'My STAR');return}
     var ch=e.target.closest('[data-choice],[data-pain]');
@@ -190,6 +307,14 @@
     if(!a)return;
     var action=a.getAttribute('data-action');
     if(action==='skip'){if(current==='home')status('That is okay. You do not have to check in.');else {render('home');speak('That is okay. You can come back whenever you want.')}return}
+    if(action==='wyr-people'){wyr.people=document.getElementById('wyrPeople')?.value.trim()||'';wyr.stage='category';renderWouldRather();speak(wyPrompt());return}
+    if(action==='wyr-restart'){wyReset();renderWouldRather();speak(wyPrompt());return}
+    if(action==='wyr-neither'){wyStopTimer();wyr.stage='declined';renderWouldRather();speak(wyPrompt());return}
+    if(action==='wyr-other'){var other=prompt('What would you rather do? (optional)');if(other&&other.trim()){wyr.category='Something else';wyr.choice=other.trim().slice(0,160);wyr.stage='summary';renderWouldRather();speak(wyPrompt())}return}
+    if(action==='wyr-chosen'){status('Your choice: '+[wyr.where,wyr.withWho,wyr.people,wyr.choice||wyr.category].filter(Boolean).join(' · ')+'. TEST ONLY: nothing was saved.');speak('Thank you for choosing.');return}
+    if(action==='wyr-start'){wyr.elapsed=0;wyr.startAt=Date.now();wyr.stage='timer';renderWouldRather();wyStopTimer();wyrTimer=setInterval(function(){wyr.elapsed=Math.floor((Date.now()-wyr.startAt)/1000);var clock=document.getElementById('wyrClock');if(clock)clock.textContent=formatWyTime(wyr.elapsed)},1000);speak('Activity started. Stop when you are ready.');return}
+    if(action==='wyr-stop'){wyStopTimer();wyr.stage='finish';renderWouldRather();speak(wyPrompt());return}
+    if(action==='wyr-finish'){status('Thank you for sharing'+(wyr.mood?': '+wyr.mood:'')+'. TEST ONLY: not saved or sent.');speak('Thank you for sharing.');return}
     if(action==='open-voice'){render('voice');return}
     if(action==='open-chat'){render('chat');return}
     if(action==='hear-message'){var message=document.getElementById('myMessage');speak(message?.value||'No message entered');return}
@@ -210,7 +335,7 @@
     }
   });
   document.getElementById('homeBtn').addEventListener('click',function(){render('home')});
-  document.getElementById('hearBtn').addEventListener('click',function(){speak(readText[current]||'My STAR')});
+  document.getElementById('hearBtn').addEventListener('click',function(){speak(current==='rather'?wyPrompt():(readText[current]||'My STAR'))});
   render('home');
 })();
 </script>

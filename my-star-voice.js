@@ -1458,8 +1458,7 @@ pitchRange?.addEventListener('input', () => {
 });
 
 autoSpeakToggle?.addEventListener('change', () => {
-  settings.autoSpeak = autoSpeakToggle.checked;
-  saveSettings();
+  setCardVoiceOn(autoSpeakToggle.checked);
 });
 
 autoSpeakStartersToggle?.addEventListener('change', () => {

@@ -418,7 +418,7 @@
 <script type="module">
   import { getSessionFromStorage } from './restClient.js?v=2025.01.09E';
   import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
-  import { listHomeDrafts } from './home-saved-drafts.js?v=2026.10.24A';
+  import { getSavedDraftCount } from './home-saved-drafts.js?v=2026.10.28D';
 
   const badge = document.getElementById('savedDraftCount');
   const link = document.getElementById('savedDraftLink');
@@ -433,7 +433,7 @@
     try {
       const groupId = await ensureActiveGroupId(userId);
       if (!groupId || getSessionFromStorage()?.user?.id !== userId) return;
-      const count = listHomeDrafts(window.localStorage, userId, groupId).length;
+      const count = await getSavedDraftCount(window);
       if (count > 0) {
         badge.textContent = count > 99 ? '99+' : String(count);
         badge.hidden = false;

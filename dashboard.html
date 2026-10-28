@@ -253,6 +253,14 @@
       color: var(--muted);
       font-size: 12px;
     }
+    .star-view-switch{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:5px;border:2px solid #cfbf9f;border-radius:17px;background:#ede6d8;margin:0 13px 12px}
+    .star-view-switch a{min-height:54px;display:flex;justify-content:center;align-items:center;text-decoration:none;text-align:center;border-radius:12px;padding:9px 5px;font-size:14px;line-height:1.2;font-weight:800;color:#304035}
+    .star-view-switch a[aria-current="page"]{background:#365940;color:#fff}
+    .star-view-switch a:focus-visible,.star-review-shortcut a:focus-visible{outline:3px solid #164a70;outline-offset:2px}
+    .star-review-shortcut{margin:0 13px 14px;padding:14px;background:#fffdf8;border:2px solid #cfbf9f;border-radius:15px}
+    .star-review-shortcut a{color:#274b35;font-weight:800;font-size:16px;line-height:1.3}
+    .star-review-shortcut p{margin:7px 0 0;color:#5b5c56;font-size:13px}
+    .star-review-shortcut[hidden]{display:none!important}
   </style>
 </head>
 
@@ -262,6 +270,14 @@
   <div id="navbar"></div>
 
   <main class="page">
+    <nav class="star-view-switch" aria-label="Switch between My STAR and caregiver or administrator view">
+      <a href="my-star.html">⭐ My STAR</a>
+      <a href="dashboard.html" aria-current="page">👥 Caregiver / Admin</a>
+    </nav>
+    <section class="star-review-shortcut" id="starReviewShortcut" hidden aria-label="My STAR observation reviews">
+      <a href="./my-star-isa-review.html">⭐ Review My STAR observations</a>
+      <p id="starReviewCount">Fictional observation review queue · admin only</p>
+    </section>
     <section class="dashboard-header starfield-page-header">
       <svg class="starfield-bg" viewBox="0 0 420 110" aria-hidden="true">
         <circle cx="28" cy="18" r="1" fill="#2C2C2A" opacity="0.15"></circle>
@@ -440,6 +456,33 @@
   window.addEventListener('pageshow', refreshSavedDraftCount);
   window.addEventListener('focus', refreshSavedDraftCount);
   window.addEventListener('storage', refreshSavedDraftCount);
+</script>
+
+<script type="module">
+  // UI shortcut only; all review permissions remain enforced by Supabase RLS.
+  import { getSessionFromStorage, rest } from './restClient.js?v=2025.01.09E';
+  import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
+  const shortcut=document.getElementById('starReviewShortcut');
+  const counter=document.getElementById('starReviewCount');
+  (async()=>{
+    const userId=getSessionFromStorage()?.user?.id;
+    if(!userId)return;
+    const groupId=await ensureActiveGroupId(userId);
+    if(!groupId||getSessionFromStorage()?.user?.id!==userId)return;
+    const members=await rest('group_members?select=role&group_id=eq.'+
+      encodeURIComponent(groupId)+'&user_id=eq.'+encodeURIComponent(userId)+'&limit=1');
+    if(members?.[0]?.role!=='admin')return;
+    shortcut.hidden=false;
+    try{
+      const pending=await rest('star_individual_observations_test?select=id&group_id=eq.'+
+        encodeURIComponent(groupId)+'&review_status=eq.pending&limit=101');
+      if(getSessionFromStorage()?.user?.id!==userId)return;
+      const count=pending?.length||0;
+      counter.textContent=(count>=101?'100+':count)+' fictional observation'+(count===1?'':'s')+' awaiting review · admin only';
+    }catch(error){
+      counter.textContent='Open fictional observation review queue · admin only';
+    }
+  })().catch(()=>{if(shortcut)shortcut.hidden=true});
 </script>
 
 <!-- ✅ Restore original hamburger menu + bottom tabbar -->

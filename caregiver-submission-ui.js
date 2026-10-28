@@ -195,6 +195,7 @@ export class CheckinSubmissionUI {
     return { context: this.context, draft: this.capture(),
       intentionalDraft: this.intentionalDraftSaved === true,
       cloudDraftId: this.cloudDraftId || null,
+      cloudDraftVersion: this.cloudDraftVersion,
       attempt: this.service?.attempt || null, phase: this.service?.attempt?.sent ? 'pending' : 'draft' };
   }
   saveRecovery(required = false) {
@@ -269,6 +270,8 @@ export class CheckinSubmissionUI {
       }
       this.cloudDraftId = id;
       this.cloudDraftVersion = saved.version;
+      // Keep the matching cloud identifier in the browser backup for safe resume.
+      this.saveRecovery();
       this.status('Draft Saved and Verified in Supabase — not submitted as a check-in.');
       this.el.storageNotice.hidden = false;
       this.el.storageNotice.textContent = 'Supabase draft verified. A separate browser recovery copy is also kept on this device.';
@@ -310,6 +313,8 @@ export class CheckinSubmissionUI {
     this.reset();
     this.restore(item.draft);
     this.intentionalDraftSaved = item.intentionalDraft === true;
+    this.cloudDraftId = item.cloudDraftId || null;
+    this.cloudDraftVersion = Number.isSafeInteger(item.cloudDraftVersion) ? item.cloudDraftVersion : null;
     this.service.attempt = item.attempt || null;
     this.dateChanged();
     this.dirty = true;

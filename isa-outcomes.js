@@ -164,6 +164,7 @@ async function start(){
  state.isAdmin=roles?.[0]?.role==='admin';
  $('isaPermission').textContent=state.isAdmin?'Administrator: you can add, activate, edit and archive outcome cards.':'Team member: read-only outcome cards.';
  $('isaNew').hidden=!state.isAdmin;
+ $('isaTestReview').hidden=!state.isAdmin;
  const name=await individualName();$('isaIndividual').replaceChildren(new Option(name,''));
  await loadMembers();await loadCards();
 }

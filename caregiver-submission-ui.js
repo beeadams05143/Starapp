@@ -1,6 +1,6 @@
 import { formatCheckinDate } from './caregiver-dates.js';
 import { CaregiverSubmission, CheckinRecoveryStore, validSelectedDate } from './caregiver-submission.js';
-import { CaregiverDraftService } from './caregiver-draft-service.js?v=2026.10.20D';
+import { CaregiverDraftService } from './caregiver-draft-service.js?v=2026.10.28D';
 
 const fullDate = value => formatCheckinDate(value, undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 
@@ -12,6 +12,7 @@ export class CheckinSubmissionUI {
       'startNewCheckin', 'duplicateNotice', 'duplicateDateLabel', 'allowDuplicate', 'changeCheckinDate',
       'downloadRecovery', 'submissionContext'].map(id => [id, doc.getElementById(id)]));
     this.dirty = false;
+    this.intentionalDraftSaved = false;
     this.busy = false;
     this.done = false;
     this.cloudSaving = false;
@@ -178,11 +179,21 @@ export class CheckinSubmissionUI {
     this.el.storageNotice.textContent = 'Browser recovery storage is unavailable or unreadable. Answers remain only on this page. Download a recovery copy before leaving. Saving a real check-in is blocked until its recovery copy can be stored.';
   }
   snapshot() {
-    return { context: this.context, draft: this.capture(), attempt: this.service?.attempt || null, phase: this.service?.attempt?.sent ? 'pending' : 'draft' };
+    return { context: this.context, draft: this.capture(),
+      intentionalDraft: this.intentionalDraftSaved === true,
+      attempt: this.service?.attempt || null, phase: this.service?.attempt?.sent ? 'pending' : 'draft' };
   }
   saveRecovery(required = false) {
     try {
       if (!this.store) throw new Error('No recovery storage');
+      // An intentionally deleted draft must not be recreated by an old open tab,
+      // background autosave, visibilitychange or pagehide event.
+      if (this.win.localStorage.getItem('star-deleted-draft-v1:' + this.store.key)) {
+        this.setStore();
+        this.intentionalDraftSaved = false;
+        this.cloudDraftId = null;
+        this.cloudDraftVersion = null;
+      }
       this.store.save(this.snapshot());
       this.el.storageNotice.hidden = false;
       this.el.storageNotice.textContent = 'Recovery copy saved on this browser. Clearing browser data, private browsing, or device loss can remove it. Save Draft also keeps a local copy; it does not submit a check-in.';
@@ -201,6 +212,7 @@ export class CheckinSubmissionUI {
   async saveDraft() {
     if (this.busy || this.done || this.service.attempt?.sent || this.cloudSaving) return false;
     this.dirty = true;
+    this.intentionalDraftSaved = true;
     const localSaved = this.saveRecovery();
     if (this.context.practice) {
       this.status(localSaved ? 'Practice draft saved on this browser only.' : 'Practice draft could not be saved.', !localSaved);
@@ -281,6 +293,7 @@ export class CheckinSubmissionUI {
     this.setStore();
     this.reset();
     this.restore(item.draft);
+    this.intentionalDraftSaved = item.intentionalDraft === true;
     this.service.attempt = item.attempt || null;
     this.dateChanged();
     this.dirty = true;
@@ -363,7 +376,16 @@ export class CheckinSubmissionUI {
         : `✓ Check-In Submitted Successfully! — ${fullDate(date)}. Your check-in is saved and available in STAR Reports.`,
         false, result.state === 'verified' ? 'verified' : 'practice');
       // Show the original green ribbon only after the database confirms a save.
-      if (result.state === 'verified') this.showSuccessBanner();
+      if (result.state === 'verified') {
+        this.showSuccessBanner();
+        // A submitted check-in must not continue to appear as a saved draft.
+        const submittedDraftId = this.cloudDraftId;
+        if (submittedDraftId && this.cloudDraftService) {
+          this.cloudDraftService.delete(submittedDraftId).catch(error => {
+            console.warn('[STAR] Submitted check-in verified; old cloud draft cleanup needs retry.', error);
+          });
+        }
+      }
       // Database success is never downgraded by local cleanup failure.
       try { this.store?.complete({ context: this.context, recordId: result.row?.id, date }); }
       catch {
@@ -393,6 +415,9 @@ export class CheckinSubmissionUI {
     this.service.attempt = null;
     this.done = false;
     this.dirty = false;
+    this.intentionalDraftSaved = false;
+    this.cloudDraftId = null;
+    this.cloudDraftVersion = null;
     this.setStore();
     this.reset();
     this.dateChanged();

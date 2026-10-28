@@ -18,6 +18,7 @@ export function listHomeDrafts(storage,userId,groupId){
     try{
       const item=JSON.parse(storage.getItem(key));
       if(!item||item.phase==='verified'||item.attempt?.sent||item.intentionalDraft!==true)continue;
+      if(item.cloudDraftId&&storage.getItem(DELETED_PREFIX+'cloud:'+userId+':'+groupId+':'+item.cloudDraftId))continue;
       if(item.context?.userId!==userId||item.context?.groupId!==groupId||item.context?.practice)continue;
       const date=item.draft?.data?.[0]?.entry_date;
       drafts.push({key,id:key.slice(prefix.length),date:validSelectedDate(date)?date:null,
@@ -84,7 +85,7 @@ export async function showHomeDrafts(doc=document,win=window){
       const row=el(doc,'div',undefined,'saved-draft-row');
       row.style.cssText='display:flex;gap:9px;margin:12px 0;align-items:stretch';
       const link=el(doc,'a');
-      const query=new URLSearchParams({resumeDraft:draft.key});
+      const query=new URLSearchParams(draft.source==='cloud'?{resumeCloudDraft:draft.id}:{resumeDraft:draft.key});
       link.href='caregiver-checkin.html?'+query;
       link.style.cssText='flex:1;min-width:0;display:block;padding:14px;background:white;border:1px solid #d8d2c8;border-radius:12px;color:#2c2c2a;text-decoration:none';
       link.append(el(doc,'strong','Continue check-in'),el(doc,'div',
@@ -100,7 +101,26 @@ export async function showHomeDrafts(doc=document,win=window){
           // Never hide a cloud draft unless its deletion was verified on the server.
           if(draft.source==='cloud')await result.service.delete(draft.id);
           // A tombstone prevents stale open check-in tabs from restoring this slot.
-          win.localStorage.setItem(DELETED_PREFIX+draft.key,new Date().toISOString());
+          const tombstone=new Date().toISOString();
+          win.localStorage.setItem(DELETED_PREFIX+draft.key,tombstone);
+          if(draft.source==='cloud'){
+            win.localStorage.setItem(DELETED_PREFIX+'cloud:'+userId+':'+groupId+':'+draft.id,tombstone);
+            // Retire copies of this same deleted cloud draft, not unrelated recovery work.
+            const prefix=browserPrefix(userId,groupId);
+            const toRetire=[];
+            for(let i=0;i<win.localStorage.length;i++){
+              const key=win.localStorage.key(i);
+              if(!key?.startsWith(prefix))continue;
+              try{
+                const item=JSON.parse(win.localStorage.getItem(key));
+                if(item?.cloudDraftId===draft.id||key===draft.key)toRetire.push(key);
+              }catch{}
+            }
+            toRetire.forEach(key=>{
+              win.localStorage.setItem(DELETED_PREFIX+key,tombstone);
+              win.localStorage.removeItem(key);
+            });
+          }
           win.localStorage.removeItem(draft.key);
           row.remove();
           if(!host.querySelector('.saved-draft-row'))showHomeDrafts(doc,win);

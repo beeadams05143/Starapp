@@ -98,7 +98,7 @@ function render(messages, myId, readsByMsgId) {
     const ticks = isMine ? (othersRead ? '✓✓' : '✓') : '';
 
     const displayName = p.display_name || (isMine ? 'You' : 'Someone');
-    const avatarUrl   = p.avatar_url   || 'https://placehold.co/36x36';
+    const avatarUrl   = p.avatar_url   || './IMG/default-avatar.png';
 
     const node = el(`
       <div class="bubble ${isMine ? 'message-me' : 'message-other'}">

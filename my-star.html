@@ -78,6 +78,9 @@
     .progress-label{font-size:16px;font-weight:800;color:#63594e;margin-bottom:9px}
     .wyr-summary{font-size:20px;line-height:1.5;font-weight:700;background:#f5f0e6;border:2px solid #d3c9b8;border-radius:14px;padding:14px}
     .text-entry{width:100%;font:inherit;font-size:18px;padding:12px;border:2px solid #b6aa96;border-radius:12px}
+    .match-preview{padding:12px;border:2px solid #c7d8c5;border-radius:12px;background:#f1f6ee;margin:8px 0}
+    #isaPreview{line-height:1.45;margin-top:14px}
+    #isaPreview p{margin:8px 0}
     @media(max-width:420px){.body-poster{height:clamp(420px,125vw,530px)}.pain-point{width:44px;height:44px}.photo-frame{height:100px}}
   </style>
 </head>
@@ -305,7 +308,7 @@
     } else if(page==='day'){
       wrap('My Day','<p>Did you like your activity today?</p><div class="choices">'+choice('Liked it','😊','I liked it')+choice('Okay','😐','It was okay')+choice('Did not like','😞','I did not like it')+choice('No activity','🙅','Not today')+'</div>'+support()+'<div class="actions">'+button('Done','done','primary')+button('Not now','skip')+'</div>');
     } else if(page==='goals'){
-      wrap('Something I Did 🌟','<p>Did you do something you want to share?</p><div class="choices">'+choice('I did something','🌟','I did it!')+choice('I tried something','🙌','I tried!')+choice('I learned something','💡','I learned!')+choice('Someone helped me','🤝','I had help')+'</div><label for="accomplishmentText">What did you do? (optional)</label><textarea class="voice-input" id="accomplishmentText" placeholder="Type or use the keyboard microphone"></textarea>'+support()+'<div class="actions">'+button('Done','done','primary')+button('Not now','skip')+'</div><p style="font-size:14px">TEST PREVIEW: Nothing is saved or credited toward an ISA goal. In the future, STAR can suggest possible goal matches for team review, without changing what you said.</p>');
+      wrap('Something I Did 🌟','<p>Did you do something you want to share?</p><div class="choices">'+choice('I did something','🌟','I did it!')+choice('I tried something','🙌','I tried!')+choice('I learned something','💡','I learned!')+choice('Someone helped me','🤝','I had help')+'</div><label for="accomplishmentText">What did you do? (optional)</label><textarea class="voice-input" id="accomplishmentText" placeholder="Type or use the keyboard microphone"></textarea>'+support()+'<div class="actions">'+button('Done','done','primary')+button('Not now','skip')+'</div><div class="notice"><strong>Fictional data test for designers:</strong> Try a made-up example to see possible ISA goal links. Nothing gets credited as progress.</div><div class="actions">'+button('Fill fictional example','isa-example')+button('Find possible goal links','isa-preview')+button('Save fictional example to review queue','isa-save')+'</div><div id="isaPreview" aria-live="polite"></div><p style="font-size:14px">In STAR TEST, only text beginning with FICTIONAL: can be saved to the separate review queue. Regular Done is never saved. An administrator must review each possible link before it is recorded as an observation, not an achievement.</p>');
     } else if(page==='tell'){
       wrap('Talk to My Team','<p>Tell someone something or look at the group chat.</p><label for="myMessage">My message (optional)</label><textarea class="voice-input" id="myMessage" placeholder="Type or use the keyboard microphone"></textarea>'+support()+'<div class="actions">'+button('Hear my message','hear-message')+button('Open Group Chat','open-chat','primary')+button('Open picture cards','open-voice')+button('Done','done')+button('Not now','skip')+'</div><p style="font-size:14px">This preview does not send or save messages. Group Chat is separate test functionality.</p>');
     } else if(page==='rather'){
@@ -350,6 +353,29 @@
     if(action==='wyr-finish'){status('Thank you for sharing'+(wyr.mood?': '+wyr.mood:'')+'. TEST ONLY: not saved or sent.');speak('Thank you for sharing.');return}
     if(action==='open-voice'){render('voice');return}
     if(action==='open-chat'){render('chat');return}
+    if(action==='isa-example'){
+      document.getElementById('accomplishmentText').value='FICTIONAL: I practiced calling the library with a helper.';
+      status('Fictional example entered. Tap Find possible goal links to see suggestions.');return;
+    }
+    if(action==='isa-preview'||action==='isa-save'){
+      var textBox=document.getElementById('accomplishmentText');
+      var raw=textBox?.value.trim()||'';
+      if(!raw){status('Enter a fictional example first. Nothing was saved.');return}
+      var assisted=document.getElementById('withSupport')?.checked;
+      var details=assisted?(document.getElementById('supportKind')?.value||'Support reported'):'not_reported';
+      var payload={words:raw,response_choice:chosen||'',support_kind:details};
+      if(!window.StarIsaTest){status('ISA testing is not ready yet. Refresh the page and try again.');return}
+      a.disabled=true;
+      (action==='isa-preview'?window.StarIsaTest.preview(payload):window.StarIsaTest.save(payload))
+        .then(function(res){
+          if(current!=='goals')return;
+          if(action==='isa-save'){
+            status('FICTIONAL TEST saved to the review queue as PENDING. No ISA progress was credited.');
+          }else status('Possible matches displayed below. These are NOT confirmed outcomes.');
+        }).catch(function(err){if(current==='goals')status(err.message||'The fictional ISA test could not run. Nothing was saved.')})
+        .finally(function(){a.disabled=false});
+      return;
+    }
     if(action==='hear-message'){var message=document.getElementById('myMessage');speak(message?.value||'No message entered');return}
     if(action==='neither'||action==='other'){chosen=action==='neither'?'Neither':'Something else';speak(chosen);status('You chose: '+chosen+'. Not saved.');return}
     if(action==='preview-help'){
@@ -380,5 +406,7 @@
   render('home');
 })();
 </script>
+<script src="./star-individual-isa-matcher.js?v=2026.10.28B"></script>
+<script type="module" src="./my-star-isa-preview.js?v=2026.10.28A"></script>
 </body>
 </html>

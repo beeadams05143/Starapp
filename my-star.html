@@ -115,6 +115,7 @@
   <div class="top-actions">
     <button class="small-btn" id="homeBtn" type="button">⌂ My STAR Home</button>
     <button class="small-btn" id="hearBtn" type="button" aria-pressed="false" aria-label="Turn reading aloud on or off">🔇 Read Aloud: OFF</button>
+    <button class="small-btn" id="micSetupBtn" type="button" aria-label="Set up microphone with a support person">🎤 Mic Setup</button>
   </div>
   <div class="notice preview-notice">STAR TEST — Fictional “Something I Did” answers can be saved for caregiver review. Other My STAR pages are previews. No alerts or ISA progress are created.</div>
   <section id="screen" aria-live="polite"></section>
@@ -251,7 +252,8 @@
       dictationGotWords=true;
       field.value=(dictationBaseText?dictationBaseText+' ':'')+words;
       field.dispatchEvent(new Event('input',{bubbles:true}));
-      setDictateHint('I heard: “'+words+'”. Check the words, and tap Stop Listening when finished.');
+      if(field.id==='micSetupText')setDictateHint('✅ Microphone working! A helper can return to My STAR now.');
+      else setDictateHint('I heard: “'+words+'”. Check the words, and tap Stop Listening when finished.');
     };
     recognition.onerror=function(event){
       if(activeRecognition!==recognition)return;
@@ -451,6 +453,16 @@
         '<div class="help-row">'+tile('urgent','🚨 ‼️','HELP NOW','Important: I need help',true)+'</div>'+
         '<div class="actions">'+button('Not now — I am done','skip','secondary')+'</div>'+
         '<div id="result" class="message" hidden></div>';
+    } else if(page==='mic-setup'){
+      wrap('🎤 Microphone Setup',
+        '<div style="text-align:center;font-size:60px;margin:8px 0" aria-hidden="true">📱 🎤 ✅</div>'+
+        '<h2>Have a helper set up the microphone</h2>'+
+        '<p style="font-size:20px;font-weight:750">The phone may ask to use the microphone. A helper can tap <strong>Allow</strong> when that appears.</p>'+
+        '<p style="font-size:17px">STAR cannot skip the phone permission question. Try speaking below to make sure the microphone works before the person uses it alone.</p>'+
+        '<label for="micSetupText">Microphone test (not saved)</label>'+
+        '<textarea class="voice-input" id="micSetupText" placeholder="Say a short test phrase" readonly></textarea>'+
+        dictateControls('micSetupText')+
+        '<div class="actions">'+button('Back to My STAR','skip','primary')+'</div>');
     } else if(page==='feel'){
       wrap('How I Feel','<p>Pick a face. You do not have to answer.</p><div class="choices">'+choice('Happy','😊','Happy')+choice('Okay','😐','Okay')+choice('Sad','😢','Sad')+choice('Upset','😠','Upset')+choice('Tired','😴','Tired')+choice('Unwell','🤒','Not feeling good')+'</div>'+support()+'<div class="actions">'+button('Done','done','primary')+button('Not now','skip')+'</div>');
     } else if(page==='pain'){
@@ -539,6 +551,7 @@
     }
   });
   document.getElementById('homeBtn').addEventListener('click',function(){render('home')});
+  document.getElementById('micSetupBtn').addEventListener('click',function(){render('mic-setup')});
   document.getElementById('hearBtn').addEventListener('click',function(){
     readAloudOn=!readAloudOn;
     try{localStorage.setItem(readAloudKey,readAloudOn?'on':'off')}catch(e){}

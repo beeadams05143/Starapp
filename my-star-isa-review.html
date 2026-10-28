@@ -22,8 +22,17 @@ label{display:block;font-weight:700;margin:13px 0 6px}
 select,textarea{font:inherit;font-size:17px;width:100%;padding:12px;border:2px solid #bab4a9;background:white;border-radius:11px}
 textarea{min-height:88px}.status{font-weight:700;color:#345e48}
 [hidden]{display:none!important}
+.star-view-switch{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:5px;border:2px solid #cfbf9f;border-radius:17px;background:#ede6d8;margin:0 0 15px;max-width:100%}
+.star-view-switch a{min-height:56px;display:flex;align-items:center;justify-content:center;text-align:center;padding:9px 6px;text-decoration:none;color:#304035;border-radius:12px;font-weight:800;font-size:15px;line-height:1.2}
+.star-view-switch a[aria-current="page"]{background:#365940;color:#fff;box-shadow:0 1px 4px #25362622}
+.star-view-switch a:focus-visible{outline:3px solid #164a70;outline-offset:2px}
+@media(max-width:390px){.star-view-switch a{font-size:14px}}
 </style></head>
 <body><main>
+<nav class="star-view-switch" aria-label="Switch between My STAR and caregiver or administrator view">
+  <a href="my-star.html">⭐ My STAR</a>
+  <a href="dashboard.html" aria-current="page">👥 Caregiver / Admin</a>
+</nav>
 <a href="./isa-outcomes.html">← ISA Outcome Cards</a>
 <h1>Individual’s Own Words</h1>
 <p class="eyebrow">STAR TEST · Fictional data only</p>

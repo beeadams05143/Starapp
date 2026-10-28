@@ -23,8 +23,17 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .checks input{width:19px;height:19px;min-height:0}.outline{border:1px solid #b59b6b;background:var(--cream);padding:14px;border-radius:12px}
 [hidden]{display:none!important}.pill{display:inline-block;padding:3px 8px;background:#eee9e1;border-radius:20px;color:#46505a;font-size:12px}
 @media(max-width:580px){main{padding:98px 10px 100px}.panel{padding:17px}.row{grid-template-columns:1fr}h1{font-size:29px}}
+.star-view-switch{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:5px;border:2px solid #cfbf9f;border-radius:17px;background:#ede6d8;margin:0 0 15px;max-width:100%}
+.star-view-switch a{min-height:56px;display:flex;align-items:center;justify-content:center;text-align:center;padding:9px 6px;text-decoration:none;color:#304035;border-radius:12px;font-weight:800;font-size:15px;line-height:1.2}
+.star-view-switch a[aria-current="page"]{background:#365940;color:#fff;box-shadow:0 1px 4px #25362622}
+.star-view-switch a:focus-visible{outline:3px solid #164a70;outline-offset:2px}
+@media(max-width:390px){.star-view-switch a{font-size:14px}}
 </style></head><body>
 <main>
+<nav class="star-view-switch" aria-label="Switch between My STAR and caregiver or administrator view">
+  <a href="my-star.html">⭐ My STAR</a>
+  <a href="dashboard.html" aria-current="page">👥 Caregiver / Admin</a>
+</nav>
 <a class="back" href="./dashboard.html">← Dashboard</a>
 <header class="panel"><div class="eyebrow">STAR · Personalized planning</div><h1>⭐ ISA Outcomes</h1>
 <p>Personal goals, support strategies, and progress tracking. These cards guide relevant caregiver check-in questions; STAR does not change an individual's official ISA.</p>

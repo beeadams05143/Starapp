@@ -118,15 +118,18 @@ export function summarizeIsaMeasurement(metric) {
       ? (days + ' reported ' + (days === 1 ? 'date' : 'dates'))
       : (answers.length + ' recorded responses across ' + days + ' ' + (days === 1 ? 'date' : 'dates'));
     const scope = onePerDate ? 'per reported date' : 'per recorded response';
+    if (/^steps?$/i.test(unit)) {
+      // A count of unnamed task steps (1, 2, 3…) cannot tell a provider WHICH
+      // actions were completed. Do not print a numerical range that implies a
+      // meaningful skills progression; preserve the original counts only in
+      // the expandable dated evidence.
+      return label + ': A step count was documented on ' + datePhrase +
+        ', but the ISA goal and check-ins do not identify the individual steps. ' +
+        'STAR therefore cannot determine which phone-call skills were practiced ' +
+        'or completed from these numbers.';
+    }
     if (answers.length === 1) {
       return label + ': ' + formatNumber(numbers[0]) + suffix + ' recorded on one date.';
-    }
-    if (/^steps?$/i.test(unit)) {
-      // The number does not identify the constituent actions. Do not turn a
-      // count of completed steps into an invented skills narrative.
-      return label + ': Across ' + frequency + ', caregivers recorded ' +
-        formatNumber(min) + ' to ' + formatNumber(max) + ' steps completed ' +
-        scope + '. The responses do not specify which steps were completed.';
     }
     if (/^(?:minutes?|hours?|seconds?)$/i.test(unit)) {
       return label + ': Across ' + frequency + ', documented time ranged from ' +
@@ -187,6 +190,18 @@ export function createIsaProgressReport({rest, document: doc = document, clock =
   const startField = $('isaProgressStart'), endField = $('isaProgressEnd'), preset = $('isaProgressPeriod');
   if (startField) startField.value = firstOfMonth(today);
   if (endField) endField.value = dateKey(today);
+  const dateContainer = $('isaCustomDates'), dateSummary = $('isaPeriodSummary');
+  function syncPeriodPresentation() {
+    const isCustom = preset?.value === 'custom';
+    if (dateContainer) dateContainer.hidden = !isCustom;
+    if (!dateSummary) return;
+    const start = startField?.value || '', end = endField?.value || '';
+    const readable = key => key ? new Date(key + 'T12:00:00').toLocaleDateString(undefined,
+      {month:'short',day:'numeric',year:'numeric'}) : '';
+    dateSummary.textContent = !start && !end ? 'Showing all recorded dates' :
+      'Showing ' + (readable(start) || 'the beginning') + ' – ' + (readable(end) || 'today');
+  }
+  syncPeriodPresentation();
   function scope(extra = {}) {
     return {groupId: currentGroupId, start: startField?.value || '', end: endField?.value || '', ...extra};
   }
@@ -295,9 +310,14 @@ export function createIsaProgressReport({rest, document: doc = document, clock =
     if (value === 'month') { startField.value = firstOfMonth(d); endField.value = dateKey(d); }
     else if (value === 'quarter') { const beginning = new Date(d.getFullYear(),d.getMonth()-2,1); startField.value = firstOfMonth(beginning); endField.value = dateKey(d); }
     else if (value === 'all') { startField.value = ''; endField.value = ''; }
+    syncPeriodPresentation();
     redraw();
   });
-  for (const field of [startField,endField]) field?.addEventListener('change', () => { if (preset) preset.value = 'custom'; redraw(); });
+  for (const field of [startField,endField]) field?.addEventListener('change', () => {
+    if (preset) preset.value = 'custom';
+    syncPeriodPresentation();
+    redraw();
+  });
   $('isaProgressCopy')?.addEventListener('click', async () => {
     try { await navigator.clipboard.writeText(lastText); $('isaProgressStatus').textContent = 'ISA progress summary copied.'; }
     catch { $('isaProgressStatus').textContent = 'Clipboard unavailable. Try selecting the dated entries.'; }

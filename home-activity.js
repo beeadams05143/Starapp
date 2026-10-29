@@ -1,6 +1,6 @@
-import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
+import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM2';
 import { downloadJsonFromBucket } from './shared-storage.js?v=2025.01.09E';
-import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
+import { ensureActiveGroupId } from './active-group.js?v=2026.10.29UVM2';
 
 let host = null;
 

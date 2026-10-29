@@ -3172,15 +3172,15 @@
 
   <div id="toast"></div>
   <div id="successBanner" role="status" aria-live="polite" aria-atomic="true"></div>
-<script type="module" src="./isa-checkin.js?v=2026.10.29UVM2"></script>
+<script type="module" src="./isa-checkin.js?v=2026.10.29UVM3"></script>
 <!-- App logic -->
 <script type="module">
   // 1) Imports MUST be first in the module
-  import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM2';
+  import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
   import { CheckinSubmissionUI } from './caregiver-submission-ui.js?v=2026.10.28D';
   import { validSelectedDate } from './caregiver-submission.js';
   import { ANSWER_VERSION, optionalEngagement, optionalYesNo } from './caregiver-answer-quality.js?v=2026.10.20A';
-  import { ensureActiveGroupId } from './active-group.js?v=2026.10.29UVM2';
+  import { ensureActiveGroupId } from './active-group.js?v=2026.10.29UVM3';
 
   // 2) Optional: expose for console debugging
   window.rest = rest;

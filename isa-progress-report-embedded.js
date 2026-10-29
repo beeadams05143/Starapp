@@ -114,32 +114,28 @@ export function summarizeIsaMeasurement(metric) {
     const unit = String(answers[0].unit || metric.unit || '').trim();
     const suffix = unit ? ' ' + unit : '';
     const onePerDate = days === answers.length;
-    const countPhrase = onePerDate
-      ? (days === 1 ? 'one documented date' : days + ' documented dates')
-      : (answers.length + ' documented responses across ' + days + ' dates');
-    const perResponse = onePerDate ? 'per documented date' : 'per recorded response';
+    const frequency = onePerDate
+      ? (days + ' reported ' + (days === 1 ? 'date' : 'dates'))
+      : (answers.length + ' recorded responses across ' + days + ' dates');
+    const scope = onePerDate ? 'per reported date' : 'per recorded response';
     if (answers.length === 1) {
-      return label + ': ' + formatNumber(numbers[0]) + suffix + ' recorded on one documented date.';
+      return label + ': ' + formatNumber(numbers[0]) + suffix + ' recorded on one date.';
     }
     if (/^steps?$/i.test(unit)) {
-      // A number of steps is *not* a list of steps or proof of independent completion.
-      // Avoid an average that could imply meaningful progress when step identities
-      // and assistance have not been supplied in the ISA measurement itself.
-      return label + ': On ' + countPhrase + ', caregivers recorded between ' +
-        formatNumber(min) + ' and ' + formatNumber(max) +
-        ' steps completed ' + perResponse + '. ' +
-        'These counts alone do not identify which specific steps were completed.';
+      // The number does not identify the constituent actions. Do not turn a
+      // count of completed steps into an invented skills narrative.
+      return label + ': Across ' + frequency + ', caregivers recorded ' +
+        formatNumber(min) + ' to ' + formatNumber(max) + ' steps completed ' +
+        scope + '. The responses do not specify which steps were completed.';
     }
     if (/^(?:minutes?|hours?|seconds?)$/i.test(unit)) {
-      return label + ': On ' + countPhrase + ', caregivers documented ' +
-        formatNumber(min) + ' to ' + formatNumber(max) + suffix + ' ' +
-        perResponse + ', averaging ' + formatNumber(average) + suffix + ' ' +
-        perResponse + '. This is not a monthly average.';
+      return label + ': Across ' + frequency + ', documented time ranged from ' +
+        formatNumber(min) + ' to ' + formatNumber(max) + suffix + ' ' + scope +
+        ', averaging ' + formatNumber(average) + suffix + ' ' + scope + '.';
     }
-    return label + ': On ' + countPhrase + ', the recorded values ranged from ' +
-      formatNumber(min) + ' to ' + formatNumber(max) + suffix +
-      ' ' + perResponse + ' (average ' + formatNumber(average) + suffix +
-      ' ' + perResponse + ').';
+    return label + ': Across ' + frequency + ', the recorded values ranged from ' +
+      formatNumber(min) + ' to ' + formatNumber(max) + suffix + ' ' + scope +
+      ' (average ' + formatNumber(average) + suffix + ' ' + scope + ').';
   }
   const frequencies = new Map();
   for (const answer of answers) {

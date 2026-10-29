@@ -33,7 +33,7 @@ assert.equal(report.answerCount,5,'counts actual answers including 0, not blank'
 assert.equal(report.observationDays,2);
 assert.equal(report.outcomes.length,2,'other group and person omitted');
 assert.equal(report.outcomes.find(x=>x.id==='goal-2').status,'archived');
-assert.match(txt,/Number of prompts: 0 recorded on one recorded date/);
+assert.match(txt,/Number of prompts: 0 recorded on one documented date/);
 assert.match(txt,/Declined/);
 assert.match(txt,/Not offered/);
 assert.match(txt,/Not observed/);

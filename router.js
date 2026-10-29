@@ -1,5 +1,5 @@
-import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM2';
-import { readCachedOnboardingCompletion } from './onboarding-flow.js?v=2026.10.29UVM2';
+import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
+import { readCachedOnboardingCompletion } from './onboarding-flow.js?v=2026.10.29UVM3';
 
 export async function next() {
   const session = getSessionFromStorage();

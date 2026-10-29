@@ -1,7 +1,7 @@
 // ISA measurement questions are generated from administrator-owned outcome cards.
 // Keep them separate from physical health, medication and legacy check-in fields.
-import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.19B';
-import { ensureActiveGroupId } from './active-group.js?v=2026.10.07A';
+import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM2';
+import { ensureActiveGroupId } from './active-group.js?v=2026.10.29UVM2';
 
 const $ = id => document.getElementById(id);
 const el = (tag,cls,text) => {const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n;};

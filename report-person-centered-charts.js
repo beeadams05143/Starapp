@@ -37,13 +37,27 @@ export function buildIsaChartSeries(isaReport, goalId, measurementId) {
     categories:[...counts].map(([label,count])=>({label,count})),
     note:entries.length+' caregiver-recorded answers. Responses describe what was documented; they are not an ISA completion score.'};
 }
+export function chooseDefaultIsaChartMetric(metrics,report,requestedId=''){
+  if(!Array.isArray(metrics)||!metrics.length)return null;
+  const valid=metrics.find(option=>option.id===requestedId);
+  if(valid)return valid;
+  const ranked=metrics.map(option=>({
+    ...option,series:buildIsaChartSeries(report,option.goalId,option.measurementId)
+  }));
+  // Prefer a documented duration series; never default to undefined task steps.
+  return ranked.find(r=>r.series.kind==='numeric'&&/minutes?|hours?|seconds?/i.test(r.series.unit))||
+    ranked.find(r=>r.series.kind==='numeric'&&r.series.points.length)||
+    ranked.find(r=>r.series.kind==='categories'&&r.series.categories.length)||
+    ranked.find(r=>r.series.kind!=='undefined-steps'&&r.series.kind!=='empty')||
+    ranked[0];
+}
 export function buildChoiceSatisfactionData(checkins,scope={}){
   const groupId=String(scope.groupId||'');
   const individualId=scope.individualId==null?null:String(scope.individualId);
   const start=String(scope.start||''),end=String(scope.end||'');
   if(!groupId)throw Error('Select a STAR group.');
   if(start&&end&&start>end)throw Error('Start date must precede end date.');
-  const satisfaction=new Map(),choices=new Map(),seen=new Set(),notes=[];
+  const satisfaction=new Map(),choices=new Map(),activityRatings=new Map(),seen=new Set(),notes=[];
   let activitiesUnspecified=0,satisfactionTotal=0,choiceTotal=0;
   for(const row of Array.isArray(checkins)?checkins:[]){
     if(!row||String(row.group_id||'')!==groupId||
@@ -62,14 +76,23 @@ export function buildChoiceSatisfactionData(checkins,scope={}){
       satisfaction.set(value,(satisfaction.get(value)||0)+1);
       satisfactionTotal++;
       if(!words)activitiesUnspecified++;
+      // The exact optional "Which activity?" response is used, never extracted
+      // or guessed from a vague like/dislike answer.
+      const activity=words||'Activity not specified';
+      const rated=activityRatings.get(activity)||{activity,ratings:{},total:0};
+      rated.ratings[value]=(rated.ratings[value]||0)+1;
+      rated.total++;
+      activityRatings.set(activity,rated);
     }else{
       choices.set(value,(choices.get(value)||0)+1);
       choiceTotal++;
     }
-    if(notes.length<30)notes.push({date,type,value,words,offered:Array.isArray(row.offered_options)?row.offered_options.map(String):[]});
+    if(notes.length<500)notes.push({date,type,value,words,activity:words||'Activity not specified',
+      offered:Array.isArray(row.offered_options)?row.offered_options.map(String):[]});
   }
   return {satisfaction:[...satisfaction].map(([label,count])=>({label,count})),
     choices:[...choices].map(([label,count])=>({label,count})),
+    activityRatings:[...activityRatings.values()].sort((a,b)=>b.total-a.total||a.activity.localeCompare(b.activity)),
     satisfactionTotal,choiceTotal,activitiesUnspecified,
     notes:notes.sort((a,b)=>b.date.localeCompare(a.date))};
 }
@@ -77,6 +100,7 @@ export function buildChoiceSatisfactionData(checkins,scope={}){
 export function createPersonCenteredCharts({rest,document:doc=document,clock=()=>new Date()}){
   const $=id=>doc.getElementById(id),graphs={isa:null,satisfaction:null,choices:null};
   let groupId='',caregiverEntries=[],cards=[],checkins=[],loadVersion=0,loadError='';
+  let requestedMetricId='';
   let wasLoaded=false;
   const dateKey=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
   const values=()=>{
@@ -112,25 +136,103 @@ export function createPersonCenteredCharts({rest,document:doc=document,clock=()=
     }
     throw Error('The chart dataset is too large to load completely. Choose a narrower period.');
   }
+  function chartArea(canvas,show){
+    const host=canvas?.parentElement;
+    if(host)host.hidden=!show;
+    if(canvas)canvas.hidden=!show;
+  }
   function drawBars(id,key,rows,caption){
     const canvas=$(id);
     if(!canvas)return;
     graphs[key]?.destroy();graphs[key]=null;
-    if(!rows.length){canvas.hidden=true;return;}
-    canvas.hidden=false;
+    if(!rows.length){chartArea(canvas,false);return;}
+    chartArea(canvas,true);
     if(typeof Chart==='undefined')throw Error('Chart library unavailable on this device.');
     graphs[key]=new Chart(canvas,{
       type:'bar',data:{
         labels:rows.map(r=>r.label),
         datasets:[{label:caption,data:rows.map(r=>r.count),
-          backgroundColor:['#946c40','#5b8c89','#b48656','#9a87af','#7f8998','#b07967'],
-          borderRadius:6,maxBarThickness:58}]
+          backgroundColor:'#5b8c89',borderRadius:6,maxBarThickness:32}]
       },options:{
-        responsive:true,maintainAspectRatio:false,
+        indexAxis:'y',responsive:true,maintainAspectRatio:false,
         plugins:{legend:{display:false},datalabels:{display:false},
-          tooltip:{callbacks:{label:ctx=>ctx.parsed.y+' recorded response(s)'}}},
-        scales:{y:{beginAtZero:true,ticks:{precision:0},title:{display:true,text:'Recorded responses'}},
-          x:{ticks:{autoSkip:false,maxRotation:30,font:{size:11}}}}
+          tooltip:{callbacks:{label:ctx=>ctx.parsed.x+' recorded choice(s)'}}},
+        scales:{x:{beginAtZero:true,ticks:{precision:0},title:{display:true,text:'Recorded choices'}},
+          y:{ticks:{autoSkip:false,font:{size:11}}}}
+      }
+    });
+  }
+  function drawActivitySatisfaction(feedback){
+    const canvas=$('pcSatisfactionChart');
+    if(!canvas)return;
+    graphs.satisfaction?.destroy();graphs.satisfaction=null;
+    const records=feedback.activityRatings||[];
+    const shown=records.slice(0,8);
+    chartArea(canvas,shown.length>0);
+    const wrapper=canvas.parentElement;
+    if(wrapper&&shown.length)wrapper.style.height=Math.max(180,Math.min(500,65*shown.length+65))+'px';
+    // Separate dated, exact activity names stay readable even on narrow phones.
+    const list=$('pcActivityFeedbackList');
+    if(list){
+      list.replaceChildren();
+      const entries=feedback.notes.filter(n=>n.type==='daily_experience').slice(0,8);
+      for(const record of entries){
+        const item=doc.createElement('li');
+        const activity=doc.createElement('strong');
+        activity.textContent=record.activity;
+        const detail=doc.createElement('span');
+        detail.textContent=' — '+record.value+' · '+record.date;
+        item.append(activity,detail);
+        list.append(item);
+      }
+      if(feedback.satisfactionTotal>entries.length){
+        const more=doc.createElement('li');
+        more.textContent=(feedback.satisfactionTotal-entries.length)+' additional responses are available in Individual Voice.';
+        list.append(more);
+      }
+      if(!entries.length){
+        const empty=doc.createElement('li');
+        empty.textContent='No activity feedback recorded for these dates.';
+        list.append(empty);
+      }
+    }
+    if(!shown.length)return;
+    if(typeof Chart==='undefined')throw Error('Chart library unavailable on this device.');
+    const ratings=[...new Set(shown.flatMap(row=>Object.keys(row.ratings)))];
+    const priorities=['Liked it','Okay','Did not like','No activity','Not today'];
+    ratings.sort((a,b)=>{
+      const aIndex=priorities.indexOf(a),bIndex=priorities.indexOf(b);
+      return (aIndex<0?999:aIndex)-(bIndex<0?999:bIndex)||a.localeCompare(b);
+    });
+    const colors={
+      'Liked it':'#5b8c89','Okay':'#b48656','Did not like':'#af6770',
+      'No activity':'#7f8998','Not today':'#7f8998'
+    };
+    graphs.satisfaction=new Chart(canvas,{
+      type:'bar',data:{
+        labels:shown.map(row=>row.activity),
+        datasets:ratings.map((rating,index)=>({
+          label:rating,data:shown.map(row=>row.ratings[rating]||0),
+          backgroundColor:colors[rating]||['#946c40','#9a87af','#b07967'][index%3],
+          maxBarThickness:35
+        }))
+      },options:{
+        indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        plugins:{
+          legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}},
+          datalabels:{display:false},
+          tooltip:{callbacks:{
+            title:items=>shown[items[0]?.dataIndex]?.activity||'Activity not specified',
+            label:item=>item.dataset.label+': '+item.parsed.x+' response(s)'
+          }}
+        },
+        scales:{
+          x:{stacked:true,beginAtZero:true,ticks:{precision:0},
+            title:{display:true,text:'Recorded satisfaction answers'}},
+          y:{stacked:true,ticks:{autoSkip:false,font:{size:11},
+            callback:function(value){const full=this.getLabelForValue(value);
+              return full.length>23?full.slice(0,22)+'…':full;}}}
+        }
       }
     });
   }
@@ -141,18 +243,19 @@ export function createPersonCenteredCharts({rest,document:doc=document,clock=()=
     const setState=message=>{if(status)status.textContent=message};
     if(!canvas)return;
     if(series.kind==='empty'||series.kind==='undefined-steps'){
-      canvas.hidden=true;setState(series.reason);if(note)note.textContent='';
+      chartArea(canvas,false);
+      setState(series.reason);
+      if(note)note.textContent='';
       return;
     }
     if(series.kind==='categories'){
-      canvas.hidden=true;
       // Use the same chart canvas for categories while making the chart type clear.
       drawBars('pcIsaChart','isa',series.categories,'Recorded responses');
       setState(series.label+' — recorded answer breakdown (not scored progress).');
       if(note)note.textContent=series.note;
       return;
     }
-    canvas.hidden=false;
+    chartArea(canvas,true);
     if(typeof Chart==='undefined')throw Error('Chart library unavailable on this device.');
     const labels=series.points.map(p=>{
       const d=new Date(p.date+'T12:00:00');
@@ -202,30 +305,23 @@ export function createPersonCenteredCharts({rest,document:doc=document,clock=()=
     try{
       const report=buildIsaProgress(caregiverEntries,cards,{groupId,individualId:'',...range});
       const metrics=listMetrics(report),select=$('pcIsaGraphMeasure');
-      const prior=select?.value;
+      const chosen=chooseDefaultIsaChartMetric(metrics,report,requestedMetricId);
       if(select){
         select.replaceChildren();
         for(const option of metrics){
           const el=doc.createElement('option');el.value=option.id;el.textContent=option.label;select.append(el);
         }
-        if(metrics.some(x=>x.id===prior))select.value=prior;
-        // Prefer a meaningful duration measurement over undefined "steps".
-        else if(metrics.length){
-          const best=metrics.find(x=>x.id.toLowerCase().includes('duration'))||
-            metrics.find(x=>x.label.toLowerCase().includes('minutes'))||metrics[0];
-          select.value=best.id;
-        }
+        if(chosen)select.value=chosen.id;
       }
       if(!metrics.length)drawISA({kind:'empty',reason:'No ISA measurements found for this group.'});
       else{
-        const selected=metrics.find(x=>x.id===select?.value)||metrics[0];
-        drawISA(buildIsaChartSeries(report,selected.goalId,selected.measurementId));
+        drawISA(buildIsaChartSeries(report,chosen.goalId,chosen.measurementId));
       }
       const feedback=buildChoiceSatisfactionData(checkins,{groupId,individualId:'',...range});
-      drawBars('pcSatisfactionChart','satisfaction',feedback.satisfaction,'Recorded activity ratings');
+      drawActivitySatisfaction(feedback);
       drawBars('pcLeisureChart','choices',feedback.choices,'Expressed choices');
       if($('pcSatisfactionStatus'))$('pcSatisfactionStatus').textContent=feedback.satisfactionTotal
-        ? feedback.satisfactionTotal+' optional activity feedback answer(s).'
+        ? feedback.satisfactionTotal+' optional satisfaction answer(s), shown by the activity exactly as entered. A rating is the individual’s opinion, not a goal score.'
         : 'No activity satisfaction answers for this date range.';
       if($('pcLeisureStatus'))$('pcLeisureStatus').textContent=feedback.choiceTotal
         ? feedback.choiceTotal+' voluntary leisure choice(s). Choosing does not mean an activity took place.'
@@ -242,7 +338,7 @@ export function createPersonCenteredCharts({rest,document:doc=document,clock=()=
   async function refresh(group,entries){
     const current=++loadVersion;
     groupId=String(group||'');caregiverEntries=Array.isArray(entries)?entries:[];
-    cards=[];checkins=[];wasLoaded=false;clearCharts();
+    cards=[];checkins=[];requestedMetricId='';wasLoaded=false;clearCharts();
     const overall=$('pcGraphStatus');
     if(!groupId){if(overall)overall.textContent='Choose a STAR Test group to see charts.';return;}
     if(overall)overall.textContent='Loading ISA and Individual Voice chart data…';
@@ -270,7 +366,7 @@ export function createPersonCenteredCharts({rest,document:doc=document,clock=()=
   for(const id of ['pcGraphStart','pcGraphEnd'])
     $(id)?.addEventListener('change',()=>{setRangeState();redraw();});
   $('pcIsaGraphMeasure')?.addEventListener('change',()=>{
-    // The existing goal selection must remain in place on redraw.
+    requestedMetricId=$('pcIsaGraphMeasure').value;
     redraw();
   });
   doc.getElementById('reportViewNav')?.addEventListener('star-report-view-changed',event=>{

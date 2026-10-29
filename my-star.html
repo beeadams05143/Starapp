@@ -117,7 +117,7 @@
     <button class="small-btn" id="hearBtn" type="button" aria-pressed="false" aria-label="Turn reading aloud on or off">🔇 Read Aloud: OFF</button>
     <button class="small-btn" id="micSetupBtn" type="button" aria-label="Set up microphone with a support person">🎤 Mic Setup</button>
   </div>
-  <div class="notice preview-notice">STAR TEST — Fictional “Something I Did” answers can be saved for caregiver review. Other My STAR pages are previews. No alerts or ISA progress are created.</div>
+  <div class="notice preview-notice">STAR TEST — Fictional “Something I Did” answers can be saved for caregiver review. Optional individual check-ins and “Something I Did” can be saved here. No emergency alerts or automatic ISA progress are created.</div>
   <section id="screen" aria-live="polite"></section>
   <p class="footer-note">My STAR is voluntary. The person can stop, skip or ask for help at any time. This is not an emergency response service.</p>
 </main>
@@ -389,7 +389,7 @@
     })[wyr.stage]||readText.rather;
   }
   function wyStopTimer(){if(wyrTimer){clearInterval(wyrTimer);wyrTimer=null}}
-  function wyReset(){wyStopTimer();supported=false;wyr={stage:'where',where:'',withWho:'',people:'',category:'',choice:'',elapsed:0,startAt:0,mood:'',offered:[],offset:0}}
+  function wyReset(){wyStopTimer();supported=false;wyr={stage:'where',where:'',withWho:'',people:'',category:'',choice:'',elapsed:0,startAt:0,mood:'',offered:[],lastOffered:[],offset:0}}
   function wyExtras(){
     return '<div class="actions">'+button('Neither','wyr-neither')+button('Something else','wyr-other')+button('Not now','skip')+'</div>';
   }
@@ -410,11 +410,11 @@
     }else if(stage==='sub'){
       items=wySub[wyr.category]||[];html='<p class="progress-label">4 · Which activity?</p><p>Choose what you would like.</p>'+wyCards(items.slice(wyr.offset,wyr.offset+2))+'<div class="actions">'+(wyr.offset>0?button('Previous choices','wyr-prev'):'')+(wyr.offset+2<items.length?button('More choices','wyr-more','primary'):'')+'</div>'+wyExtras();
     }else if(stage==='summary'){
-      html='<p>Would you like to try this?</p>'+wySummary()+'<div class="actions">'+button('Start activity timer','wyr-start','primary')+button('Just choosing','wyr-chosen')+button('Change my choice','wyr-restart')+button('Not now','skip')+'</div>'+support()+'<p style="font-size:14px">TEST ONLY. This is a preference, not proof the activity happened. No records are saved.</p>';
+      html='<p>Would you like to try this?</p>'+wySummary()+'<div class="actions">'+button('Start activity timer','wyr-start','primary')+button('Just choosing','wyr-chosen')+button('Change my choice','wyr-restart')+button('Not now','skip')+'</div>'+support()+'<p style="font-size:14px">TEST ONLY. Your choice is saved if you tap Just choosing. Choosing is not proof an activity happened.</p>';
     }else if(stage==='timer'){
       html=wySummary()+'<h2 id="wyrClock" role="timer" style="text-align:center;font-size:46px">'+formatWyTime(wyr.elapsed)+'</h2><p>Enjoy the activity. Stop when you want.</p><div class="actions">'+button('Stop timer','wyr-stop','primary')+'</div>';
     }else if(stage==='finish'){
-      items=['I liked it','It was okay','I did not like it'];html=wySummary()+'<p>How did you like it?</p>'+wyCards(items)+'<div class="actions">'+button('Done','wyr-finish','primary')+button('Not now','skip')+'</div><p style="font-size:14px">TEST ONLY. Nothing is saved or sent to a caregiver.</p>';
+      items=['I liked it','It was okay','I did not like it'];html=wySummary()+'<p>How did you like it?</p>'+wyCards(items)+'<div class="actions">'+button('Done','wyr-finish','primary')+button('Not now','skip')+'</div><p style="font-size:14px">TEST ONLY. You can save the chosen activity preference when you tap Done.</p>';
     }else if(stage==='declined'){
       html='<p>That is okay. You do not have to choose anything.</p><div class="actions">'+button('Try again','wyr-restart','primary')+button('Back to My STAR','skip')+'</div>';
     }
@@ -429,9 +429,9 @@
     else if(wyr.stage==='withWho'){
       wyr.withWho=answer;wyr.offset=0;wyr.stage=answer==='Just Me'?'category':'people';
     }else if(wyr.stage==='category'){
-      wyr.category=answer;wyr.offset=0;wyr.stage=wySub[answer]?'sub':'summary';
-    }else if(wyr.stage==='sub'){wyr.choice=answer;wyr.stage='summary'}
-    else if(wyr.stage==='finish'){wyr.mood=answer;status('You chose: '+answer+'. TEST ONLY: Not saved.');speak(answer);return}
+      wyr.lastOffered=wyr.offered.slice();wyr.category=answer;wyr.offset=0;wyr.stage=wySub[answer]?'sub':'summary';
+    }else if(wyr.stage==='sub'){wyr.lastOffered=wyr.offered.slice();wyr.choice=answer;wyr.stage='summary'}
+    else if(wyr.stage==='finish'){wyr.mood=answer;status('You chose: '+answer+'. Tap Done to save the preference.');speak(answer);return}
     renderWouldRather();speak(wyPrompt());
   }
 
@@ -488,7 +488,28 @@
     el.setAttribute('aria-pressed','true');el.classList.add('selected');
     speak(value==='Something hurts'?'Something hurts':value);
     var location=document.getElementById('painLocation');if(location)location.textContent='You chose: '+value;
-    if(current!=='goals')status('You chose: '+value+'. This is only a preview and is not saved.');
+    if(current!=='goals')status('You chose: '+value+'. Tap Done to save it, or Not now to skip.');
+  }
+  function supportDescription(){
+    return document.getElementById('withSupport')?.checked
+      ? (document.getElementById('supportKind')?.value||'Help reported') : 'not_reported';
+  }
+  function savePersonalCheckin(btn,responseType,responseValue,offeredOptions){
+    if(!String(responseValue||'').trim()){status('Nothing is required. Choose an answer or select Not now.');return}
+    btn.disabled=true;btn.textContent='Saving…';
+    status('Saving this fictional My STAR answer…');
+    import('./my-star-checkin-test.js?v=2026.10.29A')
+      .then(function(mod){
+        return mod.saveFictionalMyStarCheckin({
+          responseType:responseType,responseValue:responseValue,
+          offeredOptions:offeredOptions||[],supportKind:supportDescription()
+        })
+      })
+      .then(function(){showSilentStars()})
+      .catch(function(err){
+        btn.disabled=false;btn.textContent='Done';
+        status('Not saved. '+(err?.message||'Please try again.')+' Your choice is still selected.');
+      });
   }
   screen.addEventListener('click',function(e){
     var dictate=e.target.closest('[data-dictate]');
@@ -509,12 +530,12 @@
     if(action==='wyr-restart'){wyReset();renderWouldRather();speak(wyPrompt());return}
     if(action==='wyr-more'){wyr.offset+=2;renderWouldRather();speak(wyPrompt());return}
     if(action==='wyr-prev'){wyr.offset=Math.max(0,wyr.offset-2);renderWouldRather();speak(wyPrompt());return}
-    if(action==='wyr-neither'){wyStopTimer();wyr.stage='declined';renderWouldRather();speak(wyPrompt());return}
-    if(action==='wyr-other'){var other=prompt('What would you rather do? (optional)');if(other&&other.trim()){wyr.category='Something else';wyr.choice=other.trim().slice(0,160);wyr.stage='summary';renderWouldRather();speak(wyPrompt())}return}
-    if(action==='wyr-chosen'){var withSupport=document.getElementById('withSupport')?.checked;var method=withSupport?(' · Supported: '+document.getElementById('supportKind').value):' · Chosen independently';status('Your choice: '+[wyr.where,wyr.withWho,wyr.people,wyr.choice||wyr.category].filter(Boolean).join(' · ')+method+'. TEST ONLY: nothing was saved.');speak('Thank you for choosing.');return}
+    if(action==='wyr-neither'){var offered=wyr.offered.slice();wyStopTimer();savePersonalCheckin(a,'leisure_preference','Neither',offered);return}
+    if(action==='wyr-other'){var other=prompt('What would you rather do? (optional)');if(other&&other.trim()){wyr.lastOffered=wyr.offered.slice();wyr.category='Something else';wyr.choice=other.trim().slice(0,160);wyr.stage='summary';renderWouldRather();speak(wyPrompt())}return}
+    if(action==='wyr-chosen'){savePersonalCheckin(a,'leisure_preference',wyr.choice||wyr.category,wyr.lastOffered);return}
     if(action==='wyr-start'){wyr.elapsed=0;wyr.startAt=Date.now();wyr.stage='timer';renderWouldRather();wyStopTimer();wyrTimer=setInterval(function(){wyr.elapsed=Math.floor((Date.now()-wyr.startAt)/1000);var clock=document.getElementById('wyrClock');if(clock)clock.textContent=formatWyTime(wyr.elapsed)},1000);speak('Activity started. Stop when you are ready.');return}
     if(action==='wyr-stop'){wyStopTimer();wyr.stage='finish';renderWouldRather();speak(wyPrompt());return}
-    if(action==='wyr-finish'){status('Thank you for sharing'+(wyr.mood?': '+wyr.mood:'')+'. TEST ONLY: not saved or sent.');speak('Thank you for sharing.');return}
+    if(action==='wyr-finish'){savePersonalCheckin(a,'leisure_preference',wyr.choice||wyr.category,wyr.lastOffered);return}
     if(action==='open-voice'){render('voice');return}
     if(action==='open-chat'){render('chat');return}
     if(action==='hear-message'){var message=document.getElementById('myMessage');speak(message?.value||'No message entered');return}
@@ -546,7 +567,11 @@
           });
         return;
       }
-      // Other optional screens are still preview-only, with no misleading saved status.
+      if(current==='feel'||current==='pain'||current==='day'){
+        savePersonalCheckin(a,current==='feel'?'mood':current==='pain'?'comfort':'daily_experience',chosen,[]);
+        return;
+      }
+      // Team messaging remains a separate preview, never silently saved.
       stopDictation();window.speechSynthesis?.cancel();render('home');return;
     }
   });

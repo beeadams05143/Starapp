@@ -2,13 +2,13 @@
 import {
   rest,
   getSessionFromStorage,
-} from './restClient.js?v=2026.10.29UVM2';
+} from './restClient.js?v=2026.10.29UVM3';
 import {
   SUPABASE_URL,
   SUPABASE_ANON_KEY,
   clearSavedSession,
-} from './supabaseClient.js?v=2026.10.29UVM2';
-import { resolveActiveGroup } from './active-group.js?v=2026.10.29UVM2';
+} from './supabaseClient.js?v=2026.10.29UVM3';
+import { resolveActiveGroup } from './active-group.js?v=2026.10.29UVM3';
 
 const GROUP_KEY = 'currentGroupId';
 

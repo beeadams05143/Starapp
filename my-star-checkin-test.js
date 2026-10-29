@@ -1,7 +1,7 @@
 // UVM-only: voluntary fictional My STAR responses. This file is never used by STAR Live.
-import {rest,getSessionFromStorage} from './restClient.js?v=2026.10.28UVM2';
-import {ensureActiveGroupId} from './active-group.js?v=2026.10.28UVM2';
-import {SUPABASE_URL} from './supabaseClient.js?v=2026.10.28UVM2';
+import {rest,getSessionFromStorage} from './restClient.js?v=2026.10.29UVM3';
+import {ensureActiveGroupId} from './active-group.js?v=2026.10.29UVM3';
+import {SUPABASE_URL} from './supabaseClient.js?v=2026.10.29UVM3';
 
 export function isStarTestEnvironment(url,hostname) {
   return url === 'https://rjozzwmkvlndanoaghtc.supabase.co' &&

@@ -399,6 +399,40 @@
     #exportRangeOverlay .cg-note-drawer{width:min(480px,95vw)}
     #exportRangeOverlay .cg-edit-grid{margin-top:4px}
 
+
+    /* Compact report hub: only the chosen topic is visible on screen.
+       Do not affect the complete export, print, or check-in quick-look modes. */
+    .report-view-nav{background:#fffdf8;border:1px solid #ead7ab;border-radius:18px;padding:13px;margin:4px 0 18px;box-shadow:0 6px 18px rgba(125,89,34,.05)}
+    .report-view-label{font-size:15px;font-weight:750;margin:0 0 9px;color:#724016}
+    .report-view-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+    .report-view-options button{min-width:0;min-height:46px;border-radius:12px;padding:8px 10px;font-size:14px;font-weight:700;line-height:1.3;white-space:normal}
+    .report-view-options button[aria-pressed="true"]{background:#724016;color:white;border-color:#724016}
+    .report-view-options button:focus-visible{outline:3px solid #d68a2a;outline-offset:2px}
+    .report-view-description{font-size:13px;line-height:1.4;color:#5f5e5a;margin:9px 0 0}
+    @media(max-width:620px){.report-view-options{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    .report-custom-dates{display:flex;flex:1 1 260px;gap:8px;flex-wrap:wrap}
+    .report-custom-dates[hidden]{display:none!important}
+    .report-custom-dates label{flex:1 1 120px}
+    .report-custom-dates input{display:block;width:100%;min-height:42px;box-sizing:border-box}
+    .report-range-note{font-size:13px;font-weight:650;color:#65543c;margin:6px 0 10px}
+    body:not(.print-export):not(.quick-look-mode)[data-report-view="letter"] main.page > [data-print-section="Caregiver Overview"],
+    body:not(.print-export):not(.quick-look-mode)[data-report-view="letter"] main.page > [data-print-section="Daily Mood & Calendar"],
+    body:not(.print-export):not(.quick-look-mode)[data-report-view="isa"] main.page > [data-print-section="Daily Mood & Calendar"],
+    body:not(.print-export):not(.quick-look-mode)[data-report-view="individual"] main.page > [data-print-section="Daily Mood & Calendar"],
+    body:not(.print-export):not(.quick-look-mode)[data-report-view="checkins"] main.page > [data-print-section="Daily Mood & Calendar"],
+    body:not(.print-export):not(.quick-look-mode)[data-report-view="calendar"] main.page > [data-print-section="Caregiver Overview"],
+    body:not(.print-export):not(.quick-look-mode)[data-report-view="charts"] main.page > [data-print-section="Caregiver Overview"]{display:none!important}
+    body:not(.print-export):not(.quick-look-mode)[data-report-view="isa"] #chart-stack,
+    body:not(.print-export):not(.quick-look-mode)[data-report-view="individual"] #chart-stack,
+    body:not(.print-export):not(.quick-look-mode)[data-report-view="checkins"] #chart-stack,
+    body:not(.print-export):not(.quick-look-mode)[data-report-view="calendar"] #chart-stack{display:none!important}
+    body:not(.print-export):not(.quick-look-mode)[data-report-view="letter"] #chart-stack > :not(#parentLetterCard),
+    body:not(.print-export):not(.quick-look-mode)[data-report-view="charts"] #chart-stack > #parentLetterCard{display:none!important}
+    body:not(.print-export):not(.quick-look-mode)[data-report-view="isa"] main.page > [data-print-section="Caregiver Overview"] > :not(#isaProgressPanel),
+    body:not(.print-export):not(.quick-look-mode)[data-report-view="individual"] main.page > [data-print-section="Caregiver Overview"] > :not(#individualVoicePanel),
+    body:not(.print-export):not(.quick-look-mode)[data-report-view="checkins"] main.page > [data-print-section="Caregiver Overview"] > :not(#cg-panel):not(#services-summary-panel):not(#weekly-averages-panel){display:none!important}
+    @media print{.report-view-nav{display:none!important}}
+
     #chart-stack{display:flex;flex-direction:column;gap:16px}
     .chart-range-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:10px 12px}
     .chart-range-controls label{font-weight:700}
@@ -1091,12 +1125,20 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
       <h1>Reports</h1>
     </div>
   </header>
-  <div class="top-actions no-export" style="display:flex;gap:8px;justify-content:center;margin:8px 0 14px;">
-    <button id="fullPrintBtn">🖨️ Print Caregiver Check-ins</button>
-  </div>
-
   <main class="page">
-    <h1>Reports</h1>
+    <nav id="reportViewNav" class="report-view-nav no-export" aria-label="Choose which reports to view">
+      <p class="report-view-label">What would you like to view?</p>
+      <div class="report-view-options">
+        <button type="button" data-report-view-button="letter" aria-pressed="true">📄 Letters</button>
+        <button type="button" data-report-view-button="isa" aria-pressed="false">⭐ ISA Goals</button>
+        <button type="button" data-report-view-button="individual" aria-pressed="false">🗣️ Individual Voice</button>
+        <button type="button" data-report-view-button="checkins" aria-pressed="false">📝 Check-ins</button>
+        <button type="button" data-report-view-button="calendar" aria-pressed="false">🗓️ Health Calendar</button>
+        <button type="button" data-report-view-button="charts" aria-pressed="false">📊 More Charts</button>
+      </div>
+      <p id="reportViewDescription" class="report-view-description" role="status">Generate, copy, or print a focused provider letter.</p>
+    </nav>
+
     <div class="no-export" aria-hidden="true" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0">
       <input type="date" id="servicesSummaryStart">
       <input type="date" id="servicesSummaryEnd">
@@ -1193,11 +1235,14 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
             <option value="custom">Custom dates</option>
           </select>
         </label>
-        <label style="flex:1 1 130px">From <input id="isaProgressStart" type="date" style="display:block;width:100%;min-height:42px"></label>
-        <label style="flex:1 1 130px">Through <input id="isaProgressEnd" type="date" style="display:block;width:100%;min-height:42px"></label>
+        <div class="report-custom-dates" id="isaCustomDates" hidden>
+          <label>From <input id="isaProgressStart" type="date"></label>
+          <label>Through <input id="isaProgressEnd" type="date"></label>
+        </div>
         <button type="button" id="isaProgressCopy" disabled>Copy Summary</button>
         <button type="button" id="isaProgressPrint" disabled>Print ISA</button>
       </div>
+      <p class="report-range-note" id="isaPeriodSummary">Showing this month</p>
       <p class="muted" id="isaProgressStatus" role="status">Loading ISA progress…</p>
       <div id="isaProgressList"></div>
     </section>
@@ -1211,16 +1256,22 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
             <option value="custom">Custom dates</option>
           </select>
         </label>
-        <label style="flex:1 1 130px">From <input id="individualVoiceStart" type="date" style="display:block;width:100%;min-height:42px"></label>
-        <label style="flex:1 1 130px">Through <input id="individualVoiceEnd" type="date" style="display:block;width:100%;min-height:42px"></label>
+        <div class="report-custom-dates" id="individualVoiceCustomDates" hidden>
+          <label>From <input id="individualVoiceStart" type="date"></label>
+          <label>Through <input id="individualVoiceEnd" type="date"></label>
+        </div>
         <button type="button" id="individualVoiceCopy" disabled>Copy Individual Voice</button>
       </div>
+      <p class="report-range-note" id="individualVoicePeriodSummary">Showing this month</p>
       <p class="muted" id="individualVoiceStatus" role="status">Loading fictional Individual Voice records…</p>
       <div id="individualVoiceList"></div>
     </section>
     <section class="panel" id="cg-panel">
       <span id="caregiver-checkins" aria-hidden="true"></span>
       <h2>Caregiver Check-Ins</h2>
+      <div class="top-actions no-export" style="display:flex;gap:8px;justify-content:center;margin:8px 0 14px">
+        <button id="fullPrintBtn" type="button">🖨️ Print Caregiver Check-ins</button>
+      </div>
 
       <div id="cgQuickLook" class="quick-look is-hidden" role="region" aria-live="polite">
         <div class="quick-look-head">
@@ -9049,5 +9100,6 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinFor
   })();
 })();
 </script>
+<script defer src="./report-view-navigation.js?v=2026.10.29R1"></script>
 </body>
 </html>

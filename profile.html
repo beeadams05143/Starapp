@@ -452,6 +452,11 @@
         .filter(g => g?.id && !g?.archived);
     } catch (err) {
       console.warn('[PROFILE] groups fetch failed', err);
+      groupSelectEl.innerHTML = '<option value="">Unable to load groups — sign in again</option>';
+      showMessage('Group lookup failed. Your existing group has NOT been removed. Sign in again to reconnect.', false);
+      const retry = document.createElement('a'); retry.href='auth.html?reauth=1'; retry.textContent='Sign in again';
+      profileMessage?.append(document.createElement('br'),retry);
+      throw err;
     }
 
     if (!groups.length) {
@@ -502,7 +507,9 @@
       }
     } catch (err) {
       console.error('[PROFILE] fetchProfile failed', err);
-      showMessage('Could not load profile. Try again shortly.', false);
+      showMessage('Could not load your profile. Your saved group is still in STAR. Sign in again if needed.', false);
+      const retry = document.createElement('a'); retry.href='auth.html?reauth=1'; retry.textContent='Sign in again';
+      profileMessage?.append(document.createElement('br'),retry);
     }
   }
 
@@ -546,6 +553,10 @@
 
     const displayName = (displayNameEl.value || '').trim() || currentUser.email;
     const selectedGroupId = groupSelectEl.value || null;
+    if (!selectedGroupId || groupSelectEl.disabled) {
+      showMessage('The group list has not loaded. Please sign in again rather than saving an empty group.', false);
+      return;
+    }
 
     showMessage('Saving…', true);
     saveBtn.disabled = true;

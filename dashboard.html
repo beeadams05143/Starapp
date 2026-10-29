@@ -387,16 +387,16 @@
   </main>
 
 <!-- Page logic that populates #user-email etc. -->
-<script type="module" src="./script.js?v=2026.10.29UVM2"></script>
+<script type="module" src="./script.js?v=2026.10.29UVM3"></script>
 <script type="module" src="./avatar-float.js?v=2026.03.29A"></script>
-<script type="module" src="./home-activity.js?v=2026.10.29UVM2"></script>
+<script type="module" src="./home-activity.js?v=2026.10.29UVM3"></script>
 <script type="module" src="./dashboard-clock.js?v=2026.10.20A"></script>
 
 <script type="module">
   import {
     getSessionFromStorage,
-  } from './supabaseClient.js?v=2026.10.29UVM2';
-  import { fetchCurrentProfile } from './onboarding-flow.js?v=2026.10.29UVM2';
+  } from './supabaseClient.js?v=2026.10.29UVM3';
+  import { fetchCurrentProfile } from './onboarding-flow.js?v=2026.10.29UVM3';
 
   const userEmailEl = document.getElementById('user-email');
 
@@ -426,8 +426,8 @@
 
 <!-- Counts only drafts belonging to the signed-in caregiver in the active group, on this device. -->
 <script type="module">
-  import { getSessionFromStorage } from './restClient.js?v=2026.10.29UVM2';
-  import { ensureActiveGroupId } from './active-group.js?v=2026.10.29UVM2';
+  import { getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
+  import { ensureActiveGroupId } from './active-group.js?v=2026.10.29UVM3';
   import { getSavedDraftCount } from './home-saved-drafts.js?v=2026.10.28D';
 
   const badge = document.getElementById('savedDraftCount');
@@ -462,8 +462,8 @@
 
 <script type="module">
   // UI shortcut only; all review permissions remain enforced by Supabase RLS.
-  import { getSessionFromStorage, rest } from './restClient.js?v=2026.10.29UVM2';
-  import { ensureActiveGroupId } from './active-group.js?v=2026.10.29UVM2';
+  import { getSessionFromStorage, rest } from './restClient.js?v=2026.10.29UVM3';
+  import { ensureActiveGroupId } from './active-group.js?v=2026.10.29UVM3';
   const counter=document.getElementById('starReviewCount');
   (async()=>{
     const userId=getSessionFromStorage()?.user?.id;

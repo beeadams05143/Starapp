@@ -1181,6 +1181,43 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
         </div>
       </div>
     </section>
+    <section class="panel" id="isaProgressPanel" aria-labelledby="isaProgressHeading">
+      <h2 id="isaProgressHeading">⭐ ISA Outcome Progress</h2>
+      <p class="muted">Evidence from saved caregiver check-ins, organized by the original ISA outcome cards. No automatic progress or success ratings.</p>
+      <div class="no-export" style="display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin:12px 0">
+        <label style="flex:1 1 160px">Time period
+          <select id="isaProgressPeriod" style="display:block;width:100%;min-height:42px">
+            <option value="month">This month</option>
+            <option value="quarter">Last 3 months</option>
+            <option value="all">All dates</option>
+            <option value="custom">Custom dates</option>
+          </select>
+        </label>
+        <label style="flex:1 1 130px">From <input id="isaProgressStart" type="date" style="display:block;width:100%;min-height:42px"></label>
+        <label style="flex:1 1 130px">Through <input id="isaProgressEnd" type="date" style="display:block;width:100%;min-height:42px"></label>
+        <button type="button" id="isaProgressCopy" disabled>Copy Summary</button>
+        <button type="button" id="isaProgressPrint" disabled>Print ISA</button>
+      </div>
+      <p class="muted" id="isaProgressStatus" role="status">Loading ISA progress…</p>
+      <div id="isaProgressList"></div>
+    </section>
+    <section class="panel" id="individualVoicePanel" aria-labelledby="individualVoiceHeading">
+      <h2 id="individualVoiceHeading">🗣️ My STAR — Individual Voice</h2>
+      <p class="muted">Fictional UVM TEST data: the individual's own optional answers, picture choices, and shared accomplishments. These are not caregiver observations or automatically scored ISA progress.</p>
+      <div class="no-export" style="display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin:12px 0">
+        <label style="flex:1 1 165px">Time period
+          <select id="individualVoicePeriod" style="display:block;width:100%;min-height:42px">
+            <option value="month">This month</option><option value="all">All dates</option>
+            <option value="custom">Custom dates</option>
+          </select>
+        </label>
+        <label style="flex:1 1 130px">From <input id="individualVoiceStart" type="date" style="display:block;width:100%;min-height:42px"></label>
+        <label style="flex:1 1 130px">Through <input id="individualVoiceEnd" type="date" style="display:block;width:100%;min-height:42px"></label>
+        <button type="button" id="individualVoiceCopy" disabled>Copy Individual Voice</button>
+      </div>
+      <p class="muted" id="individualVoiceStatus" role="status">Loading fictional Individual Voice records…</p>
+      <div id="individualVoiceList"></div>
+    </section>
     <section class="panel" id="cg-panel">
       <span id="caregiver-checkins" aria-hidden="true"></span>
       <h2>Caregiver Check-Ins</h2>
@@ -1571,6 +1608,15 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
           <button id="parentLetterPrint" class="btn" style="font-size:13px">🖨️ Print Letter</button>
         </div>
       </div>
+      <label style="display:block;margin:12px 0;max-width:380px">Letter topic
+        <select id="providerLetterTopic" style="display:block;width:100%;min-height:44px;margin-top:5px">
+          <option value="caregiver">Caregiver Overview (health & activities)</option>
+          <option value="isa">ISA Outcome Progress</option>
+          <option value="individual">My STAR · Individual Voice (fictional test data)</option>
+          <option value="combined">Caregiver Overview + ISA Progress</option>
+          <option value="all">All three topics (longer letter)</option>
+        </select>
+      </label>
       <div class="parent-letter-range-control" aria-label="Caregiver summary date range">
         <label>Start date
           <input type="date" id="parentLetterStart" autocomplete="off">
@@ -1591,8 +1637,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
       </div>
       <div id="parentLetterBody" style="font-size:15px;line-height:1.7;color:#1a1a2e;white-space:pre-wrap;overflow-wrap:anywhere;font-family:Georgia,serif"></div>
       <p id="parentLetterDisclaimer" style="margin-top:16px;font-size:12px;color:#9ca3af;font-style:italic">
-        This letter was generated from caregiver check-in data recorded
-        in the STAR app. It is intended to share caregiver observations with
+        This letter was generated from the selected STAR TEST reporting sources.
+        Individual responses are identified separately from caregiver observations, and all My STAR data here are fictional. It is intended to share documented information with
         families, case managers, healthcare providers, and support teams.
       </p>
     </div>
@@ -1865,6 +1911,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
     import { renderPrintableCaregiverReport } from './caregiver-report-print.js?v=2026.07.01B';
     import { analyzeProviderRecords, renderProviderLetter, individualKey, groupKey } from './caregiver-provider-letter.js?v=2026.10.24D';
     import { buildWeeklyPromptSeries, defaultGraphRange, filterRecordsByRange, formatGraphRange, rangeFromInputs } from './caregiver-report-graphs.js?v=2026.09.04A';
+    import { createIsaProgressReport } from './isa-progress-report-embedded.js?v=2026.10.29A';
+    import { createIndividualVoiceReport } from './individual-voice-report.js?v=2026.10.29B';
 
     /* =============== Optional live data =============== */
     let loadFromSupabase = null;
@@ -1882,6 +1930,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
     if (!USER_SESSION?.user?.id) { window.location.href = 'auth.html'; throw new Error('No session'); }
     const USER_ID = USER_SESSION.user.id;
     window.rest = rest;
+    const isaReport = createIsaProgressReport({rest});
+    const individualReport = createIndividualVoiceReport({rest});
 
     async function ensureReportGroupContext() {
       try {
@@ -6273,6 +6323,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
       if (sEnd && !sEnd.value) sEnd.value = formatDateInputValue(defaultRangeEnd);
       applyCaregiverFilters();
       updateReportSectionVisibility();
+      void isaReport.refresh(groupId, cgState.entries);
+      void individualReport.refresh(groupId);
       window.dispatchEvent(new Event('caregiverDataReady'));
     }
 
@@ -7057,7 +7109,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
     };
     clearLetterDates();
     window.addEventListener('pageshow', (event) => { if (event.persisted) clearLetterDates(); });
-    ['parentLetterStart', 'parentLetterEnd', 'providerIndividual', 'providerIncludeQuotes'].forEach((id) => {
+    ['parentLetterStart', 'parentLetterEnd', 'providerIndividual', 'providerIncludeQuotes', 'providerLetterTopic'].forEach((id) => {
       document.getElementById(id)?.addEventListener('change', () => {
         const bodyEl = document.getElementById('parentLetterBody');
         if (bodyEl) bodyEl.textContent = '';
@@ -7280,6 +7332,10 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
           selector.dataset.scope = signature;
         }
         if (selector.value === '__choose__') throw new Error('Choose one individual or the records without an individual identifier, then generate again.');
+        const letterFocus = document.getElementById('providerLetterTopic')?.value || 'caregiver';
+        const includeCaregiver = ['caregiver','combined','all'].includes(letterFocus);
+        const includeIsa = ['isa','combined','all'].includes(letterFocus);
+        const includeIndividual = ['individual','all'].includes(letterFocus);
         const analysis = analyzeProviderRecords(entries, {
           start: range.startInput, end: range.endInput, groupId, individualId: selector.value,
         });
@@ -7287,26 +7343,37 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
         rangeEl.textContent = 'Loading Team Updates for the chosen date range…';
         let teamUpdates = [];
         let teamSetupPending = false;
-        try {
-          teamUpdates = await fetchTeamUpdatesForLetter(groupId, selector.value, range.endInput);
-        } catch (error) {
-          const missingTable = error?.status === 404 &&
-            /star_team_updates|schema cache|relation/i.test(error?.message || '');
-          if (!missingTable) throw error; // never silently omit records on a transient failure
-          teamSetupPending = true;
+        if (includeCaregiver) {
+          try {
+            teamUpdates = await fetchTeamUpdatesForLetter(groupId, selector.value, range.endInput);
+          } catch (error) {
+            const missingTable = error?.status === 404 &&
+              /star_team_updates|schema cache|relation/i.test(error?.message || '');
+            if (!missingTable) throw error;
+            teamSetupPending = true;
+          }
         }
         if (requestSequence !== letterRequestSequence ||
             String(groupId) !== localStorage.getItem('currentGroupId') ||
             selector.value !== analysis.individualId) {
           throw new Error('The selected group or individual changed. Generate the letter again.');
         }
-        const originalLetter = renderProviderLetter(analysis, {
+        const originalLetter = includeCaregiver ? renderProviderLetter(analysis, {
           includeQuotes: document.getElementById('providerIncludeQuotes').checked,
           teamUpdates
-        });
-        const letterText = teamSetupPending
-          ? originalLetter + '\n\nTeam Updates availability\nThe Team Updates database setup has not been completed, so administrator-entered Team Updates could not be included in this letter.'
-          : originalLetter;
+        }) : '';
+        const isaLetter = includeIsa ? await isaReport.letter({
+          start: range.startInput, end: range.endInput, groupId, individualId: selector.value
+        }) : '';
+        const individualLetter = includeIndividual ? await individualReport.letter({
+          start: range.startInput, end: range.endInput, groupId, individualId: selector.value
+        }) : '';
+        if (requestSequence !== letterRequestSequence ||
+            String(groupId) !== localStorage.getItem('currentGroupId')) {
+          throw new Error('Your selection changed. Generate the letter again.');
+        }
+        let letterText = [originalLetter, isaLetter, individualLetter].filter(Boolean).join('\n\n');
+        if (teamSetupPending) letterText += '\n\nTeam Updates availability\nThe Team Updates database setup has not been completed, so administrator-entered Team Updates could not be included in this letter.';
         rangeEl.textContent = `Range: ${range.label}` + (teamSetupPending ? ' · Team Updates setup pending' : '');
         window.starProviderLetterLayout.render(bodyEl, letterText);
         document.getElementById('parentLetterCopy').disabled = false;

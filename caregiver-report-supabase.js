@@ -1,8 +1,8 @@
 import { NOTE_FIELDS } from './caregiver-provider-letter.js?v=2026.10.20A';
 import { checkinDateKey } from './caregiver-dates.js';
 // caregiver-report-supabase.js — PRODUCTION SAFE (group-scoped; no user_id filter) v=2026.05.03D
-import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29TEST1';
-import { resolveActiveGroup } from './active-group.js?v=2026.10.07A';
+import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM2';
+import { resolveActiveGroup } from './active-group.js?v=2026.10.29UVM2';
 
 /* ---------- shared helpers ---------- */
 const TRUE_VALUES = new Set(['true', 't', 'yes', 'y', '1', 'on', 'done', 'complete', 'present']);

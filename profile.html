@@ -352,7 +352,7 @@
   import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabaseClient.js?v=2026.10.29UVM2';
   import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM2';
   import { resolveActiveGroup } from './active-group.js?v=2026.10.29UVM2';
-  import { loadAndRunRouter } from './routerLoader.js?v=2026.05.07';
+  import { loadAndRunRouter } from './routerLoader.js?v=2026.10.29UVM2';
   const defaultAvatar     = 'data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2096%2096%22%3E%3Crect%20width%3D%2296%22%20height%3D%2296%22%20rx%3D%2248%22%20fill%3D%22%23F5F2EC%22%2F%3E%3Ccircle%20cx%3D%2248%22%20cy%3D%2234%22%20r%3D%2217%22%20fill%3D%22%23D8D2C8%22%2F%3E%3Cpath%20d%3D%22M14%2090c0-23%2015-35%2034-35s34%2012%2034%2035%22%20fill%3D%22%23D8D2C8%22%2F%3E%3C%2Fsvg%3E';
   const avatarPreview     = document.getElementById('avatarPreview');
   const avatarFile        = document.getElementById('avatarFile');
@@ -487,10 +487,12 @@
       currentAvatarUrl = null;
 
       const rows = await rest(
-        `profiles?id=eq.${encodeURIComponent(currentUser.id)}&select=display_name,public_name,full_name,avatar_url,group_id,updated_at`
+        `profiles?id=eq.${encodeURIComponent(currentUser.id)}&select=display_name,public_name,full_name,avatar_url,group_id,onboarding_complete,updated_at`
       );
       const profile = rows?.[0] || null;
       if (profile) {
+        if (!profile.onboarding_complete) showSetupNote();
+        else { setupNote?.classList.remove('is-visible'); setupChecklist?.classList.remove('is-visible'); }
         displayNameEl.value = profile.display_name || profile.public_name || profile.full_name || metaName;
         if (profile.avatar_url) {
           avatarPreview.src = profile.avatar_url;
@@ -654,7 +656,6 @@
     try {
       syncSaveButtonState();
       ensureSession();
-      showSetupNote();
       await loadGroups();
       await fetchProfile();
     } catch (err) {

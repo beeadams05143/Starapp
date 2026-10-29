@@ -1,10 +1,10 @@
-import { rest, getSessionFromStorage } from './restClient.js';
-import { readCachedOnboardingCompletion } from './onboarding-flow.js';
+import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM2';
+import { readCachedOnboardingCompletion } from './onboarding-flow.js?v=2026.10.29UVM2';
 
 export async function next() {
   const session = getSessionFromStorage();
   if (!session?.user?.id || !session?.access_token) {
-    window.location.href = 'login.html';
+    window.location.href = 'auth.html?reauth=1';
     return;
   }
 
@@ -15,7 +15,9 @@ export async function next() {
     );
     profile = Array.isArray(rows) ? rows[0] || null : null;
   } catch (error) {
-    console.warn('[ROUTER] profile fetch failed, using onboarding cache fallback when available', error);
+    console.warn('[ROUTER] unable to verify profile, directing test user to sign in', error);
+    window.location.href = 'auth.html?reauth=1';
+    return;
   }
   const onboardingComplete = profile && Object.prototype.hasOwnProperty.call(profile, 'onboarding_complete')
     ? profile.onboarding_complete === true

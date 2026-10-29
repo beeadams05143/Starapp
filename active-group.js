@@ -31,7 +31,7 @@ async function fetchMemberships(userId) {
     return Array.isArray(rows) ? rows.filter((row) => row?.group_id) : [];
   } catch (error) {
     console.warn('[active-group] membership lookup failed', error?.message || error);
-    return [];
+    throw error; // A failed read is not proof that this user has no group.
   }
 }
 
@@ -71,7 +71,7 @@ export async function resolveActiveGroup(userId = null) {
 
   const storedGroupId = readStoredGroupId();
   const chosen = pickMembership(memberships, [profileGroupId, storedGroupId]);
-  const groupId = chosen?.group_id || profileGroupId || null;
+  const groupId = chosen?.group_id || null; // Only confirmed group memberships are accepted.
   const groupName = chosen?.groups?.name || '';
   const source =
     groupId && groupId === profileGroupId ? 'profile'

@@ -442,14 +442,27 @@
     let groups = [];
     try {
       ensureSession();
-      const rows = await rest([
-        'group_members?select=group_id,groups!inner(id,name,archived)',
+      // Membership comes first: never treat an empty embedded join as
+      // evidence that a returning caregiver's group has disappeared.
+      const memberships = await rest([
+        'group_members?select=group_id',
         `user_id=eq.${encodeURIComponent(currentUser.id)}`,
         'order=joined_at.asc'
       ].join('&'));
-      groups = (rows || [])
-        .map(row => row.groups)
-        .filter(g => g?.id && !g?.archived);
+      const groupIds = [...new Set((Array.isArray(memberships) ? memberships : [])
+        .map(row => row?.group_id).filter(Boolean))];
+      if (groupIds.length) {
+        const groupRows = await rest(`groups?select=id,name,archived&id=in.(${groupIds.join(',')})`);
+        groups = (Array.isArray(groupRows) ? groupRows : []).filter(g => g?.id && !g?.archived);
+        if (!groups.length) throw new Error('Your saved group membership was found, but group details could not be loaded.');
+      } else {
+        const profileRows = await rest(
+          `profiles?id=eq.${encodeURIComponent(currentUser.id)}&select=group_id&limit=1`
+        );
+        if (profileRows?.[0]?.group_id) {
+          throw new Error('Your profile still has a saved group, but STAR could not verify its membership.');
+        }
+      }
     } catch (err) {
       console.warn('[PROFILE] groups fetch failed', err);
       groupSelectEl.innerHTML = '<option value="">Unable to load groups — sign in again</option>';
@@ -460,7 +473,7 @@
     }
 
     if (!groups.length) {
-      groupSelectEl.innerHTML = '<option value="">(no groups yet)</option>';
+      groupSelectEl.innerHTML = '<option value="">No groups yet — create or join a group</option>';
       groupSelectEl.disabled = true;
       return;
     }

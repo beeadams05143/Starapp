@@ -1,5 +1,5 @@
-import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM2';
-import { ensureActiveGroupId } from './active-group.js?v=2026.10.29UVM2';
+import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
+import { ensureActiveGroupId } from './active-group.js?v=2026.10.29UVM3';
 
 const GROUP_KEY_ID = 'currentGroupId';
 const GROUP_KEY_NAME = 'currentGroupName';

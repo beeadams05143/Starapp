@@ -182,7 +182,8 @@
       SUPABASE_ANON_KEY,
       saveSession,
       getSessionFromStorage,
-    } from './supabaseClient.js?v=2026.03.29A';
+      clearSavedSession,
+    } from './supabaseClient.js?v=2026.10.29TEST1';
     import { loadAndRunRouter } from './routerLoader.js?v=2026.05.07';
 
     const ROLE_SELECT_URL = 'role-select.html';
@@ -266,7 +267,11 @@
       return requestAuth('/auth/v1/signup', { email, password });
     }
 
-    if (getSessionFromStorage()?.user?.id) {
+    const forceNewLogin = new URLSearchParams(location.search).has('reauth');
+    if (forceNewLogin) {
+      clearSavedSession();
+      setMessage('Your STAR TEST session expired. Please sign in again.');
+    } else if (getSessionFromStorage()?.user?.id) {
       void loadAndRunRouter();
     }
     async function handleCredentials(mode) {

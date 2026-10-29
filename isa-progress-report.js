@@ -88,28 +88,76 @@ export function buildIsaProgress(entries, cards, scope = {}) {
   };
 }
 
-export function formatIsaProgressText(report) {
-  const lines = ['ISA Outcome Progress'];
-  if (report.start || report.end) lines.push('Date range: ' + (report.start || 'Beginning') + ' to ' + (report.end || 'Present'));
-  lines.push('Source: dated caregiver check-ins. Answers are reported as entered; STAR does not determine whether an ISA goal was achieved.');
-  lines.push('Blank or missing answers do not mean failure or lack of progress.');
-  lines.push(report.answerCount + ' recorded measurement answers across ' + report.observationDays + ' dates.');
-  for (const group of report.outcomes) {
-    lines.push('', group.title + (group.category ? ' (' + group.category + ')' : ''));
-    if (!group.observations.length) {
-      lines.push('No ISA measurements recorded during this period.');
-      continue;
+// Summarize the same underlying evidence that remains accessible in the expandable
+// "View dated caregiver entries" area. Never equate a response with goal attainment.
+function formatNumber(value) {
+  return String(Math.round((value + Number.EPSILON) * 10) / 10);
+}
+function recordedTimes(count) {
+  return count === 1 ? 'once' : count === 2 ? 'twice' : count + ' times';
+}
+export function summarizeIsaMeasurement(metric) {
+  const answers = Array.isArray(metric?.answers) ? metric.answers : [];
+  const label = String(metric?.label || 'Recorded measurement').trim().replace(/[.\s]+$/, '');
+  if (!answers.length) return label + ': No recorded responses for this period.';
+  const days = new Set(answers.map(a => a.date).filter(Boolean)).size;
+  const unitValues = new Set(answers.map(a => String(a.unit || '').trim()));
+  const numbers = answers.map(a => {
+    const text = String(a.value ?? '').trim();
+    return text !== '' && /^[-+]?(?:\d+\.?\d*|\.\d+)$/.test(text) ? Number(text) : NaN;
+  });
+  const numeric = unitValues.size === 1 && numbers.every(Number.isFinite);
+  const datePhrase = days === 1 ? 'one recorded date' : days + ' recorded dates';
+  if (numeric) {
+    const min = Math.min(...numbers), max = Math.max(...numbers);
+    const average = numbers.reduce((sum, n) => sum + n, 0) / numbers.length;
+    const unit = String(answers[0].unit || metric.unit || '').trim();
+    const suffix = unit ? ' ' + unit : '';
+    if (answers.length === 1) {
+      return label + ': ' + formatNumber(numbers[0]) + suffix + ' recorded on ' + datePhrase + '.';
     }
-    lines.push(group.observations.length + ' recorded answers on ' + group.dates.length + ' dates.');
-    for (const m of group.measurements) {
-      lines.push(m.label + ': ' + m.answers.length + ' recorded answer(s).');
-    }
-    for (const obs of group.observations) {
-      lines.push(obs.date + ' | ' + obs.caregiver + ' | ' + obs.label + ': ' +
-        obs.value + (obs.unit ? ' ' + obs.unit : '') + (obs.activity ? ' | ' + obs.activity : ''));
-    }
+    return label + ': ' + answers.length + ' measurements across ' + datePhrase +
+      ', ranging from ' + formatNumber(min) + ' to ' + formatNumber(max) + suffix +
+      ' per entry (average ' + formatNumber(average) + suffix + ').';
   }
-  if (!report.outcomes.length) lines.push('No ISA outcome cards or saved answers were found for this selection.');
+  const frequencies = new Map();
+  for (const answer of answers) {
+    // Never interpret "Declined", "Not observed", "Not offered", or zero as failure.
+    const response = String(answer.value ?? '').trim().replace(/\s+/g, ' ');
+    if (!response) continue;
+    frequencies.set(response, (frequencies.get(response) || 0) + 1);
+  }
+  const ordered = [...frequencies.entries()].sort((a,b) => b[1]-a[1] || a[0].localeCompare(b[0]));
+  const shown = ordered.slice(0, 5).map(([value,count]) => {
+    // Long free-text responses belong in the dated evidence, not the short letter.
+    const shortValue = value.length > 90 ? value.slice(0,87) + '…' : value;
+    return '“' + shortValue + '” ' + recordedTimes(count);
+  });
+  if (ordered.length > 5) shown.push((ordered.length - 5) + ' other distinct responses');
+  return label + ': ' + answers.length + ' recorded answers across ' + datePhrase +
+    ' — ' + shown.join('; ') + '.';
+}
+export function summarizeIsaOutcome(outcome) {
+  if (!outcome?.observations?.length) return 'No ISA measurements were recorded for this outcome in the selected period.';
+  const facts = outcome.measurements.map(summarizeIsaMeasurement);
+  return facts.join(' ');
+}
+export function formatIsaProgressText(report) {
+  const lines = ['ISA Outcome Summary'];
+  if (report.start || report.end) {
+    lines.push('Reporting period: ' + (report.start || 'Beginning') + ' to ' + (report.end || 'Present'));
+  }
+  lines.push('Caregiver check-ins contained ' + report.answerCount + ' documented ISA measurement ' +
+    (report.answerCount === 1 ? 'answer' : 'answers') + ' across ' + report.observationDays +
+    ' date' + (report.observationDays === 1 ? '' : 's') + '.');
+  for (const outcome of report.outcomes) {
+    lines.push('', outcome.title + (outcome.category ? ' — ' + outcome.category : ''),
+      summarizeIsaOutcome(outcome));
+  }
+  if (!report.outcomes.length) lines.push('', 'No ISA outcome cards or saved answers were found for this selection.');
+  lines.push('', 'These are caregiver-reported measurements, not a determination of ISA goal achievement. ' +
+    'Skipped, missing, declined, or not-observed answers are not automatically treated as lack of progress. ' +
+    'Individual dated entries remain available in Reports for review.');
   return lines.join('\n');
 }
 
@@ -162,7 +210,7 @@ export function createIsaProgressReport({rest, document: doc = document, clock =
         for (const measure of outcome.measurements) {
           const label = doc.createElement('p');
           label.style.cssText = 'font-size:14px;margin:8px 0';
-          label.textContent = measure.label + ': ' + measure.answers.length + ' recorded answer(s)';
+          label.textContent = summarizeIsaMeasurement(measure);
           outer.append(label);
         }
         const history = doc.createElement('details');

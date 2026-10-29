@@ -1,7 +1,7 @@
 import { NOTE_FIELDS } from './caregiver-provider-letter.js?v=2026.10.20A';
 import { checkinDateKey } from './caregiver-dates.js';
 // caregiver-report-supabase.js — PRODUCTION SAFE (group-scoped; no user_id filter) v=2026.05.03D
-import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
+import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29TEST1';
 import { resolveActiveGroup } from './active-group.js?v=2026.10.07A';
 
 /* ---------- shared helpers ---------- */
@@ -924,6 +924,8 @@ export async function loadCaregiverCheckins(
   } catch (error) {
     console.error('Supabase caregiver_checkins error:', error);
     return {
+      loadComplete: false,
+      loadError: error?.message || 'Could not retrieve caregiver check-ins',
       entries: [],
       summary: summarize([]),
       charts: buildSeries([]),

@@ -12,7 +12,7 @@ export function buildIsaProgress(entries, cards, scope = {}) {
   for (const card of Array.isArray(cards) ? cards : []) {
     if (String(card.group_id || '') !== groupId) continue;
     if (individualId !== null && String(card.individual_id || '') !== individualId) continue;
-    if (!card.id) continue;
+    if (!card.id || card.status === 'draft') continue;
     groups.set(String(card.id), {
       id: String(card.id), title: String(card.title || 'Untitled ISA outcome'),
       category: String(card.category || ''), status: card.status || 'active',
@@ -114,7 +114,7 @@ export function formatIsaProgressText(report) {
 }
 
 export function createIsaProgressReport({rest, document: doc = document, clock = () => new Date()}) {
-  let currentGroupId = null, entries = [], cardPromise = null, status = 'not-loaded', lastText = '';
+  let currentGroupId = null, entries = [], cardPromise = null, status = 'not-loaded', lastText = '', revision = 0;
   const $ = id => doc.getElementById(id);
   const firstOfMonth = date => date.getFullYear() + '-' + String(date.getMonth()+1).padStart(2,'0') + '-01';
   const dateKey = date => date.getFullYear() + '-' + String(date.getMonth()+1).padStart(2,'0') + '-' + String(date.getDate()).padStart(2,'0');
@@ -186,11 +186,14 @@ export function createIsaProgressReport({rest, document: doc = document, clock =
     for (const id of ['isaProgressCopy','isaProgressPrint']) { if ($(id)) $(id).disabled = false; }
   }
   async function redraw() {
+    const initialRevision = revision;
     try {
       if (!currentGroupId) return;
       const data = await report();
+      if (initialRevision !== revision) return;
       render(data);
     } catch (err) {
+      if (initialRevision !== revision) return;
       if ($('isaProgressStatus')) $('isaProgressStatus').textContent = 'ISA progress unavailable: ' + (err?.message || 'Unable to load data');
       if ($('isaProgressList')) $('isaProgressList').replaceChildren();
       for (const id of ['isaProgressCopy','isaProgressPrint']) { if ($(id)) $(id).disabled = true; }
@@ -198,7 +201,13 @@ export function createIsaProgressReport({rest, document: doc = document, clock =
   }
   async function refresh(groupId, rows) {
     const id = String(groupId || '');
-    if (!id) { status = 'error'; await redraw(); return; }
+    ++revision;
+    if (!id) {
+      currentGroupId = null; status = 'error';
+      if ($('isaProgressStatus')) $('isaProgressStatus').textContent = 'Select an active group to view ISA progress.';
+      if ($('isaProgressList')) $('isaProgressList').replaceChildren();
+      return;
+    }
     currentGroupId = id;
     entries = Array.isArray(rows) ? rows : [];
     status = 'loading';

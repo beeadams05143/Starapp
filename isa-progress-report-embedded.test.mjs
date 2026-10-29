@@ -86,7 +86,7 @@ assert.equal(monthReport.outcomes.flatMap(o=>o.observations).length,60,
 assert.equal(monthReport.outcomes.find(o=>o.id==='phone').observations.length,20,
   'unnamed numeric step counts are preserved in dated evidence, not invented in the letter');
 const oneStep=buildIsaProgress([{
-  id:'single-phone',group_id:groupId,date:'2026-10-26',payload:{isa_entries:[{
+  id:'single-phone',group_id:groupId,date:'2026-10-22',payload:{isa_entries:[{
     outcome_id:'phone',measurement_id:'steps',outcome_title:'Practice making a supported phone call',
     measurement_label:'Phone call steps completed',value:1,unit:'steps'
   }]}

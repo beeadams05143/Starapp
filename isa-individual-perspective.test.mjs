@@ -39,7 +39,7 @@ assert.equal(result.feedback.length,2);
 assert.equal(result.reviewed[0].goalTitle,'Practice supported phone call');
 const letter=formatIsaIndividualPerspectiveText(result);
 assert.match(letter,/FICTIONAL: I tried calling the library/);
-assert.match(letter,/Administrator-reviewed/);
+assert.match(letter,/An administrator reviewed/);
 assert.match(letter,/Did not like.*Activity not specified/);
 assert.match(letter,/I want coloring/);
 assert.match(letter,/Choices offered: Coloring \/ Music/);

@@ -973,7 +973,7 @@
 </div>
 
 <script type="module">
-import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29TEST1';
+import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM2';
 
 (function(){
   const smokeInsertEnabled =
@@ -1026,7 +1026,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29TEST1';
 })();
 </script>
 <script type="module">
-  import { getSessionFromStorage } from './restClient.js?v=2026.10.29TEST1';
+  import { getSessionFromStorage } from './restClient.js?v=2026.10.29UVM2';
   import { completeGuidedOnboarding, getGuidedOnboardingProgress } from './onboarding-flow.js?v=2026.03.29A';
 
   const session = getSessionFromStorage();
@@ -1857,9 +1857,9 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29TEST1';
   <script type="module">
     console.log("REPORT JS LOADED");
 
-    import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29TEST1';
-    import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabaseClient.js?v=2026.10.29TEST1';
-    import { ensureActiveGroupId } from './active-group.js?v=2026.10.07A';
+    import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM2';
+    import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabaseClient.js?v=2026.10.29UVM2';
+    import { ensureActiveGroupId } from './active-group.js?v=2026.10.29UVM2';
     import { openCompactCaregiverCheckinPrintWindow } from './caregiver-checkin-print.js?v=2026.10.24A';
     import { CALENDAR_QUICK_LOOK_ITEMS, filterCaregiverCheckinsForPrint, normalizeCaregiverCheckinForCalendar, normalizeCaregiverCheckinRecord } from './caregiver-report-shared.js?v=2026.10.20C';
     import { renderPrintableCaregiverReport } from './caregiver-report-print.js?v=2026.07.01B';
@@ -1870,7 +1870,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29TEST1';
     let loadFromSupabase = null;
     let formatEntryForList = null;
     try {
-      const mod = await import('./caregiver-report-supabase.js?v=2026.10.29TEST1');
+      const mod = await import('./caregiver-report-supabase.js?v=2026.10.29UVM2');
       loadFromSupabase = mod.loadCaregiverCheckins;
       formatEntryForList = mod.formatEntryForList;
     } catch (err) {
@@ -8122,8 +8122,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29TEST1';
 </script>
 
 <script type="module">
-import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29TEST1';
-import { ensureActiveGroupId } from './active-group.js?v=2026.10.07A';
+import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM2';
+import { ensureActiveGroupId } from './active-group.js?v=2026.10.29UVM2';
 import { formatCheckinDate } from './caregiver-dates.js';
 import { loadCalendarCheckins, calendarEmptyLabel } from './caregiver-calendar-data.js?v=2026.10.27UVM-CAL1';
 import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinForCalendar } from './caregiver-report-shared.js?v=2026.10.19A';

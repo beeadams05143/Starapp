@@ -33,7 +33,7 @@ assert.equal(report.answerCount,5,'counts actual answers including 0, not blank'
 assert.equal(report.observationDays,2);
 assert.equal(report.outcomes.length,2,'other group and person omitted');
 assert.equal(report.outcomes.find(x=>x.id==='goal-2').status,'archived');
-assert.match(txt,/Number of prompts: 0 recorded on one recorded date/);
+assert.match(txt,/Number of prompts: 0 recorded on one date/);
 assert.match(txt,/Declined/);
 assert.match(txt,/Not offered/);
 assert.match(txt,/Not observed/);
@@ -69,8 +69,13 @@ const monthReport=buildIsaProgress(repeated,[],{groupId,start:'2026-10-01',end:'
 const monthText=formatIsaProgressText(monthReport);
 assert.equal(monthReport.answerCount,60);
 assert.equal(monthReport.observationDays,20);
-assert.match(monthText,/ranging from 20 to 70 minutes/);
-assert.match(monthText,/ranging from 1 to 3 steps/);
+assert.match(monthText,/20 to 70 minutes per reported date/);
+assert.match(monthText,/averaging 46\.5 minutes per reported date/);
+assert.match(monthText,/Across 20 reported dates/);
+assert.doesNotMatch(monthText,/46\.5 minutes per month/);
+assert.match(monthText,/1 to 3 steps completed per reported date/);
+assert.match(monthText,/do not specify which steps were completed/);
+assert.doesNotMatch(monthText,/average 2 steps/);
 assert.match(monthText,/“Participated” 18 times/);
 assert.match(monthText,/“Declined” twice/);
 assert.doesNotMatch(monthText,/2026-10-01 \|/);
@@ -78,6 +83,19 @@ assert.doesNotMatch(monthText,/Cedar Grove Demo Caregiver/);
 assert.ok(monthText.length<2000,'60 entries must produce a short readable letter');
 assert.equal(monthReport.outcomes.flatMap(o=>o.observations).length,60,
   'daily evidence must remain intact in report data');
+
+const sameDay=buildIsaProgress([
+  {id:'same-day-1',group_id:groupId,date:'2026-10-21',
+    payload:{isa_entries:[{outcome_id:'training',measurement_id:'duration',
+      outcome_title:'Skill practice',measurement_label:'Minutes practiced',unit:'minutes',value:10}]}},
+  {id:'same-day-2',group_id:groupId,date:'2026-10-21',
+    payload:{isa_entries:[{outcome_id:'training',measurement_id:'duration',
+      outcome_title:'Skill practice',measurement_label:'Minutes practiced',unit:'minutes',value:20}]}}
+],[],scope);
+assert.match(formatIsaProgressText(sameDay),/2 recorded responses across 1 date/);
+assert.match(formatIsaProgressText(sameDay),/averaging 15 minutes per recorded response/);
+assert.doesNotMatch(formatIsaProgressText(sameDay),/15 minutes per reported date/);
+
 console.log('Monthly ISA narrative regression: 60 entries summarized without dumping dates: PASS');
 
 console.log('ISA progress report: scoping, dates, values, archives, and evidence-only reporting: PASS');

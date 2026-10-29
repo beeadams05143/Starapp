@@ -400,6 +400,10 @@
     #exportRangeOverlay .cg-edit-grid{margin-top:4px}
 
 
+    .isa-perspective{margin-top:16px;border-top:1px solid #e6d4b4;padding-top:14px}
+    .isa-perspective h3,.isa-perspective h4{text-align:left;margin:10px 0 8px}
+    .isa-voice-item{border-left:3px solid #d9b47e;background:#fffaf1;border-radius:0 10px 10px 0;padding:9px 12px;margin:9px 0}
+    .isa-voice-item p{margin:5px 0;font-size:14px;line-height:1.45}
     /* Compact report hub: only the chosen topic is visible on screen.
        Do not affect the complete export, print, or check-in quick-look modes. */
     .report-view-nav{background:#fffdf8;border:1px solid #ead7ab;border-radius:18px;padding:13px;margin:4px 0 18px;box-shadow:0 6px 18px rgba(125,89,34,.05)}
@@ -421,7 +425,8 @@
     body:not(.print-export):not(.quick-look-mode)[data-report-view="individual"] main.page > [data-print-section="Daily Mood & Calendar"],
     body:not(.print-export):not(.quick-look-mode)[data-report-view="checkins"] main.page > [data-print-section="Daily Mood & Calendar"],
     body:not(.print-export):not(.quick-look-mode)[data-report-view="calendar"] main.page > [data-print-section="Caregiver Overview"],
-    body:not(.print-export):not(.quick-look-mode)[data-report-view="charts"] main.page > [data-print-section="Caregiver Overview"]{display:none!important}
+    body:not(.print-export):not(.quick-look-mode)[data-report-view="charts"] main.page > [data-print-section="Caregiver Overview"],
+    body:not(.print-export):not(.quick-look-mode)[data-report-view="charts"] main.page > [data-print-section="Daily Mood & Calendar"]{display:none!important}
     body:not(.print-export):not(.quick-look-mode)[data-report-view="isa"] #chart-stack,
     body:not(.print-export):not(.quick-look-mode)[data-report-view="individual"] #chart-stack,
     body:not(.print-export):not(.quick-look-mode)[data-report-view="checkins"] #chart-stack,
@@ -1245,6 +1250,9 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
       <p class="report-range-note" id="isaPeriodSummary">Showing this month</p>
       <p class="muted" id="isaProgressStatus" role="status">Loading ISA progress…</p>
       <div id="isaProgressList"></div>
+      <section id="isaIndividualPerspective" class="isa-perspective" aria-label="Individual voice in ISA planning">
+        <p class="muted">Loading administrator-reviewed ISA statements and activity feedback…</p>
+      </section>
     </section>
     <section class="panel" id="individualVoicePanel" aria-labelledby="individualVoiceHeading">
       <h2 id="individualVoiceHeading">🗣️ My STAR — Individual Voice</h2>
@@ -1963,6 +1971,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
     import { analyzeProviderRecords, renderProviderLetter, individualKey, groupKey } from './caregiver-provider-letter.js?v=2026.10.24D';
     import { buildWeeklyPromptSeries, defaultGraphRange, filterRecordsByRange, formatGraphRange, rangeFromInputs } from './caregiver-report-graphs.js?v=2026.09.04A';
     import { createIsaProgressReport } from './isa-progress-report-embedded.js?v=2026.10.29A';
+    import { createIsaIndividualPerspective } from './isa-individual-perspective.js?v=2026.10.29R2';
     import { createIndividualVoiceReport } from './individual-voice-report.js?v=2026.10.29B';
 
     /* =============== Optional live data =============== */
@@ -1982,6 +1991,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
     const USER_ID = USER_SESSION.user.id;
     window.rest = rest;
     const isaReport = createIsaProgressReport({rest});
+    const isaPerspective = createIsaIndividualPerspective({rest});
     const individualReport = createIndividualVoiceReport({rest});
 
     async function ensureReportGroupContext() {
@@ -6375,6 +6385,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
       applyCaregiverFilters();
       updateReportSectionVisibility();
       void isaReport.refresh(groupId, cgState.entries);
+      void isaPerspective.refresh(groupId);
       void individualReport.refresh(groupId);
       window.dispatchEvent(new Event('caregiverDataReady'));
     }
@@ -7416,6 +7427,9 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
         const isaLetter = includeIsa ? await isaReport.letter({
           start: range.startInput, end: range.endInput, groupId, individualId: selector.value
         }) : '';
+        const isaIndividualPerspectiveLetter = includeIsa ? await isaPerspective.letter({
+          start: range.startInput, end: range.endInput, groupId, individualId: selector.value
+        }) : '';
         const individualLetter = includeIndividual ? await individualReport.letter({
           start: range.startInput, end: range.endInput, groupId, individualId: selector.value
         }) : '';
@@ -7423,7 +7437,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
             String(groupId) !== localStorage.getItem('currentGroupId')) {
           throw new Error('Your selection changed. Generate the letter again.');
         }
-        let letterText = [originalLetter, isaLetter, individualLetter].filter(Boolean).join('\n\n');
+        let letterText = [originalLetter, isaLetter, isaIndividualPerspectiveLetter, individualLetter].filter(Boolean).join('\n\n');
         if (teamSetupPending) letterText += '\n\nTeam Updates availability\nThe Team Updates database setup has not been completed, so administrator-entered Team Updates could not be included in this letter.';
         rangeEl.textContent = `Range: ${range.label}` + (teamSetupPending ? ' · Team Updates setup pending' : '');
         window.starProviderLetterLayout.render(bodyEl, letterText);

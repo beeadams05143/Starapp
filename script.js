@@ -121,15 +121,27 @@ async function loadGroupsIntoSwitcher() {
     const userId = session?.user?.id;
     if (!userId) throw new Error('No authenticated user');
     const memberships = await rest([
-      'group_members?select=group_id,groups!inner(id,name,archived)',
+      'group_members?select=group_id',
       `user_id=eq.${encodeURIComponent(userId)}`,
       'order=joined_at.asc'
     ].join('&'));
-    list = (memberships || [])
-      .map((row) => row.groups)
-      .filter((group) => group?.id && !group?.archived);
+    const groupIds = [...new Set((Array.isArray(memberships) ? memberships : [])
+      .map(row => row?.group_id).filter(Boolean))];
+    if (groupIds.length) {
+      const groups = await rest(`groups?select=id,name,archived&id=in.(${groupIds.join(',')})`);
+      list = (Array.isArray(groups) ? groups : []).filter(group => group?.id && !group?.archived);
+      if (!list.length) throw new Error('Membership exists but group details are unavailable');
+    } else {
+      const profile = await rest(`profiles?id=eq.${encodeURIComponent(userId)}&select=group_id&limit=1`);
+      if (profile?.[0]?.group_id) throw new Error('Saved group exists but membership could not be verified');
+    }
   } catch (error) {
     console.error('loadGroupsIntoSwitcher error', error);
+    // Do not display "no groups" when the real problem is a failed read or
+    // expired session. The user's memberships and data still exist.
+    sel.innerHTML = '<option>Unable to load groups — sign in again</option>';
+    sel.disabled = true;
+    return;
   }
 
   sel.innerHTML = '';
@@ -146,8 +158,13 @@ async function loadGroupsIntoSwitcher() {
     sel.appendChild(opt);
   }
 
-  const resolved = await resolveActiveGroup();
-  const useId = list.some(g => g.id === resolved.groupId) ? resolved.groupId : list[0].id;
+  let resolvedId = null;
+  try {
+    resolvedId = (await resolveActiveGroup()).groupId;
+  } catch (error) {
+    console.warn('Could not resolve preferred group; keeping verified membership', error);
+  }
+  const useId = list.some(g => g.id === resolvedId) ? resolvedId : list[0].id;
 
   sel.value = useId;
   localStorage.setItem(GROUP_KEY, useId);

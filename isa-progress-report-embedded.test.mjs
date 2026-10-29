@@ -83,6 +83,19 @@ assert.doesNotMatch(monthText,/Cedar Grove Demo Caregiver/);
 assert.ok(monthText.length<2000,'60 entries must produce a short readable letter');
 assert.equal(monthReport.outcomes.flatMap(o=>o.observations).length,60,
   'daily evidence must remain intact in report data');
+
+const sameDay=buildIsaProgress([
+  {id:'same-day-1',group_id:groupId,date:'2026-10-21',
+    payload:{isa_entries:[{outcome_id:'training',measurement_id:'duration',
+      outcome_title:'Skill practice',measurement_label:'Minutes practiced',unit:'minutes',value:10}]}},
+  {id:'same-day-2',group_id:groupId,date:'2026-10-21',
+    payload:{isa_entries:[{outcome_id:'training',measurement_id:'duration',
+      outcome_title:'Skill practice',measurement_label:'Minutes practiced',unit:'minutes',value:20}]}}
+],[],scope);
+assert.match(formatIsaProgressText(sameDay),/2 recorded responses across 1 date/);
+assert.match(formatIsaProgressText(sameDay),/averaging 15 minutes per recorded response/);
+assert.doesNotMatch(formatIsaProgressText(sameDay),/15 minutes per reported date/);
+
 console.log('Monthly ISA narrative regression: 60 entries summarized without dumping dates: PASS');
 
 console.log('ISA progress report: scoping, dates, values, archives, and evidence-only reporting: PASS');

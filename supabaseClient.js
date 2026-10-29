@@ -128,55 +128,60 @@ function normalizeSession(payload) {
   };
 }
 
-let refreshSessionPromise = null;
-
-async function refreshSession(session) {
-  if (!session?.refresh_token) return session;
-  if (refreshSessionPromise) return refreshSessionPromise;
-  refreshSessionPromise = (async () => {
-  try {
-    const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
-      method: 'POST',
-      headers: {
-        apikey: SUPABASE_ANON_KEY,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ refresh_token: session.refresh_token }),
-    });
-    const text = await res.text();
-    if (!res.ok) {
-      throw new Error(text || `Refresh failed ${res.status}`);
+// Shared across STAR's versioned ES-module imports to avoid rotating a refresh
+// token several times concurrently when Reports loads multiple requests.
+const STAR_REFRESH_FIELD = '__starSessionRefreshes';
+function tokenExpiresAt(session) {
+  return Number(decodeJwtPayload(session?.access_token)?.exp || session?.expires_at || session?.expiresAt || 0);
+}
+function tokenValid(session, marginSeconds = 0) {
+  if (!session?.access_token || !session?.user?.id) return false;
+  const expires = tokenExpiresAt(session);
+  return !expires || expires > Math.floor(Date.now() / 1000) + marginSeconds;
+}
+function pendingRefreshes() {
+  if (typeof window === 'undefined') return null;
+  if (!window[STAR_REFRESH_FIELD]) window[STAR_REFRESH_FIELD] = Object.create(null);
+  return window[STAR_REFRESH_FIELD];
+}
+async function refreshSession(oldSession) {
+  const nowStored = getSessionFromStorage();
+  if (nowStored?.access_token !== oldSession?.access_token && tokenValid(nowStored)) return nowStored;
+  if (!oldSession?.refresh_token) return null;
+  const pending = pendingRefreshes();
+  if (pending?.[STORAGE_SCOPE]) return pending[STORAGE_SCOPE];
+  const task = (async () => {
+    try {
+      const current = getSessionFromStorage();
+      if (current?.access_token !== oldSession.access_token && tokenValid(current)) return current;
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+        method:'POST',
+        headers:{ apikey:SUPABASE_ANON_KEY, 'Content-Type':'application/json' },
+        body:JSON.stringify({refresh_token:oldSession.refresh_token})
+      });
+      if (!res.ok) throw new Error(`Refresh returned HTTP ${res.status}`);
+      const fresh = normalizeSession(await res.json());
+      if (!fresh?.refresh_token || !tokenValid(fresh)) throw new Error('Invalid refreshed session');
+      saveSession(fresh);
+      return fresh;
+    } catch(error) {
+      console.warn('[supabase] Session refresh failed',error?.message||error);
+      const latest=getSessionFromStorage();
+      if (latest?.access_token !== oldSession.access_token && tokenValid(latest)) return latest;
+      return null; // NEVER return a known-expired token.
     }
-    const payload = text ? JSON.parse(text) : null;
-    const fresh = normalizeSession(payload) || session;
-    if (payload?.user) fresh.user = payload.user;
-    saveSession(fresh);
-    return fresh;
-  } catch (err) {
-    console.warn('[supabase] refresh session failed', err);
-    // Another tab may have rotated the refresh token and already saved the
-    // replacement session. Prefer that session over the stale token we used.
-    const latest = getSessionFromStorage();
-    if (latest?.access_token && latest.access_token !== session.access_token) return latest;
-    return session;
-  } finally {
-    refreshSessionPromise = null;
-  }
   })();
-  return refreshSessionPromise;
+  if (pending) pending[STORAGE_SCOPE] = task;
+  try { return await task; }
+  finally { if (pending?.[STORAGE_SCOPE] === task) delete pending[STORAGE_SCOPE]; }
 }
-
-export async function ensureSession({ forceRefresh = false } = {}) {
-  let session = getSessionFromStorage();
+export async function ensureSession({ forceRefresh=false }={}) {
+  const session=getSessionFromStorage();
   if (!session) return null;
-  const expiresAt = session.expires_at || session.expiresAt || null;
-  if (!forceRefresh && !expiresAt) return session;
-  const now = Math.floor(Date.now() / 1000);
-  if (!forceRefresh && expiresAt - REFRESH_MARGIN_SECONDS > now) return session;
-  session = await refreshSession(session);
-  return session;
+  if (!forceRefresh && tokenValid(session,REFRESH_MARGIN_SECONDS)) return session;
+  const fresh=await refreshSession(session);
+  return tokenValid(fresh) ? fresh : null;
 }
-
 
 export function buildQuery(params = {}) {
   return Object.entries(params)

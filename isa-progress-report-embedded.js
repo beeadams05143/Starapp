@@ -116,7 +116,7 @@ export function summarizeIsaMeasurement(metric) {
     const onePerDate = days === answers.length;
     const frequency = onePerDate
       ? (days + ' reported ' + (days === 1 ? 'date' : 'dates'))
-      : (answers.length + ' recorded responses across ' + days + ' dates');
+      : (answers.length + ' recorded responses across ' + days + ' ' + (days === 1 ? 'date' : 'dates'));
     const scope = onePerDate ? 'per reported date' : 'per recorded response';
     if (answers.length === 1) {
       return label + ': ' + formatNumber(numbers[0]) + suffix + ' recorded on one date.';

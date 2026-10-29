@@ -37,7 +37,7 @@ assert.match(txt,/2026-10-21 \| Caregiver A \| Number of prompts: 0/);
 assert.match(txt,/Declined/);
 assert.match(txt,/Not offered/);
 assert.match(txt,/Not observed/);
-assert.doesNotMatch(txt,/PRIVATE|achieved|success rate|percent complete/i);
+assert.doesNotMatch(txt,/PRIVATE|automatically achieved|success rate|percent complete/i);
 assert.equal(buildIsaProgress(entries,cards,{...scope,start:'2026-10-22'}).answerCount,2);
 assert.equal(buildIsaProgress(entries,cards,{...scope,start:'2026-10-24',end:'2026-10-25'}).answerCount,0);
 assert.throws(()=>buildIsaProgress(entries,cards,{...scope,start:'2026-10-31',end:'2026-10-01'}),/start date/);

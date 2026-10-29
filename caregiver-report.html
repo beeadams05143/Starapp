@@ -438,6 +438,29 @@
     body:not(.print-export):not(.quick-look-mode)[data-report-view="checkins"] main.page > [data-print-section="Caregiver Overview"] > :not(#cg-panel):not(#services-summary-panel):not(#weekly-averages-panel){display:none!important}
     @media print{.report-view-nav{display:none!important}}
 
+
+    .person-chart-range{border:1px solid #dcc8a6;background:#fffdf8;border-radius:15px;padding:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+    .person-chart-range-heading{flex:1 1 100%;font-size:17px;font-weight:800;color:#724016}
+    .person-chart-range-heading span{font-weight:600;font-size:12px;color:#667188}
+    .person-chart-range label,.person-chart-measure{display:flex;flex-direction:column;gap:5px;font-size:13px;font-weight:700;color:#3c454f}
+    .person-chart-range select,.person-chart-measure select{min-height:44px;max-width:100%;width:100%;box-sizing:border-box}
+    .person-chart-range label{flex:1 1 160px}
+    .person-chart-range #pcGraphRangeStatus{flex:1 1 100%;margin:0}
+    .person-chart-custom{display:flex;flex:2 1 280px;gap:8px;flex-wrap:wrap}
+    .person-chart-custom[hidden]{display:none!important}
+    .person-chart-custom label{flex:1 1 130px}
+    .person-chart-custom input{min-height:44px;width:100%;box-sizing:border-box}
+    .person-chart-card h2{font-size:21px;line-height:1.25;margin:0 0 10px}
+    .person-chart-card h3{font-size:16px;margin:10px 0;text-align:left}
+    .person-chart-measure{margin:12px 0}
+    .person-chart-canvas{position:relative;width:100%;height:235px;margin:10px 0}
+    .person-chart-canvas canvas{width:100%!important;max-height:100%;height:100%!important}
+    .person-chart-canvas canvas[hidden]{display:none!important}
+    .person-chart-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .person-chart-columns section{min-width:0;border:1px solid #efe4d4;border-radius:12px;padding:10px}
+    .person-chart-card .muted{font-size:13px;line-height:1.45}
+    @media(max-width:700px){.person-chart-columns{grid-template-columns:1fr}}
+    @media print{.person-chart-range{display:none!important}.person-chart-columns{grid-template-columns:1fr}.person-chart-canvas{height:190px}}
     #chart-stack{display:flex;flex-direction:column;gap:16px}
     .chart-range-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:10px 12px}
     .chart-range-controls label{font-weight:700}
@@ -1654,6 +1677,50 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
 
     <!-- Charts -->
     <section id="chart-stack" data-print-section="Trends & Charts">
+    <!-- UVM TEST: person-centered graph sources are distinct from legacy caregiver charts. -->
+    <div class="person-chart-range no-export" id="pcChartRange">
+      <div class="person-chart-range-heading">⭐ Person-centered charts <span>Fictional STAR Test data</span></div>
+      <label>Reporting period
+        <select id="pcGraphPeriod" aria-label="Reporting period for the two new charts">
+          <option value="month" selected>This month</option>
+          <option value="quarter">Last 3 months</option>
+          <option value="all">All dates</option>
+          <option value="custom">Custom dates</option>
+        </select>
+      </label>
+      <div id="pcGraphCustom" class="person-chart-custom" hidden>
+        <label>From <input type="date" id="pcGraphStart"></label>
+        <label>Through <input type="date" id="pcGraphEnd"></label>
+      </div>
+      <p id="pcGraphRangeStatus" class="muted" role="status"></p>
+    </div>
+    <div class="chart person-chart-card" id="pcIsaGraphCard">
+      <h2>⭐ ISA Goal Measurements Over Time</h2>
+      <p class="muted">Caregiver-recorded measurements for one ISA outcome. These are observations, not automatic progress scores.</p>
+      <label class="person-chart-measure">Choose an ISA outcome and measurement
+        <select id="pcIsaGraphMeasure" aria-label="Choose ISA goal measurement"></select>
+      </label>
+      <div class="person-chart-canvas"><canvas id="pcIsaChart" aria-label="ISA caregiver measurement chart" role="img"></canvas></div>
+      <p class="muted" role="status" id="pcIsaChartStatus">Loading ISA measurements…</p>
+      <p class="muted" id="pcIsaChartNote"></p>
+    </div>
+    <div class="chart person-chart-card" id="pcChoiceGraphCard">
+      <h2>🗣️ Individual Choices &amp; Satisfaction</h2>
+      <p class="muted">These are the individual's optional My STAR answers, not caregiver observations or ISA goal scores.</p>
+      <div class="person-chart-columns">
+        <section>
+          <h3>How activities felt</h3>
+          <div class="person-chart-canvas"><canvas id="pcSatisfactionChart" aria-label="Individual activity satisfaction responses" role="img"></canvas></div>
+          <p class="muted" id="pcSatisfactionStatus">Loading activity responses…</p>
+        </section>
+        <section>
+          <h3>Activities and leisure choices</h3>
+          <div class="person-chart-canvas"><canvas id="pcLeisureChart" aria-label="Individual leisure preferences and choices" role="img"></canvas></div>
+          <p class="muted" id="pcLeisureStatus">Loading leisure choices…</p>
+        </section>
+      </div>
+      <p id="pcActivityContext" class="muted"></p>
+    </div>
     <div class="chart report-summary-inline" id="reportSummaryCard" hidden>
       <h4>Report Summary (Plain Language)</h4>
       <p class="muted chart-range-label" id="reportSummaryRange">Range: Month</p>
@@ -1973,6 +2040,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
     import { createIsaProgressReport } from './isa-progress-report-embedded.js?v=2026.10.29A';
     import { createIsaIndividualPerspective } from './isa-individual-perspective.js?v=2026.10.29R2';
     import { createIndividualVoiceReport } from './individual-voice-report.js?v=2026.10.29B';
+    import { createPersonCenteredCharts } from './report-person-centered-charts.js?v=2026.10.29P1';
 
     /* =============== Optional live data =============== */
     let loadFromSupabase = null;
@@ -1993,6 +2061,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
     const isaReport = createIsaProgressReport({rest});
     const isaPerspective = createIsaIndividualPerspective({rest});
     const individualReport = createIndividualVoiceReport({rest});
+    const personCenteredCharts = createPersonCenteredCharts({rest});
 
     async function ensureReportGroupContext() {
       try {
@@ -6387,6 +6456,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
       void isaReport.refresh(groupId, cgState.entries);
       void isaPerspective.refresh(groupId);
       void individualReport.refresh(groupId);
+      void personCenteredCharts.refresh(groupId, cgState.entries);
       window.dispatchEvent(new Event('caregiverDataReady'));
     }
 

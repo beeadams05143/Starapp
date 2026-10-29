@@ -118,15 +118,18 @@ export function summarizeIsaMeasurement(metric) {
       ? (days + ' reported ' + (days === 1 ? 'date' : 'dates'))
       : (answers.length + ' recorded responses across ' + days + ' ' + (days === 1 ? 'date' : 'dates'));
     const scope = onePerDate ? 'per reported date' : 'per recorded response';
+    if (/^steps?$/i.test(unit)) {
+      // A count of unnamed task steps (1, 2, 3…) cannot tell a provider WHICH
+      // actions were completed. Do not print a numerical range that implies a
+      // meaningful skills progression; preserve the original counts only in
+      // the expandable dated evidence.
+      return label + ': A step count was documented on ' + datePhrase +
+        ', but the ISA goal and check-ins do not identify the individual steps. ' +
+        'STAR therefore cannot determine which phone-call skills were practiced ' +
+        'or completed from these numbers.';
+    }
     if (answers.length === 1) {
       return label + ': ' + formatNumber(numbers[0]) + suffix + ' recorded on one date.';
-    }
-    if (/^steps?$/i.test(unit)) {
-      // The number does not identify the constituent actions. Do not turn a
-      // count of completed steps into an invented skills narrative.
-      return label + ': Across ' + frequency + ', caregivers recorded ' +
-        formatNumber(min) + ' to ' + formatNumber(max) + ' steps completed ' +
-        scope + '. The responses do not specify which steps were completed.';
     }
     if (/^(?:minutes?|hours?|seconds?)$/i.test(unit)) {
       return label + ': Across ' + frequency + ', documented time ranged from ' +

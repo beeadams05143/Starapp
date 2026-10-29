@@ -28,7 +28,25 @@ async function fetchMemberships(userId) {
       `user_id=eq.${encodeURIComponent(userId)}`,
       'order=joined_at.asc',
     ].join('&'));
-    return Array.isArray(rows) ? rows.filter((row) => row?.group_id) : [];
+    const joined = Array.isArray(rows) ? rows.filter((row) => row?.group_id) : [];
+    if (joined.length) return joined;
+
+    // Embedded joins can yield zero rows even when the membership is present.
+    // Check the user's own membership directly before assuming no group exists.
+    const direct = await rest([
+      'group_members?select=group_id,joined_at',
+      `user_id=eq.${encodeURIComponent(userId)}`,
+      'order=joined_at.asc',
+    ].join('&'));
+    if (!Array.isArray(direct) || !direct.length) return [];
+    const ids = [...new Set(direct.map((row) => row.group_id).filter(Boolean))];
+    if (!ids.length) return [];
+    const groups = await rest(`groups?select=id,name,archived&id=in.(${ids.join(',')})`);
+    const byId = new Map((Array.isArray(groups) ? groups : []).map((group) => [group.id, group]));
+    return direct.filter((row) => row?.group_id).map((row) => ({
+      ...row,
+      groups: byId.get(row.group_id) || null,
+    }));
   } catch (error) {
     console.warn('[active-group] membership lookup failed', error?.message || error);
     throw error; // A failed read is not proof that this user has no group.

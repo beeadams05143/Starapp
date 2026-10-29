@@ -33,11 +33,12 @@ assert.equal(report.answerCount,5,'counts actual answers including 0, not blank'
 assert.equal(report.observationDays,2);
 assert.equal(report.outcomes.length,2,'other group and person omitted');
 assert.equal(report.outcomes.find(x=>x.id==='goal-2').status,'archived');
-assert.match(txt,/2026-10-21 \| Caregiver A \| Number of prompts: 0/);
+assert.match(txt,/Number of prompts: 0 recorded on one recorded date/);
 assert.match(txt,/Declined/);
 assert.match(txt,/Not offered/);
 assert.match(txt,/Not observed/);
 assert.doesNotMatch(txt,/PRIVATE|automatically achieved|success rate|percent complete/i);
+assert.doesNotMatch(txt,/2026-10-21.*Caregiver/, 'provider letter must not dump daily records');
 assert.equal(buildIsaProgress(entries,cards,{...scope,start:'2026-10-22'}).answerCount,2);
 assert.equal(buildIsaProgress(entries,cards,{...scope,start:'2026-10-24',end:'2026-10-25'}).answerCount,0);
 assert.throws(()=>buildIsaProgress(entries,cards,{...scope,start:'2026-10-31',end:'2026-10-01'}),/start date/);
@@ -45,5 +46,38 @@ assert.throws(()=>buildIsaProgress(entries,cards,{start:'2026-10-01'}),/group/);
 const snap=buildIsaProgress([{id:'old',group_id:groupId,date:'2026-10-22',
   payload:{isa_entries:[answer('old-goal','old-measure','Needs support','Historical wording')]}}],[],scope);
 assert.equal(snap.outcomes[0].status,'historical','old card observations survive archiving/removal');
-assert.match(formatIsaProgressText(snap),/Historical wording: Needs support/);
+assert.match(formatIsaProgressText(snap),/Historical wording:.*Needs support/);
+
+// Regression: a month of 60 fictional daily ISA answers must fit into a concise letter.
+const days=[1,2,3,5,6,7,9,10,11,13,14,15,17,18,19,21,22,23,25,26];
+const community=[70,20,30,50,60,70,30,40,50,70,20,30,50,60,70,30,40,50,70,20];
+const repeated=days.map((day,i)=>({
+  id:'sample-'+day,group_id:groupId,date:'2026-10-'+String(day).padStart(2,'0'),
+  caregiver_name:'Cedar Grove Demo Caregiver (fictional)',payload:{isa_entries:[
+    {outcome_id:'community',measurement_id:'minutes',outcome_title:'Choose a community activity',
+      outcome_category:'Community Participation',measurement_label:'Minutes participating',
+      value:community[i],unit:'minutes',activity:'Fictional community outing'},
+    {outcome_id:'phone',measurement_id:'steps',outcome_title:'Practice making a supported phone call',
+      outcome_category:'Communication',measurement_label:'Phone call steps completed',
+      value:(i%3)+1,unit:'steps',activity:'Mock phone practice'},
+    {outcome_id:'leisure',measurement_id:'choice',outcome_title:'Select a preferred leisure activity',
+      outcome_category:'Self-Direction',measurement_label:'Participation choice',
+      value:[4,9].includes(i)?'Declined':'Participated',activity:'Fictional leisure activity'}
+  ]}
+}));
+const monthReport=buildIsaProgress(repeated,[],{groupId,start:'2026-10-01',end:'2026-10-29',individualId:''});
+const monthText=formatIsaProgressText(monthReport);
+assert.equal(monthReport.answerCount,60);
+assert.equal(monthReport.observationDays,20);
+assert.match(monthText,/ranging from 20 to 70 minutes/);
+assert.match(monthText,/ranging from 1 to 3 steps/);
+assert.match(monthText,/“Participated” 18 times/);
+assert.match(monthText,/“Declined” twice/);
+assert.doesNotMatch(monthText,/2026-10-01 \|/);
+assert.doesNotMatch(monthText,/Cedar Grove Demo Caregiver/);
+assert.ok(monthText.length<2000,'60 entries must produce a short readable letter');
+assert.equal(monthReport.outcomes.flatMap(o=>o.observations).length,60,
+  'daily evidence must remain intact in report data');
+console.log('Monthly ISA narrative regression: 60 entries summarized without dumping dates: PASS');
+
 console.log('ISA progress report: scoping, dates, values, archives, and evidence-only reporting: PASS');

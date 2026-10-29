@@ -159,7 +159,13 @@ async function refreshSession(oldSession) {
         headers:{ apikey:SUPABASE_ANON_KEY, 'Content-Type':'application/json' },
         body:JSON.stringify({refresh_token:oldSession.refresh_token})
       });
-      if (!res.ok) throw new Error(`Refresh returned HTTP ${res.status}`);
+      if (!res.ok) {
+        const error = new Error(`Refresh returned HTTP ${res.status}`);
+        // A rejected refresh token cannot be reused. Other errors (such as
+        // temporary network/server failures) should not delete the session.
+        error.invalidRefreshToken = res.status === 400 || res.status === 401;
+        throw error;
+      }
       const fresh = normalizeSession(await res.json());
       if (!fresh?.refresh_token || !tokenValid(fresh)) throw new Error('Invalid refreshed session');
       saveSession(fresh);
@@ -168,6 +174,11 @@ async function refreshSession(oldSession) {
       console.warn('[supabase] Session refresh failed',error?.message||error);
       const latest=getSessionFromStorage();
       if (latest?.access_token !== oldSession.access_token && tokenValid(latest)) return latest;
+      if (error?.invalidRefreshToken && latest?.access_token === oldSession.access_token) {
+        // Prevent every page from replaying the same revoked refresh token.
+        // Clear only the sandbox auth session, never its group or test data.
+        clearSavedSession();
+      }
       return null; // NEVER return a known-expired token.
     }
   })();

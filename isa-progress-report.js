@@ -113,12 +113,29 @@ export function summarizeIsaMeasurement(metric) {
     const average = numbers.reduce((sum, n) => sum + n, 0) / numbers.length;
     const unit = String(answers[0].unit || metric.unit || '').trim();
     const suffix = unit ? ' ' + unit : '';
+    const onePerDate = days === answers.length;
+    const frequency = onePerDate
+      ? (days + ' reported ' + (days === 1 ? 'date' : 'dates'))
+      : (answers.length + ' recorded responses across ' + days + ' ' + (days === 1 ? 'date' : 'dates'));
+    const scope = onePerDate ? 'per reported date' : 'per recorded response';
     if (answers.length === 1) {
-      return label + ': ' + formatNumber(numbers[0]) + suffix + ' recorded on ' + datePhrase + '.';
+      return label + ': ' + formatNumber(numbers[0]) + suffix + ' recorded on one date.';
     }
-    return label + ': ' + answers.length + ' measurements across ' + datePhrase +
-      ', ranging from ' + formatNumber(min) + ' to ' + formatNumber(max) + suffix +
-      ' per entry (average ' + formatNumber(average) + suffix + ').';
+    if (/^steps?$/i.test(unit)) {
+      // The number does not identify the constituent actions. Do not turn a
+      // count of completed steps into an invented skills narrative.
+      return label + ': Across ' + frequency + ', caregivers recorded ' +
+        formatNumber(min) + ' to ' + formatNumber(max) + ' steps completed ' +
+        scope + '. The responses do not specify which steps were completed.';
+    }
+    if (/^(?:minutes?|hours?|seconds?)$/i.test(unit)) {
+      return label + ': Across ' + frequency + ', documented time ranged from ' +
+        formatNumber(min) + ' to ' + formatNumber(max) + suffix + ' ' + scope +
+        ', averaging ' + formatNumber(average) + suffix + ' ' + scope + '.';
+    }
+    return label + ': Across ' + frequency + ', the recorded values ranged from ' +
+      formatNumber(min) + ' to ' + formatNumber(max) + suffix + ' ' + scope +
+      ' (average ' + formatNumber(average) + suffix + ' ' + scope + ').';
   }
   const frequencies = new Map();
   for (const answer of answers) {

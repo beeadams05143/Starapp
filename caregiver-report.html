@@ -8009,7 +8009,9 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
       return null;
     }
     win.document.open();
-    win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapePrintHtml(title)}</title><style>${styles}</style></head><body>${bodyHtml}</body></html>`);
+    const returnButton = `<div class="print-return-bar"><button type="button" class="print-return-button" onclick="try{if(window.opener&&!window.opener.closed){window.opener.focus();window.close();return}}catch(e){}window.location.replace('/caregiver-report.html')">← Return to STAR</button></div>`;
+    const returnStyles = `.print-return-bar{position:fixed;top:10px;right:10px;z-index:99999}.print-return-button{border:1px solid #d6dbe3;border-radius:999px;background:#fff;color:#1f2937;box-shadow:0 4px 16px rgba(15,23,42,.18);padding:10px 16px;font:700 15px/1.2 system-ui,-apple-system,Segoe UI,Roboto,Arial;cursor:pointer}@media print{.print-return-bar{display:none!important}}`;
+    win.document.write(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapePrintHtml(title)}</title><style>${styles}${returnStyles}</style></head><body>${returnButton}${bodyHtml}</body></html>`);
     win.document.close();
     const doPrint = () => {
       win.focus();

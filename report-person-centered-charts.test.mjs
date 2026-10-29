@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {buildIsaChartSeries,buildChoiceSatisfactionData} from './report-person-centered-charts.js';
+import {buildIsaChartSeries,buildChoiceSatisfactionData,chooseDefaultIsaChartMetric} from './report-person-centered-charts.js';
 import {buildIsaProgress} from './isa-progress-report-embedded.js';
 
 const groupId='test-group',scope={groupId,individualId:'',start:'2026-10-01',end:'2026-10-29'};
@@ -34,6 +34,18 @@ assert.equal(communityChart.points.at(-1).date,'2026-10-26');
 assert.equal(communityChart.unit,'minutes');
 assert.doesNotMatch(JSON.stringify(communityChart),/achieved|score|pass\/fail/);
 const phoneChart=buildIsaChartSeries(report,'phone','steps');
+// Regression: the default was selecting phone steps, leaving a giant empty chart.
+const metricOptions=[
+  {id:'phone|steps',goalId:'phone',measurementId:'steps',label:'Practice phone call — steps'},
+  {id:'community|minutes',goalId:'community',measurementId:'minutes',label:'Community activity — minutes'},
+  {id:'leisure|participation',goalId:'leisure',measurementId:'participation',label:'Leisure choices'}
+];
+assert.equal(chooseDefaultIsaChartMetric(metricOptions,report).id,'community|minutes',
+  'default should always pick recorded, meaningful measurements ahead of undefined steps');
+assert.equal(chooseDefaultIsaChartMetric(metricOptions,report,'phone|steps').id,'phone|steps',
+  'manual selection should remain possible to explain what is missing');
+assert.equal(chooseDefaultIsaChartMetric(metricOptions,report,'nonexistent').id,'community|minutes');
+assert.equal(chooseDefaultIsaChartMetric([],report),null);
 assert.equal(phoneChart.kind,'undefined-steps');
 assert.match(phoneChart.reason,/does not name which steps/);
 assert.ok(!phoneChart.points,'unnamed steps must not be plotted');
@@ -72,6 +84,14 @@ assert.equal(results.choiceTotal,1);
 assert.equal(results.activitiesUnspecified,1);
 assert.deepEqual(results.satisfaction,[{label:'Liked it',count:1},{label:'Did not like',count:1}]);
 assert.deepEqual(results.choices,[{label:'Coloring',count:1}]);
+assert.deepEqual(results.activityRatings,[
+  {activity:'Activity not specified',ratings:{'Did not like':1},total:1},
+  {activity:'I liked the park',ratings:{'Liked it':1},total:1}
+]);
+assert.equal(results.notes.find(n=>n.value==='Did not like').activity,'Activity not specified');
+assert.equal(results.notes.find(n=>n.value==='Liked it').activity,'I liked the park');
+assert.equal(results.activityRatings.reduce((sum,r)=>sum+r.total,0),results.satisfactionTotal,
+  'every recorded satisfaction answer should have a corresponding activity row');
 assert.equal(results.notes.length,3);
 assert.doesNotMatch(JSON.stringify(results),/PRIVATE|Tired/);
 const clipped=buildChoiceSatisfactionData(checkins,{...scope,start:'2026-10-27'});
@@ -81,4 +101,4 @@ const empty=buildChoiceSatisfactionData(checkins,{...scope,start:'2026-11-01',en
 assert.equal(empty.satisfactionTotal,0);
 assert.equal(empty.choiceTotal,0);
 assert.throws(()=>buildChoiceSatisfactionData(checkins,{...scope,start:'2026-11-30',end:'2026-11-01'}),/Start date/);
-console.log('STAR Test charts: ISA measurements, unnamed steps, choices, satisfaction, group/date isolation: PASS');
+console.log('STAR Test charts: sensible default, readable activity labels, group/date isolation and unnamed steps: PASS');

@@ -456,6 +456,11 @@
     .person-chart-canvas{position:relative;width:100%;height:235px;margin:10px 0}
     .person-chart-canvas canvas{width:100%!important;max-height:100%;height:100%!important}
     .person-chart-canvas canvas[hidden]{display:none!important}
+    .person-chart-canvas[hidden]{display:none!important}
+    .person-chart-activity-list{margin:8px 0;padding-left:20px;font-size:13px;line-height:1.55;text-align:left}
+    .person-chart-activity-list li{margin:5px 0;overflow-wrap:anywhere}
+    .person-chart-activity-heading{text-align:left!important;font-size:14px;margin:14px 0 5px!important}
+    .person-chart-card #pcIsaChartStatus{max-width:560px;margin:10px auto;line-height:1.5}
     .person-chart-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
     .person-chart-columns section{min-width:0;border:1px solid #efe4d4;border-radius:12px;padding:10px}
     .person-chart-card .muted{font-size:13px;line-height:1.45}
@@ -1712,6 +1717,10 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
           <h3>How activities felt</h3>
           <div class="person-chart-canvas"><canvas id="pcSatisfactionChart" aria-label="Individual activity satisfaction responses" role="img"></canvas></div>
           <p class="muted" id="pcSatisfactionStatus">Loading activity responses…</p>
+          <h4 class="person-chart-activity-heading">Activities as the individual described them</h4>
+          <ul id="pcActivityFeedbackList" class="person-chart-activity-list" aria-label="Named activities with their dates and satisfaction responses">
+            <li>Loading activity names and ratings…</li>
+          </ul>
         </section>
         <section>
           <h3>Activities and leisure choices</h3>
@@ -2040,7 +2049,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
     import { createIsaProgressReport } from './isa-progress-report-embedded.js?v=2026.10.29A';
     import { createIsaIndividualPerspective } from './isa-individual-perspective.js?v=2026.10.29R2';
     import { createIndividualVoiceReport } from './individual-voice-report.js?v=2026.10.29B';
-    import { createPersonCenteredCharts } from './report-person-centered-charts.js?v=2026.10.29P1';
+    import { createPersonCenteredCharts } from './report-person-centered-charts.js?v=2026.10.29P2';
 
     /* =============== Optional live data =============== */
     let loadFromSupabase = null;

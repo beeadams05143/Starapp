@@ -73,9 +73,9 @@ assert.match(monthText,/20 to 70 minutes per reported date/);
 assert.match(monthText,/averaging 46\.5 minutes per reported date/);
 assert.match(monthText,/Across 20 reported dates/);
 assert.doesNotMatch(monthText,/46\.5 minutes per month/);
-assert.match(monthText,/1 to 3 steps completed per reported date/);
-assert.match(monthText,/do not specify which steps were completed/);
-assert.doesNotMatch(monthText,/average 2 steps/);
+assert.match(monthText,/step count was documented on 20 recorded dates/);
+assert.match(monthText,/do not identify the individual steps/);
+assert.doesNotMatch(monthText,/average 2 steps|1 to 3 steps completed|3 steps completed per reported date/);
 assert.match(monthText,/“Participated” 18 times/);
 assert.match(monthText,/“Declined” twice/);
 assert.doesNotMatch(monthText,/2026-10-01 \|/);
@@ -83,6 +83,18 @@ assert.doesNotMatch(monthText,/Cedar Grove Demo Caregiver/);
 assert.ok(monthText.length<2000,'60 entries must produce a short readable letter');
 assert.equal(monthReport.outcomes.flatMap(o=>o.observations).length,60,
   'daily evidence must remain intact in report data');
+assert.equal(monthReport.outcomes.find(o=>o.id==='phone').observations.length,20,
+  'unnamed numeric step counts are preserved in dated evidence, not invented in the letter');
+const oneStep=buildIsaProgress([{
+  id:'single-phone',group_id:groupId,date:'2026-10-26',payload:{isa_entries:[{
+    outcome_id:'phone',measurement_id:'steps',outcome_title:'Practice making a supported phone call',
+    measurement_label:'Phone call steps completed',value:1,unit:'steps'
+  }]}
+}],[],scope);
+const oneStepLetter=formatIsaProgressText(oneStep);
+assert.match(oneStepLetter,/do not identify the individual steps/);
+assert.doesNotMatch(oneStepLetter,/1 steps recorded|1 steps completed|1 steps/);
+
 
 const sameDay=buildIsaProgress([
   {id:'same-day-1',group_id:groupId,date:'2026-10-21',

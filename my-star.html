@@ -468,7 +468,7 @@
     } else if(page==='pain'){
       painSide='front';wrap('Something Hurts','<p>Tap where it hurts. Pick front or back.</p><div class="body-switch"><button type="button" data-side="front" aria-pressed="true">FRONT</button><button type="button" data-side="back" aria-pressed="false">BACK</button></div><div class="body-layout" id="painPoster">'+bodyPoster(true)+'</div><p id="painLocation" class="selected-location" role="status">Choose a body part</p>'+support()+'<div class="actions">'+button('Done','done','primary')+button('Not now','skip')+'</div>');
     } else if(page==='day'){
-      wrap('My Day','<p>Did you like your activity today?</p><div class="choices">'+choice('Liked it','😊','I liked it')+choice('Okay','😐','It was okay')+choice('Did not like','😞','I did not like it')+choice('No activity','🙅','Not today')+'</div>'+support()+'<div class="actions">'+button('Done','done','primary')+button('Not now','skip')+'</div>');
+      wrap('My Day','<p>Did you like your activity today?</p><div class="choices">'+choice('Liked it','😊','I liked it')+choice('Okay','😐','It was okay')+choice('Did not like','😞','I did not like it')+choice('No activity','🙅','Not today')+'</div><label for="dayActivity">Which activity? (optional)</label>'+dictateControls('dayActivity')+'<textarea class="voice-input" id="dayActivity" maxlength="2000" placeholder="You can say or type what activity you tried."></textarea>'+support()+'<div class="actions">'+button('Done','done','primary')+button('Not now','skip')+'</div>');
     } else if(page==='goals'){
       wrap('Something I Did 🌟','<p>Did you do something you want to share?</p><div class="choices">'+choice('I did something','🌟','I did it!')+choice('I tried something','🙌','I tried!')+choice('I learned something','💡','I learned!')+choice('Someone helped me','🤝','I had help')+'</div><label for="accomplishmentText">What did you do? (optional)</label>'+dictateControls('accomplishmentText')+'<textarea class="voice-input" id="accomplishmentText" placeholder="Tell me what you did, or type here" maxlength="2000"></textarea>'+support()+'<div class="actions">'+button('Done','done','primary')+button('Not now','skip')+'</div>');
     } else if(page==='tell'){
@@ -494,7 +494,7 @@
     return document.getElementById('withSupport')?.checked
       ? (document.getElementById('supportKind')?.value||'Help reported') : 'not_reported';
   }
-  function savePersonalCheckin(btn,responseType,responseValue,offeredOptions){
+  function savePersonalCheckin(btn,responseType,responseValue,offeredOptions,originalWords=''){
     if(!String(responseValue||'').trim()){status('Nothing is required. Choose an answer or select Not now.');return}
     btn.disabled=true;btn.textContent='Saving…';
     status('Saving this fictional My STAR answer…');
@@ -502,7 +502,7 @@
       .then(function(mod){
         return mod.saveFictionalMyStarCheckin({
           responseType:responseType,responseValue:responseValue,
-          offeredOptions:offeredOptions||[],supportKind:supportDescription()
+          offeredOptions:offeredOptions||[],originalWords,supportKind:supportDescription()
         })
       })
       .then(function(){showSilentStars()})
@@ -568,7 +568,7 @@
         return;
       }
       if(current==='feel'||current==='pain'||current==='day'){
-        savePersonalCheckin(a,current==='feel'?'mood':current==='pain'?'comfort':'daily_experience',chosen,[]);
+        savePersonalCheckin(a,current==='feel'?'mood':current==='pain'?'comfort':'daily_experience',chosen,[],current==='day'?(document.getElementById('dayActivity')?.value||'').trim():'');
         return;
       }
       // Team messaging remains a separate preview, never silently saved.

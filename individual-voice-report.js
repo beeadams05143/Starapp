@@ -86,6 +86,17 @@ export function createIndividualVoiceReport({rest,document:doc=document,clock=()
   const d=clock();
   $('individualVoiceStart').value=dateKey(new Date(d.getFullYear(),d.getMonth(),1));
   $('individualVoiceEnd').value=dateKey(d);
+  function syncPeriodPresentation(){
+    const preset=$('individualVoicePeriod'), dates=$('individualVoiceCustomDates'), summary=$('individualVoicePeriodSummary');
+    if(dates)dates.hidden=preset?.value!=='custom';
+    if(!summary)return;
+    const start=$('individualVoiceStart').value,end=$('individualVoiceEnd').value;
+    const pretty=key=>key?new Date(key+'T12:00:00').toLocaleDateString(undefined,
+      {month:'short',day:'numeric',year:'numeric'}):'';
+    summary.textContent=!start&&!end?'Showing all recorded dates':
+      'Showing '+(pretty(start)||'the beginning')+' – '+(pretty(end)||'today');
+  }
+  syncPeriodPresentation();
   async function readAll(table,group,order,fields){
     const out=[];
     for(let offset=0;offset<10000;offset+=500){
@@ -165,10 +176,11 @@ export function createIndividualVoiceReport({rest,document:doc=document,clock=()
     const period=$('individualVoicePeriod').value,now=clock();
     if(period==='month'){$('individualVoiceStart').value=dateKey(new Date(now.getFullYear(),now.getMonth(),1));$('individualVoiceEnd').value=dateKey(now)}
     if(period==='all'){$('individualVoiceStart').value='';$('individualVoiceEnd').value=''}
+    syncPeriodPresentation();
     redraw();
   });
   for(const el of [$('individualVoiceStart'),$('individualVoiceEnd')])el?.addEventListener('change',()=>{
-    $('individualVoicePeriod').value='custom';redraw();
+    $('individualVoicePeriod').value='custom';syncPeriodPresentation();redraw();
   });
   $('individualVoiceCopy')?.addEventListener('click',async()=>{
     try{await navigator.clipboard.writeText(lastText);$('individualVoiceStatus').textContent='Individual Voice text copied.'}

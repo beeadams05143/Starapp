@@ -187,6 +187,18 @@ export function createIsaProgressReport({rest, document: doc = document, clock =
   const startField = $('isaProgressStart'), endField = $('isaProgressEnd'), preset = $('isaProgressPeriod');
   if (startField) startField.value = firstOfMonth(today);
   if (endField) endField.value = dateKey(today);
+  const dateContainer = $('isaCustomDates'), dateSummary = $('isaPeriodSummary');
+  function syncPeriodPresentation() {
+    const isCustom = preset?.value === 'custom';
+    if (dateContainer) dateContainer.hidden = !isCustom;
+    if (!dateSummary) return;
+    const start = startField?.value || '', end = endField?.value || '';
+    const readable = key => key ? new Date(key + 'T12:00:00').toLocaleDateString(undefined,
+      {month:'short',day:'numeric',year:'numeric'}) : '';
+    dateSummary.textContent = !start && !end ? 'Showing all recorded dates' :
+      'Showing ' + (readable(start) || 'the beginning') + ' – ' + (readable(end) || 'today');
+  }
+  syncPeriodPresentation();
   function scope(extra = {}) {
     return {groupId: currentGroupId, start: startField?.value || '', end: endField?.value || '', ...extra};
   }
@@ -295,9 +307,14 @@ export function createIsaProgressReport({rest, document: doc = document, clock =
     if (value === 'month') { startField.value = firstOfMonth(d); endField.value = dateKey(d); }
     else if (value === 'quarter') { const beginning = new Date(d.getFullYear(),d.getMonth()-2,1); startField.value = firstOfMonth(beginning); endField.value = dateKey(d); }
     else if (value === 'all') { startField.value = ''; endField.value = ''; }
+    syncPeriodPresentation();
     redraw();
   });
-  for (const field of [startField,endField]) field?.addEventListener('change', () => { if (preset) preset.value = 'custom'; redraw(); });
+  for (const field of [startField,endField]) field?.addEventListener('change', () => {
+    if (preset) preset.value = 'custom';
+    syncPeriodPresentation();
+    redraw();
+  });
   $('isaProgressCopy')?.addEventListener('click', async () => {
     try { await navigator.clipboard.writeText(lastText); $('isaProgressStatus').textContent = 'ISA progress summary copied.'; }
     catch { $('isaProgressStatus').textContent = 'Clipboard unavailable. Try selecting the dated entries.'; }

@@ -3,7 +3,7 @@
  * router.js lives at repo root (same tier as auth.html); not under /scripts/.
  */
 export async function loadAndRunRouter() {
-  const VERSION = '2026.10.29UVM2';
+  const VERSION = '2026.10.29UVM3';
   const candidates = [];
 
   try {

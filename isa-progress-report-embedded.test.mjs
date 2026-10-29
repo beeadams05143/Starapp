@@ -33,7 +33,7 @@ assert.equal(report.answerCount,5,'counts actual answers including 0, not blank'
 assert.equal(report.observationDays,2);
 assert.equal(report.outcomes.length,2,'other group and person omitted');
 assert.equal(report.outcomes.find(x=>x.id==='goal-2').status,'archived');
-assert.match(txt,/Number of prompts: 0 recorded on one documented date/);
+assert.match(txt,/Number of prompts: 0 recorded on one date/);
 assert.match(txt,/Declined/);
 assert.match(txt,/Not offered/);
 assert.match(txt,/Not observed/);
@@ -69,12 +69,12 @@ const monthReport=buildIsaProgress(repeated,[],{groupId,start:'2026-10-01',end:'
 const monthText=formatIsaProgressText(monthReport);
 assert.equal(monthReport.answerCount,60);
 assert.equal(monthReport.observationDays,20);
-assert.match(monthText,/20 to 70 minutes per documented date/);
-assert.match(monthText,/averaging 46\.5 minutes per documented date/);
-assert.match(monthText,/This is not a monthly average/);
+assert.match(monthText,/20 to 70 minutes per reported date/);
+assert.match(monthText,/averaging 46\.5 minutes per reported date/);
+assert.match(monthText,/Across 20 reported dates/);
 assert.doesNotMatch(monthText,/46\.5 minutes per month/);
-assert.match(monthText,/between 1 and 3 steps completed per documented date/);
-assert.match(monthText,/do not identify which specific steps were completed/);
+assert.match(monthText,/1 to 3 steps completed per reported date/);
+assert.match(monthText,/do not specify which steps were completed/);
 assert.doesNotMatch(monthText,/average 2 steps/);
 assert.match(monthText,/“Participated” 18 times/);
 assert.match(monthText,/“Declined” twice/);

@@ -3,7 +3,7 @@ import {
   SUPABASE_ANON_KEY,
   getSessionFromStorage as coreGetSessionFromStorage,
   ensureSession as coreEnsureSession,
-} from './supabaseClient.js?v=2026.07.03A';
+} from './supabaseClient.js?v=2026.10.29TEST1';
 
 export function getSessionFromStorage() {
   return coreGetSessionFromStorage();
@@ -11,7 +11,7 @@ export function getSessionFromStorage() {
 
 export async function requireSession() {
   const session = await coreEnsureSession();
-  if (!session?.access_token) throw new Error('Supabase session required');
+  if (!session?.access_token) throw new Error('Your STAR TEST sign-in has expired. Please sign in again to view reports.');
   return session;
 }
 
@@ -35,7 +35,8 @@ export async function rest(path, { method = 'GET', headers = {}, body, signal, e
   let response = await send(session);
   if (response.status === 401) {
     session = await coreEnsureSession({ forceRefresh: true });
-    if (session?.access_token) response = await send(session);
+    if (!session?.access_token) throw new Error('Your STAR TEST sign-in has expired. Please sign in again to view reports.');
+    response = await send(session);
   }
 
   if (!response.ok) {

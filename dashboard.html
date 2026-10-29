@@ -395,8 +395,8 @@
 <script type="module">
   import {
     getSessionFromStorage,
-  } from './supabaseClient.js?v=2026.03.29A';
-  import { fetchCurrentProfile } from './onboarding-flow.js?v=2026.03.29A';
+  } from './supabaseClient.js?v=2026.10.29UVM2';
+  import { fetchCurrentProfile } from './onboarding-flow.js?v=2026.10.29UVM2';
 
   const userEmailEl = document.getElementById('user-email');
 
@@ -426,8 +426,8 @@
 
 <!-- Counts only drafts belonging to the signed-in caregiver in the active group, on this device. -->
 <script type="module">
-  import { getSessionFromStorage } from './restClient.js?v=2025.01.09E';
-  import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
+  import { getSessionFromStorage } from './restClient.js?v=2026.10.29UVM2';
+  import { ensureActiveGroupId } from './active-group.js?v=2026.10.29UVM2';
   import { getSavedDraftCount } from './home-saved-drafts.js?v=2026.10.28D';
 
   const badge = document.getElementById('savedDraftCount');
@@ -462,8 +462,8 @@
 
 <script type="module">
   // UI shortcut only; all review permissions remain enforced by Supabase RLS.
-  import { getSessionFromStorage, rest } from './restClient.js?v=2025.01.09E';
-  import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
+  import { getSessionFromStorage, rest } from './restClient.js?v=2026.10.29UVM2';
+  import { ensureActiveGroupId } from './active-group.js?v=2026.10.29UVM2';
   const counter=document.getElementById('starReviewCount');
   (async()=>{
     const userId=getSessionFromStorage()?.user?.id;

@@ -1,5 +1,5 @@
-import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.19B';
-import { ensureActiveGroupId } from './active-group.js?v=2026.10.07A';
+import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM2';
+import { ensureActiveGroupId } from './active-group.js?v=2026.10.29UVM2';
 
 const $ = id => document.getElementById(id);
 const state = { groupId:null, userId:null, isAdmin:false, editing:null, records:[], strategies:[], measurements:[], members:[], selectedAssignees:[] };

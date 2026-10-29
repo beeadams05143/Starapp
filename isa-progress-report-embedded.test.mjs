@@ -69,8 +69,13 @@ const monthReport=buildIsaProgress(repeated,[],{groupId,start:'2026-10-01',end:'
 const monthText=formatIsaProgressText(monthReport);
 assert.equal(monthReport.answerCount,60);
 assert.equal(monthReport.observationDays,20);
-assert.match(monthText,/ranging from 20 to 70 minutes/);
-assert.match(monthText,/ranging from 1 to 3 steps/);
+assert.match(monthText,/20 to 70 minutes per documented date/);
+assert.match(monthText,/averaging 46\.5 minutes per documented date/);
+assert.match(monthText,/This is not a monthly average/);
+assert.doesNotMatch(monthText,/46\.5 minutes per month/);
+assert.match(monthText,/between 1 and 3 steps completed per documented date/);
+assert.match(monthText,/do not identify which specific steps were completed/);
+assert.doesNotMatch(monthText,/average 2 steps/);
 assert.match(monthText,/“Participated” 18 times/);
 assert.match(monthText,/“Declined” twice/);
 assert.doesNotMatch(monthText,/2026-10-01 \|/);

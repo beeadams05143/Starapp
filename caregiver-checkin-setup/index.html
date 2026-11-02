@@ -365,6 +365,22 @@
       </div>
       <p id="assignmentHelp" class="muted">Select an individual and a caregiver to make a personal assignment.</p>
     </section>
+    <section class="hero" aria-labelledby="includedNotesHeading">
+      <h2 id="includedNotesHeading">Always available in the caregiver check-in</h2>
+      <p>These optional notes are included for every caregiver, regardless of the questions selected below. Caregivers can leave either note blank.</p>
+      <div class="grid">
+        <article class="card">
+          <h3>★ Gold Star — Important Observations</h3>
+          <p>Capture one meaningful moment, accomplishment, or important observation in up to 180 characters. Find it near the end of the check-in under <strong>Notes &amp; Important Observations</strong>.</p>
+          <p class="muted">Included with its date in the monthly team letter. Separate from ISA progress. No setup checkbox is needed.</p>
+        </article>
+        <article class="card">
+          <h3>Education &amp; Learning — Skill Development Note</h3>
+          <p>Record what was practiced or learned in the <strong>Education &amp; Skill Development</strong> section: for example, fire safety, using Siri to make a call, or reading a social story. Up to 180 characters.</p>
+          <p class="muted">The short note is always included. Choose additional educational measures in <strong>Education &amp; Learning — Detailed Tracking</strong> below.</p>
+        </article>
+      </div>
+    </section>
     <section id="setupGrid" class="grid" aria-label="Caregiver setup categories" hidden></section>
     <section id="isaLinkSetup" class="hero" hidden aria-label="ISA measurement links">
       <h2>ISA measures — reuse a question or ask separately</h2>
@@ -508,7 +524,7 @@
       },
       {
         key: 'educational',
-        label: 'Educational',
+        label: 'Education & Learning — Detailed Tracking',
         items: [
           {
             key: 'functional_communication',

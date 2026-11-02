@@ -351,7 +351,7 @@
       </div>
       <div id="setupStatus" class="status" role="status" aria-live="polite"></div>
       <div class="actions">
-        <button id="saveBtn" type="button" class="btn">Save Caregiver Setup</button>
+        <button id="saveBtn" type="button" class="btn" hidden>Save Caregiver Setup</button>
         <a id="previewCheckinBtn" class="btn secondary" href="/caregiver-checkin.html">Preview Caregiver Check-In</a>
       </div>
     </section>
@@ -1219,6 +1219,7 @@
       }
       document.getElementById('setupGrid').hidden=false;
       document.getElementById('assignmentSetup').hidden=false;
+      saveBtn.hidden=false;
       if(!state.members.length) await loadGroupPeople();
       groupMetaEl.textContent = state.groupName
         ? `Configuring caregiver setup for ${state.groupName}`

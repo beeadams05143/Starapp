@@ -4886,12 +4886,6 @@
       );
       config = rows?.[0] || null;
     }
-    if (!config && userId) {
-      const rows = await rest(
-        `caregiver_checkin_configs?individual_id=eq.${encodeURIComponent(userId)}&select=id,individual_id,group_id,selected_categories,selected_items,updated_at&order=updated_at.desc.nullslast&limit=1`
-      );
-      config = rows?.[0] || null;
-    }
     if(assigned)config=assigned;
     if (config && isCustomCaregiverSetupEnabled(config)) {
       caregiverSetupState.configRowId = config.id || null;

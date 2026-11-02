@@ -18,7 +18,7 @@ begin
  if n_cards<>3 or n_people<>1 then
    raise exception 'UVM backfill preflight failed: expected 3 blank cards and 1 group individual, found % and %',n_cards,n_people;
  end if;
-end;
+end $star_test_preflight$;
 -- Preserve the AFTER UPDATE audit trigger and version history;
 -- temporarily bypass only the BEFORE UPDATE ownership guard in this transaction.
 alter table public.star_isa_outcomes disable trigger star_isa_outcomes_write;
@@ -33,6 +33,6 @@ begin
  where group_id='c40d0ac1-0122-46f6-b358-fac283287bb5'::uuid and individual_id='';
  get diagnostics n=row_count;
  if n<>3 then raise exception 'UVM backfill rolled back: expected 3 updates, found %',n; end if;
-end;
+end $star_test_update$;
 alter table public.star_isa_outcomes enable trigger star_isa_outcomes_write;
 commit;

@@ -120,25 +120,7 @@
     }
   };
 
-  const attentionItems = [
-    'document',
-    'chat',
-    'emergency',
-  ];
-
-  function updateHomeBadge() {
-    const badge = document.getElementById('homeBadge');
-    if (!badge) return;
-
-    const count = attentionItems.length;
-
-    if (count === 0) {
-      badge.style.display = 'none';
-    } else {
-      badge.style.display = 'inline-block';
-      badge.textContent = count;
-    }
-  }
+  // Home has no unread-count data source. Do not display a placeholder badge.
 
   const iconSvg = {
     home: '<svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" fill="none" stroke-width="2" aria-hidden="true"><path d="M3 12l9 -9l9 9"></path><path d="M9 21v-6h6v6"></path></svg>',
@@ -183,17 +165,11 @@
             return `<a href="${tab.href}" class="tab nav-item${isHome ? ' active' : ''}"${isHome ? ' id="homeNav"' : ''}>` +
               `${iconSvg[tab.icon] || iconSvg.home}` +
               `<span>${tab.label}</span>` +
-              `${isHome ? '<div class="badge" id="homeBadge">3</div>' : ''}` +
             `</a>`;
           }).join('')}
         </div>
       </nav>
     `;
-    updateHomeBadge();
-    document.getElementById('homeNav')?.addEventListener('click', () => {
-      const badge = document.getElementById('homeBadge');
-      if (badge) badge.style.display = 'none';
-    });
   }
   renderBottomBar();
   window.addEventListener('storage', (event) => {

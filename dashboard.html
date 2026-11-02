@@ -310,7 +310,7 @@
     </section>
 
     <section class="dashboard-card">
-      <div class="section-label">Quick actions</div>
+      <div class="section-label">Quick actions <a id="editCaregiverCheckinLink" hidden href="/caregiver-checkin-setup/" style="font-size:13px;font-weight:600;margin-left:12px;text-transform:none;letter-spacing:normal">Edit caregiver check-in</a></div>
       <div class="quick-actions">
         <a class="action-card active" href="caregiver-checkin.html">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
@@ -473,6 +473,7 @@
     const members=await rest('group_members?select=role&group_id=eq.'+
       encodeURIComponent(groupId)+'&user_id=eq.'+encodeURIComponent(userId)+'&limit=1');
     if(members?.[0]?.role!=='admin'){counter.textContent='Administrator review · Access required';return;}
+    document.getElementById('editCaregiverCheckinLink').hidden=false;
     try{
       const pending=await rest('star_individual_observations_test?select=id&group_id=eq.'+
         encodeURIComponent(groupId)+'&review_status=eq.pending&limit=101');

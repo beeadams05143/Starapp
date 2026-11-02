@@ -4895,10 +4895,9 @@
       caregiverSetupState.itemDescriptions = normalizeItemDescriptions(parseConfigObject(config.selected_items)?.__item_descriptions__);
     }
 
-    const localWizardConfig = parseConfigObject(localStorage.getItem('caregiver_config'));
-    if (!caregiverSetupState.forceLegacyMode && !caregiverSetupState.hasConfig && localWizardConfig) {
-      applyLocalWizardConfigToSetupState(localWizardConfig);
-    }
+    // In UVM Testing, the shared admin editor and its Supabase records are the
+    // single source of truth. Old browser-only wizard settings must not override
+    // the check-in assigned to the signed-in caregiver.
     announce();
   }
 

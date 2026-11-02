@@ -387,6 +387,12 @@
       <p>Choose an existing check-in answer only when it truly measures the same thing with the same units and response choices. Nothing is linked automatically. Blank means STAR asks the original ISA question separately.</p>
       <div id="isaMappingList"></div>
     </section>
+    <section id="bottomSavePanel" class="hero" hidden aria-label="Save caregiver setup">
+      <div class="actions">
+        <button id="saveBtnBottom" type="button" class="btn" disabled>Save Caregiver Setup</button>
+      </div>
+      <div id="setupStatusBottom" class="status" role="status" aria-live="polite"></div>
+    </section>
   </main>
 
   <script type="module">
@@ -824,6 +830,8 @@
     const setStatus = (text, type = '') => {
       setupStatusEl.textContent = text || '';
       setupStatusEl.className = `status${type ? ` ${type}` : ''}`;
+      document.getElementById('setupStatusBottom').textContent = text || '';
+      document.getElementById('setupStatusBottom').className = setupStatusEl.className;
     };
 
     function getItemDescription(itemKey, itemLabel) {
@@ -1468,6 +1476,20 @@
 
     renderCategories();
     saveBtn.addEventListener('click', saveConfig);
+    const saveBtnBottom = document.getElementById('saveBtnBottom');
+    const syncBottomSave = () => {
+      document.getElementById('bottomSavePanel').hidden = saveBtn.hidden;
+      saveBtnBottom.disabled = saveBtn.disabled;
+      saveBtnBottom.textContent = saveBtn.textContent;
+    };
+    new MutationObserver(syncBottomSave).observe(saveBtn, {
+      attributes: true, attributeFilter: ['hidden', 'disabled'],
+      childList: true, characterData: true, subtree: true
+    });
+    syncBottomSave();
+    saveBtnBottom.addEventListener('click', () => {
+      if (!saveBtn.hidden && !saveBtn.disabled) saveBtn.click();
+    });
     previewCheckinBtn?.addEventListener('click', () => {
       setStatus('Opening caregiver check-in preview…', 'success');
     });

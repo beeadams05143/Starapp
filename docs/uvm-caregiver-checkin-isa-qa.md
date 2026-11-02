@@ -10,10 +10,25 @@
 - Report aggregation checks passed for separate dates, real zero, blank omission, parent check-in ID, and different-individual exclusion.
 - **Still required:** actual phone/desktop UI, Netlify deployment, non-admin login, and new linked submission -> report reconciliation.
 
+## Ready-to-use fictional test data — November 2, 2026
+
+- Group: **Cedar Grove Test Team**.
+- Non-admin caregivers: **Alex — Fictional Caregiver** and **Jamie — Fictional Caregiver**. Both have separate working logins; obtain passwords privately from Beth. Do not commit credentials.
+- Individuals: **Taylor — Fictional Individual** and **Morgan — Fictional Individual**.
+- Taylor has **four active cards**: supported phone call (steps), community activity (minutes), leisure activity (Participated / Declined / Not offered), and **Night awakenings (answer-reuse test)** (awakenings).
+- Morgan has **three active cards**: supported phone call (steps), community activity (minutes), and leisure activity (Participated / Declined / Not offered).
+- Each new card is explicitly assigned to both fictional caregivers and to the correct individual. Original cards and history were retained.
+- A database read as Alex confirmed the four Taylor cards and three Morgan cards are visible. This does **not** establish that screen selection, submissions, permissions, or reports pass end-to-end.
+- **Caregiver question configurations and approved links have not been pre-saved.** Create them through the admin editor as Test A, so persistence and approval are tested.
+- For the first test, configure **Taylor + Alex** and **Taylor + Jamie** with different questions. Include **Physical Health → Sleep** when testing the awakening link. Explicitly approve the Taylor night-awakening measure against `night_wake_count`; leave the other three measures separate.
+- Check that switching to Morgan never labels Taylor's cards or saved evidence as Morgan's. Record any inability to select the intended individual.
+- Check the bottom **Save Caregiver Setup** button and its result message, the explanatory Gold Star / learning-note cards, and the removal of the false Home “3” badge.
+- Interns should complete the tests below, fix/retest confirmed issues in UVM testing, and return a pass/fail summary with evidence. Testing has not been completed or assigned by a message from this checklist.
+
 ## Preparation
 
 1. Verify Netlify site is deploying the **staging/uvm-intern-sandbox** branch, not `main`.
-2. Use one existing **administrator** login plus a separate **caregiver member** login (not a group admin). Current seeded test group memberships are all admins, even for caregiver-profile accounts. Invite/register a dedicated group *member* tester; do not change someone's existing account permissions or use a real individual's credentials.
+2. Use one existing **administrator** login plus a separate **caregiver member** login (not a group admin). Use the prepared Alex and Jamie accounts, whose group membership is *member* and whose profiles are non-admin. Keep the existing intern and administrator accounts unchanged.
 3. On the test app's Dashboard, the admin should see **Edit caregiver check-in** next to Quick Actions. The member caregiver must not see it.
 4. Navigate to `/caregiver-setup-wizard.html`, `/customize-checkin.html`, and `/caregiver-checkin-setup/`. All should use the single configuration editor; no competing setup wizard and no locally configured overrides.
 
@@ -31,7 +46,7 @@ The three original fictional outcomes measure phone-call **steps**, community **
 
 ## Test C — a deliberately equivalent ISA link
 
-1. In the TEST environment only, use or create an approved temporary ISA measurement that **genuinely matches** an existing check-in answer, including label/meaning, unit and response options. One safe controlled example: an ISA *count of night awakenings* in units `awakenings`, to match native `night_wake_count`. Do not edit the original three cards to force a match.
+1. Use the prepared **Taylor — Night awakenings (answer-reuse test)** card: its count and units `awakenings` match native `night_wake_count`. Review the label/meaning and explicitly approve the link in the admin editor. Do not alter the original cards or match phone-call steps / activity minutes to unrelated sleep fields.
 2. Assign the card to the test caregiver. In the admin editor, select that caregiver and individual, review the proposed reuse, explicitly approve the correct field and save.
 3. Sign in as the member caregiver. Confirm the existing check-in question appears **once** and the duplicate ISA question is absent.
 4. Submit controlled check-ins on distinct unused test dates with values **2**, **0**, and a **skipped/unknown** source. Record each expected outcome and date. Do not repeatedly submit an unconfirmed duplicate for the same date.

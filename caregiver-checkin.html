@@ -7185,6 +7185,13 @@
         const group_id = submissionUI.context.groupId;
         const user = getSessionFromStorage()?.user;
         const payload = buildPayload();
+        // Registered individual and assignment identifiers make the caregiver observation
+        // attributable without storing any invented caregiver titles or blank-as-zero data.
+        if(caregiverSetupState.assignedIndividualId){
+          payload.individual_id=caregiverSetupState.assignedIndividualId;
+          payload.checkin_assignment_id=caregiverSetupState.assignmentId;
+          payload.caregiver_user_id=user_id;
+        }
         // ISA answers are a separate typed collection; do not alter existing health fields.
         payload.isa_entries = window.starIsaCollectEntries?.() || [];
         // New check-ins never create medication-plan entries. Historical

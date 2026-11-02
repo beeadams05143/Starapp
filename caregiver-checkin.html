@@ -5731,10 +5731,20 @@
       console.warn('[cg] caregiver setup config unavailable', error?.message || error);
     }
 
-    document.getElementById('assignedIndividualSelect')?.addEventListener('change',async()=>{
+    document.getElementById('assignedIndividualSelect')?.addEventListener('change',async(event)=>{
+      const prior=caregiverSetupState.assignedIndividualId;
+      const next=event.target.value;
+      if(prior===next)return;
+      if(!window.confirm('Switching individuals starts a blank check-in. Unsaved answers for the previous individual will be cleared. Continue?')){
+        event.target.value=prior||'';
+        return;
+      }
       const userId=getSessionFromStorage()?.user?.id;
-      try{await loadGroupCaregiverSetup(userId);applyCaregiverSetupVisibility();}
-      catch(error){console.error('[cg] unable to switch assigned individual',error);}
+      try{
+        resetForm();
+        await loadGroupCaregiverSetup(userId);
+        applyCaregiverSetupVisibility();
+      }catch(error){console.error('[cg] unable to switch assigned individual',error);}
     });
     initAdlControls();
     movementEls = {

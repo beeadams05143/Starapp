@@ -1396,8 +1396,10 @@
         state.assignmentId?rest('star_isa_measure_links?select=*&assignment_id=eq.'+encodeURIComponent(state.assignmentId)) : Promise.resolve([])
       ]);
       state.existingLinks=links||[];
+      const registeredIndividuals=state.members.filter(p=>p.role==='individual');
+      const legacyGroupCardIsUnambiguous=registeredIndividuals.length===1&&registeredIndividuals[0].id===state.selectedIndividual;
       state.activeCards=(cards||[]).filter(card=>
-        (card.individual_id===''||card.individual_id===state.selectedIndividual)&&
+        (card.individual_id===state.selectedIndividual||(card.individual_id===''&&legacyGroupCardIsUnambiguous))&&
         (!Array.isArray(card.assigned_user_ids)||!card.assigned_user_ids.length||card.assigned_user_ids.includes(state.selectedCaregiver))
       );
       let count=0;

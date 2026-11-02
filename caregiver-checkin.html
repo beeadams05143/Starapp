@@ -2211,7 +2211,12 @@
             <input type="date" id="entryDateInput" name="entry_date"/>
             <span class="muted">Pick another day if you missed logging it.</span>
           </label>
-	          <div id="question-caregiver-name" class="question-block">
+	          <div id="assignedIndividualWrap" hidden class="question-block">
+            <label for="assignedIndividualSelect">Individual for this shift
+              <select id="assignedIndividualSelect" aria-label="Individual for this assigned caregiver check-in"></select>
+            </label>
+          </div>
+          <div id="question-caregiver-name" class="question-block">
 	            <label for="caregiver_name">Caregiver Name:
 	              <input id="caregiver_name" name="caregiver_name" type="text" placeholder="Enter your name" required />
 	            </label>
@@ -3271,6 +3276,7 @@
     selectedCategories: new Set(),
     selectedItems: {},
     itemDescriptions: {},
+    assignmentId: null, assignedIndividualId: null, assignedCaregiverUserId: null,
   };
   const CHECKIN_FIELD_CATEGORY_MAP = {
     sleep: ['hours_sleep', 'sleep_fell_asleep_time', 'sleep_onset_difficulty', 'night_wake_flag', 'night_wake_count', 'prn_used_for_sleep_disturbance'],
@@ -4821,16 +4827,52 @@
   }
 
   async function loadGroupCaregiverSetup(userId){
-    if (caregiverSetupState.forceLegacyMode) {
-      caregiverSetupState.groupId = await ensureGroupId(userId);
+    const currentGroup=await ensureGroupId(userId);
+    let assignments=[];
+    if(currentGroup && userId){
+      assignments=await rest('star_caregiver_checkin_assignments?select=*&active=eq.true&group_id=eq.'+
+        encodeURIComponent(currentGroup)+'&caregiver_user_id=eq.'+encodeURIComponent(userId)+'&order=created_at.asc');
+    }
+    const individualSelect=document.getElementById('assignedIndividualSelect');
+    const individualWrap=document.getElementById('assignedIndividualWrap');
+    let assigned=null;
+    if(assignments.length){
+      caregiverSetupState.forceLegacyMode=false;
+      const remembered=individualSelect?.value||caregiverSetupState.assignedIndividualId;
+      assigned=assignments.find(a=>a.individual_id===remembered)||assignments[0];
+      if(individualSelect && individualWrap){
+        const ids=assignments.map(a=>a.individual_id);
+        const profiles=await rest('profiles?select=id,display_name,public_name,full_name&id=in.('+ids.map(encodeURIComponent).join(',')+')');
+        individualSelect.replaceChildren();
+        for(const a of assignments){
+          const p=(profiles||[]).find(x=>x.id===a.individual_id);
+          individualSelect.add(new Option(p?.public_name||p?.display_name||p?.full_name||'Registered individual',a.individual_id));
+        }
+        individualSelect.value=assigned.individual_id;
+        individualWrap.hidden=assignments.length<=1;
+      }
+    }else if(individualWrap){individualWrap.hidden=true;}
+    caregiverSetupState.assignmentId=assigned?.id||null;
+    caregiverSetupState.assignedIndividualId=assigned?.individual_id||null;
+    caregiverSetupState.assignedCaregiverUserId=assigned?.caregiver_user_id||null;
+    const announce=()=>{
+      window.starCheckinAssignmentContext={
+        assignmentId:caregiverSetupState.assignmentId, individualId:caregiverSetupState.assignedIndividualId,
+        caregiverUserId:userId,groupId:currentGroup
+      };
+      window.dispatchEvent(new Event('star-caregiver-assignment-ready'));
+    };
+    if (caregiverSetupState.forceLegacyMode && !assigned) {
+      caregiverSetupState.groupId = currentGroup;
       caregiverSetupState.configRowId = null;
       caregiverSetupState.hasConfig = false;
       caregiverSetupState.selectedCategories = new Set();
       caregiverSetupState.selectedItems = {};
       caregiverSetupState.itemDescriptions = {};
+      announce();
       return;
     }
-    const groupId = await ensureGroupId(userId);
+    const groupId = currentGroup;
     caregiverSetupState.groupId = groupId || null;
     caregiverSetupState.configRowId = null;
     caregiverSetupState.hasConfig = false;
@@ -4850,6 +4892,7 @@
       );
       config = rows?.[0] || null;
     }
+    if(assigned)config=assigned;
     if (config && isCustomCaregiverSetupEnabled(config)) {
       caregiverSetupState.configRowId = config.id || null;
       caregiverSetupState.hasConfig = true;
@@ -4862,6 +4905,7 @@
     if (!caregiverSetupState.forceLegacyMode && !caregiverSetupState.hasConfig && localWizardConfig) {
       applyLocalWizardConfigToSetupState(localWizardConfig);
     }
+    announce();
   }
 
   function applyLegacyCheckinVisibility({ updateView = true } = {}){
@@ -5693,6 +5737,11 @@
       console.warn('[cg] caregiver setup config unavailable', error?.message || error);
     }
 
+    document.getElementById('assignedIndividualSelect')?.addEventListener('change',async()=>{
+      const userId=getSessionFromStorage()?.user?.id;
+      try{await loadGroupCaregiverSetup(userId);applyCaregiverSetupVisibility();}
+      catch(error){console.error('[cg] unable to switch assigned individual',error);}
+    });
     initAdlControls();
     movementEls = {
       bodyWrap: document.querySelector('[data-movement-body-wrap]'),

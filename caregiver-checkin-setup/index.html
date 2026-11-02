@@ -1230,12 +1230,6 @@
       );
       let config = rows?.[0] || null;
 
-      if (!config && state.userId) {
-        rows = await rest(
-          `caregiver_checkin_configs?individual_id=eq.${encodeURIComponent(state.userId)}&select=id,individual_id,group_id,selected_categories,selected_items,updated_at&order=updated_at.desc.nullslast&limit=1`
-        );
-        config = rows?.[0] || null;
-      }
 
       state.configRowId = config?.id || null;
       state.assignmentId=null;

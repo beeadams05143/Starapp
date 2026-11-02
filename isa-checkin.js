@@ -168,8 +168,17 @@ async function init(){
  const rows=await rest('star_isa_outcomes?select=*&group_id=eq.'+encodeURIComponent(group)+
    '&status=eq.active&order=created_at.asc&limit=300');
  if(rows?.length>=300)throw new Error('Too many ISA outcomes to display safely.');
+ let legacyAllowed=false;
+ if(individualId){
+   const memberIds=(await rest('group_members?select=user_id&group_id=eq.'+encodeURIComponent(group))).map(r=>r.user_id);
+   const people=memberIds.length?await rest('profiles?select=id,role&id=in.('+memberIds.map(encodeURIComponent).join(',')+')'):[];
+   const individuals=people.filter(p=>p.role==='individual');
+   legacyAllowed=individuals.length===1&&individuals[0].id===individualId;
+ }
  cards=(rows||[]).filter(card=>{
-   if(card.individual_id!==individualId)return false;
+   // Legacy outcome cards use an empty individual_id; only associate with the sole
+   // registered individual of that group. Do not alter historical card ownership.
+   if(card.individual_id!==individualId && !(card.individual_id==='' && legacyAllowed))return false;
    const assignees=Array.isArray(card.assigned_user_ids)?card.assigned_user_ids:[];
    return !assignees.length||assignees.includes(session.user.id);
  });

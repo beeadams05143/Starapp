@@ -4,9 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Custom Caregiver Check-In Setup - STAR</title>
-  <script>
-    window.location.replace('/caregiver-setup-wizard.html');
-  </script>
   <style>
     :root{
       --ink:#172033;
@@ -359,12 +356,26 @@
       </div>
     </section>
 
-    <section id="setupGrid" class="grid" aria-label="Caregiver setup categories"></section>
+    <section id="assignmentSetup" class="hero" hidden aria-label="Caregiver-specific setup">
+      <h2>Who is this check-in for?</h2>
+      <p>Start with group defaults, or select a registered individual and caregiver to customize that caregiver's questions. Only administrators can edit.</p>
+      <div class="toolbar">
+        <label>Individual <select id="targetIndividual"><option value="">Group defaults</option></select></label>
+        <label>Caregiver <select id="targetCaregiver"><option value="">Group defaults</option></select></label>
+      </div>
+      <p id="assignmentHelp" class="muted">Select an individual and a caregiver to make a personal assignment.</p>
+    </section>
+    <section id="setupGrid" class="grid" aria-label="Caregiver setup categories" hidden></section>
+    <section id="isaLinkSetup" class="hero" hidden aria-label="ISA measurement links">
+      <h2>ISA measures — reuse a question or ask separately</h2>
+      <p>Choose an existing check-in answer only when it truly measures the same thing with the same units and response choices. Nothing is linked automatically. Blank means STAR asks the original ISA question separately.</p>
+      <div id="isaMappingList"></div>
+    </section>
   </main>
 
   <script type="module">
-    import { rest, getSessionFromStorage } from '/restClient.js?v=2026.03.16B';
-    import { ensureActiveGroupId, resolveActiveGroup } from '/active-group.js?v=2026.03.12A';
+    import { rest, getSessionFromStorage } from '/restClient.js?v=2026.11.02UVM1';
+    import { ensureActiveGroupId, resolveActiveGroup } from '/active-group.js?v=2026.11.02UVM1';
 
     const CATEGORY_DEFS = [
       {
@@ -607,6 +618,8 @@
       categoryEls: new Map(),
       itemEls: new Map(),
       itemDescriptions: {},
+      isAdmin: false, members: [], assignmentId: null, selectedIndividual: '', selectedCaregiver: '',
+      existingLinks: [], activeCards: [],
     };
 
     const DEFAULT_ITEM_DESCRIPTIONS = {
@@ -1197,6 +1210,16 @@
 
       state.groupId = groupId;
       state.groupName = activeGroup?.groupName || '';
+      const roleRows=await rest('group_members?select=role&group_id=eq.'+encodeURIComponent(groupId)+'&user_id=eq.'+encodeURIComponent(state.userId)+'&limit=1');
+      state.isAdmin=roleRows?.[0]?.role==='admin';
+      if(!state.isAdmin){
+        setStatus('Only a STAR group administrator can edit caregiver check-ins.','error');
+        saveBtn.hidden=true;
+        return;
+      }
+      document.getElementById('setupGrid').hidden=false;
+      document.getElementById('assignmentSetup').hidden=false;
+      if(!state.members.length) await loadGroupPeople();
       groupMetaEl.textContent = state.groupName
         ? `Configuring caregiver setup for ${state.groupName}`
         : `Configuring caregiver setup for group ${groupId}`;
@@ -1214,6 +1237,12 @@
       }
 
       state.configRowId = config?.id || null;
+      state.assignmentId=null;
+      if(state.selectedIndividual && state.selectedCaregiver){
+        const assignments=await rest('star_caregiver_checkin_assignments?select=*&group_id=eq.'+encodeURIComponent(groupId)+'&individual_id=eq.'+encodeURIComponent(state.selectedIndividual)+'&caregiver_user_id=eq.'+encodeURIComponent(state.selectedCaregiver)+'&limit=1');
+        const found=assignments?.[0];
+        if(found){state.assignmentId=found.id;config=found;}
+      }
       const selectedCategories = new Set(normalizeCategoryArray(config?.selected_categories));
       const selectedItems = normalizeSelectedItems(config?.selected_items);
       state.itemDescriptions = normalizeItemDescriptions(selectedItems.__item_descriptions__);
@@ -1233,12 +1262,13 @@
       });
 
       saveBtn.disabled = false;
-      setStatus('Configuration loaded.', 'success');
+      await renderIsaMapping();
+      setStatus(state.selectedCaregiver?'Caregiver-specific configuration loaded.':'Group defaults loaded.', 'success');
     }
 
     async function saveConfig() {
-      if (!state.groupId) {
-        setStatus('No active group is selected.', 'error');
+      if (!state.groupId || !state.isAdmin) {
+        setStatus('Only administrators with an active group can save this setup.', 'error');
         return;
       }
       if (!state.userId) {
@@ -1260,7 +1290,21 @@
           updated_at: new Date().toISOString(),
         };
 
-        if (state.configRowId) {
+        if (state.selectedIndividual && state.selectedCaregiver) {
+          const assignment={
+            group_id:state.groupId, individual_id:state.selectedIndividual,
+            caregiver_user_id:state.selectedCaregiver,
+            selected_categories:payload.selected_categories,selected_items:payload.selected_items,
+            active:true,updated_at:payload.updated_at
+          };
+          const records=await rest('star_caregiver_checkin_assignments'+(state.assignmentId?'?id=eq.'+encodeURIComponent(state.assignmentId):''),{
+            method:state.assignmentId?'PATCH':'POST',
+            headers:{Prefer:'return=representation'},
+            body:JSON.stringify(state.assignmentId?assignment:[assignment])
+          });
+          state.assignmentId=records?.[0]?.id||state.assignmentId;
+          await saveIsaLinks();
+        } else if (state.configRowId) {
           await rest(`caregiver_checkin_configs?id=eq.${encodeURIComponent(state.configRowId)}`, {
             method: 'PATCH',
             headers: { Prefer: 'return=representation' },
@@ -1276,16 +1320,120 @@
         }
 
         await loadConfig();
-        setStatus('Caregiver setup saved. Opening caregiver check-in preview…', 'success');
-        setTimeout(() => {
-          window.location.href = '/caregiver-checkin.html';
-        }, 450);
+        setStatus('Caregiver setup and approved ISA links saved. You can preview the caregiver check-in.', 'success');
       } catch (error) {
         console.error('[cg-setup] save failed', error);
         setStatus(error?.message || 'Could not save caregiver setup.', 'error');
       } finally {
         saveBtn.disabled = false;
         saveBtn.textContent = originalLabel;
+      }
+    }
+
+
+    const choiceFields=[
+      {key:'night_wake_count',label:'Number of night awakenings',kinds:['count']},
+      {key:'vocational_participation',label:'Vocational participation',kinds:['choice','boolean']},
+      {key:'home_activity_flag',label:'Home activity participation',kinds:['choice','boolean']},
+      {key:'public_activity_flag',label:'Community activity participation',kinds:['choice','boolean']},
+      {key:'mood_engagement',label:'Mood and engagement',kinds:['choice']},
+      {key:'vocational_notes',label:'Vocational notes',kinds:['note']},
+      {key:'home_notes',label:'Home or family notes',kinds:['note']},
+      {key:'public_activity_note',label:'Community activity note',kinds:['note']},
+      {key:'daily_living_notes',label:'Daily living notes',kinds:['note']},
+      {key:'mood_regulation_notes',label:'Regulation observation notes',kinds:['note']}
+    ];
+    const individualSelect=document.getElementById('targetIndividual');
+    const caregiverSelect=document.getElementById('targetCaregiver');
+    const linkPanel=document.getElementById('isaLinkSetup');
+    const linkHost=document.getElementById('isaMappingList');
+    async function loadGroupPeople(){
+      const members=await rest('group_members?select=user_id,role&group_id=eq.'+encodeURIComponent(state.groupId));
+      const ids=(members||[]).map(m=>m.user_id);
+      if(!ids.length)throw new Error('No group members were found.');
+      const profiles=await rest('profiles?select=id,display_name,public_name,full_name,role&id=in.('+ids.map(encodeURIComponent).join(',')+')');
+      state.members=(profiles||[]).filter(p=>ids.includes(p.id));
+      individualSelect.replaceChildren(new Option('Select individual…',''));
+      caregiverSelect.replaceChildren(new Option('Group defaults (all caregivers)',''));
+      for(const p of state.members){
+        const name=p.public_name||p.display_name||p.full_name||'Unnamed registered member';
+        if(p.role==='individual')individualSelect.add(new Option(name,p.id));
+        if(p.role==='caregiver')caregiverSelect.add(new Option(name,p.id));
+      }
+      document.getElementById('assignmentHelp').textContent='Only registered people from this group appear in these lists.';
+    }
+    function selectedTargets(){
+      state.selectedIndividual=individualSelect.value;
+      state.selectedCaregiver=caregiverSelect.value;
+      if(Boolean(state.selectedIndividual)!==Boolean(state.selectedCaregiver)){
+        document.getElementById('assignmentHelp').textContent='Select both an individual and a caregiver, or leave both blank to edit group defaults.';
+        saveBtn.disabled=true;
+        linkPanel.hidden=true;
+        return;
+      }
+      document.getElementById('assignmentHelp').textContent=state.selectedCaregiver?
+        'You are customizing this registered caregiver’s check-in for the selected individual.':
+        'You are editing the shared default check-in.';
+      loadConfig().catch(e=>{setStatus(e?.message||'Could not load configuration','error');saveBtn.disabled=true});
+    }
+    individualSelect.addEventListener('change',selectedTargets);
+    caregiverSelect.addEventListener('change',selectedTargets);
+    function compatibleFieldOptions(measurement){
+      const label=String(measurement.label||'').toLowerCase();
+      const kind=measurement.kind;
+      return choiceFields.filter(f=>f.kinds.includes(kind)).map(f=>({
+         ...f, suggestion:label.split(/[^a-z]+/).filter(w=>w.length>4)
+           .some(word=>f.label.toLowerCase().includes(word))
+      })).sort((a,b)=>Number(b.suggestion)-Number(a.suggestion));
+    }
+    async function renderIsaMapping(){
+      linkHost.replaceChildren();state.existingLinks=[];
+      if(!state.selectedCaregiver||!state.selectedIndividual){linkPanel.hidden=true;return;}
+      linkPanel.hidden=false;
+      const [cards,links]=await Promise.all([
+        rest('star_isa_outcomes?select=*&group_id=eq.'+encodeURIComponent(state.groupId)+'&status=eq.active&order=created_at.asc&limit=300'),
+        state.assignmentId?rest('star_isa_measure_links?select=*&assignment_id=eq.'+encodeURIComponent(state.assignmentId)) : Promise.resolve([])
+      ]);
+      state.existingLinks=links||[];
+      state.activeCards=(cards||[]).filter(card=>
+        (card.individual_id===''||card.individual_id===state.selectedIndividual)&&
+        (!Array.isArray(card.assigned_user_ids)||!card.assigned_user_ids.length||card.assigned_user_ids.includes(state.selectedCaregiver))
+      );
+      let count=0;
+      for(const card of state.activeCards)for(const m of (Array.isArray(card.measurements)?card.measurements:[])){
+        if(!m.id)continue;
+        const wrap=document.createElement('div');wrap.style.cssText='border:1px solid #ded8c8;border-radius:12px;padding:12px;margin:10px 0';
+        const title=document.createElement('strong');title.textContent=card.title+' — '+m.label;
+        const label=document.createElement('label');label.style.cssText='display:block;margin-top:8px';
+        label.textContent='Where should STAR get this measurement? ';
+        const select=document.createElement('select');
+        select.dataset.outcomeId=card.id;select.dataset.measurementId=m.id;
+        select.add(new Option('Ask this ISA question separately',''));
+        const options=compatibleFieldOptions(m);
+        for(const f of options)select.add(new Option((f.suggestion?'Possible match — ':'')+f.label,f.key));
+        const saved=state.existingLinks.find(x=>x.outcome_id===card.id&&x.measurement_id===m.id);
+        select.value=saved?.source_field||'';
+        if(saved&&!select.value){select.add(new Option('Previously linked: '+saved.source_field,saved.source_field));select.value=saved.source_field;}
+        label.append(select);
+        const note=document.createElement('small');note.style.cssText='display:block;margin-top:6px;color:#65707a';
+        note.textContent='Review measurement type, options and units before approving. No automatic matching.';
+        wrap.append(title,label,note);linkHost.append(wrap);count++;
+      }
+      if(!count){const msg=document.createElement('p');msg.textContent='No active ISA measurements are currently assigned to this caregiver and individual.';linkHost.append(msg);}
+    }
+    async function saveIsaLinks(){
+      if(!state.assignmentId)throw new Error('Save the caregiver assignment before linking ISA measures.');
+      const desired=[...linkHost.querySelectorAll('select[data-outcome-id]')]
+       .filter(el=>el.value).map(el=>({outcome_id:el.dataset.outcomeId,measurement_id:el.dataset.measurementId,source_field:el.value}));
+      for(const previous of state.existingLinks){
+        if(desired.some(d=>d.outcome_id===previous.outcome_id&&d.measurement_id===previous.measurement_id&&d.source_field===previous.source_field))continue;
+        await rest('star_isa_measure_links?id=eq.'+encodeURIComponent(previous.id),{method:'DELETE'});
+      }
+      for(const next of desired){
+        if(state.existingLinks.some(link=>link.outcome_id===next.outcome_id&&link.measurement_id===next.measurement_id&&link.source_field===next.source_field))continue;
+        await rest('star_isa_measure_links',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify([{
+          group_id:state.groupId,assignment_id:state.assignmentId,...next,approved_by:state.userId
+        }])});
       }
     }
 

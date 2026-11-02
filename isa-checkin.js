@@ -5,7 +5,30 @@ import { ensureActiveGroupId } from './active-group.js?v=2026.10.29UVM3';
 
 const $ = id => document.getElementById(id);
 const el = (tag,cls,text) => {const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n;};
-let loaded=false, cards=[], rendered=[];
+let loaded=false, cards=[], rendered=[], linked=[], selectedAssignment=null;
+function recordedValue(sourceField,measurement){
+  const fields=[...document.querySelectorAll('[name]')].filter(x=>x.name===sourceField);
+  const visible=fields.filter(x=>!x.disabled && !x.closest('.config-hidden') &&
+    !x.closest('[hidden]') && !x.closest('[aria-hidden="true"]'));
+  if(!visible.length)return null;
+  const checked=visible.find(x=>(x.type==='radio'||x.type==='checkbox')&&x.checked);
+  const field=checked||visible.find(x=>x.type!=='radio'&&x.type!=='checkbox');
+  if(!field)return null;
+  const raw=String(field.value??'').trim();
+  if(!raw)return null;
+  if(measurement.kind==='count'||measurement.kind==='duration'){
+    if(!/^\\d+(?:\\.\\d+)?$/.test(raw))return null;
+    const value=Number(raw);return Number.isFinite(value)&&value>=0?value:null;
+  }
+  if(measurement.kind==='boolean'){
+    if(!['yes','no','true','false'].includes(raw.toLowerCase()))return null;
+    return raw.toLowerCase()==='true'?'Yes':raw.toLowerCase()==='false'?'No':raw;
+  }
+  if(measurement.kind==='choice'&&Array.isArray(measurement.choices)&&measurement.choices.length){
+    return measurement.choices.includes(raw)?raw:null;
+  }
+  return raw;
+}
 function collectEntries(){
  if(!loaded)return [];
  const items=[];
@@ -22,6 +45,21 @@ function collectEntries(){
    frequency:measurement.frequency||'when_occurs',report_mode:measurement.report_mode||'summary',
    value:(measurement.kind==='count'||measurement.kind==='duration')?Number(raw):raw
   });
+ }
+ for(const {card,measurement,sourceField} of linked){
+   const value=recordedValue(sourceField,measurement);
+   if(value===null)continue; // Skipped, unanswered or hidden source is NOT zero.
+   items.push({
+     outcome_id:card.id,outcome_title:card.title,outcome_version:card.version,
+     outcome_category:card.category,measurement_id:measurement.id,
+     measurement_label:measurement.label,activity:measurement.activity||'',
+     answer_type:measurement.kind,unit:measurement.unit||'',
+     frequency:measurement.frequency||'when_occurs',report_mode:measurement.report_mode||'summary',
+     assignment_id:selectedAssignment?.id||null,
+     individual_id:selectedAssignment?.individual_id||null,
+     source_field:sourceField,source_type:'admin_approved_checkin_reuse',
+     value
+   });
  }
  return items;
 }
@@ -91,6 +129,8 @@ function render(){
   }
   for(const m of (Array.isArray(card.measurements)?card.measurements:[])){
    if(!m?.id||!m.label)continue;
+   const approved=linked.some(x=>x.card.id===card.id&&x.measurement.id===m.id);
+   if(approved)continue; // Admin approved reuse; never ask the same question again.
    const item=el('div');item.style.cssText='padding:9px 0 5px;border-top:1px solid #ece6dd';
    if(m.activity){const context=el('div','',m.activity);context.style.cssText='font-size:13px;color:#626a75;margin:0 0 5px';item.append(context);}
    const label=el('label','',m.label+(m.kind==='duration'?' ('+(m.unit||'minutes')+')':''));
@@ -110,32 +150,57 @@ function render(){
 }
 async function init(){
  const host=$('starIsaCheckin');if(!host)return;
- const session=getSessionFromStorage();
- if(!session?.user?.id)return;
- const group=await ensureActiveGroupId(session.user.id);
- if(!group)return;
- const query='star_isa_outcomes?select=*&group_id=eq.'+encodeURIComponent(group)+'&individual_id=eq.&status=eq.active&order=created_at.asc&limit=300';
- const rows=await rest(query);
+ const session=getSessionFromStorage();if(!session?.user?.id)return;
+ const group=await ensureActiveGroupId(session.user.id);if(!group)return;
+ // Wait until the caregiver's own check-in configuration identifies the individual.
+ if(!window.starCheckinAssignmentContext){
+   await new Promise(resolve=>{
+     const timeout=setTimeout(resolve,3500);
+     window.addEventListener('star-caregiver-assignment-ready',()=>{clearTimeout(timeout);resolve();},{once:true});
+   });
+ }
+ const context=window.starCheckinAssignmentContext||{};
+ const assignmentRows=await rest('star_caregiver_checkin_assignments?select=*&active=eq.true&group_id=eq.'+
+   encodeURIComponent(group)+'&caregiver_user_id=eq.'+encodeURIComponent(session.user.id)+'&order=created_at.asc');
+ selectedAssignment=(assignmentRows||[]).find(x=>x.id===context.assignmentId)||null;
+ const individualId=selectedAssignment?.individual_id||'';
+ // Preserve historical group-level cards only for groups without per-person assignment.
+ const rows=await rest('star_isa_outcomes?select=*&group_id=eq.'+encodeURIComponent(group)+
+   '&status=eq.active&order=created_at.asc&limit=300');
  if(rows?.length>=300)throw new Error('Too many ISA outcomes to display safely.');
- cards=(rows||[]).filter(r=>{
-  const assigned=Array.isArray(r.assigned_user_ids)?r.assigned_user_ids:[];
-  return !assigned.length||assigned.includes(session.user.id);
+ cards=(rows||[]).filter(card=>{
+   if(card.individual_id!==individualId)return false;
+   const assignees=Array.isArray(card.assigned_user_ids)?card.assigned_user_ids:[];
+   return !assignees.length||assignees.includes(session.user.id);
  });
+ const allLinks=selectedAssignment?
+  await rest('star_isa_measure_links?select=*&assignment_id=eq.'+encodeURIComponent(selectedAssignment.id)):[];
+ const approved=allLinks||[];
+ linked=[];
+ for(const card of cards)for(const measurement of (Array.isArray(card.measurements)?card.measurements:[])){
+   const link=approved.find(l=>l.outcome_id===card.id&&l.measurement_id===measurement.id);
+   if(link)linked.push({card,measurement,sourceField:link.source_field});
+ }
  loaded=true;render();
- window.starIsaHasAssignedOutcomes=cards.length>0;
+ window.starIsaHasAssignedOutcomes=rendered.length>0;
  window.starIsaReady=true;
  window.dispatchEvent(new Event('star-isa-outcomes-ready'));
 }
+
 document.addEventListener('DOMContentLoaded',()=>{
  window.starIsaCollectEntries=collectEntries;
  window.starIsaRestoreEntries=restoreEntries;
  window.starIsaReady=false;
  window.starIsaLoadFailed=false;
- init().catch(error=>{
+ const reload=()=>{loaded=false;cards=[];linked=[];rendered=[];init().catch(error=>{
   const host=$('starIsaCheckin');if(!host)return;
   host.hidden=false;host.replaceChildren(el('p','','ISA questions could not load. Refresh this page to try again. You can skip the ISA step if needed.'));
   window.starIsaLoadFailed=true;
   window.starIsaReady=true;
   window.dispatchEvent(new Event('star-isa-outcomes-ready'));
+ });};
+ reload();
+ window.addEventListener('star-caregiver-assignment-ready',()=>{
+   if(window.starIsaReady)reload();
  });
 });

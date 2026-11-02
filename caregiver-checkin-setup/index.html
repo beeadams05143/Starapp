@@ -1279,7 +1279,7 @@
       try {
         const payload = {
           group_id: state.groupId,
-          individual_id: state.userId,
+          individual_id: null, // Group defaults never impersonate a supported individual.
           selected_categories: buildSelectedCategories(),
           selected_items: buildSelectedItems(),
           updated_at: new Date().toISOString(),
@@ -1326,17 +1326,19 @@
     }
 
 
+    // Only offer approved reuse for questions with compatible meaning,
+    // response type, and units. The administrator must still confirm the match.
     const choiceFields=[
-      {key:'night_wake_count',label:'Number of night awakenings',kinds:['count']},
-      {key:'vocational_participation',label:'Vocational participation',kinds:['choice','boolean']},
-      {key:'home_activity_flag',label:'Home activity participation',kinds:['choice','boolean']},
-      {key:'public_activity_flag',label:'Community activity participation',kinds:['choice','boolean']},
-      {key:'mood_engagement',label:'Mood and engagement',kinds:['choice']},
-      {key:'vocational_notes',label:'Vocational notes',kinds:['note']},
-      {key:'home_notes',label:'Home or family notes',kinds:['note']},
-      {key:'public_activity_note',label:'Community activity note',kinds:['note']},
+      {key:'night_wake_count',label:'Night awakenings count',kinds:['count'],unit:'awakenings'},
+      {key:'vocational_participation',label:'Vocational participation',kinds:['choice','boolean'],choices:['yes','no']},
+      {key:'home_activity_flag',label:'Home activity participation',kinds:['choice','boolean'],choices:['yes','no']},
+      {key:'public_activity_flag',label:'Community activity participation',kinds:['choice','boolean'],choices:['yes','no']},
+      {key:'mood_engagement',label:'Mood and engagement',kinds:['choice'],choices:[]},
+      {key:'vocational_notes',label:'Vocational activity notes',kinds:['note']},
+      {key:'home_notes',label:'Home family activity notes',kinds:['note']},
+      {key:'public_activity_note',label:'Community activity notes',kinds:['note']},
       {key:'daily_living_notes',label:'Daily living notes',kinds:['note']},
-      {key:'mood_regulation_notes',label:'Regulation observation notes',kinds:['note']}
+      {key:'mood_regulation_notes',label:'Mood regulation notes',kinds:['note']}
     ];
     const individualSelect=document.getElementById('targetIndividual');
     const caregiverSelect=document.getElementById('targetCaregiver');
@@ -1374,12 +1376,24 @@
     individualSelect.addEventListener('change',selectedTargets);
     caregiverSelect.addEventListener('change',selectedTargets);
     function compatibleFieldOptions(measurement){
-      const label=String(measurement.label||'').toLowerCase();
-      const kind=measurement.kind;
-      return choiceFields.filter(f=>f.kinds.includes(kind)).map(f=>({
-         ...f, suggestion:label.split(/[^a-z]+/).filter(w=>w.length>4)
-           .some(word=>f.label.toLowerCase().includes(word))
-      })).sort((a,b)=>Number(b.suggestion)-Number(a.suggestion));
+      const words=str=>String(str||'').toLowerCase().match(/[a-z]+/g)?.filter(x=>x.length>3)||[];
+      const normalize=str=>String(str||'').trim().toLowerCase();
+      const wordSet=words(measurement.label);
+      return choiceFields.filter(field=>{
+        if(!field.kinds.includes(measurement.kind))return false;
+        // Numeric measures require matching units; 'phone steps' cannot reuse 'night awakenings'.
+        if(['count','duration'].includes(measurement.kind)&&
+           (!measurement.unit||!field.unit||normalize(measurement.unit)!==normalize(field.unit)))return false;
+        // Response choices must be equivalent, not simply in the same family.
+        if(measurement.kind==='choice'){
+          const actual=Array.isArray(measurement.choices)?measurement.choices.map(normalize).sort():[];
+          const source=(field.choices||[]).map(normalize).sort();
+          if(!actual.length||actual.length!==source.length||actual.some((x,i)=>x!==source[i]))return false;
+        }
+        const sourceWords=new Set(words(field.label));
+        const shared=wordSet.filter(x=>sourceWords.has(x)).length;
+        return shared>=Math.min(2,wordSet.length)&&wordSet.length>0;
+      }).map(field=>({...field,suggestion:true}));
     }
     async function renderIsaMapping(){
       linkHost.replaceChildren();state.existingLinks=[];
@@ -1407,13 +1421,15 @@
         select.dataset.outcomeId=card.id;select.dataset.measurementId=m.id;
         select.add(new Option('Ask this ISA question separately',''));
         const options=compatibleFieldOptions(m);
-        for(const f of options)select.add(new Option((f.suggestion?'Possible match — ':'')+f.label,f.key));
+        for(const f of options)select.add(new Option('Review match — '+f.label,f.key));
         const saved=state.existingLinks.find(x=>x.outcome_id===card.id&&x.measurement_id===m.id);
         select.value=saved?.source_field||'';
         if(saved&&!select.value){select.add(new Option('Previously linked: '+saved.source_field,saved.source_field));select.value=saved.source_field;}
         label.append(select);
         const note=document.createElement('small');note.style.cssText='display:block;margin-top:6px;color:#65707a';
-        note.textContent='Review measurement type, options and units before approving. No automatic matching.';
+        note.textContent=options.length?
+          'Review the meaning, answer choices and units before approving. STAR never links automatically.':
+          'No clearly equivalent existing question was found; STAR will ask this ISA question separately.';
         wrap.append(title,label,note);linkHost.append(wrap);count++;
       }
       if(!count){const msg=document.createElement('p');msg.textContent='No active ISA measurements are currently assigned to this caregiver and individual.';linkHost.append(msg);}

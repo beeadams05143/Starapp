@@ -6,10 +6,13 @@ import { ensureActiveGroupId } from './active-group.js?v=2026.10.29UVM3';
 const $ = id => document.getElementById(id);
 const el = (tag,cls,text) => {const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n;};
 let loaded=false, cards=[], rendered=[], linked=[], selectedAssignment=null;
+function availableSourceFields(sourceField){
+  return [...document.querySelectorAll('[name]')].filter(x=>x.name===sourceField&&x.type!=='hidden'&&
+    !x.disabled && !x.closest('.config-hidden') && !x.closest('[hidden]') &&
+    !x.closest('[aria-hidden="true"]'));
+}
 function recordedValue(sourceField,measurement){
-  const fields=[...document.querySelectorAll('[name]')].filter(x=>x.name===sourceField);
-  const visible=fields.filter(x=>!x.disabled && !x.closest('.config-hidden') &&
-    !x.closest('[hidden]') && !x.closest('[aria-hidden="true"]'));
+  const visible=availableSourceFields(sourceField);
   if(!visible.length)return null;
   const checked=visible.find(x=>(x.type==='radio'||x.type==='checkbox')&&x.checked);
   const field=checked||visible.find(x=>x.type!=='radio'&&x.type!=='checkbox');
@@ -17,7 +20,7 @@ function recordedValue(sourceField,measurement){
   const raw=String(field.value??'').trim();
   if(!raw)return null;
   if(measurement.kind==='count'||measurement.kind==='duration'){
-    if(!/^\\d+(?:\\.\\d+)?$/.test(raw))return null;
+    if(!/^\d+(?:\.\d+)?$/.test(raw))return null;
     const value=Number(raw);return Number.isFinite(value)&&value>=0?value:null;
   }
   if(measurement.kind==='boolean'){
@@ -43,10 +46,14 @@ function collectEntries(){
    measurement_label:measurement.label,activity:measurement.activity||'',
    answer_type:measurement.kind,unit:measurement.unit||'',
    frequency:measurement.frequency||'when_occurs',report_mode:measurement.report_mode||'summary',
+   individual_id:selectedAssignment?.individual_id||null,
+   assignment_id:selectedAssignment?.id||null,
+   source_type:'isa_question',
    value:(measurement.kind==='count'||measurement.kind==='duration')?Number(raw):raw
   });
  }
- for(const {card,measurement,sourceField} of linked){
+ for(const {card,measurement,sourceField,linkId} of linked){
+   if(!availableSourceFields(sourceField).length)continue;
    const value=recordedValue(sourceField,measurement);
    if(value===null)continue; // Skipped, unanswered or hidden source is NOT zero.
    items.push({
@@ -57,7 +64,7 @@ function collectEntries(){
      frequency:measurement.frequency||'when_occurs',report_mode:measurement.report_mode||'summary',
      assignment_id:selectedAssignment?.id||null,
      individual_id:selectedAssignment?.individual_id||null,
-     source_field:sourceField,source_type:'admin_approved_checkin_reuse',
+     source_field:sourceField,source_type:'admin_approved_checkin_reuse',isa_link_id:linkId,
      value
    });
  }
@@ -129,7 +136,7 @@ function render(){
   }
   for(const m of (Array.isArray(card.measurements)?card.measurements:[])){
    if(!m?.id||!m.label)continue;
-   const approved=linked.some(x=>x.card.id===card.id&&x.measurement.id===m.id);
+   const approved=linked.some(x=>x.card.id===card.id&&x.measurement.id===m.id&&availableSourceFields(x.sourceField).length);
    if(approved)continue; // Admin approved reuse; never ask the same question again.
    const item=el('div');item.style.cssText='padding:9px 0 5px;border-top:1px solid #ece6dd';
    if(m.activity){const context=el('div','',m.activity);context.style.cssText='font-size:13px;color:#626a75;margin:0 0 5px';item.append(context);}
@@ -188,10 +195,10 @@ async function init(){
  linked=[];
  for(const card of cards)for(const measurement of (Array.isArray(card.measurements)?card.measurements:[])){
    const link=approved.find(l=>l.outcome_id===card.id&&l.measurement_id===measurement.id);
-   if(link)linked.push({card,measurement,sourceField:link.source_field});
+   if(link)linked.push({card,measurement,sourceField:link.source_field,linkId:link.id});
  }
  loaded=true;render();
- window.starIsaHasAssignedOutcomes=rendered.length>0;
+ window.starIsaHasAssignedOutcomes=rendered.length>0 || linked.some(x=>availableSourceFields(x.sourceField).length>0);
  window.starIsaReady=true;
  window.dispatchEvent(new Event('star-isa-outcomes-ready'));
 }

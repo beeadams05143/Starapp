@@ -9,6 +9,10 @@ const create=(tag,content,cls)=>{
  const node=document.createElement(tag); if(content!==undefined)node.textContent=String(content);
  if(cls)node.className=cls; return node;
 };
+const JAMIE_GROUP='c40d0ac1-0122-46f6-b358-fac283287bb5';
+const JAMIE_ID='58d3ac51-3dc7-4ead-b22f-8cb5829a3bac';
+const JAMIE_NAME='Jamie Rivers — FICTIONAL';
+const JAMIE_LEGACY_CARD='f9e7beb4-a4eb-4c14-b890-957b6444ea9a';
 const MAX_CARDS=500,MAX_OBSERVATIONS=500,MAX_CHECKINS=1000;
 let groupId=null,userId=null,loading=false;
 const dateOk=v=>/^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v+'T12:00:00'));
@@ -129,14 +133,17 @@ async function refresh(){
   const members=await rest('group_members?select=role&group_id=eq.'+
     encodeURIComponent(groupId)+'&user_id=eq.'+encodeURIComponent(userId)+'&limit=1',{expectedUserId:userId});
   if(members?.[0]?.role!=='admin')throw Error('This STAR TEST report is currently restricted to group administrators.');
+  if(groupId!==JAMIE_GROUP)throw Error('No individual report is configured for this test group.');
   const group=encodeURIComponent(groupId);
+  const heading=document.querySelector('h1');
+  heading.textContent='⭐ ISA Progress & Observations · Jamie Rivers';
   const fromQuery=from?'&date=gte.'+encodeURIComponent(from):'';
   const toQuery=to?'&date=lte.'+encodeURIComponent(to):'';
   const [cards,observations,checkins]=await Promise.all([
     rest('star_isa_outcomes?select=id,group_id,individual_id,title,category,outcome_text,status,measurements,version'+
-      '&group_id=eq.'+group+'&order=title.asc&limit='+MAX_CARDS,{expectedUserId:userId}),
+      '&group_id=eq.'+group+'&or=(individual_id.eq.'+JAMIE_ID+',id.eq.'+JAMIE_LEGACY_CARD+')&order=title.asc&limit='+MAX_CARDS,{expectedUserId:userId}),
     rest('star_individual_observations_test?select=id,group_id,original_words,response_choice,support_kind,review_status,reviewer_note,created_at,linked_outcome_id,linked_outcome_version'+
-      '&group_id=eq.'+group+'&review_status=eq.linked_observation&order=created_at.desc&limit='+MAX_OBSERVATIONS,{expectedUserId:userId}),
+      '&group_id=eq.'+group+'&individual_id=eq.'+JAMIE_ID+'&review_status=eq.linked_observation&order=created_at.desc&limit='+MAX_OBSERVATIONS,{expectedUserId:userId}),
     rest('caregiver_checkins?select=id,date,caregiver_name,payload&group_id=eq.'+group+fromQuery+toQuery+
       '&order=date.desc&limit='+MAX_CHECKINS,{expectedUserId:userId})
   ]);
@@ -147,6 +154,8 @@ async function refresh(){
   const cardsById=new Map(cards.map(card=>[card.id,card]));
   const measures=[];
   for(const checkin of checkins){
+   const personId=checkin.payload?.individual_id;
+   if(personId ? personId!==JAMIE_ID : checkin.payload?.individual_name!==JAMIE_NAME)continue;
    let entries=checkin.payload?.isa_entries;
    if(typeof entries==='string'){try{entries=JSON.parse(entries)}catch{entries=null}}
    if(!Array.isArray(entries))continue;

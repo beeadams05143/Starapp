@@ -8,6 +8,15 @@
 *{box-sizing:border-box}body{margin:0;background:#f5f1e8;color:#272925;font:17px/1.55 system-ui,sans-serif}main{max-width:850px;margin:auto;padding:20px 16px 48px}h1{line-height:1.12;margin:.3em 0;font-size:clamp(32px,7vw,48px)}h2{margin:30px 0 10px}a{color:#30563f;text-underline-offset:3px}nav{display:flex;flex-wrap:wrap;gap:8px 16px}nav a,.open{display:inline-flex;align-items:center;min-height:44px;font-weight:700}.eyebrow{font-weight:750;letter-spacing:.07em;font-size:13px;color:#744a1e}details{background:#fffdfa;border:1px solid #cfc6b5;border-radius:12px;margin:8px 0}summary{padding:12px 15px;min-height:48px;cursor:pointer;font-weight:750}details p{margin:0 0 6px}.detail{padding:0 15px 9px}label{display:block;font-weight:750;margin:16px 0 5px}input{width:100%;min-height:48px;border:1px solid #91846f;border-radius:10px;padding:8px 12px;font:inherit;background:#fffdfa} [hidden]{display:none!important}
 #print-team-map{min-height:44px;margin:16px 0 6px;padding:8px 14px;font:inherit;font-weight:700;color:#30563f;background:#fffdfa;border:1px solid #30563f;border-radius:8px}
 @media print{body.print-team-map{background:white}body.print-team-map main> :not(#resources),body.print-team-map #resources> :not(#team-map),body.print-team-map #print-team-map{display:none!important}body.print-team-map main{padding:0}body.print-team-map input{min-height:38px}}
+.team-contact-group{margin:18px 0;padding:10px 12px;border:1px solid #cfc6b5;border-radius:10px;min-width:0}
+.team-contact-group legend{font-weight:750;padding:0 4px}
+.team-contact label{margin-top:6px}
+.team-contact textarea{display:block;width:100%;padding:8px 12px;border:1px solid #91846f;border-radius:10px;font:inherit;background:#fffdfa;resize:vertical}
+.team-add-contact,.team-remove-contact{min-height:44px;margin:8px 0 0;padding:6px 10px;font:inherit;color:#30563f;background:#fffdfa;border:1px solid #30563f;border-radius:8px;cursor:pointer}
+.team-contact-print{display:none}
+@media print{body.print-team-map .team-add-contact,body.print-team-map .team-remove-contact,body.print-team-map .team-contact textarea{display:none}
+body.print-team-map .team-contact{break-inside:avoid}
+body.print-team-map .team-contact-print{display:block;min-height:32px;border-bottom:1px solid #91846f;white-space:pre-wrap;overflow-wrap:anywhere}}
 </style>
 </head>
 <body>
@@ -37,14 +46,41 @@
 </ul>
 </div></details>
 <details id="team-map"><summary>Who’s on your team?</summary><div class="detail">
-<p>Use this map to identify who supports the individual and who to contact for different needs. Start with the individual and the people they want involved. Fill it in together as a worksheet, or print it and write by hand. Entries are temporary until you print or save a PDF using your browser.</p>
+<p>Use this map to identify who supports the individual and who to contact for different needs. Start with the individual and the people they want involved. Add as many contacts as you need under each support role. You can edit any entry, or print the worksheet and fill it in by hand. Entries are temporary until you print or save a PDF using your browser.</p>
 <div id="team-map-fields">
 <label for="team-role-0">Individual and preferred way to communicate</label><input id="team-role-0" type="text" autocomplete="off" placeholder="Name, best contact, and what they help with">
 <label for="team-role-1">Family, trusted people, or guardian if applicable</label><input id="team-role-1" type="text" autocomplete="off" placeholder="Name, best contact, and what they help with">
 <label for="team-role-2">Employer of record or person coordinating caregivers</label><input id="team-role-2" type="text" autocomplete="off" placeholder="Name, best contact, and what they help with">
 <label for="team-role-3">Case manager or service coordinator</label><input id="team-role-3" type="text" autocomplete="off" placeholder="Name, best contact, and what they help with">
+<fieldset class="team-contact-group" data-contact-group="supervisor">
+<legend>Case manager supervisor</legend>
+<div class="team-contact-rows">
+<div class="team-contact"><label for="supervisor-contact-1">Contact 1</label><textarea id="supervisor-contact-1" rows="2" placeholder="Name, best contact, and availability or role" autocomplete="off"></textarea><div class="team-contact-print" aria-hidden="true"></div></div>
+</div>
+<button class="team-add-contact" type="button">Add supervisor</button>
+</fieldset>
 <label for="team-role-4">Designated agency or service provider</label><input id="team-role-4" type="text" autocomplete="off" placeholder="Name, best contact, and what they help with">
-<label for="team-role-5">Direct support staff and backup coverage</label><input id="team-role-5" type="text" autocomplete="off" placeholder="Name, best contact, and what they help with">
+<fieldset class="team-contact-group" data-contact-group="staff">
+<legend>Direct support staff</legend>
+<div class="team-contact-rows">
+<div class="team-contact"><label for="staff-contact-1">Contact 1</label><textarea id="staff-contact-1" rows="2" placeholder="Name, best contact, and availability or role" autocomplete="off"></textarea><div class="team-contact-print" aria-hidden="true"></div></div>
+</div>
+<button class="team-add-contact" type="button">Add support staff</button>
+</fieldset>
+<fieldset class="team-contact-group" data-contact-group="backup">
+<legend>Backup coverage</legend>
+<div class="team-contact-rows">
+<div class="team-contact"><label for="backup-contact-1">Contact 1</label><textarea id="backup-contact-1" rows="2" placeholder="Name, best contact, and availability or role" autocomplete="off"></textarea><div class="team-contact-print" aria-hidden="true"></div></div>
+</div>
+<button class="team-add-contact" type="button">Add backup contact</button>
+</fieldset>
+<fieldset class="team-contact-group" data-contact-group="respite">
+<legend>Respite providers</legend>
+<div class="team-contact-rows">
+<div class="team-contact"><label for="respite-contact-1">Contact 1</label><textarea id="respite-contact-1" rows="2" placeholder="Name, best contact, and availability or role" autocomplete="off"></textarea><div class="team-contact-print" aria-hidden="true"></div></div>
+</div>
+<button class="team-add-contact" type="button">Add respite provider</button>
+</fieldset>
 <label for="team-role-6">Other supports the individual wants to include</label><input id="team-role-6" type="text" autocomplete="off" placeholder="Name, best contact, and what they help with">
 </div>
 <button id="print-team-map" type="button">Print / Save Team Map</button>
@@ -127,8 +163,42 @@ if(location.hash==='#isa-forms'){
   forms.closest('details').open=true;
   requestAnimationFrame(()=>forms.scrollIntoView());
 }
+for(const group of document.querySelectorAll('[data-contact-group]')){
+  const rows=group.querySelector('.team-contact-rows');
+  const add=group.querySelector('.team-add-contact');
+  let nextId=1;
+  function numberContacts(){
+    Array.from(rows.children).forEach((row,index)=>{
+      row.querySelector('label').textContent='Contact '+(index+1);
+    });
+  }
+  add.addEventListener('click',()=>{
+    const row=rows.firstElementChild.cloneNode(true);
+    const field=row.querySelector('textarea');
+    field.value='';
+    field.id=group.dataset.contactGroup+'-contact-'+(++nextId);
+    row.querySelector('label').htmlFor=field.id;
+    row.querySelector('.team-contact-print').textContent='';
+    const remove=document.createElement('button');
+    remove.type='button';
+    remove.className='team-remove-contact';
+    remove.textContent='Remove this contact';
+    remove.addEventListener('click',()=>{
+      row.remove();
+      numberContacts();
+      add.focus();
+    });
+    row.append(remove);
+    rows.append(row);
+    numberContacts();
+    field.focus();
+  });
+}
 const printMap=document.getElementById('print-team-map');
 printMap.addEventListener('click',()=>{
+  document.querySelectorAll('.team-contact').forEach(row=>{
+    row.querySelector('.team-contact-print').textContent=row.querySelector('textarea').value;
+  });
   document.body.classList.add('print-team-map');
   try{window.print();}finally{document.body.classList.remove('print-team-map');}
 });

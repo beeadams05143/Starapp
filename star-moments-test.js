@@ -12,7 +12,9 @@ const mode=new URLSearchParams(location.search).get('mode');
 const daily=mode==='daily';
 const review=daily||mode==='review';
 const back=review?'my-star.html':'dashboard.html';
-let api, uid, team, person;
+// Cedar Grove’s seeded Jamie Rivers record. Only used in the UVM demo.
+const jamieDemo = {group:'c40d0ac1-0122-46f6-b358-fac283287bb5', id:'58d3ac51-3dc7-4ead-b22f-8cb5829a3bac', name:'Jamie Rivers'};
+let api, uid, team, person, previewOnly=false;
 function element(tag, value, parent=root) {
   const node=document.createElement(tag);
   node.textContent=value;
@@ -32,6 +34,7 @@ function button(label, action, parent=root) {
 function announce(message) {document.querySelector('#status').textContent=message;}
 function page(title) {
   root.replaceChildren();
+  if(previewOnly)element('p','Jamie Rivers · Fictional preview');
   const link=element('a',daily?'Finish check-in':'Back',root);
   link.href=back;
   element('h1',title);
@@ -118,6 +121,11 @@ const rows=()=>api('star_moments_test?group_id=eq.'+team+'&individual_id=eq.'+pe
 const response=row=>row.star_moment_responses_test;
 const loadPhoto=async row=>Object.assign(row,(await api('star_moments_test?id=eq.'+row.id+'&select=photo'))[0]);
 async function respond(row,values) {
+  if(previewOnly){
+    await showReview();
+    announce('You tried the review. Preview answers are temporary.');
+    return;
+  }
   if(response(row)) {
     await api('star_moment_responses_test?moment_id=eq.'+row.id+'&satisfaction=eq.Not%20now',{
       method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify(values)
@@ -144,7 +152,7 @@ function questions(row) {
       words.maxLength=2000;
       dictate(words,form);
       const support=select('How did you answer?',supports,form);
-      const save=element('button','Save my answer',form);
+      const save=element('button',previewOnly?'Try saving my answer':'Save my answer',form);
       form.onsubmit=async event=>{
         event.preventDefault();
         save.disabled=true;
@@ -230,20 +238,32 @@ async function start() {
   team=await ensureActiveGroupId(uid);
   if(!team)throw new Error('Choose a test group first.');
   const people=await api('star_moments_test_people?group_id=eq.'+team+'&select=individual_id');
+  const ownProfile=people.find(row=>row.individual_id===uid);
+  const demoProfile=team===jamieDemo.group && people.find(row=>row.individual_id===jamieDemo.id);
   if(review) {
-    if(!people.some(row=>row.individual_id===uid)){
+    if(ownProfile){
+      person=ownProfile.individual_id;
+    }else if(!daily && demoProfile){
+      person=demoProfile.individual_id;
+      previewOnly=true;
+    }else{
       if(daily){location.replace(back);return;}
-      throw new Error('Sign in with the fictional individual’s account to review moments.');
+      throw new Error('Sign in as the individual to review their moments.');
     }
-    person=uid;
     await showReview();
     return;
   }
   if(people.some(row=>row.individual_id===uid))throw new Error('Use My Moments to Review from My STAR.');
   if(!people.length)throw new Error('No fictional individuals are set up for Moments in this group.');
-  const profiles=await api('profiles?select=id,full_name&id=in.('+people.map(row=>row.individual_id).join(',')+')');
+  const profiles=await api('profiles?select=id,public_name,display_name,full_name&id=in.('+people.map(row=>row.individual_id).join(',')+')');
   const dropdown=field('Individual','select');
-  people.forEach((row,index)=>{element('option',profiles.find(profile=>profile.id===row.individual_id)?.full_name||'Fictional individual '+(index+1),dropdown).value=row.individual_id;});
+  people.forEach((row,index)=>{
+    const profile=profiles.find(item=>item.id===row.individual_id);
+    const label=row.individual_id===demoProfile?.individual_id ? jamieDemo.name :
+      profile?.public_name || profile?.display_name || profile?.full_name || 'Fictional individual '+(index+1);
+    element('option',label,dropdown).value=row.individual_id;
+  });
+  if(demoProfile)dropdown.value=demoProfile.individual_id;
   button('Continue',async()=>{person=dropdown.value;if(mode==='add')add();else await month();});
 }
 start().catch(error=>announce(error.message));

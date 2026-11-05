@@ -404,6 +404,9 @@
       <div class="drawer-item" data-role="shared">
         <a href="/feature-guide.html#resources"><i class="ti ti-book nav-icon" aria-hidden="true"></i><span class="nav-text">Resources</span></a>
       </div>
+      <div class="drawer-item" data-role="caregiver">
+        <a href="/feature-guide.html"><i class="ti ti-book nav-icon" aria-hidden="true"></i><span class="nav-text">Feature Guide</span></a>
+      </div>
 
       <details data-role="caregiver">
         <summary><i class="ti ti-settings nav-icon" aria-hidden="true"></i><span class="nav-text">Settings & Admin</span><i class="ti ti-chevron-down drawer-chevron" aria-hidden="true"></i></summary>

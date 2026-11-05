@@ -139,8 +139,9 @@
     #chatInput,
     .chat-input {
       flex:1;
+      min-width:0;
       height:58px;
-      padding:0 28px;
+      padding:0 clamp(12px, 4vw, 28px);
       border-radius:999px;
       border:0.5px solid #CFC9BE;
       background:#FFFFFF;
@@ -152,13 +153,14 @@
       color:#A4A19B;
     }
     #sendBtn {
+      flex-shrink:0;
       background: #FFF4E1;
       border: 0.5px solid #F5BD6C;
       border-radius: 999px;
       color: #633806;
       font-size: 18px;
       font-weight: 700;
-      padding: 14px 26px;
+      padding: 14px clamp(14px, 4vw, 26px);
       cursor: pointer;
       box-shadow:none;
     }

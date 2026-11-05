@@ -52,6 +52,9 @@
       font-size:10px; padding:2px 5px; border-radius:999px; font-weight:600;
       min-width:16px; text-align:center; line-height:1; }
 
+    .tabbar .chat-unread-dot{position:absolute;top:3px;right:8px;width:10px;height:10px;border-radius:50%;background:#c63131;box-shadow:0 0 0 2px #fff;}
+    .tabbar .chat-unread-dot[hidden]{display:none;}
+
     @media (max-width: 640px){
       :root{ --appbar-h:52px; --tabbar-h:52px; }
       body{ padding-top:var(--appbar-h); padding-bottom:calc(var(--tabbar-h) + 6px); }
@@ -165,6 +168,7 @@
             return `<a href="${tab.href}" class="tab nav-item${isHome ? ' active' : ''}"${isHome ? ' id="homeNav"' : ''}>` +
               `${iconSvg[tab.icon] || iconSvg.home}` +
               `<span>${tab.label}</span>` +
+              (tab.icon === 'chat' ? '<span class="chat-unread-dot" data-chat-unread hidden aria-hidden="true"></span>' : '') +
             `</a>`;
           }).join('')}
         </div>
@@ -176,6 +180,49 @@
     if (event.key === MODE_KEY || event.key === APP_CONFIG_KEY) renderBottomBar();
   });
 
+
+  if (location.hostname === 'star-uvm-testing.netlify.app') {
+    let refreshingChatBadge = false;
+    function showChatBadge(unread) {
+      const dot = bottom.querySelector('[data-chat-unread]');
+      if (!dot) return;
+      dot.hidden = !unread;
+      if (unread) dot.parentElement.setAttribute('aria-label', 'Chat, unread messages');
+      else dot.parentElement.removeAttribute('aria-label');
+    }
+    async function refreshChatBadge() {
+      if (refreshingChatBadge || document.hidden || !bottom.querySelector('[data-chat-unread]')) return;
+      refreshingChatBadge = true;
+      try {
+        const [client, groups] = await Promise.all([
+          import('/restClient.js?v=2026.10.29UVM3'),
+          import('/active-group.js?v=2026.10.29UVM3')
+        ]);
+        const userId = client.getSessionFromStorage()?.user?.id;
+        if (!userId) { showChatBadge(false); return; }
+        const groupId = await groups.ensureActiveGroupId(userId);
+        if (!groupId) { showChatBadge(false); return; }
+        const query = new URLSearchParams({
+          select: 'id,message_reads()',
+          group_id: 'eq.' + groupId,
+          sender_id: 'neq.' + userId,
+          'message_reads.user_id': 'eq.' + userId,
+          message_reads: 'is.null',
+          limit: '1'
+        });
+        const rows = await client.rest('messages?' + query, {expectedUserId: userId});
+        showChatBadge(client.getSessionFromStorage()?.user?.id === userId && Boolean(rows?.length));
+      } catch (error) {
+        console.warn('Could not refresh Chat unread badge', error);
+      } finally {
+        refreshingChatBadge = false;
+      }
+    }
+    refreshChatBadge();
+    setInterval(refreshChatBadge, 5000);
+    window.addEventListener('pageshow', refreshChatBadge);
+    document.addEventListener('visibilitychange', refreshChatBadge);
+  }
 
   // Version info lives inside the hamburger drawer, not over the form.
   // Keep a hidden marker so page-level fallback badges cannot reappear.

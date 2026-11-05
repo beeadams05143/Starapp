@@ -7,7 +7,7 @@
 <style>
 *{box-sizing:border-box}body{margin:0;background:#f5f1e8;color:#272925;font:17px/1.55 system-ui,sans-serif}main{max-width:850px;margin:auto;padding:20px 16px 48px}h1{line-height:1.12;margin:.3em 0;font-size:clamp(32px,7vw,48px)}h2{margin:30px 0 10px}a{color:#30563f;text-underline-offset:3px}nav{display:flex;flex-wrap:wrap;gap:8px 16px}nav a,.open{display:inline-flex;align-items:center;min-height:44px;font-weight:700}.eyebrow{font-weight:750;letter-spacing:.07em;font-size:13px;color:#744a1e}details{background:#fffdfa;border:1px solid #cfc6b5;border-radius:12px;margin:8px 0}summary{padding:12px 15px;min-height:48px;cursor:pointer;font-weight:750}details p{margin:0 0 6px}.detail{padding:0 15px 9px}label{display:block;font-weight:750;margin:16px 0 5px}input{width:100%;min-height:48px;border:1px solid #91846f;border-radius:10px;padding:8px 12px;font:inherit;background:#fffdfa} [hidden]{display:none!important}
 #print-team-map{min-height:44px;margin:16px 0 6px;padding:8px 14px;font:inherit;font-weight:700;color:#30563f;background:#fffdfa;border:1px solid #30563f;border-radius:8px}
-@media print{body.print-team-map{background:white}body.print-team-map main> :not(#team),body.print-team-map #team> :not(#team-map),body.print-team-map #print-team-map{display:none!important}body.print-team-map main{padding:0}body.print-team-map input{min-height:38px}}
+@media print{body.print-team-map{background:white}body.print-team-map main> :not(#resources),body.print-team-map #resources> :not(#team-map),body.print-team-map #print-team-map{display:none!important}body.print-team-map main{padding:0}body.print-team-map input{min-height:38px}}
 </style>
 </head>
 <body>
@@ -17,7 +17,39 @@
 <h1>STAR Feature Guide</h1>
 <p>Find a feature, learn what it does, and open it to try it out. Some tools depend on your role or group.</p>
 <div id="featureSearch" hidden><label for="find">Find a feature</label><input id="find" type="search" placeholder="Try check-in, photos, or chat"><p id="empty" role="status" hidden>No matching features. Try a different word.</p></div>
-<nav id="guideTopics" aria-label="Guide topics"><a href="#caregiver">Caregiver tools</a><a href="#moments">Photos and monthly review</a><a href="#individual">My STAR</a><a href="#team">Team tools and settings</a></nav>
+<nav id="guideTopics" aria-label="Guide topics"><a href="#resources">Resources</a><a href="#caregiver">Caregiver tools</a><a href="#moments">Photos and monthly review</a><a href="#individual">My STAR</a><a href="#team">Team tools and settings</a></nav>
+<section id="resources" aria-labelledby="resources-title"><h2 id="resources-title">Resources</h2>
+<details id="aris-forms"><summary>ARIS payroll forms and reimbursement</summary><div class="detail">
+<p>Vermont Developmental Disabilities Services forms for caregivers and employers of record.</p>
+<ul>
+<li><a href="https://arissolutions.org/wp-content/uploads/2026/09/DDSD-Timesheet-July-2026.pdf">ARIS DDS caregiver timesheet (PDF)</a> for recording employee hours.</li>
+<li><a href="https://ddsd.vermont.gov/document/aris-timesheet-legally-responsible-individuals-only-approved-legally-responsible">ARIS Legally Responsible Individual (LRI) timesheet</a> for approved LRIs.</li>
+<li><a href="https://arissolutions.org/wp-content/uploads/2021/07/med_dsNonpayroll.pdf">ARIS Non-Payroll Reimbursement Request Form (PDF)</a> for eligible non-payroll expenses.</li>
+</ul>
+<p>Check the <a href="https://arissolutions.org/our-programs/vt-agency-of-human-services-programs/">ARIS Vermont programs page</a> for current forms and payroll schedules. Use <a href="https://arissolutions.org/online-portal-submissions-11-18-25/">ARIS submission instructions</a> to send completed paperwork.</p>
+</div></details>
+<details id="vermont-contacts"><summary>Vermont resource phone numbers</summary><div class="detail">
+<ul>
+<li><strong>ARIS Solutions · Vermont payroll and reimbursement</strong><br><a href="tel:+18007981658">800-798-1658</a> · <a href="https://arissolutions.org/contact-us/">ARIS contact page</a></li>
+<li><strong>Department of Disabilities, Aging and Independent Living (DAIL) · General inquiries</strong><br><a href="tel:+18022412401">802-241-2401</a> · <a href="https://dail.vermont.gov/contact-us">DAIL contact page</a></li>
+<li><strong>Developmental Disabilities Services Division (DDSD) · Vermont developmental disabilities services</strong><br><a href="tel:+18022410304">802-241-0304</a> · <a href="https://ddsd.vermont.gov/">DDSD website</a></li>
+<li><strong>Vermont Family Network · Family support and navigation</strong><br><a href="tel:+18028765315">802-876-5315</a> · <a href="https://www.vermontfamilynetwork.org/get-support/">Vermont Family Network helpline</a></li>
+</ul>
+</div></details>
+<details id="team-map"><summary>Who’s on your team?</summary><div class="detail">
+<p>Use this map to identify who supports the individual and who to contact for different needs. Start with the individual and the people they want involved. Fill it in together as a worksheet, or print it and write by hand. Entries are temporary until you print or save a PDF using your browser.</p>
+<div id="team-map-fields">
+<label for="team-role-0">Individual and preferred way to communicate</label><input id="team-role-0" type="text" autocomplete="off" placeholder="Name, best contact, and what they help with">
+<label for="team-role-1">Family, trusted people, or guardian if applicable</label><input id="team-role-1" type="text" autocomplete="off" placeholder="Name, best contact, and what they help with">
+<label for="team-role-2">Employer of record or person coordinating caregivers</label><input id="team-role-2" type="text" autocomplete="off" placeholder="Name, best contact, and what they help with">
+<label for="team-role-3">Case manager or service coordinator</label><input id="team-role-3" type="text" autocomplete="off" placeholder="Name, best contact, and what they help with">
+<label for="team-role-4">Designated agency or service provider</label><input id="team-role-4" type="text" autocomplete="off" placeholder="Name, best contact, and what they help with">
+<label for="team-role-5">Direct support staff and backup coverage</label><input id="team-role-5" type="text" autocomplete="off" placeholder="Name, best contact, and what they help with">
+<label for="team-role-6">Other supports the individual wants to include</label><input id="team-role-6" type="text" autocomplete="off" placeholder="Name, best contact, and what they help with">
+</div>
+<button id="print-team-map" type="button">Print / Save Team Map</button>
+</div></details>
+</section>
 <section id="caregiver" aria-labelledby="caregiver-title"><h2 id="caregiver-title">Caregiver tools</h2>
 <details><summary>Caregiver Check-in</summary><div class="detail"><p>Record how the individual’s day went. From Home, open Check-in, confirm the date, and answer the questions that apply. Review and submit when you’re done.</p><a class="open" href="caregiver-checkin.html">Open Caregiver Check-in</a></div></details>
 <details><summary>Saved Drafts</summary><div class="detail"><p>Open an unfinished check-in saved on this device. Continue where you left off or delete a draft you no longer need.</p><a class="open" href="saved-drafts.html">Open Saved Drafts</a></div></details>
@@ -65,37 +97,7 @@
 <details><summary>Home</summary><div class="detail"><p>Use Quick Actions to open common tools. An unread Help Now or Something Hurts message from another team member appears at the top and links to Group Chat.</p><a class="open" href="dashboard.html">Open Home</a></div></details>
 <details><summary>Group Chat</summary><div class="detail"><p>Open Chat, type a message, and tap Send. The chat belongs to your active group. Opening it marks incoming messages as read.</p><a class="open" href="chat.html">Open Group Chat</a></div></details>
 <details><summary>Calendar</summary><div class="detail"><p>Open Calendar to see upcoming events for the group. Select an event to view details or use the add option to schedule something.</p><a class="open" href="calendar.html">Open Calendar</a></div></details>
-<details><summary>Docs</summary><div class="detail"><p>Open Docs and choose a category to find care documents, ISA or IEP records, meeting minutes, or uploaded files.</p><a class="open" href="documents/index.html">Open Docs</a></div></details>
-<details id="aris-forms"><summary>ARIS payroll forms and reimbursement</summary><div class="detail">
-<p>Vermont Developmental Disabilities Services forms for caregivers and employers of record.</p>
-<ul>
-<li><a href="https://arissolutions.org/wp-content/uploads/2026/09/DDSD-Timesheet-July-2026.pdf">ARIS DDS caregiver timesheet (PDF)</a> for recording employee hours.</li>
-<li><a href="https://ddsd.vermont.gov/document/aris-timesheet-legally-responsible-individuals-only-approved-legally-responsible">ARIS Legally Responsible Individual (LRI) timesheet</a> for approved LRIs.</li>
-<li><a href="https://arissolutions.org/wp-content/uploads/2021/07/med_dsNonpayroll.pdf">ARIS Non-Payroll Reimbursement Request Form (PDF)</a> for eligible non-payroll expenses.</li>
-</ul>
-<p>Check the <a href="https://arissolutions.org/our-programs/vt-agency-of-human-services-programs/">ARIS Vermont programs page</a> for current forms and payroll schedules. Use <a href="https://arissolutions.org/online-portal-submissions-11-18-25/">ARIS submission instructions</a> to send completed paperwork.</p>
-</div></details>
-<details id="vermont-contacts"><summary>Vermont resource phone numbers</summary><div class="detail">
-<ul>
-<li><strong>ARIS Solutions · Vermont payroll and reimbursement</strong><br><a href="tel:+18007981658">800-798-1658</a> · <a href="https://arissolutions.org/contact-us/">ARIS contact page</a></li>
-<li><strong>Department of Disabilities, Aging and Independent Living (DAIL) · General inquiries</strong><br><a href="tel:+18022412401">802-241-2401</a> · <a href="https://dail.vermont.gov/contact-us">DAIL contact page</a></li>
-<li><strong>Developmental Disabilities Services Division (DDSD) · Vermont developmental disabilities services</strong><br><a href="tel:+18022410304">802-241-0304</a> · <a href="https://ddsd.vermont.gov/">DDSD website</a></li>
-<li><strong>Vermont Family Network · Family support and navigation</strong><br><a href="tel:+18028765315">802-876-5315</a> · <a href="https://www.vermontfamilynetwork.org/get-support/">Vermont Family Network helpline</a></li>
-</ul>
-</div></details>
-<details id="team-map"><summary>Who’s on your team?</summary><div class="detail">
-<p>Use this map to identify who supports the individual and who to contact for different needs. Start with the individual and the people they want involved. Fill it in together as a worksheet, or print it and write by hand. Entries are temporary until you print or save a PDF using your browser.</p>
-<div id="team-map-fields">
-<label for="team-role-0">Individual and preferred way to communicate</label><input id="team-role-0" type="text" autocomplete="off" placeholder="Name, best contact, and what they help with">
-<label for="team-role-1">Family, trusted people, or guardian if applicable</label><input id="team-role-1" type="text" autocomplete="off" placeholder="Name, best contact, and what they help with">
-<label for="team-role-2">Employer of record or person coordinating caregivers</label><input id="team-role-2" type="text" autocomplete="off" placeholder="Name, best contact, and what they help with">
-<label for="team-role-3">Case manager or service coordinator</label><input id="team-role-3" type="text" autocomplete="off" placeholder="Name, best contact, and what they help with">
-<label for="team-role-4">Designated agency or service provider</label><input id="team-role-4" type="text" autocomplete="off" placeholder="Name, best contact, and what they help with">
-<label for="team-role-5">Direct support staff and backup coverage</label><input id="team-role-5" type="text" autocomplete="off" placeholder="Name, best contact, and what they help with">
-<label for="team-role-6">Other supports the individual wants to include</label><input id="team-role-6" type="text" autocomplete="off" placeholder="Name, best contact, and what they help with">
-</div>
-<button id="print-team-map" type="button">Print / Save Team Map</button>
-</div></details>
+<details><summary>Docs</summary><div class="detail"><p>Open Docs and choose a category to find medical records, meeting minutes, guardianship documents, or uploaded files.</p><a class="open" href="documents/index.html">Open Docs</a></div></details>
 <details id="critical-incident-reporting"><summary>Vermont Critical Incident Reporting</summary><div class="detail">
 <p>For caregivers and employers of record supporting someone in a Vermont DDSD program. Vermont DAIL directs DDSD programs to report critical incidents through its online Critical Incident Reporting (CIR) system.</p>
 <ol>

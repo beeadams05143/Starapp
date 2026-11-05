@@ -402,7 +402,7 @@
         <a href="/profile.html"><i class="ti ti-user nav-icon" aria-hidden="true"></i><span class="nav-text">Profile</span></a>
       </div>
       <div class="drawer-item" data-role="shared">
-        <a href="/feature-guide.html"><i class="ti ti-book nav-icon" aria-hidden="true"></i><span class="nav-text">Feature Guide</span></a>
+        <a href="/feature-guide.html#resources"><i class="ti ti-book nav-icon" aria-hidden="true"></i><span class="nav-text">Resources</span></a>
       </div>
 
       <details data-role="caregiver">
@@ -450,15 +450,11 @@
         <summary><i class="ti ti-files nav-icon" aria-hidden="true"></i><span class="nav-text">Documents</span><i class="ti ti-chevron-down drawer-chevron" aria-hidden="true"></i></summary>
         <div class="detail-body">
           <div class="detail-body-inner">
-            <div class="helper">Access important records, ISA/IEP plans, meeting notes, medical details, finance, caregiving, HR, year end paperwork, guardianship, and uploaded files.</div>
+            <div class="helper">Find meeting minutes, medical records, year-end paperwork, guardianship documents, and uploaded files.</div>
             <div class="sub">
               <a href="/emergency-medical.html" data-doc-type="emergency">Emergency Sheet</a>
-              <a href="/documents/documents.html?cat=ISA" data-doc-type="isa_iep">ISA / IEP</a>
               <a href="/documents/minutes-form.html" data-doc-type="isa_iep">Meeting Minutes</a>
               <a href="/documents/documents.html?cat=Medical" data-doc-type="medical">Medical</a>
-              <a href="/documents/documents.html?cat=Caregiving" data-doc-type="caregiving">Caregiving</a>
-              <a href="/documents/documents.html?cat=HR" data-doc-type="hr_finance">HR</a>
-              <a href="/documents/documents.html?cat=Finance" data-doc-type="hr_finance">Finance</a>
               <a href="/documents/documents.html?cat=Year%20End%20Paperwork" data-doc-type="year_end">Year End Paperwork</a>
               <a href="/documents/documents.html?cat=Guardianship" data-doc-type="guardianship">Guardianship</a>
               <a href="/documents/documents.html?cat=Uploaded%20Files" data-doc-type="uploaded_files">Uploaded Files</a>

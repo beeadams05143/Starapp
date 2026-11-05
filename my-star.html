@@ -30,8 +30,6 @@
     .tile strong {font-size:clamp(17px,3vw,23px);line-height:1.2}
     .tile small {font-size:13px;line-height:1.3}
     .tile.help {border:3px solid #9c3029;background:#fff0e9;color:#842820}
-    .help-row {width:100%;min-height:110px;margin:16px 0}
-    .help-row .scene {font-size:46px}
     .panel {background:#fffdfa;border:2px solid #d6cbb8;border-radius:22px;padding:18px;margin-top:12px}
     .notice {border-left:5px solid #b46a46;background:#fff3de;padding:12px 14px;border-radius:9px;margin:14px 0;font-size:14px;line-height:1.45}
     .notice.urgent {border-color:#b12823;background:#ffede9}
@@ -479,8 +477,9 @@
     if(page==='home'){
       screen.innerHTML='<h1>My STAR</h1><p class="intro">What would you like to do? Nothing is required.</p>'+
         '<div class="tiles">'+
-          tile('feel','😊 😐 😟','How I Feel','Pick how I feel')+
+          tile('urgent','🚨 ‼️','HELP NOW','Important: I need help',true)+
           tile('pain','🧍 🩹','Something Hurts','Point to my body')+
+          tile('feel','😊 😐 😟','How I Feel','Pick how I feel')+
           tile('day','🏊 🌳','My Day','Tell how my day went')+
           tile('moments','📷','My Moments to Review','Look at a photo')+
           tile('goals','🌟 🙌','Something I Did','Tell what I did')+
@@ -490,7 +489,6 @@
         '<div class="tiles" style="margin-top:14px">'+
           tile('voice','🖼️ 🗣️','Picture Communication','Use my picture cards')+
         '</div>'+
-        '<div class="help-row">'+tile('urgent','🚨 ‼️','HELP NOW','Important: I need help',true)+'</div>'+
         '<div class="actions">'+button('Not now — I am done','skip','secondary')+'</div>'+
         '<div id="result" class="message" hidden></div>';
     } else if(page==='moments'){

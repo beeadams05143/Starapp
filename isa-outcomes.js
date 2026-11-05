@@ -33,16 +33,72 @@ function bankChanged(){
  (categories[category]||[]).forEach(k=>box.add(new Option(k,k)));
 }
 function activeCardStatus(row){return row.status==='active'?'Active':row.status==='archived'?'Archived':'Draft';}
+const demoGroup = 'c40d0ac1-0122-46f6-b358-fac283287bb5';
+const jamieId = '58d3ac51-3dc7-4ead-b22f-8cb5829a3bac';
+let view = 'active';
+let evidence = [];
+
+function installViews(){
+ const nav = el('nav','bar');
+ nav.setAttribute('aria-label','ISA views');
+ const buttons = new Map();
+ for(const [key,label] of [['active','Active ISA'],['draft','Draft ISA'],['archived','Forms & History']]){
+  const button = el('button','alt',label);
+  button.type='button';
+  buttons.set(key,button);
+  button.addEventListener('click',()=>{
+   view=key;
+   setEditor(false);
+   updateViews();
+   renderList();
+  });
+  nav.append(button);
+ }
+ function updateViews(){
+  for(const [key,button] of buttons){
+   button.setAttribute('aria-pressed',String(key===view));
+   button.classList.toggle('alt',key!==view);
+  }
+  $('isaNew').hidden=!(state.isAdmin&&view==='draft');
+ }
+ $('isaList').before(nav);
+ updateViews();
+}
+
+function appendEvidence(row,card){
+ if(!state.isAdmin)return;
+ const entries = evidence.filter(item=>item.outcome_id===card.id);
+ const details=el('details','subpanel');
+ details.append(el('summary','',entries.length
+  ? 'Caregiver check-ins · '+entries.length+' recent measurements'
+  : 'Caregiver check-ins'));
+ if(!entries.length)details.append(el('p','hint','No linked answers in the check-ins loaded for this view.'));
+ for(const item of entries.slice(0,8)){
+  const value=typeof item.value==='boolean'?(item.value?'Yes':'No'):String(item.value);
+  details.append(el('p','',item.date+' · '+(item.caregiver_name||'Caregiver')+' — '+(item.measurement_label||'Recorded answer')+': '+value+(item.unit?' '+item.unit:'')));
+ }
+ row.append(details);
+}
+
 function renderList(){
  const host=$('isaList');host.replaceChildren();
- if(!state.records.length){host.append(el('p','muted','No ISA outcome cards yet. An administrator can create one from the bank or from scratch.'));return;}
- for(const item of state.records){
+ if(view==='archived'){
+  for(const [href,label] of [['./resources/isa-basic-form.pdf','ISA Basic Form'],['./resources/isa-required-approvals.pdf','ISA Required Approvals Form'],['./resources/isa-review-change-form.pdf','ISA Review/Change Form']]){
+   const link=el('a','',label+' (PDF)');link.href=href;
+   const line=el('p');line.append(link);host.append(line);
+  }
+  host.append(el('h3','','Archived outcome cards'));
+ }
+ const visible=state.records.filter(card=>card.status===view);
+ if(!visible.length)host.append(el('p','muted',view==='draft'?'No draft outcomes in progress.':'No '+view+' outcomes.'));
+ for(const item of visible){
   const row=el('div','entry'), bar=el('div','bar'), title=el('h3','',item.title), badge=el('span','pill',activeCardStatus(item));
   bar.append(title,badge);row.append(bar);
   row.append(el('p','hint',item.category+' · '+(item.measurements||[]).length+' measurement(s) · '+(item.strategies||[]).length+' support strategy/strategies'));
   if(item.outcome_text)row.append(el('p','',item.outcome_text));
   if(item.voice_text)row.append(el('p','muted',(item.voice_source==='individual'?'Individual’s words: ':'Observed preference: ')+item.voice_text));
-  if(state.isAdmin){const b=el('button','alt','Edit card');b.type='button';b.addEventListener('click',()=>openCard(item));row.append(b);}
+  if(view==='active')appendEvidence(row,item);
+  if(state.isAdmin&&view==='draft'){const b=el('button','alt','Edit card');b.type='button';b.addEventListener('click',()=>openCard(item));row.append(b);}
   host.append(row);
  }
 }
@@ -127,9 +183,29 @@ async function loadMembers(){
  } catch(e){console.warn('Unable to load group membership display',e?.message);state.members=[];}
 }
 async function loadCards(){
- const records=await rest('star_isa_outcomes?select=*&group_id=eq.'+encodeURIComponent(state.groupId)+'&individual_id=eq.&order=created_at.asc&limit=500');
+ const records=await rest('star_isa_outcomes?select=*&group_id=eq.'+encodeURIComponent(state.groupId)+'&'+(state.groupId===demoGroup?'or=(individual_id.eq.'+jamieId+',individual_id.eq."")':'individual_id=eq.')+'&order=created_at.asc&limit=500');
  if(records?.length>=500)throw new Error('Too many outcome cards to load safely. Contact the administrator.');
- state.records=records||[];renderList();
+ state.records=records||[];
+ evidence=[];
+ if(state.isAdmin){
+  try{
+   const checkins=await rest('caregiver_checkins?select=date,caregiver_name,payload&group_id=eq.'+encodeURIComponent(state.groupId)+'&order=date.desc,id.desc&limit=100',{expectedUserId:state.userId});
+   for(const checkin of checkins){
+    const payload=checkin.payload;
+    if(state.groupId===demoGroup && payload?.individual_name!=='Jamie Rivers — FICTIONAL')continue;
+    if(payload?.individual_id && payload.individual_id!==val('isaIndividual'))continue;
+    let entries=payload?.isa_entries;
+    if(typeof entries==='string'){try{entries=JSON.parse(entries)}catch{continue}}
+    if(!Array.isArray(entries))continue;
+    for(const item of entries){
+     if(item?.value!==null&&item?.value!==undefined&&item.value!=='')
+      evidence.push({...item,date:checkin.date,caregiver_name:checkin.caregiver_name});
+    }
+   }
+  }catch(error){console.warn('ISA check-in evidence unavailable',error);}
+ }
+ if(state.groupId!==await ensureActiveGroupId(state.userId)||getSessionFromStorage()?.user?.id!==state.userId)throw new Error('Your account or group changed. Reload ISA Outcomes.');
+ renderList();
  tell(state.records.length+' ISA outcome card(s) loaded.');
 }
 async function saveCard(e){
@@ -148,7 +224,7 @@ async function saveCard(e){
   };
   if(values.status==='active'&&!values.measurements.length)throw new Error('Add at least one measurement before activating this card.');
   if(values.voice_source==='none')values.voice_text='';
-  const opts={method:state.editing?'PATCH':'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(state.editing?values:{...values,group_id:state.groupId,individual_id:''})};
+  const opts={method:state.editing?'PATCH':'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(state.editing?values:{...values,group_id:state.groupId,individual_id:val('isaIndividual')})};
   await rest('star_isa_outcomes'+(state.editing?'?id=eq.'+encodeURIComponent(state.editing)+'&group_id=eq.'+encodeURIComponent(state.groupId):''),opts);
   setEditor(false);await loadCards();tell('Outcome card saved. Active cards now drive the ISA questions in caregiver check-ins.');
  }catch(error){tell(error.message||'Unable to save the outcome.',true);}
@@ -162,10 +238,10 @@ async function start(){
  $('isaGroup').textContent=localStorage.getItem('currentGroupName')||'Current STAR group';
  const roles=await rest('group_members?select=role&group_id=eq.'+encodeURIComponent(state.groupId)+'&user_id=eq.'+encodeURIComponent(state.userId)+'&limit=1');
  state.isAdmin=roles?.[0]?.role==='admin';
- $('isaPermission').textContent=state.isAdmin?'Administrator: you can add, activate, edit and archive outcome cards.':'Team member: read-only outcome cards.';
- $('isaNew').hidden=!state.isAdmin;
+ $('isaPermission').textContent=state.isAdmin?'Administrator · Draft outcomes can be edited in Draft ISA.':'Team member: read-only outcome cards.';
+ installViews();
  $('isaEvidenceLinks').hidden=!state.isAdmin;
- const name=await individualName();$('isaIndividual').replaceChildren(new Option(name,''));
+ const name=state.groupId===demoGroup?'Jamie Rivers — FICTIONAL':await individualName();$('isaIndividual').replaceChildren(new Option(name,state.groupId===demoGroup?jamieId:''));
  await loadMembers();await loadCards();
 }
 document.addEventListener('DOMContentLoaded',()=>{

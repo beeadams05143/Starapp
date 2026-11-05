@@ -2222,6 +2222,13 @@
 	              <input id="caregiver_name" name="caregiver_name" type="text" placeholder="Enter your name" required />
 	            </label>
 	          </div>
+          <section id="shiftSupports" class="question-block" aria-labelledby="shiftSupportsTitle">
+            <h2 id="shiftSupportsTitle">Supports Provided This Shift</h2>
+            <input type="hidden" name="shift_supports" value="[]">
+            <div data-support-rows></div>
+            <button class="btn" type="button" data-add-support>+ Add another support</button>
+            <p data-support-error role="alert" hidden></p>
+          </section>
 	        </div>
 
 	        <section class="central-prn-card" id="centralPrnSection" aria-labelledby="centralPrnTitle">
@@ -6695,7 +6702,54 @@
       }
       openSectionDetailByIndex(steps.findIndex(step => step.id === 'final-notes-step'));
     }
+    const shiftSupports = document.getElementById('shiftSupports');
+    const shiftSupportRows = shiftSupports.querySelector('[data-support-rows]');
+    const shiftSupportField = shiftSupports.querySelector('[name=shift_supports]');
+    const supportOptions = ['In-home support','Community support','Employment support','Respite','Not sure — needs review'];
+    const locationOptions = ['At home','In the community','At a place of employment','Other'];
+    function addShiftSupport(values = {}){
+      const row = document.createElement('fieldset');
+      row.className = 'question-block';
+      row.style.minWidth = '0';
+      row.innerHTML = '<legend>Support entry</legend><label>Support provided<select data-support></select></label>' +
+        '<label>Where it happened<select data-location></select></label>' +
+        '<label>Place or short note (optional)<input data-note type="text" maxlength="160"></label>' +
+        '<button type="button" class="btn" data-remove-support>Remove support entry</button>';
+      for (const [selector, options, value, placeholder] of [
+        ['[data-support]',supportOptions,values.support,'Choose a support'],
+        ['[data-location]',locationOptions,values.location,'Choose a location']
+      ]) {
+        const select = row.querySelector(selector);
+        select.add(new Option(placeholder,''));
+        options.forEach(option => select.add(new Option(option,option)));
+        select.value = options.includes(value) ? value : '';
+      }
+      row.querySelector('[data-note]').value = values.note || '';
+      row.querySelector('[data-remove-support]').onclick = () => {
+        row.remove();
+        if (!shiftSupportRows.children.length) addShiftSupport();
+        syncShiftSupports();
+        shiftSupports.querySelector('[data-add-support]').focus();
+      };
+      shiftSupportRows.append(row);
+      return row;
+    }
+    function readShiftSupports(){
+      return Array.from(shiftSupportRows.children, row => ({
+        support: row.querySelector('[data-support]').value,
+        location: row.querySelector('[data-location]').value,
+        note: row.querySelector('[data-note]').value.trim()
+      })).filter(entry => entry.support || entry.location || entry.note);
+    }
+    function syncShiftSupports(){
+      shiftSupportField.value = JSON.stringify(readShiftSupports());
+    }
+    shiftSupports.querySelector('[data-add-support]').onclick = () => addShiftSupport().querySelector('select').focus();
+    shiftSupportRows.addEventListener('input',syncShiftSupports);
+    shiftSupportRows.addEventListener('change',syncShiftSupports);
+    addShiftSupport();
     function serialize(step){
+      if(step.contains(shiftSupports))syncShiftSupports();
       const data={};
       step.querySelectorAll('input,select,textarea').forEach(el=>{
         if(!el.name) return;
@@ -6776,6 +6830,11 @@
 	        hydrateAdlFieldsFromData(draft.data[idx] || {}, { silent: true });
 	      }
 	      if (idx === 0) {
+        shiftSupportRows.replaceChildren();
+        const supportEntries = parseJsonArray(draft.data[idx]?.shift_supports);
+        if (supportEntries.length) supportEntries.forEach(entry => addShiftSupport(entry));
+        else addShiftSupport();
+        syncShiftSupports();
 	        hydratePrnFromData(draft.data[idx] || {});
 	      }
 	      if (idx === movementStepIndex) {
@@ -7181,6 +7240,17 @@
       e?.preventDefault?.();
       if (!submissionUI || isSubmittingFinal) return;
       if (!validateCentralPrns()) return;
+      const supportRows = readShiftSupports();
+      const missingIndividual = supportRows.length && !caregiverSetupState.assignedIndividualId && !caregiverSetupState.groupIndividualName;
+      const incomplete = supportRows.some(entry => !entry.support || !entry.location);
+      const supportError = shiftSupports.querySelector('[data-support-error]');
+      supportError.hidden = !incomplete && !missingIndividual;
+      if (incomplete || missingIndividual) {
+        supportError.textContent = missingIndividual ? 'Ask your admin to set the individual for this check-in before submitting support entries.' : 'Choose a support and location for each entry, or remove the incomplete entry.';
+        openSectionDetailByIndex(0);
+        shiftSupports.scrollIntoView({block:'center'});
+        return;
+      }
       const legacyMedDraft = getLegacyMedDraftText();
       if (legacyMedDraft && !window.confirm(
         'This recovered draft has medication-change details that will not be submitted. Copy them into the admin-only Team Updates area first. Choose OK only after copying them, or Cancel to keep editing and preserve the draft.'
@@ -7197,6 +7267,7 @@
         const group_id = submissionUI.context.groupId;
         const user = getSessionFromStorage()?.user;
         const payload = buildPayload();
+        payload.shift_supports = supportRows;
         // Registered individual and assignment identifiers make the caregiver observation
         // attributable without storing any invented caregiver titles or blank-as-zero data.
         if(caregiverSetupState.groupIndividualName){
@@ -7204,6 +7275,7 @@
         }
         if(caregiverSetupState.assignedIndividualId){
           payload.individual_id=caregiverSetupState.assignedIndividualId;
+          payload.individual_name=document.getElementById('assignedIndividualSelect').selectedOptions[0]?.text || '';
           payload.checkin_assignment_id=caregiverSetupState.assignmentId;
           payload.caregiver_user_id=user_id;
         }

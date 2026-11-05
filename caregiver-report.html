@@ -1305,6 +1305,19 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
     <section class="panel" id="cg-panel">
       <span id="caregiver-checkins" aria-hidden="true"></span>
       <h2>Caregiver Check-Ins</h2>
+      <section id="shiftSupportReport" class="panel cg-hide-when-quick-look">
+        <h3>Supports &amp; Locations</h3>
+        <p class="muted">Submitted check-ins documenting each support. One check-in can count in more than one category.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:10px">
+          <label>Individual <select data-person></select></label>
+          <label>Period <select data-period><option value="">Custom / all dates</option><option value="month">This month</option><option value="previous">Previous month</option><option value="week">Last 7 days</option></select></label>
+          <label>From <input type="date" data-from></label>
+          <label>Through <input type="date" data-through></label>
+        </div>
+        <p data-support-summary role="status"></p>
+        <ul data-support-counts></ul>
+        <div data-support-dates></div>
+      </section>
       <div class="top-actions no-export" style="display:flex;gap:8px;justify-content:center;margin:8px 0 14px">
         <button id="fullPrintBtn" type="button">🖨️ Print Caregiver Check-ins</button>
       </div>
@@ -5949,7 +5962,88 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
       });
     }
 
+    const shiftSupportReport = document.getElementById('shiftSupportReport');
+    const supportReportPerson = shiftSupportReport.querySelector('[data-person]');
+    const supportReportFrom = shiftSupportReport.querySelector('[data-from]');
+    const supportReportThrough = shiftSupportReport.querySelector('[data-through]');
+    function renderShiftSupports(){
+      const summary = shiftSupportReport.querySelector('[data-support-summary]');
+      const totals = shiftSupportReport.querySelector('[data-support-counts]');
+      const dated = shiftSupportReport.querySelector('[data-support-dates]');
+      const previous = supportReportPerson.value;
+      const people = new Map();
+      const entries = [];
+      for(const entry of cgState.entries){
+        const payload = entry.payload || {};
+        const rows = payload.shift_supports;
+        const name = String(payload.individual_name || '').trim();
+        const key = payload.individual_id || (name && 'name:'+name.toLowerCase());
+        const date = parseEntryDate(entry);
+        if(!key || !date || !Array.isArray(rows) || !rows.length)continue;
+        const valid = rows.filter(row => row && row.support && row.location);
+        if(!valid.length)continue;
+        people.set(key,name || 'Registered individual');
+        entries.push({entry,key,day:formatDateInputValue(date),rows:valid});
+      }
+      supportReportPerson.replaceChildren();
+      if(!people.size)supportReportPerson.add(new Option('No entries yet',''));
+      for(const [id,name] of people)supportReportPerson.add(new Option(name,id));
+      if(people.has(previous))supportReportPerson.value=previous;
+      totals.replaceChildren();
+      dated.replaceChildren();
+      const from=supportReportFrom.value, through=supportReportThrough.value;
+      if(from && through && from>through){
+        summary.textContent='Choose an end date on or after the start date.';
+        return;
+      }
+      const shown=entries.filter(item => item.key===supportReportPerson.value &&
+        (!from || item.day>=from) && (!through || item.day<=through)).sort((a,b)=>b.day.localeCompare(a.day));
+      summary.textContent=shown.length ? shown.length+' submitted check-in(s) in this period.' : 'No support entries in this period.';
+      const counts=new Map();
+      for(const item of shown){
+        const heading=document.createElement('h4');
+        heading.textContent=formatCaregiverTableTimestamp(item.entry)+' · '+getCaregiverName(item.entry);
+        const list=document.createElement('ul');
+        for(const row of item.rows){
+          const line=document.createElement('li');
+          line.textContent=[row.support,row.location,row.note].filter(Boolean).join(' · ');
+          list.append(line);
+        }
+        dated.append(heading,list);
+        for(const support of new Set(item.rows.map(row=>row.support)))counts.set(support,(counts.get(support)||0)+1);
+      }
+      for(const [support,count] of counts){
+        const line=document.createElement('li');
+        line.textContent=support+' · '+count+' check-in(s)';
+        totals.append(line);
+      }
+    }
+    const supportReportPeriod = shiftSupportReport.querySelector('[data-period]');
+    supportReportPerson.addEventListener('change',renderShiftSupports);
+    for(const field of [supportReportFrom,supportReportThrough]){
+      field.addEventListener('change',()=>{
+        supportReportPeriod.value='';
+        renderShiftSupports();
+      });
+    }
+    supportReportPeriod.addEventListener('change',()=>{
+      const end=new Date();
+      const start=new Date(end.getFullYear(),end.getMonth(),1);
+      if(supportReportPeriod.value==='previous'){
+        end.setDate(0);
+        start.setMonth(start.getMonth()-1);
+      }
+      if(supportReportPeriod.value==='week'){
+        start.setTime(end.getTime());
+        start.setDate(start.getDate()-6);
+      }
+      supportReportFrom.value=supportReportPeriod.value ? formatDateInputValue(start) : '';
+      supportReportThrough.value=supportReportPeriod.value ? formatDateInputValue(end) : '';
+      renderShiftSupports();
+    });
+
     function applyCaregiverFilters(){
+      renderShiftSupports();
       const entries = cgState.entries.slice();
       if (cgInputs.caregiver) {
         cgInputs.caregiver.value = 'all';

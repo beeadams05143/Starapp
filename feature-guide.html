@@ -32,6 +32,12 @@
 <p><strong>Quarterly check-ins.</strong> If your team reviews progress quarterly, use that time to ask the individual what’s working and look at their responses and the progress recorded in STAR. Vermont DDSD calls for a review of the full ISA at least annually and before a new ISA starts. Each outcome has its own review schedule written into the ISA. The Qualified Developmental Disabilities Professional (QDDP) follows that schedule and documents the full ISA review, including progress and how satisfied the individual is with their supports.</p>
 <p><strong>Changes between reviews.</strong> Bring changes in the individual’s goals or support needs to the team as soon as they come up. You can start the review and change process at any time. For a significant change in supports, update the formal ISA and get written approval before the change takes effect. That includes the individual, their guardian if applicable, the QDDP, and the agencies providing services, consistent with who approved the original ISA.</p>
 <p><strong>Document the change.</strong> Use the DDSD ISA Review/Change Form or an equivalent record. Include the individual’s name, the ISA term, the effective date, what is changing, who will provide support, how progress will be recorded and reviewed, and the required approvals. Use STAR to draft the proposed card and gather input. Once the formal change is approved, update the STAR card to match.</p>
+<h3 id="isa-forms">Vermont ISA forms</h3>
+<ul>
+<li><a href="/resources/isa-basic-form.pdf">ISA Basic Form (PDF)</a> for creating an Individual Support Agreement.</li>
+<li><a href="/resources/isa-required-approvals.pdf">ISA Required Approvals Form (PDF)</a> for documenting approval of the agreement.</li>
+<li><a href="/resources/isa-review-change-form.pdf">ISA Review/Change Form (PDF)</a> for documenting a review or proposed changes.</li>
+</ul>
 <p>Source <a href="https://ddsd.vermont.gov/isa-guidelines">Vermont DDSD Individual Support Agreement Guidelines</a>, sections III–V.</p>
 <a class="open" href="isa-outcomes.html">Open ISA Outcomes</a></div></details>
 <details><summary>Focus of the Week</summary><div class="detail"><p>Choose one area for the team to work on, describe the plan, and save it. Revisit it to reflect and plan next steps.</p><a class="open" href="focus-week.html">Open Focus of the Week</a></div></details>
@@ -63,6 +69,11 @@
 </section>
 </main>
 <script>
+const forms=document.getElementById('isa-forms');
+if(location.hash==='#isa-forms'){
+  forms.closest('details').open=true;
+  requestAnimationFrame(()=>forms.scrollIntoView());
+}
 const field=document.getElementById('find');
 const sections=document.querySelectorAll('main section');
 document.getElementById('featureSearch').hidden=false;

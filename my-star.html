@@ -60,6 +60,10 @@
     [hidden] {display:none!important}
     @media(max-width:420px) {.tile {min-height:154px}.tile .scene{font-size:42px}.tile small{font-size:12px}.body-layout{gap:7px}.body-poster{height:300px}.pain-point{width:38px;height:38px}}
 
+    .body-card .body-poster{width:min(100%,230px);height:auto;aspect-ratio:200/420}
+    .body-card .body-poster svg{display:block}
+    [data-symptom][aria-pressed="true"]{background:#dcebe1;border-color:#315742}
+
     /* Full-size body map with touch-friendly but visually small markers. */
     .body-layout{display:block}
     .body-switch{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
@@ -113,7 +117,6 @@
     <a href="dashboard.html">👥 Caregiver / Admin</a>
   </nav>
   <div class="top-actions">
-    <button class="small-btn" id="homeBtn" type="button">⌂ My STAR Home</button>
     <button class="small-btn" id="hearBtn" type="button" aria-pressed="false" aria-label="Turn reading aloud on or off">🔇 Read Aloud: OFF</button>
     <button class="small-btn" id="micSetupBtn" type="button" aria-label="Set up microphone with a support person">🎤 Mic Setup</button>
   </div>
@@ -304,12 +307,45 @@
   }
   function support(){return '<label style="display:flex;align-items:center;gap:12px;font-weight:700;margin:20px 0"><input id="withSupport" type="checkbox" style="width:25px;height:25px"> Someone helped me answer</label><div id="supportOptions" hidden><label for="supportKind">How did they help?</label><select id="supportKind" class="large-action secondary" style="width:100%;margin-top:8px"><option value="Read a question aloud">Read a question aloud</option><option value="Helped me choose">Helped me choose</option><option value="Entered my answer">Entered my answer</option></select></div>'}
   function choice(value,emoji,words){return '<button type="button" class="choice" aria-pressed="false" data-choice="'+value+'"><span class="scene" aria-hidden="true">'+emoji+'</span><span>'+words+'</span></button>'}
+  var painPart='';
+  var symptomChoices={
+    Head:['Headache','Dizzy'], Nose:['Stuffy nose','Runny nose','Nose hurts'],
+    Throat:['Sore throat','Hurts to swallow'], Ears:['Earache','Ear feels plugged'],
+    Chest:['Chest hurts','Cough'], Stomach:['Stomachache','Feel like throwing up'],
+    'Back of head':['Headache'], Neck:['Sore neck','Stiff neck']
+  };
+  function showPainOptions(part){
+    painPart=part;
+    var options=(symptomChoices[part]||['Hurts','Feels sore']).concat(['Something else','I’m not sure']);
+    document.getElementById('painSymptoms').innerHTML='<h2>What feels wrong?</h2>'+
+      '<button type="button" class="small-btn" data-hear-symptoms>🔊 Hear the choices</button>'+
+      '<div class="choices">'+options.map(function(option){
+        return '<button type="button" class="small-btn" data-symptom="'+option+'" aria-pressed="false">'+option+'</button>';
+      }).join('')+'</div>';
+    document.getElementById('painSymptoms').scrollIntoView({block:'nearest'});
+  }
   function bodyPoster(front){
     var parts=front?[
-      ['Head',50,11],['Throat',50,23],['Chest',50,36],['Stomach',50,47],['Left arm',21,43],['Right arm',79,43],['Left leg',41,73],['Right leg',59,73]
-    ]:[['Back of head',50,11],['Neck',50,23],['Back',50,37],['Lower back',50,51],['Left leg',41,73],['Right leg',59,73]];
-    return '<div class="body-card"><strong>'+(front?'FRONT':'BACK')+'</strong><div class="body-poster"><svg viewBox="0 0 190 340" role="img" aria-label="'+(front?'Front':'Back')+' outline of a whole person"><circle cx="95" cy="35" r="23" fill="#eacaaa" stroke="#775d48" stroke-width="2"/><rect x="87" y="58" width="16" height="20" rx="5" fill="#eacaaa"/><path d="M71 76 Q56 75 52 91 L41 174 Q39 189 47 192 Q55 194 60 177 L75 116 L75 205 L71 313 Q70 330 80 332 Q91 331 92 315 L96 232 L101 315 Q104 330 115 332 Q125 330 120 312 L115 205 L115 116 L131 177 Q134 194 144 192 Q151 189 148 174 L138 91 Q134 75 118 76Z" fill="#eacaaa" stroke="#775d48" stroke-width="2"/><path d="M76 205 Q96 217 114 205" fill="none" stroke="#a88968" stroke-width="2"/></svg>'+
-      parts.map(function(a){return '<button type="button" class="pain-point" data-pain="'+a[0]+'" aria-label="'+a[0]+'" style="left:'+a[1]+'%;top:'+a[2]+'%">•</button>'}).join('')+'</div></div>'
+      ['Head',50,8],['Ears',72,14],['Nose',50,18],['Throat',50,28],
+      ['Chest',50,39],['Stomach',50,51],['Right arm',22,44],['Left arm',78,44],
+      ['Right leg',40,75],['Left leg',60,75]
+    ]:[
+      ['Back of head',50,11],['Neck',50,26],['Upper back',50,37],
+      ['Lower back',50,51],['Left arm',22,44],['Right arm',78,44],['Left leg',40,75],['Right leg',60,75]
+    ];
+    var face=front
+      ? '<path d="M77 58q7-4 13 0m20 0q7-4 13 0M100 63l-3 12 6 1m-13 9q10 6 20 0" fill="none" stroke="#684738" stroke-width="2.8" stroke-linecap="round"/>'
+      : '<path d="M71 61q1 21 10 33 19 9 38 0 9-12 10-33" fill="#594139"/>';
+    var figure='<svg viewBox="0 0 200 420" role="img" aria-label="'+(front?'Front':'Back')+' view of a person">'+
+      '<path d="M82 90h36v28l-18 14-18-14zM59 136q-12 17-16 42l-17 63q-4 17 6 21 10 3 15-13l23-62 11-35m60-16q12 17 16 42l17 63q4 17-6 21-10 3-15-13l-23-62-11-35" fill="#dba987" stroke="#785545" stroke-width="2.5" stroke-linejoin="round"/>'+
+      '<path d="M66 222q-7 36 1 76l4 90q0 12 14 12 11-1 11-14l4-115 4 115q0 13 11 14 14 0 14-12l4-90q8-40 1-76z" fill="#546a88" stroke="#354860" stroke-width="2.5"/>'+
+      '<path d="M78 109q-26 6-37 37l24 11 3-8-5 79q37 9 74 0l-5-79 3 8 24-11q-11-31-37-37-22 20-44 0z" fill="#8ab6a1" stroke="#3f6255" stroke-width="2.5" stroke-linejoin="round"/>'+
+      '<path d="M72 384q11 5 23 0l1 16q-4 11-30 9-12-2-6-12zm56 0q-11 5-23 0l-1 16q4 11 30 9 12-2 6-12z" fill="#ede6d9" stroke="#625952" stroke-width="2.5"/>'+
+      '<path d="M73 58q-14-9-13 6 1 11 12 10m55-16q14-9 13 6-1 11-12 10" fill="#dba987" stroke="#785545" stroke-width="2.5"/>'+
+      '<path d="M69 54q0-34 31-34t31 34l-3 18q-3 28-28 30-25-2-28-30z" fill="#e6b797" stroke="#785545" stroke-width="2.5"/>'+
+      '<path d="M69 61q-8-30 13-41 16-9 35-2 22 8 14 43l-6-16q-20 5-37-8-8 14-17 16z" fill="#594139"/>'+face+'</svg>';
+    return '<div class="body-card"><strong>'+(front?'FRONT':'BACK')+'</strong><div class="body-poster">'+figure+
+      parts.map(function(a){return '<button type="button" class="pain-point" aria-pressed="false" data-pain="'+a[0]+'" aria-label="'+a[0]+'" style="left:'+a[1]+'%;top:'+a[2]+'%">•</button>'}).join('')+'</div></div>'
   }
   function picture(kind){
     if(kind==='swim')return '<svg viewBox="0 0 220 160" role="img" aria-label="Person swimming in a blue pool"><rect x="0" y="0" width="220" height="160" fill="#b9e6ed"/><rect x="0" y="99" width="220" height="61" fill="#51a7c3"/><circle cx="73" cy="62" r="17" fill="#b87949"/><path d="M88 85L139 98 163 72" fill="none" stroke="#6d3b2c" stroke-width="15" stroke-linecap="round"/><path d="M0 117Q20 105 40 117T80 117T120 117T160 117T200 117" stroke="white" fill="none" stroke-width="5"/><path d="M0 140Q20 128 40 140T80 140T120 140T160 140T200 140" stroke="white" fill="none" stroke-width="5"/></svg>';
@@ -469,7 +505,7 @@
     } else if(page==='feel'){
       wrap('How I Feel','<p>Pick a face. You do not have to answer.</p><div class="choices">'+choice('Happy','😊','Happy')+choice('Okay','😐','Okay')+choice('Sad','😢','Sad')+choice('Upset','😠','Upset')+choice('Tired','😴','Tired')+choice('Unwell','🤒','Not feeling good')+'</div>'+support()+'<div class="actions">'+button('Done','done','primary')+button('Not now','skip')+'</div>');
     } else if(page==='pain'){
-      painSide='front';wrap('Something Hurts','<p>Tap where it hurts. Pick front or back.</p><div class="body-switch"><button type="button" data-side="front" aria-pressed="true">FRONT</button><button type="button" data-side="back" aria-pressed="false">BACK</button></div><div class="body-layout" id="painPoster">'+bodyPoster(true)+'</div><p id="painLocation" class="selected-location" role="status">Choose a body part</p>'+support()+'<div class="actions">'+button('Done','done','primary')+button('Not now','skip')+'</div>');
+      painSide='front';painPart='';wrap('Something Hurts','<p>Tap where it hurts. Pick front or back.</p><div class="body-switch"><button type="button" data-side="front" aria-pressed="true">FRONT</button><button type="button" data-side="back" aria-pressed="false">BACK</button></div><div class="body-layout" id="painPoster">'+bodyPoster(true)+'</div><p id="painLocation" class="selected-location" role="status">Choose a body part</p><div id="painSymptoms"></div>'+support()+'<div class="actions">'+button('Done','done','primary')+button('Not now','skip')+'</div>');
     } else if(page==='day'){
       wrap('My Day','<p>Did you like your activity today?</p><div class="choices">'+choice('Liked it','😊','I liked it')+choice('Okay','😐','It was okay')+choice('Did not like','😞','I did not like it')+choice('No activity','🙅','Not today')+'</div><label for="dayActivity">Which activity? (optional)</label>'+dictateControls('dayActivity')+'<textarea class="voice-input" id="dayActivity" maxlength="2000" placeholder="You can say or type what activity you tried."></textarea>'+support()+'<div class="actions">'+button('Done','done','primary')+button('Not now','skip')+'</div>');
     } else if(page==='goals'){
@@ -524,13 +560,32 @@
     var dictate=e.target.closest('[data-dictate]');
     if(dictate){toggleDictation(dictate);return}
     var side=e.target.closest('[data-side]');
-    if(side){painSide=side.getAttribute('data-side');document.querySelectorAll('[data-side]').forEach(function(b){b.setAttribute('aria-pressed',String(b===side))});document.getElementById('painPoster').innerHTML=bodyPoster(painSide==='front');return}
+    if(side){painSide=side.getAttribute('data-side');document.querySelectorAll('[data-side]').forEach(function(b){b.setAttribute('aria-pressed',String(b===side))});document.getElementById('painPoster').innerHTML=bodyPoster(painSide==='front');
+      document.querySelectorAll('[data-pain]').forEach(function(point){
+        var selected=point.dataset.pain===painPart;
+        point.classList.toggle('selected',selected);
+        point.setAttribute('aria-pressed',String(selected));
+      });
+      speak(painSide==='front'?'Front of the body':'Back of the body');return}
     var pick=e.target.closest('[data-wyr-pick]');
     if(pick){pickWyr(pick.getAttribute('data-wyr-pick'));return}
     var open=e.target.closest('[data-open]');
     if(open){render(open.getAttribute('data-open'));speak(readText[current]||'My STAR');return}
+    var symptom=e.target.closest('[data-symptom]');
+    if(symptom){
+      chosen=painPart+' — '+symptom.dataset.symptom;
+      document.querySelectorAll('[data-symptom]').forEach(function(item){item.setAttribute('aria-pressed',String(item===symptom))});
+      speak(symptom.dataset.symptom);
+      status('You chose: '+chosen+'. Tap Done to save it.');
+      return;
+    }
+    if(e.target.closest('[data-hear-symptoms]')){
+      if(!readAloudOn){status('Turn on Read Aloud to hear the choices.');return}
+      speak('What feels wrong? '+Array.from(document.querySelectorAll('[data-symptom]'),function(item){return item.textContent}).join('. '));
+      return;
+    }
     var ch=e.target.closest('[data-choice],[data-pain]');
-    if(ch){choose(ch,ch.getAttribute('data-choice')||ch.getAttribute('data-pain'));return}
+    if(ch){choose(ch,ch.getAttribute('data-choice')||ch.getAttribute('data-pain'));if(ch.dataset.pain)showPainOptions(ch.dataset.pain);return}
     var a=e.target.closest('[data-action]');
     if(!a)return;
     var action=a.getAttribute('data-action');
@@ -584,7 +639,6 @@
       stopDictation();window.speechSynthesis?.cancel();render('home');return;
     }
   });
-  document.getElementById('homeBtn').addEventListener('click',function(){render('home')});
   document.getElementById('micSetupBtn').addEventListener('click',function(){render('mic-setup')});
   document.getElementById('hearBtn').addEventListener('click',function(){
     readAloudOn=!readAloudOn;

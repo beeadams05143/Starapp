@@ -54,25 +54,27 @@ function observationEntry(row){
 }
 function measureEntry(rec){
  const entry=create('div',undefined,'evidence measure');
- entry.append(create('span',formatDay(rec.date)+' · Caregiver check-in','source-label'));
+ entry.append(create('span',formatDay(rec.date)+' · Submitted caregiver check-in','source-label'));
  const detail=create('p',undefined,'measure-value');
  detail.append(create('strong',rec.measurement_label||'ISA measurement'),document.createTextNode(': '));
  const value=typeof rec.value==='number'?String(rec.value):String(rec.value??'');
  detail.append(document.createTextNode(value+(rec.unit?' '+rec.unit:'')));
  entry.append(detail);
  if(rec.activity)entry.append(create('p','Activity: '+rec.activity,'source-meta'));
+ if(rec.individual_name)entry.append(create('p','Individual: '+rec.individual_name,'source-meta'));
  if(rec.caregiver_name)entry.append(create('p','Recorded by: '+rec.caregiver_name,'source-meta'));
  return entry;
 }
 function render(cards,observations,measures,from,to,truncated){
  const host=$('outcomeReport');
  host.replaceChildren();
+ const shownCards=new Set(cards.map(card=>card.id));
  const reviewed=observations.filter(o=>o.review_status==='linked_observation'&&
-    o.linked_outcome_id&&dateIncluded(eventDay(o.created_at),from,to));
+    shownCards.has(o.linked_outcome_id)&&dateIncluded(eventDay(o.created_at),from,to));
  const caregiven=measures.filter(x=>dateIncluded(x.date,from,to));
  const counts=$('reportCounts');counts.replaceChildren();
  summaryItem(counts,'ISA Outcome Cards',cards.length);
- summaryItem(counts,'Caregiver measurements',caregiven.length);
+ summaryItem(counts,'Caregiver check-in measurements',caregiven.length);
  summaryItem(counts,'Reviewed My STAR links',reviewed.length);
  const summary=create('p','Period: '+(from?formatDay(from):'All dates')+' – '+(to?formatDay(to):'Today')+'. Measurements and individual statements are shown separately. No progress percentages or goal attainment are inferred.','report-note');
  host.append(summary);
@@ -103,7 +105,7 @@ function render(cards,observations,measures,from,to,truncated){
   section.append(measured);host.append(section);
  }
  reportStatus('Report ready. '+reviewed.length+' linked individual observation'+(reviewed.length===1?'':'s')+
-  ' and '+caregiven.length+' caregiver measurement'+(caregiven.length===1?'':'s')+' in the selected period.');
+  ' and '+caregiven.length+' caregiver measurement'+(caregiven.length===1?'':'s')+' from '+new Set(caregiven.map(item=>item.checkin_id)).size+' submitted caregiver check-in(s) in the selected period.');
 }
 async function refresh(){
  if(loading)return;
@@ -132,7 +134,7 @@ async function refresh(){
   const toQuery=to?'&date=lte.'+encodeURIComponent(to):'';
   const [cards,observations,checkins]=await Promise.all([
     rest('star_isa_outcomes?select=id,group_id,individual_id,title,category,outcome_text,status,measurements,version'+
-      '&group_id=eq.'+group+'&individual_id=eq.&order=title.asc&limit='+MAX_CARDS,{expectedUserId:userId}),
+      '&group_id=eq.'+group+'&order=title.asc&limit='+MAX_CARDS,{expectedUserId:userId}),
     rest('star_individual_observations_test?select=id,group_id,original_words,response_choice,support_kind,review_status,reviewer_note,created_at,linked_outcome_id,linked_outcome_version'+
       '&group_id=eq.'+group+'&review_status=eq.linked_observation&order=created_at.desc&limit='+MAX_OBSERVATIONS,{expectedUserId:userId}),
     rest('caregiver_checkins?select=id,date,caregiver_name,payload&group_id=eq.'+group+fromQuery+toQuery+
@@ -142,17 +144,21 @@ async function refresh(){
     throw Error('Report sources could not be verified. Try again.');
   if(groupId!==await ensureActiveGroupId(userId)||getSessionFromStorage()?.user?.id!==userId)
     throw Error('Your account or group changed. Refresh the report.');
-  const cardIds=new Set(cards.map(c=>c.id));
+  const cardsById=new Map(cards.map(card=>[card.id,card]));
   const measures=[];
   for(const checkin of checkins){
    let entries=checkin.payload?.isa_entries;
    if(typeof entries==='string'){try{entries=JSON.parse(entries)}catch{entries=null}}
    if(!Array.isArray(entries))continue;
    for(const item of entries){
-    if(!item||!cardIds.has(item.outcome_id))continue;
+    if(!item)continue;
+    const card=cardsById.get(item.outcome_id);
+    if(!card)continue;
+    const checkinIndividual=checkin.payload?.individual_id;
+    if(checkinIndividual&&card.individual_id&&checkinIndividual!==card.individual_id)continue;
     // Blank is unanswered. Zero is a valid recorded value, not a skipped entry.
     if(item.value===null||item.value===undefined||item.value==='')continue;
-    measures.push({...item,date:checkin.date,caregiver_name:checkin.caregiver_name});
+    measures.push({...item,date:checkin.date,caregiver_name:checkin.caregiver_name,checkin_id:checkin.id,individual_name:checkin.payload?.individual_name});
    }
   }
   const capped=cards.length===MAX_CARDS||observations.length===MAX_OBSERVATIONS||checkins.length===MAX_CHECKINS;

@@ -64,11 +64,30 @@
 <details><summary>Group Chat</summary><div class="detail"><p>Open Chat, type a message, and tap Send. The chat belongs to your active group. Opening it marks incoming messages as read.</p><a class="open" href="chat.html">Open Group Chat</a></div></details>
 <details><summary>Calendar</summary><div class="detail"><p>Open Calendar to see upcoming events for the group. Select an event to view details or use the add option to schedule something.</p><a class="open" href="calendar.html">Open Calendar</a></div></details>
 <details><summary>Docs</summary><div class="detail"><p>Open Docs and choose a category to find care documents, ISA or IEP records, meeting minutes, or uploaded files.</p><a class="open" href="documents/index.html">Open Docs</a></div></details>
+<details id="critical-incident-reporting"><summary>Vermont Critical Incident Reporting</summary><div class="detail">
+<p>For caregivers and employers of record supporting someone in a Vermont DDSD program. Vermont DAIL directs DDSD programs to report critical incidents through its online Critical Incident Reporting (CIR) system.</p>
+<ol>
+<li>Follow your team’s immediate safety and notification procedures. Notify the employer of record or designated contact according to your team’s reporting plan.</li>
+<li>Check the current Vermont CIR policy for the incident type, required notifications, and deadlines. For self- or family-managed services, coordinate with your case manager or designated reporting contact so the authorized person can submit through the state system.</li>
+<li>Gather the facts for the report, including when and where it happened, what happened, actions taken, and who was notified. Use your team’s approved secure process for sharing these details.</li>
+</ol>
+<p>Use the Vermont DAIL portal for the official submission. STAR provides these resource links.</p>
+<ul>
+<li><a class="open" href="https://dail.vermont.gov/resources/critical-incident-reporting-portal">Open Vermont DAIL’s CIR portal and reporting instructions</a></li>
+<li><a class="open" href="https://ddsd.vermont.gov/cir-guidelines">Open Vermont DDSD Critical Incident Reporting Guidelines</a></li>
+<li><a class="open" href="https://ddsd.vermont.gov/resources/forms">Find the Critical Incident Reporting Form on Vermont’s DDSD forms page</a> (reference copy).</li>
+</ul>
+</div></details>
 <details><summary>Emergency Sheet</summary><div class="detail"><p>Open Emergency to find the individual’s key medical and emergency information. Admins manage changes to the sheet.</p><a class="open" href="emergency-medical.html">Open Emergency Sheet</a></div></details>
 <details><summary>Profile and Group Settings</summary><div class="detail"><p>Open Profile to see your account and group. Use Group Settings to manage your team if your role allows it.</p><a class="open" href="profile.html">Open Profile and Group Settings</a></div></details>
 </section>
 </main>
 <script>
+const incident=document.getElementById('critical-incident-reporting');
+if(location.hash==='#critical-incident-reporting'){
+  incident.open=true;
+  requestAnimationFrame(()=>incident.scrollIntoView());
+}
 const forms=document.getElementById('isa-forms');
 if(location.hash==='#isa-forms'){
   forms.closest('details').open=true;

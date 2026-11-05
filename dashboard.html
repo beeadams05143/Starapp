@@ -267,6 +267,8 @@
     .star-review-shortcut a{color:#274b35;font-weight:800;font-size:16px;line-height:1.3}
     .star-review-shortcut p{margin:7px 0 0;color:#5b5c56;font-size:13px}
     .star-review-shortcut[hidden]{display:none!important}
+    .home-help-notice {margin:12px 0 18px;padding:14px 16px;border:2px solid #9c3029;border-radius:14px;background:#fff0e9;color:#742820}
+    .home-help-notice a {display:inline-flex;align-items:center;min-height:44px;color:inherit;font-weight:750;text-decoration:underline}
   </style>
 </head>
 
@@ -280,6 +282,12 @@
       <a href="my-star.html" aria-label="Preview the individual My STAR experience in STAR Testing">⭐ Preview My STAR</a>
       <a href="dashboard.html" aria-current="page">👥 Caregiver / Admin</a>
     </nav>
+    <div aria-live="polite">
+      <section class="home-help-notice" id="homeHelpNotice" hidden>
+        <strong id="homeHelpTitle"></strong><br>
+        <a href="chat.html">Open Group Chat</a>
+      </section>
+    </div>
     <section class="dashboard-header starfield-page-header">
       <svg class="starfield-bg" viewBox="0 0 420 110" aria-hidden="true">
         <circle cx="28" cy="18" r="1" fill="#2C2C2A" opacity="0.15"></circle>
@@ -396,6 +404,49 @@
       </div>
     </section>
   </main>
+
+<script type="module">
+  import {getSessionFromStorage, rest} from './restClient.js?v=2026.10.29UVM3';
+  import {ensureActiveGroupId} from './active-group.js?v=2026.10.29UVM3';
+
+  const notice=document.getElementById('homeHelpNotice');
+  const title=document.getElementById('homeHelpTitle');
+  let refreshing=false;
+  async function refreshHelpNotice(){
+    if(refreshing || document.hidden)return;
+    refreshing=true;
+    try{
+      const userId=getSessionFromStorage()?.user?.id;
+      if(!userId){notice.hidden=true;return;}
+      const groupId=await ensureActiveGroupId(userId);
+      if(!groupId){notice.hidden=true;return;}
+      const query=new URLSearchParams({
+        select:'message,message_reads()',
+        group_id:'eq.'+groupId,
+        sender_id:'neq.'+userId,
+        or:'(message.like.[STAR TEST] 🚨 Help now*,message.like.[STAR TEST] 🩹 Something hurts*)',
+        'message_reads.user_id':'eq.'+userId,
+        message_reads:'is.null',
+        order:'created_at.desc,id.desc',
+        limit:'1'
+      });
+      const rows=await rest('messages?'+query,{expectedUserId:userId});
+      if(getSessionFromStorage()?.user?.id!==userId){notice.hidden=true;return;}
+      const latest=rows[0]?.message;
+      if(latest){
+        const label=latest.startsWith('[STAR TEST] 🚨')?'🚨 Unread Help Now message':'🩹 Unread Something Hurts message';
+        if(title.textContent!==label)title.textContent=label;
+      }
+      notice.hidden=!latest;
+    }catch(error){
+      console.warn('Could not refresh Home help notification',error);
+    }finally{refreshing=false;}
+  }
+  refreshHelpNotice();
+  setInterval(refreshHelpNotice,5000);
+  window.addEventListener('pageshow',refreshHelpNotice);
+  document.addEventListener('visibilitychange',refreshHelpNotice);
+</script>
 
 <!-- Page logic that populates #user-email etc. -->
 <script type="module" src="./script.js?v=2026.10.29UVM3"></script>

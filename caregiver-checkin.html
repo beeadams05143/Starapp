@@ -2151,7 +2151,8 @@
       .guided-checkin-navigation label { width:100%; }
       .guided-checkin-navigation button { width:100%; }
     }
-</style>
+#assignedIndividualWrap[hidden]{display:none!important}
+  </style>
 </head>
 <body>
   <section class="starfield-page-header">
@@ -4849,9 +4850,26 @@
           individualSelect.add(new Option(p?.public_name||p?.display_name||p?.full_name||'Registered individual',a.individual_id));
         }
         individualSelect.value=assigned.individual_id;
-        individualWrap.hidden=assignments.length<=1;
+        individualWrap.hidden=false;
       }
-    }else if(individualWrap){individualWrap.hidden=true;}
+    }
+    const groupId = currentGroup;
+    let config = assigned;
+    if (!config && groupId) {
+      const rows = await rest(
+        `caregiver_checkin_configs?group_id=eq.${encodeURIComponent(groupId)}&select=id,group_id,individual_id,selected_categories,selected_items,updated_at&order=updated_at.desc.nullslast&limit=1`
+      );
+      config = rows?.[0] || null;
+    }
+    caregiverSetupState.groupIndividualName = '';
+    if (!assigned && individualWrap && individualSelect) {
+      const profile = parseConfigObject(config?.selected_items)?.__individual_profile__;
+      const name = typeof profile?.preferred_name === 'string' ? profile.preferred_name.trim() : '';
+      individualSelect.replaceChildren();
+      if (name) individualSelect.add(new Option(name, name));
+      individualWrap.hidden = !name;
+      caregiverSetupState.groupIndividualName = name;
+    }
     caregiverSetupState.assignmentId=assigned?.id||null;
     caregiverSetupState.assignedIndividualId=assigned?.individual_id||null;
     caregiverSetupState.assignedCaregiverUserId=assigned?.caregiver_user_id||null;
@@ -4872,21 +4890,12 @@
       announce();
       return;
     }
-    const groupId = currentGroup;
     caregiverSetupState.groupId = groupId || null;
     caregiverSetupState.configRowId = null;
     caregiverSetupState.hasConfig = false;
     caregiverSetupState.selectedCategories = new Set();
     caregiverSetupState.selectedItems = {};
     caregiverSetupState.itemDescriptions = {};
-    let config = null;
-    if (groupId) {
-      const rows = await rest(
-        `caregiver_checkin_configs?group_id=eq.${encodeURIComponent(groupId)}&select=id,group_id,individual_id,selected_categories,selected_items,updated_at&order=updated_at.desc.nullslast&limit=1`
-      );
-      config = rows?.[0] || null;
-    }
-    if(assigned)config=assigned;
     if (config && isCustomCaregiverSetupEnabled(config)) {
       caregiverSetupState.configRowId = config.id || null;
       caregiverSetupState.hasConfig = true;
@@ -7190,6 +7199,9 @@
         const payload = buildPayload();
         // Registered individual and assignment identifiers make the caregiver observation
         // attributable without storing any invented caregiver titles or blank-as-zero data.
+        if(caregiverSetupState.groupIndividualName){
+          payload.individual_name=caregiverSetupState.groupIndividualName;
+        }
         if(caregiverSetupState.assignedIndividualId){
           payload.individual_id=caregiverSetupState.assignedIndividualId;
           payload.checkin_assignment_id=caregiverSetupState.assignmentId;

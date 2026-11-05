@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>STAR Feature Guide · UVM Testing</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f5f1e8;color:#272925;font:17px/1.55 system-ui,sans-serif}main{max-width:850px;margin:auto;padding:20px 16px 48px}h1{line-height:1.12;margin:.3em 0;font-size:clamp(32px,7vw,48px)}h2{margin:30px 0 10px}a{color:#30563f;text-underline-offset:3px}nav{display:flex;flex-wrap:wrap;gap:8px 16px}nav a,.open{display:inline-flex;align-items:center;min-height:44px;font-weight:700}.eyebrow{font-weight:750;letter-spacing:.07em;font-size:13px;color:#744a1e}details{background:#fffdfa;border:1px solid #cfc6b5;border-radius:12px;margin:8px 0}summary{padding:12px 15px;min-height:48px;cursor:pointer;font-weight:750}details p{margin:0 0 6px}.detail{padding:0 15px 9px}label{display:block;font-weight:750;margin:16px 0 5px}input{width:100%;min-height:48px;border:1px solid #91846f;border-radius:10px;padding:8px 12px;font:inherit;background:#fffdfa} [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+<nav aria-label="Return to STAR"><a href="dashboard.html">← Caregiver Home</a><a href="my-star.html">← My STAR</a></nav>
+<p class="eyebrow">STAR UVM TESTING</p>
+<h1>STAR Feature Guide</h1>
+<p>Find a feature, learn what it does, and open it to try it out. Some tools depend on your role or group.</p>
+<div id="featureSearch" hidden><label for="find">Find a feature</label><input id="find" type="search" placeholder="Try check-in, photos, or chat"><p id="empty" role="status" hidden>No matching features. Try a different word.</p></div>
+<nav id="guideTopics" aria-label="Guide topics"><a href="#caregiver">Caregiver tools</a><a href="#moments">Photos and monthly review</a><a href="#individual">My STAR</a><a href="#team">Team tools and settings</a></nav>
+<section id="caregiver" aria-labelledby="caregiver-title"><h2 id="caregiver-title">Caregiver tools</h2>
+<details><summary>Caregiver Check-in</summary><div class="detail"><p>Record how the individual’s day went. From Home, open Check-in, confirm the date, and answer the questions that apply. Review and submit when you’re done.</p><a class="open" href="caregiver-checkin.html">Open Caregiver Check-in</a></div></details>
+<details><summary>Saved Drafts</summary><div class="detail"><p>Open an unfinished check-in saved on this device. Continue where you left off or delete a draft you no longer need.</p><a class="open" href="saved-drafts.html">Open Saved Drafts</a></div></details>
+<details><summary>Reports</summary><div class="detail"><p>Choose a date range to review check-in summaries, trends, and available ISA progress reports.</p><a class="open" href="caregiver-report.html">Open Reports</a></div></details>
+<details><summary>ISA Outcomes</summary><div class="detail"><p>Open an outcome to see the individual’s goal and how progress is measured. Admins can manage outcomes and link matching check-in answers to measures.</p><a class="open" href="isa-outcomes.html">Open ISA Outcomes</a></div></details>
+<details><summary>Focus of the Week</summary><div class="detail"><p>Choose one area for the team to work on, describe the plan, and save it. Revisit it to reflect and plan next steps.</p><a class="open" href="focus-week.html">Open Focus of the Week</a></div></details>
+<details><summary>Team Updates</summary><div class="detail"><p>Admins can record medication or routine changes, learning goals, and other important updates for the team.</p><a class="open" href="team-updates.html">Open Team Updates</a></div></details>
+<details><summary>Review My STAR Observations</summary><div class="detail"><p>Admins can review submissions from Something I Did and decide whether an observation belongs with an ISA outcome.</p><a class="open" href="my-star-isa-review.html">Open Review My STAR Observations</a></div></details>
+<details><summary>Customize Caregiver Check-in</summary><div class="detail"><p>Admins can select a caregiver, assign relevant questions, and review links to ISA measures. Save when finished.</p><a class="open" href="/caregiver-checkin-setup/">Open Customize Caregiver Check-in</a></div></details>
+</section>
+<section id="moments" aria-labelledby="moments-title"><h2 id="moments-title">Photos and monthly review</h2>
+<details><summary>Add a Moment</summary><div class="detail"><p>Choose the individual, take or upload a photo, and add a short activity label, category, and caregiver observation. Save it for the individual to review.</p><a class="open" href="star-moments-test.html?mode=add">Open Add a Moment</a></div></details>
+<details><summary>My Moments to Review</summary><div class="detail"><p>Look at one photo at a time. Share how it felt and whether you want to do it again. Add your own words if you’d like. Choose Not now to come back later. A photo can also appear after the mood check-in.</p><a class="open" href="star-moments-test.html?mode=review">Open My Moments to Review</a></div></details>
+<details><summary>My Month</summary><div class="detail"><p>Choose an individual and a month to look back at their experiences. Open a photo to review their response and the support they used. Caregiver observations are shown separately on completed moments.</p><a class="open" href="star-moments-test.html?mode=month">Open My Month</a></div></details>
+</section>
+<section id="individual" aria-labelledby="individual-title"><h2 id="individual-title">My STAR</h2>
+<details><summary>Help Now and Something Hurts</summary><div class="detail"><p>Tap either tile in the first row to post to your test group chat right away. Add details if you want. In Something Hurts, choose Front or Back, tap a body part, and pick a symptom or save the body part alone. Get someone nearby if you need help right away.</p><a class="open" href="my-star.html">Open Help Now and Something Hurts</a></div></details>
+<details><summary>How I Feel and My Day</summary><div class="detail"><p>Choose a face to share how you feel, or open My Day to share how an activity went. Tap Done to save your answer or Not now to skip.</p><a class="open" href="my-star.html">Open How I Feel and My Day</a></div></details>
+<details><summary>Something I Did</summary><div class="detail"><p>Share something you did, tried, or learned. Add your own words and say if someone helped you. Tap Done to send it for team review.</p><a class="open" href="my-star.html">Open Something I Did</a></div></details>
+<details><summary>Would You Rather?</summary><div class="detail"><p>Follow the picture choices to explore what you might like to do. Choose an activity, ask for something else, or stop whenever you want.</p><a class="open" href="my-star.html">Open Would You Rather?</a></div></details>
+<details><summary>Talk to My Team</summary><div class="detail"><p>Open this tile to go to Group Chat or open picture cards.</p><a class="open" href="my-star.html">Open Talk to My Team</a></div></details>
+<details><summary>Picture Communication</summary><div class="detail"><p>Open the picture cards and choose a picture to help communicate what you want to say.</p><a class="open" href="my-star-voice.html">Open Picture Communication</a></div></details>
+<details><summary>Read Aloud and Mic Setup</summary><div class="detail"><p>Turn on Read Aloud to hear prompts and supported choices. Use Mic Setup with a helper to try speaking into a supported text box. You can type in those boxes too.</p><a class="open" href="my-star.html">Open Read Aloud and Mic Setup</a></div></details>
+</section>
+<section id="team" aria-labelledby="team-title"><h2 id="team-title">Team tools and settings</h2>
+<details><summary>Home</summary><div class="detail"><p>Use Quick Actions to open common tools. An unread Help Now or Something Hurts message from another team member appears at the top and links to Group Chat.</p><a class="open" href="dashboard.html">Open Home</a></div></details>
+<details><summary>Group Chat</summary><div class="detail"><p>Open Chat, type a message, and tap Send. The chat belongs to your active group. Opening it marks incoming messages as read.</p><a class="open" href="chat.html">Open Group Chat</a></div></details>
+<details><summary>Calendar</summary><div class="detail"><p>Open Calendar to see upcoming events for the group. Select an event to view details or use the add option to schedule something.</p><a class="open" href="calendar.html">Open Calendar</a></div></details>
+<details><summary>Docs</summary><div class="detail"><p>Open Docs and choose a category to find care documents, ISA or IEP records, meeting minutes, or uploaded files.</p><a class="open" href="documents/index.html">Open Docs</a></div></details>
+<details><summary>Emergency Sheet</summary><div class="detail"><p>Open Emergency to find the individual’s key medical and emergency information. Admins manage changes to the sheet.</p><a class="open" href="emergency-medical.html">Open Emergency Sheet</a></div></details>
+<details><summary>Profile and Group Settings</summary><div class="detail"><p>Open Profile to see your account and group. Use Group Settings to manage your team if your role allows it.</p><a class="open" href="profile.html">Open Profile and Group Settings</a></div></details>
+</section>
+</main>
+<script>
+const field=document.getElementById('find');
+const sections=document.querySelectorAll('main section');
+document.getElementById('featureSearch').hidden=false;
+field.addEventListener('input',()=>{
+  const query=field.value.trim().toLowerCase();
+  let matches=0;
+  for(const section of sections){
+    const cards=Array.from(section.querySelectorAll('details'));
+    for(const card of cards)card.hidden=!card.textContent.toLowerCase().includes(query);
+    const visible=cards.filter(card=>!card.hidden).length;
+    matches+=visible;
+    section.hidden=visible===0;
+  }
+  document.getElementById('guideTopics').hidden=Boolean(query);
+  document.getElementById('empty').hidden=matches!==0;
+});
+</script>
+</body>
+</html>

@@ -333,17 +333,20 @@
       ['Back of head',50,11],['Neck',50,26],['Upper back',50,37],
       ['Lower back',50,51],['Left arm',22,44],['Right arm',78,44],['Left leg',40,75],['Right leg',60,75]
     ];
-    var face=front
-      ? '<path d="M77 58q7-4 13 0m20 0q7-4 13 0M100 63l-3 12 6 1m-13 9q10 6 20 0" fill="none" stroke="#684738" stroke-width="2.8" stroke-linecap="round"/>'
-      : '<path d="M71 61q1 21 10 33 19 9 38 0 9-12 10-33" fill="#594139"/>';
+    var head=front
+      ? '<path d="M69 54q0-34 31-34t31 34l-3 18q-3 28-28 30-25-2-28-30z" fill="#e6b797" stroke="#785545" stroke-width="2.5"/>'+
+        '<path d="M69 61q-8-30 13-41 16-9 35-2 22 8 14 43l-6-16q-20 5-37-8-8 14-17 16z" fill="#594139"/>'+
+        '<path d="M77 58q7-4 13 0m20 0q7-4 13 0M100 63l-3 12 6 1m-13 9q10 6 20 0" fill="none" stroke="#684738" stroke-width="2.8" stroke-linecap="round"/>'
+      : '<path d="M68 57C63 32 78 18 100 18s37 14 32 39l-4 19c-2 8-6 13-11 17l-6-1-4 5H93l-4-5-6 1c-5-4-9-9-11-17z" fill="#594139" stroke="#49332b" stroke-width="2.5" stroke-linejoin="round"/>'+
+        '<path d="M78 45q9-16 29-16m-23 30q9-10 24-12" fill="none" stroke="#806257" stroke-width="2.5" stroke-linecap="round"/>';
+    var rearDetails=front?'':'<path d="M76 122q24 8 48 0m-51 114v14l10 6 10-6v-14zm34 0v14l10 6 10-6v-14zM66 399q14 4 28 0m12 0q14 4 28 0" fill="none" stroke="#354860" stroke-opacity=".65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
     var figure='<svg viewBox="0 0 200 420" role="img" aria-label="'+(front?'Front':'Back')+' view of a person">'+
       '<path d="M82 90h36v28l-18 14-18-14zM59 136q-12 17-16 42l-17 63q-4 17 6 21 10 3 15-13l23-62 11-35m60-16q12 17 16 42l17 63q4 17-6 21-10 3-15-13l-23-62-11-35" fill="#dba987" stroke="#785545" stroke-width="2.5" stroke-linejoin="round"/>'+
       '<path d="M66 222q-7 36 1 76l4 90q0 12 14 12 11-1 11-14l4-115 4 115q0 13 11 14 14 0 14-12l4-90q8-40 1-76z" fill="#546a88" stroke="#354860" stroke-width="2.5"/>'+
       '<path d="M78 109q-26 6-37 37l24 11 3-8-5 79q37 9 74 0l-5-79 3 8 24-11q-11-31-37-37-22 20-44 0z" fill="#8ab6a1" stroke="#3f6255" stroke-width="2.5" stroke-linejoin="round"/>'+
       '<path d="M72 384q11 5 23 0l1 16q-4 11-30 9-12-2-6-12zm56 0q-11 5-23 0l-1 16q4 11 30 9 12-2 6-12z" fill="#ede6d9" stroke="#625952" stroke-width="2.5"/>'+
       '<path d="M73 58q-14-9-13 6 1 11 12 10m55-16q14-9 13 6-1 11-12 10" fill="#dba987" stroke="#785545" stroke-width="2.5"/>'+
-      '<path d="M69 54q0-34 31-34t31 34l-3 18q-3 28-28 30-25-2-28-30z" fill="#e6b797" stroke="#785545" stroke-width="2.5"/>'+
-      '<path d="M69 61q-8-30 13-41 16-9 35-2 22 8 14 43l-6-16q-20 5-37-8-8 14-17 16z" fill="#594139"/>'+face+'</svg>';
+      head+rearDetails+'</svg>';
     return '<div class="body-card"><strong>'+(front?'FRONT':'BACK')+'</strong><div class="body-poster">'+figure+
       parts.map(function(a){return '<button type="button" class="pain-point" aria-pressed="false" data-pain="'+a[0]+'" aria-label="'+a[0]+'" style="left:'+a[1]+'%;top:'+a[2]+'%">•</button>'}).join('')+'</div></div>'
   }

@@ -443,6 +443,7 @@
           tile('feel','😊 😐 😟','How I Feel','Pick how I feel')+
           tile('pain','🧍 🩹','Something Hurts','Point to my body')+
           tile('day','🏊 🌳','My Day','Tell how my day went')+
+          tile('moments','📷','My Moments to Review','Look at a photo')+
           tile('goals','🌟 🙌','Something I Did','Tell what I did')+
           tile('tell','🗣️ 💬','Talk to My Team','Share a message or chat')+
           tile('rather','🏠 🌳','Would You Rather?','Choose what I like')+
@@ -453,6 +454,8 @@
         '<div class="help-row">'+tile('urgent','🚨 ‼️','HELP NOW','Important: I need help',true)+'</div>'+
         '<div class="actions">'+button('Not now — I am done','skip','secondary')+'</div>'+
         '<div id="result" class="message" hidden></div>';
+    } else if(page==='moments'){
+      location.href='star-moments-test.html?mode=review';
     } else if(page==='mic-setup'){
       wrap('🎤 Microphone Setup',
         '<div style="text-align:center;font-size:60px;margin:8px 0" aria-hidden="true">📱 🎤 ✅</div>'+
@@ -505,7 +508,13 @@
           offeredOptions:offeredOptions||[],originalWords,supportKind:supportDescription()
         })
       })
-      .then(function(){showSilentStars()})
+      .then(function(){
+        if(responseType==='mood' && responseValue!=='Not now'){
+          location.href='star-moments-test.html?mode=daily';
+          return;
+        }
+        showSilentStars();
+      })
       .catch(function(err){
         btn.disabled=false;btn.textContent='Done';
         status('Not saved. '+(err?.message||'Please try again.')+' Your choice is still selected.');

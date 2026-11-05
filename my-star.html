@@ -118,7 +118,7 @@
     <button class="small-btn" id="hearBtn" type="button" aria-pressed="false" aria-label="Turn reading aloud on or off">🔇 Read Aloud: OFF</button>
     <button class="small-btn" id="micSetupBtn" type="button" aria-label="Set up microphone with a support person">🎤 Mic Setup</button>
   </div>
-  <div class="notice preview-notice">STAR TEST — Fictional “Something I Did” answers can be saved for caregiver review. Optional individual check-ins and “Something I Did” can be saved here. No emergency alerts or automatic ISA progress are created.</div>
+  <div class="notice preview-notice">STAR TEST — Fictional “Something I Did” answers can be saved for caregiver review. Optional individual check-ins and “Something I Did” can be saved here. Help Now and Something Hurts post in the test group chat.</div>
   <section id="screen" aria-live="polite"></section>
   <p class="footer-note">My STAR is voluntary. The person can stop, skip or ask for help at any time. This is not an emergency response service.</p>
 </main>
@@ -134,7 +134,7 @@
     goals:'Something I did. Tell us about something you did, tried or learned.',
     tell:'Talk to my team. Share a message or open group chat.',
     rather:'Would you rather do something inside, outside, or go somewhere? You can pick something else or not now.',
-    urgent:'Help now. This is only a test. It will not send an alert.'
+    urgent:'Help now. This sends a message to your test group chat.'
   };
   // A deliberate opt-in is required before My STAR narrates anything.
   var readAloudKey='star_my_star_read_aloud_enabled', readAloudOn=false, selectedVoice=null;
@@ -506,7 +506,7 @@
     } else if(page==='feel'){
       wrap('How I Feel','<p>Pick a face. You do not have to answer.</p><div class="choices">'+choice('Happy','😊','Happy')+choice('Okay','😐','Okay')+choice('Sad','😢','Sad')+choice('Upset','😠','Upset')+choice('Tired','😴','Tired')+choice('Unwell','🤒','Not feeling good')+'</div>'+support()+'<div class="actions">'+button('Done','done','primary')+button('Not now','skip')+'</div>');
     } else if(page==='pain'){
-      painSide='front';painPart='';wrap('Something Hurts','<p>Tap where it hurts. Pick front or back.</p><div class="body-switch"><button type="button" data-side="front" aria-pressed="true">FRONT</button><button type="button" data-side="back" aria-pressed="false">BACK</button></div><div class="body-layout" id="painPoster">'+bodyPoster(true)+'</div><p id="painLocation" class="selected-location" role="status">Choose a body part</p><div id="painSymptoms"></div>'+support()+'<div class="actions">'+button('Done','done','primary')+button('Not now','skip')+'</div>');
+      painSide='front';painPart='';wrap('Something Hurts','<p>Tap where it hurts. Pick front or back.</p><div class="body-switch"><button type="button" data-side="front" aria-pressed="true">FRONT</button><button type="button" data-side="back" aria-pressed="false">BACK</button></div><div class="body-layout" id="painPoster">'+bodyPoster(true)+'</div><p id="painLocation" class="selected-location" role="status">Choose a body part</p><div id="painSymptoms"></div>'+support()+'<div class="actions">'+button('Send details to chat','chat-details')+button('Done','done','primary')+button('Not now','skip')+'</div>');
     } else if(page==='day'){
       wrap('My Day','<p>Did you like your activity today?</p><div class="choices">'+choice('Liked it','😊','I liked it')+choice('Okay','😐','It was okay')+choice('Did not like','😞','I did not like it')+choice('No activity','🙅','Not today')+'</div><label for="dayActivity">Which activity? (optional)</label>'+dictateControls('dayActivity')+'<textarea class="voice-input" id="dayActivity" maxlength="2000" placeholder="You can say or type what activity you tried."></textarea>'+support()+'<div class="actions">'+button('Done','done','primary')+button('Not now','skip')+'</div>');
     } else if(page==='goals'){
@@ -516,7 +516,7 @@
     } else if(page==='rather'){
       wyReset();renderWouldRather();
     } else if(page==='urgent'){
-      wrap('🚨 HELP NOW','<div class="notice urgent"><strong>TEST ONLY — NO ALERT IS SENT.</strong> This screen does not contact caregivers, text anyone, or request emergency services. In a real emergency, get help directly.</div><p>What do you need to tell someone?</p><div class="choices">'+choice('Something hurts','🩹','Something hurts')+choice('I am scared','😨','I am scared')+choice('I need someone','🙋','I need someone')+choice('Something happened','❗','Something happened')+'</div><label for="urgentMessage">Add more (optional)</label><textarea id="urgentMessage" class="voice-input" placeholder="Type or dictate"></textarea><div class="actions">'+button('Preview help request','preview-help','primary')+button('Cancel','skip')+'</div>');
+      wrap('🚨 HELP NOW','<div class="notice urgent">Help Now posts in your test group chat. If you need help right away, get someone nearby.</div><p>What do you need to tell someone?</p><div class="choices">'+choice('Something hurts','🩹','Something hurts')+choice('I am scared','😨','I am scared')+choice('I need someone','🙋','I need someone')+choice('Something happened','❗','Something happened')+'</div><label for="urgentMessage">Add more (optional)</label><textarea id="urgentMessage" class="voice-input" placeholder="Type or dictate"></textarea><div class="actions">'+button('Send details to chat','chat-details','primary')+button('Done','skip')+'</div>');
     } else if(page==='chat') {window.location.href='chat.html';return}
     else if(page==='voice'){window.location.href='my-star-voice.html';return}
     var input=document.getElementById('withSupport');
@@ -557,6 +557,38 @@
         status('Not saved. '+(err?.message||'Please try again.')+' Your choice is still selected.');
       });
   }
+  var helpDestination;
+  function sendChatNotice(box,message,destination){
+    var id=crypto.randomUUID();
+    async function send(){
+      box.textContent='Sending to group chat…';
+      try{
+        var [client,groups,config]=await Promise.all([
+          import('./restClient.js?v=2026.10.29UVM3'),
+          import('./active-group.js?v=2026.10.29UVM3'),
+          import('./supabaseClient.js?v=2026.10.29UVM3')
+        ]);
+        if(location.hostname!=='star-uvm-testing.netlify.app'||config.SUPABASE_URL!=='https://rjozzwmkvlndanoaghtc.supabase.co')throw new Error('Test only');
+        var userId=(await client.requireSession()).user.id;
+        if(destination.userId&&destination.userId!==userId)throw new Error('Account changed');
+        destination.userId=userId;
+        var groupId=destination.groupId||await groups.ensureActiveGroupId(userId);
+        if(!groupId)throw new Error('No active group');
+        destination.groupId=groupId;
+        await client.rest('messages?on_conflict=id',{
+          method:'POST',expectedUserId:userId,headers:{Prefer:'resolution=ignore-duplicates,return=minimal'},
+          body:JSON.stringify({id,group_id:groupId,sender_id:userId,message})
+        });
+        box.textContent='Sent to group chat.';
+      }catch(error){
+        box.textContent='Could not confirm the message was sent. ';
+        var retry=document.createElement('button');
+        retry.type='button';retry.className='small-btn';retry.textContent='Try again';
+        retry.addEventListener('click',send,{once:true});box.append(retry);
+      }
+    }
+    return send();
+  }
   screen.addEventListener('click',function(e){
     var dictate=e.target.closest('[data-dictate]');
     if(dictate){toggleDictation(dictate);return}
@@ -571,7 +603,18 @@
     var pick=e.target.closest('[data-wyr-pick]');
     if(pick){pickWyr(pick.getAttribute('data-wyr-pick'));return}
     var open=e.target.closest('[data-open]');
-    if(open){render(open.getAttribute('data-open'));speak(readText[current]||'My STAR');return}
+    if(open){
+      var next=open.getAttribute('data-open');
+      render(next);speak(readText[current]||'My STAR');
+      if(next==='urgent'||next==='pain'){
+        helpDestination={};
+        var notice=document.createElement('p');
+        notice.setAttribute('role','status');
+        screen.querySelector('.panel').prepend(notice);
+        sendChatNotice(notice,next==='urgent'?'[STAR TEST] 🚨 Help now. I need help.':'[STAR TEST] 🩹 Something hurts.',helpDestination);
+      }
+      return;
+    }
     var symptom=e.target.closest('[data-symptom]');
     if(symptom){
       chosen=painPart+' — '+symptom.dataset.symptom;
@@ -605,10 +648,15 @@
     if(action==='open-chat'){render('chat');return}
     if(action==='hear-message'){var message=document.getElementById('myMessage');speak(message?.value||'No message entered');return}
     if(action==='neither'||action==='other'){chosen=action==='neither'?'Neither':'Something else';speak(chosen);status('You chose: '+chosen+'. Not saved.');return}
-    if(action==='preview-help'){
-      if(!chosen){status('Choose a picture first, or ask someone for help. No message has been sent.');return}
-      var extra=document.getElementById('urgentMessage')?.value||'';
-      status('🚨 TEST PREVIEW ONLY: '+chosen+(extra?' — '+extra:'')+'. Nothing was sent.');return
+    if(action==='chat-details'){
+      var extra=document.getElementById('urgentMessage')?.value.trim()||'';
+      if(!chosen&&!extra){status('Choose a picture or add a message first.');return}
+      var result=document.getElementById('result');
+      result.hidden=false;
+      a.disabled=true;
+      sendChatNotice(result,'[STAR TEST] '+(current==='urgent'?'🚨 Help now: ':'🩹 Something hurts: ')+[chosen,extra].filter(Boolean).join(' — ').slice(0,2000),helpDestination)
+        .finally(function(){a.disabled=false});
+      return;
     }
     if(action==='done'){
       if(activeRecognition){finishDictation();setDictateHint('Finish speaking, check that your words are correct, then tap Done again.');return}

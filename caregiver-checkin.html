@@ -4880,7 +4880,7 @@
       caregiverSetupState.groupIndividualName = name;
     }
     caregiverSetupState.assignmentId=assigned?.id||null;
-    caregiverSetupState.assignedIndividualId=assigned?.individual_id||null;
+    caregiverSetupState.assignedIndividualId=assigned?.individual_id||config?.individual_id||null;
     caregiverSetupState.assignedCaregiverUserId=assigned?.caregiver_user_id||null;
     const announce=()=>{
       window.starCheckinAssignmentContext={

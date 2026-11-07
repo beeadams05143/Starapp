@@ -1,7 +1,7 @@
 import { NOTE_FIELDS } from './caregiver-provider-letter.js?v=2026.10.20A';
 import { checkinDateKey } from './caregiver-dates.js';
 import { SUPABASE_URL } from './supabaseClient.js';
-import { scopeUvmReportRows } from './uvm-report-scope.js';
+import { scopeUvmReportRows } from './uvm-report-scope.js?v=2026.11.07-profile';
 // caregiver-report-supabase.js — PRODUCTION SAFE (group-scoped; no user_id filter) v=2026.05.03D
 import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
 import { resolveActiveGroup } from './active-group.js?v=2026.10.29UVM3';

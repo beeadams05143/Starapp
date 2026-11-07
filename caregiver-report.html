@@ -1181,6 +1181,26 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         </div>
       </div>
     </section>
+    <section class="panel" id="isaProgressPanel" aria-labelledby="isaProgressHeading">
+      <h2 id="isaProgressHeading">⭐ ISA Outcome Progress</h2>
+      <p class="muted">Evidence from saved caregiver check-ins, organized by the original ISA outcome cards. No automatic progress or success ratings.</p>
+      <div class="no-export" style="display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin:12px 0">
+        <label style="flex:1 1 160px">Time period
+          <select id="isaProgressPeriod" style="display:block;width:100%;min-height:42px">
+            <option value="month">This month</option>
+            <option value="quarter">Last 3 months</option>
+            <option value="all">All dates</option>
+            <option value="custom">Custom dates</option>
+          </select>
+        </label>
+        <label style="flex:1 1 130px">From <input id="isaProgressStart" type="date" style="display:block;width:100%;min-height:42px"></label>
+        <label style="flex:1 1 130px">Through <input id="isaProgressEnd" type="date" style="display:block;width:100%;min-height:42px"></label>
+        <button type="button" id="isaProgressCopy" disabled>Copy Summary</button>
+        <button type="button" id="isaProgressPrint" disabled>Print ISA</button>
+      </div>
+      <p class="muted" id="isaProgressStatus" role="status">Loading ISA progress…</p>
+      <div id="isaProgressList"></div>
+    </section>
     <section class="panel" id="cg-panel">
       <span id="caregiver-checkins" aria-hidden="true"></span>
       <h2>Caregiver Check-Ins</h2>
@@ -1571,6 +1591,14 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
           <button id="parentLetterPrint" class="btn" style="font-size:13px">🖨️ Print Letter</button>
         </div>
       </div>
+      <label style="display:block;margin:12px 0;max-width:340px">Letter topic
+        <select id="providerLetterTopic" style="display:block;width:100%;min-height:44px;margin-top:5px">
+          <option value="caregiver">Caregiver Overview (health, daily life & activities)</option>
+          <option value="isa">ISA Outcome Progress</option>
+          <option value="combined">Caregiver Overview + ISA Progress</option>
+          <option value="individual" disabled>My STAR · Individual Voice (not connected yet)</option>
+        </select>
+      </label>
       <div class="parent-letter-range-control" aria-label="Caregiver summary date range">
         <label>Start date
           <input type="date" id="parentLetterStart" autocomplete="off">
@@ -1865,6 +1893,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     import { renderPrintableCaregiverReport } from './caregiver-report-print.js?v=2026.07.01B';
     import { analyzeProviderRecords, renderProviderLetter, individualKey, groupKey } from './caregiver-provider-letter.js?v=2026.10.24D';
     import { buildWeeklyPromptSeries, defaultGraphRange, filterRecordsByRange, formatGraphRange, rangeFromInputs } from './caregiver-report-graphs.js?v=2026.09.04A';
+    import { createIsaProgressReport } from './isa-progress-report.js?v=2026.10.29A';
 
     /* =============== Optional live data =============== */
     let loadFromSupabase = null;
@@ -1882,6 +1911,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     if (!USER_SESSION?.user?.id) { window.location.href = 'auth.html'; throw new Error('No session'); }
     const USER_ID = USER_SESSION.user.id;
     window.rest = rest;
+    const isaReport = createIsaProgressReport({rest});
 
     async function ensureReportGroupContext() {
       try {
@@ -6256,6 +6286,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       if (sEnd && !sEnd.value) sEnd.value = formatDateInputValue(defaultRangeEnd);
       applyCaregiverFilters();
       updateReportSectionVisibility();
+      // Use the same fully loaded, group-scoped check-ins as the caregiver reports.
+      void isaReport.refresh(groupId, cgState.entries);
       window.dispatchEvent(new Event('caregiverDataReady'));
     }
 
@@ -7040,7 +7072,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     };
     clearLetterDates();
     window.addEventListener('pageshow', (event) => { if (event.persisted) clearLetterDates(); });
-    ['parentLetterStart', 'parentLetterEnd', 'providerIndividual', 'providerIncludeQuotes'].forEach((id) => {
+    ['parentLetterStart', 'parentLetterEnd', 'providerIndividual', 'providerIncludeQuotes', 'providerLetterTopic'].forEach((id) => {
       document.getElementById(id)?.addEventListener('change', () => {
         const bodyEl = document.getElementById('parentLetterBody');
         if (bodyEl) bodyEl.textContent = '';
@@ -7263,6 +7295,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
           selector.dataset.scope = signature;
         }
         if (selector.value === '__choose__') throw new Error('Choose one individual or the records without an individual identifier, then generate again.');
+        const letterFocus = document.getElementById('providerLetterTopic')?.value || 'caregiver';
         const analysis = analyzeProviderRecords(entries, {
           start: range.startInput, end: range.endInput, groupId, individualId: selector.value,
         });
@@ -7270,26 +7303,34 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         rangeEl.textContent = 'Loading Team Updates for the chosen date range…';
         let teamUpdates = [];
         let teamSetupPending = false;
-        try {
-          teamUpdates = await fetchTeamUpdatesForLetter(groupId, selector.value, range.endInput);
-        } catch (error) {
-          const missingTable = error?.status === 404 &&
-            /star_team_updates|schema cache|relation/i.test(error?.message || '');
-          if (!missingTable) throw error; // never silently omit records on a transient failure
-          teamSetupPending = true;
+        if (letterFocus !== 'isa') {
+          try {
+            teamUpdates = await fetchTeamUpdatesForLetter(groupId, selector.value, range.endInput);
+          } catch (error) {
+            const missingTable = error?.status === 404 &&
+              /star_team_updates|schema cache|relation/i.test(error?.message || '');
+            if (!missingTable) throw error; // never silently omit records on a transient failure
+            teamSetupPending = true;
+          }
         }
         if (requestSequence !== letterRequestSequence ||
             String(groupId) !== localStorage.getItem('currentGroupId') ||
             selector.value !== analysis.individualId) {
           throw new Error('The selected group or individual changed. Generate the letter again.');
         }
-        const originalLetter = renderProviderLetter(analysis, {
+        const originalLetter = letterFocus === 'isa' ? '' : renderProviderLetter(analysis, {
           includeQuotes: document.getElementById('providerIncludeQuotes').checked,
           teamUpdates
         });
-        const letterText = teamSetupPending
-          ? originalLetter + '\n\nTeam Updates availability\nThe Team Updates database setup has not been completed, so administrator-entered Team Updates could not be included in this letter.'
-          : originalLetter;
+        const isaLetter = letterFocus === 'caregiver' ? '' : await isaReport.letter({
+          start: range.startInput, end: range.endInput, groupId, individualId: selector.value
+        });
+        if (requestSequence !== letterRequestSequence ||
+            String(groupId) !== localStorage.getItem('currentGroupId')) {
+          throw new Error('Report selection changed. Generate the letter again.');
+        }
+        let letterText = [originalLetter, isaLetter].filter(Boolean).join('\n\n');
+        if (teamSetupPending) letterText += '\n\nTeam Updates availability\nThe Team Updates database setup has not been completed, so administrator-entered Team Updates could not be included in this letter.';
         rangeEl.textContent = `Range: ${range.label}` + (teamSetupPending ? ' · Team Updates setup pending' : '');
         window.starProviderLetterLayout.render(bodyEl, letterText);
         document.getElementById('parentLetterCopy').disabled = false;

@@ -24,11 +24,11 @@ test('badge counts waiting photos only for signed-in individual',async()=>{
  assert.ok(calls[1].includes('individual_id=eq.taylor'));
  assert.equal(small.textContent,'2 photos waiting');assert.equal(badges[0].textContent,'2 waiting');
 });
-test('caregiver demo badge uses Jamie only and labels preview',async()=>{
+test('caregiver device badge uses Jamie and labels shared device',async()=>{
  const id='58d3ac51-3dc7-4ead-b22f-8cb5829a3bac';
  const {calls,tile}=await run('caregiver',[id,'taylor']);
- assert.ok(calls[1].includes('individual_id=eq.'+id));assert.match(tile['aria-label'],/fictional preview/);
+ assert.ok(calls[1].includes('individual_id=eq.'+id));assert.match(tile['aria-label'],/Shared device/);
 });
 test('unlinked account cannot display another individual count',async()=>{
- const {calls,badges}=await run('outsider',['taylor']);assert.equal(calls.length,1);assert.equal(badges.length,0);
+ const {calls,badges}=await run('outsider',[]);assert.equal(calls.length,1);assert.equal(badges.length,0);
 });

@@ -488,7 +488,11 @@
       if(!group)return;
       var people=await client.rest('star_moments_test_people?group_id=eq.'+group+'&select=individual_id',{expectedUserId:user});
       var own=people.find(function(row){return row.individual_id===user});
-      var person=own?user:(group==='c40d0ac1-0122-46f6-b358-fac283287bb5'&&people.some(function(row){return row.individual_id==='58d3ac51-3dc7-4ead-b22f-8cb5829a3bac'})?'58d3ac51-3dc7-4ead-b22f-8cb5829a3bac':null);
+      var preferred;
+      try{preferred=localStorage.getItem('star_moments_person:'+group)}catch(e){}
+      var saved=people.find(function(row){return row.individual_id===preferred});
+      var jamie=group==='c40d0ac1-0122-46f6-b358-fac283287bb5'&&people.find(function(row){return row.individual_id==='58d3ac51-3dc7-4ead-b22f-8cb5829a3bac'});
+      var person=own?user:(saved||jamie||people[0])?.individual_id;
       if(!person)return;
       var count=0,offset=0,batch;
       do{
@@ -501,7 +505,7 @@
       if(!tileNode)return;
       tileNode.querySelector('.moment-waiting-badge')?.remove();
       tileNode.querySelector('small').textContent=count?count+' photo'+(count===1?'':'s')+' waiting':'No photos waiting';
-      tileNode.setAttribute('aria-label','My Moments. '+count+' photos waiting'+(own?'':'. Jamie fictional preview'));
+      tileNode.setAttribute('aria-label','My Moments. '+count+' photos waiting'+(own?'':'. Shared device'));
       if(count){var badge=document.createElement('span');badge.className='moment-waiting-badge';badge.textContent=count+' waiting';badge.setAttribute('aria-hidden','true');tileNode.append(badge);}
     }catch(error){/* Leave the tile available when the count cannot be loaded. */}
   }

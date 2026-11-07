@@ -43,17 +43,17 @@ async function moments(user,mode){
     if(path.startsWith('star_moments_test_people'))return [{individual_id:jamie},{individual_id:taylor}];
     if(path.startsWith('profiles?'))return [{id:jamie,public_name:'test profile'},{id:taylor,public_name:'Taylor'}];
     if(path.startsWith('star_moment_notes_test'))return [{observation:'Seemed to enjoy it',note:'Caregiver-only observation'}];
-    if(path.startsWith('star_moment_responses_test')){records[0].star_moment_responses_test={...JSON.parse(opts.body),reviewed_at:new Date().toISOString()};return [records[0].star_moment_responses_test];}
+    if(path.startsWith('star_moment_responses_test')){records[0].star_moment_responses_test={...JSON.parse(opts.body),recorded_by:user,reviewed_at:new Date().toISOString()};return [records[0].star_moment_responses_test];}
     if(path.startsWith('star_moments_test?id='))return [{photo:records[0].photo}];
     if(path.startsWith('star_moments_test?'))return structuredClone(records);
     throw Error('Unexpected API path '+path);
   };
-  const spoken=[];
-  const context=vm.createContext({document,window:{speechSynthesis:{cancel(){},speak:u=>spoken.push(u.text)}},SpeechSynthesisUtterance:class{constructor(text){this.text=text}},localStorage:{getItem:()=> 'on'},location:{search:'?mode='+mode,hostname:'star-uvm-testing.netlify.app'},URLSearchParams,
+  const spoken=[],dictations=[];
+  const context=vm.createContext({document,window:{SpeechRecognition:class{constructor(){dictations.push(this)}start(){}stop(){this.onend?.()}abort(){this.onend?.()}},speechSynthesis:{cancel(){},speak:u=>spoken.push(u.text)}},SpeechSynthesisUtterance:class{constructor(text){this.text=text}},localStorage:{getItem:()=> 'on'},location:{search:'?mode='+mode,hostname:'star-uvm-testing.netlify.app'},URLSearchParams,
     SUPABASE_URL:'https://rjozzwmkvlndanoaghtc.supabase.co',requireSession:async()=>({user:{id:user}}),ensureActiveGroupId:async()=>team,rest:api});
   vm.runInContext(momentSource.replace(/^import .*;\n/gm,'').replace('start().catch(error=>announce(error.message));','globalThis.qa={start,questions,showReview,month};'),context);
   await context.qa.start();
-  return {root,calls,records,spoken,qa:context.qa};
+  return {root,calls,records,spoken,dictations,qa:context.qa};
 }
 {
   const {root,calls,records,spoken}=await moments(jamie,'review');
@@ -63,14 +63,13 @@ async function moments(user,mode){
   assert.ok(calls.some(c=>c.path.includes('individual_id=eq.'+jamie)));
   assert.doesNotMatch(text(root),/Caregiver-only|Seemed to enjoy/);
   assert.equal(root.querySelectorAll('textarea').length,1,'optional words and emoji choices share one page');
-  assert.equal(findButton(root,'Save my choice ✓').disabled,true);
+  assert.equal(findButton(root,'Save').disabled,true);
   await nodes(root).find(n=>n.attrs['aria-pressed']==='false').onclick();
-  assert.equal(findButton(root,'Save my choice ✓').disabled,false);
+  assert.equal(findButton(root,'Save').disabled,false);
   root.querySelector('textarea').value='I want the picture books.';
-  root.querySelector('select').value='Answered after seeing choices';
   await root.querySelector('form').onsubmit({preventDefault(){}});
   assert.equal(records[0].star_moment_responses_test.words,'I want the picture books.');
-  assert.equal(records[0].star_moment_responses_test.support,'Answered after seeing choices');
+  assert.equal(records[0].star_moment_responses_test.support,null);
   assert.equal(records[0].star_moment_responses_test.again,null,'repeat question is optional and not invented');
   assert.match(text(root),/My choice is saved/);
   assert.ok(!calls.some(c=>c.path.startsWith('star_moment_notes_test')),'no caregiver observations fetched during individual answers');
@@ -82,16 +81,43 @@ async function moments(user,mode){
   assert.equal(records[0].star_moment_responses_test.satisfaction,'Not now');
   await qa.showReview();
   await nodes(root).filter(n=>n.attrs['aria-pressed']==='false')[1].onclick();
-  root.querySelector('select').value='';
   await root.querySelector('form').onsubmit({preventDefault(){}});
   assert.equal(records[0].star_moment_responses_test.support,null,'helper question is optional');
   assert.equal(calls.find(c=>c.method==='PATCH').path,'star_moment_responses_test?moment_id=eq.own-photo&satisfaction=eq.Not%20now');
 }
 {
-  const {root,calls}=await moments(caregiver,'review');
-  assert.match(text(root),/Fictional preview/);
-  await findButton(root,'Not now').onclick();
-  assert.ok(!calls.some(c=>c.method==='POST'||c.method==='PATCH'),'caregiver preview never submits individual answers');
+  const {root,calls,records}=await moments(caregiver,'review');
+  assert.doesNotMatch(text(root),/preview|Try my choice|For my helper/);
+  assert.equal(root.querySelector('select').value,jamie,'shared device identifies the subject');
+  const words=root.querySelector('textarea');
+  assert.equal(words.parent.tagName,'label','words are visible without expanding anything');
+  words.value='I loved the music.';words.oninput();
+  assert.equal(findButton(root,'Save').disabled,false,'words alone can be saved');
+  await root.querySelector('form').onsubmit({preventDefault(){}});
+  assert.equal(records[0].star_moment_responses_test.words,'I loved the music.');
+  assert.equal(records[0].star_moment_responses_test.recorded_by,caregiver,'save keeps actual account attribution');
+  assert.equal(records[0].star_moment_responses_test.satisfaction,'In my own words','no emoji rating invented');
+  assert.ok(calls.some(c=>c.path.includes('individual_id=eq.'+jamie)));
+  assert.match(text(root),/My choice is saved/);
+}
+{
+  const {root,calls}=await moments(caregiver,'daily');
+  assert.ok(calls.some(c=>c.path.includes('individual_id=eq.'+jamie)),'daily review also supports caregiver devices');
+  assert.ok(findButton(root,'Save'));
+}
+{
+  const {root,records,dictations}=await moments(caregiver,'review');
+  await findButton(root,'🎙 Dictate').onclick();
+  dictations[0].onresult({results:[[{transcript:'I want to do it again.'}]]});
+  assert.equal(root.querySelector('textarea').value,'I want to do it again.');
+  assert.equal(findButton(root,'Save').disabled,false);
+  await root.querySelector('form').onsubmit({preventDefault(){}});
+  assert.equal(records[0].star_moment_responses_test.words,'I want to do it again.');
+}
+{
+  const {root,records,qa}=await moments(caregiver,'review');
+  records.length=0;await qa.showReview();
+  assert.ok(root.querySelector('select'),'can change individual even when no photos wait');
 }
 {
   const {root}=await moments(caregiver,'add');

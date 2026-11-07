@@ -5,7 +5,6 @@ import {SUPABASE_URL} from './supabaseClient.js';
 const observations=['Seemed to enjoy it','Unsure','Seemed uncomfortable'];
 const categories=['Work','Community','Home','Learning','Fun/Leisure','Other'];
 const ratings=['I liked it','It was okay','I didn’t like it','I’m not sure'];
-const supports=['Answered independently','Answered after seeing choices','Answered with caregiver assistance'];
 const root=document.querySelector('main');
 const mode=new URLSearchParams(location.search).get('mode');
 const daily=mode==='daily';
@@ -13,7 +12,9 @@ const review=daily||mode==='review';
 const back=review?'my-star.html':'dashboard.html';
 // Cedar Grove’s seeded Jamie Rivers record. Only used in the UVM demo.
 const jamieDemo = {group:'c40d0ac1-0122-46f6-b358-fac283287bb5', id:'58d3ac51-3dc7-4ead-b22f-8cb5829a3bac', name:'Jamie Rivers'};
-let api, uid, team, person, previewOnly=false;
+let api, uid, team, person, sharedDevice=false, personName='';
+let reviewPeople=[];
+let activeDictation=null;
 function element(tag, value, parent=root) {
   const node=document.createElement(tag);
   node.textContent=value;
@@ -33,9 +34,10 @@ function button(label, action, parent=root) {
 function announce(message) {document.querySelector('#status').textContent=message;}
 function page(title) {
   window.speechSynthesis?.cancel();
+  activeDictation?.abort();
+  activeDictation=null;
   root.className=review?'moment-review':'';
   root.replaceChildren();
-  if(previewOnly)element('p','Jamie Rivers · Fictional preview');
   const link=element('a',daily?'Finish check-in':'Back',root);
   link.href=back;
   element('h1',title);
@@ -55,15 +57,37 @@ function select(label, values, parent=root) {
 }
 function dictate(input,parent) {
   const Speech=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!Speech)return;
-  button('🎙 Dictate',()=> {
+  const mic=button('🎙 Dictate',()=>{
+    if(!Speech){
+      input.focus();
+      announce('Use the microphone on your keyboard to speak, or type your words.');
+      return;
+    }
+    if(activeDictation){activeDictation.stop();return;}
+    window.speechSynthesis?.cancel();
     const speech=new Speech();
+    activeDictation=speech;
     speech.lang='en-US';
-    speech.onresult=event=>{input.value=(input.value+' '+event.results[0][0].transcript).trim().slice(0,input.maxLength);};
-    speech.onerror=()=>announce('Microphone unavailable. You can type instead.');
-    speech.start();
+    mic.textContent='⏹ Stop dictation';
+    mic.setAttribute('aria-pressed','true');
+    speech.onresult=event=>{
+      if(activeDictation!==speech)return;
+      input.value=(input.value+' '+event.results[0][0].transcript).trim().slice(0,input.maxLength);
+      input.oninput?.();
+      announce('Your words are ready. You can change them, then tap Save.');
+    };
+    speech.onerror=event=>{if(event.error!=='aborted')announce('Microphone unavailable. You can use your keyboard microphone or type instead.');};
+    speech.onend=()=>{
+      if(activeDictation===speech)activeDictation=null;
+      mic.textContent='🎙 Dictate';
+      mic.setAttribute('aria-pressed','false');
+    };
+    try{speech.start();announce('Listening…');}
+    catch(error){activeDictation=null;mic.textContent='🎙 Dictate';throw error;}
   },parent);
+  mic.setAttribute('aria-pressed','false');
 }
+
 function photo(row) {
   const img=element('img','');
   img.alt=row.label;
@@ -143,10 +167,6 @@ async function rows(){
 const response=row=>row.star_moment_responses_test;
 const loadPhoto=async row=>Object.assign(row,(await api('star_moments_test?id=eq.'+row.id+'&select=photo'))[0]);
 async function respond(row,values) {
-  if(previewOnly){
-    announce('Preview only. This answer was not saved for Jamie. Sign in as the individual to save their own choice.');
-    return;
-  }
   if(response(row)) {
     await api('star_moment_responses_test?moment_id=eq.'+row.id+'&satisfaction=eq.Not%20now',{
       method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify(values)
@@ -158,7 +178,8 @@ async function respond(row,values) {
     return;
   }
   page('⭐ My choice is saved');
-  element('p',values.satisfaction);
+  if(values.satisfaction!=='In my own words')element('p',values.satisfaction);
+  if(values.words)element('blockquote',values.words);
   if(!daily)button('Next photo',showReview).className='moment-save';
   const finish=element('a','Back to My STAR');
   finish.href=back;
@@ -178,10 +199,21 @@ function speakMoment(text,force=false) {
   utterance.rate=0.85;
   window.speechSynthesis.speak(utterance);
 }
+function reviewSubject(){
+  if(sharedDevice){
+    if(reviewPeople.length>1){
+      const who=field('Reviewing for','select');
+      reviewPeople.forEach(item=>{element('option',item.name,who).value=item.id;});
+      who.value=person;
+      who.onchange=async()=>{person=who.value;personName=reviewPeople.find(item=>item.id===person).name;try{localStorage.setItem('star_moments_person:'+team,person);}catch{};try{await showReview();}catch(error){announce(error.message);}};
+    }else element('p',personName);
+  }
+}
 function questions(row,count=1) {
   page('My Moments');
+  reviewSubject();
   element('p',count+' photo'+(count===1?'':'s')+' waiting').className='moment-count';
-  const prompt=row.label+'. How was this? I liked it. It was okay. I did not like it. I am not sure. Choose a face, then tap Save my choice. You can choose Not now.';
+  const prompt=row.label+'. How was this? I liked it. It was okay. I did not like it. I am not sure. Choose a face or tell me in your words, then tap Save. You can choose Not now.';
   button('🔊 Read to me',()=>speakMoment(prompt,true)).className='moment-hear';
   photo(row);
   element('h2',row.label).className='moment-label';
@@ -198,8 +230,8 @@ function questions(row,count=1) {
       satisfaction=value;
       choiceButtons.forEach(item=>item.setAttribute('aria-pressed',String(item===node)));
       save.disabled=false;
-      announce(value+'. Tap Save my choice.');
-      speakMoment(value+'. Tap Save my choice.');
+      announce(value+'. Tap Save.');
+      speakMoment(value+'. Tap Save.');
     },choices);
     node.className='moment-choice';
     node.setAttribute('aria-pressed','false');
@@ -209,34 +241,32 @@ function questions(row,count=1) {
     element('span',value,node);
     return node;
   });
-  const extra=element('details','',form);
-  element('summary','💬 Add my words (optional)',extra);
-  const words=field('My words','textarea',extra);
+  const words=field('My words (optional)','textarea',form);
   words.maxLength=2000;
-  dictate(words,extra);
-  const helper=element('details','',form);
-  element('summary','For my helper (optional)',helper);
-  const support=select('How did you answer?',supports,helper);
-  support.required=false;
-  const save=element('button',previewOnly?'Try my choice ✓':'Save my choice ✓',form);
+  words.rows=2;
+  words.placeholder='Tell me about it';
+  dictate(words,form);
+  const save=element('button','Save',form);
+  words.oninput=()=>{save.disabled=!satisfaction&&!words.value.trim();};
   save.type='submit';
   save.className='moment-save';
   save.disabled=true;
   const later=button('Not now',()=>respond(row,{satisfaction:'Not now',again:null,words:'',support:null}),form);
   later.className='moment-later';
   form.append(document.querySelector('#status'));
-  if(previewOnly)announce('Fictional preview. Your choice will not be saved for Jamie.');
   let saving=false;
   form.onsubmit=async event=>{
     event.preventDefault();
-    if(!satisfaction||saving)return;
+    if((!satisfaction&&!words.value.trim())||saving)return;
+    activeDictation?.abort();
+    activeDictation=null;
     saving=true;
     save.disabled=true;
     later.disabled=true;
     choiceButtons.forEach(node=>node.disabled=true);
     announce('Saving your choice…');
     try {
-      await respond(row,{satisfaction,again:null,words:words.value,support:support.value||null});
+      await respond(row,{satisfaction:satisfaction||'In my own words',again:null,words:words.value,support:null});
     }catch(error){announce('Your choice was not saved. '+error.message);}
     finally {
       saving=false;
@@ -252,6 +282,7 @@ async function showReview() {
   const available=(await rows()).filter(isWaiting);
   available.sort((a,b)=>Number(Boolean(response(a)))-Number(Boolean(response(b))));
   if(!available.length){
+    reviewSubject();
     element('p','You have no photos waiting.');
     const home=element('a','Back to My STAR');home.href=back;
     return;
@@ -287,7 +318,8 @@ async function month() {
       element('p',done?'Individual responded':answer?'Not now—ask another time':'Waiting for individual response');
       if(done){
         element('h3','Individual reported');
-        element('p',answer.satisfaction);
+        if(answer.satisfaction!=='In my own words')element('p',answer.satisfaction);
+        if(answer.recorded_by && answer.recorded_by!==person)element('p','Shared device · Saved using a caregiver account');
         if(answer.again)element('p','Do it again? '+answer.again);
         if(answer.words)element('blockquote',answer.words);
         if(answer.support)element('p',answer.support);
@@ -318,12 +350,20 @@ async function start() {
   if(review) {
     if(ownProfile){
       person=ownProfile.individual_id;
-    }else if(!daily && demoProfile){
-      person=demoProfile.individual_id;
-      previewOnly=true;
+    }else if(people.length){
+      sharedDevice=true;
+      const profiles=await api('profiles?select=id,public_name,display_name,full_name&id=in.('+people.map(row=>row.individual_id).join(',')+')');
+      reviewPeople=people.map((row,index)=>{
+        const profile=profiles.find(item=>item.id===row.individual_id);
+        return {id:row.individual_id,name:row.individual_id===demoProfile?.individual_id?jamieDemo.name:profile?.public_name||profile?.display_name||profile?.full_name||'Individual '+(index+1)};
+      });
+      let preferred;
+      try{preferred=localStorage.getItem('star_moments_person:'+team);}catch{}
+      person=reviewPeople.some(item=>item.id===preferred)?preferred:demoProfile?.individual_id||reviewPeople[0].id;
+      try{localStorage.setItem('star_moments_person:'+team,person);}catch{}
+      personName=reviewPeople.find(item=>item.id===person).name;
     }else{
-      if(daily){location.replace(back);return;}
-      throw new Error('Sign in as the individual to review their moments.');
+      throw new Error('No individuals are linked to this group yet.');
     }
     await showReview();
     return;

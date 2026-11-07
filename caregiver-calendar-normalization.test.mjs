@@ -19,7 +19,9 @@ const stable = normalizeCaregiverCheckinForCalendar({
 assert.equal(stable.dateKey, '2026-09-01');
 assert.equal(stable.flags.prn, false);
 assert.equal(stable.flags.sleep_concern, false);
-assert.match(text(stable), /^Josh\nNo notable concerns$/);
+// Caregiver identity is stored separately from the compact observation lines.
+assert.equal(stable.source.caregiver_name, 'Josh');
+assert.match(text(stable), /^No notable concerns$/);
 assert.doesNotMatch(text(stable), /recorded|PRN: no|typical|none/);
 
 const engagementOne = normalizeCaregiverCheckinForCalendar({
@@ -33,7 +35,7 @@ const engagementOne = normalizeCaregiverCheckinForCalendar({
     public_activity_flag: 'yes',
   },
 });
-assert.match(text(engagementOne), /Shirley/);
+assert.equal(engagementOne.source.caregiver_name, 'Shirley');
 assert.match(text(engagementOne), /Some trouble focusing/);
 assert.match(text(engagementOne), /Engagement 1 · Less engaged/);
 assert.match(text(engagementOne), /Vocational \+ Community/);
@@ -74,7 +76,7 @@ const energyPacing = normalizeCaregiverCheckinForCalendar({
 });
 assert.equal(energyPacing.flags.prn, true);
 assert.equal(energyPacing.flags.prn_aggr, true);
-assert.match(text(energyPacing), /Beth/);
+assert.equal(energyPacing.source.caregiver_name, 'Beth');
 assert.match(text(energyPacing), /Higher energy/);
 assert.match(text(energyPacing), /Frequent pacing/);
 assert.match(text(energyPacing), /PRN 2:15 PM/);
@@ -110,8 +112,8 @@ assert.equal(physical.flags.sleep_concern, true);
 assert.equal(physical.flags.illness, true);
 assert.equal(physical.flags.appetite, true);
 assert.equal(physical.flags.med_change, true);
-assert.match(text(physical), /Sleep concern/);
-assert.match(text(physical), /Illness\/discomfort/);
+// Health icons use the flags asserted above; compact text retains the entered detail.
+assert.match(text(physical), /Medication change: New evening dose/);
 
 const legacyPrn = normalizeCaregiverCheckinForCalendar({
   id: 'old-prn',
@@ -138,7 +140,8 @@ const legacyManic = normalizeCaregiverCheckinForCalendar({
 });
 assert.equal(legacyManic.flags.anomaly, true);
 assert.equal(legacyManic.flags.manic, true);
-assert.match(text(legacyManic), /Legacy elevated signal/);
+assert.match(text(legacyManic), /No additional details recorded/);
+assert.doesNotMatch(text(legacyManic), /No notable concerns/);
 assert.doesNotMatch(text(legacyManic), /^Manic$/m);
 
 const secondCaregiverSameDay = normalizeCaregiverCheckinForCalendar({
@@ -149,6 +152,7 @@ const secondCaregiverSameDay = normalizeCaregiverCheckinForCalendar({
     public_activity_flag: 'yes',
   },
 });
-assert.match(text(secondCaregiverSameDay), /^Jordan\nCommunity$/);
+assert.equal(secondCaregiverSameDay.source.caregiver_name, 'Jordan');
+assert.match(text(secondCaregiverSameDay), /^Community$/);
 
 console.log('caregiver calendar normalization: PASS');

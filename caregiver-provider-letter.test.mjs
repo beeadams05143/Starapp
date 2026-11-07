@@ -30,10 +30,11 @@ assert.deepEqual(a.sleepGaps, [3, 3, 3]); assert.ok(a.regularSpacing);
 assert.deepEqual(a.following.afterSleep, { total: 3, reduced: 3 });
 assert.deepEqual(a.following.afterNoSleep, { total: 1, reduced: 0 });
 let letter = renderProviderLetter(a);
-assert.match(letter, /does not establish a sleep cycle/);
-assert.match(letter, /too sparse to support an association/);
+// The current letter reports dated facts without inferring cycles or associations.
+assert.match(letter, /Sleep difficulties or nighttime waking were recorded on October 1, 4, 7 and 10/);
+assert.doesNotMatch(letter, /established sleep cycle|caused reduced engagement/);
 assert.doesNotMatch(letter, /PRIVATE FOREIGN NOTE|Thank you for trusting|caused reduced/);
-assert.match(letter, /Strengths and Successes/); assert.match(letter, /library visit/);
+assert.match(letter, /Strengths and Positive Experiences/); assert.match(letter, /library visit/);
 assert.equal(analyze([sleep(1), sleep(3), sleep(8), sleep(13)], scope).regularSpacing, false);
 assert.equal(analyze([sleep(1), sleep(4), sleep(7)], scope).regularSpacing, false);
 assert.equal(analyze([sleep(1), sleep(2), sleep(3)], scope).sleepClusters, 2);
@@ -58,8 +59,9 @@ assert.equal(noteAnalysis.themes.find(t => t.name === 'positive experiences').da
 assert.equal(noteAnalysis.themes.find(t => t.name === 'positive experiences').distinctWording, 1);
 for (const quote of noteAnalysis.quotes) assert.equal(quote.quote, quote.text.slice(quote.start, quote.end));
 letter = renderProviderLetter(analyze(notes, scope));
-assert.match(letter, /Oct 1, 2026: “Needed extra breaks and stayed away from the group\.”/);
-assert.match(letter, /may have been copied forward/);
+assert.match(letter, /Needed extra breaks and stayed away from the group\./);
+assert.doesNotMatch(letter, /The outing was not successful|Staff felt happy/, 'negated and other-person notes never become positive experiences');
+assert.doesNotMatch(letter, /may have been copied forward/, 'do not infer why caregivers repeated wording');
 assert.doesNotMatch(renderProviderLetter(analyze(notes, scope), { includeQuotes: false }), /“/);
 const normalized = normalizeSupabaseEntry(row(8, { caregiver_notes: 'Payload original.' }, { caregiver_notes: 'Root original.' }));
 assert.deepEqual(originalNotes(normalized).map(q => q.text), ['Payload original.', 'Root original.']);
@@ -78,8 +80,8 @@ a = analyze([row(1, { caregiver_notes: 'First person.' }, { individual_id: 'a' }
 assert.equal(a.rows.length, 1);
 assert.throws(() => analyze([], { ...scope, groupId: '' }), /active group/);
 const comparison = Array.from({ length: 14 }, (_, i) => row(i + 1, { mood_pacing: i < 7 ? 'frequent' : 'none' }));
-assert.match(renderProviderLetter(analyze(comparison, scope)), /Pacing was reported less often/);
-assert.match(renderProviderLetter(analyze([], scope)), /insufficient/);
+assert.match(renderProviderLetter(analyze(comparison, scope)), /pacing or restlessness on 7 days/);
+assert.match(renderProviderLetter(analyze([], scope)), /No caregiver records were available/);
 
 const prior = process.env.TZ;
 try {

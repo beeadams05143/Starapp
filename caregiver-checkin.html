@@ -2205,9 +2205,8 @@
         </label>
         <button type="button" id="skipGuidedSection">Skip this section for now →</button>
       </nav>
-      <!-- STEP 1: Physical -->
-      <div id="physicalSection" class="step active" data-step="0">
-        <div class="top-card">
+      <!-- Shift details belong to the whole check-in, independent of optional sections. -->
+        <div id="shiftDetails" class="top-card">
           <label for="entryDateInput">Date of shift:
             <input type="date" id="entryDateInput" name="entry_date"/>
             <span class="muted">Pick another day if you missed logging it.</span>
@@ -2231,6 +2230,8 @@
           </section>
 	        </div>
 
+      <!-- STEP 1: Physical -->
+      <div id="physicalSection" class="step active" data-step="0">
 	        <section class="central-prn-card" id="centralPrnSection" aria-labelledby="centralPrnTitle">
 	          <h2 id="centralPrnTitle">PRN Medication</h2>
 	          <input type="hidden" name="prn_entries" id="prn_entries" value="[]"/>
@@ -6748,10 +6749,18 @@
     shiftSupportRows.addEventListener('input',syncShiftSupports);
     shiftSupportRows.addEventListener('change',syncShiftSupports);
     addShiftSupport();
+    function stepFields(step){
+      const fields = Array.from(step.querySelectorAll('input,select,textarea'));
+      // Keep existing draft step keys compatible after moving shared details.
+      if (step.id === 'physicalSection') {
+        fields.push(...document.getElementById('shiftDetails').querySelectorAll('input,select,textarea'));
+      }
+      return fields;
+    }
     function serialize(step){
-      if(step.contains(shiftSupports))syncShiftSupports();
+      if(step.id === 'physicalSection')syncShiftSupports();
       const data={};
-      step.querySelectorAll('input,select,textarea').forEach(el=>{
+      stepFields(step).forEach(el=>{
         if(!el.name) return;
         if(el.type==='checkbox') data[el.name]=!!el.checked;
         else if(el.type==='radio'){ if(el.checked) data[el.name]=el.value; }
@@ -6761,7 +6770,7 @@
     }
     function hydrate(step,data){
       if(!data) return;
-      step.querySelectorAll('input,select,textarea').forEach(el=>{
+      stepFields(step).forEach(el=>{
         const v = data[el.name]; if(v===undefined) return;
         if(el.type==='checkbox') el.checked = !!v;
         else if(el.type==='radio'){

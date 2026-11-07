@@ -736,7 +736,9 @@ export function normalizeCaregiverCheckinForCalendar(record = {}) {
     ...(meaningfulNote && meaningfulActivity ? [meaningfulActivity] : []),
   ], 5);
   if (!summaryLines.length) {
-    summaryLines.push('No notable concerns');
+    // A concern icon with no narrative must never be labeled all clear.
+    const concern = flags.sleep_concern || flags.illness || flags.appetite || flags.anomaly;
+    summaryLines.push(concern ? 'No additional details recorded' : 'No notable concerns');
   }
   if (parseBooleanLoose(payload.pet_interaction_flag) === true || payload.pet_activity_type) {
     const petLine = `Pet interaction: ${payload.pet_activity_type || 'yes'}`;

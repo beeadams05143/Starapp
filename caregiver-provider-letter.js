@@ -275,7 +275,7 @@ export function renderProviderLetter(a, { includeQuotes = true, teamUpdates = []
   });
   // A quote belongs to one section only, even when its wording matches several.
   const usedQuotes = new Set();
-  const quote = (pattern, { max = 1, exclude = null } = {}) => {
+  const quote = (pattern, { max = 1, exclude = null, accept = () => true } = {}) => {
     if (!includeQuotes) return '';
     const selected = [], topics = new Set();
     for (const q of a.notes.quotes) {
@@ -283,7 +283,7 @@ export function renderProviderLetter(a, { includeQuotes = true, teamUpdates = []
       // Medication-purpose and PRN notes belong in medication reporting,
       // not reinterpreted as general symptoms by keyword matching.
       if (/prn_entries\[|med_change_note|summary_highlight_note/.test(q.field)) continue;
-      if (!q.date || value.length > 180 || !pattern.test(value) || exclude?.test(value) || isGoldStarRepeat(q.date, value)) continue;
+      if (!accept(q) || !q.date || value.length > 180 || !pattern.test(value) || exclude?.test(value) || isGoldStarRepeat(q.date, value)) continue;
       if (/\b(will|planned|tomorrow|maybe|probably not)\b/i.test(value)) continue;
       const id = q.date + ':' + value.toLowerCase();
       if (usedQuotes.has(id)) continue;
@@ -408,13 +408,14 @@ export function renderProviderLetter(a, { includeQuotes = true, teamUpdates = []
     ['attention', 'difficulty maintaining attention'],
   ];
   const behavior = behaviorLabels.filter(([key]) => a.metrics[key].dates.length);
-  if (behavior.length) {
+  const participationNotes = a.notes.quotes.filter(q => q.themes.includes('reduced participation'));
+  if (behavior.length || participationNotes.length) {
     const parts = [];
     const engagement = behavior.filter(([key]) => key === 'engagement' || key === 'withdrawal');
     const regulation = behavior.filter(([key]) => key !== 'engagement' && key !== 'withdrawal');
     if (engagement.length) parts.push('Caregivers recorded changes in participation and engagement, including ' + engagement.map(([key, label]) => label + ' on ' + a.metrics[key].dates.length + ' days').join(' and ') + '. These observations appeared on multiple days during the reporting period.');
     if (regulation.length) parts.push('Other observations included ' + joinNatural(regulation.map(([key, label]) => label + ' on ' + a.metrics[key].dates.length + ' days')) + '.');
-    const behaviorQuote = quote(/\b(pacing|paced|restless|snappy|irritab|withdrawn|engag|manic|pressured speech)\b/i, {
+    const behaviorQuote = quote(/\b(pacing|paced|restless|snappy|irritab|withdrawn|engag|manic|pressured speech|needed extra breaks|took longer breaks|stayed away|joined fewer)\b/i, {
       max: 2, exclude: /\b(stopping manic cycles|preventing mania|to prevent manic symptoms)\b/i
     });
     if (behaviorQuote) parts.push(behaviorQuote);
@@ -524,7 +525,7 @@ export function renderProviderLetter(a, { includeQuotes = true, teamUpdates = []
   if (strengths.length || positive?.dates.length || independent?.dates.length) {
     const parts = [];
     if (strengths.length) parts.push('Caregivers documented examples of coping, participation, or independence, including ' + strengths.slice(0, 6).map(key => key.replace(/_/g, ' ')).join(', ') + '.');
-    const positiveQuote = quote(/\b(enjoyed|happy|successful|independent|greeted|good outing|went well|polite|excuse me|proud)\b/i, { max: 2, exclude: /\b(anxiety|worried|tired|snappy|did sleep|sleep good|orchard|apple)\b/i });
+    const positiveQuote = quote(/\b(enjoyed|happy|successful|independent|greeted|good outing|went well|polite|excuse me|proud)\b/i, { max: 2, accept: q => q.themes.includes('positive experiences') || q.themes.includes('independence and coping'), exclude: /\b(anxiety|worried|tired|snappy|did sleep|sleep good|orchard|apple)\b/i });
     if (positiveQuote) parts.push(positiveQuote);
     if (!parts.length) parts.push('Caregiver notes included positive experiences and moments of participation during this period.');
     add('Strengths and Positive Experiences', parts);
@@ -674,6 +675,7 @@ export function renderProviderLetter(a, { includeQuotes = true, teamUpdates = []
   } else if (a.metrics.prn.dates.length) med.push('Caregivers reported PRN use on ' + dates(a.metrics.prn.dates) + '; individual administration details were not available for these dates.');
   // Medication changes have their own prominent section, not a trailing line
   // after a potentially long PRN administration log.
+  if (a.possibleRepeatedPrn) med.push('Some PRN entries repeat the same date and details; the number of distinct administrations is uncertain.');
   add('Medication and PRN Observations', med);
   const medicationSectionItems = [...medicationTimeline, ...teamEntries.medication];
   if (medicationSectionItems.length) {

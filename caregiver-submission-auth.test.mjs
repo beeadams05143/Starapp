@@ -1,16 +1,17 @@
 import assert from 'node:assert/strict';
 import { rest } from './restClient.js';
+import { saveSession } from './supabaseClient.js';
 const originalFetch = globalThis.fetch;
 const originalStorage = globalThis.localStorage;
 const data = new Map();
 globalThis.localStorage = {getItem:k=>data.get(k)??null,setItem:(k,v)=>data.set(k,v),removeItem:k=>data.delete(k)};
-const key='supabase.auth.token:starapp:okfsobfyhpforyqogjea';
-const save=(user='caregiver',expires=4102444800)=>data.set(key,JSON.stringify({currentSession:{user:{id:user},access_token:'test-only',refresh_token:'test-only',expires_at:expires}}));
+// Use the client API so this test follows the selected test project's storage scope.
+const save=(user='caregiver',expires=4102444800)=>saveSession({user:{id:user},access_token:'test-only',refresh_token:'test-only',expires_at:expires});
 const response=(value,status=200)=>new Response(JSON.stringify(value),{status,headers:{'Content-Type':'application/json'}});
 try {
   let calls=[];
   globalThis.fetch=async(url,options)=>{calls.push({url,options});return response([]);};
-  await assert.rejects(()=>rest('caregiver_checkins',{method:'POST',expectedUserId:'caregiver'}),/session required/);
+  await assert.rejects(()=>rest('caregiver_checkins',{method:'POST',expectedUserId:'caregiver'}),/sign-in has expired/);
   assert.equal(calls.length,0);
   save('other');
   await assert.rejects(()=>rest('caregiver_checkins',{method:'POST',expectedUserId:'caregiver'}),/caregiver changed/);
@@ -35,7 +36,7 @@ try {
   // Abort during refresh: no delayed POST after the timeout.
   save('caregiver',1);const pending=new AbortController();let posts=0;
   globalThis.fetch=async(url)=>{
-    if(url.includes('/auth/v1/token')){pending.abort();return response({user:{id:'caregiver'},access_token:'fresh-test',expires_at:4102444800});}
+    if(url.includes('/auth/v1/token')){pending.abort();return response({user:{id:'caregiver'},access_token:'fresh-test',refresh_token:'fresh-refresh',expires_at:4102444800});}
     posts++;return response([]);
   };
   await assert.rejects(()=>rest('caregiver_checkins',{method:'POST',expectedUserId:'caregiver',signal:pending.signal}),/abort/i);

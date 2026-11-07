@@ -123,7 +123,7 @@
     }
   };
 
-  // Home has no unread-count data source. Do not display a placeholder badge.
+  // Home and Chat badges reflect unread team messages, including shared-device alerts.
 
   const iconSvg = {
     home: '<svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" fill="none" stroke-width="2" aria-hidden="true"><path d="M3 12l9 -9l9 9"></path><path d="M9 21v-6h6v6"></path></svg>',
@@ -168,7 +168,7 @@
             return `<a href="${tab.href}" class="tab nav-item${isHome ? ' active' : ''}"${isHome ? ' id="homeNav"' : ''}>` +
               `${iconSvg[tab.icon] || iconSvg.home}` +
               `<span>${tab.label}</span>` +
-              (tab.icon === 'chat' ? '<span class="chat-unread-dot" data-chat-unread hidden aria-hidden="true"></span>' : '') +
+              (tab.icon === 'chat' ? '<span class="chat-unread-dot" data-chat-unread hidden aria-hidden="true"></span>' : tab.icon === 'home' ? '<span class="chat-unread-dot" data-home-unread hidden aria-hidden="true"></span>' : '') +
             `</a>`;
           }).join('')}
         </div>
@@ -183,7 +183,9 @@
 
   if (location.hostname === 'star-uvm-testing.netlify.app') {
     let refreshingChatBadge = false;
-    function showChatBadge(unread) {
+    function showChatBadge(unread,helpUnread=false) {
+      const homeDot=bottom.querySelector('[data-home-unread]');
+      if(homeDot){homeDot.hidden=!helpUnread;if(helpUnread)homeDot.parentElement.setAttribute('aria-label','Home, unread Help Now or Something Hurts message');else homeDot.parentElement.removeAttribute('aria-label');}
       const dot = bottom.querySelector('[data-chat-unread]');
       if (!dot) return;
       dot.hidden = !unread;
@@ -194,24 +196,21 @@
       if (refreshingChatBadge || document.hidden || !bottom.querySelector('[data-chat-unread]')) return;
       refreshingChatBadge = true;
       try {
-        const [client, groups] = await Promise.all([
+        const [client, groups, alerts] = await Promise.all([
           import('/restClient.js?v=2026.10.29UVM3'),
-          import('/active-group.js?v=2026.10.29UVM3')
+          import('/active-group.js?v=2026.10.29UVM3'),
+          import('/chat-alerts.js?v=2026.11.07-shared-alerts')
         ]);
         const userId = client.getSessionFromStorage()?.user?.id;
         if (!userId) { showChatBadge(false); return; }
         const groupId = await groups.ensureActiveGroupId(userId);
         if (!groupId) { showChatBadge(false); return; }
-        const query = new URLSearchParams({
-          select: 'id,message_reads()',
-          group_id: 'eq.' + groupId,
-          sender_id: 'neq.' + userId,
-          'message_reads.user_id': 'eq.' + userId,
-          message_reads: 'is.null',
-          limit: '1'
-        });
-        const rows = await client.rest('messages?' + query, {expectedUserId: userId});
-        showChatBadge(client.getSessionFromStorage()?.user?.id === userId && Boolean(rows?.length));
+        const [rows,helpRows]=await Promise.all([
+          client.rest('messages?'+alerts.unreadMessagesQuery(userId,groupId),{expectedUserId:userId}),
+          client.rest('messages?'+alerts.unreadMessagesQuery(userId,groupId,{helpOnly:true}),{expectedUserId:userId})
+        ]);
+        const sameUser=client.getSessionFromStorage()?.user?.id===userId;
+        showChatBadge(sameUser&&Boolean(rows?.length),sameUser&&Boolean(helpRows?.length));
       } catch (error) {
         console.warn('Could not refresh Chat unread badge', error);
       } finally {

@@ -548,7 +548,7 @@
     } else if(page==='feel'){
       wrap('How I Feel','<p>Pick a face. You do not have to answer.</p><div class="choices">'+choice('Happy','😊','Happy')+choice('Okay','😐','Okay')+choice('Sad','😢','Sad')+choice('Upset','😠','Upset')+choice('Tired','😴','Tired')+choice('Unwell','🤒','Not feeling good')+'</div>'+support()+'<div class="actions">'+button('Done','done','primary')+button('Not now','skip')+'</div>');
     } else if(page==='pain'){
-      painSide='front';painPart='';wrap('Something Hurts','<p>Tap where it hurts. Pick front or back.</p><div class="body-switch"><button type="button" data-side="front" aria-pressed="true">FRONT</button><button type="button" data-side="back" aria-pressed="false">BACK</button></div><div class="body-layout" id="painPoster">'+bodyPoster(true)+'</div><p id="painLocation" class="selected-location" role="status">Choose a body part</p><div id="painSymptoms"></div>'+support()+'<div class="actions">'+button('Send details to chat','chat-details')+button('Done','done','primary')+button('Not now','skip')+'</div>');
+      painSide='front';painPart='';wrap('Something Hurts','<p>Tap where it hurts. Pick front or back.</p><div class="body-switch"><button type="button" data-side="front" aria-pressed="true">FRONT</button><button type="button" data-side="back" aria-pressed="false">BACK</button></div><div class="body-layout" id="painPoster">'+bodyPoster(true)+'</div><p id="painLocation" class="selected-location" role="status">Choose a body part</p><div id="painSymptoms"></div>'+support()+'<div class="actions">'+button('Send to my team','chat-details','primary')+button('Not now','skip')+'</div>');
     } else if(page==='day'){
       wrap('My Day','<p>Did you like your activity today?</p><div class="choices">'+choice('Liked it','😊','I liked it')+choice('Okay','😐','It was okay')+choice('Did not like','😞','I did not like it')+choice('No activity','🙅','Not today')+'</div><label for="dayActivity">Which activity? (optional)</label>'+dictateControls('dayActivity')+'<textarea class="voice-input" id="dayActivity" maxlength="2000" placeholder="You can say or type what activity you tried."></textarea>'+support()+'<div class="actions">'+button('Done','done','primary')+button('Not now','skip')+'</div>');
     } else if(page==='goals'){
@@ -558,7 +558,7 @@
     } else if(page==='rather'){
       wyReset();renderWouldRather();
     } else if(page==='urgent'){
-      wrap('🚨 HELP NOW','<div class="notice urgent">Help Now posts in your test group chat. If you need help right away, get someone nearby.</div><p>What do you need to tell someone?</p><div class="choices">'+choice('Something hurts','🩹','Something hurts')+choice('I am scared','😨','I am scared')+choice('I need someone','🙋','I need someone')+choice('Something happened','❗','Something happened')+'</div><label for="urgentMessage">Add more (optional)</label><textarea id="urgentMessage" class="voice-input" placeholder="Type or dictate"></textarea><div class="actions">'+button('Send details to chat','chat-details','primary')+button('Done','skip')+'</div>');
+      wrap('🚨 HELP NOW','<div class="notice urgent">Help Now posts in your test group chat. If you need help right away, get someone nearby.</div><p>What do you need to tell someone?</p><div class="choices">'+choice('Something hurts','🩹','Something hurts')+choice('I am scared','😨','I am scared')+choice('I need someone','🙋','I need someone')+choice('Something happened','❗','Something happened')+'</div><label for="urgentMessage">Add more (optional)</label><textarea id="urgentMessage" class="voice-input" placeholder="Type or dictate"></textarea><div class="actions">'+button('Send to my team','chat-details','primary')+button('Not now','skip')+'</div>');
     } else if(page==='chat') {window.location.href='chat.html';return}
     else if(page==='voice'){window.location.href='my-star-voice.html';return}
     var input=document.getElementById('withSupport');
@@ -570,7 +570,8 @@
     el.setAttribute('aria-pressed','true');el.classList.add('selected');
     speak(value==='Something hurts'?'Something hurts':value);
     var location=document.getElementById('painLocation');if(location)location.textContent='You chose: '+value;
-    if(current!=='goals')status('You chose: '+value+'. Tap Done to save it, or Not now to skip.');
+    if(current==='pain'||current==='urgent')status('You chose: '+value+'. Tap Send to my team.');
+    else if(current!=='goals')status('You chose: '+value+'. Tap Done to save it, or Not now to skip.');
   }
   function supportDescription(){
     return document.getElementById('withSupport')?.checked
@@ -600,7 +601,7 @@
       });
   }
   var helpDestination;
-  function sendChatNotice(box,message,destination){
+  function sendChatNotice(box,message,destination,onSent){
     var id=crypto.randomUUID();
     async function send(){
       box.textContent='Sending to group chat…';
@@ -622,6 +623,7 @@
           body:JSON.stringify({id,group_id:groupId,sender_id:userId,message})
         });
         box.textContent='Sent to group chat.';
+        if(onSent)onSent();
       }catch(error){
         box.textContent='Could not confirm the message was sent. ';
         var retry=document.createElement('button');
@@ -662,7 +664,7 @@
       chosen=painPart+' — '+symptom.dataset.symptom;
       document.querySelectorAll('[data-symptom]').forEach(function(item){item.setAttribute('aria-pressed',String(item===symptom))});
       speak(symptom.dataset.symptom);
-      status('You chose: '+chosen+'. Tap Done to save it.');
+      status('You chose: '+chosen+'. Tap Send to my team.');
       return;
     }
     if(e.target.closest('[data-hear-symptoms]')){
@@ -696,7 +698,11 @@
       var result=document.getElementById('result');
       result.hidden=false;
       a.disabled=true;
-      sendChatNotice(result,'[STAR TEST] '+(current==='urgent'?'🚨 Help now: ':'🩹 Something hurts: ')+[chosen,extra].filter(Boolean).join(' — ').slice(0,2000),helpDestination)
+      var sentFrom=current, sentDestination=helpDestination;
+      sendChatNotice(result,'[STAR TEST] '+(current==='urgent'?'🚨 Help now: ':'🩹 Something hurts: ')+[chosen,extra].filter(Boolean).join(' — ').slice(0,2000),helpDestination,function(){
+          if(current!==sentFrom||helpDestination!==sentDestination)return;
+          stopDictation();render('home');status('✓ Sent to my team.');
+        })
         .finally(function(){a.disabled=false});
       return;
     }

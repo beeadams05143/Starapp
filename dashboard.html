@@ -409,6 +409,7 @@
   import {getSessionFromStorage, rest} from './restClient.js?v=2026.10.29UVM3';
   import {ensureActiveGroupId} from './active-group.js?v=2026.10.29UVM3';
 
+  import {unreadMessagesQuery} from './chat-alerts.js?v=2026.11.07-shared-alerts';
   const notice=document.getElementById('homeHelpNotice');
   const title=document.getElementById('homeHelpTitle');
   let refreshing=false;
@@ -420,16 +421,7 @@
       if(!userId){notice.hidden=true;return;}
       const groupId=await ensureActiveGroupId(userId);
       if(!groupId){notice.hidden=true;return;}
-      const query=new URLSearchParams({
-        select:'message,message_reads()',
-        group_id:'eq.'+groupId,
-        sender_id:'neq.'+userId,
-        or:'(message.like.[STAR TEST] 🚨 Help now*,message.like.[STAR TEST] 🩹 Something hurts*)',
-        'message_reads.user_id':'eq.'+userId,
-        message_reads:'is.null',
-        order:'created_at.desc,id.desc',
-        limit:'1'
-      });
+      const query=unreadMessagesQuery(userId,groupId,{helpOnly:true});
       const rows=await rest('messages?'+query,{expectedUserId:userId});
       if(getSessionFromStorage()?.user?.id!==userId){notice.hidden=true;return;}
       const latest=rows[0]?.message;
@@ -549,7 +541,7 @@
 </script>
 
 <!-- ✅ Restore original hamburger menu + bottom tabbar -->
-<script defer src="./ui-shell.js?v=2026.11.05-chat-badge"></script>
+<script defer src="./ui-shell.js?v=2026.11.07-shared-alerts"></script>
 <script defer src="./scripts/appbar-drawer.js?v=2026.11.05-caregiver-guide"></script>
 
 <footer class="dashboard-legal-footer">

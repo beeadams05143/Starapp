@@ -1917,6 +1917,7 @@
     @media(max-width:600px) { .draft-save-bar { top:52px; } }
 
 .top-actions,#downloadRecovery,#storageNotice,#submissionContext{display:none!important}
+.top-actions.has-pending-recovery{display:flex!important;flex-wrap:wrap;gap:12px;padding:14px;border:2px solid #8a4b22;border-radius:12px;background:#fff9e9}
 #checkinSubmitPanel>p:not(#checkinDateLabel):not(#submissionStatus),#checkinSubmitPanel>a[href="caregiver-report.html"]{display:none}
 .prn-quick-row{padding:15px;border-bottom:1px solid #e9e8e4;display:grid;gap:10px}
 .prn-quick-row>div{display:flex;justify-content:space-between;gap:12px;align-items:center}
@@ -3191,7 +3192,7 @@
 <script type="module">
   // 1) Imports MUST be first in the module
   import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
-  import { CheckinSubmissionUI } from './caregiver-submission-ui.js?v=2026.10.28D';
+  import { CheckinSubmissionUI } from './caregiver-submission-ui.js?v=2026.11.07-recovery';
   import { validSelectedDate } from './caregiver-submission.js';
   import { ANSWER_VERSION, optionalEngagement, optionalYesNo } from './caregiver-answer-quality.js?v=2026.10.20A';
   import { ensureActiveGroupId } from './active-group.js?v=2026.10.29UVM3';

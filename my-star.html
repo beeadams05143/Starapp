@@ -102,6 +102,7 @@
     .star-view-switch a[aria-current="page"]{background:#365940;color:#fff;box-shadow:0 1px 4px #25362622}
     .star-view-switch a:focus-visible{outline:3px solid #164a70;outline-offset:2px}
     @media(max-width:390px){.star-view-switch a{font-size:14px}}
+    .tile[data-open="moments"]{position:relative}.moment-waiting-badge{position:absolute;top:10px;right:10px;background:#a54227;color:#fff;border-radius:20px;padding:5px 9px;font-size:14px;font-weight:800}
   </style>
 </head>
 <body>
@@ -472,6 +473,42 @@
     renderWouldRather();speak(wyPrompt());
   }
 
+  var momentsCountRequest=0;
+  async function refreshMomentsCount(){
+    var request=++momentsCountRequest;
+    try{
+      var [client,groups,config]=await Promise.all([
+        import('./restClient.js?v=2026.10.29UVM3'),
+        import('./active-group.js?v=2026.10.29UVM3'),
+        import('./supabaseClient.js?v=2026.10.29UVM3')
+      ]);
+      if(location.hostname!=='star-uvm-testing.netlify.app'||config.SUPABASE_URL!=='https://rjozzwmkvlndanoaghtc.supabase.co')return;
+      var user=(await client.requireSession()).user.id;
+      var group=await groups.ensureActiveGroupId(user);
+      if(!group)return;
+      var people=await client.rest('star_moments_test_people?group_id=eq.'+group+'&select=individual_id',{expectedUserId:user});
+      var own=people.find(function(row){return row.individual_id===user});
+      var person=own?user:(group==='c40d0ac1-0122-46f6-b358-fac283287bb5'&&people.some(function(row){return row.individual_id==='58d3ac51-3dc7-4ead-b22f-8cb5829a3bac'})?'58d3ac51-3dc7-4ead-b22f-8cb5829a3bac':null);
+      if(!person)return;
+      var count=0,offset=0,batch;
+      do{
+        batch=await client.rest('star_moments_test?group_id=eq.'+group+'&individual_id=eq.'+person+'&select=id,star_moment_responses_test(satisfaction)&order=created_at.desc,id&limit=500&offset='+offset,{expectedUserId:user});
+        count+=batch.filter(function(row){return !row.star_moment_responses_test||row.star_moment_responses_test.satisfaction==='Not now'}).length;
+        offset+=batch.length;
+      }while(batch.length===500);
+      if(request!==momentsCountRequest||current!=='home')return;
+      var tileNode=screen.querySelector('[data-open="moments"]');
+      if(!tileNode)return;
+      tileNode.querySelector('.moment-waiting-badge')?.remove();
+      tileNode.querySelector('small').textContent=count?count+' photo'+(count===1?'':'s')+' waiting':'No photos waiting';
+      tileNode.setAttribute('aria-label','My Moments. '+count+' photos waiting'+(own?'':'. Jamie fictional preview'));
+      if(count){var badge=document.createElement('span');badge.className='moment-waiting-badge';badge.textContent=count+' waiting';badge.setAttribute('aria-hidden','true');tileNode.append(badge);}
+    }catch(error){/* Leave the tile available when the count cannot be loaded. */}
+  }
+  window.addEventListener('pageshow',function(){if(current==='home')refreshMomentsCount()});
+  window.addEventListener('focus',function(){if(current==='home')refreshMomentsCount()});
+  document.addEventListener('visibilitychange',function(){if(!document.hidden&&current==='home')refreshMomentsCount()});
+
   function render(page){
     stopDictation();wyStopTimer();chosen='';current=page;window.speechSynthesis?.cancel();
     if(page==='home'){
@@ -481,7 +518,7 @@
           tile('pain','🧍 🩹','Something Hurts','Point to my body')+
           tile('feel','😊 😐 😟','How I Feel','Pick how I feel')+
           tile('day','🏊 🌳','My Day','Tell how my day went')+
-          tile('moments','📷','My Moments to Review','Look at a photo')+
+          tile('moments','📷','My Moments','Look at my photos')+
           tile('goals','🌟 🙌','Something I Did','Tell what I did')+
           tile('tell','🗣️ 💬','Talk to My Team','Share a message or chat')+
           tile('rather','🏠 🌳','Would You Rather?','Choose what I like')+
@@ -491,6 +528,7 @@
         '</div>'+
         '<div class="actions">'+button('Not now — I am done','skip','secondary')+'</div>'+
         '<div id="result" class="message" hidden></div>';
+      refreshMomentsCount();
     } else if(page==='moments'){
       location.href='star-moments-test.html?mode=review';
     } else if(page==='mic-setup'){

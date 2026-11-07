@@ -48,36 +48,43 @@ async function moments(user,mode){
     if(path.startsWith('star_moments_test?'))return structuredClone(records);
     throw Error('Unexpected API path '+path);
   };
-  const context=vm.createContext({document,window:{},location:{search:'?mode='+mode,hostname:'star-uvm-testing.netlify.app'},URLSearchParams,
+  const spoken=[];
+  const context=vm.createContext({document,window:{speechSynthesis:{cancel(){},speak:u=>spoken.push(u.text)}},SpeechSynthesisUtterance:class{constructor(text){this.text=text}},localStorage:{getItem:()=> 'on'},location:{search:'?mode='+mode,hostname:'star-uvm-testing.netlify.app'},URLSearchParams,
     SUPABASE_URL:'https://rjozzwmkvlndanoaghtc.supabase.co',requireSession:async()=>({user:{id:user}}),ensureActiveGroupId:async()=>team,rest:api});
   vm.runInContext(momentSource.replace(/^import .*;\n/gm,'').replace('start().catch(error=>announce(error.message));','globalThis.qa={start,questions,showReview,month};'),context);
   await context.qa.start();
-  return {root,calls,records,qa:context.qa};
+  return {root,calls,records,spoken,qa:context.qa};
 }
 {
-  const {root,calls,records}=await moments(jamie,'review');
+  const {root,calls,records,spoken}=await moments(jamie,'review');
+  assert.match(spoken[0],/Library visit.*How was this/);
+  await findButton(root,'🔊 Read to me').onclick();
+  assert.equal(spoken.length,2);
   assert.ok(calls.some(c=>c.path.includes('individual_id=eq.'+jamie)));
   assert.doesNotMatch(text(root),/Caregiver-only|Seemed to enjoy/);
-  await findButton(root,'Yes').onclick();
-  await findButton(root,'I liked it').onclick();
-  await findButton(root,'Yes').onclick();
+  assert.equal(root.querySelectorAll('textarea').length,1,'optional words and emoji choices share one page');
+  assert.equal(findButton(root,'Save my choice ✓').disabled,true);
+  await nodes(root).find(n=>n.attrs['aria-pressed']==='false').onclick();
+  assert.equal(findButton(root,'Save my choice ✓').disabled,false);
   root.querySelector('textarea').value='I want the picture books.';
   root.querySelector('select').value='Answered after seeing choices';
   await root.querySelector('form').onsubmit({preventDefault(){}});
   assert.equal(records[0].star_moment_responses_test.words,'I want the picture books.');
   assert.equal(records[0].star_moment_responses_test.support,'Answered after seeing choices');
-  assert.equal(records[0].star_moment_responses_test.again,'Yes');
-  assert.match(text(root),/Your answer was saved/);
+  assert.equal(records[0].star_moment_responses_test.again,null,'repeat question is optional and not invented');
+  assert.match(text(root),/My choice is saved/);
   assert.ok(!calls.some(c=>c.path.startsWith('star_moment_notes_test')),'no caregiver observations fetched during individual answers');
 }
 {
-  const {root,calls,records}=await moments(taylor,'review');
+  const {root,calls,records,qa}=await moments(taylor,'review');
   assert.ok(calls.some(c=>c.path.includes('individual_id=eq.'+taylor)),'another individual uses own profile');
   await findButton(root,'Not now').onclick();
   assert.equal(records[0].star_moment_responses_test.satisfaction,'Not now');
-  await findButton(root,'Yes').onclick();await findButton(root,'It was okay').onclick();await findButton(root,'No').onclick();
-  root.querySelector('select').value='Answered independently';
+  await qa.showReview();
+  await nodes(root).filter(n=>n.attrs['aria-pressed']==='false')[1].onclick();
+  root.querySelector('select').value='';
   await root.querySelector('form').onsubmit({preventDefault(){}});
+  assert.equal(records[0].star_moment_responses_test.support,null,'helper question is optional');
   assert.equal(calls.find(c=>c.method==='PATCH').path,'star_moment_responses_test?moment_id=eq.own-photo&satisfaction=eq.Not%20now');
 }
 {

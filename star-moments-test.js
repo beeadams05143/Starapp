@@ -5,7 +5,6 @@ import {SUPABASE_URL} from './supabaseClient.js';
 const observations=['Seemed to enjoy it','Unsure','Seemed uncomfortable'];
 const categories=['Work','Community','Home','Learning','Fun/Leisure','Other'];
 const ratings=['I liked it','It was okay','I didn’t like it','I’m not sure'];
-const repeats=['Yes','No','I’m not sure'];
 const supports=['Answered independently','Answered after seeing choices','Answered with caregiver assistance'];
 const root=document.querySelector('main');
 const mode=new URLSearchParams(location.search).get('mode');
@@ -33,6 +32,8 @@ function button(label, action, parent=root) {
 }
 function announce(message) {document.querySelector('#status').textContent=message;}
 function page(title) {
+  window.speechSynthesis?.cancel();
+  root.className=review?'moment-review':'';
   root.replaceChildren();
   if(previewOnly)element('p','Jamie Rivers · Fictional preview');
   const link=element('a',daily?'Finish check-in':'Back',root);
@@ -130,13 +131,20 @@ function add() {
     finally {save.disabled=false;save.textContent='Save moment';}
   };
 }
-const rows=()=>api('star_moments_test?group_id=eq.'+team+'&individual_id=eq.'+person+'&select=id,label,category,created_at,star_moment_responses_test(*)&order=created_at.desc&limit=100');
+async function rows(){
+  const list=[];
+  let batch;
+  do{
+    batch=await api('star_moments_test?group_id=eq.'+team+'&individual_id=eq.'+person+'&select=id,label,category,created_at,star_moment_responses_test(*)&order=created_at.desc,id&limit=500&offset='+list.length);
+    list.push(...batch);
+  }while(batch.length===500);
+  return list;
+}
 const response=row=>row.star_moment_responses_test;
 const loadPhoto=async row=>Object.assign(row,(await api('star_moments_test?id=eq.'+row.id+'&select=photo'))[0]);
 async function respond(row,values) {
   if(previewOnly){
-    await showReview();
-    announce('You tried the review. Preview answers are temporary.');
+    announce('Preview only. This answer was not saved for Jamie. Sign in as the individual to save their own choice.');
     return;
   }
   if(response(row)) {
@@ -144,60 +152,114 @@ async function respond(row,values) {
       method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify(values)
     }).then(result=>{if(!result?.length)throw new Error('This moment already has a response.');});
   } else await post('star_moment_responses_test',{moment_id:row.id,...values});
-  if(daily){location.href=back;return;}
-  await showReview();
-  announce(values.satisfaction==='Not now'?'You can come back to this photo.':'Your answer was saved.');
+  window.speechSynthesis?.cancel();
+  if(values.satisfaction==='Not now'){
+    location.href=back;
+    return;
+  }
+  page('⭐ My choice is saved');
+  element('p',values.satisfaction);
+  if(!daily)button('Next photo',showReview).className='moment-save';
+  const finish=element('a','Back to My STAR');
+  finish.href=back;
 }
-function questions(row) {
-  page(row.label);
+const isWaiting=row=>!response(row)||response(row).satisfaction==='Not now';
+function speakMoment(text,force=false) {
+  let enabled=false;
+  try {enabled=localStorage.getItem('star_my_star_read_aloud_enabled')==='on';}catch{}
+  if(!force&&!enabled)return;
+  if(!window.speechSynthesis||typeof SpeechSynthesisUtterance==='undefined'){
+    if(force)announce('Read aloud is unavailable on this device. A helper can read the choices.');
+    return;
+  }
+  window.speechSynthesis.cancel();
+  const utterance=new SpeechSynthesisUtterance(text);
+  utterance.lang='en-US';
+  utterance.rate=0.85;
+  window.speechSynthesis.speak(utterance);
+}
+function questions(row,count=1) {
+  page('My Moments');
+  element('p',count+' photo'+(count===1?'':'s')+' waiting').className='moment-count';
+  const prompt=row.label+'. How was this? I liked it. It was okay. I did not like it. I am not sure. Choose a face, then tap Save my choice. You can choose Not now.';
+  button('🔊 Read to me',()=>speakMoment(prompt,true)).className='moment-hear';
   photo(row);
+  element('h2',row.label).className='moment-label';
   element('h2','How was this?');
-  const defer=()=>respond(row,{satisfaction:'Not now',again:null,words:'',support:null});
-  ratings.forEach(satisfaction=>button(satisfaction,()=>{
-    page(row.label);
-    photo(row);
-    element('h2','Would you like to do this again?');
-    repeats.forEach(again=>button(again,()=>{
-      page(row.label);
-      photo(row);
-      const form=element('form','');
-      const words=field('Your exact words (optional)','textarea',form);
-      words.maxLength=2000;
-      dictate(words,form);
-      const support=select('How did you answer?',supports,form);
-      const save=element('button',previewOnly?'Try saving my answer':'Save my answer',form);
-      form.onsubmit=async event=>{
-        event.preventDefault();
-        save.disabled=true;
-        try {await respond(row,{satisfaction,again,words:words.value,support:support.value});}
-        catch(error){announce(error.message);}
-        finally {save.disabled=false;}
-      };
-      button('Back to choices',()=>questions(row));
-      button('Not now',defer);
-    }));
-    button('Back to choices',()=>questions(row));
-    button('Not now',defer);
-  }));
-  button('Not now',defer);
+  const form=element('form','');
+  const choices=element('div','',form);
+  choices.className='moment-choices';
+  choices.setAttribute('role','group');
+  choices.setAttribute('aria-label','How was this?');
+  let satisfaction='';
+  const faces=['😊','😐','🙁','🤔'];
+  const choiceButtons=ratings.map((value,index)=>{
+    const node=button('',()=>{
+      satisfaction=value;
+      choiceButtons.forEach(item=>item.setAttribute('aria-pressed',String(item===node)));
+      save.disabled=false;
+      announce(value+'. Tap Save my choice.');
+      speakMoment(value+'. Tap Save my choice.');
+    },choices);
+    node.className='moment-choice';
+    node.setAttribute('aria-pressed','false');
+    const emoji=element('span',faces[index],node);
+    emoji.className='moment-face';
+    emoji.setAttribute('aria-hidden','true');
+    element('span',value,node);
+    return node;
+  });
+  const extra=element('details','',form);
+  element('summary','💬 Add my words (optional)',extra);
+  const words=field('My words','textarea',extra);
+  words.maxLength=2000;
+  dictate(words,extra);
+  const helper=element('details','',form);
+  element('summary','For my helper (optional)',helper);
+  const support=select('How did you answer?',supports,helper);
+  support.required=false;
+  const save=element('button',previewOnly?'Try my choice ✓':'Save my choice ✓',form);
+  save.type='submit';
+  save.className='moment-save';
+  save.disabled=true;
+  const later=button('Not now',()=>respond(row,{satisfaction:'Not now',again:null,words:'',support:null}),form);
+  later.className='moment-later';
+  form.append(document.querySelector('#status'));
+  if(previewOnly)announce('Fictional preview. Your choice will not be saved for Jamie.');
+  let saving=false;
+  form.onsubmit=async event=>{
+    event.preventDefault();
+    if(!satisfaction||saving)return;
+    saving=true;
+    save.disabled=true;
+    later.disabled=true;
+    choiceButtons.forEach(node=>node.disabled=true);
+    announce('Saving your choice…');
+    try {
+      await respond(row,{satisfaction,again:null,words:words.value,support:support.value||null});
+    }catch(error){announce('Your choice was not saved. '+error.message);}
+    finally {
+      saving=false;
+      save.disabled=false;
+      later.disabled=false;
+      choiceButtons.forEach(node=>node.disabled=false);
+    }
+  };
+  speakMoment(prompt);
 }
 async function showReview() {
-  page('My Moments to Review');
-  const available=(await rows()).filter(row=>!response(row)||response(row).satisfaction==='Not now');
+  page('My Moments');
+  const available=(await rows()).filter(isWaiting);
   available.sort((a,b)=>Number(Boolean(response(a)))-Number(Boolean(response(b))));
-  if(!available.length){if(daily){location.replace(back);return;}element('p','You have no photos waiting.');return;}
-  const show=async index=>{
-    const row=await loadPhoto(available[index]);
-    page('My Moments to Review');
-    photo(row);
-    element('p',row.label);
-    element('h2',daily?'Want to look at a moment today?':'Want to look at this moment?');
-    button('Yes',()=>questions(row));
-    button('Not now',()=>respond(row,{satisfaction:'Not now',again:null,words:'',support:null}));
-    if(!daily&&available.length>1)button('Next photo',()=>show((index+1)%available.length));
-  };
-  await show(0);
+  if(!available.length){
+    element('p','You have no photos waiting.');
+    const home=element('a','Back to My STAR');home.href=back;
+    return;
+  }
+  const row=await loadPhoto(available[0]);
+  questions(row,available.length);
 }
+
 function localMonth(date) {
   const value=new Date(date);
   return value.getFullYear()+'-'+String(value.getMonth()+1).padStart(2,'0');
@@ -226,9 +288,9 @@ async function month() {
       if(done){
         element('h3','Individual reported');
         element('p',answer.satisfaction);
-        element('p','Do it again? '+answer.again);
+        if(answer.again)element('p','Do it again? '+answer.again);
         if(answer.words)element('blockquote',answer.words);
-        element('p',answer.support);
+        if(answer.support)element('p',answer.support);
       }
       if(done&&notes[0]){
         element('h3','Caregiver observed');

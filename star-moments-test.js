@@ -103,18 +103,23 @@ function add() {
   const note=field('Short observation (optional)','textarea',form);
   note.maxLength=500;
   const save=element('button','Save moment',form);
+  // Show feedback beside Save on long mobile forms.
+  form.append(document.querySelector('#status'));
   form.onsubmit=async event=>{
     event.preventDefault();
     const file=capture.files[0]||upload.files[0];
     if(!file){announce('Choose or take a photo.');return;}
     save.disabled=true;
+    save.textContent='Saving…';
+    announce('Preparing your photo…');
     try {
       const image=await compress(file);
+      announce('Saving your moment…');
       await post('rpc/star_add_moment_test',{moment:crypto.randomUUID(),team,person,activity:activity.value.trim(),kind:category.value,image,observed:observed.value,detail:note.value});
       form.reset();
       announce('Moment saved.');
-    } catch(error){announce(error.message);}
-    finally {save.disabled=false;}
+    } catch(error){announce('Moment was not saved. '+(error.message||'Please try again.'));}
+    finally {save.disabled=false;save.textContent='Save moment';}
   };
 }
 const rows=()=>api('star_moments_test?group_id=eq.'+team+'&individual_id=eq.'+person+'&select=id,label,category,created_at,star_moment_responses_test(*)&order=created_at.desc&limit=100');

@@ -1,5 +1,7 @@
 import { NOTE_FIELDS } from './caregiver-provider-letter.js?v=2026.10.20A';
 import { checkinDateKey } from './caregiver-dates.js';
+import { SUPABASE_URL } from './supabaseClient.js';
+import { scopeUvmReportRows } from './uvm-report-scope.js';
 // caregiver-report-supabase.js — PRODUCTION SAFE (group-scoped; no user_id filter) v=2026.05.03D
 import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
 import { resolveActiveGroup } from './active-group.js?v=2026.10.29UVM3';
@@ -890,13 +892,15 @@ export async function loadCaregiverCheckins(
 
     console.log('[STAGE 3 after group filter]', groupFiltered.length);
 
-    const individualFiltered = groupFiltered;
-    console.log('[STAGE 4 bypassed individual filter]', normalized.length);
+    const individualFiltered = scopeUvmReportRows(groupFiltered, SUPABASE_URL, activeGroupId);
 
     const rangeFiltered = individualFiltered.filter((row) => {
       const ts = normTs(row);
       const time = ts.getTime();
       if (Number.isNaN(time)) return false;
+      const day = checkinDateKey(row);
+      if (startDateNorm && day < startDateNorm) return false;
+      if (endDateNorm && day > endDateNorm) return false;
       return range === 'all' || ts >= start;
     });
 

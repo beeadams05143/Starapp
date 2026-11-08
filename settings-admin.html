@@ -1,0 +1,32 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Settings & Administration — STAR Testing</title><link rel="stylesheet" href="/style.css"><style>body{margin:0;background:#f5f2ec;color:#292b32;font:16px system-ui;padding:85px 16px 110px}.wrap{max-width:720px;margin:auto}h1{font:600 30px Georgia;color:#75491d}.card{background:#fff;border:1px solid #e5d7bc;border-radius:20px;padding:20px;margin:16px 0}.member{border-top:1px solid #e7e2d8;padding:16px 0}.member:first-child{border-top:0}.muted{color:#62636a;font-size:13px;overflow-wrap:anywhere}select,button,.link{font:inherit;border-radius:10px;padding:10px;border:1px solid #d9c9ab;background:#fff;max-width:100%}button{background:#f7edda;color:#75491d;cursor:pointer}button:disabled{opacity:.5}.link{display:inline-block;text-decoration:none;color:#75491d;margin:5px}label{display:block;margin:10px 0 5px}.status{padding:10px 0} .memberhead{font-weight:650} </style></head><body><main class="wrap"><h1>Settings & Administration</h1><p>Manage your STAR group and team member roles.</p><div class="card"><h2>Team members</h2><p class="muted">Only administrators can change roles. User IDs identify accounts, not individuals receiving support.</p><div id="status" role="status">Loading your group…</div><div id="members"></div></div><div class="card"><h2>Group Settings & Invitations</h2><p>Find your invitation code and invite your team.</p><a class="link" href="/group-settings.html">Open Group Settings & Invitations</a></div><div class="card"><h2>Security</h2><p>Role changes require administrator approval. The final administrator cannot be removed.</p></div></main><script type="module">
+import {rest,getSessionFromStorage} from './restClient.js';
+import {ensureActiveGroupId} from './active-group.js';
+const roles={administrator:'Administrator',caregiver:'Caregiver',individual:'Individual',case_manager:'Case Manager'};
+const status=document.getElementById('status'),members=document.getElementById('members');
+let gid,admin=false;
+function el(tag,text,cls){const x=document.createElement(tag);if(text!==undefined)x.textContent=text;if(cls)x.className=cls;return x;}
+async function rpc(name,body){return rest('rpc/'+name,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});}
+async function load(){
+ const session=getSessionFromStorage();if(!session?.user?.id){location.href='/auth.html';return;}
+ gid=await ensureActiveGroupId(session.user.id);if(!gid){status.textContent='No active group. Create or join a group first.';return;}
+ const list=await rpc('star_test_team_members',{p_group_id:gid});
+ admin=list.some(x=>x.user_id===session.user.id&&x.membership_role==='admin');
+ status.textContent=admin?'Administrator access · Changes require confirmation':'Viewing your team · Only an administrator can change roles';
+ members.replaceChildren();
+ for(const m of list){
+  const box=el('div',undefined,'member'),name=el('div',m.display_name,'memberhead'),id=el('div','User ID: '+m.user_id,'muted'),label=el('label','Assigned role'),select=el('select'),save=el('button','Save role');
+  for(const [value,title] of Object.entries(roles)){const opt=el('option',title);opt.value=value;select.append(opt);}
+  select.value=m.assigned_role|| (m.membership_role==='admin'?'administrator':'caregiver');
+  select.disabled=!admin;save.disabled=!admin;
+  save.addEventListener('click',async()=>{
+   const chosen=select.value;
+   if(!confirm('Assign '+roles[chosen]+' to '+m.display_name+'?'))return;
+   save.disabled=true;status.textContent='Saving role…';
+   try{await rpc('star_test_assign_team_role',{p_group_id:gid,p_user_id:m.user_id,p_role:chosen});await load();}
+   catch(e){status.textContent='Could not change role: '+e.message;save.disabled=false;}
+  });
+  box.append(name,id,label,select,el('span',' '),save);members.append(box);
+ }
+}
+load().catch(e=>{status.textContent='Unable to load team: '+e.message;});
+</script><script defer src="/scripts/appbar-drawer.js"></script><script defer src="/ui-shell.js"></script></body></html>

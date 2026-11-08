@@ -408,8 +408,8 @@
         <a href="/feature-guide.html"><i class="ti ti-book nav-icon" aria-hidden="true"></i><span class="nav-text">Feature Guide</span></a>
       </div>
 
-      <div class="drawer-item" data-role="caregiver"><a href="/settings-admin.html"><i class="ti ti-settings nav-icon" aria-hidden="true"></i><span class="nav-text">Settings & Administration</span></a></div>
-      <div class="drawer-item" data-role="caregiver"><a href="/group-settings.html"><i class="ti ti-users nav-icon" aria-hidden="true"></i><span class="nav-text">Group Settings & Invitations</span></a></div>
+      <div class="drawer-item" data-admin-only hidden data-role="caregiver"><a href="/settings-admin.html"><i class="ti ti-settings nav-icon" aria-hidden="true"></i><span class="nav-text">Settings & Administration</span></a></div>
+      <div class="drawer-item" data-admin-only hidden data-role="caregiver"><a href="/group-settings.html"><i class="ti ti-users nav-icon" aria-hidden="true"></i><span class="nav-text">Group Settings & Invitations</span></a></div>
       <div class="drawer-item" data-role="caregiver"><a href="/caregiver-setup-wizard.html" data-caregiver-edit-link><i class="ti ti-adjustments nav-icon" aria-hidden="true"></i><span class="nav-text">Edit Caregiver Check-In</span></a></div>
       <div class="drawer-item" data-role="shared">
         <a href="/dashboard.html" class="active"><i class="ti ti-home nav-icon" aria-hidden="true"></i><span class="nav-text">Dashboard</span></a>
@@ -596,22 +596,13 @@
   }
 
   async function fetchCurrentRole() {
-    const session = typeof getSessionFromStorage === 'function' ? getSessionFromStorage() : null;
-    const userId = session?.user?.id;
-    if (!userId || !SUPABASE_URL) return '';
-
     try {
-      const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=role&limit=1`,
-        {
-          headers: buildAuthHeaders(session.access_token),
-        }
-      );
-      if (!res.ok) throw new Error(`Role lookup failed (${res.status})`);
-      const rows = await res.json();
-      return normalizeRole(Array.isArray(rows) ? rows[0]?.role : '');
-    } catch (error) {
-      console.warn('[drawer] role lookup failed', error);
+      const {loadRoleContext}=await import('/role-context.js');
+      const context=await loadRoleContext();
+      overlay.querySelectorAll('[data-admin-only]').forEach(node=>{node.hidden=context.role!=='administrator';});
+      return context.role==='individual'?'individual':'caregiver';
+    } catch(error) {
+      overlay.querySelectorAll('[data-admin-only]').forEach(node=>{node.hidden=true;});
       return '';
     }
   }

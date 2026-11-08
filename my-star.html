@@ -103,6 +103,11 @@
     .star-view-switch a:focus-visible{outline:3px solid #164a70;outline-offset:2px}
     @media(max-width:390px){.star-view-switch a{font-size:14px}}
     .tile[data-open="moments"]{position:relative}.moment-waiting-badge{position:absolute;top:10px;right:10px;background:#a54227;color:#fff;border-radius:20px;padding:5px 9px;font-size:14px;font-weight:800}
+    .role-home-panel{background:#fff;border:1px solid #e5d7bc;border-radius:24px;padding:24px}
+    .role-home-panel h1{font-family:Georgia,serif;color:#75491d}
+    .role-home-panel .tile{background:#faf6ee;box-shadow:none;border-width:1px;border-color:#e5d7bc}
+    .role-home-panel .tile.help{background:#fff1e9;border-color:#deb493;color:#292b32;border-width:2px}
+    @media(max-width:500px){.role-home-panel{padding:18px}.role-home-panel .tiles{grid-template-columns:1fr}.role-home-panel .tile{min-height:140px}.role-home-panel .scene{font-size:40px}}
   </style>
 </head>
 <body>
@@ -515,18 +520,19 @@
 
   function render(page){
     stopDictation();wyStopTimer();chosen='';current=page;window.speechSynthesis?.cancel();
+    screen.classList.toggle('role-home-panel',page==='home');
     if(page==='home'){
-      screen.innerHTML='<h1>My STAR</h1><p class="intro">What would you like to do? Nothing is required.</p>'+
+      screen.innerHTML='<h1 id="myStarGreeting">My STAR ☆</h1><p class="intro">What would you like to share today? Nothing is required.</p>'+
         '<div class="tiles">'+
-          tile('urgent','🚨 ‼️','HELP NOW','Important: I need help',true)+
-          tile('pain','🧍 🩹','Something Hurts','Point to my body')+
-          tile('feel','😊 😐 😟','How I Feel','Pick how I feel')+
+          tile('urgent','🚨 ‼️','Help Now','Tell my team I need help',true)+
+          tile('pain','🧍 🩹','Something Hurts','Show where my body hurts',true)+
+          tile('feel','😊 😐 😟','This Is How I Feel','Choose how I am feeling')+
           tile('day','🏊 🌳','My Day','Tell how my day went')+
           tile('support-preparation','🌿','What Helps Me','Share what helps me feel comfortable')+
           tile('communication','💬','How I Communicate','Tell people what helps me')+
-          tile('moments','📷','My Moments','Look at my photos')+
+          tile('moments','📷','My STAR Moments','Look at my photos and say what I liked')+
           tile('goals','🌟 🙌','Something I Did','Tell what I did')+
-          tile('tell','🗣️ 💬','Talk to My Team','Share a message or chat')+
+          tile('chat','🗣️ 💬','My Team Chat','Talk with my team')+
           tile('rather','🏠 🌳','Would You Rather?','Choose what I like')+
         '</div>'+
         '<div class="tiles" style="margin-top:14px">'+
@@ -534,7 +540,7 @@
         '</div>'+
         '<div class="actions">'+button('Not now — I am done','skip','secondary')+'</div>'+
         '<div id="result" class="message" hidden></div>';
-      refreshMomentsCount();
+      updateGreeting();refreshMomentsCount();window.dispatchEvent(new Event('star:home-rendered'));
     } else if(page==='support-preparation'){
       location.href='support-preparation.html';
     } else if(page==='communication'){
@@ -751,9 +757,13 @@
     else window.speechSynthesis?.cancel();
   });
   if('speechSynthesis' in window)window.speechSynthesis.addEventListener?.('voiceschanged',function(){selectedVoice=preferVoice()});
+  function updateGreeting(){var title=document.getElementById('myStarGreeting');if(title)title.textContent=window.starIndividualName?'My STAR · Hi, '+window.starIndividualName+'! ☆':'My STAR ☆';}
+  window.addEventListener('star:identity',updateGreeting);
   updateReadButton();
-  render('home');
+  var requestedPage=new URLSearchParams(location.search).get('page');
+  render(['urgent','pain','feel','day','goals','rather','tell'].includes(requestedPage)?requestedPage:'home');
 })();
 </script>
+<script type="module" src="my-star-role.js?v=2026.11.08-roles"></script>
 </body>
 </html>

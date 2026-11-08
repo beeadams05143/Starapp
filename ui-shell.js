@@ -35,7 +35,7 @@
     .tabbar{ position:fixed; inset:auto 0 0 0; z-index:999;
       height:var(--tabbar-h); background:#f9f7f2; color:#2c2c2c;
       border-top:1px solid #e5dfd3; box-shadow:none; }
-    .tabbar__inner{ max-width:980px; height:100%; margin:0 auto; padding:0 16px;
+    .tabbar__inner{ overflow-x:auto; max-width:980px; height:100%; margin:0 auto; padding:0 16px;
       display:flex; align-items:center; justify-content:space-around; gap:8px; }
     .tabbar .tab, .bottom-nav .nav-item{ position:relative; display:inline-flex; flex-direction:column; align-items:center;
       gap:4px; min-width:60px; padding:4px 8px; border-radius:10px;
@@ -98,9 +98,11 @@
 `;
 
 
+  let resolvedTeamRole = '';
   const MODE_KEY = 'star_menu_mode';
   const APP_CONFIG_KEY = 'star_app_config';
   const getMenuMode = () => {
+    if(resolvedTeamRole)return resolvedTeamRole==='individual'?'individual':'caregiver';
     try {
       const stored = localStorage.getItem(MODE_KEY);
       return stored === 'individual' ? 'individual' : 'caregiver';
@@ -160,6 +162,9 @@
           ...(features.chat ? [{ href: '/chat.html', icon: 'chat', label: 'Chat' }] : []),
           { href: '/emergency-medical.html', icon: 'emergency', label: 'Emergency' },
         ];
+    if(resolvedTeamRole==='case_manager'){
+      const checkin=tabs.find(t=>t.icon==='checkin');if(checkin)Object.assign(checkin,{href:'/isa-outcomes.html',icon:'focus',label:'ISA'});
+    }
     bottom.innerHTML = `
       <nav class="tabbar" aria-label="Primary">
         <div class="tabbar__inner">
@@ -176,6 +181,7 @@
     `;
   }
   renderBottomBar();
+  import('/role-context.js').then(m=>m.loadRoleContext()).then(context=>{if(context.role){resolvedTeamRole=context.role;renderBottomBar();}}).catch(()=>{});
   window.addEventListener('storage', (event) => {
     if (event.key === MODE_KEY || event.key === APP_CONFIG_KEY) renderBottomBar();
   });

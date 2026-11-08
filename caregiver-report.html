@@ -2059,7 +2059,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
     import { renderPrintableCaregiverReport } from './caregiver-report-print.js?v=2026.07.01B';
     import { analyzeProviderRecords, renderProviderLetter, individualKey, groupKey } from './caregiver-provider-letter.js?v=2026.10.24D';
     import { buildWeeklyPromptSeries, defaultGraphRange, filterRecordsByRange, formatGraphRange, rangeFromInputs } from './caregiver-report-graphs.js?v=2026.09.04A';
-    import { createIsaProgressReport } from './isa-progress-report-embedded.js?v=2026.10.29A';
+    import {scopeUvmIsaCards} from './uvm-report-scope.js?v=2026.11.07-isa-scope';
+    import { createIsaProgressReport } from './isa-progress-report-embedded.js?v=2026.11.07-person-scope';
     import { createIsaIndividualPerspective } from './isa-individual-perspective.js?v=2026.10.29R2';
     import { createIndividualVoiceReport } from './individual-voice-report.js?v=2026.10.29B';
     import { createPersonCenteredCharts } from './report-person-centered-charts.js?v=2026.10.29P2';
@@ -2080,7 +2081,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
     if (!USER_SESSION?.user?.id) { window.location.href = 'auth.html'; throw new Error('No session'); }
     const USER_ID = USER_SESSION.user.id;
     window.rest = rest;
-    const isaReport = createIsaProgressReport({rest});
+    const isaReport = createIsaProgressReport({rest,mapCards:(cards,groupId)=>scopeUvmIsaCards(cards,SUPABASE_URL,groupId)});
     const isaPerspective = createIsaIndividualPerspective({rest});
     const individualReport = createIndividualVoiceReport({rest});
     const personCenteredCharts = createPersonCenteredCharts({rest});
@@ -6556,7 +6557,9 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
       if (sEnd && !sEnd.value) sEnd.value = formatDateInputValue(defaultRangeEnd);
       applyCaregiverFilters();
       updateReportSectionVisibility();
-      void isaReport.refresh(groupId, cgState.entries);
+      void isaReport.refresh(groupId, cgState.entries,
+        SUPABASE_URL==='https://rjozzwmkvlndanoaghtc.supabase.co' && groupId==='c40d0ac1-0122-46f6-b358-fac283287bb5'
+          ? '58d3ac51-3dc7-4ead-b22f-8cb5829a3bac' : undefined);
       void isaPerspective.refresh(groupId);
       void individualReport.refresh(groupId);
       void personCenteredCharts.refresh(groupId, cgState.entries);

@@ -1,5 +1,13 @@
 // Group-scoped ISA reporting from saved caregiver check-ins.
 // Values are evidence, never automatic goal-completion judgments.
+export function resolveIsaIndividual(entries,cards,requested){
+  if(requested!==undefined && requested!==null)return String(requested);
+  const ids=new Set((entries||[]).map(row=>String(row.individual_id||row.payload?.individual_id||'')));
+  if(!ids.size)for(const card of cards||[])ids.add(String(card.individual_id||''));
+  if(ids.size>1)throw new Error('Choose one individual before viewing ISA progress.');
+  return [...ids][0]??'';
+}
+
 export function buildIsaProgress(entries, cards, scope = {}) {
   const groupId = String(scope.groupId || '');
   if (!groupId) throw new Error('Choose a STAR group before viewing ISA progress.');
@@ -8,6 +16,7 @@ export function buildIsaProgress(entries, cards, scope = {}) {
   const end = String(scope.end || '');
   if (start && end && start > end) throw new Error('The start date must come before the end date.');
 
+  const knownCards=new Map((Array.isArray(cards)?cards:[]).filter(card=>String(card.group_id||'')===groupId).map(card=>[String(card.id),card]));
   const groups = new Map();
   for (const card of Array.isArray(cards) ? cards : []) {
     if (String(card.group_id || '') !== groupId) continue;
@@ -46,6 +55,9 @@ export function buildIsaProgress(entries, cards, scope = {}) {
       if (seenAnswers.has(identity)) continue;
       seenAnswers.add(identity);
       const outcomeId = String(answer.outcome_id);
+      const knownCard=knownCards.get(outcomeId);
+      if(individualId!==null && knownCard && String(knownCard.individual_id||'')!==individualId)continue;
+      if(individualId!==null && answer.individual_id && String(answer.individual_id)!==individualId)continue;
       let group = groups.get(outcomeId);
       if (!group) {
         group = {
@@ -181,7 +193,8 @@ export function formatIsaProgressText(report) {
   return lines.join('\n');
 }
 
-export function createIsaProgressReport({rest, document: doc = document, clock = () => new Date()}) {
+export function createIsaProgressReport({rest, mapCards = cards => cards, document: doc = document, clock = () => new Date()}) {
+  let currentIndividualId = null;
   let currentGroupId = null, entries = [], cardPromise = null, status = 'not-loaded', lastText = '', revision = 0;
   const $ = id => doc.getElementById(id);
   const firstOfMonth = date => date.getFullYear() + '-' + String(date.getMonth()+1).padStart(2,'0') + '-01';
@@ -203,7 +216,7 @@ export function createIsaProgressReport({rest, document: doc = document, clock =
   }
   syncPeriodPresentation();
   function scope(extra = {}) {
-    return {groupId: currentGroupId, start: startField?.value || '', end: endField?.value || '', ...extra};
+    return {groupId: currentGroupId, individualId:currentIndividualId, start: startField?.value || '', end: endField?.value || '', ...extra};
   }
   async function getCards() {
     if (!cardPromise) throw new Error('ISA cards are not loaded for this group.');
@@ -212,6 +225,7 @@ export function createIsaProgressReport({rest, document: doc = document, clock =
   async function report(extra = {}) {
     const cards = await getCards();
     if (status !== 'ready' || !currentGroupId) throw new Error('ISA data could not be loaded.');
+    if(extra.individualId!=null && String(extra.individualId)!==currentIndividualId)throw new Error('The selected individual changed. Reload this person’s ISA report.');
     return buildIsaProgress(entries, cards, scope(extra));
   }
   function render(reportData) {
@@ -279,9 +293,10 @@ export function createIsaProgressReport({rest, document: doc = document, clock =
       for (const id of ['isaProgressCopy','isaProgressPrint']) { if ($(id)) $(id).disabled = true; }
     }
   }
-  async function refresh(groupId, rows) {
+  async function refresh(groupId, rows, individualId) {
     const id = String(groupId || '');
-    ++revision;
+    const requestRevision=++revision;
+    currentIndividualId=null;
     if (!id) {
       currentGroupId = null; status = 'error';
       if ($('isaProgressStatus')) $('isaProgressStatus').textContent = 'Select an active group to view ISA progress.';
@@ -296,10 +311,13 @@ export function createIsaProgressReport({rest, document: doc = document, clock =
     cardPromise = rest('star_isa_outcomes?select=id,group_id,individual_id,title,category,status,measurements&group_id=eq.' +
       encodeURIComponent(id) + '&order=created_at.asc&limit=500').then(cards => {
         if (!Array.isArray(cards) || cards.length >= 500) throw new Error('ISA cards could not be fully loaded.');
-        return cards;
+        const mapped=mapCards(cards,id);
+        const person=resolveIsaIndividual(rows,mapped,individualId);
+        if(requestRevision===revision)currentIndividualId=person;
+        return mapped;
       });
-    try { await cardPromise; if (currentGroupId === key) {status = 'ready'; await redraw();} }
-    catch (err) { if (currentGroupId === key) {status = 'error'; await redraw();} }
+    try { await cardPromise; if (currentGroupId === key && requestRevision===revision) {status = 'ready'; await redraw();} }
+    catch (err) { if (currentGroupId === key && requestRevision===revision) {status = 'error'; await redraw();} }
   }
   async function letter(extra) {
     if (!extra?.groupId || String(extra.groupId) !== currentGroupId) throw new Error('ISA group changed. Reload Reports.');

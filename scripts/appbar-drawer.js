@@ -295,6 +295,7 @@
         letter-spacing:.01em;
         color:${isDocsFamilyPage ? '#6f4518' : '#111'};
       }
+      nav.drawer .drawer-item[hidden]{display:none!important;}
       nav.drawer .drawer-item{
         display:block;
         padding:0;

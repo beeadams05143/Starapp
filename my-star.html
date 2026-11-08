@@ -522,6 +522,7 @@
           tile('pain','🧍 🩹','Something Hurts','Point to my body')+
           tile('feel','😊 😐 😟','How I Feel','Pick how I feel')+
           tile('day','🏊 🌳','My Day','Tell how my day went')+
+          tile('communication','💬','How I Communicate','Tell people what helps me')+
           tile('moments','📷','My Moments','Look at my photos')+
           tile('goals','🌟 🙌','Something I Did','Tell what I did')+
           tile('tell','🗣️ 💬','Talk to My Team','Share a message or chat')+
@@ -533,6 +534,8 @@
         '<div class="actions">'+button('Not now — I am done','skip','secondary')+'</div>'+
         '<div id="result" class="message" hidden></div>';
       refreshMomentsCount();
+    } else if(page==='communication'){
+      location.href='communication.html?view=mine';
     } else if(page==='moments'){
       location.href='star-moments-test.html?mode=review';
     } else if(page==='mic-setup'){

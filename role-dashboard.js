@@ -9,7 +9,7 @@ async function init(){
   if(context.role==='individual'){location.replace('my-star.html');return;}
   const people=context.members.filter(m=>m.assigned_role==='individual');
   const name=people.length===1?people[0].display_name:people.length?'the individuals on your team':'the individual';
-  renderRoleHome(root,context.role,name);root.hidden=false;status.textContent='';
+  renderRoleHome(root,context.role,name);root.hidden=false;status.textContent='Signed in as '+context.self.display_name+'.';
   // Counts retain their original account/group scope after the dashboard redesign.
   getSavedDraftCount(window).then(count=>{
     if(getSessionFromStorage()?.user?.id!==context.uid)return;
@@ -27,3 +27,6 @@ async function init(){
   await import('./home-activity.js');
 }
 init().catch(error=>{root.hidden=true;status.textContent='Could not open your role dashboard. '+error.message;const retry=document.createElement('button');retry.textContent='Try again';retry.onclick=()=>location.reload();status.append(retry);});
+
+// Re-resolve membership after returning from the browser back/forward cache.
+window.addEventListener('pageshow',event=>{if(event.persisted)location.reload();});

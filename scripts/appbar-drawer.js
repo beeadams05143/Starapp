@@ -408,17 +408,9 @@
         <a href="/feature-guide.html"><i class="ti ti-book nav-icon" aria-hidden="true"></i><span class="nav-text">Feature Guide</span></a>
       </div>
 
-      <details data-role="caregiver">
-        <summary><i class="ti ti-settings nav-icon" aria-hidden="true"></i><span class="nav-text">Settings & Admin</span><i class="ti ti-chevron-down drawer-chevron" aria-hidden="true"></i></summary>
-        <div class="detail-body">
-          <div class="detail-body-inner">
-            <div class="sub">
-              <a href="/group-settings.html">Group Settings</a>
-              <a href="/caregiver-setup-wizard.html" data-caregiver-edit-link>Edit Caregiver Check-In</a>
-            </div>
-          </div>
-        </div>
-      </details>
+      <div class="drawer-item" data-role="caregiver"><a href="/settings-admin.html"><i class="ti ti-settings nav-icon" aria-hidden="true"></i><span class="nav-text">Settings & Administration</span></a></div>
+      <div class="drawer-item" data-role="caregiver"><a href="/group-settings.html"><i class="ti ti-users nav-icon" aria-hidden="true"></i><span class="nav-text">Group Settings & Invitations</span></a></div>
+      <div class="drawer-item" data-role="caregiver"><a href="/caregiver-setup-wizard.html" data-caregiver-edit-link><i class="ti ti-adjustments nav-icon" aria-hidden="true"></i><span class="nav-text">Edit Caregiver Check-In</span></a></div>
       <div class="drawer-item" data-role="shared">
         <a href="/dashboard.html" class="active"><i class="ti ti-home nav-icon" aria-hidden="true"></i><span class="nav-text">Dashboard</span></a>
       </div>

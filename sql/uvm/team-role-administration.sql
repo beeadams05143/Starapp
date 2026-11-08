@@ -21,7 +21,7 @@ begin
  if p_role is null or p_role not in ('administrator','caregiver','individual','case_manager') then raise exception 'Invalid role'; end if;
  select role into old_role from public.group_members where group_id=p_group_id and user_id=p_user_id for update;
  if not found then raise exception 'User is not a member of this group'; end if;
- if old_role='admin' and p_role<>'administrator' and (select count(*) from public.group_members where group_id=p_group_id and role='admin')<=1 then raise exception 'Cannot remove the last administrator'; end if;
+ if old_role='admin' and p_role<>'administrator' and not exists(select 1 from public.group_members gm join auth.users u on u.id=gm.user_id where gm.group_id=p_group_id and gm.role='admin' and gm.user_id<>p_user_id and (u.banned_until is null or u.banned_until<=now())) then raise exception 'Cannot remove the last administrator'; end if;
  update public.group_members set team_role=p_role,role=case when p_role='administrator' then 'admin' else 'member' end where group_id=p_group_id and user_id=p_user_id;
  -- Profile navigation uses caregiver/individual; admin authority remains group-scoped.
  update public.profiles set role=case when p_role='individual' then 'individual' else 'caregiver' end,updated_at=now() where id=p_user_id and group_id=p_group_id;

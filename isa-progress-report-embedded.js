@@ -197,7 +197,7 @@ export function formatIsaProgressText(report) {
         if(/^steps?$/i.test(unit)){
           lines.push('Caregivers recorded task-step counts on '+plural(days,'date')+'. The entries do not identify which individual steps were completed, so no specific skill achievement can be inferred from the counts.');
         }else{
-          lines.push('Caregivers recorded '+label.toLowerCase()+' on '+plural(days,'date')+'. Values ranged from '+formatNumber(min)+' to '+formatNumber(max)+(unit?' '+unit:'')+', averaging '+formatNumber(avg)+(unit?' '+unit:'')+' per recorded response. These figures describe what was documented rather than confirming the outcome was met.');
+          lines.push('Caregivers recorded '+label.toLowerCase()+' on '+plural(days,'date')+'. Values ranged from '+formatNumber(min)+' to '+formatNumber(max)+(unit?' '+unit:'')+', averaging '+formatNumber(avg)+(unit?' '+unit:'')+' per recorded response.');
         }
       }else{
         const distinct=[...new Set(answers.map(x=>String(x.value??'').trim()).filter(Boolean))];

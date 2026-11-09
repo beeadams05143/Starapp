@@ -1015,7 +1015,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>document.addEventListener('DOMContentLoaded',()=>{ try{ Chart.register(ChartDataLabels); }catch(e){} });</script>
 <link rel="stylesheet" href="support-report.css"><link rel="stylesheet" href="report-chart-layout.css?v=2026.11.08-mobile">
-</head>
+<style>body[data-report-view="isa"] #wholePersonIntegratedPanel{display:block!important}body[data-report-view="isa"] #isaProgressPanel{display:none!important}@media(max-width:650px){#wholePersonIntegratedPanel{padding:8px!important}#wholePersonIntegratedPanel iframe{height:950px}}</style></head>
 <body>
 <!-- ===== MINI STATUS BAR (no console needed) ===== -->
 <style>
@@ -1257,6 +1257,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
         </div>
       </div>
     </section>
+    <section class="panel" id="wholePersonIntegratedPanel" aria-label="Whole-Person ISA Reports" style="display:none"><h2>⭐ ISA Outcome Review — Whole-Person View</h2><p class="muted">Participation, caregiver observations, individual voice, supports, locations, and evidence together.</p><a href="./whole-person-reports-preview.html?v=5" style="display:block;text-align:center;background:#193866;color:white;padding:14px;border-radius:12px;font-weight:800;margin:10px 0">Open Full-Screen Whole-Person Reports</a><iframe title="STAR Whole-Person Reports" src="./whole-person-reports-preview.html?v=5" loading="lazy" style="width:100%;height:900px;border:1px solid #ccd5e8;border-radius:12px;background:white"></iframe></section>
     <section class="panel" id="isaProgressPanel" aria-labelledby="isaProgressHeading">
       <h2 id="isaProgressHeading">⭐ ISA Outcome Progress</h2>
       <p class="muted">Evidence from saved caregiver check-ins, organized by the original ISA outcome cards. No automatic progress or success ratings.</p>

@@ -1,5 +1,5 @@
 import {loadRoleContext} from './role-context.js';
-import {renderRoleHome,setRoleBadge} from './role-home-render.js?v=2026.11.09-tiles';
+import {renderRoleHome,setRoleBadge} from './role-home-render.js?v=2026.11.09-dashboard-sections';
 import {unreadMessagesQuery} from './chat-alerts.js';
 import {rest,getSessionFromStorage} from './restClient.js';
 import {getSavedDraftCount} from './home-saved-drafts.js?v=2026.10.28D';
@@ -13,7 +13,7 @@ async function init(){
   renderRoleHome(root,context.role,name);root.hidden=false;status.textContent='Signed in as '+context.self.display_name+'.';
   /* TEST_ROLE_SWITCH_START */
   if(location.hostname==='star-uvm-testing.netlify.app' && context.role==='administrator'){
-    const {mountRoleSwitch}=await import('./scripts/test-role-switch.js?v=2026.11.09');
+    const {mountRoleSwitch}=await import('./scripts/test-role-switch.js?v=2026.11.09-dashboard-sections');
     mountRoleSwitch({context,root,name,restore:()=>renderRoleHome(root,context.role,name)});
   }
   /* TEST_ROLE_SWITCH_END */

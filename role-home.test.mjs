@@ -2,6 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync,existsSync} from 'node:fs';
 import vm from 'node:vm';
+import {dashboardGroups,shortTitles,iconPaths} from './dashboard-layout.mjs';
 import {assignedRole,roleHome,resolveRoleContext} from './role-home-model.mjs';
 const roles=['administrator','caregiver','case_manager','individual'];
 const member=role=>({user_id:'self',membership_role:role==='administrator'?'admin':'member',assigned_role:role,display_name:'Alex Example'});
@@ -38,11 +39,11 @@ class Element{
  setAttribute(k,v){this.attrs[k]=v;}
  querySelector(){return null;}
 }
-const renderSource=readFileSync('role-home-render.js','utf8').replace(/^import.*\n/,'').replaceAll('export function','function');
-function renderer(){const context=vm.createContext({roleHome,roleLabels:{administrator:'Administrator',caregiver:'Caregiver',individual:'Individual',case_manager:'Case Manager'},document:{createElement:tag=>new Element(tag)}});vm.runInContext(renderSource,context);return context.renderRoleHome;}
+const renderSource=readFileSync('role-home-render.js','utf8').replace(/^import.*\n/gm,'').replaceAll('export function','function');
+function renderer(){const context=vm.createContext({dashboardGroups,shortTitles,iconPaths,roleHome,roleLabels:{administrator:'Administrator',caregiver:'Caregiver',individual:'Individual',case_manager:'Case Manager'},document:{createElement:tag=>new Element(tag),createElementNS:(ns,tag)=>new Element(tag)}});vm.runInContext(renderSource,context);return context.renderRoleHome;}
 const flatten=n=>[n,...n.children.flatMap(flatten)];
 test('working dashboards contain links; read-only previews share cards but cannot navigate or save',()=>{
- const render=renderer();for(const role of roles){const live=new Element('main'),preview=new Element('main');render(live,role,'Alex');render(preview,role,'Alex',{preview:true});const links=flatten(live).filter(n=>n.tagName==='a');assert.ok(links.length>3);assert.equal(flatten(preview).filter(n=>n.tagName==='a'||n.tagName==='button'||n.tagName==='form').length,0);assert.deepEqual(links.map(n=>n.children[0].textContent),flatten(preview).filter(n=>n.attrs['aria-disabled']==='true').map(n=>n.children[0].textContent));}
+ const render=renderer();for(const role of roles){const live=new Element('main'),preview=new Element('main');render(live,role,'Alex');render(preview,role,'Alex',{preview:true});const links=flatten(live).filter(n=>n.tagName==='a');assert.ok(links.length>3);assert.equal(flatten(preview).filter(n=>n.tagName==='a'||n.tagName==='form').length,0);assert.deepEqual(links.map(n=>n.children[0].textContent),flatten(preview).filter(n=>n.attrs['aria-disabled']==='true').map(n=>n.children[0].textContent));}
 });
 test('names are rendered as text, never interpreted as markup',()=>{const root=new Element('main');renderer()(root,'case_manager','<img src=x onerror=alert(1)>');assert.ok(flatten(root).some(n=>n.textContent?.includes('<img')));assert.ok(flatten(root).every(n=>n.innerHTML===undefined));});
 const dash=readFileSync('role-dashboard.js','utf8').replace(/^import.*\n/gm,'').replace("await import('./home-activity.js')",'Promise.resolve()').replace(/init\(\)\.catch[\s\S]*$/,'globalThis.boot=init;');
@@ -55,4 +56,22 @@ for(const role of roles)test(`${role} opens its working home after sign-in`,asyn
 test('My STAR deep links open questions without submitting, and preserve optional voice controls',()=>{
  const html=readFileSync('my-star.html','utf8');assert.match(html,/render\(\['urgent','pain','feel','day','goals','rather','tell'\]\.includes\(requestedPage\)\?requestedPage:'home'\)/);assert.match(html,/star:identity/);assert.match(html,/updateReadButton/);assert.match(html,/Mic Setup/);assert.match(html,/tile\('chat'.*'My Team Chat'/);
  assert.doesNotMatch(readFileSync('role-context.js','utf8'),/localStorage|assign_team_role/);
+});
+test('compact navigation preserves every tool once and starts with six everyday actions',()=>{
+ for(const role of ['administrator','caregiver','case_manager']){
+  const view=roleHome(role,'Alex'),groups=dashboardGroups(view,role);
+  assert.equal(groups[0].cards.length,6);
+  const expected=view.sections.flatMap(s=>s.cards).filter(c=>c.href!=='role-preview.html').map(c=>c.href).sort();
+  const actual=groups.flatMap(g=>g.cards).map(c=>c.href).sort();assert.deepEqual(actual,expected);
+  assert.equal(new Set(actual).size,actual.length);
+  assert.equal(groups.some(g=>g.id==='admin'),role==='administrator');
+ }
+});
+test('section switches show one panel and role changes fall back to a valid overview',()=>{
+ const root=new Element('main'),render=renderer();render(root,'administrator','Alex');
+ const panels=()=>flatten(root).filter(n=>n.className==='dashboard-panel');
+ const buttons=flatten(root).filter(n=>n.tagName==='button');
+ assert.equal(panels().filter(p=>!p.hidden).length,1);assert.equal(panels().find(p=>!p.hidden).id,'dashboard-overview');
+ buttons.find(b=>b.attrs['data-group']==='admin').onclick();assert.equal(panels().filter(p=>!p.hidden).length,1);assert.equal(panels().find(p=>!p.hidden).id,'dashboard-admin');
+ render(root,'caregiver','Alex',{preview:true});assert.equal(panels().find(p=>!p.hidden).id,'dashboard-overview');
 });

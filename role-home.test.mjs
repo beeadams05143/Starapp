@@ -38,7 +38,7 @@ class Element{
  setAttribute(k,v){this.attrs[k]=v;}
  querySelector(){return null;}
 }
-const renderSource=readFileSync('role-home-render.js','utf8').replace(/^import.*\n/,'').replace('export function','function');
+const renderSource=readFileSync('role-home-render.js','utf8').replace(/^import.*\n/,'').replaceAll('export function','function');
 function renderer(){const context=vm.createContext({roleHome,roleLabels:{administrator:'Administrator',caregiver:'Caregiver',individual:'Individual',case_manager:'Case Manager'},document:{createElement:tag=>new Element(tag)}});vm.runInContext(renderSource,context);return context.renderRoleHome;}
 const flatten=n=>[n,...n.children.flatMap(flatten)];
 test('working dashboards contain links; read-only previews share cards but cannot navigate or save',()=>{
@@ -48,7 +48,7 @@ test('names are rendered as text, never interpreted as markup',()=>{const root=n
 const dash=readFileSync('role-dashboard.js','utf8').replace(/^import.*\n/gm,'').replace("await import('./home-activity.js')",'Promise.resolve()').replace(/init\(\)\.catch[\s\S]*$/,'globalThis.boot=init;');
 for(const role of roles)test(`${role} opens its working home after sign-in`,async()=>{
  const elements=Object.fromEntries(['homeStatus','roleHome','activitySection'].map(id=>[id,new Element('div')]));const replacements=[],renders=[];
- const context=vm.createContext({document:{getElementById:id=>elements[id]},window:{},location:{replace:path=>replacements.push(path)},loadRoleContext:async()=>({uid:'self',group:'g',role,self:member(role),members:[member('individual')]}),renderRoleHome:(root,role,name)=>renders.push({role,name}),getSessionFromStorage:()=>({user:{id:'self'}}),getSavedDraftCount:async()=>0,rest:async()=>[]});
+ const context=vm.createContext({setRoleBadge:()=>{},unreadMessagesQuery:()=>'',document:{getElementById:id=>elements[id]},window:{},location:{replace:path=>replacements.push(path)},loadRoleContext:async()=>({uid:'self',group:'g',role,self:member(role),members:[member('individual')]}),renderRoleHome:(root,role,name)=>renders.push({role,name}),getSessionFromStorage:()=>({user:{id:'self'}}),getSavedDraftCount:async()=>0,rest:async()=>[]});
  vm.runInContext(dash,context);await context.boot();
  if(role==='individual'){assert.deepEqual(replacements,['my-star.html']);assert.equal(renders.length,0);}else{assert.equal(renders[0].role,role);assert.equal(renders[0].name,'Alex Example');assert.equal(elements.roleHome.hidden,false);assert.equal(elements.homeStatus.textContent,'Signed in as Alex Example.');assert.equal(replacements.length,0);}
 });

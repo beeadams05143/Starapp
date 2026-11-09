@@ -1,4 +1,4 @@
-import {renderRoleHome} from '../role-home-render.js';
+import {renderRoleHome} from '../role-home-render.js?v=2026.11.09-tiles';
 export function mountRoleSwitch({context,root,name,restore}) {
   if(location.hostname!=='star-uvm-testing.netlify.app'||context.role!=='administrator')return;
   const panel=document.createElement('section');

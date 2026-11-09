@@ -1,5 +1,6 @@
 import {loadRoleContext} from './role-context.js';
-import {renderRoleHome} from './role-home-render.js';
+import {renderRoleHome,setRoleBadge} from './role-home-render.js?v=2026.11.09-tiles';
+import {unreadMessagesQuery} from './chat-alerts.js';
 import {rest,getSessionFromStorage} from './restClient.js';
 import {getSavedDraftCount} from './home-saved-drafts.js?v=2026.10.28D';
 const status=document.getElementById('homeStatus'),root=document.getElementById('roleHome');
@@ -16,19 +17,18 @@ async function init(){
     mountRoleSwitch({context,root,name,restore:()=>renderRoleHome(root,context.role,name)});
   }
   /* TEST_ROLE_SWITCH_END */
-  // Counts retain their original account/group scope after the dashboard redesign.
-  getSavedDraftCount(window).then(count=>{
+  // Badge state survives switching between previews and the working Admin home.
+  async function refreshBadges(){
     if(getSessionFromStorage()?.user?.id!==context.uid)return;
-    const link=root.querySelector('a[href="saved-drafts.html"] strong');
-    if(link&&count)link.textContent='Saved Drafts · '+count;
-  }).catch(()=>{});
-  if(context.role==='administrator'){
-    rest('star_individual_observations_test?select=id&group_id=eq.'+context.group+'&review_status=eq.pending',{expectedUserId:context.uid}).then(rows=>{
-      if(getSessionFromStorage()?.user?.id!==context.uid)return;
-      const link=root.querySelector('a[href="my-star-isa-review.html"] strong');
-      if(link&&rows?.length)link.textContent='Review My STAR Observations · '+rows.length+' waiting';
-    }).catch(()=>{});
+    const apply=(href,count,label)=>{if(getSessionFromStorage()?.user?.id===context.uid)setRoleBadge(root,href,count,label);};
+    await Promise.allSettled([
+      getSavedDraftCount(window).then(count=>apply('saved-drafts.html',count,count+' saved drafts')),
+      rest('messages?'+unreadMessagesQuery(context.uid,context.group),{expectedUserId:context.uid}).then(rows=>apply('chat.html',rows?.length?'!':0,'Unread team messages')),
+      ...(context.role==='administrator'?[rest('star_individual_observations_test?select=id&group_id=eq.'+context.group+'&review_status=eq.pending',{expectedUserId:context.uid}).then(rows=>apply('my-star-isa-review.html',rows?.length||0,(rows?.length||0)+' observations awaiting review'))]:[])
+    ]);
   }
+  refreshBadges();
+  window.setInterval?.(refreshBadges,15000);
   document.getElementById('activitySection').hidden=false;
   await import('./home-activity.js');
 }

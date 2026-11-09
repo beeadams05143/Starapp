@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>STAR Feature Guide · UVM Testing</title>
+<script>if ("scrollRestoration" in history) history.scrollRestoration = "manual";</script>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#f5f1e8;color:#272925;font:17px/1.55 system-ui,sans-serif}main{max-width:850px;margin:auto;padding:20px 16px 48px}h1{line-height:1.12;margin:.3em 0;font-size:clamp(32px,7vw,48px)}h2{margin:30px 0 10px}a{color:#30563f;text-underline-offset:3px}nav{display:flex;flex-wrap:wrap;gap:8px 16px}nav a,.open{display:inline-flex;align-items:center;min-height:44px;font-weight:700}.eyebrow{font-weight:750;letter-spacing:.07em;font-size:13px;color:#744a1e}details{background:#fffdfa;border:1px solid #cfc6b5;border-radius:12px;margin:8px 0}summary{padding:12px 15px;min-height:48px;cursor:pointer;font-weight:750}details p{margin:0 0 6px}.detail{padding:0 15px 9px}label{display:block;font-weight:750;margin:16px 0 5px}input{width:100%;min-height:48px;border:1px solid #91846f;border-radius:10px;padding:8px 12px;font:inherit;background:#fffdfa} [hidden]{display:none!important}
 #print-team-map{min-height:44px;margin:16px 0 6px;padding:8px 14px;font:inherit;font-weight:700;color:#30563f;background:#fffdfa;border:1px solid #30563f;border-radius:8px}
@@ -20,7 +21,7 @@ body.print-team-map .team-contact-print{display:block;min-height:32px;border-bot
 
 /* STAR Handbook UVM draft */
 .handbook-card{margin:16px 0 20px;padding:20px 18px;background:#fffdf8;border:2px solid #d7b36a;border-radius:16px;box-shadow:0 3px 15px rgba(50,46,36,.07)}
-.handbook-draft-flag{display:inline-block;font-size:18px;font-weight:900;letter-spacing:.085em;color:#8b2d19;border:2px solid #b85b3a;border-radius:7px;padding:5px 11px;background:#fff0e7}
+.handbook-draft-flag{display:inline-block;font-size:clamp(24px,6vw,32px);font-weight:900;letter-spacing:.085em;color:#8b2d19;border:2px solid #b85b3a;border-radius:7px;padding:5px 11px;background:#fff0e7}
 .handbook-card h3{font-size:clamp(23px,5vw,30px);line-height:1.2;margin:12px 0 10px;color:#252d27}
 .handbook-card p{margin:0 0 15px}
 .handbook-actions{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}
@@ -52,12 +53,12 @@ body.print-team-map .team-contact-print{display:block;min-height:32px;border-bot
   <h3>STAR App User Handbook</h3>
   <p>70-page working draft with illustrations and step-by-step instructions. Preview the entire handbook or print only what you need. This version can be replaced as the team makes corrections.</p>
   <div class="handbook-actions" role="group" aria-label="Handbook PDF actions">
-    <a href="resources/star-handbook/STAR_Handbook_DRAFT.pdf" target="_blank" rel="noopener">View complete handbook</a>
-    <a href="resources/star-handbook/STAR_Handbook_DRAFT.pdf" download="STAR_Handbook_DRAFT.pdf">Download complete PDF</a>
-    <a href="resources/star-handbook/STAR_Handbook_DRAFT.pdf" target="_blank" rel="noopener">Print complete handbook</a>
+    <a href="resources/star-handbook/STAR_Handbook_DRAFT.pdf" target="_blank" rel="noopener">View Complete Handbook</a>
+    <a href="resources/star-handbook/STAR_Handbook_DRAFT.pdf" target="_blank" rel="noopener">Download / Print Complete Handbook</a>
+    <a href="#handbook-sections" id="choose-handbook-section">Print by Section (Optional)</a>
   </div>
-  <p class="handbook-print-note">For printing on an iPhone, open the PDF and choose Share → Print. On a computer, open the PDF and use Print (Ctrl+P or Command+P).</p>
-  <details class="handbook-sections"><summary>Optional: print individual sections</summary>
+  <p class="handbook-print-note">On an iPhone or iPad, open the complete PDF and tap Share → Print to print all 70 pages, or Share → Save to Files to download it. Section printing below is optional. On a computer, open the PDF and use Print (Ctrl+P or Command+P).</p>
+  <details class="handbook-sections" id="handbook-sections"><summary>Optional: print individual sections</summary>
     <div class="detail"><p>Choose a section below to open its own printable PDF. This is optional; the full handbook above stays available.</p>
     <ul class="handbook-section-list">
       <li><a href="resources/star-handbook/01_getting_started.pdf" target="_blank" rel="noopener">Getting started</a><span>Pages 1–15</span></li>
@@ -213,14 +214,17 @@ body.print-team-map .team-contact-print{display:block;min-height:32px;border-bot
 // Keep the Feature Guide at its beginning when opened from the dashboard.
 // Preserve intentional deep links to individual Resources sections.
 if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+document.getElementById('choose-handbook-section').addEventListener('click', () => {
+  document.getElementById('handbook-sections').open = true;
+});
 function resetGuideEntryScroll() {
-  if (!location.hash) window.scrollTo({top:0,left:0,behavior:'instant'});
+  if (!location.hash) window.scrollTo({top:0,left:0,behavior:'auto'});
 }
 window.addEventListener('load', resetGuideEntryScroll);
 window.addEventListener('pageshow', () => {
   if (!location.hash) {
     resetGuideEntryScroll();
-    requestAnimationFrame(resetGuideEntryScroll);
+    requestAnimationFrame(() => requestAnimationFrame(resetGuideEntryScroll));
   }
 });
 const incident=document.getElementById('critical-incident-reporting');

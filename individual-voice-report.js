@@ -1,5 +1,6 @@
 // UVM STAR TEST: voluntary self-reports are displayed separately from caregiver entries.
 // Never turn a self-report, missed answer, preference or pending ISA link into goal achievement.
+import {resolveIsaIndividual} from './isa-progress-report-embedded.js';
 export const INDIVIDUAL_VOICE_TYPES = Object.freeze({
   mood:'How I Feel', comfort:'Something Hurts', daily_experience:'My Day',
   leisure_preference:'Would You Rather?', accomplishment:'Something I Did'
@@ -80,7 +81,7 @@ export function formatIndividualVoiceText(report) {
   return lines.join('\n');
 }
 export function createIndividualVoiceReport({rest,document:doc=document,clock=()=>new Date()}){
-  let activeGroupId=null,loads=null,revision=0,lastText='';
+  let activeGroupId=null,loads=null,revision=0,lastText='',requestedIndividual;
   const $=id=>doc.getElementById(id);
   const dateKey=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
   const d=clock();
@@ -108,7 +109,8 @@ export function createIndividualVoiceReport({rest,document:doc=document,clock=()
     }
     throw Error('Too many individual records to safely display.');
   }
-  async function refresh(groupId){
+  async function refresh(groupId,individualId){
+    requestedIndividual=individualId;
     const group=String(groupId||''),current=++revision;
     activeGroupId=group;loads=null;
     if(!group){$('individualVoiceStatus').textContent='Select your STAR Test group.';$('individualVoiceList').replaceChildren();return}
@@ -132,7 +134,7 @@ export function createIndividualVoiceReport({rest,document:doc=document,clock=()
       groupId:activeGroupId,
       start:scope.start??$('individualVoiceStart').value,
       end:scope.end??$('individualVoiceEnd').value,
-      individualId:scope.individualId??''
+      individualId:resolveIsaIndividual([...checkins,...observations],cards,scope.individualId??requestedIndividual)
     },cards);
   }
   async function redraw(){

@@ -51,35 +51,31 @@ export function buildIsaIndividualPerspective(observations,checkins,cards,scope=
 export function formatIsaIndividualPerspectiveText(data){
   const lines=[];
   if(data.reviewed.length){
-    lines.push('Individual’s Voice — Reviewed ISA Connections',
-      'An administrator reviewed the link between each statement and its ISA outcome. This is not a scored measurement or confirmation that every skill step was completed.');
+    lines.push('Individual’s Voice and Reviewed ISA Connections',
+      'The individual’s own words and choices provide context for team review. The following statements have been linked to an ISA outcome through administrator review; they are not scored achievements.');
     const groups=new Map();
     for(const row of data.reviewed){
       if(!groups.has(row.goalId))groups.set(row.goalId,{title:row.goalTitle,rows:[]});
       groups.get(row.goalId).rows.push(row);
     }
     for(const group of groups.values()){
-      lines.push('',group.title);
-      for(const r of group.rows.slice(0,3))
-        lines.push(r.date+' · '+(r.words?'Individual’s words: “'+r.words+'”':'Picture selection: '+r.choice)+
-          (r.support!=='not_reported'?' · Help with answering: '+r.support:''));
-      if(group.rows.length>3)lines.push(group.rows.length-3+' more reviewed statements available in Reports.');
+      const descriptions=group.rows.filter(r=>r.words).slice(0,3).map(r=>'“'+r.words+'”');
+      const selections=group.rows.filter(r=>!r.words&&r.choice).slice(0,3).map(r=>r.choice);
+      lines.push('',group.title, 'In '+group.rows.length+' reviewed '+(group.rows.length===1?'response':'responses')+', the individual '+(descriptions.length?'expressed '+descriptions.join('; '):'made recorded choices')+'.'+(selections.length?' Picture choices included '+selections.join(', ')+'.':'')+' These statements can inform the team’s understanding of the outcome without replacing caregiver observations.');
     }
   }
   if(data.feedback.length){
-    lines.push('','Individual’s Activity Experiences & Preferences',
-      'The person’s expressed satisfaction and preferences can guide future activity choices. These self-reports are not automatically assigned to an ISA goal.');
-    const relevant=[...data.feedback].sort((a,b)=>{
-      const disliked=x=>/did not like|neither|not today/i.test(x.value)?1:0;
-      return disliked(b)-disliked(a)||b.date.localeCompare(a.date);
-    });
-    for(const r of relevant.slice(0,5)){
-      lines.push(r.date+' · '+(r.type==='daily_experience'?'Activity feedback':'Leisure choice')+
-        ': '+r.value+(r.words?' · Person’s description: “'+r.words+'”':'')+
-        (r.offered.length?' · Choices offered: '+r.offered.join(' / '):'')+
-        (r.type==='daily_experience'&&!r.words?' · Activity not specified':''));
-    }
-    if(data.feedback.length>5)lines.push((data.feedback.length-5)+' additional feedback responses available in Reports.');
+    const feedback=data.feedback.filter(x=>x.type==='daily_experience');
+    const counts=new Map();
+    for(const x of feedback){const key=String(x.value||'Not specified').trim();counts.set(key,(counts.get(key)||0)+1)}
+    const descriptions=[...new Set(feedback.map(x=>String(x.words||'').replace(/^FICTIONAL:\s*/i,'').trim()).filter(Boolean))];
+    const difficult=descriptions.filter(x=>/busy|crowd|quiet|uncomfort|did not like/i.test(x));
+    lines.push('','Individual’s Activity Experiences and Preferences',
+      'The individual shared activity feedback on '+feedback.length+' recorded '+(feedback.length===1?'occasion':'occasions')+'. '+[...counts].map(([label,n])=>n+' '+(n===1?'response':'responses')+' indicated “'+label+'”').join('; ')+'.');
+    if(difficult.length)lines.push('Some comments identified environmental preferences or discomfort, including '+difficult.slice(0,2).map(x=>'“'+x+'”').join(' and ')+'. These preferences may help the team offer more suitable activity choices.');
+    const other=descriptions.filter(x=>!difficult.includes(x));
+    if(other.length)lines.push('Other recorded comments included '+other.slice(0,2).map(x=>'“'+x+'”').join(' and ')+'.');
+    lines.push('These are self-reports, not automatically assigned to an ISA outcome. Choosing not to participate is a valid expression of preference. Additional dated responses remain available in Reports.');
   }
   return lines.join('\n');
 }

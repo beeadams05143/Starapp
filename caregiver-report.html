@@ -1014,7 +1014,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>document.addEventListener('DOMContentLoaded',()=>{ try{ Chart.register(ChartDataLabels); }catch(e){} });</script>
-<link rel="stylesheet" href="support-report.css">
+<link rel="stylesheet" href="support-report.css"><link rel="stylesheet" href="report-chart-layout.css?v=2026.11.08-mobile">
 </head>
 <body>
 <!-- ===== MINI STATUS BAR (no console needed) ===== -->
@@ -1717,9 +1717,12 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
     <div class="chart person-chart-card" id="pcIsaGraphCard">
       <h2>⭐ ISA Goal Measurements Over Time</h2>
       <p class="muted">Caregiver-recorded measurements for one ISA outcome. These are observations, not automatic progress scores.</p>
-      <label class="person-chart-measure">Choose an ISA outcome and measurement
-        <select id="pcIsaGraphMeasure" aria-label="Choose ISA goal measurement"></select>
-      </label>
+      <div class="isa-chart-controls">
+        <label class="person-chart-measure">ISA card category<select id="pcIsaGraphCategory" aria-label="ISA outcome card category"></select></label>
+        <label class="person-chart-measure">ISA outcome<select id="pcIsaGraphOutcome" aria-label="ISA outcome card"></select></label>
+        <label class="person-chart-measure">Measurement<select id="pcIsaGraphMeasure" aria-label="Choose ISA goal measurement"></select></label>
+      </div>
+      <p id="pcIsaCardInfo" class="isa-chart-card-info" aria-live="polite"></p>
       <div class="person-chart-canvas"><canvas id="pcIsaChart" aria-label="ISA caregiver measurement chart" role="img"></canvas></div>
       <p class="muted" role="status" id="pcIsaChartStatus">Loading ISA measurements…</p>
       <p class="muted" id="pcIsaChartNote"></p>
@@ -1727,8 +1730,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
     <div class="chart person-chart-card" id="pcSupportGraphCard">
       <h2>Supports, Locations &amp; Time</h2>
       <p class="muted">Saved support entries from caregiver check-ins, using the individual and reporting period selected above.</p>
-      <label class="no-export">Show <select id="pcSupportUnit"><option value="hours">Recorded hours</option><option value="entries">Support-entry counts</option></select></label>
-      <button type="button" class="btn no-export" id="pcSupportPrint">Print this chart</button>
+      <div class="support-chart-controls no-export"><label>Show <select id="pcSupportUnit"><option value="hours">Recorded hours</option><option value="entries">Support-entry counts</option></select></label>
+      <button type="button" class="btn" id="pcSupportPrint">Print this chart</button></div>
       <div id="pcSupportUsage" aria-live="polite"></div>
     </div>
     <div class="chart person-chart-card" id="pcChoiceGraphCard">
@@ -2072,7 +2075,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
     import { createIsaProgressReport } from './isa-progress-report-embedded.js?v=2026.11.07-person-scope';
     import { createIsaIndividualPerspective } from './isa-individual-perspective.js?v=2026.11.08-person-scope';
     import { createIndividualVoiceReport } from './individual-voice-report.js?v=2026.11.08-linked-person';
-    import { createPersonCenteredCharts } from './report-person-centered-charts.js?v=2026.11.08-support-time';
+    import { createPersonCenteredCharts } from './report-person-centered-charts.js?v=2026.11.08-categories-mobile';
 
     /* =============== Optional live data =============== */
     let loadFromSupabase = null;

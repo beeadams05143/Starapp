@@ -36,7 +36,7 @@ test('production submission path saves and verifies supports, locations and minu
 });
 class Element{
  constructor(tag,doc){this.tagName=tag;this.ownerDocument=doc;this.children=[];this.style={};this.value='';this.classList={contains:()=>false};this.parentElement={hidden:false,style:{}};this.attrs={};}
- append(...nodes){this.children.push(...nodes);}replaceChildren(){this.children=[];}setAttribute(k,v){this.attrs[k]=v;}addEventListener(){}
+ append(...nodes){this.children.push(...nodes);}replaceChildren(){this.children=[];}setAttribute(k,v){this.attrs[k]=v;}addEventListener(type,fn){this.events??={};this.events[type]=fn;}
  get selectedOptions(){return this.children.filter(n=>n.value===this.value);}
 }
 const text=n=>(n.textContent||'')+' '+n.children.map(text).join(' ');
@@ -62,4 +62,21 @@ test('check-in capture and recovery keep the minutes field, including blank and 
  vm.runInContext(html.slice(start,end)+'\nglobalThis.capture=readShiftSupports;globalThis.sync=syncShiftSupports;',context);
  context.sync();const restored=normalizeSupportEntries(context.shiftSupportField.value);assert.equal(restored[0].minutes,45);assert.equal(restored[1].minutes,0);assert.equal(restored[2].minutes,null);
  assert.match(html,/data-minutes.*min="0".*max="1440"/);assert.match(html,/\[data-minutes\]'\)\.value = values.minutes \?\? ''/);
+});
+
+
+test('ISA category controls use the exact linked card categories and never mix measurements between outcomes',async()=>{
+ const {buildIsaProgress}=await import('./isa-progress-report-embedded.js');
+ const {listIsaChartMetrics}=await import('./report-person-centered-charts.js');
+ const cards=[{id:'one',group_id:scope.groupId,individual_id:scope.individualId,title:'Community choices',category:'Community Participation',status:'active'},{id:'two',group_id:scope.groupId,individual_id:scope.individualId,title:'My own request',category:'My custom category',status:'active'}];
+ const recorded=structuredClone(row);recorded.payload.isa_entries=cards.map((c,i)=>({outcome_id:c.id,outcome_category:'Old snapshot category',outcome_title:'Old title',measurement_id:'m'+i,measurement_label:i?'Requests':'Participation minutes',answer_type:i?'count':'duration',value:i?2:45,unit:i?'requests':'minutes'}));
+ const report=buildIsaProgress([recorded],cards,scope),metrics=listIsaChartMetrics(report);
+ assert.equal(metrics.find(m=>m.goalId==='one').category,cards[0].category);assert.equal(metrics.find(m=>m.goalId==='two').category,cards[1].category);assert.equal(metrics.find(m=>m.goalId==='two').goalTitle,cards[1].title);
+ const nodes=new Map(),doc={body:{dataset:{reportView:'charts'},classList:{contains:()=>false}},getElementById:id=>nodes.get(id),createElement:tag=>new Element(tag,doc)};
+ for(const id of ['pcGraphIndividual','pcGraphPeriod','pcGraphStatus','pcIsaChart','pcIsaChartStatus','pcIsaChartNote','pcIsaGraphMeasure','pcIsaGraphCategory','pcIsaGraphOutcome','pcIsaCardInfo'])nodes.set(id,new Element('div',doc));
+ nodes.get('pcGraphPeriod').value='month';globalThis.window={addEventListener(){}};globalThis.Chart=class{constructor(){}destroy(){}resize(){}};
+ const controller=createPersonCenteredCharts({document:doc,clock:()=>new Date(2026,10,8),rest:async path=>path.startsWith('star_isa_outcomes')?cards:[]});await controller.refresh(scope.groupId,[recorded]);
+ assert.equal(nodes.get('pcIsaGraphCategory').value,'Community Participation');assert.match(nodes.get('pcIsaCardInfo').textContent,/Community choices/);
+ nodes.get('pcIsaGraphCategory').value='My custom category';nodes.get('pcIsaGraphCategory').events.change();
+ assert.equal(nodes.get('pcIsaGraphOutcome').value,'two');assert.equal(nodes.get('pcIsaGraphMeasure').children[0].textContent,'Requests');assert.match(nodes.get('pcIsaCardInfo').textContent,/My custom category/);assert.doesNotMatch(nodes.get('pcIsaCardInfo').textContent,/Old snapshot|Community choices/);
 });

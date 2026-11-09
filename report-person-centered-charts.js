@@ -98,9 +98,22 @@ export function buildChoiceSatisfactionData(checkins,scope={}){
     notes:notes.sort((a,b)=>b.date.localeCompare(a.date))};
 }
 
+export function listIsaChartMetrics(report){
+    const options=[];
+    for(const outcome of report.outcomes){
+      for(const measure of outcome.measurements){
+        options.push({id:outcome.id+'|'+measure.id,
+          label:outcome.title+' — '+measure.label,goalId:outcome.id,measurementId:measure.id,
+          category:outcome.category,goalTitle:outcome.title,measurementLabel:measure.label});
+      }
+    }
+    return options;
+  }
+
 export function createPersonCenteredCharts({rest,document:doc=document,clock=()=>new Date()}){
   const $=id=>doc.getElementById(id),graphs={isa:null,satisfaction:null,choices:null};
   let groupId='',caregiverEntries=[],cards=[],checkins=[],loadVersion=0,loadError='';
+  let selectedCategory=null,selectedGoal=null;
   let requestedMetricId='',individualId='',selectedPerson=null,cardsError='',feedbackError='';
   let wasLoaded=false;
   const dateKey=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
@@ -284,17 +297,6 @@ export function createPersonCenteredCharts({rest,document:doc=document,clock=()=
     setState(series.label+' — recorded values by check-in date (not an ISA goal score).');
     if(note)note.textContent=series.note;
   }
-  function listMetrics(report){
-    const options=[];
-    for(const outcome of report.outcomes){
-      for(const measure of outcome.measurements){
-        options.push({id:outcome.id+'|'+measure.id,
-          label:outcome.title+' — '+measure.label,goalId:outcome.id,measurementId:measure.id,
-          category:outcome.category});
-      }
-    }
-    return options;
-  }
   function choosePerson(){
     const people=new Map();
     for(const row of caregiverEntries){if(String(row.group_id||'')!==groupId)continue;const p=row.payload||{};people.set(String(row.individual_id??p.individual_id??''),p.individual_name||'Registered individual');}
@@ -321,15 +323,21 @@ export function createPersonCenteredCharts({rest,document:doc=document,clock=()=
     try{
       choosePerson();drawSupports(range);
       const report=buildIsaProgress(caregiverEntries,cards,{groupId,individualId,...range});
-      const metrics=listMetrics(report),select=$('pcIsaGraphMeasure');
+      const allMetrics=listIsaChartMetrics(report),select=$('pcIsaGraphMeasure');
+      const preferred=chooseDefaultIsaChartMetric(allMetrics,report,requestedMetricId);
+      const categories=[...new Set(allMetrics.map(m=>m.category))];
+      if(!categories.includes(selectedCategory))selectedCategory=preferred?.category??null;
+      const categoryMetrics=allMetrics.filter(m=>m.category===selectedCategory);
+      const preferredGoal=chooseDefaultIsaChartMetric(categoryMetrics,report,requestedMetricId);
+      const goals=[...new Map(categoryMetrics.map(m=>[m.goalId,m.goalTitle]))];
+      if(!goals.some(([id])=>id===selectedGoal))selectedGoal=preferredGoal?.goalId??null;
+      const metrics=categoryMetrics.filter(m=>m.goalId===selectedGoal);
       const chosen=chooseDefaultIsaChartMetric(metrics,report,requestedMetricId);
-      if(select){
-        select.replaceChildren();
-        for(const option of metrics){
-          const el=doc.createElement('option');el.value=option.id;el.textContent=option.label;select.append(el);
-        }
-        if(chosen)select.value=chosen.id;
-      }
+      const fill=(node,options,value)=>{if(!node)return;node.replaceChildren();for(const [id,title] of options){const option=doc.createElement('option');option.value=id;option.textContent=title;node.append(option);}node.value=value??'';node.disabled=!options.length;};
+      fill($('pcIsaGraphCategory'),categories.map(category=>[category,category||'Category not recorded']),selectedCategory);
+      fill($('pcIsaGraphOutcome'),goals,selectedGoal);
+      fill(select,metrics.map(m=>[m.id,m.measurementLabel]),chosen?.id);
+      const info=$('pcIsaCardInfo');if(info)info.textContent=chosen?'Category: '+(chosen.category||'Not recorded')+'\nOutcome: '+chosen.goalTitle+'\nMeasurement: '+chosen.measurementLabel:'';
       if(!metrics.length)drawISA({kind:'empty',reason:cardsError?'ISA data unavailable: '+cardsError:'No saved ISA measurements for this individual and date range.'});
       else{
         drawISA(buildIsaChartSeries(report,chosen.goalId,chosen.measurementId));
@@ -356,7 +364,7 @@ export function createPersonCenteredCharts({rest,document:doc=document,clock=()=
   async function refresh(group,entries){
     const current=++loadVersion;
     groupId=String(group||'');caregiverEntries=Array.isArray(entries)?entries:[];
-    cards=[];checkins=[];requestedMetricId='';selectedPerson=null;cardsError='';feedbackError='';wasLoaded=false;clearCharts();
+    cards=[];checkins=[];requestedMetricId='';selectedCategory=null;selectedGoal=null;selectedPerson=null;cardsError='';feedbackError='';wasLoaded=false;clearCharts();
     const overall=$('pcGraphStatus');
     if(!groupId){if(overall)overall.textContent='Choose a STAR group to see charts.';return;}
     if(overall)overall.textContent='Loading ISA and Individual Voice chart data…';
@@ -383,7 +391,9 @@ export function createPersonCenteredCharts({rest,document:doc=document,clock=()=
       clearCharts();
     }
   }
-  $('pcGraphIndividual')?.addEventListener('change',()=>{selectedPerson=$('pcGraphIndividual').value;requestedMetricId='';redraw();});
+  $('pcGraphIndividual')?.addEventListener('change',()=>{selectedPerson=$('pcGraphIndividual').value;requestedMetricId='';selectedCategory=null;selectedGoal=null;redraw();});
+  $('pcIsaGraphCategory')?.addEventListener('change',()=>{selectedCategory=$('pcIsaGraphCategory').value;selectedGoal=null;requestedMetricId='';redraw();});
+  $('pcIsaGraphOutcome')?.addEventListener('change',()=>{selectedGoal=$('pcIsaGraphOutcome').value;requestedMetricId='';redraw();});
   $('pcSupportUnit')?.addEventListener('change',redraw);
   $('pcSupportPrint')?.addEventListener('click',()=>{
     const win=window.open('','_blank');if(!win){$('pcGraphStatus').textContent='Allow pop-ups to print this chart.';return;}

@@ -175,22 +175,43 @@ export function summarizeIsaOutcome(outcome) {
   return facts.join(' ');
 }
 export function formatIsaProgressText(report) {
-  const lines = ['ISA Outcome Summary'];
-  if (report.start || report.end) {
-    lines.push('Reporting period: ' + (report.start || 'Beginning') + ' to ' + (report.end || 'Present'));
+  const plural=(n,s)=>n+' '+s+(n===1?'':'s');
+  const lines=['ISA Outcomes and Daily Progress'];
+  if(report.start||report.end) lines.push('Reporting period: '+(report.start||'Beginning')+' to '+(report.end||'Present'));
+  lines.push('', 'During this reporting period, caregivers documented '+plural(report.answerCount,'ISA measurement response')+
+    ' across '+plural(report.observationDays,'date')+'. These entries describe the activities, skills and supports recorded by the team.');
+  for(const outcome of report.outcomes){
+    const title=String(outcome.title||'ISA outcome').replace(/\\s*[—-]\\s*FICTIONAL\\s*$/i,'');
+    const category=String(outcome.category||'').trim();
+    lines.push('',title+(category?' — '+category:''));
+    if(!outcome.observations?.length){lines.push('There were no recorded measurements for this outcome during the selected period.');continue;}
+    for(const metric of outcome.measurements||[]){
+      const answers=Array.isArray(metric.answers)?metric.answers:[];
+      if(!answers.length)continue;
+      const numbers=answers.map(a=>String(a.value??'').trim()).map(v=>v!==''&&/^[-+]?(?:\\d+\\.?\\d*|\\.\\d+)$/.test(v)?Number(v):NaN);
+      const units=[...new Set(answers.map(a=>String(a.unit||'').trim()))];
+      const label=String(metric.label||'this skill').replace(/[:.]+$/,'');
+      if(numbers.every(Number.isFinite)&&units.length===1){
+        const unit=units[0],min=Math.min(...numbers),max=Math.max(...numbers),avg=numbers.reduce((a,b)=>a+b,0)/numbers.length;
+        const days=new Set(answers.map(x=>x.date).filter(Boolean)).size;
+        if(/^steps?$/i.test(unit)){
+          lines.push('Caregivers recorded task-step counts on '+plural(days,'date')+'. The entries do not identify which individual steps were completed, so no specific skill achievement can be inferred from the counts.');
+        }else{
+          lines.push('Caregivers recorded '+label.toLowerCase()+' on '+plural(days,'date')+'. Values ranged from '+formatNumber(min)+' to '+formatNumber(max)+(unit?' '+unit:'')+', averaging '+formatNumber(avg)+(unit?' '+unit:'')+' per recorded response. These figures describe what was documented rather than confirming the outcome was met.');
+        }
+      }else{
+        const distinct=[...new Set(answers.map(x=>String(x.value??'').trim()).filter(Boolean))];
+        const examples=distinct.slice(0,3).map(v=>v.replace(/^FICTIONAL:\\s*/i,'').replace(/\\s+/g,' ').replace(/[.]+$/,''));
+        const days=new Set(answers.map(x=>x.date).filter(Boolean)).size;
+        if(examples.length){
+          lines.push('Caregivers documented '+label.toLowerCase()+' on '+plural(days,'date')+'. Recorded examples included '+examples.map(x=>'“'+x+'”').join('; ')+'.'+(distinct.length>3?' Additional descriptions are available in the dated records.':''));
+        }else lines.push('This measurement was included in the ISA, but no descriptive responses were recorded during this period.');
+      }
+    }
   }
-  lines.push('Caregiver check-ins contained ' + report.answerCount + ' documented ISA measurement ' +
-    (report.answerCount === 1 ? 'answer' : 'answers') + ' across ' + report.observationDays +
-    ' date' + (report.observationDays === 1 ? '' : 's') + '.');
-  for (const outcome of report.outcomes) {
-    lines.push('', outcome.title + (outcome.category ? ' — ' + outcome.category : ''),
-      summarizeIsaOutcome(outcome));
-  }
-  if (!report.outcomes.length) lines.push('', 'No ISA outcome cards or saved answers were found for this selection.');
-  lines.push('', 'These are caregiver-reported measurements, not a determination of ISA goal achievement. ' +
-    'Skipped, missing, declined, or not-observed answers are not automatically treated as lack of progress. ' +
-    'Individual dated entries remain available in Reports for review.');
-  return lines.join('\n');
+  if(!report.outcomes.length)lines.push('', 'No ISA outcome cards or saved measurements were available for this selection.');
+  lines.push('', 'These caregiver observations are evidence for the team to review, not an automatic determination of ISA goal achievement. Missing, skipped, declined and not-observed answers are not treated as lack of progress. Dated source entries remain available in Reports.');
+  return lines.join('\\n');
 }
 
 export function createIsaProgressReport({rest, mapCards = cards => cards, document: doc = document, clock = () => new Date()}) {

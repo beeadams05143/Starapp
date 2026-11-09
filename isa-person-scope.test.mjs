@@ -25,3 +25,17 @@ test('cross-person answer references cannot reappear as historical goals',()=>{
 test('unselected mixed-person data is rejected',()=>{
  assert.throws(()=>resolveIsaIndividual([{individual_id:jamie},{individual_id:'morgan'}],cards),/Choose one individual/);
 });
+
+test('individual ISA panel resolves a linked profile instead of silently searching an empty ID',async()=>{
+ const {createIsaIndividualPerspective}=await import('./isa-individual-perspective.js');
+ const elements=new Map(['isaIndividualPerspective','isaProgressPeriod','isaProgressStart','isaProgressEnd'].map(id=>[id,new Node()]));
+ const controller=createIsaIndividualPerspective({document:{getElementById:id=>elements.get(id),createElement:()=>new Node()},rest:async path=>{
+  if(path.startsWith('star_isa_outcomes'))return [{id:'goal',group_id:'test',individual_id:'jamie',title:'Fictional snack goal'}];
+  if(path.startsWith('star_individual_observations_test'))return [{id:'obs',group_id:'test',individual_id:'jamie',created_at:'2026-11-07T12:00:00Z',review_status:'linked_observation',linked_outcome_id:'goal',original_words:'FICTIONAL: I made my snack.'}];
+  return [{id:'feedback',group_id:'test',individual_id:'jamie',checkin_date:'2026-11-08',response_type:'daily_experience',response_value:'Liked it',original_words:'FICTIONAL: I chose fruit.',is_fictional:true}];
+ }});
+ await controller.refresh('test');
+ const screen=text(elements.get('isaIndividualPerspective'));
+ assert.match(screen,/I made my snack/);assert.match(screen,/I chose fruit/);assert.doesNotMatch(screen,/No reviewed/);
+ const letter=await controller.letter({groupId:'test',individualId:'jamie'});assert.match(letter,/I made my snack/);
+});

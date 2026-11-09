@@ -1,6 +1,7 @@
 // UVM TEST ONLY: a person-centered companion to caregiver ISA measurements.
 // Reviewed goal links establish relevance, not skill completion. Other individual
 // activity preferences remain unlinked and must not be counted as ISA progress.
+import {resolveIsaIndividual} from './isa-progress-report-embedded.js';
 const sourceDate=(value)=>{
   if(!value)return '';
   const d=new Date(value);
@@ -84,7 +85,7 @@ export function formatIsaIndividualPerspectiveText(data){
 }
 export function createIsaIndividualPerspective({rest,document:doc=document}){
   const $=id=>doc.getElementById(id);
-  let groupId='',recordsPromise=null,revision=0;
+  let groupId='',recordsPromise=null,revision=0,requestedIndividual;
   const readAll=async(table,query,group)=>{
     const all=[];
     for(let offset=0;offset<5000;offset+=500){
@@ -101,8 +102,9 @@ export function createIsaIndividualPerspective({rest,document:doc=document}){
     if(!groupId||!recordsPromise)throw Error('ISA Individual Voice not loaded.');
     if(scope.groupId&&String(scope.groupId)!==groupId)throw Error('STAR TEST group changed.');
     const [observations,checkins,cards]=await recordsPromise;
+    const individualId=resolveIsaIndividual([...observations,...checkins],cards,scope.individualId??requestedIndividual);
     return buildIsaIndividualPerspective(observations,checkins,cards,{
-      ...dateScope(),...scope,groupId,individualId:scope.individualId??''
+      ...dateScope(),...scope,groupId,individualId
     });
   }
   async function redraw(){
@@ -160,7 +162,8 @@ export function createIsaIndividualPerspective({rest,document:doc=document}){
       const p=doc.createElement('p');p.textContent='Individual ISA evidence unavailable: '+err.message;host.append(p);
     }
   }
-  async function refresh(group){
+  async function refresh(group,individualId){
+    requestedIndividual=individualId;
     groupId=String(group||'');revision++;
     const host=$('isaIndividualPerspective');
     if(host)host.textContent='Loading individual ISA evidence…';

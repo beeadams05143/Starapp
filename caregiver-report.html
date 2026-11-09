@@ -2061,7 +2061,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
     import { buildWeeklyPromptSeries, defaultGraphRange, filterRecordsByRange, formatGraphRange, rangeFromInputs } from './caregiver-report-graphs.js?v=2026.09.04A';
     import {scopeUvmIsaCards} from './uvm-report-scope.js?v=2026.11.07-isa-scope';
     import { createIsaProgressReport } from './isa-progress-report-embedded.js?v=2026.11.07-person-scope';
-    import { createIsaIndividualPerspective } from './isa-individual-perspective.js?v=2026.10.29R2';
+    import { createIsaIndividualPerspective } from './isa-individual-perspective.js?v=2026.11.08-person-scope';
     import { createIndividualVoiceReport } from './individual-voice-report.js?v=2026.10.29B';
     import { createPersonCenteredCharts } from './report-person-centered-charts.js?v=2026.10.29P2';
 
@@ -6560,7 +6560,9 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
       void isaReport.refresh(groupId, cgState.entries,
         SUPABASE_URL==='https://rjozzwmkvlndanoaghtc.supabase.co' && groupId==='c40d0ac1-0122-46f6-b358-fac283287bb5'
           ? '58d3ac51-3dc7-4ead-b22f-8cb5829a3bac' : undefined);
-      void isaPerspective.refresh(groupId);
+      void isaPerspective.refresh(groupId,
+        SUPABASE_URL==='https://rjozzwmkvlndanoaghtc.supabase.co' && groupId==='c40d0ac1-0122-46f6-b358-fac283287bb5'
+          ? '58d3ac51-3dc7-4ead-b22f-8cb5829a3bac' : undefined);
       void individualReport.refresh(groupId);
       void personCenteredCharts.refresh(groupId, cgState.entries);
       window.dispatchEvent(new Event('caregiverDataReady'));

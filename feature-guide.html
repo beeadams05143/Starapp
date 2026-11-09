@@ -164,6 +164,18 @@ body.print-team-map .team-contact-print{display:block;min-height:32px;border-bot
 </section>
 </main>
 <script>
+// Keep the Feature Guide at its beginning when opened from the dashboard.
+// Preserve intentional deep links to individual Resources sections.
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+function resetGuideEntryScroll() {
+  if (!location.hash) window.scrollTo({top:0,left:0,behavior:'instant'});
+}
+window.addEventListener('pageshow', () => {
+  if (!location.hash) {
+    resetGuideEntryScroll();
+    requestAnimationFrame(resetGuideEntryScroll);
+  }
+});
 const incident=document.getElementById('critical-incident-reporting');
 if(location.hash==='#critical-incident-reporting'){
   incident.open=true;

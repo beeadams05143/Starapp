@@ -17,6 +17,25 @@
 @media print{body.print-team-map .team-add-contact,body.print-team-map .team-remove-contact,body.print-team-map .team-contact textarea{display:none}
 body.print-team-map .team-contact{break-inside:avoid}
 body.print-team-map .team-contact-print{display:block;min-height:32px;border-bottom:1px solid #91846f;white-space:pre-wrap;overflow-wrap:anywhere}}
+
+/* STAR Handbook UVM draft */
+.handbook-card{margin:16px 0 20px;padding:20px 18px;background:#fffdf8;border:2px solid #d7b36a;border-radius:16px;box-shadow:0 3px 15px rgba(50,46,36,.07)}
+.handbook-draft-flag{display:inline-block;font-size:18px;font-weight:900;letter-spacing:.085em;color:#8b2d19;border:2px solid #b85b3a;border-radius:7px;padding:5px 11px;background:#fff0e7}
+.handbook-card h3{font-size:clamp(23px,5vw,30px);line-height:1.2;margin:12px 0 10px;color:#252d27}
+.handbook-card p{margin:0 0 15px}
+.handbook-actions{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}
+.handbook-actions a{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:10px 16px;background:#315541;color:white;border-radius:10px;text-align:center;text-decoration:none;font-size:16px;font-weight:750;flex:1 1 210px}
+.handbook-actions a:nth-child(2){background:#f7f3e8;color:#264a36;border:1.5px solid #315541}
+.handbook-actions a:nth-child(3){background:#7d6242}
+.handbook-actions a:focus-visible,.handbook-section-list a:focus-visible{outline:3px solid #27563e;outline-offset:3px}
+.handbook-card .handbook-print-note{font-size:15px;color:#534e42;margin-bottom:14px}
+.handbook-card .handbook-sections{background:#f7f5ee;border-color:#d2c4a9}
+.handbook-card .handbook-sections summary{color:#284c39}
+.handbook-section-list{margin:8px 0 12px;padding-left:16px}
+.handbook-section-list li{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:2px 15px;min-height:45px;padding:10px 0;border-bottom:1px solid #e4ddd0}
+.handbook-section-list a{font-weight:700;line-height:1.35}
+.handbook-section-list span{font-size:14px;color:#626057;white-space:nowrap}
+.handbook-card .handbook-privacy-note{display:block;color:#705637;font-weight:800;letter-spacing:.04em}
 </style>
 </head>
 <body>
@@ -28,6 +47,33 @@ body.print-team-map .team-contact-print{display:block;min-height:32px;border-bot
 <div id="featureSearch" hidden><label for="find">Find a feature</label><input id="find" type="search" placeholder="Try check-in, photos, or chat"><p id="empty" role="status" hidden>No matching features. Try a different word.</p></div>
 <nav id="guideTopics" aria-label="Guide topics"><a href="#resources">Resources</a><a href="#caregiver">Caregiver tools</a><a href="#moments">Photos and monthly review</a><a href="#individual">My STAR</a><a href="#team">Team tools and settings</a></nav>
 <section id="resources" aria-labelledby="resources-title"><h2 id="resources-title">Resources</h2>
+<div class="handbook-card" id="star-handbook-draft" aria-label="STAR App User Handbook draft">
+  <span class="handbook-draft-flag">DRAFT — FOR REVIEW</span>
+  <h3>STAR App User Handbook</h3>
+  <p>70-page working draft with illustrations and step-by-step instructions. Preview the entire handbook or print only what you need. This version can be replaced as the team makes corrections.</p>
+  <div class="handbook-actions" role="group" aria-label="Handbook PDF actions">
+    <a href="resources/star-handbook/STAR_Handbook_DRAFT.pdf" target="_blank" rel="noopener">View complete handbook</a>
+    <a href="resources/star-handbook/STAR_Handbook_DRAFT.pdf" download="STAR_Handbook_DRAFT.pdf">Download complete PDF</a>
+    <a href="resources/star-handbook/STAR_Handbook_DRAFT.pdf" target="_blank" rel="noopener">Print complete handbook</a>
+  </div>
+  <p class="handbook-print-note">For printing on an iPhone, open the PDF and choose Share → Print. On a computer, open the PDF and use Print (Ctrl+P or Command+P).</p>
+  <details class="handbook-sections"><summary>Optional: print individual sections</summary>
+    <div class="detail"><p>Choose a section below to open its own printable PDF. This is optional; the full handbook above stays available.</p>
+    <ul class="handbook-section-list">
+      <li><a href="resources/star-handbook/01_getting_started.pdf" target="_blank" rel="noopener">Getting started</a><span>Pages 1–15</span></li>
+      <li><a href="resources/star-handbook/02_administrators.pdf" target="_blank" rel="noopener">Administrators</a><span>Pages 16–21</span></li>
+      <li><a href="resources/star-handbook/03_caregivers_dsp.pdf" target="_blank" rel="noopener">Caregivers and DSPs</a><span>Pages 22–28</span></li>
+      <li><a href="resources/star-handbook/04_case_managers.pdf" target="_blank" rel="noopener">Case managers</a><span>Pages 29–30</span></li>
+      <li><a href="resources/star-handbook/05_my_star_individuals.pdf" target="_blank" rel="noopener">My STAR — individual guide</a><span>Pages 31–39</span></li>
+      <li><a href="resources/star-handbook/06_communication_support.pdf" target="_blank" rel="noopener">Communication and support</a><span>Pages 40–48</span></li>
+      <li><a href="resources/star-handbook/07_references_checklist.pdf" target="_blank" rel="noopener">References and checklist</a><span>Pages 49–51</span></li>
+      <li><a href="resources/star-handbook/08_custom_checkin_setup.pdf" target="_blank" rel="noopener">Custom check-in setup</a><span>Pages 52–59</span></li>
+      <li><a href="resources/star-handbook/09_reports_illustrated.pdf" target="_blank" rel="noopener">Reports walkthrough</a><span>Pages 60–70</span></li>
+    </ul></div>
+  </details>
+  <small class="handbook-privacy-note">TEST ENVIRONMENT · Working draft · For review only</small>
+</div>
+
 <details><summary>Understanding My Support Needs — preparation for professional planning</summary><div class="detail"><p>From the caregiver dashboard, open Understanding My Support Needs and choose the linked individual. In My STAR, open What Helps Me. Prepare together follows the seven sections of Vermont’s Therapeutic Support Plan template, with short optional questions and clear field references.</p><p>The individual can answer by choices, speech, typing, pictures or gestures with assistance. Use My perspective for their actual communication, and Team observations for the supporter’s account. Save each contribution. Shared-device entries keep the actual signed-in recorder identified. A new contribution adds to the dated record rather than overwriting someone’s words.</p><p>For Section 4, name or select one concern before answering. Link explicitly assigned communication or check-in records when helpful; select only the sources you want included. Unassigned legacy records and other individuals’ sources are excluded.</p><p>Review &amp; share shows saved contributions by section. Preview the Vermont outline, print or save it as a PDF using the browser, or download the text preparation packet. The packet is not the official completed form, a clinical assessment, or an approved plan.</p><p>This can be a helpful first step before requesting a professional evaluation or plan, but professional support can be requested at any point. Daily supports points back to the existing professional plan and team documents; preparation answers do not create care instructions. Consultant authoring, formal signatures, approval verification, and committee approvals are future workflows.</p></div></details>
 <details><summary>How I Communicate</summary><div class="detail"><p>Open How I Communicate from the caregiver dashboard, choose the individual, and read the team’s guide. New staff and relevant medical or public-safety workers can use the first-contact guide or a printed copy shared by an authorized team member.</p><p>In My view, the individual can answer optional guided questions, hear them read aloud, select choices, and dictate or type words. They can use a caregiver’s signed-in device. The actual recorder and assistance are kept with the entry.</p><p>Caregivers can record observable actions, support offered, and what happened next, or suggest an update. Administrators review these separately and edit/publish the shared guide. Each publication retains a version; reviewing an observation does not automatically change guidance.</p><p>Each profile starts blank. No one else’s answers, signals, or support strategies are copied into it.</p></div></details>
 <details id="aris-forms"><summary>ARIS payroll forms and reimbursement</summary><div class="detail">
@@ -170,6 +216,7 @@ if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 function resetGuideEntryScroll() {
   if (!location.hash) window.scrollTo({top:0,left:0,behavior:'instant'});
 }
+window.addEventListener('load', resetGuideEntryScroll);
 window.addEventListener('pageshow', () => {
   if (!location.hash) {
     resetGuideEntryScroll();

@@ -10,6 +10,12 @@ async function init(){
   const people=context.members.filter(m=>m.assigned_role==='individual');
   const name=people.length===1?people[0].display_name:people.length?'the individuals on your team':'the individual';
   renderRoleHome(root,context.role,name);root.hidden=false;status.textContent='Signed in as '+context.self.display_name+'.';
+  /* TEST_ROLE_SWITCH_START */
+  if(location.hostname==='star-uvm-testing.netlify.app' && context.role==='administrator'){
+    const {mountRoleSwitch}=await import('./scripts/test-role-switch.js?v=2026.11.09');
+    mountRoleSwitch({context,root,name,restore:()=>renderRoleHome(root,context.role,name)});
+  }
+  /* TEST_ROLE_SWITCH_END */
   // Counts retain their original account/group scope after the dashboard redesign.
   getSavedDraftCount(window).then(count=>{
     if(getSessionFromStorage()?.user?.id!==context.uid)return;

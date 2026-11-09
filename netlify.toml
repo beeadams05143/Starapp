@@ -1,3 +1,7 @@
+[build]
+  command = "node scripts/build-publish.mjs"
+  publish = "dist"
+
 # Publish directory defaults to repo root (.). router.js and routerLoader.js at root are deployed with HTML.
 # Neither is listed in .gitignore.
 

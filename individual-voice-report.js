@@ -58,26 +58,29 @@ export function buildIndividualVoiceReport(checkins, observations, scope={}, isa
 }
 function supportLabel(value){return value==='not_reported'?'Not reported':value}
 export function formatIndividualVoiceText(report) {
-  const lines=['My STAR — Individual Voice (FICTIONAL TEST DATA)'];
-  if(report.start||report.end)lines.push('Date range: '+(report.start||'Beginning')+' to '+(report.end||'Present'));
-  lines.push('These are the individual’s own answers and choices, not caregiver-confirmed observations.');
-  lines.push('Participation is optional. A missing answer is not a problem or evidence of lack of progress.');
-  lines.push(report.checkinCount+' optional individual check-in answer(s) and '+report.accomplishmentCount+
-    ' shared accomplishment(s), across '+report.days+' date(s).');
-  for(const e of report.entries){
-    lines.push('',e.date+' — '+e.label);
-    if(e.offered.length)lines.push('Options offered: '+e.offered.join(' / '));
-    if(e.choice)lines.push('Selected: '+e.choice);
-    if(e.words)lines.push('Individual’s original words: “'+e.words+'”');
-    lines.push('Help with answering: '+supportLabel(e.support));
-    if(e.source==='observation'){
-      if(e.review==='linked_observation')lines.push('Administrator-reviewed ISA observation link: '+e.linkedGoal+' (not automatic progress)');
-      else if(e.review==='pending')lines.push('ISA review: Awaiting administrator review');
-      else if(e.review==='needs_details')lines.push('ISA review: More information requested');
-      else lines.push('ISA review: Kept as an individual observation; not credited as progress');
-    }
+  const lines=['My STAR — Individual Voice'];
+  if(report.start||report.end)lines.push('Reporting period: '+(report.start||'Beginning')+' to '+(report.end||'Present'));
+  lines.push('', 'During this period, the individual shared '+report.checkinCount+' optional check-in '+(report.checkinCount===1?'response':'responses')+' and '+report.accomplishmentCount+' '+(report.accomplishmentCount===1?'accomplishment':'accomplishments')+' across '+report.days+' recorded '+(report.days===1?'date':'dates')+'. These are the individual’s own choices and descriptions.');
+  const entries=Array.isArray(report.entries)?report.entries:[];
+  const groups=new Map();
+  for(const e of entries){const label=String(e.label||'Shared experience').trim();if(!groups.has(label))groups.set(label,[]);groups.get(label).push(e)}
+  for(const [label,items] of groups){
+    lines.push('',label);
+    const counts=new Map();
+    for(const e of items)if(e.choice){const key=String(e.choice);counts.set(key,(counts.get(key)||0)+1)}
+    const selected=[...counts].map(([choice,count])=>count+' '+(count===1?'response':'responses')+' selected “'+choice+'”');
+    if(selected.length)lines.push('Recorded selections included '+selected.join('; ')+'.');
+    const words=[...new Set(items.map(e=>String(e.words||'').replace(/^FICTIONAL:\s*/i,'').trim()).filter(Boolean))];
+    if(words.length)lines.push('In the individual’s own words, recorded examples included '+words.slice(0,3).map(w=>'“'+w+'”').join('; ')+'.'+(words.length>3?' Additional statements remain in the dated records.':''));
+    const supports=[...new Set(items.map(e=>e.support).filter(x=>x&&x!=='not_reported').map(supportLabel))];
+    if(supports.length)lines.push('Documented help with answering included '+supports.join(' and ')+'.');
+    const reviewed=items.filter(e=>e.source==='observation'&&e.review==='linked_observation');
+    if(reviewed.length)lines.push(reviewed.length+' '+(reviewed.length===1?'observation was':'observations were')+' linked to an ISA outcome after administrator review.');
+    const pending=items.filter(e=>e.source==='observation'&&e.review==='pending');
+    if(pending.length)lines.push(pending.length+' '+(pending.length===1?'observation is':'observations are')+' awaiting administrator review.');
   }
-  if(!report.entries.length)lines.push('No optional self-reports recorded for this date range.');
+  if(!entries.length)lines.push('No optional individual responses were recorded in this period.');
+  lines.push('', 'The individual’s participation and answers are voluntary. Missing or declined responses are not treated as negative outcomes, and the person’s statements are not automatically interpreted as caregiver-confirmed observations.');
   return lines.join('\n');
 }
 export function createIndividualVoiceReport({rest,document:doc=document,clock=()=>new Date()}){

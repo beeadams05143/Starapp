@@ -107,7 +107,25 @@
     .role-home-panel h1{font-family:Georgia,serif;color:#75491d}
     .role-home-panel .tile{background:#faf6ee;box-shadow:none;border-width:1px;border-color:#e5d7bc}
     .role-home-panel .tile.help{background:#fff1e9;border-color:#deb493;color:#292b32;border-width:2px}
-    @media(max-width:500px){.role-home-panel{padding:18px}.role-home-panel .tiles{grid-template-columns:1fr}.role-home-panel .tile{min-height:140px}.role-home-panel .scene{font-size:40px}}
+    /* Compact, accessible My STAR dashboard: two tiles per row on phones. */
+    @media(max-width:500px){
+      .role-home-panel{padding:14px}
+      .role-home-panel h1{font-size:clamp(26px,7vw,33px);margin:4px 0 8px}
+      .role-home-panel .intro{font-size:15px;line-height:1.35;margin:4px 0 13px}
+      .role-home-panel .tiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+      .role-home-panel .tile{min-width:0;min-height:142px;padding:12px 6px;gap:7px;border-radius:18px}
+      .role-home-panel .tile .scene{font-size:clamp(27px,8vw,37px);line-height:1.1;letter-spacing:-4px;padding-right:4px}
+      .role-home-panel .tile strong{font-size:clamp(15px,4vw,18px);line-height:1.15;overflow-wrap:anywhere}
+      .role-home-panel .tile small{font-size:12px;line-height:1.25;overflow-wrap:anywhere}
+      .role-home-panel .tile.help{border-width:2px}
+    }
+    @media(max-width:350px){
+      .role-home-panel{padding:9px}
+      .role-home-panel .tiles{gap:7px}
+      .role-home-panel .tile{min-height:136px;padding:9px 4px}
+      .role-home-panel .tile strong{font-size:14px}
+      .role-home-panel .tile small{font-size:11px}
+    }
   </style>
 </head>
 <body>

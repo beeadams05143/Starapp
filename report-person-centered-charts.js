@@ -1,7 +1,8 @@
 // UVM STAR TEST: two person-centered charts, drawn from existing saved evidence.
 // Caregiver ISA measurements and voluntary My STAR answers are different sources.
 // A chart is never a score, pass/fail determination, or proof of goal achievement.
-import { buildIsaProgress } from './isa-progress-report-embedded.js?v=2026.10.29A';
+import {buildSupportUsage,renderSupportUsage} from './support-report.js';
+import { buildIsaProgress } from './isa-progress-report-embedded.js';
 
 export function buildIsaChartSeries(isaReport, goalId, measurementId) {
   const outcome=(isaReport?.outcomes||[]).find(row=>String(row.id)===String(goalId));
@@ -100,7 +101,7 @@ export function buildChoiceSatisfactionData(checkins,scope={}){
 export function createPersonCenteredCharts({rest,document:doc=document,clock=()=>new Date()}){
   const $=id=>doc.getElementById(id),graphs={isa:null,satisfaction:null,choices:null};
   let groupId='',caregiverEntries=[],cards=[],checkins=[],loadVersion=0,loadError='';
-  let requestedMetricId='';
+  let requestedMetricId='',individualId='',selectedPerson=null,cardsError='',feedbackError='';
   let wasLoaded=false;
   const dateKey=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
   const values=()=>{
@@ -294,6 +295,21 @@ export function createPersonCenteredCharts({rest,document:doc=document,clock=()=
     }
     return options;
   }
+  function choosePerson(){
+    const people=new Map();
+    for(const row of caregiverEntries){if(String(row.group_id||'')!==groupId)continue;const p=row.payload||{};people.set(String(row.individual_id??p.individual_id??''),p.individual_name||'Registered individual');}
+    for(const card of cards)if(String(card.group_id||'')===groupId&&!people.has(String(card.individual_id||'')))people.set(String(card.individual_id||''),'Registered individual '+(people.size+1));
+    for(const row of checkins)if(String(row.group_id||'')===groupId&&!people.has(String(row.individual_id||'')))people.set(String(row.individual_id||''),'Registered individual '+(people.size+1));
+    const select=$('pcGraphIndividual'),old=selectedPerson;
+    individualId=people.has(old)?old:(people.keys().next().value??'');selectedPerson=individualId;
+    if(select){select.replaceChildren();for(const [id,name] of people){const option=doc.createElement('option');option.value=id;option.textContent=name;select.append(option);}select.value=individualId;select.disabled=people.size<2;}
+    return people.get(individualId)||'Selected individual';
+  }
+  function drawSupports(range){
+    const root=$('pcSupportUsage');if(!root)return;
+    const person=$('pcGraphIndividual')?.selectedOptions?.[0]?.textContent||'Selected individual';
+    renderSupportUsage(root,buildSupportUsage(caregiverEntries,{groupId,individualId,...range}),{unit:$('pcSupportUnit')?.value||'hours',caption:person+' · '+(range.start||'All dates')+' through '+(range.end||'latest')});
+  }
   function redraw(){
     if(!groupId||!wasLoaded)return;
     if(doc.body.dataset.reportView!=='charts'&&!doc.body.classList.contains('print-export'))return;
@@ -303,7 +319,8 @@ export function createPersonCenteredCharts({rest,document:doc=document,clock=()=
       clearCharts();return;
     }
     try{
-      const report=buildIsaProgress(caregiverEntries,cards,{groupId,individualId:'',...range});
+      choosePerson();drawSupports(range);
+      const report=buildIsaProgress(caregiverEntries,cards,{groupId,individualId,...range});
       const metrics=listMetrics(report),select=$('pcIsaGraphMeasure');
       const chosen=chooseDefaultIsaChartMetric(metrics,report,requestedMetricId);
       if(select){
@@ -313,11 +330,11 @@ export function createPersonCenteredCharts({rest,document:doc=document,clock=()=
         }
         if(chosen)select.value=chosen.id;
       }
-      if(!metrics.length)drawISA({kind:'empty',reason:'No ISA measurements found for this group.'});
+      if(!metrics.length)drawISA({kind:'empty',reason:cardsError?'ISA data unavailable: '+cardsError:'No saved ISA measurements for this individual and date range.'});
       else{
         drawISA(buildIsaChartSeries(report,chosen.goalId,chosen.measurementId));
       }
-      const feedback=buildChoiceSatisfactionData(checkins,{groupId,individualId:'',...range});
+      const feedback=buildChoiceSatisfactionData(checkins,{groupId,individualId,...range});
       drawActivitySatisfaction(feedback);
       drawBars('pcLeisureChart','choices',feedback.choices,'Expressed choices');
       if($('pcSatisfactionStatus'))$('pcSatisfactionStatus').textContent=feedback.satisfactionTotal
@@ -329,7 +346,8 @@ export function createPersonCenteredCharts({rest,document:doc=document,clock=()=
       if($('pcActivityContext'))$('pcActivityContext').textContent=feedback.activitiesUnspecified
         ? feedback.activitiesUnspecified+' satisfaction response(s) did not name the activity; STAR will not guess which activity was rated.'
         : 'Activity names come only from what the individual actually reported.';
-      if(overall)overall.textContent='Showing fictional STAR Test data. Blank or skipped answers are not counted.';
+      if(feedbackError){for(const id of ['pcSatisfactionStatus','pcLeisureStatus'])if($(id))$(id).textContent='Individual Voice data unavailable: '+feedbackError;}
+      if(overall)overall.textContent='Charts use saved records for the selected individual. Blank or skipped answers are not counted.';
     }catch(error){
       clearCharts();
       if(overall)overall.textContent='Unable to draw charts: '+(error?.message||error);
@@ -338,12 +356,12 @@ export function createPersonCenteredCharts({rest,document:doc=document,clock=()=
   async function refresh(group,entries){
     const current=++loadVersion;
     groupId=String(group||'');caregiverEntries=Array.isArray(entries)?entries:[];
-    cards=[];checkins=[];requestedMetricId='';wasLoaded=false;clearCharts();
+    cards=[];checkins=[];requestedMetricId='';selectedPerson=null;cardsError='';feedbackError='';wasLoaded=false;clearCharts();
     const overall=$('pcGraphStatus');
-    if(!groupId){if(overall)overall.textContent='Choose a STAR Test group to see charts.';return;}
+    if(!groupId){if(overall)overall.textContent='Choose a STAR group to see charts.';return;}
     if(overall)overall.textContent='Loading ISA and Individual Voice chart data…';
     try{
-      const result=await Promise.all([
+      const result=await Promise.allSettled([
         readAll('star_isa_outcomes','id,group_id,individual_id,title,category,status,measurements',
           'created_at.asc',groupId),
         readAll('star_individual_checkins_test',
@@ -351,7 +369,10 @@ export function createPersonCenteredCharts({rest,document:doc=document,clock=()=
           'checkin_date.desc',groupId)
       ]);
       if(current!==loadVersion)return;
-      [cards,checkins]=result;
+      cards=result[0].status==='fulfilled'?result[0].value:[];
+      checkins=result[1].status==='fulfilled'?result[1].value:[];
+      cardsError=result[0].status==='rejected'?String(result[0].reason?.message||result[0].reason):'';
+      feedbackError=result[1].status==='rejected'?String(result[1].reason?.message||result[1].reason):'';
       wasLoaded=true;loadError='';redraw();
       if(doc.body.dataset.reportView!=='charts'&&overall)
         overall.textContent='Chart data ready. Open More Charts to view.';
@@ -362,6 +383,14 @@ export function createPersonCenteredCharts({rest,document:doc=document,clock=()=
       clearCharts();
     }
   }
+  $('pcGraphIndividual')?.addEventListener('change',()=>{selectedPerson=$('pcGraphIndividual').value;requestedMetricId='';redraw();});
+  $('pcSupportUnit')?.addEventListener('change',redraw);
+  $('pcSupportPrint')?.addEventListener('click',()=>{
+    const win=window.open('','_blank');if(!win){$('pcGraphStatus').textContent='Allow pop-ups to print this chart.';return;}
+    const clone=$('pcSupportGraphCard').cloneNode(true);clone.querySelectorAll('button,select').forEach(n=>n.remove());clone.querySelectorAll('details').forEach(n=>n.open=true);
+    const title=win.document.createElement('title');title.textContent='Supports, Locations & Time';win.document.head.append(title);
+    const css=win.document.createElement('link');css.rel='stylesheet';css.href=new URL('./support-report.css',window.location.href).href;win.document.head.append(css);win.document.body.append(clone);css.onload=css.onerror=()=>{win.focus();win.print();};
+  });
   $('pcGraphPeriod')?.addEventListener('change',()=>{setRangeState();redraw();});
   for(const id of ['pcGraphStart','pcGraphEnd'])
     $(id)?.addEventListener('change',()=>{setRangeState();redraw();});

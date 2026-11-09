@@ -1014,6 +1014,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>document.addEventListener('DOMContentLoaded',()=>{ try{ Chart.register(ChartDataLabels); }catch(e){} });</script>
+<link rel="stylesheet" href="support-report.css">
 </head>
 <body>
 <!-- ===== MINI STATUS BAR (no console needed) ===== -->
@@ -1697,9 +1698,10 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
     <section id="chart-stack" data-print-section="Trends & Charts">
     <!-- UVM TEST: person-centered graph sources are distinct from legacy caregiver charts. -->
     <div class="person-chart-range no-export" id="pcChartRange">
-      <div class="person-chart-range-heading">⭐ Person-centered charts <span>Fictional STAR Test data</span></div>
+      <div class="person-chart-range-heading">⭐ Person-centered charts <span>Saved check-in records</span></div>
+      <label>Individual <select id="pcGraphIndividual" aria-label="Individual for person-centered charts"></select></label>
       <label>Reporting period
-        <select id="pcGraphPeriod" aria-label="Reporting period for the two new charts">
+        <select id="pcGraphPeriod" aria-label="Reporting period for person-centered charts">
           <option value="month" selected>This month</option>
           <option value="quarter">Last 3 months</option>
           <option value="all">All dates</option>
@@ -1721,6 +1723,13 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
       <div class="person-chart-canvas"><canvas id="pcIsaChart" aria-label="ISA caregiver measurement chart" role="img"></canvas></div>
       <p class="muted" role="status" id="pcIsaChartStatus">Loading ISA measurements…</p>
       <p class="muted" id="pcIsaChartNote"></p>
+    </div>
+    <div class="chart person-chart-card" id="pcSupportGraphCard">
+      <h2>Supports, Locations &amp; Time</h2>
+      <p class="muted">Saved support entries from caregiver check-ins, using the individual and reporting period selected above.</p>
+      <label class="no-export">Show <select id="pcSupportUnit"><option value="hours">Recorded hours</option><option value="entries">Support-entry counts</option></select></label>
+      <button type="button" class="btn no-export" id="pcSupportPrint">Print this chart</button>
+      <div id="pcSupportUsage" aria-live="polite"></div>
     </div>
     <div class="chart person-chart-card" id="pcChoiceGraphCard">
       <h2>🗣️ Individual Choices &amp; Satisfaction</h2>
@@ -1808,7 +1817,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
         <h2>Community Interaction Types</h2>
         <p class="muted chart-range-label" id="interactionRangeLabel">Range: Recent 3 months</p>
         <canvas id="interactionTypeChart"></canvas>
-        <p class="muted">Counts of interaction types when he engaged with community members.</p>
+        <p class="muted">Counts of documented interaction types with community members.</p>
       </div>
       <div class="chart kpi-summary-inline report-graph" id="activityTypeSummary" data-graph-id="activity" data-graph-title="Activity Types">
         <h4>Activity Types (Top 6)</h4>
@@ -2063,7 +2072,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
     import { createIsaProgressReport } from './isa-progress-report-embedded.js?v=2026.11.07-person-scope';
     import { createIsaIndividualPerspective } from './isa-individual-perspective.js?v=2026.11.08-person-scope';
     import { createIndividualVoiceReport } from './individual-voice-report.js?v=2026.10.29B';
-    import { createPersonCenteredCharts } from './report-person-centered-charts.js?v=2026.10.29P2';
+    import { createPersonCenteredCharts } from './report-person-centered-charts.js?v=2026.11.08-support-time';
 
     /* =============== Optional live data =============== */
     let loadFromSupabase = null;
@@ -6007,7 +6016,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
         const list=document.createElement('ul');
         for(const row of item.rows){
           const line=document.createElement('li');
-          line.textContent=[row.support,row.location,row.note].filter(Boolean).join(' · ');
+          line.textContent=[row.support,row.location,row.minutes===null||row.minutes===undefined||row.minutes===''?'Time not recorded':row.minutes+' minutes',row.note].filter(Boolean).join(' · ');
           list.append(line);
         }
         dated.append(heading,list);

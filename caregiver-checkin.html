@@ -2224,7 +2224,7 @@
 	          </div>
           <section id="shiftSupports" class="question-block" aria-labelledby="shiftSupportsTitle">
             <h2 id="shiftSupportsTitle">Supports Provided This Shift</h2>
-            <input type="hidden" name="shift_supports" value="[]">
+            <p>Enter each support and where it happened. Minutes are optional. Split time between entries; do not repeat the same minutes. Leave unknown time blank.</p><input type="hidden" name="shift_supports" value="[]">
             <div data-support-rows></div>
             <button class="btn" type="button" data-add-support>+ Add another support</button>
             <p data-support-error role="alert" hidden></p>
@@ -3193,6 +3193,7 @@
   // 1) Imports MUST be first in the module
   import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
   import { CheckinSubmissionUI } from './caregiver-submission-ui.js?v=2026.11.07-recovery';
+  import {normalizeSupportEntries} from './support-report.js';
   import { validSelectedDate } from './caregiver-submission.js';
   import { ANSWER_VERSION, optionalEngagement, optionalYesNo } from './caregiver-answer-quality.js?v=2026.10.20A';
   import { ensureActiveGroupId } from './active-group.js?v=2026.10.29UVM3';
@@ -6715,6 +6716,7 @@
       row.style.minWidth = '0';
       row.innerHTML = '<legend>Support entry</legend><label>Support provided<select data-support></select></label>' +
         '<label>Where it happened<select data-location></select></label>' +
+        '<label>Time for this support (minutes, optional)<input data-minutes type="number" min="0" max="1440" step="1" inputmode="numeric"></label>' +
         '<label>Place or short note (optional)<input data-note type="text" maxlength="160"></label>' +
         '<button type="button" class="btn" data-remove-support>Remove support entry</button>';
       for (const [selector, options, value, placeholder] of [
@@ -6727,6 +6729,7 @@
         select.value = options.includes(value) ? value : '';
       }
       row.querySelector('[data-note]').value = values.note || '';
+      row.querySelector('[data-minutes]').value = values.minutes ?? '';
       row.querySelector('[data-remove-support]').onclick = () => {
         row.remove();
         if (!shiftSupportRows.children.length) addShiftSupport();
@@ -6740,8 +6743,9 @@
       return Array.from(shiftSupportRows.children, row => ({
         support: row.querySelector('[data-support]').value,
         location: row.querySelector('[data-location]').value,
-        note: row.querySelector('[data-note]').value.trim()
-      })).filter(entry => entry.support || entry.location || entry.note);
+        note: row.querySelector('[data-note]').value.trim(),
+        minutes: row.querySelector('[data-minutes]').value
+      })).filter(entry => entry.support || entry.location || entry.note || entry.minutes !== '');
     }
     function syncShiftSupports(){
       shiftSupportField.value = JSON.stringify(readShiftSupports());
@@ -7250,7 +7254,9 @@
       e?.preventDefault?.();
       if (!submissionUI || isSubmittingFinal) return;
       if (!validateCentralPrns()) return;
-      const supportRows = readShiftSupports();
+      let supportRows;
+      try{supportRows=normalizeSupportEntries(readShiftSupports());}
+      catch(error){const node=shiftSupports.querySelector('[data-support-error]');node.hidden=false;node.textContent=error.message;openSectionDetailByIndex(0);shiftSupports.scrollIntoView({block:'center'});return;}
       const missingIndividual = supportRows.length && !caregiverSetupState.assignedIndividualId && !caregiverSetupState.groupIndividualName;
       const incomplete = supportRows.some(entry => !entry.support || !entry.location);
       const supportError = shiftSupports.querySelector('[data-support-error]');

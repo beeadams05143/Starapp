@@ -399,6 +399,8 @@
     import { rest, getSessionFromStorage } from '/restClient.js?v=2026.11.02UVM1';
     import { ensureActiveGroupId, resolveActiveGroup } from '/active-group.js?v=2026.11.02UVM1';
 
+    import { completeGuidedOnboarding } from '/onboarding-flow.js?v=2026.10.29UVM3';
+
     const CATEGORY_DEFS = [
       {
         key: 'behavior_mental_health',
@@ -1338,6 +1340,7 @@
           state.configRowId = inserted?.[0]?.id || null;
         }
 
+        await completeGuidedOnboarding(session.user.id);
         await loadConfig();
         setStatus('Caregiver setup and approved ISA links saved. You can preview the caregiver check-in.', 'success');
       } catch (error) {

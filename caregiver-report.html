@@ -1015,7 +1015,13 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>document.addEventListener('DOMContentLoaded',()=>{ try{ Chart.register(ChartDataLabels); }catch(e){} });</script>
 <link rel="stylesheet" href="support-report.css"><link rel="stylesheet" href="report-chart-layout.css?v=2026.11.08-mobile">
-<style>body[data-report-view="isa"] #wholePersonIntegratedPanel{display:block!important}body[data-report-view="isa"] #isaProgressPanel{display:none!important}@media(max-width:650px){#wholePersonIntegratedPanel{padding:8px!important}#wholePersonIntegratedPanel iframe{height:950px}}</style></head>
+<style>body[data-report-view="isa"] #wholePersonIntegratedPanel{display:block!important}body[data-report-view="isa"] #isaProgressPanel{display:none!important}@media(max-width:650px){#wholePersonIntegratedPanel{padding:8px!important}#wholePersonIntegratedPanel iframe{height:950px}}</style><style id="wholePersonVisibilityFix">
+/* UVM only: preserve all original sections, but show integrated whole-person panel on ISA tab. */
+body:not(.print-export):not(.quick-look-mode)[data-report-view="isa"] main.page > [data-print-section="Caregiver Overview"] > #wholePersonIntegratedPanel{display:block!important}
+body:not(.print-export):not(.quick-look-mode)[data-report-view="isa"] main.page > [data-print-section="Caregiver Overview"] > #isaProgressPanel{display:none!important}
+#wholePersonIntegratedPanel iframe{display:block;width:100%;height:calc(100vh - 130px);min-height:800px;border:0!important}
+@media(max-width:650px){#wholePersonIntegratedPanel iframe{height:1100px;min-height:1100px}}
+</style></head>
 <body>
 <!-- ===== MINI STATUS BAR (no console needed) ===== -->
 <style>

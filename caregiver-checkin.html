@@ -5,6 +5,7 @@
   <title>Caregiver Check-In</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="stylesheet" href="style.css?v=2025.01.09E"/>
+  <link rel="stylesheet" href="caregiver-care-date.css?v=2026.11.15-date-choice"/>
   <style>
     * {
       box-sizing: border-box;
@@ -2153,7 +2154,7 @@
     }
 </style>
 </head>
-<body>
+<body class="care-date-pending">
   <section class="starfield-page-header">
     <svg class="starfield-bg" viewBox="0 0 420 110" aria-hidden="true">
       <circle cx="28" cy="18" r="1" fill="#2C2C2A" opacity="0.15"></circle><circle cx="80" cy="10" r="0.7" fill="#2C2C2A" opacity="0.12"></circle><circle cx="130" cy="28" r="0.9" fill="#2C2C2A" opacity="0.1"></circle><circle cx="200" cy="8" r="0.7" fill="#2C2C2A" opacity="0.1"></circle><circle cx="260" cy="22" r="0.6" fill="#2C2C2A" opacity="0.1"></circle><circle cx="340" cy="14" r="0.8" fill="#2C2C2A" opacity="0.12"></circle><circle cx="390" cy="28" r="1" fill="#2C2C2A" opacity="0.15"></circle><circle cx="50" cy="55" r="0.7" fill="#2C2C2A" opacity="0.1"></circle><circle cx="150" cy="65" r="0.8" fill="#2C2C2A" opacity="0.1"></circle><circle cx="300" cy="50" r="0.8" fill="#2C2C2A" opacity="0.12"></circle><circle cx="400" cy="68" r="0.7" fill="#2C2C2A" opacity="0.1"></circle>
@@ -2181,7 +2182,7 @@
       <div class="prog-item" data-step="6"><div class="prog-label">Educational</div><div class="seg"></div></div>
     </div>
 
-    <div class="draft-save-bar" id="draftSaveBar"><button type="button" id="saveDraftAlways" disabled>Save Draft</button><span id="draftSaveFeedback" role="status" aria-live="polite">Available once your check-in opens.</span></div>
+    <div class="draft-save-bar" id="draftSaveBar"><div id="careDateBanner" tabindex="-1" role="status" aria-live="polite" hidden><div>Reporting care for<strong id="careDateBannerLabel"></strong></div><button type="button" id="careDateChange">Change care date</button></div><button type="button" id="saveDraftAlways" disabled>Save Draft</button><span id="draftSaveFeedback" role="status" aria-live="polite">Available once your check-in opens.</span></div>
     <section id="legacyMedChangeNotice" hidden role="status" class="legacy-med-note">
       <strong>Medication-change information found in this older draft</strong>
       <p>Medication plans now belong in Team Updates. Copy these details into Team Updates before submitting; they will not be included in this new caregiver check-in.</p>
@@ -2197,6 +2198,17 @@
     </div>
 
     <form id="cg-form" novalidate>
+      <section id="careDateChooser" aria-labelledby="careDateChooserTitle">
+        <h2 id="careDateChooserTitle">Which day are you telling us about?</h2>
+        <p>Choose the day you provided care. Entering yesterday’s care today? Choose <strong>Yesterday</strong>.</p>
+        <button type="button" class="care-day-choice" id="careDateToday" disabled><strong>Today</strong><span id="careDateTodayLabel"></span></button>
+        <button type="button" class="care-day-choice" id="careDateYesterday" disabled><strong>Yesterday</strong><span id="careDateYesterdayLabel"></span></button>
+        <button type="button" class="care-day-choice" id="careDateOther" disabled>Choose another date</button>
+        <button type="button" class="care-day-choice" id="careDateKeep" hidden disabled></button>
+        <div id="careDateCustom" hidden><label for="careDatePicker">Day you provided care</label><input type="date" id="careDatePicker"><button type="button" class="btn primary" id="careDateUse">Use this date</button></div>
+        <p id="careDateError" role="alert"></p>
+      </section>
+
       <fieldset id="checkinFields" disabled inert style="border:0;padding:0;margin:0;min-width:0">
       <nav id="guidedCheckinNavigation" class="guided-checkin-navigation" aria-label="Check-in section navigation">
         <label for="guidedSectionSelect">Go to section
@@ -2207,7 +2219,7 @@
       <!-- STEP 1: Physical -->
       <div id="physicalSection" class="step active" data-step="0">
         <div class="top-card">
-          <label for="entryDateInput">Date of shift:
+          <label class="care-date-original" for="entryDateInput">Care date:
             <input type="date" id="entryDateInput" name="entry_date"/>
             <span class="muted">Pick another day if you missed logging it.</span>
           </label>
@@ -2318,18 +2330,34 @@
                 <label class="yn-pill"><input type="radio" name="appears_tired" value="no"> No</label>
               </div>
             </div>
+          </div>
+          <div id="sleepReportScope" class="question-block">
+            <div class="movement-label" id="sleepScopeTitle">Are you reporting overnight sleep?</div>
+            <div class="yn-pill-group" role="group" aria-labelledby="sleepScopeTitle">
+              <label class="yn-pill"><input type="radio" name="sleep_reporting" value="yes"> Yes — I have sleep information</label>
+              <label class="yn-pill"><input type="radio" name="sleep_reporting" value="not_observed"> No — day shift / sleep not observed</label>
+            </div>
+            <p class="muted">Leave unanswered if sleep is not reported. This never means “no sleep difficulties.”</p>
+          </div>
+          <fieldset id="sleepQuestions" hidden disabled style="border:0;padding:0;margin:0;min-width:0">
+          <div class="physical-general-row">
+            <div id="sleepNightContext" class="sleep-night-context"><strong data-sleep-night>Choose the care date first.</strong><br>After-midnight times belong to the next morning. Record returning to sleep separately in notes.</div>
             <label>Hours of sleep:
               <select name="hours_sleep" class="yn"><option value="">Select</option><option>4</option><option>6</option><option>8</option><option>10+</option></select>
             </label>
-            <label>Time fell asleep:
+            <label>Time they first fell asleep:
               <input type="time" name="sleep_fell_asleep_time"/>
             </label>
           </div>
 	          <div class="physical-sleep-row">
-	            <label class="physical-checkbox-card" style="display:flex;align-items:center;gap:8px">
-	              <input type="checkbox" name="sleep_onset_difficulty" style="width:auto"/>
-	              <span>Difficulty falling asleep (took ~2+ hours)</span>
-	            </label>
+	                        <div id="sleepOnsetQuestion" class="question-block">
+              <div class="movement-label" id="sleepOnsetTitle">Did they have difficulty falling asleep (took about 2+ hours)?</div>
+              <div class="yn-pill-group" role="group" aria-labelledby="sleepOnsetTitle">
+                <label class="yn-pill"><input type="radio" name="sleep_onset_difficulty" value="yes"> Yes</label>
+                <label class="yn-pill"><input type="radio" name="sleep_onset_difficulty" value="no"> No</label>
+                <label class="yn-pill"><input type="radio" name="sleep_onset_difficulty" value="not_sure"> Not sure</label>
+              </div>
+            </div>
             <div id="question-night-wake-flag" class="question-block">
               <div class="movement-label">Woke up during the night?</div>
               <div class="yn-pill-group" role="group" aria-label="Woke up during the night">
@@ -2348,6 +2376,10 @@
             </select>
           </label>
           <div class="muted" style="margin:-4px 0 8px">Record hours of sleep or time fell asleep — either one is fine, or both.</div>
+          <label id="sleepNotesWrap">Sleep notes (optional)
+            <textarea name="sleep_notes" rows="2" placeholder="For example: First fell asleep at 5:30 a.m., or woke and returned to sleep at 5:30 a.m."></textarea>
+          </label>
+          </fieldset>
 	          <div class="physical-final-row">
             <div id="question-had-bm" class="question-block">
               <div class="movement-label">Had a BM today?</div>
@@ -3149,7 +3181,7 @@
       </fieldset>
       <section id="checkinSubmitPanel" class="panel checkin-submit-panel" aria-labelledby="checkinDateTitle">
         <p id="submissionContext">Loading caregiver and group… Questions remain disabled until ready.</p>
-        <details id="checkinAnswersReview"><summary>Review entered answers</summary><div id="reviewSections"></div></details>
+        <details id="checkinAnswersReview"><summary>Review entered answers</summary><p class="sleep-night-context" data-sleep-night data-sleep-review></p><div id="reviewSections"></div></details>
         <div id="duplicateNotice" role="alert" hidden>
           <p id="duplicateDateLabel"></p>
           <label class="confirmation-choice"><input type="checkbox" id="allowDuplicate" autocomplete="off"> I intend to create an additional check-in for this same date. Keep the existing record unchanged.</label>
@@ -3159,7 +3191,7 @@
         <p id="checkinDateLabel" class="checkin-date-label" aria-live="polite">Select the date being documented.</p>
         
         <button class="btn" id="changeCheckinDate" type="button">Change Date</button>
-        <label class="confirmation-choice"><input type="checkbox" id="checkinDateConfirmed" autocomplete="off" required disabled> <strong>I confirm this date is correct.</strong></label>
+        <label class="confirmation-choice"><input type="checkbox" id="checkinDateConfirmed" autocomplete="off" required disabled> <strong id="checkinDateConfirmationText">I confirm the care date is correct.</strong></label>
         <button class="btn primary" id="submitAll" type="submit" disabled>Submit Check-In</button>
         <p id="submissionStatus" role="status" aria-live="assertive" aria-atomic="true" tabindex="-1">Loading submission safeguards…</p>
         <button class="btn" id="checkSaveStatus" type="button" hidden>Check original save status — no new submission</button>
@@ -3178,7 +3210,9 @@
 <script type="module">
   // 1) Imports MUST be first in the module
   import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.19B';
-  import { CheckinSubmissionUI } from './caregiver-submission-ui.js?v=2026.10.28D';
+  import { CheckinSubmissionUI } from './caregiver-submission-ui.js?v=2026.11.15-date-choice';
+  import { normalizeSleepPayload } from './caregiver-sleep.js?v=2026.11.15-sleep-scope';
+  import { sleepOnsetAnswer, restoredSleepResponse } from './caregiver-care-date.js?v=2026.11.15-date-choice';
   import { validSelectedDate } from './caregiver-submission.js';
   import { ANSWER_VERSION, optionalEngagement, optionalYesNo } from './caregiver-answer-quality.js?v=2026.10.20A';
   import { ensureActiveGroupId } from './active-group.js?v=2026.10.07A';
@@ -3274,7 +3308,7 @@
     itemDescriptions: {},
   };
   const CHECKIN_FIELD_CATEGORY_MAP = {
-    sleep: ['hours_sleep', 'sleep_fell_asleep_time', 'sleep_onset_difficulty', 'night_wake_flag', 'night_wake_count', 'prn_used_for_sleep_disturbance'],
+    sleep: ['sleep_reporting', 'sleep_notes', 'hours_sleep', 'sleep_fell_asleep_time', 'sleep_onset_difficulty', 'night_wake_flag', 'night_wake_count', 'prn_used_for_sleep_disturbance'],
     hygiene: ['adl_entries', 'adl_note', 'prompting_level'],
     meals: ['appetite_change_flag', 'appetite_change_direction', 'adl_entries'],
     pain: ['movement_present', 'movement_main_type', 'movement_notes', 'prn_used_for_pain'],
@@ -4868,7 +4902,7 @@
   function applyLegacyCheckinVisibility({ updateView = true } = {}){
     const subtitle = document.querySelector('.sub');
     if (subtitle) {
-      subtitle.innerHTML = 'Every new check-in starts with a blank date. A recovery copy is kept in this browser when storage is available. <strong>Save Draft</strong> saves a local copy; only <strong>Submit Check-In</strong> saves to Supabase.';
+      subtitle.innerHTML = 'Choose Today, Yesterday, or another care date before beginning. A recovery copy is kept in this browser when storage is available. <strong>Save Draft</strong> saves a local copy; only the final <strong>Save check-in</strong> button submits your check-in.';
     }
 
     const physicalStep = document.querySelector('.step[data-step="0"]');
@@ -4927,7 +4961,7 @@
   function applyCaregiverSetupVisibility({ updateView = true } = {}){
     const subtitle = document.querySelector('.sub');
     if (subtitle && caregiverSetupState.groupName) {
-      subtitle.innerHTML = `Every new check-in starts with a blank date. A recovery copy is kept in this browser when storage is available. <strong>Save Draft</strong> saves a local copy; only <strong>Submit Check-In</strong> saves to Supabase. Configured for ${caregiverSetupState.groupName}.`;
+      subtitle.innerHTML = `Choose Today, Yesterday, or another care date before beginning. A recovery copy is kept in this browser when storage is available. <strong>Save Draft</strong> saves a local copy; only the final <strong>Save check-in</strong> button submits your check-in. Configured for ${caregiverSetupState.groupName}.`;
     }
     if (caregiverSetupState.forceLegacyMode || !caregiverSetupState.hasConfig) {
       applyLegacyCheckinVisibility({ updateView });
@@ -4999,7 +5033,10 @@
     setConfigHidden([
       labelForName('hours_sleep'),
       labelForName('sleep_fell_asleep_time'),
-      labelForName('sleep_onset_difficulty'),
+      document.getElementById('sleepReportScope'),
+      document.getElementById('sleepOnsetQuestion'),
+      document.getElementById('sleepNightContext'),
+      document.getElementById('sleepNotesWrap'),
       document.getElementById('question-night-wake-flag'),
       document.getElementById('nightWakeCountWrap'),
     ], !sleepEnabled);
@@ -6637,18 +6674,24 @@
     }
     function serialize(step){
       const data={};
+      if (step.querySelector('[name="sleep_onset_difficulty"]')) data.sleep_onset_difficulty = null;
       step.querySelectorAll('input,select,textarea').forEach(el=>{
         if(!el.name) return;
         if(el.type==='checkbox') data[el.name]=!!el.checked;
-        else if(el.type==='radio'){ if(el.checked) data[el.name]=el.value; }
+        else if(el.type==='radio'){ if(el.checked) {
+          if (el.name === 'sleep_onset_difficulty') {
+            data[el.name] = sleepOnsetAnswer(el.value);
+            data.sleep_onset_response = el.value;
+          } else data[el.name]=el.value;
+        } }
         else data[el.name]=el.value;
       });
-      return data;
+      return step.querySelector('[name="sleep_reporting"]') ? normalizeSleepPayload(data) : data;
     }
     function hydrate(step,data){
       if(!data) return;
       step.querySelectorAll('input,select,textarea').forEach(el=>{
-        const v = data[el.name]; if(v===undefined) return;
+        const v = el.name === 'sleep_onset_difficulty' ? restoredSleepResponse(data) : data[el.name]; if(v===undefined) return;
         if(el.type==='checkbox') el.checked = !!v;
         else if(el.type==='radio'){
           if (el.name === 'movement_present' || el.name === 'temp_present' || el.name === 'menstrual_present') return;

@@ -1,3 +1,4 @@
+import { sleepObservation } from './caregiver-sleep.js?v=2026.11.15-sleep-scope';
 import { checkinDateKey, normalizeCheckinDate, formatCheckinDate } from './caregiver-dates.js';
 import { optionalYesNo, optionalEngagement } from './caregiver-answer-quality.js';
 
@@ -21,7 +22,7 @@ export const NOTE_FIELDS = [
   'caregiver_notes', 'summary_highlight_note', 'physical_notes', 'behavior_notes', 'mood_regulation_notes',
   'community_notes', 'daily_living_notes', 'notes', 'public_activity_note',
   'interaction_note', 'home_notes', 'vocational_notes', 'med_change_note',
-  'pet_activity_note', 'pet_activity_notes',
+  'pet_activity_note', 'pet_activity_notes', 'sleep_notes',
 ];
 export const individualKey = row => String(row.individual_id ?? row.payload?.individual_id ?? '');
 export const groupKey = row => String(row.group_id ?? row.payload?.group_id ?? row.payload?.group ?? '');
@@ -94,7 +95,7 @@ function observation(row) {
   const onset = bool(p.sleep_onset_difficulty);
   const waking = bool(p.night_wake_flag);
   const category = (value, negatives, positives) => negatives.includes(value) ? false : positives.includes(value) ? true : null;
-  const sleep = onset === true || waking === true ? true : modern && onset === false && waking === false ? false : null;
+  const sleep = sleepObservation(p).concern;
   const prn = list(p.prn_entries).filter(item => item && (item.medication || item.time || item.reason));
   const prnAnswer = bool(p.prn_used_today ?? p.prn_administered);
   const tracking = Object.values(p.behavior_tracking || {});
@@ -325,6 +326,7 @@ export function renderProviderLetter(a, { includeQuotes = true, teamUpdates = []
     entry => entry.date === date && normalized(entry.note) === normalized(note)
   );
   const bedtime = a.days.flatMap(day => day.records.map(({ row }) => {
+    if (p(row).sleep_reporting_version === 2 && p(row).sleep_reporting !== 'yes') return null;
     const raw = String(p(row).sleep_fell_asleep_time || '').trim();
     if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(raw)) return null;
     const [hour, minute] = raw.split(':').map(Number);

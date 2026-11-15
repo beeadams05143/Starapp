@@ -1,3 +1,4 @@
+import { sleepObservation } from './caregiver-sleep.js?v=2026.11.15-sleep-scope';
 import { checkinDateKey } from './caregiver-dates.js';
 
 export const CALENDAR_EMOJI = {
@@ -562,7 +563,9 @@ export function normalizeCaregiverCheckinForCalendar(record = {}) {
   const dateKey = normalized.dateKey || getCheckinDayKeyFromEntry(normalized);
   const prnEntries = parsePrnEntriesForCalendar(payload.prn_entries ?? normalized.prn_entries);
   const hasStructuredPrn = prnEntries.length > 0;
-  const sleep = pickNumberForCalendar(payload.hours_sleep, normalized.hours_sleep, payload.sleep_hours);
+  const sleepState = sleepObservation(payload);
+  const sleepAvailable = payload.sleep_reporting_version !== 2 || payload.sleep_reporting === 'yes';
+  const sleep = sleepAvailable ? pickNumberForCalendar(payload.hours_sleep, normalized.hours_sleep, payload.sleep_hours) : null;
   const movementPresent = parseBooleanLoose(payload.movement_present ?? normalized.movement_present);
   const movementSeverity = pickNumberForCalendar(payload.movement_severity, normalized.movement_severity);
   const moodEngagementScore = pickNumberForCalendar(payload.mood_engagement_score, payload.mood_engagement);
@@ -589,10 +592,10 @@ export function normalizeCaregiverCheckinForCalendar(record = {}) {
   const legacy = {
     sleep,
     sleep_low: sleep !== null ? sleep < 8 : false,
-    onset: hasLateSleepOnsetForCalendar(payload) || hasLateSleepOnsetForCalendar(normalized),
-    night: parseBooleanLoose(payload.night_wake_flag ?? payload.night_waking) === true
+    onset: sleepAvailable && (hasLateSleepOnsetForCalendar(payload) || hasLateSleepOnsetForCalendar(normalized)),
+    night: sleepAvailable && (parseBooleanLoose(payload.night_wake_flag ?? payload.night_waking) === true
       || Number(payload.night_wake_count) > 0
-      || /woke|wake|waking/i.test(String(payload.night_wake_notes || '')),
+      || /woke|wake|waking/i.test(String(payload.night_wake_notes || ''))),
     prn_sleep: prnSleep,
     prn_mania: prnMania,
     prn_aggr: prnAggr,
@@ -629,6 +632,7 @@ export function normalizeCaregiverCheckinForCalendar(record = {}) {
   const flags = {
     bm: normalized.hadBm === true || parseBooleanLoose(payload.had_bm ?? payload.bm_today) === true,
     sleep_concern: sleepConcern,
+    sleep_reporting_status: sleepState.status,
     prn: anyPrnUsed,
     illness,
     temp: tempRecorded,
@@ -717,7 +721,7 @@ export function normalizeCaregiverCheckinForCalendar(record = {}) {
   const meaningfulNote = [
     payload.public_activity_note, payload.community_notes, payload.vocational_notes,
     payload.home_notes, payload.caregiver_notes, payload.behavior_notes,
-    payload.physical_notes, payload.daily_living_notes,
+    payload.sleep_notes, payload.physical_notes, payload.daily_living_notes,
   ].map(value => String(value || '').trim().replace(/\s+/g, ' ')).find(value => value.length >= 12 && value.length <= 180);
   const activityTypes = [payload.public_activity_type, payload.home_activity_type, payload.vocational_activity_type]
     .flatMap(value => { if (Array.isArray(value)) return value; if (typeof value !== 'string') return []; try { const parsed = JSON.parse(value); if (Array.isArray(parsed)) return parsed; } catch {} return value.split(/[;,|]/); })
@@ -732,6 +736,7 @@ export function normalizeCaregiverCheckinForCalendar(record = {}) {
     ...compactCalendarLines(moodDetails, 2),
     prnLine,
     ...specificHealth,
+    ...(sleepState.status === 'Reported' ? [] : [sleepState.status === 'Not reported' ? 'Sleep not reported' : 'Sleep not observed (day shift)']),
     meaningfulNote || meaningfulActivity || (participation.length ? participation.join(' + ') : ''),
     ...(meaningfulNote && meaningfulActivity ? [meaningfulActivity] : []),
   ], 5);

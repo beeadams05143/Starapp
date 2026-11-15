@@ -1,3 +1,4 @@
+import { sleepDisplayPayload } from './caregiver-sleep.js?v=2026.11.15-sleep-scope';
 const NOTE_KEYS = new Set([
   'caregiver_notes', 'notes', 'physical_notes', 'behavior_notes', 'vocational_notes',
   'home_activity_note', 'home_notes', 'pet_activity_note', 'pet_activity_notes',
@@ -25,6 +26,7 @@ const LABELS = {
   interaction_prompting: 'Prompting', interaction_note: 'Interaction note', community_time: 'Community minutes',
   appears_good_health: 'Good health', appears_tired: 'Tired', hours_sleep: 'Sleep',
   sleep_fell_asleep_time: 'Fell asleep', sleep_onset_time: 'Fell asleep',
+  sleep_reporting_status: 'Sleep reporting', sleep_notes: 'Sleep notes',
   sleep_onset_difficulty: 'Sleep onset difficulty', night_wake_flag: 'Night waking',
   night_waking: 'Night waking', night_wake_count: 'Night wakings',
   appetite_change_flag: 'Appetite change', appetite_change_direction: 'Appetite',
@@ -75,7 +77,7 @@ const SECTIONS = [
   ] },
   { title: 'Physical Health', prefixes: ['sleep_', 'night_', 'appetite_', 'med_change_', 'movement_', 'temp_', 'menstrual_'], keys: [
     'appears_good_health', 'appears_tired', 'hours_sleep', 'sleep_fell_asleep_time', 'sleep_onset_time',
-    'sleep_onset_difficulty', 'night_wake_flag', 'night_waking', 'night_wake_count', 'appetite_change_flag',
+    'sleep_reporting_status', 'sleep_notes', 'sleep_onset_difficulty', 'night_wake_flag', 'night_waking', 'night_wake_count', 'appetite_change_flag',
     'appetite_change_direction', 'med_change_flag', 'med_change_name', 'med_change_dose', 'med_change_note',
     'movement_present', 'movement_main_type', 'movement_severity', 'movement_frequency', 'movement_times',
     'movement_body_map', 'movement_triggers', 'movement_interfered', 'movement_interfered_notes',
@@ -317,7 +319,7 @@ function fieldHtml(row, sectionTitle) {
 }
 
 export function buildCompactCaregiverCheckinPrint(record = {}, options = {}) {
-  const payload = record.payload && typeof record.payload === 'object' && !Array.isArray(record.payload) ? record.payload : {};
+  const payload = sleepDisplayPayload(record.payload && typeof record.payload === 'object' && !Array.isArray(record.payload) ? record.payload : {});
   const allKeys = [...new Set([...Object.keys(payload).filter(visibleKey), ...Object.keys(record).filter(visibleKey)])];
   const consumed = new Set();
   const meta = [

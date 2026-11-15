@@ -1,0 +1,35 @@
+import assert from 'node:assert/strict';
+import { normalizeSleepPayload, sleepObservation, sleepDisplayPayload } from './caregiver-sleep.js';
+import { normalizeCaregiverCheckinForCalendar } from './caregiver-report-shared.js';
+import { analyzeProviderRecords } from './caregiver-provider-letter.js';
+import { buildCompactCaregiverCheckinPrint } from './caregiver-checkin-print.js';
+
+const skipped = normalizeSleepPayload({ sleep_reporting: 'not_observed', sleep_onset_difficulty: true,
+  night_wake_flag: 'yes', night_wake_count: '2', sleep_fell_asleep_time: '05:30', hours_sleep: '4' });
+assert.equal(skipped.sleep_reporting, 'not_observed');
+for (const key of ['sleep_onset_difficulty', 'night_wake_flag', 'night_wake_count', 'hours_sleep', 'sleep_fell_asleep_time']) assert.equal(skipped[key], null);
+assert.equal(sleepObservation(skipped).concern, null);
+assert.equal(sleepObservation(normalizeSleepPayload({})).status, 'Not reported');
+assert.equal(sleepObservation({sleep_onset_difficulty: false, night_wake_flag:'no',answer_quality_version:1}).concern, null, 'old unchecked checkbox cannot prove a negative');
+assert.equal(sleepObservation({sleep_onset_difficulty:true}).concern, true, 'preserve old affirmative observations');
+assert.equal(sleepDisplayPayload({sleep_onset_difficulty:false}).sleep_onset_difficulty, 'Not reported');
+assert.equal(sleepDisplayPayload({sleep_onset_difficulty:null,sleep_onset_response:'not_sure'}).sleep_onset_difficulty,'Not sure');
+const explicitNo = normalizeSleepPayload({sleep_reporting:'yes',sleep_onset_difficulty:false,sleep_onset_response:'no',night_wake_flag:'no'});
+assert.equal(sleepObservation(explicitNo).concern, false, 'only explicit answers establish a night without the reported difficulties');
+const mixed = normalizeSleepPayload({sleep_reporting:'yes',sleep_onset_difficulty:null,sleep_onset_response:'not_sure',night_wake_flag:'no'});
+assert.equal(sleepObservation(mixed).concern, null);
+const row = (day,payload) => ({id:'test-'+day,group_id:'qa',date:'2026-11-'+day,payload});
+const records = [row('10',skipped),row('11',{}),row('12',{sleep_onset_difficulty:false,night_wake_flag:'no'}),row('13',explicitNo),row('14',{sleep_onset_difficulty:true,sleep_fell_asleep_time:'05:30'})];
+const result=analyzeProviderRecords(records,{groupId:'qa',start:'2026-11-10',end:'2026-11-14'});
+assert.equal(result.metrics.sleep.answered,2);
+assert.equal(result.metrics.sleep.positive,1);
+assert.equal(normalizeCaregiverCheckinForCalendar(records[0]).flags.sleep_concern,false);
+assert.match(normalizeCaregiverCheckinForCalendar(records[0]).flags.sleep_reporting_status,/Not observed/);
+assert.equal(normalizeCaregiverCheckinForCalendar(records[4]).flags.sleep_concern,true);
+const printed=buildCompactCaregiverCheckinPrint(records[0]);
+assert.ok(printed.sections.flatMap(s=>s.rows).some(r=>r.label==='Sleep reporting' && /Not observed/.test(r.value)));
+assert.ok(!printed.sections.flatMap(s=>s.rows).some(r=>r.key==='sleep_onset_difficulty' && r.value==='No'));
+const oldPrinted=buildCompactCaregiverCheckinPrint(records[2]);
+assert.ok(oldPrinted.sections.flatMap(s=>s.rows).some(r=>r.key==='sleep_onset_difficulty' && r.value==='Not reported'));
+assert.equal(records[2].payload.sleep_onset_difficulty,false,'presentation must never rewrite historical records');
+console.log('Day shifts, skipped sleep, explicit negatives, unknown legacy checkbox values, calendar and provider denominators: PASS');

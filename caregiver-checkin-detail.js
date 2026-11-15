@@ -1,4 +1,5 @@
-import { openCompactCaregiverCheckinPrintWindow } from './caregiver-checkin-print.js?v=2026.10.24A';
+import { sleepDisplayPayload } from './caregiver-sleep.js?v=2026.11.15-sleep-scope';
+import { openCompactCaregiverCheckinPrintWindow } from './caregiver-checkin-print.js?v=2026.11.15-sleep-scope';
 import { rest } from './restClient.js?v=2026.07.03A';
 
 const NOTE_KEYS = new Set([
@@ -30,6 +31,7 @@ const LABELS = {
   interaction_prompting: 'Prompting (interaction)', interaction_note: 'Interaction note', community_time: 'Total community minutes',
   appears_good_health: 'Appears in good health?', appears_tired: 'Appears tired?', hours_sleep: 'Hours of sleep',
   sleep_fell_asleep_time: 'Fell asleep at', sleep_onset_time: 'Sleep onset time',
+  sleep_reporting_status: 'Sleep reporting', sleep_notes: 'Sleep notes',
   sleep_onset_difficulty: 'Difficulty falling asleep?', night_wake_flag: 'Woke during the night?',
   night_waking: 'Night waking?', night_wake_count: 'Number of night wakings',
   prn_used_for_sleep_disturbance: 'PRN used for sleep disturbance', prn_name: 'PRN medication', prn_time: 'PRN time',
@@ -73,7 +75,7 @@ const SECTIONS = [
     prefixes: ['sleep_', 'night_', 'appetite_', 'med_change_', 'movement_', 'temp_', 'menstrual_'],
     keys: [
       'appears_good_health', 'appears_tired',
-      'hours_sleep', 'sleep_fell_asleep_time', 'sleep_onset_time', 'sleep_onset_difficulty',
+      'sleep_reporting_status', 'sleep_notes', 'hours_sleep', 'sleep_fell_asleep_time', 'sleep_onset_time', 'sleep_onset_difficulty',
       'night_wake_flag', 'night_waking', 'night_wake_count',
       'prn_used_for_sleep_disturbance', 'prn_administered', 'prn_given', 'prn_name', 'prn_time',
       'appetite_change_flag', 'appetite_change_direction',
@@ -396,14 +398,12 @@ async function loadDetail() {
       return;
     }
 
-    const payload = record.payload && typeof record.payload === 'object' && !Array.isArray(record.payload)
-      ? record.payload
-      : {};
+    const payload = sleepDisplayPayload(record.payload && typeof record.payload === 'object' && !Array.isArray(record.payload) ? record.payload : {});
     // The SELECT is protected by Supabase RLS. If this row was returned, the
     // signed-in user is authorized to view it; avoid rejecting it based on
     // auxiliary profile/member reads that have separate RLS visibility.
     const caregiver = await caregiverLabel(record, payload);
-    currentCheckinRecord = { ...record, payload };
+    currentCheckinRecord = record;
     currentCaregiverName = caregiver;
     const date = dateValue(record, payload);
     pageTitle.textContent = formatDate(date);

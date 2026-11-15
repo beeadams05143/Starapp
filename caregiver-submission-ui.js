@@ -1,3 +1,4 @@
+import { CareDateChoice } from './caregiver-care-date.js?v=2026.11.15-date-choice';
 import { formatCheckinDate } from './caregiver-dates.js';
 import { CaregiverSubmission, CheckinRecoveryStore, validSelectedDate } from './caregiver-submission.js';
 import { CaregiverDraftService } from './caregiver-draft-service.js?v=2026.10.28D';
@@ -11,6 +12,7 @@ export class CheckinSubmissionUI {
       'submissionStatus', 'storageNotice', 'recoveryChoices', 'resumeDraftBtn', 'discardDraftBtn', 'checkSaveStatus',
       'startNewCheckin', 'duplicateNotice', 'duplicateDateLabel', 'allowDuplicate', 'changeCheckinDate',
       'downloadRecovery', 'submissionContext'].map(id => [id, doc.getElementById(id)]));
+    this.careDate = new CareDateChoice({ doc, win, input: this.el.entryDateInput, onChangeDate: () => this.dateChanged() });
     this.dirty = false;
     this.intentionalDraftSaved = false;
     this.busy = false;
@@ -54,7 +56,7 @@ export class CheckinSubmissionUI {
     this.el.entryDateInput.addEventListener('change', () => this.dateChanged());
     this.el.checkinDateConfirmed.addEventListener('change', () => this.update());
     this.el.allowDuplicate.addEventListener('change', () => this.update());
-    this.el.changeCheckinDate.addEventListener('click', () => this.changeDate());
+    this.el.changeCheckinDate.addEventListener('click', () => this.careDate.open());
     this.el.resumeDraftBtn.addEventListener('click', () => this.resume());
     this.el.discardDraftBtn.addEventListener('click', () => this.discard());
     this.el.startNewCheckin.addEventListener('click', () => this.startNew());
@@ -119,7 +121,7 @@ export class CheckinSubmissionUI {
       this.resumeCloudDraft(cloudDraftParam).catch(error => this.status('Cloud draft not restored: '+(error?.message||'Please try again.'), true));
     }
     if (!context.userId || !context.groupId) this.status('Save Failed — sign in and open this form in the correct group before entering a check-in.', true);
-    else if (!requestedDraft && !cloudDraftParam) this.status(context.practice ? 'Practice Mode — completion does not save a real check-in.' : 'Choose the date being documented, then confirm it below.');
+    else if (!requestedDraft && !cloudDraftParam) this.status(context.practice ? 'Practice Mode — completion does not save a real check-in.' : 'Choose the day you provided care to begin.');
     this.update();
   }
   setStore() {
@@ -144,7 +146,15 @@ export class CheckinSubmissionUI {
   }
   update() {
     const date = this.el.entryDateInput.value;
-    const valid = validSelectedDate(date);
+    // Pending attempts keep their original frozen date and remain recoverable.
+    if (this.service?.attempt?.sent && this.careDate) {
+      this.careDate.chosenDate = date;
+      this.careDate.choosing = false;
+    }
+    const valid = validSelectedDate(date) && (this.careDate?.ready ?? true);
+    this.careDate?.sync(this.busy || this.done || !!this.service?.attempt?.sent);
+    this.el.submitAll.textContent = this.context.practice ? 'Complete Practice — Not Saved'
+      : valid ? `Save ${formatCheckinDate(date, undefined, { weekday: 'long' })}’s check-in` : 'Save check-in';
     this.el.checkinDateLabel.textContent = valid ? fullDate(date) : 'Select the date being documented.';
     this.el.checkinDateConfirmed.disabled = !valid || this.busy || this.done || !!this.service?.attempt?.sent;
     this.el.submitAll.disabled = !valid || !this.el.checkinDateConfirmed.checked || this.busy || this.done ||
@@ -310,6 +320,7 @@ export class CheckinSubmissionUI {
     if (this.dirty && !this.saveRecovery()) return;
     // Fork rather than overwrite a draft that may be open in another tab.
     this.setStore();
+    this.careDate?.requireChoice();
     this.reset();
     this.restore(item.draft);
     this.intentionalDraftSaved = item.intentionalDraft === true;
@@ -335,6 +346,7 @@ export class CheckinSubmissionUI {
     if (this.win.localStorage.getItem('star-deleted-draft-v1:cloud:'+
         this.context.userId+':'+this.context.groupId+':'+id))
       throw new Error('This saved draft has already been deleted on this device.');
+    this.careDate?.requireChoice();
     this.reset();
     this.restore(row.draft_data);
     this.cloudDraftId = row.id;
@@ -349,6 +361,7 @@ export class CheckinSubmissionUI {
     if (this.busy || this.done || this.service.attempt?.sent || !this.win.confirm('Discard the answers in this open form? Other recovery copies will remain.')) return;
     try { this.store?.remove(); }
     catch { this.storageWarning(); return; }
+    this.careDate?.requireChoice();
     this.reset();
     this.dirty = false;
     this.dateChanged();
@@ -358,7 +371,7 @@ export class CheckinSubmissionUI {
   begin() {
     if (this.busy || this.done || this.service.attempt?.sent) return '';
     const date = this.el.entryDateInput.value;
-    if (!validSelectedDate(date) || !this.el.checkinDateConfirmed.checked) {
+    if (!validSelectedDate(date) || (this.careDate && !this.careDate.ready) || !this.el.checkinDateConfirmed.checked) {
       this.status('Save Failed — select a valid check-in date and confirm it directly above Submit. Your answers remain on this page.', true);
       this.el.submissionStatus.focus();
       return '';
@@ -459,6 +472,7 @@ export class CheckinSubmissionUI {
     this.cloudDraftId = null;
     this.cloudDraftVersion = null;
     this.setStore();
+    this.careDate?.requireChoice();
     this.reset();
     this.dateChanged();
     this.setLocked(false);

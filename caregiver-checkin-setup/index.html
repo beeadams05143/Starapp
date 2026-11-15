@@ -358,7 +358,7 @@
 
     <section id="assignmentSetup" class="hero" hidden aria-label="Caregiver-specific setup">
       <h2>Who is this check-in for?</h2>
-      <p>Start with group defaults, or select a registered individual and caregiver to customize that caregiver's questions. Only administrators can edit.</p>
+      <p>Select an individual and staff member, choose their questions below, then save. Repeat for each staff member: Dad can have sleep questions only, while respite staff can have community, vocational, and respite activities. Each assignment is saved separately and loads for that caregiver. Leave both lists blank to edit group defaults. Only administrators can edit.</p>
       <div class="toolbar">
         <label>Individual <select id="targetIndividual"><option value="">Group defaults</option></select></label>
         <label>Caregiver <select id="targetCaregiver"><option value="">Group defaults</option></select></label>
@@ -1292,6 +1292,10 @@
         setStatus('Only administrators with an active group can save this setup.', 'error');
         return;
       }
+      if (Boolean(state.selectedIndividual) !== Boolean(state.selectedCaregiver)) {
+        setStatus('Select both an individual and a staff member before saving an assignment.', 'error');
+        return;
+      }
       if (!state.userId) {
         setStatus('Please log in again to save caregiver setup.', 'error');
         return;
@@ -1340,7 +1344,7 @@
           state.configRowId = inserted?.[0]?.id || null;
         }
 
-        await completeGuidedOnboarding(session.user.id);
+        await completeGuidedOnboarding(state.userId);
         await loadConfig();
         setStatus('Caregiver setup and approved ISA links saved. You can preview the caregiver check-in.', 'success');
       } catch (error) {
@@ -1382,7 +1386,7 @@
       for(const p of state.members){
         const name=p.public_name||p.display_name||p.full_name||'Unnamed registered member';
         if(p.role==='individual')individualSelect.add(new Option(name,p.id));
-        if(p.role==='caregiver')caregiverSelect.add(new Option(name,p.id));
+        if(p.role==='caregiver'||members.some(m=>m.user_id===p.id&&m.role==='admin'))caregiverSelect.add(new Option(name,p.id));
       }
       document.getElementById('assignmentHelp').textContent='Only registered people from this group appear in these lists.';
     }

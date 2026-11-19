@@ -41,7 +41,6 @@
     .primary {background:#3d614c;color:#fff;border:2px solid #3d614c}
     .secondary {background:white;color:#252d26;border:2px solid #bbb2a1}
     .large-action {border-radius:16px;padding:15px 18px;min-height:58px;font-size:19px;font-weight:800}
-    .back {margin-bottom:15px}
     .message {margin-top:14px;border-radius:15px;background:#ebf4e9;padding:16px;font-size:19px;font-weight:700}
     .body-layout {display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
     .body-card {background:#f8f3e9;border-radius:18px;border:2px solid #d3c9b8;padding:10px;text-align:center}
@@ -127,6 +126,7 @@
   </style>
   <script defer src="/ui-shell.js?v=2026.11.19D"></script>
   <script defer src="/scripts/appbar-drawer.js?v=2026.11.19D"></script>
+  <link rel="stylesheet" href="my-star-back.css">
 </head>
 <body data-side-menu-only>
 <div id="appbar-host"></div>
@@ -202,7 +202,7 @@ import { getSessionFromStorage } from "./restClient.js";
   function status(msg){var el=document.getElementById('result');if(el){el.hidden=false;el.textContent=msg}}
   function tile(id,picture,title,detail,urgent){return '<button type="button" class="tile'+(urgent?' help':'')+'" data-open="'+id+'"><span class="scene" aria-hidden="true">'+picture+'</span><strong>'+title+'</strong><small>'+detail+'</small></button>'}
   function button(label,id,kind){return '<button class="large-action '+(kind||'secondary')+'" type="button" data-action="'+id+'">'+label+'</button>'}
-  function wrap(title,body){screen.innerHTML='<button type="button" class="small-btn back" data-open="home">← Back to My STAR</button><h1>'+title+'</h1><div class="panel">'+body+'<div class="message" id="result" role="status" hidden></div></div>'}
+  function wrap(title,body){screen.innerHTML='<button type="button" class="star-back" data-open="home" aria-label="Back to My STAR"><span class="star-back-arrow" aria-hidden="true">←</span> BACK</button><h1>'+title+'</h1><div class="panel">'+body+'<div class="message" id="result" role="status" hidden></div></div>'}
   // Speech-to-text is separate from the Read Aloud option. Listening starts ONLY on a tap.
   var activeRecognition=null, dictationField=null, dictationButton=null;
   var dictationBaseText='', dictationGotWords=false, dictationHadError=false, dictationStopping=false;
@@ -557,7 +557,7 @@ import { getSessionFromStorage } from "./restClient.js";
         '<div id="result" class="message" hidden></div>';
       refreshMomentsCount();
     } else if(page==='support-preparation'){
-      location.href='support-preparation.html';
+      location.href='support-preparation.html?from=my-star';
     } else if(page==='communication'){
       location.href='communication.html?view=mine';
     } else if(page==='moments'){
@@ -586,7 +586,7 @@ import { getSessionFromStorage } from "./restClient.js";
       wyReset();renderWouldRather();
     } else if(page==='urgent'){
       wrap('🚨 HELP NOW','<div class="notice urgent">Help Now posts in your group chat. If you need help right away, get someone nearby.</div><p>What do you need to tell someone?</p><div class="choices">'+choice('Something hurts','🩹','Something hurts')+choice('I am scared','😨','I am scared')+choice('I need someone','🙋','I need someone')+choice('Something happened','❗','Something happened')+'</div><label for="urgentMessage">Add more (optional)</label><textarea id="urgentMessage" class="voice-input" placeholder="Type or dictate"></textarea><div class="actions">'+button('Send to my team','chat-details','primary')+button('Not now','skip')+'</div>');
-    } else if(page==='chat') {window.location.href='chat.html';return}
+    } else if(page==='chat') {window.location.href='chat.html?from=my-star';return}
     else if(page==='voice'){window.location.href='my-star-voice.html';return}
     var input=document.getElementById('withSupport');
     if(input)input.addEventListener('change',function(){supported=input.checked;document.getElementById('supportOptions').hidden=!supported});

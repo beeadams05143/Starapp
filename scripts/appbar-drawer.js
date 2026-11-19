@@ -600,8 +600,13 @@
   setupInactivityAutoLogout();
   refreshRoleVisibility();
   // --- open / close helpers ---
-  const open  = () => { overlay.setAttribute('aria-hidden','false'); document.body.style.overflow='hidden'; };
-  const close = () => { overlay.setAttribute('aria-hidden','true');  document.body.style.overflow=''; };
+  function setDrawerOpen(isOpen) {
+    overlay.setAttribute('aria-hidden', String(!isOpen));
+    document.getElementById('openMenu')?.setAttribute('aria-expanded', String(isOpen));
+    document.body.style.overflow = isOpen ? 'hidden' : '';
+  }
+  const open = () => setDrawerOpen(true);
+  const close = () => setDrawerOpen(false);
 
   // bind to the button created by your top appbar (#openMenu)
   function bindOpen(){

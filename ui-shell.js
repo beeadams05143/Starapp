@@ -66,8 +66,7 @@
   // ----- mount points -----
   let top = document.getElementById('appbar-host');
   if (!top) { top = document.createElement('div'); top.id = 'appbar-host'; document.body.prepend(top); }
-  let bottom = document.getElementById('tabbar-host');
-  if (!bottom) { bottom = document.createElement('div'); bottom.id = 'tabbar-host'; document.body.appendChild(bottom); }
+  const sideMenuOnly = document.body.hasAttribute('data-side-menu-only');
 
   // ----- TOP BAR (brand + menu button only) -----
  top.innerHTML = `
@@ -77,17 +76,22 @@
       <span></span>
       <span></span>
     </button>
-    <a class="brand" href="/dashboard.html" style="text-decoration:none;color:inherit">
+    <a class="brand" href="${sideMenuOnly ? '/my-star.html' : '/dashboard.html'}" style="text-decoration:none;color:inherit">
       <div style="display:flex;align-items:center;gap:8px;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2C2C2A" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true">
           <polygon points="12,2 14.9,9.3 22.6,9.3 16.4,14 18.8,21.5 12,17.2 5.2,21.5 7.6,14 1.4,9.3 9.1,9.3"></polygon>
         </svg>
-        <span style="font-size:15px;font-weight:400;color:#2C2C2A;letter-spacing:0.15em;text-transform:uppercase;">STAR</span>
+        <span style="font-size:15px;font-weight:400;color:#2C2C2A;letter-spacing:0.15em;text-transform:uppercase;">${sideMenuOnly ? "My STAR" : "STAR"}</span>
       </div>
     </a>
   </header>
 `;
 
+
+  if (sideMenuOnly) return;
+
+  let bottom = document.getElementById('tabbar-host');
+  if (!bottom) { bottom = document.createElement('div'); bottom.id = 'tabbar-host'; document.body.appendChild(bottom); }
 
   const APP_CONFIG_KEY = 'star_app_config';
   let role = null;

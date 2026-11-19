@@ -35,8 +35,14 @@ function page(title) {
   activeDictation=null;
   root.className=review?'moment-review':'';
   root.replaceChildren();
-  const link=element('a',daily?'Finish check-in':'Back',root);
+  const link=element('a','');
   link.href=back;
+  link.className='star-back';
+  link.setAttribute('aria-label',daily?'Finish check-in and return to My STAR':review?'Back to My STAR':'Back to caregiver dashboard');
+  const arrow=element('span','←',link);
+  arrow.className='star-back-arrow';
+  arrow.setAttribute('aria-hidden','true');
+  link.append(daily?' Finish check-in':' BACK');
   element('h1',title);
   const status=element('p','');
   status.id='status';
@@ -194,8 +200,6 @@ async function respond(row,values) {
       announce('Could not confirm it was shared. Try again.');
     }
   });
-  const finish=element('a','Back to My STAR');
-  finish.href=back;
 }
 const isWaiting=row=>!response(row)||response(row).satisfaction==='Not now';
 function speakMoment(text,force=false) {
@@ -297,7 +301,6 @@ async function showReview() {
   if(!available.length){
     reviewSubject();
     element('p','You have no photos waiting.');
-    const home=element('a','Back to My STAR');home.href=back;
     return;
   }
   const row=await loadPhoto(available[0]);

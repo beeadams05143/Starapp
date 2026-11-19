@@ -5,6 +5,16 @@
 import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
 import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
 import { isMyStarAlert } from './chat-alerts.js';
+import { loadSignedInRole } from './signed-in-role.js';
+
+const backToMyStar = document.getElementById('myStarBack');
+if (new URLSearchParams(location.search).get('from') === 'my-star') {
+  backToMyStar.hidden = false;
+} else {
+  loadSignedInRole().then(role => {
+    backToMyStar.hidden = role !== 'individual';
+  }).catch(error => console.warn('[STAR] Could not load chat navigation role', error));
+}
 
 // ---------- Require login ----------
 const session = getSessionFromStorage();

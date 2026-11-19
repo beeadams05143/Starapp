@@ -25,15 +25,13 @@
     .action { display: inline-flex; align-items: center; min-height: 48px; border: 2px solid #b9ad97; padding: 9px 15px; border-radius: 14px; background: white; color: inherit; font: inherit; font-weight: 750; text-decoration: none; cursor: pointer }
     .primary { color: white; background: #3d614c; border-color: #3d614c }
     .primary:disabled { opacity: .65; cursor: default }
-    .intensity { display: grid; gap: 8px; margin-top: 16px; font-weight: 650 }
-    .intensity select { min-height: 48px; font: inherit }
     #saveStatus { margin-bottom: 0; font-weight: 700 }
     #saveStatus:empty { display: none }
     [hidden] { display: none !important }
   </style>
   <script defer src="/ui-shell.js?v=2026.11.19A"></script>
   <script defer src="/scripts/appbar-drawer.js?v=2026.11.19A"></script>
-  <script type="module" src="/my-star.js?v=2026.11.19A"></script>
+  <script type="module" src="/my-star.js?v=2026.11.19B"></script>
 </head>
 <body>
   <main>
@@ -54,20 +52,10 @@
           <label class="choice"><input type="radio" name="mood" value="😊 Happy" required><span class="face" aria-hidden="true">😊</span>Happy</label>
           <label class="choice"><input type="radio" name="mood" value="🙂 OK"><span class="face" aria-hidden="true">🙂</span>Okay</label>
           <label class="choice"><input type="radio" name="mood" value="😢 Sad"><span class="face" aria-hidden="true">😢</span>Sad</label>
-          <label class="choice"><input type="radio" name="mood" value="😡 Mad"><span class="face" aria-hidden="true">😡</span>Mad</label>
+          <label class="choice"><input type="radio" name="mood" value="😠 Upset"><span class="face" aria-hidden="true">😠</span>Upset</label>
           <label class="choice"><input type="radio" name="mood" value="😴 Tired"><span class="face" aria-hidden="true">😴</span>Tired</label>
           <label class="choice"><input type="radio" name="mood" value="🤒 Sick"><span class="face" aria-hidden="true">🤒</span>Not feeling good</label>
         </div>
-        <label class="intensity">How strong is the feeling?
-          <select name="intensity" required>
-            <option value="">Choose how strong</option>
-            <option value="1">A little</option>
-            <option value="2">A bit</option>
-            <option value="3">In the middle</option>
-            <option value="4">Strong</option>
-            <option value="5">Very strong</option>
-          </select>
-        </label>
       </fieldset>
       <div class="actions">
         <button class="action" id="readAloud" type="button" hidden>🔊 Read aloud</button>

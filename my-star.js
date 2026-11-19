@@ -48,33 +48,33 @@ function speak(text) {
 let readEnabled = false
 readAloud.addEventListener('click', () => {
   readEnabled = true
-  speak('This is how I feel. Pick a face. Happy, okay, sad, mad, tired, or not feeling good. Choose how strong the feeling is. Tap Done to save, or Not now to skip.')
+  speak('This is how I feel. Pick a face. Happy, okay, sad, upset, tired, or not feeling good. Tap Done to save, or Not now to skip.')
 })
 choices.addEventListener('change', event => {
-  if (!readEnabled) return
-  if (event.target.name === 'mood') speak(event.target.labels[0].textContent.trim().replace(/^\S+\s*/, ''))
-  if (event.target.name === 'intensity') speak(event.target.selectedOptions[0].textContent)
+  if (readEnabled) speak(event.target.labels[0].textContent.trim().replace(/^\S+\s*/, ''))
 })
 
 moodForm.addEventListener('submit', async event => {
   event.preventDefault()
   if (save.disabled) return
-  const data = new FormData(moodForm)
-  const mood = data.get('mood')
-  const intensity = Number(data.get('intensity'))
-  if (!mood || !intensity) return
+  const mood = new FormData(moodForm).get('mood')
+  if (!mood) return
   save.disabled = choices.disabled = true
   status.textContent = 'Saving…'
 
   try {
-    const { groupId } = await resolveActiveGroup(userId)
-    if (!groupId) throw new Error('Join your STAR group to save a check-in.')
+    const { groupId, memberships } = await resolveActiveGroup(userId)
+    if (!groupId || !memberships.some(member => member.group_id === groupId)) {
+      status.textContent = 'Join your STAR group to save a check-in.'
+      save.disabled = choices.disabled = false
+      return
+    }
     const today = new Date()
     const date = [today.getFullYear(), String(today.getMonth() + 1).padStart(2, '0'), String(today.getDate()).padStart(2, '0')].join('-')
     await rest('mood_entries', {
       method: 'POST',
       headers: { Prefer: 'return=minimal' },
-      body: JSON.stringify([{ date, mood, intensity, notes: '', user_id: userId, group_id: groupId }]),
+      body: JSON.stringify([{ date, mood, notes: '', user_id: userId, group_id: groupId }]),
       expectedUserId: userId,
     })
     status.textContent = '⭐ Your check-in was saved.'

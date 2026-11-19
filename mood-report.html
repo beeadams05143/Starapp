@@ -185,7 +185,7 @@
     const visible = showingAll ? filtered : filtered.slice(0, 5);
     visible.forEach(entry => {
       const li = document.createElement("li");
-      li.textContent = `${entry.time || "Unknown"} — Mood: ${entry.mood}, Intensity: ${entry.intensity}, Note: ${entry.note || "None"}`;
+      li.textContent = `${entry.time || "Unknown"} — Mood: ${entry.mood}, Intensity: ${entry.intensity ?? "Not recorded"}, Note: ${entry.note || "None"}`;
       entriesList.appendChild(li);
     });
     toggleBtn.textContent = showingAll ? "Show Less" : "Show All Entries";
@@ -208,7 +208,7 @@
       })
       .reverse();
 
-    const dataIntensity = entries.map(e => Number(e.intensity)).reverse();
+    const dataIntensity = entries.map(e => e.intensity == null ? null : Number(e.intensity)).reverse();
 
     window.intensityChart = new Chart(ctxLine, {
       type: "line",
@@ -232,7 +232,7 @@
             callbacks: {
               label: (context) => {
                 const entry = entries[entries.length - 1 - context.dataIndex];
-                return `Mood: ${entry.mood}, Intensity: ${entry.intensity}`;
+                return `Mood: ${entry.mood}, Intensity: ${entry.intensity ?? "Not recorded"}`;
               }
             }
           }
@@ -293,7 +293,7 @@
     const rows = entries.map(e => [
       `"${e.time}"`,
       `"${e.mood}"`,
-      `"${e.intensity}"`,
+      `"${e.intensity ?? ""}"`,
       `"${(e.note || "").replace(/"/g, '""')}"`
     ]);
 

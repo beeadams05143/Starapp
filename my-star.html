@@ -3,67 +3,798 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>My STAR — Accessible Experience</title>
   <meta name="theme-color" content="#f7f1e6">
-  <title>My STAR</title>
   <style>
-    :root { font-family: system-ui, sans-serif; color: #272b29; background: #f7f1e6 }
-    * { box-sizing: border-box }
-    body { margin: 0 }
-    main { width: min(860px, 100%); margin: auto; padding: 16px 15px 32px }
-    h1 { font-size: clamp(28px, 6vw, 38px) }
-    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px }
-    .tile, .choice { border: 2px solid #d5c8b1; border-radius: 20px; background: #fffdf7; color: inherit; text-align: center; padding: 14px 8px; min-height: 112px; display: grid; align-content: center; justify-items: center; gap: 8px; font: inherit; font-size: clamp(16px, 4.5vw, 22px); font-weight: 750; text-decoration: none; cursor: pointer }
-    .face { font-size: clamp(28px, 8vw, 48px); line-height: 1.2 }
-    .panel { padding: 16px; border: 2px solid #d5c8b1; border-radius: 20px; background: #fffdfa }
-    fieldset { border: 0; margin: 0; padding: 0 }
-    legend { margin-bottom: 14px }
-    .choice { position: relative }
-    .choice input { position: absolute; opacity: 0 }
-    .choice:has(input:checked) { border-color: #366c48; background: #e8f3e7 }
-    .choice:focus-within, :focus-visible { outline: 3px solid #2c5f75; outline-offset: 3px }
-    .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px }
-    .action { display: inline-flex; align-items: center; min-height: 48px; border: 2px solid #b9ad97; padding: 9px 15px; border-radius: 14px; background: white; color: inherit; font: inherit; font-weight: 750; text-decoration: none; cursor: pointer }
-    .primary { color: white; background: #3d614c; border-color: #3d614c }
-    .primary:disabled { opacity: .65; cursor: default }
-    #saveStatus { margin-bottom: 0; font-weight: 700 }
-    #saveStatus:empty { display: none }
-    [hidden] { display: none !important }
+    :root {font-family:system-ui,-apple-system,Arial,sans-serif;color:#272b29;background:#f7f1e6}
+    * {box-sizing:border-box}
+    body {margin:0;min-height:100vh}
+    header {background:#fffaf0;border-bottom:2px solid #dfd5c1;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .brand {font-weight:850;font-size:24px;letter-spacing:.035em}
+    main {width:min(860px,100%);margin:auto;padding:16px 15px 64px}
+    h1,h2 {line-height:1.17;margin:12px 0}
+    h1 {font-size:clamp(26px,6vw,38px)}
+    h2 {font-size:clamp(23px,5vw,30px)}
+    p {line-height:1.5}
+    .intro {font-size:17px;margin:7px 0 18px}
+    button,a.tile {touch-action:manipulation;cursor:pointer}
+    button {font:inherit}
+    button:focus-visible,a:focus-visible {outline:4px solid #2c5f75;outline-offset:3px}
+    .top-actions {display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+    .small-btn {border:2px solid #c8bda7;background:white;color:#272b29;border-radius:15px;padding:12px 15px;font-size:16px;font-weight:750;min-height:48px}
+    .tiles {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+    .tile {min-height:176px;border:2px solid #d5c8b1;border-radius:22px;background:#fffdf7;padding:16px 10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;text-decoration:none;color:inherit;box-shadow:0 2px 6px #392e1610}
+    .tile:active,.choice:active {transform:scale(.98)}
+    .tile .scene {font-size:50px;line-height:1.3;letter-spacing:-8px;white-space:nowrap;padding-right:8px}
+    .tile strong {font-size:clamp(17px,3vw,23px);line-height:1.2}
+    .tile small {font-size:13px;line-height:1.3}
+    .tile.help {border:3px solid #9c3029;background:#fff0e9;color:#842820}
+    .panel {background:#fffdfa;border:2px solid #d6cbb8;border-radius:22px;padding:18px;margin-top:12px}
+    .notice {border-left:5px solid #b46a46;background:#fff3de;padding:12px 14px;border-radius:9px;margin:14px 0;font-size:14px;line-height:1.45}
+    .notice.urgent {border-color:#b12823;background:#ffede9}
+    .choices {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:16px 0}
+    .choice {min-height:140px;border:3px solid #d5c8b1;border-radius:18px;background:#fffef9;padding:12px;display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center;font-weight:800;font-size:19px}
+    .choice[aria-pressed="true"] {border-color:#366c48;background:#e8f3e7}
+    .choice .scene {font-size:55px;line-height:1.3}
+    .choice .picture {width:100%;height:165px}
+    .choice .picture svg {width:100%;height:100%;border-radius:14px;background:#eff4e7}
+    .actions {display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .primary {background:#3d614c;color:#fff;border:2px solid #3d614c}
+    .secondary {background:white;color:#252d26;border:2px solid #bbb2a1}
+    .large-action {border-radius:16px;padding:15px 18px;min-height:58px;font-size:19px;font-weight:800}
+    .back {margin-bottom:15px}
+    .message {margin-top:14px;border-radius:15px;background:#ebf4e9;padding:16px;font-size:19px;font-weight:700}
+    .body-layout {display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+    .body-card {background:#f8f3e9;border-radius:18px;border:2px solid #d3c9b8;padding:10px;text-align:center}
+    .body-card strong {font-size:20px}
+    .body-poster {height:330px;max-width:230px;position:relative;margin:8px auto}
+    .body-poster svg {width:100%;height:100%}
+    .pain-point {position:absolute;transform:translate(-50%,-50%);width:43px;height:43px;border-radius:50%;border:3px solid #833b28;background:#fce4cf;color:#401b11;font-size:22px;font-weight:900}
+    .pain-point.selected {background:#b42e26;color:white;border-color:#fff;box-shadow:0 0 0 4px #b42e26}
+    .voice-input {width:100%;min-height:110px;border:2px solid #b6aa96;border-radius:14px;font:inherit;font-size:19px;padding:13px}
+    .footer-note {font-size:13px;color:#625e55;margin:20px 4px}
+    .inline-link {color:#245675;font-weight:750}
+    [hidden] {display:none!important}
+    @media(max-width:420px) {.tile {min-height:154px}.tile .scene{font-size:42px}.tile small{font-size:12px}.body-layout{gap:7px}.body-poster{height:300px}.pain-point{width:38px;height:38px}}
+
+    .body-card .body-poster{width:min(100%,230px);height:auto;aspect-ratio:200/420}
+    .body-card .body-poster svg{display:block}
+    [data-symptom][aria-pressed="true"]{background:#dcebe1;border-color:#315742}
+
+    /* Full-size body map with touch-friendly but visually small markers. */
+    .body-layout{display:block}
+    .body-switch{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+    .body-switch button{min-height:58px;border:3px solid #c7b9a1;background:white;border-radius:15px;font-size:22px;font-weight:850}
+    .body-switch button[aria-pressed=true]{border-color:#356848;background:#e5f1e7}
+    .body-poster{height:clamp(430px,120vw,565px);width:min(100%,315px);max-width:315px;margin:10px auto}
+    .pain-point{width:44px;height:44px;border:0;background:transparent;color:transparent;display:grid;place-items:center}
+    .pain-point:after{content:"";display:block;width:16px;height:16px;border:3px solid #803e2a;background:#fce5d2;border-radius:50%;box-shadow:0 1px 3px #49332455}
+    .pain-point.selected{background:transparent;border:0;box-shadow:none;color:transparent}
+    .pain-point.selected:after{width:20px;height:20px;background:#b52e27;border-color:white;box-shadow:0 0 0 3px #b52e27}
+    .selected-location{font-size:20px;font-weight:800;color:#315c44;margin:10px 0}
+    .photo-choice{padding:8px;font-size:19px;min-height:168px}
+    .photo-frame{display:flex;align-items:center;justify-content:center;position:relative;width:100%;height:112px;background:#f3e9d9;border-radius:10px;overflow:hidden}
+    .photo-frame img{width:100%;height:100%;object-fit:cover}
+    .photo-fallback{font-size:54px;line-height:1}
+    .progress-label{font-size:16px;font-weight:800;color:#63594e;margin-bottom:9px}
+    .wyr-summary{font-size:20px;line-height:1.5;font-weight:700;background:#f5f0e6;border:2px solid #d3c9b8;border-radius:14px;padding:14px}
+    .text-entry{width:100%;font:inherit;font-size:18px;padding:12px;border:2px solid #b6aa96;border-radius:12px}
+    .notice.preview-notice{font-size:14px;padding:10px 12px;margin:9px 0 15px;font-weight:650}
+    .dictate-btn{width:100%;min-height:78px;font-size:23px;border:3px solid #46664e;border-radius:20px;background:#e9f3e9;color:#22412d;display:flex;gap:12px;align-items:center;justify-content:center;font-weight:850;margin:13px 0 6px}
+    .dictate-btn[aria-pressed="true"]{background:#fcecd9;border-color:#aa5531;color:#75391c}
+    .dictate-hint{margin:5px 0 16px;font-size:16px;font-weight:650;color:#535a4e;line-height:1.45;min-height:23px}
+    .voice-input{font-size:20px;min-height:110px}
+    /* Gentle, silent completion animation: a small starburst, never a progress award. */
+    .star-complete{position:relative;min-height:360px;display:grid;place-items:center;overflow:hidden;border-radius:24px;background:radial-gradient(circle at center,#fff9df 0%,#f7f1e6 75%);text-align:center}
+    .star-complete-inner{position:relative;z-index:2;padding:24px}
+    .star-complete-symbol{display:block;font-size:65px;line-height:1.2;animation:completeGlow 1.3s ease-out both}
+    .star-complete strong{display:block;font-size:clamp(27px,7vw,42px);color:#365940;margin-top:12px}
+    .star-complete small{display:block;font-size:16px;margin-top:12px;color:#555b53}
+    .star-spark{position:absolute;top:50%;left:50%;font-size:clamp(24px,6vw,40px);opacity:0;animation:starBurst 1.35s ease-out both;animation-delay:var(--delay)}
+    @keyframes starBurst {0%{opacity:0;transform:translate(-50%,-50%) scale(.25) rotate(0deg)}25%{opacity:1}70%{opacity:1}100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(.8) rotate(70deg)}}
+    @keyframes completeGlow{0%{transform:scale(.35);opacity:.3}55%{transform:scale(1.16);opacity:1}100%{transform:scale(1);opacity:1}}
+    @media(prefers-reduced-motion:reduce){.star-complete-symbol{animation:none}.star-spark{animation:none;opacity:0}.star-complete{min-height:240px}}
+
+    @media(max-width:420px){.body-poster{height:clamp(420px,125vw,530px)}.pain-point{width:44px;height:44px}.photo-frame{height:100px}}
+    .star-view-switch{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:5px;border:2px solid #cfbf9f;border-radius:17px;background:#ede6d8;margin:0 0 15px;max-width:100%}
+    .star-view-switch a{min-height:56px;display:flex;align-items:center;justify-content:center;text-align:center;padding:9px 6px;text-decoration:none;color:#304035;border-radius:12px;font-weight:800;font-size:15px;line-height:1.2}
+    .star-view-switch a[aria-current="page"]{background:#365940;color:#fff;box-shadow:0 1px 4px #25362622}
+    .star-view-switch a:focus-visible{outline:3px solid #164a70;outline-offset:2px}
+    @media(max-width:390px){.star-view-switch a{font-size:14px}}
+    .tile[data-open="moments"]{position:relative}.moment-waiting-badge{position:absolute;top:10px;right:10px;background:#a54227;color:#fff;border-radius:20px;padding:5px 9px;font-size:14px;font-weight:800}
+    .role-home-panel{background:#fff;border:1px solid #e5d7bc;border-radius:24px;padding:24px}
+    .role-home-panel h1{font-family:Georgia,serif;color:#75491d}
+    .role-home-panel .tile{background:#faf6ee;box-shadow:none;border-width:1px;border-color:#e5d7bc}
+    .role-home-panel .tile.help{background:#fff1e9;border-color:#deb493;color:#292b32;border-width:2px}
+    /* Compact, accessible My STAR dashboard: two tiles per row on phones. */
+    @media(max-width:500px){
+      .role-home-panel{padding:14px}
+      .role-home-panel h1{font-size:clamp(26px,7vw,33px);margin:4px 0 8px}
+      .role-home-panel .intro{font-size:15px;line-height:1.35;margin:4px 0 13px}
+      .role-home-panel .tiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+      .role-home-panel .tile{min-width:0;min-height:142px;padding:12px 6px;gap:7px;border-radius:18px}
+      .role-home-panel .tile .scene{font-size:clamp(27px,8vw,37px);line-height:1.1;letter-spacing:-4px;padding-right:4px}
+      .role-home-panel .tile strong{font-size:clamp(15px,4vw,18px);line-height:1.15;overflow-wrap:anywhere}
+      .role-home-panel .tile small{font-size:12px;line-height:1.25;overflow-wrap:anywhere}
+      .role-home-panel .tile.help{border-width:2px}
+    }
+    @media(max-width:350px){
+      .role-home-panel{padding:9px}
+      .role-home-panel .tiles{gap:7px}
+      .role-home-panel .tile{min-height:136px;padding:9px 4px}
+      .role-home-panel .tile strong{font-size:14px}
+      .role-home-panel .tile small{font-size:11px}
+    }
   </style>
-  <script defer src="/ui-shell.js?v=2026.11.19A"></script>
-  <script defer src="/scripts/appbar-drawer.js?v=2026.11.19A"></script>
-  <script type="module" src="/my-star.js?v=2026.11.19B"></script>
 </head>
 <body>
-  <main>
-    <h1 id="heading">My STAR ☆</h1>
-    <p id="loadStatus" role="status">Loading My STAR…</p>
-    <section id="home" hidden>
-      <div class="grid">
-        <a class="tile" href="?page=feel"><span class="face" aria-hidden="true">😊 😐 😟</span>This Is How I Feel</a>
-        <a class="tile" href="/chat.html" id="groupChat"><span class="face" aria-hidden="true">💬</span>My Team Chat</a>
-        <a class="tile" href="/wouldyourather.html"><span class="face" aria-hidden="true">🏠 🌳</span>Would You Rather?</a>
-        <a class="tile" href="/my-star-voice.html"><span class="face" aria-hidden="true">🖼️</span>Picture Communication</a>
-      </div>
-    </section>
-    <form id="moodForm" class="panel" hidden>
-      <fieldset id="moodChoices">
-        <legend>Pick a face. You can skip this.</legend>
-        <div class="grid">
-          <label class="choice"><input type="radio" name="mood" value="😊 Happy" required><span class="face" aria-hidden="true">😊</span>Happy</label>
-          <label class="choice"><input type="radio" name="mood" value="🙂 OK"><span class="face" aria-hidden="true">🙂</span>Okay</label>
-          <label class="choice"><input type="radio" name="mood" value="😢 Sad"><span class="face" aria-hidden="true">😢</span>Sad</label>
-          <label class="choice"><input type="radio" name="mood" value="😠 Upset"><span class="face" aria-hidden="true">😠</span>Upset</label>
-          <label class="choice"><input type="radio" name="mood" value="😴 Tired"><span class="face" aria-hidden="true">😴</span>Tired</label>
-          <label class="choice"><input type="radio" name="mood" value="🤒 Sick"><span class="face" aria-hidden="true">🤒</span>Not feeling good</label>
-        </div>
-      </fieldset>
-      <div class="actions">
-        <button class="action" id="readAloud" type="button" hidden>🔊 Read aloud</button>
-        <button class="action primary" id="saveMood" type="submit">Done</button>
-        <a class="action" id="back" href="/my-star.html">Not now</a>
-      </div>
-      <p id="saveStatus" role="status"></p>
-    </form>
-  </main>
+<header>
+  <div class="brand">⭐ My STAR</div>
+  <nav aria-label="My STAR navigation"><a href="my-star.html">My STAR</a> · <a href="chat.html">Group Chat</a> · <a href="profile.html">Profile</a></nav>
+</header>
+<main>
+  <div class="top-actions">
+    <button class="small-btn" id="hearBtn" type="button" aria-pressed="false" aria-label="Turn reading aloud on or off">🔇 Read Aloud: OFF</button>
+    <button class="small-btn" id="micSetupBtn" type="button" aria-label="Set up microphone with a support person">🎤 Mic Setup</button>
+  </div>
+  <p id="myStarStatus" role="status">Loading My STAR…</p>
+  <section id="screen" aria-live="polite" hidden></section>
+  <p class="footer-note">My STAR is voluntary. The person can stop, skip or ask for help at any time. This is not an emergency response service.</p>
+</main>
+<script type="module">
+import { loadSignedInRole } from "./signed-in-role.js";
+import { getSessionFromStorage } from "./restClient.js";
+
+(async function(){
+  const loadStatus = document.getElementById('myStarStatus');
+  if (!getSessionFromStorage()?.user?.id) {
+    location.replace('auth.html');
+    return;
+  }
+  if (await loadSignedInRole() !== 'individual') {
+    loadStatus.textContent = 'Please sign in with an Individual account to use My STAR.';
+    return;
+  }
+  loadStatus.hidden = true;
+  document.getElementById('screen').hidden = false;
+  var screen=document.getElementById('screen'), current='home', chosen='', supported=false, supportKind='', painSide='front', wyr=null, wyrTimer=null;
+  var readText={
+    home:'Welcome to My STAR. Pick what you want to do. You can choose not now.',
+    feel:'How are you feeling? Pick a face. You can stop any time.',
+    pain:'Where does it hurt? Tap a spot on the body.',
+    day:'How was your activity? You can choose not now.',
+    goals:'Something I did. Tell us about something you did, tried or learned.',
+    tell:'Talk to my team. Share a message or open group chat.',
+    rather:'Would you rather do something inside, outside, or go somewhere? You can pick something else or not now.',
+    urgent:'Help now. This sends a message to your group chat.'
+  };
+  // A deliberate opt-in is required before My STAR narrates anything.
+  var readAloudKey='star_my_star_read_aloud_enabled', readAloudOn=false, selectedVoice=null;
+  try {readAloudOn=localStorage.getItem(readAloudKey)==='on'}catch(e){}
+  function preferVoice(){
+    if(!('speechSynthesis' in window))return null;
+    var voices=window.speechSynthesis.getVoices().filter(function(v){return /^en(-|$)/i.test(v.lang||'')});
+    voices.sort(function(a,b){
+      function rank(v){
+        var n=(v.name||'').toLowerCase();
+        return (/enhanced|premium|natural/.test(n)?90:0)+(/samantha|ava|allison|jenny|aria|google us english/.test(n)?35:0)
+           +(/^en-us/i.test(v.lang)?15:0)+(v.localService?5:0)-(/compact|novelty|whisper|bells|bad news/.test(n)?110:0);
+      }
+      return rank(b)-rank(a);
+    });
+    return voices[0]||null;
+  }
+  function updateReadButton(){
+    var b=document.getElementById('hearBtn');if(!b)return;
+    b.textContent=readAloudOn?'🔊 Read Aloud: ON':'🔇 Read Aloud: OFF';
+    b.setAttribute('aria-pressed',String(readAloudOn));
+  }
+  function speak(text){
+    if(!readAloudOn)return;
+    if(!('speechSynthesis' in window)){status('Spoken prompts are unavailable on this device.');return}
+    try{
+      window.speechSynthesis.cancel();
+      var u=new SpeechSynthesisUtterance(String(text||''));
+      selectedVoice=preferVoice()||selectedVoice;
+      if(selectedVoice)u.voice=selectedVoice;
+      u.lang='en-US';u.rate=.80;u.pitch=1;u.volume=.35;
+      window.speechSynthesis.speak(u);
+    }catch(e){status('Could not play sound on this device.')}
+  }
+  function status(msg){var el=document.getElementById('result');if(el){el.hidden=false;el.textContent=msg}}
+  function tile(id,picture,title,detail,urgent){return '<button type="button" class="tile'+(urgent?' help':'')+'" data-open="'+id+'"><span class="scene" aria-hidden="true">'+picture+'</span><strong>'+title+'</strong><small>'+detail+'</small></button>'}
+  function button(label,id,kind){return '<button class="large-action '+(kind||'secondary')+'" type="button" data-action="'+id+'">'+label+'</button>'}
+  function wrap(title,body){screen.innerHTML='<button type="button" class="small-btn back" data-open="home">← Back to My STAR</button><h1>'+title+'</h1><div class="panel">'+body+'<div class="message" id="result" role="status" hidden></div></div>'}
+  // Speech-to-text is separate from the Read Aloud option. Listening starts ONLY on a tap.
+  var activeRecognition=null, dictationField=null, dictationButton=null;
+  var dictationBaseText='', dictationGotWords=false, dictationHadError=false, dictationStopping=false;
+  function dictateControls(id){
+    return '<button type="button" class="dictate-btn" data-dictate="'+id+'" aria-pressed="false" aria-label="Talk instead of typing">🎤 Talk Instead</button>'+
+      '<p class="dictate-hint" id="dictateHint" role="status" aria-live="polite">Tap Talk Instead, say your words, and check that they appear in the box.</p>';
+  }
+  function setDictateHint(msg){
+    var hint=document.getElementById('dictateHint');
+    if(hint)hint.textContent=msg;
+  }
+  // Aborting is for navigation/cancellation only. Tapping Stop must use .stop()
+  // so Safari/iPhone can return the final speech result before ending.
+  function stopDictation(){
+    var active=activeRecognition, btn=dictationButton;
+    activeRecognition=null;dictationField=null;dictationButton=null;dictationStopping=false;
+    if(active){try{active.abort()}catch(e){}}
+    if(btn&&btn.isConnected){
+      btn.setAttribute('aria-pressed','false');
+      btn.textContent='🎤 Talk Instead';
+    }
+  }
+  function finishDictation(){
+    if(!activeRecognition||dictationStopping)return;
+    dictationStopping=true;
+    if(dictationButton&&dictationButton.isConnected){
+      dictationButton.textContent='⌛ Finishing…';
+      dictationButton.setAttribute('aria-pressed','false');
+    }
+    setDictateHint('Finishing your words… check the text box before tapping Done.');
+    try{activeRecognition.stop()}catch(e){
+      setDictateHint('Could not finish listening. Check your words or try the microphone again.');
+      stopDictation();
+    }
+  }
+  function toggleDictation(btn){
+    if(activeRecognition){finishDictation();return}
+    var field=document.getElementById(btn.getAttribute('data-dictate'));
+    if(!field)return;
+    var Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!Recognition){
+      setDictateHint('Voice typing is unavailable in this browser. You can type, use picture cards, or ask someone to help.');
+      return;
+    }
+    var recognition;
+    try{recognition=new Recognition()}catch(e){
+      setDictateHint('This browser could not open the microphone. You can type or ask someone to help.');
+      return;
+    }
+    recognition.lang='en-US';
+    recognition.continuous=false;
+    // Show interim words immediately; some iPhones take time to send a final result.
+    recognition.interimResults=true;
+    recognition.maxAlternatives=1;
+    dictationBaseText=field.value.trim();
+    dictationGotWords=false;dictationHadError=false;dictationStopping=false;
+    activeRecognition=recognition;dictationField=field;dictationButton=btn;
+    window.speechSynthesis?.cancel();
+    setDictateHint('Starting microphone… allow access if asked, then speak.');
+    recognition.onstart=function(){
+      if(activeRecognition!==recognition)return;
+      btn.setAttribute('aria-pressed','true');
+      btn.textContent='⏹ Stop Listening';
+      setDictateHint('Listening… say what you did. Your words should appear as you speak.');
+    };
+    recognition.onresult=function(event){
+      if(activeRecognition!==recognition)return;
+      // Rebuild the current utterance from ALL results so interim corrections
+      // replace earlier guesses rather than duplicating the same words.
+      var parts=[];
+      for(var i=0;i<event.results.length;i++){
+        var item=event.results[i];
+        var transcript=item&&item[0]&&item[0].transcript;
+        if(transcript&&transcript.trim())parts.push(transcript.trim());
+      }
+      var words=parts.join(' ').trim();
+      if(!words||!field.isConnected)return;
+      dictationGotWords=true;
+      field.value=(dictationBaseText?dictationBaseText+' ':'')+words;
+      field.dispatchEvent(new Event('input',{bubbles:true}));
+      if(field.id==='micSetupText')setDictateHint('✅ Microphone working! A helper can return to My STAR now.');
+      else setDictateHint('I heard: “'+words+'”. Check the words, and tap Stop Listening when finished.');
+    };
+    recognition.onerror=function(event){
+      if(activeRecognition!==recognition)return;
+      // Some iPhones report an end-of-session error even after transcribing words.
+      // A recognized answer should never be replaced by a misleading failure notice.
+      if(dictationGotWords){setDictateHint('Your words appeared in the box. Check them before tapping Done.');return;}
+      dictationHadError=true;
+      var error=event.error||'';
+      if(error==='no-speech')setDictateHint('I did not hear any words. Tap Talk Instead to try again.');
+      else if(error==='not-allowed'||error==='service-not-allowed')setDictateHint('Microphone access was blocked. Allow microphone permission for this site in your browser settings.');
+      else if(error==='audio-capture')setDictateHint('The microphone could not be accessed. Check your device microphone permission.');
+      else if(error==='network')setDictateHint('Speech recognition needs a connection on this device. Check internet access and try again.');
+      else setDictateHint('Speech recognition did not work. You can try again or type your answer.');
+    };
+    recognition.onend=function(){
+      if(activeRecognition!==recognition)return;
+      activeRecognition=null;dictationField=null;dictationButton=null;dictationStopping=false;
+      if(btn.isConnected){
+        btn.textContent='🎤 Talk Instead';btn.setAttribute('aria-pressed','false');
+      }
+      if(!dictationHadError){
+        if(dictationGotWords)setDictateHint('Your words are in the box. Check them, then tap Done. Tap Talk Instead to add more.');
+        else setDictateHint('No words appeared. Tap Talk Instead to try again, and check microphone permission if needed.');
+      }
+    };
+    try{recognition.start()}catch(e){
+      activeRecognition=null;dictationField=null;dictationButton=null;dictationStopping=false;
+      btn.setAttribute('aria-pressed','false');btn.textContent='🎤 Talk Instead';
+      setDictateHint('Speech-to-text did not start. Check microphone permission and try again.');
+    }
+  }
+  function showSilentStars(){
+    // Completion is intentionally silent; read-aloud is not triggered by Done.
+    window.speechSynthesis?.cancel();
+    stopDictation();
+    var dots=[
+      [-136,-92,0],[-96,-137,.06],[-18,-147,.09],[87,-131,.03],
+      [142,-63,.06],[145,38,.09],[92,119,.02],[9,143,.08],
+      [-95,122,.05],[-149,47,.04],[-159,-20,.07],[35,-105,.12]
+    ];
+    var stars=dots.map(function(v,i){
+      var star=i%3===0?'✦':i%3===1?'⭐':'✧';
+      return '<span class="star-spark" aria-hidden="true" style="--dx:'+v[0]+'px;--dy:'+v[1]+'px;--delay:'+v[2]+'s">'+star+'</span>';
+    }).join('');
+    screen.innerHTML='<div class="star-complete" role="status" aria-label="All done!">'+stars+
+      '<div class="star-complete-inner"><span class="star-complete-symbol" aria-hidden="true">🌟</span><strong>All done!</strong></div></div>';
+    setTimeout(function(){if(screen.querySelector('.star-complete'))render('home')},1750);
+  }
+  function support(){return '<label style="display:flex;align-items:center;gap:12px;font-weight:700;margin:20px 0"><input id="withSupport" type="checkbox" style="width:25px;height:25px"> Someone helped me answer</label><div id="supportOptions" hidden><label for="supportKind">How did they help?</label><select id="supportKind" class="large-action secondary" style="width:100%;margin-top:8px"><option value="Read a question aloud">Read a question aloud</option><option value="Helped me choose">Helped me choose</option><option value="Entered my answer">Entered my answer</option></select></div>'}
+  function choice(value,emoji,words){return '<button type="button" class="choice" aria-pressed="false" data-choice="'+value+'"><span class="scene" aria-hidden="true">'+emoji+'</span><span>'+words+'</span></button>'}
+  var painPart='';
+  var symptomChoices={
+    Head:['Headache','Dizzy'], Nose:['Stuffy nose','Runny nose','Nose hurts'],
+    Throat:['Sore throat','Hurts to swallow'], Ears:['Earache','Ear feels plugged'],
+    Chest:['Chest hurts','Cough'], Stomach:['Stomachache','Feel like throwing up'],
+    'Back of head':['Headache'], Neck:['Sore neck','Stiff neck']
+  };
+  function showPainOptions(part){
+    painPart=part;
+    var options=(symptomChoices[part]||['Hurts','Feels sore']).concat(['Something else','I’m not sure']);
+    document.getElementById('painSymptoms').innerHTML='<h2>What feels wrong?</h2>'+
+      '<button type="button" class="small-btn" data-hear-symptoms>🔊 Hear the choices</button>'+
+      '<div class="choices">'+options.map(function(option){
+        return '<button type="button" class="small-btn" data-symptom="'+option+'" aria-pressed="false">'+option+'</button>';
+      }).join('')+'</div>';
+    document.getElementById('painSymptoms').scrollIntoView({block:'nearest'});
+  }
+  function bodyPoster(front){
+    var parts=front?[
+      ['Head',50,8],['Ears',72,14],['Nose',50,18],['Throat',50,28],
+      ['Chest',50,39],['Stomach',50,51],['Right arm',22,44],['Left arm',78,44],
+      ['Right leg',40,75],['Left leg',60,75]
+    ]:[
+      ['Back of head',50,11],['Neck',50,26],['Upper back',50,37],
+      ['Lower back',50,51],['Left arm',22,44],['Right arm',78,44],['Left leg',40,75],['Right leg',60,75]
+    ];
+    var head=front
+      ? '<path d="M69 54q0-34 31-34t31 34l-3 18q-3 28-28 30-25-2-28-30z" fill="#e6b797" stroke="#785545" stroke-width="2.5"/>'+
+        '<path d="M69 61q-8-30 13-41 16-9 35-2 22 8 14 43l-6-16q-20 5-37-8-8 14-17 16z" fill="#594139"/>'+
+        '<path d="M77 58q7-4 13 0m20 0q7-4 13 0M100 63l-3 12 6 1m-13 9q10 6 20 0" fill="none" stroke="#684738" stroke-width="2.8" stroke-linecap="round"/>'
+      : '<path d="M68 57C63 32 78 18 100 18s37 14 32 39l-4 19c-2 8-6 13-11 17l-6-1-4 5H93l-4-5-6 1c-5-4-9-9-11-17z" fill="#594139" stroke="#49332b" stroke-width="2.5" stroke-linejoin="round"/>'+
+        '<path d="M78 45q9-16 29-16m-23 30q9-10 24-12" fill="none" stroke="#806257" stroke-width="2.5" stroke-linecap="round"/>';
+    var rearDetails=front?'':'<path d="M76 122q24 8 48 0m-51 114v14l10 6 10-6v-14zm34 0v14l10 6 10-6v-14zM66 399q14 4 28 0m12 0q14 4 28 0" fill="none" stroke="#354860" stroke-opacity=".65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
+    var figure='<svg viewBox="0 0 200 420" role="img" aria-label="'+(front?'Front':'Back')+' view of a person">'+
+      '<path d="M82 90h36v28l-18 14-18-14zM59 136q-12 17-16 42l-17 63q-4 17 6 21 10 3 15-13l23-62 11-35m60-16q12 17 16 42l17 63q4 17-6 21-10 3-15-13l-23-62-11-35" fill="#dba987" stroke="#785545" stroke-width="2.5" stroke-linejoin="round"/>'+
+      '<path d="M66 222q-7 36 1 76l4 90q0 12 14 12 11-1 11-14l4-115 4 115q0 13 11 14 14 0 14-12l4-90q8-40 1-76z" fill="#546a88" stroke="#354860" stroke-width="2.5"/>'+
+      '<path d="M78 109q-26 6-37 37l24 11 3-8-5 79q37 9 74 0l-5-79 3 8 24-11q-11-31-37-37-22 20-44 0z" fill="#8ab6a1" stroke="#3f6255" stroke-width="2.5" stroke-linejoin="round"/>'+
+      '<path d="M72 384q11 5 23 0l1 16q-4 11-30 9-12-2-6-12zm56 0q-11 5-23 0l-1 16q4 11 30 9 12-2 6-12z" fill="#ede6d9" stroke="#625952" stroke-width="2.5"/>'+
+      '<path d="M73 58q-14-9-13 6 1 11 12 10m55-16q14-9 13 6-1 11-12 10" fill="#dba987" stroke="#785545" stroke-width="2.5"/>'+
+      head+rearDetails+'</svg>';
+    return '<div class="body-card"><strong>'+(front?'FRONT':'BACK')+'</strong><div class="body-poster">'+figure+
+      parts.map(function(a){return '<button type="button" class="pain-point" aria-pressed="false" data-pain="'+a[0]+'" aria-label="'+a[0]+'" style="left:'+a[1]+'%;top:'+a[2]+'%">•</button>'}).join('')+'</div></div>'
+  }
+  function picture(kind){
+    if(kind==='swim')return '<svg viewBox="0 0 220 160" role="img" aria-label="Person swimming in a blue pool"><rect x="0" y="0" width="220" height="160" fill="#b9e6ed"/><rect x="0" y="99" width="220" height="61" fill="#51a7c3"/><circle cx="73" cy="62" r="17" fill="#b87949"/><path d="M88 85L139 98 163 72" fill="none" stroke="#6d3b2c" stroke-width="15" stroke-linecap="round"/><path d="M0 117Q20 105 40 117T80 117T120 117T160 117T200 117" stroke="white" fill="none" stroke-width="5"/><path d="M0 140Q20 128 40 140T80 140T120 140T160 140T200 140" stroke="white" fill="none" stroke-width="5"/></svg>';
+    return '<svg viewBox="0 0 220 160" role="img" aria-label="Person listening to music with headphones"><rect width="220" height="160" fill="#f2dbb2"/><circle cx="110" cy="75" r="37" fill="#d49b6c"/><path d="M64 72A46 46 0 0 1 156 72" fill="none" stroke="#3f536a" stroke-width="11"/><rect x="60" y="66" width="17" height="35" rx="8" fill="#3f536a"/><rect x="143" y="66" width="17" height="35" rx="8" fill="#3f536a"/><path d="M98 98Q110 109 123 98" stroke="#7a3b27" fill="none" stroke-width="4"/><path d="M173 22v45q-8-7-16 0-7 12 6 15 17 1 17-16V35l18-5v-12z" fill="#3f536a"/></svg>'
+  }
+
+  // Preserve the original Would You Rather? categories and optional custom photo cards.
+  // This preview deliberately does not send activity sessions to Supabase.
+  var wyFamilies={
+    'Inside':['Music','Puzzles','Books','Art','Cards & Games','Video Games','Cooking','Computers','Sensory Space'],
+    'Outside':['Walk','Playground','Nature Hunt','Sports','Water Play','Garden','Chalk','Bike/Scooter'],
+    'Car Trip':['Library','Shop','Food Shop','Clothes Shop','Out to Eat','Get Coffee','Museum','Park Trip','Errands','Other Car Trip']
+  };
+  var wySub={
+    'Art':['Coloring','Painting','Playdoh','Clay','Build','Cut & Paste','Collage','Sewing','Glue & Glitter'],
+    'Music':['My Playlist','Drums','Keyboard'],
+    'Puzzles':['Big Pieces','Standard','Floor Puzzle','Puzzle Blocks','3D Puzzle'],
+    'Books':['Picture Book','Audiobook','Story Time'],
+    'Walk':['Short Block','Park Loop','Trail'],
+    'Playground':['Swing','Slide','Climb'],
+    'Sports':['Catch','Kick','Hoops'],
+    'Sensory Space':['Weighted Blanket','Bean Bag','Calm Lights'],
+    'Cards & Games':['UNO','Go Fish','War','Memory','Yahtzee','Candy Land','Connect Four','Jenga','Dominoes','Dice Games']
+  };
+  // Photo IDs are from free-to-use Pexels photos; only preview images are loaded.
+  var wyPhotos={
+    'Inside':6297091,'Outside':8704681,'Music':5077420,'Art':7859031,'Water Play':8688166,
+    'Cards & Games':8111356,'Cooking':7964666,'Walk':9533800,
+    'Garden':8704681,'My Playlist':5077420,'Painting':7859031,
+    'Car Trip':11942041
+  };
+  var wyIcons={
+    'Inside':'🏠','Outside':'🌳','Car Trip':'🚗','Just Me':'🧍','One Person':'👥','Group':'👪',
+    'Music':'🎵','Puzzles':'🧩','Books':'📚','Art':'🎨','Cards & Games':'🃏','Video Games':'🎮',
+    'Cooking':'🍳','Computers':'💻','Sensory Space':'🧸','Walk':'🚶','Playground':'🛝',
+    'Nature Hunt':'🍃','Sports':'⚽','Water Play':'💦','Garden':'🌻','Chalk':'🖍️',
+    'Bike/Scooter':'🚲','Library':'📚','Shop':'🛍️','Food Shop':'🛒','Clothes Shop':'👕',
+    'Out to Eat':'🍽️','Get Coffee':'☕','Museum':'🏛️','Park Trip':'🌲','Errands':'📝',
+    'Other Car Trip':'🚗','Coloring':'🖍️','Painting':'🎨','Playdoh':'🟨','Clay':'🏺',
+    'Build':'🧱','Cut & Paste':'✂️','Collage':'🖼️','Sewing':'🧵','Glue & Glitter':'✨',
+    'My Playlist':'🎧','Drums':'🥁','Keyboard':'🎹','Big Pieces':'🧩','Standard':'🧩',
+    'Floor Puzzle':'🧩','Puzzle Blocks':'🧱','3D Puzzle':'🧩','Picture Book':'📖',
+    'Audiobook':'🎧','Story Time':'📖','Short Block':'🚶','Park Loop':'🌲','Trail':'🥾',
+    'Swing':'🛝','Slide':'🛝','Climb':'🧗','Catch':'⚾','Kick':'⚽','Hoops':'🏀',
+    'Weighted Blanket':'🧸','Bean Bag':'🛋️','Calm Lights':'💡','UNO':'🃏',
+    'Go Fish':'🎣','War':'🃏','Memory':'🧠','Yahtzee':'🎲','Candy Land':'🍬',
+    'Connect Four':'🟡','Jenga':'🧱','Dominoes':'🁣','Dice Games':'🎲'
+  };
+  function safeHtml(v){return String(v||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+  function wyImage(label){
+    var custom=null;
+    try{
+      var images=JSON.parse(localStorage.getItem('wy_custom_icons')||'{}');
+      if(typeof images[label]==='string' && /^data:image\/(png|jpeg|webp|gif);base64,/.test(images[label]))custom=images[label];
+    }catch(e){}
+    var id=wyPhotos[label],src=custom||(id?'https://images.pexels.com/photos/'+id+'/pexels-photo-'+id+'.jpeg?auto=compress&w=480':null);
+    var fallback=safeHtml(wyIcons[label]||'✨');
+    if(!src)return '<span class="photo-fallback" aria-hidden="true">'+fallback+'</span>';
+    return '<img src="'+safeHtml(src)+'" alt="" loading="lazy" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span class="photo-fallback" aria-hidden="true" hidden>'+fallback+'</span>';
+  }
+  function wyCard(label){
+    return '<button type="button" class="choice photo-choice" data-wyr-pick="'+safeHtml(label)+'"><span class="photo-frame">'+wyImage(label)+'</span><span>'+safeHtml(label)+'</span></button>';
+  }
+  function wyCards(options){return '<div class="choices">'+options.map(wyCard).join('')+'</div>'}
+  function wyPrompt(){
+    if(!wyr)return readText.rather;
+    return ({
+      where:'Would you rather do something inside, outside, or go somewhere?',
+      withWho:'Would you rather be by yourself, with one person, or in a group?',
+      people:'Who would you like to spend time with? You can skip this question.',
+      category:'What kind of activity would you like to do?',
+      sub:'Which one sounds good to you?',
+      summary:'Here is what you chose. You can change it or stop.',
+      timer:'You can stop the timer at any time.',
+      finish:'How was your activity?',
+      declined:'Neither is okay. You do not have to choose.'
+    })[wyr.stage]||readText.rather;
+  }
+  function wyStopTimer(){if(wyrTimer){clearInterval(wyrTimer);wyrTimer=null}}
+  function wyReset(){wyStopTimer();supported=false;wyr={stage:'where',where:'',withWho:'',people:'',category:'',choice:'',elapsed:0,startAt:0,mood:'',offered:[],lastOffered:[],offset:0}}
+  function wyExtras(){
+    return '<div class="actions">'+button('Neither','wyr-neither')+button('Something else','wyr-other')+button('Not now','skip')+'</div>';
+  }
+  function wySummary(){
+    return '<div class="wyr-summary">📍 '+safeHtml(wyr.where)+'<p>👥 '+safeHtml(wyr.withWho)+(wyr.people?' — '+safeHtml(wyr.people):'')+'</p><p>🎯 '+safeHtml(wyr.choice||wyr.category||'No activity chosen')+'</p></div>';
+  }
+  function renderWouldRather(){
+    current='rather';chosen='';
+    var html='',stage=wyr.stage,items=[];
+    if(stage==='where'){
+      items=['Inside','Outside','Car Trip'];html='<p class="progress-label">1 · Where?</p><p>Would you rather stay inside, go outside, or take a trip?</p>'+wyCards(items)+wyExtras();
+    }else if(stage==='withWho'){
+      items=['Just Me','One Person','Group'];html='<p class="progress-label">2 · With who?</p><p>Would you rather be alone, with one person, or with a group?</p>'+wyCards(items)+wyExtras();
+    }else if(stage==='people'){
+      html='<p>Who would you like to do this with? You can leave this empty.</p><label for="wyrPeople">Name or names (optional)</label><input class="text-entry" id="wyrPeople" placeholder="Who? (optional)" value="'+safeHtml(wyr.people)+'"><div class="actions">'+button('Continue','wyr-people','primary')+button('Skip','wyr-people')+button('Not now','skip')+'</div>';
+    }else if(stage==='category'){
+      items=wyFamilies[wyr.where]||[];html='<p class="progress-label">3 · What kind?</p><p>What sounds fun?</p>'+wyCards(items.slice(wyr.offset,wyr.offset+2))+'<div class="actions">'+(wyr.offset>0?button('Previous choices','wyr-prev'):'')+(wyr.offset+2<items.length?button('More choices','wyr-more','primary'):'')+'</div>'+wyExtras();
+    }else if(stage==='sub'){
+      items=wySub[wyr.category]||[];html='<p class="progress-label">4 · Which activity?</p><p>Choose what you would like.</p>'+wyCards(items.slice(wyr.offset,wyr.offset+2))+'<div class="actions">'+(wyr.offset>0?button('Previous choices','wyr-prev'):'')+(wyr.offset+2<items.length?button('More choices','wyr-more','primary'):'')+'</div>'+wyExtras();
+    }else if(stage==='summary'){
+      html='<p>Would you like to try this?</p>'+wySummary()+'<div class="actions">'+button('Start activity timer','wyr-start','primary')+button('Just choosing','wyr-chosen')+button('Change my choice','wyr-restart')+button('Not now','skip')+'</div>'+support()+'<p style="font-size:14px">TEST ONLY. Your choice is saved if you tap Just choosing. Choosing is not proof an activity happened.</p>';
+    }else if(stage==='timer'){
+      html=wySummary()+'<h2 id="wyrClock" role="timer" style="text-align:center;font-size:46px">'+formatWyTime(wyr.elapsed)+'</h2><p>Enjoy the activity. Stop when you want.</p><div class="actions">'+button('Stop timer','wyr-stop','primary')+'</div>';
+    }else if(stage==='finish'){
+      items=['I liked it','It was okay','I did not like it'];html=wySummary()+'<p>How did you like it?</p>'+wyCards(items)+'<div class="actions">'+button('Done','wyr-finish','primary')+button('Not now','skip')+'</div><p style="font-size:14px">TEST ONLY. You can save the chosen activity preference when you tap Done.</p>';
+    }else if(stage==='declined'){
+      html='<p>That is okay. You do not have to choose anything.</p><div class="actions">'+button('Try again','wyr-restart','primary')+button('Back to My STAR','skip')+'</div>';
+    }
+    wyr.offered=(stage==='category'||stage==='sub')?items.slice(wyr.offset,wyr.offset+2):items.slice();
+    wrap('Would You Rather?',html);
+    var supportBox=document.getElementById('withSupport');
+    if(supportBox)supportBox.addEventListener('change',function(){supported=supportBox.checked;document.getElementById('supportOptions').hidden=!supported});
+  }
+  function formatWyTime(sec){return String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0')}
+  function pickWyr(answer){
+    if(wyr.stage==='where'){wyr.where=answer;wyr.stage='withWho'}
+    else if(wyr.stage==='withWho'){
+      wyr.withWho=answer;wyr.offset=0;wyr.stage=answer==='Just Me'?'category':'people';
+    }else if(wyr.stage==='category'){
+      wyr.lastOffered=wyr.offered.slice();wyr.category=answer;wyr.offset=0;wyr.stage=wySub[answer]?'sub':'summary';
+    }else if(wyr.stage==='sub'){wyr.lastOffered=wyr.offered.slice();wyr.choice=answer;wyr.stage='summary'}
+    else if(wyr.stage==='finish'){wyr.mood=answer;status('You chose: '+answer+'. Tap Done to save the preference.');speak(answer);return}
+    renderWouldRather();speak(wyPrompt());
+  }
+
+  var momentsCountRequest=0;
+  async function refreshMomentsCount(){
+    var request=++momentsCountRequest;
+    try{
+      var [client,groups]=await Promise.all([
+        import('./restClient.js'),
+        import('./active-group.js')
+      ]);
+      var user=(await client.requireSession()).user.id;
+      var group=await groups.ensureActiveGroupId(user);
+      if(!group)return;
+      var person=user;
+      var count=0,offset=0,batch;
+      do{
+        batch=await client.rest('star_moments?group_id=eq.'+group+'&individual_id=eq.'+person+'&select=id,star_moment_responses(satisfaction)&order=created_at.desc,id&limit=500&offset='+offset,{expectedUserId:user});
+        count+=batch.filter(function(row){return !row.star_moment_responses||row.star_moment_responses.satisfaction==='Not now'}).length;
+        offset+=batch.length;
+      }while(batch.length===500);
+      if(request!==momentsCountRequest||current!=='home')return;
+      var tileNode=screen.querySelector('[data-open="moments"]');
+      if(!tileNode)return;
+      tileNode.querySelector('.moment-waiting-badge')?.remove();
+      tileNode.querySelector('small').textContent=count?count+' photo'+(count===1?'':'s')+' waiting':'No photos waiting';
+      tileNode.setAttribute('aria-label','My Moments. '+count+' photos waiting');
+      if(count){var badge=document.createElement('span');badge.className='moment-waiting-badge';badge.textContent=count+' waiting';badge.setAttribute('aria-hidden','true');tileNode.append(badge);}
+    }catch(error){/* Leave the tile available when the count cannot be loaded. */}
+  }
+  window.addEventListener('pageshow',function(){if(current==='home')refreshMomentsCount()});
+  window.addEventListener('focus',function(){if(current==='home')refreshMomentsCount()});
+  document.addEventListener('visibilitychange',function(){if(!document.hidden&&current==='home')refreshMomentsCount()});
+
+  function render(page){
+    stopDictation();wyStopTimer();chosen='';current=page;window.speechSynthesis?.cancel();
+    screen.classList.toggle('role-home-panel',page==='home');
+    if(page==='home'){
+      screen.innerHTML='<h1 id="myStarGreeting">My STAR ☆</h1><p class="intro">What would you like to share today? Nothing is required.</p>'+
+        '<div class="tiles">'+
+          tile('urgent','🚨 ‼️','Help Now','Tell my team I need help',true)+
+          tile('pain','🧍 🩹','Something Hurts','Show where my body hurts',true)+
+          tile('feel','😊 😐 😟','This Is How I Feel','Choose how I am feeling')+
+          tile('day','🏊 🌳','My Day','Tell how my day went')+
+          tile('support-preparation','🌿','What Helps Me','Share what helps me feel comfortable')+
+          tile('communication','💬','How I Communicate','Tell people what helps me')+
+          tile('moments','📷','My STAR Moments','Look at my photos and say what I liked')+
+          tile('goals','🌟 🙌','Something I Did','Tell what I did')+
+          tile('chat','🗣️ 💬','My Team Chat','Talk with my team')+
+          tile('rather','🏠 🌳','Would You Rather?','Choose what I like')+
+        '</div>'+
+        '<div class="tiles" style="margin-top:14px">'+
+          tile('voice','🖼️ 🗣️','Picture Communication','Use my picture cards')+
+        '</div>'+
+        '<div class="actions">'+button('Not now — I am done','skip','secondary')+'</div>'+
+        '<div id="result" class="message" hidden></div>';
+      updateGreeting();refreshMomentsCount();window.dispatchEvent(new Event('star:home-rendered'));
+    } else if(page==='support-preparation'){
+      location.href='support-preparation.html';
+    } else if(page==='communication'){
+      location.href='communication.html?view=mine';
+    } else if(page==='moments'){
+      location.href='star-moments.html?mode=review';
+    } else if(page==='mic-setup'){
+      wrap('🎤 Microphone Setup',
+        '<div style="text-align:center;font-size:60px;margin:8px 0" aria-hidden="true">📱 🎤 ✅</div>'+
+        '<h2>Have a helper set up the microphone</h2>'+
+        '<p style="font-size:20px;font-weight:750">The phone may ask to use the microphone. A helper can tap <strong>Allow</strong> when that appears.</p>'+
+        '<p style="font-size:17px">STAR cannot skip the phone permission question. Try speaking below to make sure the microphone works before the person uses it alone.</p>'+
+        '<label for="micSetupText">Microphone test (not saved)</label>'+
+        '<textarea class="voice-input" id="micSetupText" placeholder="Say a short test phrase" readonly></textarea>'+
+        dictateControls('micSetupText')+
+        '<div class="actions">'+button('Back to My STAR','skip','primary')+'</div>');
+    } else if(page==='feel'){
+      wrap('How I Feel','<p>Pick a face. You do not have to answer.</p><div class="choices">'+choice('Happy','😊','Happy')+choice('Okay','😐','Okay')+choice('Sad','😢','Sad')+choice('Upset','😠','Upset')+choice('Tired','😴','Tired')+choice('Unwell','🤒','Not feeling good')+'</div>'+support()+'<div class="actions">'+button('Done','done','primary')+button('Not now','skip')+'</div>');
+    } else if(page==='pain'){
+      painSide='front';painPart='';wrap('Something Hurts','<p>Tap where it hurts. Pick front or back.</p><div class="body-switch"><button type="button" data-side="front" aria-pressed="true">FRONT</button><button type="button" data-side="back" aria-pressed="false">BACK</button></div><div class="body-layout" id="painPoster">'+bodyPoster(true)+'</div><p id="painLocation" class="selected-location" role="status">Choose a body part</p><div id="painSymptoms"></div>'+support()+'<div class="actions">'+button('Send to my team','chat-details','primary')+button('Not now','skip')+'</div>');
+    } else if(page==='day'){
+      wrap('My Day','<p>Did you like your activity today?</p><div class="choices">'+choice('Liked it','😊','I liked it')+choice('Okay','😐','It was okay')+choice('Did not like','😞','I did not like it')+choice('No activity','🙅','Not today')+'</div><label for="dayActivity">Which activity? (optional)</label>'+dictateControls('dayActivity')+'<textarea class="voice-input" id="dayActivity" maxlength="2000" placeholder="You can say or type what activity you tried."></textarea>'+support()+'<div class="actions">'+button('Done','done','primary')+button('Not now','skip')+'</div>');
+    } else if(page==='goals'){
+      wrap('Something I Did 🌟','<p>Did you do something you want to share?</p><div class="choices">'+choice('I did something','🌟','I did it!')+choice('I tried something','🙌','I tried!')+choice('I learned something','💡','I learned!')+choice('Someone helped me','🤝','I had help')+'</div><label for="accomplishmentText">What did you do? (optional)</label>'+dictateControls('accomplishmentText')+'<textarea class="voice-input" id="accomplishmentText" placeholder="Tell me what you did, or type here" maxlength="2000"></textarea>'+support()+'<div class="actions">'+button('Done','done','primary')+button('Not now','skip')+'</div>');
+    } else if(page==='tell'){
+      wrap('Talk to My Team','<p>Tell someone something or look at the group chat.</p><label for="myMessage">My message (optional)</label>'+dictateControls('myMessage')+'<textarea class="voice-input" id="myMessage" placeholder="Tell me your message, or type here" maxlength="2000"></textarea>'+support()+'<div class="actions">'+button('Hear my message','hear-message')+button('Open Group Chat','open-chat','primary')+button('Open picture cards','open-voice')+button('Done','done')+button('Not now','skip')+'</div><p style="font-size:14px">This preview does not send or save messages. Group Chat is separate test functionality.</p>');
+    } else if(page==='rather'){
+      wyReset();renderWouldRather();
+    } else if(page==='urgent'){
+      wrap('🚨 HELP NOW','<div class="notice urgent">Help Now posts in your group chat. If you need help right away, get someone nearby.</div><p>What do you need to tell someone?</p><div class="choices">'+choice('Something hurts','🩹','Something hurts')+choice('I am scared','😨','I am scared')+choice('I need someone','🙋','I need someone')+choice('Something happened','❗','Something happened')+'</div><label for="urgentMessage">Add more (optional)</label><textarea id="urgentMessage" class="voice-input" placeholder="Type or dictate"></textarea><div class="actions">'+button('Send to my team','chat-details','primary')+button('Not now','skip')+'</div>');
+    } else if(page==='chat') {window.location.href='chat.html';return}
+    else if(page==='voice'){window.location.href='my-star-voice.html';return}
+    var input=document.getElementById('withSupport');
+    if(input)input.addEventListener('change',function(){supported=input.checked;document.getElementById('supportOptions').hidden=!supported});
+  }
+  function choose(el,value){
+    chosen=value;
+    document.querySelectorAll('[data-choice],[data-pain]').forEach(function(b){b.setAttribute('aria-pressed','false');b.classList.remove('selected')});
+    el.setAttribute('aria-pressed','true');el.classList.add('selected');
+    speak(value==='Something hurts'?'Something hurts':value);
+    var location=document.getElementById('painLocation');if(location)location.textContent='You chose: '+value;
+    if(current==='pain'||current==='urgent')status('You chose: '+value+'. Tap Send to my team.');
+    else if(current!=='goals')status('You chose: '+value+'. Tap Done to save it, or Not now to skip.');
+  }
+  function supportDescription(){
+    return document.getElementById('withSupport')?.checked
+      ? (document.getElementById('supportKind')?.value||'Help reported') : 'not_reported';
+  }
+  function requestId(button, payload){
+    const signature=JSON.stringify(payload);
+    if(button.dataset.saveSignature!==signature){
+      button.dataset.saveSignature=signature;
+      button.dataset.requestId=crypto.randomUUID();
+    }
+    return button.dataset.requestId;
+  }
+  function savePersonalCheckin(btn,responseType,responseValue,offeredOptions,originalWords=''){
+    if(!String(responseValue||'').trim()){status('Nothing is required. Choose an answer or select Not now.');return}
+    btn.disabled=true;btn.textContent='Saving…';
+    status('Saving this My STAR answer…');
+    import('./my-star.js?v=2026.11.19C')
+      .then(function(mod){
+        return mod.saveCheckin({
+          responseType:responseType,responseValue:responseValue,
+          offeredOptions:offeredOptions||[],originalWords,supportKind:supportDescription(),
+          requestId:requestId(btn,[responseType,responseValue,offeredOptions,originalWords,supportDescription()])
+        })
+      })
+      .then(function(){
+        if(responseType==='mood' && responseValue!=='Not now'){
+          location.href='star-moments.html?mode=daily';
+          return;
+        }
+        showSilentStars();
+      })
+      .catch(function(err){
+        btn.disabled=false;btn.textContent='Done';
+        status('Not saved. '+(err?.message||'Please try again.')+' Your choice is still selected.');
+      });
+  }
+  var helpDestination={};
+  function sendChatNotice(box,message,destination,onSent){
+    var id=crypto.randomUUID();
+    async function send(){
+      box.textContent='Sending to group chat…';
+      try{
+        var [client,groups]=await Promise.all([
+          import('./restClient.js'),
+          import('./active-group.js')
+        ]);
+        var userId=(await client.requireSession()).user.id;
+        if(destination.userId&&destination.userId!==userId)throw new Error('Account changed');
+        destination.userId=userId;
+        var groupId=destination.groupId||await groups.ensureActiveGroupId(userId);
+        if(!groupId)throw new Error('No active group');
+        destination.groupId=groupId;
+        await client.rest('messages?on_conflict=my_star_request_id',{
+          method:'POST',expectedUserId:userId,headers:{Prefer:'resolution=ignore-duplicates,return=minimal'},
+          body:JSON.stringify({my_star_request_id:id,group_id:groupId,sender_id:userId,message})
+        });
+        box.textContent='Sent to group chat.';
+        if(onSent)onSent();
+      }catch(error){
+        box.textContent='Could not confirm the message was sent. ';
+        var retry=document.createElement('button');
+        retry.type='button';retry.className='small-btn';retry.textContent='Try again';
+        retry.addEventListener('click',send,{once:true});box.append(retry);
+      }
+    }
+    return send();
+  }
+  screen.addEventListener('click',function(e){
+    var dictate=e.target.closest('[data-dictate]');
+    if(dictate){toggleDictation(dictate);return}
+    var side=e.target.closest('[data-side]');
+    if(side){painSide=side.getAttribute('data-side');document.querySelectorAll('[data-side]').forEach(function(b){b.setAttribute('aria-pressed',String(b===side))});document.getElementById('painPoster').innerHTML=bodyPoster(painSide==='front');
+      document.querySelectorAll('[data-pain]').forEach(function(point){
+        var selected=point.dataset.pain===painPart;
+        point.classList.toggle('selected',selected);
+        point.setAttribute('aria-pressed',String(selected));
+      });
+      speak(painSide==='front'?'Front of the body':'Back of the body');return}
+    var pick=e.target.closest('[data-wyr-pick]');
+    if(pick){pickWyr(pick.getAttribute('data-wyr-pick'));return}
+    var open=e.target.closest('[data-open]');
+    if(open){
+      var next=open.getAttribute('data-open');
+      render(next);speak(readText[current]||'My STAR');
+      if(next==='urgent'||next==='pain'){
+        helpDestination={};
+        var notice=document.createElement('p');
+        notice.setAttribute('role','status');
+        screen.querySelector('.panel').prepend(notice);
+        sendChatNotice(notice,next==='urgent'?'🚨 Help now. I need help.':'🩹 Something hurts.',helpDestination);
+      }
+      return;
+    }
+    var symptom=e.target.closest('[data-symptom]');
+    if(symptom){
+      chosen=painPart+' — '+symptom.dataset.symptom;
+      document.querySelectorAll('[data-symptom]').forEach(function(item){item.setAttribute('aria-pressed',String(item===symptom))});
+      speak(symptom.dataset.symptom);
+      status('You chose: '+chosen+'. Tap Send to my team.');
+      return;
+    }
+    if(e.target.closest('[data-hear-symptoms]')){
+      if(!readAloudOn){status('Turn on Read Aloud to hear the choices.');return}
+      speak('What feels wrong? '+Array.from(document.querySelectorAll('[data-symptom]'),function(item){return item.textContent}).join('. '));
+      return;
+    }
+    var ch=e.target.closest('[data-choice],[data-pain]');
+    if(ch){choose(ch,ch.getAttribute('data-choice')||ch.getAttribute('data-pain'));if(ch.dataset.pain)showPainOptions(ch.dataset.pain);return}
+    var a=e.target.closest('[data-action]');
+    if(!a)return;
+    var action=a.getAttribute('data-action');
+    if(action==='skip'){stopDictation();if(current==='home')status('That is okay. You do not have to check in.');else {render('home');speak('That is okay. You can come back whenever you want.')}return}
+    if(action==='wyr-people'){wyr.people=document.getElementById('wyrPeople')?.value.trim()||'';wyr.stage='category';renderWouldRather();speak(wyPrompt());return}
+    if(action==='wyr-restart'){wyReset();renderWouldRather();speak(wyPrompt());return}
+    if(action==='wyr-more'){wyr.offset+=2;renderWouldRather();speak(wyPrompt());return}
+    if(action==='wyr-prev'){wyr.offset=Math.max(0,wyr.offset-2);renderWouldRather();speak(wyPrompt());return}
+    if(action==='wyr-neither'){var offered=wyr.offered.slice();wyStopTimer();savePersonalCheckin(a,'leisure_preference','Neither',offered);return}
+    if(action==='wyr-other'){var other=prompt('What would you rather do? (optional)');if(other&&other.trim()){wyr.lastOffered=wyr.offered.slice();wyr.category='Something else';wyr.choice=other.trim().slice(0,160);wyr.stage='summary';renderWouldRather();speak(wyPrompt())}return}
+    if(action==='wyr-chosen'){savePersonalCheckin(a,'leisure_preference',wyr.choice||wyr.category,wyr.lastOffered);return}
+    if(action==='wyr-start'){wyr.elapsed=0;wyr.startAt=Date.now();wyr.stage='timer';renderWouldRather();wyStopTimer();wyrTimer=setInterval(function(){wyr.elapsed=Math.floor((Date.now()-wyr.startAt)/1000);var clock=document.getElementById('wyrClock');if(clock)clock.textContent=formatWyTime(wyr.elapsed)},1000);speak('Activity started. Stop when you are ready.');return}
+    if(action==='wyr-stop'){wyStopTimer();wyr.stage='finish';renderWouldRather();speak(wyPrompt());return}
+    if(action==='wyr-finish'){savePersonalCheckin(a,'leisure_preference',wyr.choice||wyr.category,wyr.lastOffered);return}
+    if(action==='open-voice'){render('voice');return}
+    if(action==='open-chat'){render('chat');return}
+    if(action==='hear-message'){var message=document.getElementById('myMessage');speak(message?.value||'No message entered');return}
+    if(action==='neither'||action==='other'){chosen=action==='neither'?'Neither':'Something else';speak(chosen);status('You chose: '+chosen+'. Not saved.');return}
+    if(action==='chat-details'){
+      var extra=document.getElementById('urgentMessage')?.value.trim()||'';
+      if(!chosen&&!extra){status('Choose a picture or add a message first.');return}
+      var result=document.getElementById('result');
+      result.hidden=false;
+      a.disabled=true;
+      var sentFrom=current, sentDestination=helpDestination;
+      sendChatNotice(result,(current==='urgent'?'🚨 Help now: ':'🩹 Something hurts: ')+[chosen,extra].filter(Boolean).join(' — ').slice(0,2000),helpDestination,function(){
+          if(current!==sentFrom||helpDestination!==sentDestination)return;
+          stopDictation();render('home');status('✓ Sent to my team.');
+        })
+        .finally(function(){a.disabled=false});
+      return;
+    }
+    if(action==='done'){
+      if(activeRecognition){finishDictation();setDictateHint('Finish speaking, check that your words are correct, then tap Done again.');return}
+      var messageField=document.getElementById('myMessage');
+      var accomplishment=document.getElementById('accomplishmentText');
+      var words=accomplishment?.value.trim()||'';
+      var val=words||chosen||(messageField?.value.trim()||'');
+      if(!val){status('You can choose an answer, or stop for now. Nothing is required.');return}
+      if(current==='goals'){
+        // Preserve the exact words and selected picture separately. No ISA links or credit.
+        var btn=a, chosenNow=chosen, supportBox=document.getElementById('withSupport');
+        var kind=supportBox?.checked?(document.getElementById('supportKind')?.value||'Help reported'):'not_reported';
+        btn.disabled=true;btn.textContent='Saving…';
+        status('Saving your answer for the team to review…');
+        import('./my-star.js?v=2026.11.19C')
+          .then(function(mod){return mod.saveObservation({words:words,choice:chosenNow,supportKind:kind,requestId:requestId(btn,[words,chosenNow,kind])})})
+          .then(function(){showSilentStars()})
+          .catch(function(err){
+            btn.disabled=false;btn.textContent='Done';
+            status('Not saved yet. '+(err?.message||'There was a problem. Please try Done again.')+' Your words are still here.');
+          });
+        return;
+      }
+      if(current==='feel'||current==='pain'||current==='day'){
+        savePersonalCheckin(a,current==='feel'?'mood':current==='pain'?'comfort':'daily_experience',chosen,[],current==='day'?(document.getElementById('dayActivity')?.value||'').trim():'');
+        return;
+      }
+      if(current==='tell'&&messageField?.value.trim()){
+        a.disabled=true;
+        var box=document.getElementById('result');
+        box.hidden=false;
+        sendChatNotice(box,messageField.value.trim().slice(0,2000),{},function(){render('home');status('✓ Sent to my team.');});
+      }
+      return;
+    }
+  });
+  document.getElementById('micSetupBtn').addEventListener('click',function(){render('mic-setup')});
+  document.getElementById('hearBtn').addEventListener('click',function(){
+    readAloudOn=!readAloudOn;
+    try{localStorage.setItem(readAloudKey,readAloudOn?'on':'off')}catch(e){}
+    updateReadButton();
+    if(readAloudOn)speak(current==='rather'?wyPrompt():(readText[current]||'My STAR'));
+    else window.speechSynthesis?.cancel();
+  });
+  if('speechSynthesis' in window)window.speechSynthesis.addEventListener?.('voiceschanged',function(){selectedVoice=preferVoice()});
+  updateReadButton();
+  var requestedPage=new URLSearchParams(location.search).get('page');
+  render(['urgent','pain','feel','day','goals','rather','tell'].includes(requestedPage)?requestedPage:'home');
+})().catch(error=>{
+  console.warn('[My STAR] Could not open Individual view',error);
+  const loadStatus=document.getElementById('myStarStatus');
+  loadStatus.hidden=false;
+  loadStatus.textContent='My STAR couldn’t load. Refresh to try again.';
+});
+</script>
 </body>
 </html>

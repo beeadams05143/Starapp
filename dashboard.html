@@ -138,6 +138,7 @@
       line-height: 1;
     }
     .draft-count-badge[hidden] { display: none; }
+    [data-my-star-supporter][hidden], [data-my-star-supporter-admin][hidden] { display: none }
     .quick-actions>*{min-width:0;width:100%}
     .action-card > span{min-width:0;max-width:100%;overflow-wrap:anywhere}
     .action-card .action-description{font-size:13px;line-height:1.35;font-weight:500;letter-spacing:0;color:#5f5e5a;display:block;margin-top:0;overflow-wrap:anywhere}
@@ -282,6 +283,7 @@
     </section>
 
     <section class="dashboard-card">
+      <p id="myStarChatAlert" hidden><a href="/chat.html">🔴 New My STAR help message in Group Chat</a></p>
       <div class="section-label">Quick actions</div>
       <div class="quick-actions">
         <a class="action-card active" href="caregiver-checkin.html">
@@ -343,6 +345,11 @@
           <span>Team Updates</span>
           <small class="action-description">Medications, learning goals &amp; important changes</small>
         </a>
+        <a class="action-card" data-my-star-supporter hidden href="star-moments.html?mode=add"><span aria-hidden="true">📷</span><span>Add a Moment</span></a>
+        <a class="action-card" data-my-star-supporter hidden href="star-moments.html?mode=month"><span aria-hidden="true">🗓️</span><span>My Month</span></a>
+        <a class="action-card" data-my-star-supporter hidden href="communication.html"><span aria-hidden="true">💬</span><span>Communication Supports</span></a>
+        <a class="action-card" data-my-star-supporter hidden href="support-preparation.html"><span aria-hidden="true">🌿</span><span>Support Preparation</span></a>
+        <a class="action-card" data-my-star-supporter-admin hidden href="my-star-isa-review.html"><span aria-hidden="true">🌟</span><span>Review My STAR Observations</span></a>
       </div>
 
       <div class="section-label">Recent activity</div>
@@ -395,6 +402,9 @@
   } from './supabaseClient.js?v=2026.03.29A';
   import { fetchCurrentProfile } from './onboarding-flow.js?v=2026.03.29A';
 
+  import { rest } from './restClient.js';
+  import { resolveActiveGroup } from './active-group.js';
+  import { unreadMessagesQuery } from './chat-alerts.js';
   import { loadSignedInRole } from './signed-in-role.js';
 
   const userEmailEl = document.getElementById('user-email');
@@ -418,6 +428,29 @@
       document.getElementById('staffDashboard').hidden = false;
       document.getElementById('dashboardRoleStatus').hidden = true;
       const profile = await fetchCurrentProfile(session.user.id);
+      const { groupId, memberships } = await resolveActiveGroup(session.user.id);
+      if (groupId && memberships.some(item => item.group_id === groupId)) {
+        const [member] = await rest('group_members?select=role&group_id=eq.' + encodeURIComponent(groupId) +
+          '&user_id=eq.' + encodeURIComponent(session.user.id), { expectedUserId: session.user.id });
+        const isAdmin = member?.role === 'admin';
+        if (isAdmin || role === 'caregiver') {
+          document.querySelectorAll('[data-my-star-supporter]').forEach(card => card.hidden = false);
+          if (isAdmin) document.querySelectorAll('[data-my-star-supporter-admin]').forEach(card => card.hidden = false);
+        }
+        async function refreshMyStarAlerts() {
+          if (document.hidden) return;
+          try {
+            const query = unreadMessagesQuery(session.user.id, groupId, { helpOnly: true });
+            const rows = await rest('messages?' + query, { expectedUserId: session.user.id });
+            document.getElementById('myStarChatAlert').hidden = !rows?.length;
+          } catch (error) {
+            console.warn('[DASHBOARD] Could not check My STAR alerts', error);
+          }
+        }
+        refreshMyStarAlerts();
+        window.addEventListener('focus', refreshMyStarAlerts);
+        window.setInterval(refreshMyStarAlerts, 15000);
+      }
       if (userEmailEl) {
         userEmailEl.textContent =
           profile?.display_name ||

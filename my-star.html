@@ -625,11 +625,7 @@ import { getSessionFromStorage } from "./restClient.js";
         })
       })
       .then(function(){
-        if(responseType==='mood' && responseValue!=='Not now'){
-          location.href='star-moments.html?mode=daily';
-          return;
-        }
-        showSilentStars();
+        if(btn.isConnected)showSilentStars();
       })
       .catch(function(err){
         btn.disabled=false;btn.textContent='Done';

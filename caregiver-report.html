@@ -399,6 +399,73 @@
     #exportRangeOverlay .cg-note-drawer{width:min(480px,95vw)}
     #exportRangeOverlay .cg-edit-grid{margin-top:4px}
 
+
+    .isa-perspective{margin-top:16px;border-top:1px solid #e6d4b4;padding-top:14px}
+    .isa-perspective h3,.isa-perspective h4{text-align:left;margin:10px 0 8px}
+    .isa-voice-item{border-left:3px solid #d9b47e;background:#fffaf1;border-radius:0 10px 10px 0;padding:9px 12px;margin:9px 0}
+    .isa-voice-item p{margin:5px 0;font-size:14px;line-height:1.45}
+    /* Compact report hub: only the chosen topic is visible on screen.
+       Do not affect the complete export, print, or check-in quick-look modes. */
+    .report-view-nav{background:#fffdf8;border:1px solid #ead7ab;border-radius:18px;padding:13px;margin:4px 0 18px;box-shadow:0 6px 18px rgba(125,89,34,.05)}
+    .report-view-label{font-size:15px;font-weight:750;margin:0 0 9px;color:#724016}
+    .report-view-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+    .report-view-options button{min-width:0;min-height:46px;border-radius:12px;padding:8px 10px;font-size:14px;font-weight:700;line-height:1.3;white-space:normal}
+    .report-view-options button[aria-pressed="true"]{background:#724016;color:white;border-color:#724016}
+    .report-view-options button:focus-visible{outline:3px solid #d68a2a;outline-offset:2px}
+    .report-view-description{font-size:13px;line-height:1.4;color:#5f5e5a;margin:9px 0 0}
+    @media(max-width:620px){.report-view-options{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    .report-custom-dates{display:flex;flex:1 1 260px;gap:8px;flex-wrap:wrap}
+    .report-custom-dates[hidden]{display:none!important}
+    .report-custom-dates label{flex:1 1 120px}
+    .report-custom-dates input{display:block;width:100%;min-height:42px;box-sizing:border-box}
+    .report-range-note{font-size:13px;font-weight:650;color:#65543c;margin:6px 0 10px}
+    body:not(.print-export):not(.quick-look-mode)[data-report-view="letter"] main.page > [data-print-section="Caregiver Overview"],
+    body:not(.print-export):not(.quick-look-mode)[data-report-view="letter"] main.page > [data-print-section="Daily Mood & Calendar"],
+    body:not(.print-export):not(.quick-look-mode)[data-report-view="isa"] main.page > [data-print-section="Daily Mood & Calendar"],
+    body:not(.print-export):not(.quick-look-mode)[data-report-view="individual"] main.page > [data-print-section="Daily Mood & Calendar"],
+    body:not(.print-export):not(.quick-look-mode)[data-report-view="checkins"] main.page > [data-print-section="Daily Mood & Calendar"],
+    body:not(.print-export):not(.quick-look-mode)[data-report-view="calendar"] main.page > [data-print-section="Caregiver Overview"],
+    body:not(.print-export):not(.quick-look-mode)[data-report-view="charts"] main.page > [data-print-section="Caregiver Overview"],
+    body:not(.print-export):not(.quick-look-mode)[data-report-view="charts"] main.page > [data-print-section="Daily Mood & Calendar"]{display:none!important}
+    body:not(.print-export):not(.quick-look-mode)[data-report-view="isa"] #chart-stack,
+    body:not(.print-export):not(.quick-look-mode)[data-report-view="individual"] #chart-stack,
+    body:not(.print-export):not(.quick-look-mode)[data-report-view="checkins"] #chart-stack,
+    body:not(.print-export):not(.quick-look-mode)[data-report-view="calendar"] #chart-stack{display:none!important}
+    body:not(.print-export):not(.quick-look-mode)[data-report-view="letter"] #chart-stack > :not(#parentLetterCard),
+    body:not(.print-export):not(.quick-look-mode)[data-report-view="charts"] #chart-stack > #parentLetterCard{display:none!important}
+    body:not(.print-export):not(.quick-look-mode)[data-report-view="isa"] main.page > [data-print-section="Caregiver Overview"] > :not(#isaProgressPanel),
+    body:not(.print-export):not(.quick-look-mode)[data-report-view="individual"] main.page > [data-print-section="Caregiver Overview"] > :not(#individualVoicePanel),
+    body:not(.print-export):not(.quick-look-mode)[data-report-view="checkins"] main.page > [data-print-section="Caregiver Overview"] > :not(#cg-panel):not(#services-summary-panel):not(#weekly-averages-panel){display:none!important}
+    @media print{.report-view-nav{display:none!important}}
+
+
+    .person-chart-range{border:1px solid #dcc8a6;background:#fffdf8;border-radius:15px;padding:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+    .person-chart-range-heading{flex:1 1 100%;font-size:17px;font-weight:800;color:#724016}
+    .person-chart-range-heading span{font-weight:600;font-size:12px;color:#667188}
+    .person-chart-range label,.person-chart-measure{display:flex;flex-direction:column;gap:5px;font-size:13px;font-weight:700;color:#3c454f}
+    .person-chart-range select,.person-chart-measure select{min-height:44px;max-width:100%;width:100%;box-sizing:border-box}
+    .person-chart-range label{flex:1 1 160px}
+    .person-chart-range #pcGraphRangeStatus{flex:1 1 100%;margin:0}
+    .person-chart-custom{display:flex;flex:2 1 280px;gap:8px;flex-wrap:wrap}
+    .person-chart-custom[hidden]{display:none!important}
+    .person-chart-custom label{flex:1 1 130px}
+    .person-chart-custom input{min-height:44px;width:100%;box-sizing:border-box}
+    .person-chart-card h2{font-size:21px;line-height:1.25;margin:0 0 10px}
+    .person-chart-card h3{font-size:16px;margin:10px 0;text-align:left}
+    .person-chart-measure{margin:12px 0}
+    .person-chart-canvas{position:relative;width:100%;height:235px;margin:10px 0}
+    .person-chart-canvas canvas{width:100%!important;max-height:100%;height:100%!important}
+    .person-chart-canvas canvas[hidden]{display:none!important}
+    .person-chart-canvas[hidden]{display:none!important}
+    .person-chart-activity-list{margin:8px 0;padding-left:20px;font-size:13px;line-height:1.55;text-align:left}
+    .person-chart-activity-list li{margin:5px 0;overflow-wrap:anywhere}
+    .person-chart-activity-heading{text-align:left!important;font-size:14px;margin:14px 0 5px!important}
+    .person-chart-card #pcIsaChartStatus{max-width:560px;margin:10px auto;line-height:1.5}
+    .person-chart-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .person-chart-columns section{min-width:0;border:1px solid #efe4d4;border-radius:12px;padding:10px}
+    .person-chart-card .muted{font-size:13px;line-height:1.45}
+    @media(max-width:700px){.person-chart-columns{grid-template-columns:1fr}}
+    @media print{.person-chart-range{display:none!important}.person-chart-columns{grid-template-columns:1fr}.person-chart-canvas{height:190px}}
     #chart-stack{display:flex;flex-direction:column;gap:16px}
     .chart-range-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:10px 12px}
     .chart-range-controls label{font-weight:700}
@@ -947,7 +1014,11 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>document.addEventListener('DOMContentLoaded',()=>{ try{ Chart.register(ChartDataLabels); }catch(e){} });</script>
-</head>
+<link rel="stylesheet" href="support-report.css"><link rel="stylesheet" href="report-chart-layout.css?v=2026.11.08-mobile">
+/* UVM only: preserve all original sections, but show integrated whole-person panel on ISA tab. */
+body:not(.print-export):not(.quick-look-mode)[data-report-view="isa"] main.page > [data-print-section="Caregiver Overview"] > #wholePersonIntegratedPanel{display:block!important}
+body:not(.print-export):not(.quick-look-mode)[data-report-view="isa"] main.page > [data-print-section="Caregiver Overview"] > #isaProgressPanel{display:none!important}
+</style></head>
 <body>
 <!-- ===== MINI STATUS BAR (no console needed) ===== -->
 <style>
@@ -1027,8 +1098,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 })();
 </script>
 <script type="module">
-  import { getSessionFromStorage } from './restClient.js?v=2026.03.29A';
-  import { completeGuidedOnboarding, getGuidedOnboardingProgress } from './onboarding-flow.js?v=2026.03.29A';
+  import { getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
+  import { completeGuidedOnboarding, getGuidedOnboardingProgress } from './onboarding-flow.js?v=2026.10.29UVM3';
 
   const session = getSessionFromStorage();
   const guidedProgress = getGuidedOnboardingProgress(session?.user?.id || null);
@@ -1065,8 +1136,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 </script>
 
 <!-- Shared navigation shell -->
-<script defer src="./ui-shell.js?v=2026.10.20A"></script>
-<script defer src="./scripts/appbar-drawer.js?v=2026.03.29A"></script>
+<script defer src="./ui-shell.js?v=2026.11.19E"></script>
+<script defer src="./scripts/appbar-drawer.js?v=2026.11.19E"></script>
 
   <div id="navbar"></div>
   <header class="star-page-header" aria-label="Reports">
@@ -1092,12 +1163,20 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       <h1>Reports</h1>
     </div>
   </header>
-  <div class="top-actions no-export" style="display:flex;gap:8px;justify-content:center;margin:8px 0 14px;">
-    <button id="fullPrintBtn">🖨️ Print Caregiver Check-ins</button>
-  </div>
-
   <main class="page">
-    <h1>Reports</h1>
+    <nav id="reportViewNav" class="report-view-nav no-export" aria-label="Choose which reports to view">
+      <p class="report-view-label">What would you like to view?</p>
+      <div class="report-view-options">
+        <button type="button" data-report-view-button="letter" aria-pressed="true">📄 Letters</button>
+        <button type="button" data-report-view-button="isa" aria-pressed="false">⭐ ISA Goals</button>
+        <button type="button" data-report-view-button="individual" aria-pressed="false">🗣️ Individual Voice</button>
+        <button type="button" data-report-view-button="checkins" aria-pressed="false">📝 Check-ins</button>
+        <button type="button" data-report-view-button="calendar" aria-pressed="false">🗓️ Health Calendar</button>
+        <button type="button" data-report-view-button="charts" aria-pressed="false">📊 More Charts</button>
+      </div>
+      <p id="reportViewDescription" class="report-view-description" role="status">Generate, copy, or print a focused provider letter.</p>
+    </nav>
+
     <div class="no-export" aria-hidden="true" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0">
       <input type="date" id="servicesSummaryStart">
       <input type="date" id="servicesSummaryEnd">
@@ -1182,9 +1261,72 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         </div>
       </div>
     </section>
+    <section class="panel" id="wholePersonIntegratedPanel" aria-label="Whole-Person ISA Reports" style="display:none"><h2>⭐ ISA Outcome Review — Whole-Person View</h2><p class="muted">Participation, caregiver observations, individual voice, supports, locations, and evidence together.</p><a class="btn" href="./whole-person-reports.html">Open Whole-Person Reports</a></section>
+    <section class="panel" id="isaProgressPanel" aria-labelledby="isaProgressHeading">
+      <h2 id="isaProgressHeading">⭐ ISA Outcome Progress</h2>
+      <p class="muted">Evidence from saved caregiver check-ins, organized by the original ISA outcome cards. No automatic progress or success ratings.</p>
+      <div class="no-export" style="display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin:12px 0">
+        <label style="flex:1 1 160px">Time period
+          <select id="isaProgressPeriod" style="display:block;width:100%;min-height:42px">
+            <option value="month">This month</option>
+            <option value="quarter">Last 3 months</option>
+            <option value="all">All dates</option>
+            <option value="custom">Custom dates</option>
+          </select>
+        </label>
+        <div class="report-custom-dates" id="isaCustomDates" hidden>
+          <label>From <input id="isaProgressStart" type="date"></label>
+          <label>Through <input id="isaProgressEnd" type="date"></label>
+        </div>
+        <button type="button" id="isaProgressCopy" disabled>Copy Summary</button>
+        <button type="button" id="isaProgressPrint" disabled>Print ISA</button>
+      </div>
+      <p class="report-range-note" id="isaPeriodSummary">Showing this month</p>
+      <p class="muted" id="isaProgressStatus" role="status">Loading ISA progress…</p>
+      <section id="isaIndividualPerspective" class="isa-perspective" aria-label="Individual voice in ISA planning">
+        <p class="muted">Loading administrator-reviewed ISA statements and activity feedback…</p>
+      </section>
+      <div id="isaProgressList"></div>
+    </section>
+    <section class="panel" id="individualVoicePanel" aria-labelledby="individualVoiceHeading">
+      <h2 id="individualVoiceHeading">🗣️ My STAR — Individual Voice</h2>
+      <p class="muted">The individual's own optional answers, picture choices, and shared accomplishments. These are not caregiver observations or automatically scored ISA progress.</p>
+      <div class="no-export" style="display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin:12px 0">
+        <label style="flex:1 1 165px">Time period
+          <select id="individualVoicePeriod" style="display:block;width:100%;min-height:42px">
+            <option value="month">This month</option><option value="all">All dates</option>
+            <option value="custom">Custom dates</option>
+          </select>
+        </label>
+        <div class="report-custom-dates" id="individualVoiceCustomDates" hidden>
+          <label>From <input id="individualVoiceStart" type="date"></label>
+          <label>Through <input id="individualVoiceEnd" type="date"></label>
+        </div>
+        <button type="button" id="individualVoiceCopy" disabled>Copy Individual Voice</button>
+      </div>
+      <p class="report-range-note" id="individualVoicePeriodSummary">Showing this month</p>
+      <p class="muted" id="individualVoiceStatus" role="status">Loading Individual Voice records…</p>
+      <div id="individualVoiceList"></div>
+    </section>
     <section class="panel" id="cg-panel">
       <span id="caregiver-checkins" aria-hidden="true"></span>
       <h2>Caregiver Check-Ins</h2>
+      <section id="shiftSupportReport" class="panel cg-hide-when-quick-look">
+        <h3>Supports &amp; Locations</h3>
+        <p class="muted">Submitted check-ins documenting each support. One check-in can count in more than one category.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:10px">
+          <label>Individual <select data-person></select></label>
+          <label>Period <select data-period><option value="">Custom / all dates</option><option value="month">This month</option><option value="previous">Previous month</option><option value="week">Last 7 days</option></select></label>
+          <label>From <input type="date" data-from></label>
+          <label>Through <input type="date" data-through></label>
+        </div>
+        <p data-support-summary role="status"></p>
+        <ul data-support-counts></ul>
+        <div data-support-dates></div>
+      </section>
+      <div class="top-actions no-export" style="display:flex;gap:8px;justify-content:center;margin:8px 0 14px">
+        <button id="fullPrintBtn" type="button">🖨️ Print Caregiver Check-ins</button>
+      </div>
 
       <div id="cgQuickLook" class="quick-look is-hidden" role="region" aria-live="polite">
         <div class="quick-look-head">
@@ -1559,6 +1701,65 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 
     <!-- Charts -->
     <section id="chart-stack" data-print-section="Trends & Charts">
+    <!-- Person-centered graph sources are distinct from legacy caregiver charts. -->
+    <div class="person-chart-range no-export" id="pcChartRange">
+      <div class="person-chart-range-heading">⭐ Person-centered charts <span>Saved check-in records</span></div>
+      <label>Individual <select id="pcGraphIndividual" aria-label="Individual for person-centered charts"></select></label>
+      <label>Reporting period
+        <select id="pcGraphPeriod" aria-label="Reporting period for person-centered charts">
+          <option value="month" selected>This month</option>
+          <option value="quarter">Last 3 months</option>
+          <option value="all">All dates</option>
+          <option value="custom">Custom dates</option>
+        </select>
+      </label>
+      <div id="pcGraphCustom" class="person-chart-custom" hidden>
+        <label>From <input type="date" id="pcGraphStart"></label>
+        <label>Through <input type="date" id="pcGraphEnd"></label>
+      </div>
+      <p id="pcGraphRangeStatus" class="muted" role="status"></p>
+    </div>
+    <div class="chart person-chart-card" id="pcIsaGraphCard">
+      <h2>⭐ ISA Goal Measurements Over Time</h2>
+      <p class="muted">Caregiver-recorded measurements for one ISA outcome. These are observations, not automatic progress scores.</p>
+      <div class="isa-chart-controls">
+        <label class="person-chart-measure">ISA card category<select id="pcIsaGraphCategory" aria-label="ISA outcome card category"></select></label>
+        <label class="person-chart-measure">ISA outcome<select id="pcIsaGraphOutcome" aria-label="ISA outcome card"></select></label>
+        <label class="person-chart-measure">Measurement<select id="pcIsaGraphMeasure" aria-label="Choose ISA goal measurement"></select></label>
+      </div>
+      <p id="pcIsaCardInfo" class="isa-chart-card-info" aria-live="polite"></p>
+      <div class="person-chart-canvas"><canvas id="pcIsaChart" aria-label="ISA caregiver measurement chart" role="img"></canvas></div>
+      <p class="muted" role="status" id="pcIsaChartStatus">Loading ISA measurements…</p>
+      <p class="muted" id="pcIsaChartNote"></p>
+    </div>
+    <div class="chart person-chart-card" id="pcSupportGraphCard">
+      <h2>Supports, Locations &amp; Time</h2>
+      <p class="muted">Saved support entries from caregiver check-ins, using the individual and reporting period selected above.</p>
+      <div class="support-chart-controls no-export"><label>Show <select id="pcSupportUnit"><option value="hours">Recorded hours</option><option value="entries">Support-entry counts</option></select></label>
+      <button type="button" class="btn" id="pcSupportPrint">Print this chart</button></div>
+      <div id="pcSupportUsage" aria-live="polite"></div>
+    </div>
+    <div class="chart person-chart-card" id="pcChoiceGraphCard">
+      <h2>🗣️ Individual Choices &amp; Satisfaction</h2>
+      <p class="muted">These are the individual's optional My STAR answers, not caregiver observations or ISA goal scores.</p>
+      <div class="person-chart-columns">
+        <section>
+          <h3>How activities felt</h3>
+          <div class="person-chart-canvas"><canvas id="pcSatisfactionChart" aria-label="Individual activity satisfaction responses" role="img"></canvas></div>
+          <p class="muted" id="pcSatisfactionStatus">Loading activity responses…</p>
+          <h4 class="person-chart-activity-heading">Activities as the individual described them</h4>
+          <ul id="pcActivityFeedbackList" class="person-chart-activity-list" aria-label="Named activities with their dates and satisfaction responses">
+            <li>Loading activity names and ratings…</li>
+          </ul>
+        </section>
+        <section>
+          <h3>Activities and leisure choices</h3>
+          <div class="person-chart-canvas"><canvas id="pcLeisureChart" aria-label="Individual leisure preferences and choices" role="img"></canvas></div>
+          <p class="muted" id="pcLeisureStatus">Loading leisure choices…</p>
+        </section>
+      </div>
+      <p id="pcActivityContext" class="muted"></p>
+    </div>
     <div class="chart report-summary-inline" id="reportSummaryCard" hidden>
       <h4>Report Summary (Plain Language)</h4>
       <p class="muted chart-range-label" id="reportSummaryRange">Range: Month</p>
@@ -1572,6 +1773,15 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
           <button id="parentLetterPrint" class="btn" style="font-size:13px">🖨️ Print Letter</button>
         </div>
       </div>
+      <label style="display:block;margin:12px 0;max-width:380px">Letter topic
+        <select id="providerLetterTopic" style="display:block;width:100%;min-height:44px;margin-top:5px">
+          <option value="caregiver">Caregiver Overview (health & activities)</option>
+          <option value="isa">ISA Outcome Progress</option>
+          <option value="individual">My STAR · Individual Voice</option>
+          <option value="combined">Caregiver Overview + ISA Progress</option>
+          <option value="all">All three topics (longer letter)</option>
+        </select>
+      </label>
       <div class="parent-letter-range-control" aria-label="Caregiver summary date range">
         <label>Start date
           <input type="date" id="parentLetterStart" autocomplete="off">
@@ -1592,8 +1802,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       </div>
       <div id="parentLetterBody" style="font-size:15px;line-height:1.7;color:#1a1a2e;white-space:pre-wrap;overflow-wrap:anywhere;font-family:Georgia,serif"></div>
       <p id="parentLetterDisclaimer" style="margin-top:16px;font-size:12px;color:#9ca3af;font-style:italic">
-        This letter was generated from caregiver check-in data recorded
-        in the STAR app. It is intended to share caregiver observations with
+        This letter was generated from the selected STAR reporting sources.
+        Individual responses are identified separately from caregiver observations. It is intended to share documented information with
         families, case managers, healthcare providers, and support teams.
       </p>
     </div>
@@ -1615,7 +1825,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         <h2>Community Interaction Types</h2>
         <p class="muted chart-range-label" id="interactionRangeLabel">Range: Recent 3 months</p>
         <canvas id="interactionTypeChart"></canvas>
-        <p class="muted">Counts of interaction types when he engaged with community members.</p>
+        <p class="muted">Counts of documented interaction types with community members.</p>
       </div>
       <div class="chart kpi-summary-inline report-graph" id="activityTypeSummary" data-graph-id="activity" data-graph-title="Activity Types">
         <h4>Activity Types (Top 6)</h4>
@@ -1866,12 +2076,16 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     import { renderPrintableCaregiverReport } from './caregiver-report-print.js?v=2026.07.01B';
     import { analyzeProviderRecords, renderProviderLetter, individualKey, groupKey } from './caregiver-provider-letter.js?v=2026.11.15-sleep-scope';
     import { buildWeeklyPromptSeries, defaultGraphRange, filterRecordsByRange, formatGraphRange, rangeFromInputs } from './caregiver-report-graphs.js?v=2026.09.04A';
+    import { createIsaProgressReport } from './isa-progress-report-embedded.js?v=2026.11.07-person-scope';
+    import { createIsaIndividualPerspective } from './isa-individual-perspective.js?v=2026.11.08-person-scope';
+    import { createIndividualVoiceReport } from './individual-voice-report.js?v=2026.11.08-linked-person';
+    import { createPersonCenteredCharts } from './report-person-centered-charts.js?v=2026.11.08-categories-mobile';
 
     /* =============== Optional live data =============== */
     let loadFromSupabase = null;
     let formatEntryForList = null;
     try {
-      const mod = await import('./caregiver-report-supabase.js?v=2026.10.20A');
+      const mod = await import('./caregiver-report-supabase.js?v=2026.11.07-profile');
       loadFromSupabase = mod.loadCaregiverCheckins;
       formatEntryForList = mod.formatEntryForList;
     } catch (err) {
@@ -1882,7 +2096,18 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     const USER_SESSION = getSessionFromStorage();
     if (!USER_SESSION?.user?.id) { window.location.href = 'auth.html'; throw new Error('No session'); }
     const USER_ID = USER_SESSION.user.id;
+    const { loadSignedInRole } = await import('./signed-in-role.js');
+    const reportRole = await loadSignedInRole();
+    if (!['case_manager','caregiver','administrator'].includes(reportRole)) {
+      location.replace('dashboard.html');
+      throw new Error('Report access requires a staff role.');
+    }
+    const canEditCaregiverReport = reportRole !== 'case_manager';
     window.rest = rest;
+    const isaReport = createIsaProgressReport({rest});
+    const isaPerspective = createIsaIndividualPerspective({rest});
+    const individualReport = createIndividualVoiceReport({rest});
+    const personCenteredCharts = createPersonCenteredCharts({rest});
 
     async function ensureReportGroupContext() {
       try {
@@ -2447,11 +2672,12 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         const ts = getCheckinDate(entry);
         if (!ts) continue;
         const monthKey = `${ts.getFullYear()}-${String(ts.getMonth() + 1).padStart(2, '0')}`;
-        const bucket = byMonth.get(monthKey) || { h:0, f:0, c:0, prompts: [], total:0 };
+        const bucket = byMonth.get(monthKey) || { h:0, f:0, c:0, p:0, prompts: [], total:0 };
         bucket.total += 1;
         if (resolveDailyLivingBool(entry, 'hygiene') === true) bucket.h += 1;
         if (resolveDailyLivingBool(entry, 'food_prep') === true) bucket.f += 1;
         if (resolveDailyLivingBool(entry, 'cleanup') === true) bucket.c += 1;
+        if (entry?.payload?.pet_care === true || entry?.pet_care === true) bucket.p += 1;
         const prompt = getPromptValue(entry);
         if (Number.isFinite(prompt)) bucket.prompts.push(prompt);
         byMonth.set(monthKey, bucket);
@@ -2471,6 +2697,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
           hygiene_yes: bucket.h,
           food_prep_yes: bucket.f,
           cleanup_yes: bucket.c,
+          pet_care_yes: bucket.p,
           avg_new_skill_score: bucket.prompts.length
             ? Math.round(bucket.prompts.reduce((sum,v)=>sum+v,0)/bucket.prompts.length)
             : null,
@@ -4571,9 +4798,9 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       cgState.memberProfileById = new Map();
       if (!groupId) return;
       try {
-        const members = await rest(
-          `group_members?select=user_id&group_id=eq.${encodeURIComponent(groupId)}`
-        );
+        const members = await rest('rpc/star_team_members',{
+          method:'POST',body:JSON.stringify({p_group_id:groupId}),expectedUserId:USER_ID
+        });
         const userIds = Array.from(new Set(
           (Array.isArray(members) ? members : [])
             .map((row) => row?.user_id ? String(row.user_id).trim() : '')
@@ -4739,7 +4966,20 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       body.innerHTML = '';
 
       if (!rowsToRender.length) {
-        body.innerHTML = `<tr><td colspan="3">No caregiver check-ins found.</td></tr>`;
+        const row = document.createElement('tr');
+        const cell = document.createElement('td');
+        cell.colSpan = 3;
+        if (!cgState.providerReady) {
+          cell.textContent = 'Caregiver check-ins could not load. Your STAR sign-in may have expired. ';
+          const login = document.createElement('a');
+          login.href = 'auth.html?reauth=1';
+          login.textContent = 'Sign in again';
+          cell.append(login);
+        } else {
+          cell.textContent = 'No caregiver check-ins found for this group.';
+        }
+        row.append(cell);
+        body.append(row);
         return;
       }
 
@@ -4771,7 +5011,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
           editBtn.className = 'cg-edit-btn';
           editBtn.textContent = 'Edit';
           editBtn.dataset.checkinId = checkinId;
-          actionGroup.appendChild(editBtn);
+          if(canEditCaregiverReport) actionGroup.appendChild(editBtn);
           const viewBtn = document.createElement('a');
           viewBtn.className = 'cg-edit-btn';
           viewBtn.textContent = 'View';
@@ -4785,7 +5025,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
           deleteBtn.className = 'cg-delete-btn';
           deleteBtn.textContent = 'Delete';
           deleteBtn.dataset.checkinId = checkinId;
-          actionGroup.appendChild(deleteBtn);
+          if(canEditCaregiverReport) actionGroup.appendChild(deleteBtn);
 
           actionTd.appendChild(actionGroup);
         } else {
@@ -5690,6 +5930,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     }
 
     async function deleteCaregiverCheckin(checkinId){
+      if(!canEditCaregiverReport)return;
       if (!checkinId) return;
       const confirmed = window.confirm('Delete this caregiver check-in? This cannot be undone.');
       if (!confirmed) return;
@@ -5747,7 +5988,88 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       });
     }
 
+    const shiftSupportReport = document.getElementById('shiftSupportReport');
+    const supportReportPerson = shiftSupportReport.querySelector('[data-person]');
+    const supportReportFrom = shiftSupportReport.querySelector('[data-from]');
+    const supportReportThrough = shiftSupportReport.querySelector('[data-through]');
+    function renderShiftSupports(){
+      const summary = shiftSupportReport.querySelector('[data-support-summary]');
+      const totals = shiftSupportReport.querySelector('[data-support-counts]');
+      const dated = shiftSupportReport.querySelector('[data-support-dates]');
+      const previous = supportReportPerson.value;
+      const people = new Map();
+      const entries = [];
+      for(const entry of cgState.entries){
+        const payload = entry.payload || {};
+        const rows = payload.shift_supports;
+        const name = String(payload.individual_name || '').trim();
+        const key = payload.individual_id || (name && 'name:'+name.toLowerCase());
+        const date = parseEntryDate(entry);
+        if(!key || !date || !Array.isArray(rows) || !rows.length)continue;
+        const valid = rows.filter(row => row && row.support && row.location);
+        if(!valid.length)continue;
+        people.set(key,name || 'Registered individual');
+        entries.push({entry,key,day:formatDateInputValue(date),rows:valid});
+      }
+      supportReportPerson.replaceChildren();
+      if(!people.size)supportReportPerson.add(new Option('No entries yet',''));
+      for(const [id,name] of people)supportReportPerson.add(new Option(name,id));
+      if(people.has(previous))supportReportPerson.value=previous;
+      totals.replaceChildren();
+      dated.replaceChildren();
+      const from=supportReportFrom.value, through=supportReportThrough.value;
+      if(from && through && from>through){
+        summary.textContent='Choose an end date on or after the start date.';
+        return;
+      }
+      const shown=entries.filter(item => item.key===supportReportPerson.value &&
+        (!from || item.day>=from) && (!through || item.day<=through)).sort((a,b)=>b.day.localeCompare(a.day));
+      summary.textContent=shown.length ? shown.length+' submitted check-in(s) in this period.' : 'No support entries in this period.';
+      const counts=new Map();
+      for(const item of shown){
+        const heading=document.createElement('h4');
+        heading.textContent=formatCaregiverTableTimestamp(item.entry)+' · '+getCaregiverName(item.entry);
+        const list=document.createElement('ul');
+        for(const row of item.rows){
+          const line=document.createElement('li');
+          line.textContent=[row.support,row.location,row.minutes===null||row.minutes===undefined||row.minutes===''?'Time not recorded':row.minutes+' minutes',row.note].filter(Boolean).join(' · ');
+          list.append(line);
+        }
+        dated.append(heading,list);
+        for(const support of new Set(item.rows.map(row=>row.support)))counts.set(support,(counts.get(support)||0)+1);
+      }
+      for(const [support,count] of counts){
+        const line=document.createElement('li');
+        line.textContent=support+' · '+count+' check-in(s)';
+        totals.append(line);
+      }
+    }
+    const supportReportPeriod = shiftSupportReport.querySelector('[data-period]');
+    supportReportPerson.addEventListener('change',renderShiftSupports);
+    for(const field of [supportReportFrom,supportReportThrough]){
+      field.addEventListener('change',()=>{
+        supportReportPeriod.value='';
+        renderShiftSupports();
+      });
+    }
+    supportReportPeriod.addEventListener('change',()=>{
+      const end=new Date();
+      const start=new Date(end.getFullYear(),end.getMonth(),1);
+      if(supportReportPeriod.value==='previous'){
+        end.setDate(0);
+        start.setMonth(start.getMonth()-1);
+      }
+      if(supportReportPeriod.value==='week'){
+        start.setTime(end.getTime());
+        start.setDate(start.getDate()-6);
+      }
+      supportReportFrom.value=supportReportPeriod.value ? formatDateInputValue(start) : '';
+      supportReportThrough.value=supportReportPeriod.value ? formatDateInputValue(end) : '';
+      renderShiftSupports();
+    });
+
     function applyCaregiverFilters(){
+      renderShiftSupports();
       const entries = cgState.entries.slice();
       if (cgInputs.caregiver) {
         cgInputs.caregiver.value = 'all';
@@ -6206,7 +6528,9 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
             includeAllUsers: true,
             groupId,
           });
-        } catch {}
+        } catch (error) {
+          console.error('[REPORT] Check-in request failed', error?.message || error);
+        }
       }
 
       cgState.providerReady = res?.loadComplete === true;
@@ -6258,6 +6582,10 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       if (sEnd && !sEnd.value) sEnd.value = formatDateInputValue(defaultRangeEnd);
       applyCaregiverFilters();
       updateReportSectionVisibility();
+      void isaReport.refresh(groupId, cgState.entries);
+      void isaPerspective.refresh(groupId);
+      void individualReport.refresh(groupId);
+      void personCenteredCharts.refresh(groupId, cgState.entries);
       window.dispatchEvent(new Event('caregiverDataReady'));
     }
 
@@ -6964,6 +7292,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         }
         return;
       }
+      if(!canEditCaregiverReport)return;
       const btn = event.target.closest('.cg-edit-btn');
       if (btn) {
         const checkinId = btn.dataset.checkinId;
@@ -7042,7 +7371,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     };
     clearLetterDates();
     window.addEventListener('pageshow', (event) => { if (event.persisted) clearLetterDates(); });
-    ['parentLetterStart', 'parentLetterEnd', 'providerIndividual', 'providerIncludeQuotes'].forEach((id) => {
+    ['parentLetterStart', 'parentLetterEnd', 'providerIndividual', 'providerIncludeQuotes', 'providerLetterTopic'].forEach((id) => {
       document.getElementById(id)?.addEventListener('change', () => {
         const bodyEl = document.getElementById('parentLetterBody');
         if (bodyEl) bodyEl.textContent = '';
@@ -7265,6 +7594,10 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
           selector.dataset.scope = signature;
         }
         if (selector.value === '__choose__') throw new Error('Choose one individual or the records without an individual identifier, then generate again.');
+        const letterFocus = document.getElementById('providerLetterTopic')?.value || 'caregiver';
+        const includeCaregiver = ['caregiver','combined','all'].includes(letterFocus);
+        const includeIsa = ['isa','combined','all'].includes(letterFocus);
+        const includeIndividual = ['individual','all'].includes(letterFocus);
         const analysis = analyzeProviderRecords(entries, {
           start: range.startInput, end: range.endInput, groupId, individualId: selector.value,
         });
@@ -7272,26 +7605,40 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         rangeEl.textContent = 'Loading Team Updates for the chosen date range…';
         let teamUpdates = [];
         let teamSetupPending = false;
-        try {
-          teamUpdates = await fetchTeamUpdatesForLetter(groupId, selector.value, range.endInput);
-        } catch (error) {
-          const missingTable = error?.status === 404 &&
-            /star_team_updates|schema cache|relation/i.test(error?.message || '');
-          if (!missingTable) throw error; // never silently omit records on a transient failure
-          teamSetupPending = true;
+        if (includeCaregiver) {
+          try {
+            teamUpdates = await fetchTeamUpdatesForLetter(groupId, selector.value, range.endInput);
+          } catch (error) {
+            const missingTable = error?.status === 404 &&
+              /star_team_updates|schema cache|relation/i.test(error?.message || '');
+            if (!missingTable) throw error;
+            teamSetupPending = true;
+          }
         }
         if (requestSequence !== letterRequestSequence ||
             String(groupId) !== localStorage.getItem('currentGroupId') ||
             selector.value !== analysis.individualId) {
           throw new Error('The selected group or individual changed. Generate the letter again.');
         }
-        const originalLetter = renderProviderLetter(analysis, {
+        const originalLetter = includeCaregiver ? renderProviderLetter(analysis, {
           includeQuotes: document.getElementById('providerIncludeQuotes').checked,
           teamUpdates
-        });
-        const letterText = teamSetupPending
-          ? originalLetter + '\n\nTeam Updates availability\nThe Team Updates database setup has not been completed, so administrator-entered Team Updates could not be included in this letter.'
-          : originalLetter;
+        }) : '';
+        const isaLetter = includeIsa ? await isaReport.letter({
+          start: range.startInput, end: range.endInput, groupId, individualId: selector.value
+        }) : '';
+        const isaIndividualPerspectiveLetter = includeIsa ? await isaPerspective.letter({
+          start: range.startInput, end: range.endInput, groupId, individualId: selector.value
+        }) : '';
+        const individualLetter = includeIndividual ? await individualReport.letter({
+          start: range.startInput, end: range.endInput, groupId, individualId: selector.value
+        }) : '';
+        if (requestSequence !== letterRequestSequence ||
+            String(groupId) !== localStorage.getItem('currentGroupId')) {
+          throw new Error('Your selection changed. Generate the letter again.');
+        }
+        let letterText = [originalLetter, isaLetter, isaIndividualPerspectiveLetter, individualLetter].filter(Boolean).join('\n\n');
+        if (teamSetupPending) letterText += '\n\nTeam Updates availability\nThe Team Updates database setup has not been completed, so administrator-entered Team Updates could not be included in this letter.';
         rangeEl.textContent = `Range: ${range.label}` + (teamSetupPending ? ' · Team Updates setup pending' : '');
         window.starProviderLetterLayout.render(bodyEl, letterText);
         document.getElementById('parentLetterCopy').disabled = false;
@@ -8109,8 +8456,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
 </script>
 
 <script type="module">
-import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
-import { ensureActiveGroupId } from './active-group.js?v=2026.10.07A';
+import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
+import { ensureActiveGroupId } from './active-group.js?v=2026.10.29UVM3';
 import { formatCheckinDate } from './caregiver-dates.js';
 import { loadCalendarCheckins, calendarEmptyLabel } from './caregiver-calendar-data.js';
 import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinForCalendar } from './caregiver-report-shared.js?v=2026.11.15-sleep-scope';
@@ -8972,5 +9319,6 @@ import { CALENDAR_EMOJI, CALENDAR_QUICK_LOOK_ITEMS, normalizeCaregiverCheckinFor
   })();
 })();
 </script>
+<script defer src="./report-view-navigation.js?v=2026.10.29R1"></script>
 </body>
 </html>

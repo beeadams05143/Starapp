@@ -90,7 +90,7 @@ assert.match(html, /id="parentLetterApply"[^>]*disabled/);
 assert.match(html, /Choose a start and end date\./);
 assert.doesNotMatch(html, /syncParentLetterRangeDefaults/);
 assert.doesNotMatch(html, /id="calendarPrintBtn"/);
-assert.match(html, /id="fullPrintBtn">🖨️ Print Caregiver Check-ins<\/button>/);
+assert.match(html, /id="fullPrintBtn"[^>]*>🖨️ Print Caregiver Check-ins<\/button>/);
 assert.match(html, /id="cgPrintOverlay"/);
 assert.match(html, /Specific dates further narrow the filters/);
 assert.match(html, /function checkinMatchesPrintFilters/);

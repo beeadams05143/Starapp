@@ -1,0 +1,181 @@
+// STAR: a person-centered companion to caregiver ISA measurements.
+// Reviewed goal links establish relevance, not skill completion. Other individual
+// activity preferences remain unlinked and must not be counted as ISA progress.
+import {resolveIsaIndividual} from './isa-progress-report-embedded.js';
+const sourceDate=(value)=>{
+  if(!value)return '';
+  const d=new Date(value);
+  if(!Number.isFinite(d.getTime()))return '';
+  return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
+};
+export function buildIsaIndividualPerspective(observations,checkins,cards,scope={}){
+  const group=String(scope.groupId||''),person=scope.individualId==null?null:String(scope.individualId);
+  const start=String(scope.start||''),end=String(scope.end||'');
+  if(!group)throw Error('Select your STAR group.');
+  if(start&&end&&start>end)throw Error('Choose a valid date range.');
+  const valid=row=>row&&String(row.group_id||'')===group&&
+    (person===null||String(row.individual_id||'')===person);
+  const inRange=date=>date&&(!start||date>=start)&&(!end||date<=end);
+  const goals=new Map((Array.isArray(cards)?cards:[]).filter(valid).map(x=>[String(x.id),String(x.title||'Untitled ISA outcome')]));
+  const reviewed=[],feedback=[],reviewSeen=new Set(),feedbackSeen=new Set();
+  for(const row of Array.isArray(observations)?observations:[]){
+    if(!valid(row)||row.review_status!=='linked_observation')continue;
+    const id=String(row.linked_outcome_id||'');
+    if(!goals.has(id)||row.id&&reviewSeen.has(row.id))continue;
+    const date=sourceDate(row.created_at);
+    if(!inRange(date))continue;
+    const words=String(row.original_words||'').trim(),choice=String(row.response_choice||'').trim();
+    if(!words&&!choice)continue;
+    if(row.id)reviewSeen.add(row.id);
+    reviewed.push({date,goalId:id,goalTitle:goals.get(id),words,choice,
+      support:String(row.support_kind||'not_reported'),source:'Individual’s Something I Did',
+      review:'Administrator-reviewed ISA connection (not scored progress)'});
+  }
+  for(const row of Array.isArray(checkins)?checkins:[]){
+    if(!valid(row)||
+      !['daily_experience','leisure_preference'].includes(row.response_type))continue;
+    if(row.id&&feedbackSeen.has(row.id))continue;
+    const date=String(row.checkin_date||'').slice(0,10);
+    if(!inRange(date))continue;
+    const value=String(row.response_value||'').trim(),words=String(row.original_words||'').trim();
+    if(!value&&!words)continue;
+    if(row.id)feedbackSeen.add(row.id);
+    feedback.push({date,type:row.response_type,value,words,
+      offered:Array.isArray(row.offered_options)?row.offered_options.map(x=>String(x)):[],
+      support:String(row.support_kind||'not_reported'),source:'Individual’s own check-in'});
+  }
+  reviewed.sort((a,b)=>b.date.localeCompare(a.date)||a.goalTitle.localeCompare(b.goalTitle));
+  feedback.sort((a,b)=>b.date.localeCompare(a.date));
+  return {groupId:group,start,end,reviewed,feedback};
+}
+export function formatIsaIndividualPerspectiveText(data){
+  const lines=[];
+  if(data.reviewed.length){
+    lines.push('Individual’s Voice and Reviewed ISA Connections',
+      'The individual’s own words and choices provide context for team review. The following statements have been linked to an ISA outcome through administrator review; they are not scored achievements.');
+    const groups=new Map();
+    for(const row of data.reviewed){
+      if(!groups.has(row.goalId))groups.set(row.goalId,{title:row.goalTitle,rows:[]});
+      groups.get(row.goalId).rows.push(row);
+    }
+    for(const group of groups.values()){
+      const descriptions=group.rows.filter(r=>r.words).slice(0,3).map(r=>'“'+r.words+'”');
+      const selections=group.rows.filter(r=>!r.words&&r.choice).slice(0,3).map(r=>r.choice);
+      lines.push('',group.title, 'In '+group.rows.length+' reviewed '+(group.rows.length===1?'response':'responses')+', the individual '+(descriptions.length?'expressed '+descriptions.join('; '):'made recorded choices')+'.'+(selections.length?' Picture choices included '+selections.join(', ')+'.':'')+' These statements can inform the team’s understanding of the outcome without replacing caregiver observations.');
+    }
+  }
+  if(data.feedback.length){
+    const feedback=data.feedback.filter(x=>x.type==='daily_experience');
+    const counts=new Map();
+    for(const x of feedback){const key=String(x.value||'Not specified').trim();counts.set(key,(counts.get(key)||0)+1)}
+    const descriptions=[...new Set(feedback.map(x=>String(x.words||'').replace(/^FICTIONAL:\s*/i,'').trim()).filter(Boolean))];
+    const difficult=descriptions.filter(x=>/busy|crowd|quiet|uncomfort|did not like/i.test(x));
+    lines.push('','Individual’s Activity Experiences and Preferences',
+      'The individual shared activity feedback on '+feedback.length+' recorded '+(feedback.length===1?'occasion':'occasions')+'. '+[...counts].map(([label,n])=>n+' '+(n===1?'response':'responses')+' indicated “'+label+'”').join('; ')+'.');
+    if(difficult.length)lines.push('Some comments identified environmental preferences or discomfort, including '+difficult.slice(0,2).map(x=>'“'+x+'”').join(' and ')+'. These preferences may help the team offer more suitable activity choices.');
+    const other=descriptions.filter(x=>!difficult.includes(x));
+    if(other.length)lines.push('Other recorded comments included '+other.slice(0,2).map(x=>'“'+x+'”').join(' and ')+'.');
+    lines.push('These are self-reports, not automatically assigned to an ISA outcome. Choosing not to participate is a valid expression of preference. Additional dated responses remain available in Reports.');
+  }
+  return lines.join('\n');
+}
+export function createIsaIndividualPerspective({rest,document:doc=document}){
+  const $=id=>doc.getElementById(id);
+  let groupId='',recordsPromise=null,revision=0,requestedIndividual;
+  const readAll=async(table,query,group)=>{
+    const all=[];
+    for(let offset=0;offset<5000;offset+=500){
+      const rows=await rest(table+'?'+query+'&group_id=eq.'+encodeURIComponent(group)+
+        '&limit=500&offset='+offset);
+      if(!Array.isArray(rows))throw Error('Individual ISA evidence could not be verified.');
+      all.push(...rows);
+      if(rows.length<500)return all;
+    }
+    throw Error('Too many individual ISA responses to show completely. Narrow the date range.');
+  };
+  const dateScope=()=>({start:$('isaProgressStart')?.value||'',end:$('isaProgressEnd')?.value||''});
+  async function getReport(scope={}){
+    if(!groupId||!recordsPromise)throw Error('ISA Individual Voice not loaded.');
+    if(scope.groupId&&String(scope.groupId)!==groupId)throw Error('STAR group changed.');
+    const [observations,checkins,cards]=await recordsPromise;
+    const individualId=resolveIsaIndividual([...observations,...checkins],cards,scope.individualId??requestedIndividual);
+    return buildIsaIndividualPerspective(observations,checkins,cards,{
+      ...dateScope(),...scope,groupId,individualId
+    });
+  }
+  async function redraw(){
+    const request=revision,host=$('isaIndividualPerspective');
+    if(!host)return;
+    try{
+      const data=await getReport();
+      if(request!==revision)return;
+      host.replaceChildren();
+      const title=doc.createElement('h3');
+      title.textContent='🗣️ Individual Voice in ISA Planning';
+      host.append(title);
+      const intro=doc.createElement('p');intro.className='muted';
+      intro.textContent='Administrator-reviewed “I Did It” links and the individual’s own opinions. Neither creates automatic ISA scores.';
+      host.append(intro);
+      if(!data.reviewed.length&&!data.feedback.length){
+        const empty=doc.createElement('p');empty.textContent='No reviewed individual statements or activity feedback for this date range.';
+        host.append(empty);
+        return;
+      }
+      if(data.reviewed.length){
+        const h=doc.createElement('h4');h.textContent='⭐ Reviewed “I Did It” statements';host.append(h);
+        for(const r of data.reviewed){
+          const item=doc.createElement('div');item.className='isa-voice-item';
+          const heading=doc.createElement('strong');heading.textContent=r.goalTitle+' · '+r.date;item.append(heading);
+          const quote=doc.createElement('p');
+          quote.textContent=r.words?'“'+r.words+'”':'Selected picture: '+r.choice;
+          item.append(quote);
+          const desc=doc.createElement('p');desc.className='muted';
+          desc.textContent='Administrator-reviewed ISA connection (not a scored measurement)'+
+            (r.support!=='not_reported'?' · Answer support: '+r.support:'');
+          item.append(desc);host.append(item);
+        }
+      }
+      if(data.feedback.length){
+        const h=doc.createElement('h4');h.textContent='Activity feedback & preferences';host.append(h);
+        const p=doc.createElement('p');p.className='muted';
+        p.textContent='Liked, disliked and preferred activities inform what to try again or change. Feedback is not assigned to a goal without review.';
+        host.append(p);
+        for(const r of data.feedback){
+          const item=doc.createElement('div');item.className='isa-voice-item';
+          const header=doc.createElement('strong');
+          header.textContent=r.date+' · '+(r.type==='daily_experience'?'How the activity felt':'Leisure choice');
+          item.append(header);
+          const note=doc.createElement('p');
+          note.textContent='Selected: '+r.value+(r.words?' · “'+r.words+'”':'')+
+            (r.offered.length?' · Offered: '+r.offered.join(' or '):'')+
+            (r.type==='daily_experience'&&!r.words?' · Activity not specified':'');
+          item.append(note);host.append(item);
+        }
+      }
+    }catch(err){
+      if(request!==revision)return;
+      host.replaceChildren();
+      const p=doc.createElement('p');p.textContent='Individual ISA evidence unavailable: '+err.message;host.append(p);
+    }
+  }
+  async function refresh(group,individualId){
+    requestedIndividual=individualId;
+    groupId=String(group||'');revision++;
+    const host=$('isaIndividualPerspective');
+    if(host)host.textContent='Loading individual ISA evidence…';
+    if(!groupId){recordsPromise=null;return}
+    recordsPromise=Promise.all([
+      readAll('star_individual_observations',
+        'select=id,group_id,individual_id,created_at,original_words,response_choice,support_kind,review_status,linked_outcome_id&review_status=eq.linked_observation&order=created_at.desc',groupId),
+      readAll('star_individual_checkins',
+        'select=id,group_id,individual_id,checkin_date,response_type,response_value,original_words,offered_options,support_kind&response_type=in.(daily_experience,leisure_preference)&order=checkin_date.desc',groupId),
+      readAll('star_isa_outcomes',
+        'select=id,group_id,individual_id,title&order=created_at.asc',groupId)
+    ]);
+    await redraw();
+  }
+  for(const id of ['isaProgressPeriod','isaProgressStart','isaProgressEnd']){
+    $(id)?.addEventListener('change',()=>{revision++;void redraw()});
+  }
+  return {refresh,redraw,letter:async(scope)=>formatIsaIndividualPerspectiveText(await getReport(scope))};
+}

@@ -187,6 +187,7 @@
     }
     .message.ok { color: #0f766e; }
   </style>
+  <script>window.location.replace('/caregiver-checkin-setup/'+window.location.search);</script>
 </head>
 <body>
   <main class="shell">
@@ -274,7 +275,7 @@
 
   <script type="module">
     import { supabase } from './supabaseClient.js?v=2026.03.29A';
-    import { saveCheckinConfig } from './onboarding-flow.js?v=2026.03.29A';
+    import { saveCheckinConfig } from './onboarding-flow.js?v=2026.10.27UVM2';
 
     async function getActiveGroupId() {
       const { data: { user } } = await supabase.auth.getUser();

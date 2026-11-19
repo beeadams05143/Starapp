@@ -13,6 +13,12 @@ export class CheckinSubmissionUI {
       'startNewCheckin', 'duplicateNotice', 'duplicateDateLabel', 'allowDuplicate', 'changeCheckinDate',
       'downloadRecovery', 'submissionContext'].map(id => [id, doc.getElementById(id)]));
     this.careDate = new CareDateChoice({ doc, win, input: this.el.entryDateInput, onChangeDate: () => this.dateChanged() });
+    const retry=doc.createElement('button');
+    retry.type='button';retry.className='btn';retry.hidden=true;
+    retry.textContent='Recover original check-in — same attempt, no duplicate';
+    this.el.checkSaveStatus.after(retry);
+    this.el.retryOriginal=retry;
+    retry.addEventListener('click',()=>this.retryOriginal());
     this.dirty = false;
     this.intentionalDraftSaved = false;
     this.busy = false;
@@ -298,6 +304,7 @@ export class CheckinSubmissionUI {
   refreshRecoveryList() {
     try {
       this.recoveries = this.store?.list() || [];
+      this.el.recoveryChoices.closest?.('.top-actions')?.classList.toggle('has-pending-recovery',this.recoveries.some(item=>item.attempt?.sent));
       const select = this.el.recoveryChoices;
       select.replaceChildren();
       for (const item of this.recoveries) {
@@ -332,6 +339,12 @@ export class CheckinSubmissionUI {
     this.saveRecovery();
     this.setLocked(!!this.service.attempt?.sent);
     this.el.checkSaveStatus.hidden = !this.service.attempt?.sent;
+    if (this.el.retryOriginal) this.el.retryOriginal.hidden = !this.service.attempt?.sent;
+    if(this.service.attempt?.sent){
+      const panel=this.doc.getElementById('checkinSubmitPanel');
+      panel?.classList.add('is-reviewing');
+      panel?.scrollIntoView({block:'start'});
+    }
     const date = this.el.entryDateInput.value;
     this.status(this.service.attempt?.sent
       ? 'Save Status Uncertain — recovered a pending submission. Do not resubmit; check its save status.'
@@ -414,6 +427,15 @@ export class CheckinSubmissionUI {
     try { this.finish(await this.service.reconcile()); }
     finally { this.el.checkSaveStatus.disabled = false; }
   }
+  async retryOriginal(){
+    if(this.busy||this.done||!this.service.attempt?.sent)return;
+    this.busy=true;
+    this.el.retryOriginal.disabled=true;
+    this.el.checkSaveStatus.disabled=true;
+    this.status('Recovering the original check-in using the same attempt ID…');
+    try{this.finish(await this.service.retryOriginal());}
+    finally{this.el.retryOriginal.disabled=false;this.el.checkSaveStatus.disabled=false;}
+  }
   finish(result) {
     this.busy = false;
     if (result.state === 'verified' || result.state === 'practice') {
@@ -422,6 +444,7 @@ export class CheckinSubmissionUI {
       this.dirty = false;
       this.el.checkinDateConfirmed.checked = false;
       this.el.checkSaveStatus.hidden = true;
+      if (this.el.retryOriginal) this.el.retryOriginal.hidden = true;
       this.el.startNewCheckin.hidden = false;
       this.setLocked(true);
       this.status(result.state === 'practice'
@@ -457,6 +480,7 @@ export class CheckinSubmissionUI {
       const uncertain = result.state === 'uncertain' || !!this.service.attempt?.sent;
       this.status(`${uncertain ? 'Save Status Uncertain — do not resubmit.' : 'Save Failed — information preserved on this page.'} ${result.message || ''}${result.id ? ` Attempt ID: ${result.id}.` : ''}`, true);
       this.el.checkSaveStatus.hidden = !uncertain;
+      if (this.el.retryOriginal) this.el.retryOriginal.hidden = !uncertain;
       this.setLocked(uncertain);
       this.saveRecovery();
     }

@@ -7,7 +7,7 @@ export async function loadCalendarCheckins({ request, groupId, startDate, endDat
     const rows = [];
     const size = 1000;
     for (let offset = 0; ; offset += size) {
-      const page = await request(`caregiver_checkins?select=id,group_id,user_id,created_at,submitted_at,date,had_bm,payload&group_id=eq.${encodeURIComponent(groupId)}&${filters}order=id.asc&limit=${size}&offset=${offset}`);
+      const page = await request(`caregiver_checkins?select=id,group_id,user_id,created_at,submitted_at,date,payload&group_id=eq.${encodeURIComponent(groupId)}&${filters}order=id.asc&limit=${size}&offset=${offset}`);
       if (!Array.isArray(page)) throw new Error('Invalid calendar response');
       rows.push(...page);
       if (page.length < size) return rows;

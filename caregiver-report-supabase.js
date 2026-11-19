@@ -1,8 +1,8 @@
 import { NOTE_FIELDS } from './caregiver-provider-letter.js?v=2026.10.20A';
 import { checkinDateKey } from './caregiver-dates.js';
 // caregiver-report-supabase.js — PRODUCTION SAFE (group-scoped; no user_id filter) v=2026.05.03D
-import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
-import { resolveActiveGroup } from './active-group.js?v=2026.10.07A';
+import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
+import { resolveActiveGroup } from './active-group.js?v=2026.10.29UVM3';
 
 /* ---------- shared helpers ---------- */
 const TRUE_VALUES = new Set(['true', 't', 'yes', 'y', '1', 'on', 'done', 'complete', 'present']);
@@ -891,12 +891,14 @@ export async function loadCaregiverCheckins(
     console.log('[STAGE 3 after group filter]', groupFiltered.length);
 
     const individualFiltered = groupFiltered;
-    console.log('[STAGE 4 bypassed individual filter]', normalized.length);
 
     const rangeFiltered = individualFiltered.filter((row) => {
       const ts = normTs(row);
       const time = ts.getTime();
       if (Number.isNaN(time)) return false;
+      const day = checkinDateKey(row);
+      if (startDateNorm && day < startDateNorm) return false;
+      if (endDateNorm && day > endDateNorm) return false;
       return range === 'all' || ts >= start;
     });
 
@@ -924,6 +926,8 @@ export async function loadCaregiverCheckins(
   } catch (error) {
     console.error('Supabase caregiver_checkins error:', error);
     return {
+      loadComplete: false,
+      loadError: error?.message || 'Could not retrieve caregiver check-ins',
       entries: [],
       summary: summarize([]),
       charts: buildSeries([]),

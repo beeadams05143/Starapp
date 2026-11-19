@@ -153,7 +153,11 @@
           { href: '/my-star.html', icon: 'home', label: 'My STAR' },
           ...(features.chat ? [{ href: '/chat.html', icon: 'chat', label: 'Group Chat' }] : []),
         ]
-      : [
+      : role === 'case_manager' ? [
+          { href: '/dashboard.html', icon: 'home', label: 'Home' },
+          { href: '/caregiver-report.html', icon: 'reports', label: 'Reports' },
+          { href: '/isa-outcomes.html', icon: 'focus', label: 'ISA' },
+        ] : [
           { href: '/dashboard.html', icon: 'home', label: 'Home' },
           { href: '/caregiver-checkin.html', icon: 'checkin', label: 'Check-in' },
           { href: '/caregiver-report.html', icon: 'reports', label: 'Reports' },

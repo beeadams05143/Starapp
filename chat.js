@@ -4,6 +4,7 @@
 
 import { rest, getSessionFromStorage } from './restClient.js?v=2025.01.09E';
 import { ensureActiveGroupId } from './active-group.js?v=2026.03.12A';
+import { isMyStarAlert } from './chat-alerts.js';
 
 // ---------- Require login ----------
 const session = getSessionFromStorage();
@@ -73,8 +74,9 @@ async function fetchReadsFor(messageIds, myId) {
 }
 
 async function markReadFor(messages, myId) {
+  if (document.hidden) return;
   const rows = messages
-    .filter(m => m.sender_id !== myId)
+    .filter(m => m.sender_id !== myId || isMyStarAlert(m.message))
     .map(m => ({ message_id: m.id, user_id: myId }));
   if (!rows.length) return;
   try {

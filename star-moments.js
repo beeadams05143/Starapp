@@ -1,4 +1,4 @@
-import {rest, requireSession} from './restClient.js';
+import {getSessionFromStorage, rest, requireSession} from './restClient.js';
 import {ensureActiveGroupId} from './active-group.js';
 
 const observations=['Seemed to enjoy it','Unsure','Seemed uncomfortable'];
@@ -351,6 +351,11 @@ async function month() {
 }
 async function start() {
   page('My STAR Moments');
+  if(!getSessionFromStorage()?.user?.id){
+    announce('Sign in to STAR to see your Moments.');
+    element('a','Sign in').href='auth.html';
+    return;
+  }
   const session=await requireSession();
   uid=session.user.id;
   api=(path,options)=>rest(path,{...options,expectedUserId:uid});

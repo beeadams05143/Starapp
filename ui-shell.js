@@ -89,17 +89,8 @@
 `;
 
 
-  const MODE_KEY = 'star_menu_mode';
   const APP_CONFIG_KEY = 'star_app_config';
-  const getMenuMode = () => {
-    try {
-      const stored = localStorage.getItem(MODE_KEY);
-      return stored === 'individual' ? 'individual' : 'caregiver';
-    } catch {
-      return 'caregiver';
-    }
-  };
-
+  let role = null;
   const getAppFeatures = () => {
     try {
       const parsed = JSON.parse(localStorage.getItem(APP_CONFIG_KEY) || 'null');
@@ -148,16 +139,15 @@
   };
 
   function renderBottomBar(){
-    const mode = getMenuMode();
+    if (!role) {
+      bottom.replaceChildren();
+      return;
+    }
     const features = getAppFeatures();
-    const tabs = mode === 'individual'
+    const tabs = role === 'individual'
       ? [
-          { href: '/dashboard.html', icon: 'home', label: 'Home' },
-          ...(features.calendar ? [{ href: '/calendar.html', icon: 'calendar', label: 'Calendar' }] : []),
-          { href: '/home.html', icon: 'mood', label: 'Mood' },
-          { href: '/my-star-voice.html', icon: 'voice', label: 'Voice' },
-          ...(features.chat ? [{ href: '/chat.html', icon: 'chat', label: 'Chat' }] : []),
-          { href: '/emergency-medical.html', icon: 'emergency', label: 'Emergency' },
+          { href: '/my-star.html', icon: 'home', label: 'My STAR' },
+          ...(features.chat ? [{ href: '/chat.html', icon: 'chat', label: 'Group Chat' }] : []),
         ]
       : [
           { href: '/dashboard.html', icon: 'home', label: 'Home' },
@@ -174,7 +164,8 @@
         <div class="tabbar__inner">
           ${tabs.map((tab) => {
             const isHome = tab.label === 'Home';
-            return `<a href="${tab.href}" class="tab nav-item${isHome ? ' active' : ''}"${isHome ? ' id="homeNav"' : ''}>` +
+            const active = role === 'individual' ? location.pathname === tab.href : isHome;
+            return `<a href="${tab.href}" class="tab nav-item${active ? ' active' : ''}"${isHome ? ' id="homeNav"' : ''}>` +
               `${iconSvg[tab.icon] || iconSvg.home}` +
               `<span>${tab.label}</span>` +
               `${isHome ? '<div class="badge" id="homeBadge">3</div>' : ''}` +
@@ -189,10 +180,18 @@
       if (badge) badge.style.display = 'none';
     });
   }
-  renderBottomBar();
-  window.addEventListener('storage', (event) => {
-    if (event.key === MODE_KEY || event.key === APP_CONFIG_KEY) renderBottomBar();
-  });
+  async function refreshBottomBar() {
+    try {
+      const { loadSignedInRole } = await import('/signed-in-role.js');
+      role = await loadSignedInRole();
+    } catch (error) {
+      role = null;
+      console.warn('[STAR] Could not load navigation role', error);
+    }
+    renderBottomBar();
+  }
+  refreshBottomBar();
+  window.addEventListener('storage', refreshBottomBar);
 
 
   // Version info lives inside the hamburger drawer, not over the form.

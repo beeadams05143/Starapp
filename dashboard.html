@@ -250,7 +250,8 @@
   <!-- Top navbar host (ui-shell will fill this; safe to keep) -->
   <div id="navbar"></div>
 
-  <main class="page">
+  <p id="dashboardRoleStatus" role="status">Loading STAR…</p>
+  <main class="page" id="staffDashboard" hidden>
     <section class="dashboard-header starfield-page-header">
       <svg class="starfield-bg" viewBox="0 0 420 110" aria-hidden="true">
         <circle cx="28" cy="18" r="1" fill="#2C2C2A" opacity="0.15"></circle>
@@ -394,6 +395,8 @@
   } from './supabaseClient.js?v=2026.03.29A';
   import { fetchCurrentProfile } from './onboarding-flow.js?v=2026.03.29A';
 
+  import { loadSignedInRole } from './signed-in-role.js';
+
   const userEmailEl = document.getElementById('user-email');
 
   (async () => {
@@ -403,6 +406,17 @@
       return;
     }
     try {
+      const role = await loadSignedInRole();
+      if (role === 'individual') {
+        window.location.replace('/my-star.html');
+        return;
+      }
+      if (!role) {
+        window.location.replace('/role-select.html');
+        return;
+      }
+      document.getElementById('staffDashboard').hidden = false;
+      document.getElementById('dashboardRoleStatus').hidden = true;
       const profile = await fetchCurrentProfile(session.user.id);
       if (userEmailEl) {
         userEmailEl.textContent =
@@ -414,6 +428,7 @@
       }
     } catch (error) {
       console.warn('[DASHBOARD] profile load failed', error);
+      document.getElementById('dashboardRoleStatus').textContent = 'STAR couldn’t load your profile. Refresh to try again.';
     }
   })();
 
@@ -437,6 +452,9 @@
     if (!userId) return;
 
     try {
+      const { loadSignedInRole } = await import('./signed-in-role.js');
+      const role = await loadSignedInRole();
+      if (!role || role === 'individual') return;
       const groupId = await ensureActiveGroupId(userId);
       if (!groupId || getSessionFromStorage()?.user?.id !== userId) return;
       const count = await getSavedDraftCount(window);
@@ -457,8 +475,8 @@
 </script>
 
 <!-- ✅ Restore original hamburger menu + bottom tabbar -->
-<script defer src="./ui-shell.js?v=2026.10.26A"></script>
-<script defer src="./scripts/appbar-drawer.js?v=2026.03.29A"></script>
+<script defer src="./ui-shell.js?v=2026.11.19A"></script>
+<script defer src="./scripts/appbar-drawer.js?v=2026.11.19A"></script>
 
 <footer class="dashboard-legal-footer">
   <div class="dashboard-legal-links">

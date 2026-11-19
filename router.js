@@ -22,7 +22,7 @@ export async function next() {
     : readCachedOnboardingCompletion(session.user.id);
 
   if (onboardingComplete === true) {
-    window.location.href = 'dashboard.html';
+    window.location.href = profile?.role === 'individual' ? 'my-star.html' : 'dashboard.html';
     return;
   }
 
@@ -57,9 +57,9 @@ export async function next() {
   }
 
   if (profile.onboarding_step === 'checkin' && profile.role === 'individual') {
-    window.location.href = 'moodchecker_with_other_moods.html';
+    window.location.href = 'my-star.html?page=feel';
     return;
   }
 
-  window.location.href = 'dashboard.html';
+  window.location.href = profile.role === 'individual' ? 'my-star.html' : 'dashboard.html';
 }

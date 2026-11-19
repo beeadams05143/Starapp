@@ -1,12 +1,12 @@
 // /scripts/appbar-drawer.js — hamburger drawer that hooks to #openMenu
-(function () {
-  const supaGlobals = window.STAR_SUPABASE || {};
+(async function () {
   const {
     SUPABASE_URL,
     SUPABASE_ANON_KEY,
     getSessionFromStorage,
     clearSavedSession,
-  } = supaGlobals;
+  } = await import('/supabaseClient.js?v=2026.07.03A');
+  const { loadSignedInRole } = await import('/signed-in-role.js');
   const APP_CONFIG_KEY = 'star_app_config';
   const LOGIN_URL = '/auth.html';
   const INACTIVITY_WARNING_DELAY_MS = 14 * 60 * 1000; // Production: show warning after 14 minutes of inactivity
@@ -412,20 +412,14 @@
           </div>
         </div>
       </details>
-      <div class="drawer-item" data-role="shared">
+      <div class="drawer-item" data-role="caregiver">
         <a href="/dashboard.html" class="active"><i class="ti ti-home nav-icon" aria-hidden="true"></i><span class="nav-text">Dashboard</span></a>
       </div>
       <div class="drawer-item" data-role="shared">
         <a id="auth-dash-link" href="/auth.html"><i class="ti ti-logout nav-icon" aria-hidden="true"></i><span class="nav-text">Log Out</span></a>
       </div>
       <div class="drawer-item" data-role="individual">
-        <a href="/home.html"><i class="ti ti-mood-smile nav-icon" aria-hidden="true"></i><span class="nav-text">Mood Check-In</span></a>
-      </div>
-      <div class="drawer-item" data-role="individual">
-        <a href="/wouldyourather.html"><i class="ti ti-arrows-random nav-icon" aria-hidden="true"></i><span class="nav-text">Would You Rather</span></a>
-      </div>
-      <div class="drawer-item" data-role="individual">
-        <a href="/my-star-voice.html"><i class="ti ti-microphone nav-icon" aria-hidden="true"></i><span class="nav-text">My STAR Voice</span></a>
+        <a href="/my-star.html"><i class="ti ti-home nav-icon" aria-hidden="true"></i><span class="nav-text">My STAR</span></a>
       </div>
       <div class="drawer-item" data-role="caregiver">
         <a href="/caregiver-checkin.html"><i class="ti ti-checkbox nav-icon" aria-hidden="true"></i><span class="nav-text">Caregiver Check-In</span></a>
@@ -436,7 +430,7 @@
       <div class="drawer-item" data-role="shared">
         <a href="/chat.html" data-feature="chat"><i class="ti ti-message nav-icon" aria-hidden="true"></i><span class="nav-text">Group Chat</span></a>
       </div>
-      <div class="drawer-item" data-role="shared">
+      <div class="drawer-item" data-role="caregiver">
         <a href="/calendar.html" data-feature="calendar"><i class="ti ti-calendar nav-icon" aria-hidden="true"></i><span class="nav-text">Calendar</span></a>
       </div>
       <div class="drawer-item" data-role="caregiver">
@@ -462,7 +456,7 @@
           </div>
         </div>
       </details>
-      <div class="drawer-item" data-role="shared">
+      <div class="drawer-item" data-role="caregiver">
         <a href="/emergency-medical.html"><i class="ti ti-alert-triangle nav-icon" aria-hidden="true"></i><span class="nav-text">Emergency</span></a>
       </div>
       <details data-role="shared">
@@ -579,63 +573,22 @@
     }
   }
 
-  function normalizeRole(role) {
-    const value = String(role || '').trim().toLowerCase();
-    if (value === 'individual' || value === 'caregiver') return value;
-    return '';
-  }
-
-  function getCachedRole() {
-    try {
-      const parsed = JSON.parse(localStorage.getItem(APP_CONFIG_KEY) || 'null');
-      const configRole = normalizeRole(parsed?.role || parsed?.userRole || parsed?.mode);
-      if (configRole) return configRole;
-    } catch {}
-
-    try {
-      const storedRole = normalizeRole(localStorage.getItem('user_type') || localStorage.getItem('role'));
-      if (storedRole) return storedRole;
-    } catch {}
-
-    return 'caregiver';
-  }
-
-  async function fetchCurrentRole() {
-    const session = typeof getSessionFromStorage === 'function' ? getSessionFromStorage() : null;
-    const userId = session?.user?.id;
-    if (!userId || !SUPABASE_URL) return '';
-
-    try {
-      const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=role&limit=1`,
-        {
-          headers: buildAuthHeaders(session.access_token),
-        }
-      );
-      if (!res.ok) throw new Error(`Role lookup failed (${res.status})`);
-      const rows = await res.json();
-      return normalizeRole(Array.isArray(rows) ? rows[0]?.role : '');
-    } catch (error) {
-      console.warn('[drawer] role lookup failed', error);
-      return '';
-    }
-  }
-
-  let currentRole = getCachedRole();
-
   function applyRoleVisibility(role) {
-    currentRole = normalizeRole(role) || 'caregiver';
     overlay.querySelectorAll('[data-role]').forEach(node => {
       const roles = (node.dataset.role || '').split(/\s+/).filter(Boolean);
-      node.style.display = (roles.includes('shared') || roles.includes(currentRole)) ? '' : 'none';
+      node.style.display = (roles.includes('shared') || roles.includes(role)) ? '' : 'none';
     });
-    applyFeatureVisibility(currentRole);
+    applyFeatureVisibility(role);
   }
 
   async function refreshRoleVisibility() {
-    applyRoleVisibility(getCachedRole());
-    const fetchedRole = await fetchCurrentRole();
-    if (fetchedRole) applyRoleVisibility(fetchedRole);
+    applyRoleVisibility(null);
+    try {
+      const role = await loadSignedInRole();
+      applyRoleVisibility(role === 'individual' ? 'individual' : role ? 'caregiver' : null);
+    } catch (error) {
+      console.warn('[drawer] Role lookup failed', error);
+    }
   }
 
   updateAuthLink();

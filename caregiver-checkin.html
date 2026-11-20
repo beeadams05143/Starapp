@@ -2202,13 +2202,13 @@
     <form id="cg-form" novalidate>
       <section id="careDateChooser" aria-labelledby="careDateChooserTitle">
         <h2 id="careDateChooserTitle">Which day are you telling us about?</h2>
-        <p>Choose the day you provided care. Entering yesterday’s care today? Choose <strong>Yesterday</strong>.</p>
         <button type="button" class="care-day-choice" id="careDateToday" disabled><strong>Today</strong><span id="careDateTodayLabel"></span></button>
         <button type="button" class="care-day-choice" id="careDateYesterday" disabled><strong>Yesterday</strong><span id="careDateYesterdayLabel"></span></button>
         <button type="button" class="care-day-choice" id="careDateOther" disabled>Choose another date</button>
         <button type="button" class="care-day-choice" id="careDateKeep" hidden disabled></button>
         <div id="careDateCustom" hidden><label for="careDatePicker">Day you provided care</label><input type="date" id="careDatePicker"><button type="button" class="btn primary" id="careDateUse">Use this date</button></div>
         <p id="careDateError" role="alert"></p>
+        <button type="button" class="btn" id="retryCheckinLoad" hidden>Retry loading check-in</button>
       </section>
 
       <fieldset id="checkinFields" disabled inert style="border:0;padding:0;margin:0;min-width:0">
@@ -3227,10 +3227,6 @@
   import { CheckinSubmissionUI } from './caregiver-submission-ui.js?v=2026.11.07-recovery';
   import {normalizeSupportEntries} from './support-report.js';
   import {loadSignedInRole} from './signed-in-role.js';
-  if(await loadSignedInRole()==='case_manager'){
-    location.replace('caregiver-report.html');
-    throw new Error('Case managers have read-only report access.');
-  }
   import { normalizeSleepPayload } from './caregiver-sleep.js?v=2026.11.15-sleep-scope';
   import { sleepOnsetAnswer, restoredSleepResponse } from './caregiver-care-date.js?v=2026.11.15-date-choice';
   import { validSelectedDate } from './caregiver-submission.js';
@@ -5737,8 +5733,23 @@
     if (adlActivityInput) adlActivityInput.value = '';
   };
 
-  // 4) Start logic once DOM is ready
-  document.addEventListener('DOMContentLoaded', async () => {
+  // Register before awaiting the role lookup so a slow response cannot miss DOMContentLoaded.
+  document.addEventListener('DOMContentLoaded', () => {
+    initializeCheckin().catch(error => {
+      console.error('[cg] check-in initialization failed', error);
+      document.getElementById('careDateError').textContent = 'The check-in could not load. Please try again.';
+      const retry = document.getElementById('retryCheckinLoad');
+      retry.hidden = false;
+      retry.addEventListener('click', () => location.reload(), { once: true });
+    });
+  }, { once: true });
+
+  async function initializeCheckin() {
+    if (await loadSignedInRole() === 'case_manager') {
+      location.replace('caregiver-report.html');
+      return;
+    }
+
     formEl        = document.getElementById('cg-form');
     submitBtn     = document.getElementById('submitAll');
     reviewOverlay = document.getElementById('checkinSubmitPanel');
@@ -6187,7 +6198,7 @@
       reset: resetForm,
       changeDate: () => { openSectionDetailByIndex(0); entryDateInput?.focus(); }
     });
-  }); // <-- end DOMContentLoaded
+  }
 
   // Helper: normalize truthy/falsey
   const toBool = (v) => {

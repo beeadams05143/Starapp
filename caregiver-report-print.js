@@ -126,8 +126,9 @@ function renderMood(root, model) {
     return;
   }
   addTable(section, [
-    { key: 'date', label: 'Date' },
+    { key: 'timestamp', label: 'Timestamp' },
     { key: 'mood', label: 'Mood' },
+    { key: 'intensity', label: 'Intensity' },
     { key: 'notes', label: 'Notes' },
   ], model.moods);
 }

@@ -5,7 +5,6 @@
     isa:'Individualized ISA goals with concise measurement summaries and expandable dated evidence.',
     individual:'Voluntary My STAR answers, with the individual’s words kept separate from caregiver observations.',
     checkins:'Find and print individual caregiver check-ins.',
-    mood:'Review mood check-ins shared in My STAR and see how they change over time.',
     calendar:'Review health dates, mood information, and calendar observations.',
     charts:'Optional historical caregiver charts. These are not ISA outcome measurements.'
   };

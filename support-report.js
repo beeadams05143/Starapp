@@ -25,13 +25,14 @@ export function buildSupportUsage(records,{groupId,individualId,start='',end=''}
     let rows=p.shift_supports;try{if(typeof rows==='string')rows=JSON.parse(rows);}catch{continue;}
     if(!Array.isArray(rows))continue;
     for(const row of rows){
-      if(!row?.support||!row.location)continue;
+      if(!row?.support)continue;
+      const location=String(row.location||'').trim()||'Location not recorded';
       let minutes=null;try{minutes=supportMinutes(row.minutes);}catch{invalidTime++;}
       if(minutes===null)missingTime++;else totalMinutes+=minutes;
-      const key=JSON.stringify([row.support,row.location]);
-      const item=pairs.get(key)||{support:row.support,location:row.location,entries:0,minutes:0,timedEntries:0};
+      const key=JSON.stringify([row.support,location]);
+      const item=pairs.get(key)||{support:row.support,location,entries:0,minutes:0,timedEntries:0};
       item.entries++;if(minutes!==null){item.minutes+=minutes;item.timedEntries++;}pairs.set(key,item);
-      evidence.push({date,support:row.support,location:row.location,minutes,note:String(row.note||''),caregiver:String(record.caregiver_name||p.caregiver_name||'Caregiver'),recordId:record.id});
+      evidence.push({date,support:row.support,location,minutes,note:String(row.note||''),caregiver:String(record.caregiver_name||p.caregiver_name||'Caregiver'),recordId:record.id});
     }
   }
   return {pairs:[...pairs.values()].sort((a,b)=>a.support.localeCompare(b.support)||a.location.localeCompare(b.location)),evidence:evidence.sort((a,b)=>b.date.localeCompare(a.date)),missingTime,invalidTime,totalMinutes,entries:evidence.length};

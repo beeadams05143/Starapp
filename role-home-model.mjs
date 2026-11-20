@@ -1,9 +1,9 @@
 export function assignedRole(member) {
   if (!member) throw Error('Your membership could not be verified.');
   if (member.membership_role === 'admin') return 'administrator';
-  return ['individual','caregiver','case_manager'].includes(member.assigned_role) ? member.assigned_role : 'caregiver';
+  return ['individual','caregiver','case_manager','parent'].includes(member.assigned_role) ? member.assigned_role : 'caregiver';
 }
-export const roleLabels = {administrator:'Administrator',caregiver:'Caregiver',individual:'Individual',case_manager:'Case Manager'};
+export const roleLabels = {administrator:'Administrator',caregiver:'Caregiver',parent:'Parent',individual:'Individual',case_manager:'Case Manager'};
 const card = (title, description, href, urgent=false) => ({title,description,href,urgent});
 export function roleHome(role, name='the individual') {
   if (!roleLabels[role]) throw Error('Unknown team role');
@@ -12,6 +12,11 @@ export function roleHome(role, name='the individual') {
   const daily = [card('Daily check-in','Record the shift, supports provided, locations, and observations.','caregiver-checkin.html'),card('My STAR Moments',`Add a photo and a short observation to share with ${name}.`,'star-moments.html?mode=add'),card('Reports','Review entries and the individual’s own responses.','caregiver-report.html')];
   const more = [card('My Month','Look back at experiences, photos, and responses.','star-moments.html?mode=month'),card('Saved Drafts','Finish check-ins you started on this device.','saved-drafts.html'),card('Focus','See the team’s weekly focus.','focus-week.html'),card('Team Updates','Read important team updates.','team-updates.html'),card('Feature Guide & Resources','Learn how to use STAR and find Vermont resources.','feature-guide.html'),card('Emergency information','Read the individual’s shared emergency sheet.','emergency-medical.html')];
   if (role==='individual') return {title:`My STAR · Hi, ${name}! ☆`,text:'What would you like to share today?',sections:[{title:'',cards:[card('Help Now','Tell my team I need help.','my-star.html?page=urgent',true),card('Something Hurts','Show my team where my body hurts.','my-star.html?page=pain',true),card('This Is How I Feel','Choose how I am feeling.','my-star.html?page=feel'),card('My Day','Share what I did and what I thought.','my-star.html?page=day'),card('My STAR Moments','Look at my photos and say what I liked.','star-moments.html?mode=review'),card('My Team Chat','Talk with my team.','chat.html'),card('How I Communicate','Tell people what helps me.','communication.html?view=mine'),card('What Helps Me','Share what helps me feel comfortable.','support-preparation.html'),card('Something I Did','Tell what I did, tried, or learned.','my-star.html?page=goals'),card('Would You Rather?','Choose what I like.','my-star.html?page=rather'),card('Picture Communication','Use my picture cards.','my-star-voice.html')]}]};
+  if (role==='parent') return {title:'Parent Home',text:`Share how ${name} is doing.`,sections:[{title:'Parent check-in',cards:[
+    card('Parent Check-In','Record sleep, physical health, and mental health observations.','caregiver-checkin.html'),
+    card('Saved Drafts','Finish a check-in you started.','saved-drafts.html'),
+    card('Group Chat','Stay connected with the team.','chat.html')
+  ]}]};
   if (role==='case_manager') return {title:name.startsWith('the individual')?'Your team overview':`${name}’s team overview`,text:`Review what ${name} and the team have shared.`,sections:[{title:'Review & support',cards:review.slice(0,2)}]};
   const sections=[{title:'Daily support',cards:daily},{title:'Calendar & Group Chat',cards:coordinate},{title:'Communication & Support',cards:[...review.filter(c=>!['isa-outcomes.html','caregiver-report.html'].includes(c.href))]},{title:'More team tools',cards:[review[0],...more]}];
   if (role==='administrator') sections.unshift({title:'Administration',cards:[card('Team members & roles','Manage every team member, including the individual.','settings-admin.html'),card('Group Settings & Invitations','Find your group invitation code and invite your team.','group-settings.html'),card('Review My STAR Observations','Review the individual’s shared accomplishments.','my-star-isa-review.html'),card('Edit Caregiver Check-In','Choose and assign different questions to each caregiver and individual.','caregiver-checkin-setup/') ]});

@@ -52,7 +52,7 @@ export async function next() {
   }
 
   const teamRole = await loadSignedInRole();
-  if (teamRole === 'case_manager') {
+  if (teamRole === 'case_manager' || teamRole === 'parent') {
     window.location.href = 'dashboard.html';
     return;
   }

@@ -18,7 +18,7 @@ export async function fetchMoodReportRows(rest, { groupId, individualId, userId,
   if (!groupId || !individualId || !userId) return [];
   const start = startFor(range, now);
   const params = new URLSearchParams({
-    select: 'id,group_id,user_id,date,created_at,mood,intensity,notes,note',
+    select: 'id,group_id,user_id,date,created_at,mood,notes,note',
     group_id: 'eq.' + groupId,
     user_id: 'eq.' + individualId,
     order: 'date.desc,created_at.desc,id.desc',
@@ -41,7 +41,7 @@ export async function fetchMoodReportRows(rest, { groupId, individualId, userId,
       rows.set(row.id, {
         id: row.id, date, dateObj, timestamp: row.created_at || date,
         mood: String(row.mood || '').trim() || 'Unknown',
-        intensity: row.intensity ?? null, notes: row.notes || row.note || '',
+        notes: row.notes || row.note || '',
       });
     }
     if (page.length < 500) return [...rows.values()].reverse();

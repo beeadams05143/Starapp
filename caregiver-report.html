@@ -1626,8 +1626,8 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       <p class="muted" id="moodReportStatus" role="status">Loading mood check-ins…</p>
       <div class="mood-table-wrap" style="max-height:340px;overflow:auto;border-radius:8px">
         <table id="moodTable">
-          <thead><tr><th>Date</th><th>Mood</th><th>Intensity</th><th>Notes</th></tr></thead>
-          <tbody><tr><td colspan="4">Loading…</td></tr></tbody>
+          <thead><tr><th>Date</th><th>Mood</th><th>Notes</th></tr></thead>
+          <tbody><tr><td colspan="3">Loading…</td></tr></tbody>
         </table>
       </div>
       <div id="moodSummaryCard" class="mood-summary-card">
@@ -2078,7 +2078,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     import { ensureActiveGroupId } from './active-group.js?v=2026.10.07A';
     import { openCompactCaregiverCheckinPrintWindow } from './caregiver-checkin-print.js?v=2026.11.15-sleep-scope';
     import { CALENDAR_QUICK_LOOK_ITEMS, filterCaregiverCheckinsForPrint, normalizeCaregiverCheckinForCalendar, normalizeCaregiverCheckinRecord } from './caregiver-report-shared.js?v=2026.11.15-sleep-scope';
-    import { renderPrintableCaregiverReport } from './caregiver-report-print.js?v=2026.07.01B';
+    import { renderPrintableCaregiverReport } from './caregiver-report-print.js?v=2026.11.19-mood';
     import { analyzeProviderRecords, renderProviderLetter, individualKey, groupKey } from './caregiver-provider-letter.js?v=2026.11.15-sleep-scope';
     import { buildWeeklyPromptSeries, defaultGraphRange, filterRecordsByRange, formatGraphRange, rangeFromInputs } from './caregiver-report-graphs.js?v=2026.09.04A';
     import { createIsaProgressReport } from './isa-progress-report-embedded.js?v=2026.11.07-person-scope';
@@ -2108,7 +2108,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       throw new Error('Report access requires a staff role.');
     }
     const { loadRoleContext } = await import('./role-context.js');
-    const { fetchMoodReportRows } = await import('./mood-report-data.js?v=2026.11.19-mood');
+    const { fetchMoodReportRows } = await import('./mood-report-data.js?v=2026.11.19-mood2');
     const canEditCaregiverReport = reportRole !== 'case_manager';
     window.rest = rest;
     const isaReport = createIsaProgressReport({rest});
@@ -7389,7 +7389,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         ? filteredMood.length+' mood check-in'+(filteredMood.length===1?'':'s')
         : 'No mood check-ins for this person and period.';
       for(const entry of [...filteredMood].reverse()){
-        renderRow([entry.dateObj.toLocaleDateString(),entry.mood,entry.intensity ?? 'Not recorded',entry.notes || '—']);
+        renderRow([entry.dateObj.toLocaleDateString(),entry.mood,entry.notes || '—']);
       }
 
       const indiv=Object.create(null), buckets={"Positive":0,"Low Energy":0,"Challenging":0,"Other":0};
@@ -7858,7 +7858,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         if (Number.isNaN(date.getTime())) return;
         const key = formatDateInputValue(date);
         const day = ensure(key);
-        day.moods.push(`${entry.mood || 'Unknown'}${entry.intensity != null ? ` (${entry.intensity})` : ''}`);
+        day.moods.push(entry.mood || 'Unknown');
         if (entry.notes) day.notes.push(`Mood note: ${entry.notes}`);
       });
       return [...days.values()].sort((a, b) => a.key.localeCompare(b.key)).map((day) => ({
@@ -7971,7 +7971,6 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         moods: moods.map((entry) => ({
           timestamp: printDateTimeLabel(entry.timestamp || entry.dateObj),
           mood: entry.mood || 'Unknown',
-          intensity: entry.intensity ?? '—',
           notes: entry.notes || '—',
         })),
         calendarDays: buildPrintCalendar(entries, moods),

@@ -18,7 +18,7 @@ test('reads saved report rows for the active group, person and local care dates'
   assert.equal(entries.length, 1);
   assert.equal(entries[0].dateObj.getDate(), 19);
   assert.equal(entries[0].mood, '😊 Happy');
-  assert.equal(entries[0].intensity, null);
+  assert.equal(Object.hasOwn(entries[0], 'intensity'), false);
 });
 
 test('paginates the existing mood history and keeps distinct check-ins on the same day', async () => {

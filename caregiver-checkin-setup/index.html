@@ -438,7 +438,7 @@
     <section id="setupGrid" class="grid" aria-label="Caregiver setup categories" hidden></section>
     <section id="isaLinkSetup" class="hero" hidden aria-label="ISA Question Placement">
       <h2>ISA Question Placement</h2>
-      <p>Choose where each follow-up appears. If that section is unavailable, it appears under Important observation. Linked questions use the original check-in answer.</p>
+      <p>Check the ISA questions that belong in this caregiver’s check-in. Choose an enabled section for each follow-up, or use an existing check-in answer.</p>
       <div id="isaMappingList"></div>
     </section>
     <section id="bottomSavePanel" class="hero" hidden aria-label="Save caregiver setup">
@@ -1576,9 +1576,19 @@
         };
 
         if (state.selectedIndividual && state.selectedCaregiver) {
+          const isaRows = [...linkHost.querySelectorAll('[data-isa-placement]')];
+          const missingSection = isaRows.find(row =>
+            row.querySelector('[data-isa-include]').checked &&
+            !row.querySelector('[data-outcome-id]').value &&
+            !row.querySelector('[data-isa-section]').value);
+          if (missingSection) {
+            missingSection.querySelector('[data-isa-section]').focus();
+            throw new Error('Choose an enabled section for each included ISA follow-up, or uncheck it.');
+          }
           payload.selected_items.__isa_placement__ = Object.fromEntries(
-            [...linkHost.querySelectorAll('[data-isa-placement]')].map(row => [
+            isaRows.map(row => [
               row.dataset.isaPlacement, {
+                included: row.querySelector('[data-isa-include]').checked,
                 section: row.querySelector('[data-isa-section]').value,
                 after: row.querySelector('[data-isa-after]').value,
                 prompt: row.querySelector('[data-isa-prompt]').value.trim(),
@@ -1705,6 +1715,21 @@
         return shared>=Math.min(2,wordSet.length)&&wordSet.length>0;
       }).map(field=>({...field,suggestion:true}));
     }
+    function availableIsaSections() {
+      const services = readAssignedServices();
+      const categories = new Set(buildSelectedCategories());
+      return [
+        ['homeFamilySection','In-Home Support',Object.hasOwn(services,'home')],
+        ['communitySection','Community Support',Object.hasOwn(services,'community')],
+        ['daily-living-step','Respite',Object.hasOwn(services,'respite')],
+        ['vocationalSection','Ongoing Supported Employment',Object.hasOwn(services,'employment')],
+        ['physicalSection','Physical Health',categories.has('physical_health')],
+        ['behaviorSection','Behavior / Mental Health',categories.has('behavior_mental_health')],
+        ['educational-step','Education & Learning',educationNote.checked || categories.has('educational')],
+        ['final-notes-step','Important observation',true]
+      ].filter(([, , enabled]) => enabled);
+    }
+
     async function renderIsaMapping(placements, stillCurrent){
       linkHost.replaceChildren();state.existingLinks=[];
       if(!state.selectedCaregiver||!state.selectedIndividual){linkPanel.hidden=true;return;}
@@ -1751,16 +1776,20 @@
           wrap.append(setting);
           return setting;
         };
-        wrap.append(title,label);
+        const include = document.createElement('input');
+        include.type = 'checkbox';
+        include.dataset.isaInclude = '';
+        // Older versions saved the default placement even for untouched questions.
+        include.checked = placement?.included ?? Boolean(saved ||
+          (placement?.section && placement.section !== 'final-notes-step') ||
+          placement?.prompt || placement?.after || placement?.steps?.length);
+        const includeLabel = document.createElement('label');
+        includeLabel.style.cssText = 'display:flex;align-items:center;gap:8px;margin-top:8px';
+        includeLabel.append(include, 'Include in this check-in');
+        wrap.append(title,includeLabel,label);
         const section = document.createElement('select');
         section.dataset.isaSection = '';
-        for (const [id, name] of [
-          ['final-notes-step','Important observation'], ['homeFamilySection','In-Home Support'],
-          ['communitySection','Community Support'], ['daily-living-step','Respite'],
-          ['vocationalSection','Ongoing Supported Employment'], ['physicalSection','Physical Health'],
-          ['behaviorSection','Behavior / Mental Health'], ['educational-step','Education & Learning']
-        ]) section.add(new Option(name,id));
-        if ([...section.options].some(option => option.value === placement?.section)) section.value = placement.section;
+        section.dataset.preferredSection = placement?.section || '';
         const sectionLabel = addSetting('Show this question under', section);
         const after = document.createElement('select');
         after.dataset.isaAfter = '';
@@ -1785,21 +1814,44 @@
           stepsLabel = addSetting('Optional checklist, one step per line', steps);
         }
         const syncPlacement = () => {
-          if (stepsLabel) stepsLabel.style.display = select.value ? 'none' : 'grid';
-          sectionLabel.style.display = promptLabel.style.display = select.value ? 'none' : 'grid';
-          afterLabel.style.display = !select.value && section.value === 'homeFamilySection' ? 'grid' : 'none';
+          const followUp = include.checked && !select.value;
+          label.style.display = include.checked ? 'block' : 'none';
+          note.hidden = !include.checked;
+          if (stepsLabel) stepsLabel.style.display = followUp ? 'grid' : 'none';
+          sectionLabel.style.display = promptLabel.style.display = followUp ? 'grid' : 'none';
+          afterLabel.style.display = followUp && section.value === 'homeFamilySection' ? 'grid' : 'none';
         };
-        section.addEventListener('change', syncPlacement);
+        section.addEventListener('change', () => {
+          section.dataset.preferredSection = section.value;
+          syncPlacement();
+        });
+        include.addEventListener('change', syncPlacement);
         select.addEventListener('change', syncPlacement);
-        syncPlacement();
+        wrap.addEventListener('isa-sections-updated', syncPlacement);
         wrap.append(note);linkHost.append(wrap);count++;
       }
+      refreshIsaSections();
       if(!count){const msg=document.createElement('p');msg.textContent='No active ISA measurements are currently assigned to this caregiver and individual.';linkHost.append(msg);}
     }
+    function refreshIsaSections() {
+      const sections = availableIsaSections();
+      for (const section of linkHost.querySelectorAll('[data-isa-section]')) {
+        section.replaceChildren(new Option('Choose a section',''));
+        for (const [id, name] of sections) section.add(new Option(name,id));
+        const preferred = section.dataset.preferredSection;
+        section.value = sections.some(([id]) => id === preferred) ? preferred : '';
+        section.closest('[data-isa-placement]').dispatchEvent(new Event('isa-sections-updated'));
+      }
+    }
+    serviceSettings.addEventListener('change', refreshIsaSections);
+    setupGridEl.addEventListener('change', refreshIsaSections);
+    educationNote.addEventListener('change', refreshIsaSections);
+
     async function saveIsaLinks(){
       if(!state.assignmentId)throw new Error('Save the caregiver assignment before linking ISA measures.');
       const desired=[...linkHost.querySelectorAll('select[data-outcome-id]')]
-       .filter(el=>el.value).map(el=>({outcome_id:el.dataset.outcomeId,measurement_id:el.dataset.measurementId,source_field:el.value}));
+       .filter(el=>el.value && el.closest('[data-isa-placement]').querySelector('[data-isa-include]').checked)
+       .map(el=>({outcome_id:el.dataset.outcomeId,measurement_id:el.dataset.measurementId,source_field:el.value}));
       for(const previous of state.existingLinks){
         if(desired.some(d=>d.outcome_id===previous.outcome_id&&d.measurement_id===previous.measurement_id&&d.source_field===previous.source_field))continue;
         await rest('star_isa_measure_links?id=eq.'+encodeURIComponent(previous.id),{method:'DELETE'});

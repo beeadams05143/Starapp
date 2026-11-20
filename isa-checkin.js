@@ -113,7 +113,7 @@ const sectionIds = new Set(['homeFamilySection', 'communitySection', 'daily-livi
 function sectionFor(placement) {
  const id = placement?.section;
  const step = sectionIds.has(id) && $(id);
- return step && !step.hidden && !step.classList.contains('config-hidden') ? id : 'final-notes-step';
+ return step && !step.hidden && !step.classList.contains('config-hidden') ? id : null;
 }
 function panelFor(id) {
  const content = $(id)?.querySelector('.section-content');
@@ -133,7 +133,15 @@ function render(){
   // An approved source is the only question, including shifts where its field is skipped.
   if (linked.some(link => link.card.id === card.id && link.measurement.id === m.id)) continue;
   const placement = placements?.[card.id + ':' + m.id];
-  const section = sectionFor(placement);
+  if (selectedAssignment) {
+   // An untouched legacy placement is indistinguishable from the old default.
+   const included = placement?.included ?? Boolean(
+    (placement?.section && placement.section !== 'final-notes-step') ||
+    placement?.prompt || placement?.after || placement?.steps?.length);
+   if (!included) continue;
+  }
+  const section = sectionFor(placement) || (!selectedAssignment ? 'final-notes-step' : null);
+  if (!section) continue;
   const panel = panelFor(section);
   if (!panel) continue;
   const afterHome = section === 'homeFamilySection' && placement?.after === 'homeActivities';
@@ -244,7 +252,8 @@ async function init(context, generation){
  linked=[];
  for(const card of cards)for(const measurement of (Array.isArray(card.measurements)?card.measurements:[])){
    const link=approved.find(l=>l.outcome_id===card.id&&l.measurement_id===measurement.id);
-   if(link)linked.push({card,measurement,sourceField:link.source_field,linkId:link.id});
+   const placement = assignment?.selected_items?.__isa_placement__?.[card.id + ':' + measurement.id];
+   if(link && placement?.included !== false)linked.push({card,measurement,sourceField:link.source_field,linkId:link.id});
  }
  loaded=true;render();
 }

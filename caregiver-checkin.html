@@ -1966,7 +1966,7 @@
     }
     #adlActivityChips .adl-activity-group .movement-chip input {width:20px !important;height:20px;margin:0}
     #adlActivityChips .adl-activity-group .movement-chip.is-wide {grid-column:auto}
-    #daily-living-step .row > div {min-width:0;width:100%}
+    #homeFamilySection .row > div {min-width:0;width:100%}
     @media(max-width:420px) {
       #adlActivityChips .adl-activity-group .movement-chips {grid-template-columns:minmax(0,1fr)}
     }
@@ -2037,64 +2037,54 @@
     }
 
     /* Mobile ADL choices: fill the available panel width with two readable columns. */
-    #daily-living-step .row, #daily-living-step .row > div,
-    #daily-living-step .adl-activity-list, #daily-living-step .adl-activity-group {
+    #homeFamilySection .row, #homeFamilySection .row > div,
+    #homeFamilySection .adl-activity-list, #homeFamilySection .adl-activity-group {
       width:100%; min-width:0; max-width:none;
     }
-    #daily-living-step .adl-activity-list { grid-template-columns:minmax(0,1fr) !important; }
-    #daily-living-step .adl-activity-group .movement-chips {
+    #homeFamilySection .adl-activity-list { grid-template-columns:minmax(0,1fr) !important; }
+    #homeFamilySection .adl-activity-group .movement-chips {
       display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important;
       gap:10px !important; width:100%; min-width:0;
     }
-    #daily-living-step .adl-activity-group .movement-chip,
-    #daily-living-step .adl-activity-group .movement-chip.is-wide {
+    #homeFamilySection .adl-activity-group .movement-chip,
+    #homeFamilySection .adl-activity-group .movement-chip.is-wide {
       grid-column:auto !important; width:100% !important; min-width:0 !important;
       max-width:none !important; height:auto !important; min-height:76px;
       padding:12px 8px !important; overflow-wrap:anywhere; word-break:normal;
       white-space:normal; font-size:clamp(13px,3.6vw,16px);
     }
-    #daily-living-step .adl-activity-group .movement-chip span {
+    #homeFamilySection .adl-activity-group .movement-chip span {
       overflow-wrap:anywhere; word-break:normal; white-space:normal;
     }
     #summaryHighlightBox { border:2px solid #d5a64d !important; background:#fff7df !important; }
     #summaryHighlightBox .summary-star { color:#b7791f; font-size:24px; margin-right:6px; }
 
     /* The ADL row was inheriting narrow multi-column sizing from the shared form grid. */
-    #daily-living-step .section-content > fieldset.panel > .row:has(#adlActivityChips) {
+    #homeFamilySection .section-content > fieldset.panel > .row:has(#adlActivityChips) {
       display:block !important; width:100% !important; max-width:none !important;
     }
-    #daily-living-step .section-content > fieldset.panel > .row:has(#adlActivityChips) > div {
+    #homeFamilySection .section-content > fieldset.panel > .row:has(#adlActivityChips) > div {
       display:block !important; width:100% !important; max-width:none !important;
     }
-    #daily-living-step #adlActivityChips,
-    #daily-living-step #adlActivityChips .adl-activity-group,
-    #daily-living-step #adlActivityChips .movement-chips {
+    #homeFamilySection #adlActivityChips,
+    #homeFamilySection #adlActivityChips .adl-activity-group,
+    #homeFamilySection #adlActivityChips .movement-chips {
       box-sizing:border-box !important; width:100% !important; max-width:100% !important;
     }
-    #daily-living-step #adlActivityChips .movement-chip {
+    #homeFamilySection #adlActivityChips .movement-chip {
       box-sizing:border-box !important; width:100% !important; min-width:0 !important;
       overflow-wrap:break-word !important; word-break:normal !important;
     }
     #final-notes-step textarea {font-size:16px;}
 
     /* Keep one final highlight note; medication and physical-health notes remain available. */
-    #daily-living-step label:has([name="adl_note"]),
-    #daily-living-step label:has([name="daily_living_notes"]),
-    #communitySection label:has([name="public_activity_note"]),
-    #communitySection label:has([name="interaction_note"]),
-    #homeFamilySection label:has([name="home_notes"]),
-    .step label:has([name="vocational_notes"]),
     .step label:has([name="aggression_notes"]),
-    .step label:has([name="pet_activity_note"]),
-    .step label:has([name="pet_activity_notes"]),
     .step .behavior-card-notes,
     .step .educational-card-notes {display:none !important;}
-    #daily-living-step .row.cols-2:has(#adl_note) {display:block !important;}
-    #daily-living-step .row.cols-2:has(#adl_note) > label:has(#prompting_level) {
+    #homeFamilySection .row.cols-2:has(#adl_note) {display:block !important;}
+    #homeFamilySection .row.cols-2:has(#adl_note) > label:has(#prompting_level) {
       display:block !important; width:100% !important; max-width:none !important;
     }
-    #daily-living-step #adlEntryList,
-    #daily-living-step #adlEntryList + input[name="adl_entries"] {display:none !important;}
     /* Simple landing: the seven-category checklist remains in the DOM for legacy status
        handling, but must not be shown ahead of the guided one-section-at-a-time form. */
     #sectionListView { display:none !important; }
@@ -2119,11 +2109,12 @@
     .care-date-pending #draftSaveBar > :not(#caregiverBackHome) { display:none !important; }
     #draftSaveFeedback:empty { display:none; }
     #draftSaveFeedback { flex-basis:100%; }
-    #shiftSupportLog .support-entry { min-width:0; margin:12px 0; padding:12px; }
-    #shiftSupportLog .support-entry > label:not([hidden]) { display:block; margin:8px 0; }
-    #shiftSupportLog :is(select, input:not([type="checkbox"]), textarea) { width:100%; min-height:44px; }
-    #shiftSupportLog .support-activities label { display:flex; align-items:center; gap:8px; padding:6px 0; }
-    #shiftSupportLog input[type="checkbox"] { width:auto; }
+    [data-service-fields] legend { display:block; font-weight:750; }
+    [data-service-fields] .support-entry { min-width:0; margin:12px 0; padding:12px; }
+    [data-service-fields] .support-entry > label:not([hidden]) { display:block; margin:8px 0; }
+    [data-service-fields] :is(select, input:not([type="checkbox"]), textarea) { width:100%; min-height:44px; }
+    [data-service-fields] .support-activities label { display:flex; align-items:center; gap:8px; padding:6px 0; }
+    [data-service-fields] input[type="checkbox"] { width:auto; }
     #healthConcernsPanel[hidden] { display:none !important; }
     #healthConcernsPanel, .physical-general-row:has(#healthConcernsPanel) > .question-block { grid-column:1 / -1; }
     #prnEntriesWrap.is-hidden { display:none; }
@@ -2217,10 +2208,10 @@
     <div class="progress" id="progress">
       <div class="prog-item" data-step="0"><div class="prog-label">Physical</div><div class="seg active"></div></div>
       <div class="prog-item" data-step="1"><div class="prog-label">Behavior / Mental Health</div><div class="seg"></div></div>
-      <div class="prog-item" data-step="2"><div class="prog-label">Vocational</div><div class="seg"></div></div>
-      <div class="prog-item" data-step="3"><div class="prog-label">Home / Family</div><div class="seg"></div></div>
-      <div class="prog-item" data-step="4"><div class="prog-label">Supports Provided</div><div class="seg"></div></div>
-      <div class="prog-item" data-step="5"><div class="prog-label">Daily Living</div><div class="seg"></div></div>
+      <div class="prog-item" data-step="2"><div class="prog-label">Ongoing Supported Employment</div><div class="seg"></div></div>
+      <div class="prog-item" data-step="3"><div class="prog-label">In-Home Support</div><div class="seg"></div></div>
+      <div class="prog-item" data-step="4"><div class="prog-label">Community Support</div><div class="seg"></div></div>
+      <div class="prog-item" data-step="5"><div class="prog-label">Respite</div><div class="seg"></div></div>
       <div class="prog-item" data-step="6"><div class="prog-label">Educational</div><div class="seg"></div></div>
     </div>
 
@@ -2773,11 +2764,11 @@
       <!-- STEP 3: Vocational -->
       <div id="vocationalSection" class="step" data-step="2">
         <div class="section-card section-detail">
-          <div class="section-header">Vocational <span>→</span></div>
+          <div class="section-header">Ongoing Supported Employment <span>→</span></div>
           <div class="section-content">
           <button class="back-btn" type="button">← Back</button>
         <fieldset class="panel">
-          <div class="section-title">Vocational Participation</div>
+          <div class="section-title">Ongoing Supported Employment</div>
           <div class="row cols-3 compact">
             <div id="question-vocational-participation" class="question-block">
               <div class="movement-label">Participated in vocational activity?</div>
@@ -2800,6 +2791,7 @@
             </div>
           </div>
           <label id="vocationalNotesWrap" style="display:none">Vocational notes:<textarea name="vocational_notes" placeholder="Describe tasks, progress, or challenges during vocational time."></textarea></label>
+          <div data-service-fields="Ongoing Supported Employment"></div>
           <div class="controls">
             <div class="left-actions"><button class="btn" type="button" data-save>Save Draft</button><span class="action-note">Save a local recovery copy. This does not submit the check-in.</span><span class="savedAt" data-savedat></span></div>
             <div class="left-actions"><button class="btn" type="button" data-prev>← Back</button><span class="action-note">Continue to the next section.</span><button class="btn primary save-next-btn" type="button" data-next>Next →</button></div>
@@ -2812,16 +2804,16 @@
       <!-- STEP 4: Home / Family -->
       <div id="homeFamilySection" class="step" data-step="3">
         <div class="section-card section-detail">
-          <div class="section-header">Home / Family <span>→</span></div>
+          <div class="section-header">In-Home Support <span>→</span></div>
           <div class="section-content">
           <button class="back-btn" type="button">← Back</button>
         <fieldset class="panel">
-          <div class="section-title">Home / Family Community</div>
+          <div class="section-title">In-Home Support</div>
           <div class="row cols-3 compact">
             <div id="question-home-activity-flag" class="question-block">
               <div class="movement-label">Engaged in a home/community activity?</div>
               <div class="yn-pill-group" role="group" aria-label="Home activity">
-                <label class="yn-pill"><input type="radio" name="home_activity_flag" value="" data-skip> Did not participate today / Skip</label>
+                <label class="yn-pill"><input type="radio" name="home_activity_flag" value=""> Did not participate today</label>
                 <label class="yn-pill"><input type="radio" name="home_activity_flag" value="yes"> Yes</label>
                 <label class="yn-pill"><input type="radio" name="home_activity_flag" value="no"> No</label>
               </div>
@@ -2887,6 +2879,29 @@
             </div>
           </div>
           <label id="homeNotesWrap" style="display:none">Home / family notes:<textarea name="home_notes" placeholder="Interactions, meals, visitors, or notable moments at home."></textarea></label>
+          <div id="originalAdlQuestions">
+          <div class="subcap">Daily Living</div>
+          <div class="row">
+            <div>
+              <div class="movement-label">ADL activities</div>
+              <div class="adl-activity-list checkbox-grid adl-checkbox-grid" id="adlActivityChips"></div>
+              <input type="hidden" name="adl_category" id="adl_category" value=""/>
+              <input type="hidden" name="adl_activity" id="adl_activity" value=""/>
+            </div>
+          </div>
+          <div class="row cols-2">
+            <label>ADL note:<textarea name="adl_note" id="adl_note" rows="4" style="display:block;width:100%;min-height:110px;box-sizing:border-box;resize:vertical" placeholder="Describe what was completed, any help or prompting, and how the individual participated."></textarea></label>
+            <label>Prompting / independence:
+              <select name="prompting_level" id="prompting_level" data-scale="prompting"></select>
+            </label>
+          </div>
+          <p class="muted" style="margin:8px 0 4px">Add each ADL as you go so the log prints clearly.</p>
+          <button class="btn" type="button" id="addAdlEntry">+ Add ADL entry</button>
+          <ul class="adl-entry-list" id="adlEntryList"></ul>
+          <input type="hidden" name="adl_entries" id="adl_entries" value=""/>
+          <label>Daily living notes:<textarea name="daily_living_notes" id="daily_living_notes" placeholder="Cooking, cleaning, laundry, errands, etc."></textarea></label>
+          </div>
+          <div data-service-fields="In-Home Support"></div>
           <div class="controls">
             <div class="left-actions"><button class="btn" type="button" data-save>Save Draft</button><span class="action-note">Save a local recovery copy. This does not submit the check-in.</span><span class="savedAt" data-savedat></span></div>
             <div>
@@ -2903,17 +2918,11 @@
       <!-- STEP 5: Community / Interaction -->
       <div id="communitySection" class="step" data-step="4">
         <div class="section-card section-detail">
-          <div class="section-header">Supports Provided <span>→</span></div>
+          <div class="section-header">Community Support <span>→</span></div>
           <div class="section-content">
           <button class="back-btn" type="button">← Back</button>
         <fieldset class="panel">
-          <div class="section-title">Supports Provided</div>
-          <section id="shiftSupportLog" aria-label="Supports provided this shift">
-            <p>Record the support you provided during this shift. Leave a section blank if you did not provide that service.</p>
-            <div id="shiftSupportEntries"></div>
-          </section>
-          <div hidden aria-hidden="true">
-          <div class="section-title">Community &amp; Social Interaction</div>
+          <div class="section-title">Community Support</div>
           <div class="subcap">Community at large</div>
           <div class="row cols-3 compact">
             <div id="question-public-activity-flag" class="question-block">
@@ -2998,7 +3007,7 @@
           <div id="interactionDetailsNotes" class="row" style="display:none;grid-template-columns:minmax(0,1fr)">
             <label for="interaction_note" style="display:block;width:100%;min-width:0">Interaction note:<textarea id="interaction_note" name="interaction_note" rows="5" style="display:block;width:100%;min-height:130px;box-sizing:border-box;resize:vertical" placeholder="Describe who they interacted with, what happened, any prompting needed, and how they responded."></textarea></label>
           </div>
-          </div>
+          <div data-service-fields="Community Support"></div>
           <div class="controls">
             <div class="left-actions"><button class="btn" type="button" data-save>Save Draft</button><span class="action-note">Save a local recovery copy. This does not submit the check-in.</span><span class="savedAt" data-savedat></span></div>
             <div class="left-actions"><button class="btn" type="button" data-prev>← Back</button><span class="action-note">Continue to the next section.</span><button class="btn primary save-next-btn" type="button" data-next>Next →</button></div>
@@ -3011,30 +3020,12 @@
       <!-- STEP 6: Daily Living -->
       <div class="step" data-step="5" id="daily-living-step">
         <div class="section-card section-detail">
-          <div class="section-header">Daily Living <span>→</span></div>
+          <div class="section-header">Respite <span>→</span></div>
           <div class="section-content">
           <button class="back-btn" type="button">← Back</button>
         <fieldset class="panel">
-          <div class="section-title">Daily Living</div>
-          <div class="row">
-            <div>
-              <div class="movement-label">ADL activities</div>
-              <div class="adl-activity-list checkbox-grid adl-checkbox-grid" id="adlActivityChips"></div>
-              <input type="hidden" name="adl_category" id="adl_category" value=""/>
-              <input type="hidden" name="adl_activity" id="adl_activity" value=""/>
-            </div>
-          </div>
-          <div class="row cols-2">
-            <label>ADL note:<textarea name="adl_note" id="adl_note" rows="4" style="display:block;width:100%;min-height:110px;box-sizing:border-box;resize:vertical" placeholder="Describe what was completed, any help or prompting, and how the individual participated."></textarea></label>
-            <label>Prompting / independence:
-              <select name="prompting_level" id="prompting_level" data-scale="prompting"></select>
-            </label>
-          </div>
-          <p class="muted" style="margin:8px 0 4px">Add each ADL as you go so the log prints clearly.</p>
-          <button class="btn" type="button" id="addAdlEntry">+ Add ADL entry</button>
-          <ul class="adl-entry-list" id="adlEntryList"></ul>
-          <input type="hidden" name="adl_entries" id="adl_entries" value=""/>
-          <label>Daily living notes:<textarea name="daily_living_notes" id="daily_living_notes" placeholder="Cooking, cleaning, laundry, errands, etc."></textarea></label>
+          <div class="section-title">Respite</div>
+          <div data-service-fields="Respite"></div>
           <div class="controls">
             <div class="left-actions">
               <button class="btn" type="button" data-save>Save Draft</button>
@@ -3044,7 +3035,7 @@
             </div>
             <div>
               <button class="btn" type="button" data-prev>← Back</button>
-              <button class="btn primary" type="button" data-open-final-notes>Next →</button>
+              <button class="btn primary" type="button" data-next>Next →</button>
             </div>
           </div>
         </fieldset>
@@ -3214,10 +3205,10 @@
   const SECTION_STATUS_DEFS = [
     { key: 'physical', navKey: 'physical', stepId: 'physicalSection', title: 'Physical Health', quickStatus: 'all_clear', quickLabel: 'All clear — nothing to report', statusLabel: 'All clear' },
     { key: 'behavior', navKey: 'behavior', stepId: 'behaviorSection', title: 'Behavior / Mental Health', quickStatus: 'stable', quickLabel: 'Stable — nothing to report', statusLabel: 'Stable' },
-    { key: 'vocational', navKey: 'vocational', stepId: 'vocationalSection', title: 'Vocational', quickStatus: 'did_not_participate', quickLabel: 'Did not participate', statusLabel: 'Did not participate' },
-    { key: 'home_family', navKey: 'homeFamily', stepId: 'homeFamilySection', title: 'Home / Family', quickStatus: 'no_notable_activity', quickLabel: 'No notable home/family activity', statusLabel: 'No notable activity' },
-    { key: 'community', navKey: 'community', stepId: 'communitySection', title: 'Supports Provided', quickStatus: 'did_not_participate', quickLabel: 'Did not participate', statusLabel: 'Did not participate' },
-    { key: 'daily_living', navKey: 'dailyLiving', stepId: 'daily-living-step', title: 'Daily Living', quickStatus: 'did_not_participate', quickLabel: 'Did not participate', statusLabel: 'Did not participate' },
+    { key: 'vocational', navKey: 'vocational', stepId: 'vocationalSection', title: 'Ongoing Supported Employment', quickStatus: 'did_not_participate', quickLabel: 'Did not participate', statusLabel: 'Did not participate' },
+    { key: 'home_family', navKey: 'homeFamily', stepId: 'homeFamilySection', title: 'In-Home Support', quickStatus: 'no_notable_activity', quickLabel: 'No notable home/family activity', statusLabel: 'No notable activity' },
+    { key: 'community', navKey: 'community', stepId: 'communitySection', title: 'Community Support', quickStatus: 'did_not_participate', quickLabel: 'Did not participate', statusLabel: 'Did not participate' },
+    { key: 'respite', navKey: 'dailyLiving', stepId: 'daily-living-step', title: 'Respite', quickStatus: 'did_not_participate', quickLabel: 'Did not participate', statusLabel: 'Did not participate' },
     { key: 'educational', navKey: 'educational', stepId: 'educational-step', title: 'Education & Skill Development', quickStatus: 'no_education', quickLabel: 'No educational activity recorded', statusLabel: 'No educational activity' }
   ];
   const SECTION_STATUS_BY_NAV = new Map(SECTION_STATUS_DEFS.map((def) => [def.navKey, def]));
@@ -4778,7 +4769,7 @@
   }
 
   function getConfiguredAdlOptions(){
-    if (!caregiverSetupState.hasConfig) return BASE_ADL_OPTIONS;
+    if (!caregiverSetupState.selectedItems?.daily_living?.length || !caregiverSetupState.hasConfig) return BASE_ADL_OPTIONS;
     const next = {};
     if (configItemEnabled('daily_living', 'hygiene') || configItemEnabled('daily_living', 'toileting')) {
       next['Hygiene / Toileting'] = BASE_ADL_OPTIONS['Hygiene / Toileting'];
@@ -4934,11 +4925,11 @@
 
     setStepAndNavHidden(physicalStep, progressItems.physical, false);
     setStepAndNavHidden(behaviorStep, progressItems.behavior, false);
-    setStepAndNavHidden(vocationalStep, progressItems.vocational, true);
-    setStepAndNavHidden(homeFamilyStep, progressItems.home_family, true);
-    setStepAndNavHidden(communityStep, progressItems.community, !getAssignedShiftServices().length);
+    setStepAndNavHidden(vocationalStep, progressItems.vocational, !hasAssignedShiftService('Ongoing Supported Employment'));
+    setStepAndNavHidden(homeFamilyStep, progressItems.home_family, !hasAssignedShiftService('In-Home Support'));
+    setStepAndNavHidden(communityStep, progressItems.community, !hasAssignedShiftService('Community Support'));
     syncAssignedShiftServiceCards();
-    setStepAndNavHidden(dailyLivingStep, progressItems.daily_living, true);
+    setStepAndNavHidden(dailyLivingStep, progressItems.daily_living, !hasAssignedShiftService('Respite'));
     setStepAndNavHidden(educationalStep, progressItems.educational, caregiverSetupState.isParent);
 
     setConfigHidden([
@@ -5028,11 +5019,11 @@
 
     setStepAndNavHidden(physicalStep, progressItems.physical, !physicalVisible);
     setStepAndNavHidden(behaviorStep, progressItems.behavior, !behaviorVisible);
-    setStepAndNavHidden(vocationalStep, progressItems.vocational, true);
-    setStepAndNavHidden(homeFamilyStep, progressItems.home_family, true);
-    setStepAndNavHidden(communityStep, progressItems.community, !getAssignedShiftServices().length);
+    setStepAndNavHidden(vocationalStep, progressItems.vocational, !hasAssignedShiftService('Ongoing Supported Employment'));
+    setStepAndNavHidden(homeFamilyStep, progressItems.home_family, !hasAssignedShiftService('In-Home Support'));
+    setStepAndNavHidden(communityStep, progressItems.community, !hasAssignedShiftService('Community Support'));
     syncAssignedShiftServiceCards();
-    setStepAndNavHidden(dailyLivingStep, progressItems.daily_living, true);
+    setStepAndNavHidden(dailyLivingStep, progressItems.daily_living, !hasAssignedShiftService('Respite'));
     // The short optional educational note is available regardless of setup.
     // Detailed educational tracking remains conditional on caregiver setup.
     setStepAndNavHidden(educationalStep, progressItems.educational, caregiverSetupState.isParent);
@@ -5105,24 +5096,24 @@
       document.getElementById('question-vocational-participation'),
       document.getElementById('vocationalDetails'),
       document.getElementById('vocationalNotesWrap'),
-    ], !anyConfigItemEnabled('vocational', ['attended_work_program', 'task_completion', 'prompting_needed', 'workplace_behavior', 'independence']));
+    ], !!caregiverSetupState.selectedItems?.vocational?.length && !anyConfigItemEnabled('vocational', ['attended_work_program', 'task_completion', 'prompting_needed', 'workplace_behavior', 'independence']));
 
     setConfigHidden([
       document.getElementById('question-public-activity-flag'),
       document.getElementById('publicDetails'),
       document.getElementById('publicDetailsNotes'),
       labelForName('public_activity_note'),
-    ], !anyConfigItemEnabled('community', ['community_outing', 'transportation', 'recreation_participation']));
+    ], !!caregiverSetupState.selectedItems?.community?.length && !anyConfigItemEnabled('community', ['community_outing', 'transportation', 'recreation_participation']));
 
     setConfigHidden([
       document.getElementById('question-community-interaction-ok'),
       document.getElementById('interactionDetails'),
       document.getElementById('interactionDetailsNotes'),
-    ], !anyConfigItemEnabled('community', ['social_interaction', 'safety_in_community']));
+    ], !!caregiverSetupState.selectedItems?.community?.length && !anyConfigItemEnabled('community', ['social_interaction', 'safety_in_community']));
 
     setConfigHidden([
       labelForName('daily_living_notes'),
-    ], !(visibility.hygiene || visibility.meals || visibility.personalCare || anyConfigItemEnabled('daily_living', ['following_routine', 'clean_up', 'laundry'])));
+    ], !!caregiverSetupState.selectedItems?.daily_living?.length && !(visibility.hygiene || visibility.meals || visibility.personalCare || anyConfigItemEnabled('daily_living', ['following_routine', 'clean_up', 'laundry'])));
 
     renderAdlCategoryChips();
     renderAdlActivityChips();
@@ -5759,7 +5750,7 @@
 	    steps.forEach((step, idx) => {
 	      step.querySelector('[data-next]')?.addEventListener('click', () => {
 	        if (idx === 0 && !validateCentralPrns()) return;
-            if (step.id === 'communitySection' && !validateShiftSupportRows()) return;
+            if (step.querySelector('[data-service-fields]') && !validateShiftSupportRows()) return;
 	        markSectionDetailedComplete(step);
 	        continueGuidedFlow(idx);
 	      });
@@ -6675,6 +6666,10 @@
       });
     }
 
+    function hasAssignedShiftService(support) {
+      return getAssignedShiftServices().some(service => service.support === support);
+    }
+
     function shiftSupportField() {
       return document.querySelector('[name="shift_supports"]');
     }
@@ -6688,12 +6683,13 @@
       const services = getAssignedShiftServices();
       renderedShiftServices = JSON.stringify(services);
       priorShiftSupportRows = rows.filter(row => row && typeof row === 'object');
-      const list = document.getElementById('shiftSupportEntries');
-      list.replaceChildren();
+      document.querySelectorAll('[data-service-fields]').forEach(list => list.replaceChildren());
 
       services.forEach(({ support, location }) => {
         const previousIndex = priorShiftSupportRows.findIndex(entry => entry.support === support);
         const previous = previousIndex >= 0 ? priorShiftSupportRows.splice(previousIndex, 1)[0] : null;
+        if (support !== 'Respite' && !previous) return;
+        const list = Array.from(document.querySelectorAll('[data-service-fields]')).find(node => node.dataset.serviceFields === support);
         const row = document.createElement('fieldset');
         row.className = 'panel support-entry';
         row.dataset.support = support;
@@ -6702,7 +6698,7 @@
           <div class="support-activities"></div>
           <label>Minutes (optional)<input type="number" data-minutes min="0" max="1440" step="1" inputmode="numeric"></label>
           <label>Note (optional)<textarea data-note rows="2" placeholder="What did you do, and how did the person participate?"></textarea></label>`;
-        row.querySelector('legend').textContent = support;
+        row.querySelector('legend').textContent = support === 'Respite' ? 'What support did you provide during respite?' : 'Support details from your draft';
         row.querySelector('[data-minutes]').value = previous?.minutes ?? '';
         row.querySelector('[data-note]').value = previous?.note || '';
         const activities = row.querySelector('.support-activities');
@@ -6724,7 +6720,7 @@
     }
 
     function readShiftSupportRows() {
-      const rows = Array.from(document.querySelectorAll('#shiftSupportEntries .support-entry'), row => {
+      const rows = Array.from(document.querySelectorAll('[data-service-fields] .support-entry'), row => {
         const rawMinutes = row.querySelector('[data-minutes]').value;
         const note = row.querySelector('[data-note]').value.trim();
         const activities = Array.from(row.querySelectorAll('input[type="checkbox"]:checked'), input => input.value);
@@ -6746,16 +6742,20 @@
 
     function validateShiftSupportRows() {
       syncShiftSupportField();
-      const invalid = Array.from(document.querySelectorAll('#shiftSupportEntries [data-minutes]'))
+      const invalid = Array.from(document.querySelectorAll('[data-service-fields] [data-minutes]'))
         .find(input => !input.validity.valid);
       if (!invalid) return true;
-      openSectionDetailByIndex(steps.findIndex(step => step.id === 'communitySection'), 'instant');
+      openSectionDetailByIndex(steps.indexOf(invalid.closest('.step')), 'instant');
       invalid.reportValidity();
       return false;
     }
 
     function stepFields(step){
-      const fields = Array.from(step.querySelectorAll('input,select,textarea'));
+      const fields = Array.from(step.querySelectorAll('input,select,textarea'))
+        .filter(field => !field.closest('#originalAdlQuestions'));
+      if (step.id === 'daily-living-step') {
+        fields.push(...document.querySelectorAll('#originalAdlQuestions input, #originalAdlQuestions select, #originalAdlQuestions textarea'));
+      }
       // Keep existing draft step keys compatible after moving shared details.
       if (step.id === 'physicalSection') {
         fields.push(...document.getElementById('shiftDetails').querySelectorAll('input,select,textarea'));
@@ -7182,7 +7182,7 @@
       const radioSeen = new Set();
       const fields = container.querySelectorAll('input,select,textarea');
       fields.forEach((field) => {
-        if (field.closest("#healthConcernsPanel[hidden], #healthConcernsPanel.config-hidden")) return;
+        if (field.closest("[hidden], .config-hidden, [data-service-fields]")) return;
         const value = fieldDisplayValue(field, radioSeen);
         if (value === null || value === undefined || value === '') return;
         const label = extractLabelText(field);
@@ -7230,14 +7230,12 @@
 	        const sectionEl = document.getElementById(def.stepId);
         if (isStepHidden(sectionEl)) return;
 	        const status = getSectionStatus(def);
-	        const items = def.stepId === 'communitySection'
-          ? readShiftSupportRows().map(row => ({
-              label: row.support || 'Support',
-              value: [row.location, row.minutes == null ? '' : row.minutes + ' min',
-                row.activities?.join(', '), row.note].filter(Boolean).join(' · ')
-            }))
-          : isQuickClearedStatus(def, status) ? [] : collectSectionReviewItems(sectionEl);
-	        if (isQuickClearedStatus(def, status)) {
+	        const items = isQuickClearedStatus(def, status) ? [] : collectSectionReviewItems(sectionEl);
+        readShiftSupportRows().filter(row => row.support === def.title).forEach(row => {
+          items.push({label:'Support details', value:[row.location, row.minutes == null ? '' : row.minutes + ' min',
+            row.activities?.join(', '), row.note].filter(Boolean).join(' · ')});
+        });
+        if (isQuickClearedStatus(def, status)) {
 	          items.unshift({ label: 'Section status', value: def.statusLabel });
 	        } else if (status === 'completed') {
 	          items.unshift({ label: 'Section status', value: 'Completed with detailed answers' });
@@ -7302,6 +7300,22 @@
         const payload = buildPayload();
         // Preserve support entries from drafts created with the previous form.
         payload.shift_supports = parseJsonArray(payload.shift_supports);
+        const serviceDetails = {
+          'In-Home Support': {
+            provided: payload.home_activity_flag === 'yes' || !!payload.adl_activity || parseJsonArray(payload.adl_entries).length > 0 || payload.pet_interaction_flag === 'yes',
+            note: [payload.home_notes, payload.adl_note, payload.daily_living_notes].filter(Boolean).join(' · ')
+          },
+          'Community Support': {
+            provided: payload.public_activity_flag === 'yes' || payload.community_interaction_ok === 'yes',
+            note: [payload.public_activity_note, payload.interaction_note].filter(Boolean).join(' · ')
+          },
+          'Ongoing Supported Employment': {provided: payload.vocational_participation === 'yes', note: payload.vocational_notes || ''}
+        };
+        getAssignedShiftServices().forEach(({support, location}) => {
+          const details = serviceDetails[support];
+          if (!details?.provided || payload.shift_supports.some(row => row.support === support)) return;
+          payload.shift_supports.push({support, location, minutes:null, note:details.note});
+        });
         // Registered individual and assignment identifiers make the caregiver observation
         // attributable without storing any invented caregiver titles or blank-as-zero data.
         if(caregiverSetupState.groupIndividualName){
@@ -7758,7 +7772,7 @@
     document.querySelectorAll('[data-skip]').forEach((skipCheckbox) => {
       const section = skipCheckbox.closest('.step');
       if (!section) return;
-      const otherInputs = section.querySelectorAll('input:not([data-skip])');
+      const otherInputs = skipCheckbox.closest('.yn-pill-group').querySelectorAll('input:not([data-skip])');
       const setOtherInputsDisabled = (disabled) => {
         otherInputs.forEach(input => {
           input.disabled = disabled;

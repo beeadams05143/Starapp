@@ -2059,21 +2059,46 @@
     #summaryHighlightBox { border:2px solid #d5a64d !important; background:#fff7df !important; }
     #summaryHighlightBox .summary-star { color:#b7791f; font-size:24px; margin-right:6px; }
 
-    /* The ADL row was inheriting narrow multi-column sizing from the shared form grid. */
-    #homeFamilySection .section-content > fieldset.panel > .row:has(#adlActivityChips) {
-      display:block !important; width:100% !important; max-width:none !important;
+    /* The original ADL questions sit inside their own wrapper in In-Home Support. */
+    #originalAdlQuestions > .row:has(#adlActivityChips) {
+      display:block !important;
     }
-    #homeFamilySection .section-content > fieldset.panel > .row:has(#adlActivityChips) > div {
-      display:block !important; width:100% !important; max-width:none !important;
+    #originalAdlQuestions #adlActivityChips .adl-activity-group .movement-chip span {
+      overflow-wrap:normal;
+      word-break:normal;
+      hyphens:none;
     }
-    #homeFamilySection #adlActivityChips,
-    #homeFamilySection #adlActivityChips .adl-activity-group,
-    #homeFamilySection #adlActivityChips .movement-chips {
-      box-sizing:border-box !important; width:100% !important; max-width:100% !important;
-    }
-    #homeFamilySection #adlActivityChips .movement-chip {
-      box-sizing:border-box !important; width:100% !important; min-width:0 !important;
-      overflow-wrap:break-word !important; word-break:normal !important;
+    @media (max-width:768px) {
+      #originalAdlQuestions #adlActivityChips .adl-activity-group .movement-chips {
+        grid-template-columns:repeat(auto-fit,minmax(min(100%,145px),1fr)) !important;
+      }
+      #originalAdlQuestions #adlActivityChips .adl-activity-group .movement-chip {
+        flex-direction:row;
+        min-height:52px;
+        padding:10px 12px !important;
+        font-size:16px;
+        text-align:left;
+      }
+      #originalAdlQuestions #adlActivityChips .movement-chip input {flex:none}
+      #cg-form .step .section-content .yn-pill-group > .yn-pill {
+        box-sizing:border-box;
+        flex:1 1 min(100%,125px);
+        min-height:48px;
+        min-width:0;
+        justify-content:center;
+        padding:10px;
+        font-size:16px;
+        line-height:1.3;
+        text-align:center;
+        white-space:normal;
+        overflow-wrap:normal;
+        word-break:normal;
+      }
+      #cg-form .step .controls :is([data-prev],[data-next],[data-review]) {
+        min-height:44px;
+        white-space:normal;
+        line-height:1.3;
+      }
     }
     #final-notes-step textarea {font-size:16px;}
 
@@ -2088,6 +2113,7 @@
     /* Simple landing: the seven-category checklist remains in the DOM for legacy status
        handling, but must not be shown ahead of the guided one-section-at-a-time form. */
     #sectionListView { display:none !important; }
+    .isa-gated-answer[hidden] { display:none !important; }
     .legacy-med-note{margin:12px 0;padding:14px;border:1px solid #c5964c;background:#fff8e9;border-radius:12px}
     .legacy-med-note p{margin:8px 0;line-height:1.45}
     .legacy-med-note pre{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;font-size:13px}
@@ -2105,6 +2131,10 @@
       display:none !important;
     }
     #caregiverBackHome { display:inline-flex; align-items:center; min-height:44px; text-decoration:none; }
+    .assignment-preview :is(#saveDraftAlways, [data-save], [data-behavior-desc-edit], [data-educational-desc-edit],
+      #checkinDateTitle, #checkinDateLabel, #changeCheckinDate, #checkinSubmitPanel .confirmation-choice, #submitAll, #submissionStatus) {
+      display:none !important;
+    }
     .care-date-pending #draftSaveBar:has(#caregiverBackHome) { display:flex !important; }
     .care-date-pending #draftSaveBar > :not(#caregiverBackHome) { display:none !important; }
     #draftSaveFeedback:empty { display:none; }
@@ -2268,6 +2298,10 @@
           <input type="hidden" name="shift_supports" value="[]">
 	        </div>
 
+        <div class="landing-actions">
+          <button class="btn primary" type="button" id="beginGuidedCheckinBtn">Begin Caregiver Check-in</button>
+        </div>
+
       <!-- STEP 1: Physical -->
       <div id="physicalSection" class="step active" data-step="0">
 	        <section class="central-prn-card" id="centralPrnSection" aria-labelledby="centralPrnTitle">
@@ -2343,10 +2377,6 @@
             </div>
             <button type="button" class="quick-clear-btn" data-quick-clear="dailyLiving" aria-pressed="false">Did not participate</button>
           </div>
-        </div>
-
-        <div class="landing-actions">
-          <button class="btn primary" type="button" id="beginGuidedCheckinBtn">Begin Caregiver Check-in</button>
         </div>
 
         <div class="section-card section-detail">
@@ -3076,7 +3106,7 @@
           <div class="section-header">Notes &amp; Important Observations <span>★</span></div>
           <div class="section-content">
             <fieldset class="panel">
-              <p class="muted">Save a meaningful moment for the monthly team letter. This is separate from ISA progress.</p>
+              <p class="muted">Save a meaningful moment for the monthly team letter. </p>
 
           <div id="summaryHighlightBox" style="margin:18px 0;padding:14px;border:1px solid #d9ccb8;border-radius:12px;background:#fffaf2">
             <label for="summary_highlight_note" style="display:block;font-weight:700"><span class="summary-star" aria-hidden="true">★</span> Gold-star observation (optional)</label>
@@ -3093,21 +3123,9 @@
           </div>
         </div>
       </div>
-      <!-- ISA questions have their own optional guided step, separate from the gold star. -->
+      <!-- Preserve draft step eight for ISA answers recorded before inline placement. -->
       <div class="step" data-step="8" id="isa-outcomes-step" hidden aria-hidden="true">
-        <div class="section-card section-detail">
-          <div class="section-header">ISA Activities &amp; Progress</div>
-          <div class="section-content">
-            <fieldset class="panel">
-              <section id="starIsaCheckin" hidden aria-label="Assigned ISA outcome measurements"></section>
-              <input type="hidden" id="isa_entries" name="isa_entries" value="[]" />
-              <div class="controls" style="display:flex;gap:12px;flex-wrap:nowrap">
-                <button class="btn" type="button" id="isaStepBack" style="flex:1;min-width:0">← Back</button>
-                <button class="btn primary" type="button" id="isaStepReview" style="flex:1;min-width:0">Review &amp; Submit</button>
-              </div>
-            </fieldset>
-          </div>
-        </div>
+        <input type="hidden" id="isa_entries" name="isa_entries" value="[]" />
       </div>
 
       </fieldset>
@@ -3137,7 +3155,7 @@
 
   <div id="toast"></div>
   <div id="successBanner" role="status" aria-live="polite" aria-atomic="true"></div>
-<script type="module" src="./isa-checkin.js?v=2026.11.02UVM4"></script>
+<script type="module" src="./isa-checkin.js?v=2026.11.20-inline"></script>
 <!-- App logic -->
 <script type="module">
   // 1) Imports MUST be first in the module
@@ -3145,7 +3163,7 @@
   import { CheckinSubmissionUI } from './caregiver-submission-ui.js?v=2026.11.19-review';
   import {loadSignedInRole} from './signed-in-role.js';
   import { normalizeSleepPayload } from './caregiver-sleep.js?v=2026.11.15-sleep-scope';
-  import { sleepOnsetAnswer, restoredSleepResponse } from './caregiver-care-date.js?v=2026.11.15-date-choice';
+  import { CareDateChoice, sleepOnsetAnswer, restoredSleepResponse } from './caregiver-care-date.js?v=2026.11.15-date-choice';
   import { validSelectedDate } from './caregiver-submission.js';
   import { ANSWER_VERSION, optionalEngagement, optionalYesNo } from './caregiver-answer-quality.js?v=2026.10.20A';
   import { ensureActiveGroupId } from './active-group.js?v=2026.10.29UVM3';
@@ -3156,8 +3174,19 @@
   // 3) Simple load marker
   console.log('[cg] script loaded v4');
 
+  const previewAssignment = new URLSearchParams(window.location.search).get('previewAssignment');
+  const isAssignmentPreview = previewAssignment !== null;
   const isPractice = new URLSearchParams(window.location.search).get('onboarding') === '1';
-  if (isPractice) {
+  if (isAssignmentPreview) {
+    document.body.classList.add('assignment-preview');
+    const banner = document.getElementById('practiceBanner');
+    banner.classList.add('visible');
+    banner.textContent = 'Admin preview · Loading assigned check-in…';
+    const back = document.getElementById('caregiverBackHome');
+    back.href = '/caregiver-checkin-setup/';
+    back.textContent = '← Back to Caregiver Setup';
+    document.querySelector('.page-wrap .sub').textContent = 'Choose a sample care date to walk through the assigned questions.';
+  } else if (isPractice) {
     document.getElementById('practiceBanner')?.classList.add('visible');
   }
 
@@ -4283,6 +4312,7 @@
 	  }
 
   async function saveBehaviorDescription(itemKey, description){
+    if (isAssignmentPreview) return;
     const nextDescription = trimOrNull(description);
     const nextDescriptions = { ...(caregiverSetupState.itemDescriptions || {}) };
     if (nextDescription) nextDescriptions[itemKey] = nextDescription;
@@ -4798,7 +4828,27 @@
     const currentGroup=await ensureGroupId(userId);
     caregiverSetupState.isParent = false;
     let assignments=[];
-    if(currentGroup && userId){
+    if (isAssignmentPreview) {
+      if (!currentGroup || !userId || !/^[0-9a-f-]{36}$/i.test(previewAssignment)) {
+        throw new Error('Choose a saved assignment from Caregiver Setup.');
+      }
+      const groupFilter = 'group_id=eq.' + encodeURIComponent(currentGroup);
+      const roles = await rest('group_members?select=role&' + groupFilter + '&user_id=eq.' + encodeURIComponent(userId));
+      if (roles?.[0]?.role !== 'admin') throw new Error('Only an administrator for this group can open this preview.');
+      assignments = await rest('star_caregiver_checkin_assignments?select=*&active=eq.true&' + groupFilter +
+        '&id=eq.' + encodeURIComponent(previewAssignment));
+      if (!assignments?.length) throw new Error('This saved assignment is unavailable in the active group.');
+      const previewTeam = await rest('rpc/star_team_members', {
+        method: 'POST', body: JSON.stringify({ p_group_id: currentGroup })
+      });
+      const caregiver = previewTeam?.find(member => member.user_id === assignments[0].caregiver_user_id);
+      const individual = previewTeam?.find(member => member.user_id === assignments[0].individual_id);
+      if (!caregiver || !individual) throw new Error('The caregiver or individual is unavailable in this group.');
+      caregiverSetupState.isParent = caregiver.assigned_role === 'parent';
+      document.getElementById('practiceBanner').textContent =
+        'Admin preview · ' + (caregiver.display_name || 'Caregiver') + ' for ' +
+        (individual.display_name || 'Individual') + ' · Answers are temporary';
+    } else if(currentGroup && userId){
       const team = await rest('rpc/star_team_members', {
         method:'POST', body:JSON.stringify({p_group_id:currentGroup})
       });
@@ -4822,6 +4872,7 @@
           individualSelect.add(new Option(p?.public_name||p?.display_name||p?.full_name||'Registered individual',a.individual_id));
         }
         individualSelect.value=assigned.individual_id;
+        individualSelect.disabled = isAssignmentPreview;
         individualWrap.hidden=false;
       }
     }
@@ -4850,7 +4901,7 @@
     const announce=()=>{
       window.starCheckinAssignmentContext={
         assignmentId:caregiverSetupState.assignmentId, individualId:caregiverSetupState.assignedIndividualId,
-        caregiverUserId:userId,groupId:currentGroup
+        caregiverUserId:isAssignmentPreview ? assigned?.caregiver_user_id : userId,groupId:currentGroup, isParent:caregiverSetupState.isParent
       };
       window.dispatchEvent(new Event('star-caregiver-assignment-ready'));
     };
@@ -5699,7 +5750,7 @@
     formEl.addEventListener('submit', submitFinal);
     const session = getSessionFromStorage();
     try {
-      caregiverSetupState.forceLegacyMode = await userHasLegacyCaregiverCheckins(session?.user?.id || null);
+      caregiverSetupState.forceLegacyMode = !isAssignmentPreview && await userHasLegacyCaregiverCheckins(session?.user?.id || null);
       if (caregiverSetupState.forceLegacyMode) onboardingActive = false;
     } catch (error) {
       console.warn('[cg] legacy caregiver checkin lookup failed', error?.message || error);
@@ -5711,6 +5762,13 @@
       await loadGroupCaregiverSetup(session?.user?.id || null);
     } catch (error) {
       console.warn('[cg] caregiver setup config unavailable', error?.message || error);
+      if (isAssignmentPreview) {
+        formEl.hidden = true;
+        document.getElementById('progress').hidden = true;
+        document.querySelector('.page-wrap .sub').hidden = true;
+        document.getElementById('practiceBanner').textContent = error?.message || 'The assigned check-in could not be loaded.';
+        return;
+      }
     }
 
     document.getElementById('assignedIndividualSelect')?.addEventListener('change',async(event)=>{
@@ -6016,44 +6074,13 @@
       }
       showSectionList();
     });
-    document.getElementById('finalNotesReview')?.addEventListener('click', () => {
-      if (!window.starIsaReady) {
-        alert('ISA activities are still loading. Please try again shortly.');
-        return;
-      }
-      const isaStep=document.getElementById('isa-outcomes-step');
-      if (!isStepHidden(isaStep)) openSectionDetailByIndex(steps.indexOf(isaStep));
-      else renderReviewBeforeSubmit();
-    });
-    document.getElementById('isaStepBack')?.addEventListener('click', () => {
-      const idx=steps.findIndex(step=>step.id==='final-notes-step');
-      if(idx>=0)openSectionDetailByIndex(idx);
-    });
-    document.getElementById('isaStepReview')?.addEventListener('click',renderReviewBeforeSubmit);
+    document.getElementById('finalNotesReview')?.addEventListener('click', renderReviewBeforeSubmit);
+    if (isAssignmentPreview) document.getElementById('finalNotesReview').textContent = 'Review Answers';
     // Initial position
     go(0);
     applyConditionalSections();
     applyCaregiverSetupVisibility();
     syncEducationalQuestionStates();
-    // Keep ISA as a separate, optional guided screen, only when assigned cards exist.
-    const isaStep=document.getElementById('isa-outcomes-step');
-    const updateIsaStepVisibility=()=>{
-      const showIsa=!caregiverSetupState.isParent && (window.starIsaHasAssignedOutcomes===true || window.starIsaLoadFailed===true);
-      if (isaStep) {
-        isaStep.hidden=!showIsa;
-        isaStep.setAttribute('aria-hidden',String(!showIsa));
-      }
-      const button=document.getElementById('finalNotesReview');
-      if(button)button.textContent=showIsa?'Next: ISA Activities →':'Review & Submit';
-      if(!showIsa && steps[current]?.id==='isa-outcomes-step'){
-        current=steps.findIndex(step=>step.id==='final-notes-step');
-      }
-      syncWizardView();
-      updateProgress();
-    };
-    window.addEventListener('star-isa-outcomes-ready',updateIsaStepVisibility);
-    updateIsaStepVisibility();
-
     const ynFields = [
       'vocational_participation',
       'home_activity_flag',
@@ -6074,6 +6101,20 @@
         applyConditionalSections();
       }
     });
+    if (isAssignmentPreview) {
+      updateSectionLandingUI();
+      const dateChoice = new CareDateChoice({
+        doc: document, win: window, input: entryDateInput,
+        onChangeDate: () => dateChoice.sync()
+      });
+      dateChoice.sync();
+      const fields = document.getElementById('checkinFields');
+      fields.disabled = false;
+      fields.inert = false;
+      document.getElementById('checkinSubmitPanel').setAttribute('aria-label', 'Preview answers');
+      document.getElementById('checkinSubmitPanel').removeAttribute('aria-labelledby');
+      return;
+    }
     submissionUI = new CheckinSubmissionUI({
       document, window,
       context: {
@@ -6606,7 +6647,7 @@
       });
       const beginBtn = document.getElementById('beginGuidedCheckinBtn');
       if (beginBtn) {
-        beginBtn.textContent = getNextNeededSectionIndex() >= 0 ? 'Begin Caregiver Check-in' : 'Review & Submit';
+        beginBtn.textContent = isAssignmentPreview ? 'Begin Assigned Preview' : getNextNeededSectionIndex() >= 0 ? 'Begin Caregiver Check-in' : 'Review & Submit';
       }
     }
     function markSectionDetailedComplete(step){
@@ -6995,12 +7036,12 @@
               option.value = String(idx);
               option.textContent = getSectionDefForStep(step)?.title ||
                 (step.id === 'final-notes-step' ? 'Important observation' :
-                 step.id === 'isa-outcomes-step' ? 'ISA Activities & Progress' : 'Notes');
+                 'Notes');
               sectionSelect.appendChild(option);
             });
             const reviewOption = document.createElement('option');
             reviewOption.value = 'review';
-            reviewOption.textContent = 'Review & Submit';
+            reviewOption.textContent = isAssignmentPreview ? 'Review Answers' : 'Review & Submit';
             sectionSelect.appendChild(reviewOption);
             sectionSelect.value = reviewOverlay?.classList.contains('is-reviewing')
               ? 'review' : String(current);
@@ -7137,6 +7178,8 @@
     }
 	    function clearDraftUI(){
 	      draft=createEmptyDraft();
+      document.getElementById('isa_entries').value = '[]';
+      window.starIsaRestoreEntries?.();
           showLegacyMedDraftNotice();
 	      // Recovery removal is performed only by the scoped submission controller.
 	      steps.forEach((s,i)=>updateSavedAt(s,i));
@@ -7246,7 +7289,8 @@
 	      card.appendChild(row);
 	    }
 
-	    function renderReviewBeforeSubmit() {
+	    async function renderReviewBeforeSubmit() {
+          await window.starIsaLoad;
 	      if (!reviewOverlay || !reviewSectionsEl) return;
 	      syncPrnEntriesField();
 	      reviewSectionsEl.innerHTML = '';
@@ -7283,24 +7327,33 @@
 	        if (!items.length) return;
 	        const card = document.createElement('section');
 	        card.className = 'review-section';
+          card.dataset.reviewSection = def.stepId;
 	        const header = document.createElement('h3');
 	        header.textContent = def.title;
 	        card.appendChild(header);
         items.forEach((item) => appendReviewItem(card, item));
         reviewSectionsEl.appendChild(card);
       });
-      // Present ISA answers alongside existing health answers for review.
       const isaReviewEntries = caregiverSetupState.isParent ? [] : (window.starIsaCollectEntries?.() || []);
-      if(isaReviewEntries.length){
-        const isaCard=document.createElement('section');
-        isaCard.className='review-section';
-        const heading=document.createElement('h3');heading.textContent='ISA Activities & Progress';
-        isaCard.appendChild(heading);
-        isaReviewEntries.forEach(entry=>appendReviewItem(isaCard,{
-          label:entry.outcome_title+' — '+entry.measurement_label,
-          value:String(entry.value)+(entry.unit?' '+entry.unit:'')
-        }));
-        reviewSectionsEl.appendChild(isaCard);
+      for (const entry of isaReviewEntries) {
+        // Existing answers are already displayed with their regular question.
+        if (entry.source_type === 'admin_approved_checkin_reuse') continue;
+        const sectionId = window.starIsaReviewSection?.(entry);
+        let card = [...reviewSectionsEl.children].find(child => child.dataset.reviewSection === sectionId);
+        if (!card) {
+          card = document.createElement('section');
+          card.className = 'review-section';
+          card.dataset.reviewSection = sectionId;
+          const heading = document.createElement('h3');
+          heading.textContent = getSectionDefForStep(document.getElementById(sectionId))?.title ||
+            (sectionId === 'educational-step' ? 'Education & Learning' : 'Important observation');
+          card.appendChild(heading);
+          reviewSectionsEl.appendChild(card);
+        }
+        appendReviewItem(card, {
+          label: entry.measurement_label,
+          value: String(entry.value) + (entry.unit ? ' ' + entry.unit : '')
+        });
       }
       if (!reviewSectionsEl.children.length) {
         const empty = document.createElement('p');
@@ -7318,7 +7371,9 @@
     // ---------- FINAL SUBMIT ----------
     async function submitFinal(e){
       e?.preventDefault?.();
-      if (!submissionUI || isSubmittingFinal) return;
+      if (isAssignmentPreview || !submissionUI || isSubmittingFinal) return;
+      await window.starIsaLoad;
+      if (isSubmittingFinal) return;
       if (!validateCentralPrns() || !validateShiftSupportRows()) return;
       const legacyMedDraft = getLegacyMedDraftText();
       if (legacyMedDraft && !window.confirm(
@@ -7755,7 +7810,8 @@
     updatePrnOverview();
 
     document.getElementById('beginGuidedCheckinBtn')?.addEventListener('click', () => {
-	      const nextIdx = getNextNeededSectionIndex();
+	      const nextNeeded = getNextNeededSectionIndex();
+          const nextIdx = isAssignmentPreview && nextNeeded < 0 ? steps.findIndex(step => !isStepHidden(step)) : nextNeeded;
 	      if (nextIdx >= 0) {
 	        openSectionDetailByIndex(nextIdx);
 	      } else {

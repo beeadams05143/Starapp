@@ -2907,17 +2907,8 @@
         <fieldset class="panel">
           <div class="section-title">Supports Provided</div>
           <section id="shiftSupportLog" aria-label="Supports provided this shift">
-            <p>Choose the service you provided. Add another entry for a different service or setting. Count each block of time once.</p>
-            <datalist id="shiftSupportLocations">
-              <option value="Own or family home"></option>
-              <option value="Shared living home"></option>
-              <option value="Staffed residence"></option>
-              <option value="Respite provider’s home"></option>
-              <option value="Community"></option>
-              <option value="Workplace"></option>
-            </datalist>
+            <p>Record the support you provided during this shift. Leave a section blank if you did not provide that service.</p>
             <div id="shiftSupportEntries"></div>
-            <button class="btn" type="button" id="addShiftSupport">+ Add a support</button>
           </section>
           <div hidden aria-hidden="true">
           <div class="section-title">Community &amp; Social Interaction</div>
@@ -4918,7 +4909,8 @@
     setStepAndNavHidden(behaviorStep, progressItems.behavior, false);
     setStepAndNavHidden(vocationalStep, progressItems.vocational, true);
     setStepAndNavHidden(homeFamilyStep, progressItems.home_family, true);
-    setStepAndNavHidden(communityStep, progressItems.community, false);
+    setStepAndNavHidden(communityStep, progressItems.community, !getAssignedShiftServices().length);
+    syncAssignedShiftServiceCards();
     setStepAndNavHidden(dailyLivingStep, progressItems.daily_living, true);
     setStepAndNavHidden(educationalStep, progressItems.educational, false);
 
@@ -4967,7 +4959,7 @@
       formEl?.parentNode?.insertBefore(emptyState, formEl);
     }
 
-    const anythingEnabled = hasAnyEnabledCategory();
+    const anythingEnabled = hasAnyEnabledCategory() || getAssignedShiftServices().length > 0;
     setConfigHidden([formEl], !anythingEnabled);
     setConfigHidden([emptyState], anythingEnabled);
 
@@ -5010,8 +5002,8 @@
     setStepAndNavHidden(behaviorStep, progressItems.behavior, !behaviorVisible);
     setStepAndNavHidden(vocationalStep, progressItems.vocational, true);
     setStepAndNavHidden(homeFamilyStep, progressItems.home_family, true);
-    setStepAndNavHidden(communityStep, progressItems.community, !getAvailableShiftSupportTypes().length);
-    updateShiftSupportAddButton();
+    setStepAndNavHidden(communityStep, progressItems.community, !getAssignedShiftServices().length);
+    syncAssignedShiftServiceCards();
     setStepAndNavHidden(dailyLivingStep, progressItems.daily_living, true);
     // The short optional educational note is available regardless of setup.
     // Detailed educational tracking remains conditional on caregiver setup.
@@ -6622,107 +6614,89 @@
       ]
     };
 
-    function getAvailableShiftSupportTypes() {
-      if (!shouldUseCustomCaregiverSetup()) return Object.keys(SHIFT_SUPPORT_ACTIVITIES);
+    const SHIFT_SERVICE_KEYS = {
+      home: ['In-Home Support', 'daily_living'],
+      community: ['Community Support', 'community'],
+      employment: ['Ongoing Supported Employment', 'vocational'],
+      respite: ['Respite', 'respite']
+    };
+    let priorShiftSupportRows = [];
+    let renderedShiftServices = '';
+
+    function getAssignedShiftServices() {
       const selected = caregiverSetupState.selectedCategories;
-      const home = selected.has('daily_living') || selected.has('home_family');
-      const community = selected.has('community');
-      const work = selected.has('vocational');
-      return [
-        home && 'In-Home Support',
-        community && 'Community Support',
-        work && 'Ongoing Supported Employment',
-        (home || community || work || selected.has('respite')) && 'Respite'
-      ].filter(Boolean);
+      const saved = caregiverSetupState.selectedItems?.__support_services__;
+      return Object.entries(SHIFT_SERVICE_KEYS).flatMap(([key, [support, legacy]]) => {
+        const enabled = saved && typeof saved === 'object'
+          ? Object.hasOwn(saved, key)
+          : isPractice || selected.has(legacy) || (key === 'home' && selected.has('home_family'));
+        return enabled ? [{ support, location: typeof saved?.[key] === 'string' ? saved[key] : '' }] : [];
+      });
     }
 
     function shiftSupportField() {
       return document.querySelector('[name="shift_supports"]');
     }
 
-    function updateShiftSupportAddButton() {
-      document.getElementById('addShiftSupport').disabled = !getAvailableShiftSupportTypes().length;
+    function syncAssignedShiftServiceCards() {
+      const services = getAssignedShiftServices();
+      if (JSON.stringify(services) !== renderedShiftServices) renderAssignedShiftServiceCards(readShiftSupportRows());
     }
 
-    function addShiftSupportRow(entry = {}) {
-      const row = document.createElement('fieldset');
-      row.className = 'panel support-entry';
-      row.innerHTML = `<legend>Support entry</legend>
-        <label>Service<select data-service><option value="">Choose a service</option></select></label>
-        <label data-respite-type hidden>Respite type<select><option value="">Choose a respite type</option>
-          <option>Hourly respite</option><option>24-hour respite</option></select></label>
-        <div class="support-activities" hidden></div>
-        <label>Where did you provide support?<input type="text" data-location list="shiftSupportLocations"></label>
-        <label>Minutes (optional)<input type="number" data-minutes min="0" max="1440" step="1" inputmode="numeric"></label>
-        <label>Note (optional)<textarea data-note rows="2" placeholder="What did you do, and how did the person participate?"></textarea></label>
-        <button class="btn" type="button" data-remove-support>Remove support</button>`;
-      const service = row.querySelector('[data-service]');
-      const respiteWrap = row.querySelector('[data-respite-type]');
-      const respite = respiteWrap.querySelector('select');
-      const activities = row.querySelector('.support-activities');
-      const types = new Set(getAvailableShiftSupportTypes());
-      if (entry.support) types.add(entry.support);
-      types.forEach(type => service.add(new Option(type, type)));
-      service.value = entry.support || '';
-      row.querySelector('[data-location]').value = entry.location || '';
-      row.querySelector('[data-minutes]').value = entry.minutes ?? '';
-      row.querySelector('[data-note]').value = entry.note || '';
-      respite.value = entry.respite_type || '';
+    function renderAssignedShiftServiceCards(rows) {
+      const services = getAssignedShiftServices();
+      renderedShiftServices = JSON.stringify(services);
+      priorShiftSupportRows = rows.filter(row => row && typeof row === 'object');
+      const list = document.getElementById('shiftSupportEntries');
+      list.replaceChildren();
 
-      function renderActivities(selected = []) {
-        respiteWrap.hidden = service.value !== 'Respite';
-        const labels = Object.hasOwn(SHIFT_SUPPORT_ACTIVITIES, service.value) ? SHIFT_SUPPORT_ACTIVITIES[service.value] : [];
-        activities.hidden = !labels.length;
-        activities.replaceChildren();
-        if (!labels.length) return;
-        const title = document.createElement('strong');
-        title.textContent = 'What did you support? (optional)';
-        activities.append(title);
+      services.forEach(({ support, location }) => {
+        const previousIndex = priorShiftSupportRows.findIndex(entry => entry.support === support);
+        const previous = previousIndex >= 0 ? priorShiftSupportRows.splice(previousIndex, 1)[0] : null;
+        const row = document.createElement('fieldset');
+        row.className = 'panel support-entry';
+        row.dataset.support = support;
+        row.dataset.location = previous?.location ?? location;
+        row.innerHTML = `<legend></legend>
+          <div class="support-activities"></div>
+          <label>Minutes (optional)<input type="number" data-minutes min="0" max="1440" step="1" inputmode="numeric"></label>
+          <label>Note (optional)<textarea data-note rows="2" placeholder="What did you do, and how did the person participate?"></textarea></label>`;
+        row.querySelector('legend').textContent = support;
+        row.querySelector('[data-minutes]').value = previous?.minutes ?? '';
+        row.querySelector('[data-note]').value = previous?.note || '';
+        const activities = row.querySelector('.support-activities');
+        const savedActivities = Array.isArray(previous?.activities) ? previous.activities : [];
+        const labels = new Set([...SHIFT_SUPPORT_ACTIVITIES[support], ...savedActivities]);
         labels.forEach(activity => {
           const label = document.createElement('label');
           const input = document.createElement('input');
           input.type = 'checkbox';
           input.value = activity;
-          input.checked = selected.includes(activity);
+          input.checked = savedActivities.includes(activity);
           label.append(input, activity);
           activities.append(label);
         });
-      }
-
-      renderActivities(Array.isArray(entry.activities) ? entry.activities : []);
-      service.addEventListener('change', () => {
-        respite.value = '';
-        renderActivities();
+        if (previous) row.dataset.existing = 'true';
+        list.append(row);
       });
-      row.querySelector('[data-location]').addEventListener('input', event => event.target.setCustomValidity(''));
-      row.addEventListener('input', syncShiftSupportField);
-      row.addEventListener('change', syncShiftSupportField);
-      row.querySelector('[data-remove-support]').addEventListener('click', () => {
-        row.remove();
-        syncShiftSupportField();
-        const field = shiftSupportField();
-        field.dispatchEvent(new Event('input', { bubbles: true }));
-        document.getElementById('addShiftSupport').focus();
-      });
-      document.getElementById('shiftSupportEntries').append(row);
-      return row;
-    }
-
-    function renderShiftSupportRows(rows) {
-      document.getElementById('shiftSupportEntries').replaceChildren();
-      rows.forEach(row => addShiftSupportRow(row));
+      syncShiftSupportField();
     }
 
     function readShiftSupportRows() {
-      return Array.from(document.querySelectorAll('#shiftSupportEntries .support-entry'), row => {
-        const support = row.querySelector('[data-service]').value;
-        const location = row.querySelector('[data-location]').value.trim();
-        const note = row.querySelector('[data-note]').value.trim();
+      const rows = Array.from(document.querySelectorAll('#shiftSupportEntries .support-entry'), row => {
         const rawMinutes = row.querySelector('[data-minutes]').value;
+        const note = row.querySelector('[data-note]').value.trim();
         const activities = Array.from(row.querySelectorAll('input[type="checkbox"]:checked'), input => input.value);
-        const respite_type = support === 'Respite' ? row.querySelector('[data-respite-type] select').value : '';
-        return { support, location, minutes: rawMinutes === '' ? null : Number(rawMinutes), note, activities, respite_type };
-      }).filter(row => row.support || row.location || row.minutes !== null || row.note || row.activities.length);
+        if (!activities.length && rawMinutes === '' && !note && row.dataset.existing !== 'true') return null;
+        return {
+          support: row.dataset.support,
+          location: row.dataset.location,
+          minutes: rawMinutes === '' ? null : Number(rawMinutes),
+          note,
+          activities
+        };
+      }).filter(Boolean);
+      return [...priorShiftSupportRows, ...rows];
     }
 
     function syncShiftSupportField() {
@@ -6731,25 +6705,12 @@
 
     function validateShiftSupportRows() {
       syncShiftSupportField();
-      for (const row of document.querySelectorAll('#shiftSupportEntries .support-entry')) {
-        const service = row.querySelector('[data-service]');
-        const location = row.querySelector('[data-location]');
-        const minutes = row.querySelector('[data-minutes]');
-        const respite = row.querySelector('[data-respite-type] select');
-        const filled = !!(service.value || location.value.trim() || minutes.value ||
-          minutes.validity.badInput || row.querySelector('[data-note]').value.trim());
-        service.required = filled;
-        location.required = filled;
-        location.setCustomValidity(filled && !location.value.trim() ? 'Enter where you provided support.' : '');
-        respite.required = service.value === 'Respite';
-        for (const input of [service, location, minutes, respite]) {
-          if (input.validity.valid) continue;
-          openSectionDetailByIndex(steps.findIndex(step => step.id === 'communitySection'), 'instant');
-          input.reportValidity();
-          return false;
-        }
-      }
-      return true;
+      const invalid = Array.from(document.querySelectorAll('#shiftSupportEntries [data-minutes]'))
+        .find(input => !input.validity.valid);
+      if (!invalid) return true;
+      openSectionDetailByIndex(steps.findIndex(step => step.id === 'communitySection'), 'instant');
+      invalid.reportValidity();
+      return false;
     }
 
     function stepFields(step){
@@ -6881,7 +6842,7 @@
     }
     function applyDraftToForm(){
       steps.forEach((step, idx) => restore(step, idx));
-      renderShiftSupportRows(parseJsonArray(shiftSupportField().value));
+      renderAssignedShiftServiceCards(parseJsonArray(shiftSupportField().value));
       // Recover ISA answers from drafts made before ISA had its own step.
       const oldIsa=draft.data?.[7]?.isa_entries;
       const isaField=document.getElementById('isa_entries');
@@ -7038,7 +6999,7 @@
     }
     function resetFormValues(){
       formEl.reset();
-      renderShiftSupportRows([]);
+      renderAssignedShiftServiceCards([]);
       formEl.querySelectorAll('input[type="checkbox"]').forEach((el) => {
         el.checked = false;
       });
@@ -7227,7 +7188,7 @@
 	        const items = def.stepId === 'communitySection'
           ? readShiftSupportRows().map(row => ({
               label: row.support || 'Support',
-              value: [row.location, row.respite_type, row.minutes == null ? '' : row.minutes + ' min',
+              value: [row.location, row.minutes == null ? '' : row.minutes + ' min',
                 row.activities?.join(', '), row.note].filter(Boolean).join(' · ')
             }))
           : isQuickClearedStatus(def, status) ? [] : collectSectionReviewItems(sectionEl);
@@ -7673,12 +7634,7 @@
 	      });
 	    });
 
-	    document.getElementById('addShiftSupport')?.addEventListener('click', () => {
-      const def = SECTION_STATUS_BY_STEP.get('communitySection');
-      if (isQuickClearedStatus(def)) setSectionStatus(def, 'needs_checkin');
-      addShiftSupportRow().querySelector('select').focus();
-    });
-    document.getElementById('saveDraftAlways')?.addEventListener('click', saveDraftExplicitly);
+	    document.getElementById('saveDraftAlways')?.addEventListener('click', saveDraftExplicitly);
 
     const prnQuickNo = document.getElementById('prnQuickNo');
     const prnOpenQuestions = document.getElementById('prnOpenQuestions');

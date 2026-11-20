@@ -433,7 +433,7 @@
     body:not(.print-export):not(.quick-look-mode)[data-report-view="calendar"] #chart-stack{display:none!important}
     body:not(.print-export):not(.quick-look-mode)[data-report-view="letter"] #chart-stack > :not(#parentLetterCard),
     body:not(.print-export):not(.quick-look-mode)[data-report-view="charts"] #chart-stack > #parentLetterCard{display:none!important}
-    body:not(.print-export):not(.quick-look-mode)[data-report-view="isa"] main.page > [data-print-section="Caregiver Overview"] > :not(#isaProgressPanel),
+    body:not(.print-export):not(.quick-look-mode)[data-report-view="isa"] main.page > [data-print-section="Caregiver Overview"] > :not(#isaProgressPanel):not(#wholePersonIntegratedPanel),
     body:not(.print-export):not(.quick-look-mode)[data-report-view="individual"] main.page > [data-print-section="Caregiver Overview"] > :not(#individualVoicePanel),
     body:not(.print-export):not(.quick-look-mode)[data-report-view="checkins"] main.page > [data-print-section="Caregiver Overview"] > :not(#cg-panel):not(#services-summary-panel):not(#weekly-averages-panel){display:none!important}
     @media print{.report-view-nav{display:none!important}}
@@ -548,6 +548,7 @@
     body.print-export #kpi-row{margin:8px 0 10px;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
     body.print-export .kpi{padding:6px 8px;font-size:12px}
     #kpi-row{display:none}
+    body[data-report-view="isa"] #wholePersonIntegratedPanel{display:block!important}
     #mood-panel{display:none}
     body[data-report-view="mood"] #mood-panel{display:block}
     body:not(.print-export):not(.quick-look-mode)[data-report-view="mood"] main.page > [data-print-section="Caregiver Overview"],
@@ -1019,10 +1020,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>document.addEventListener('DOMContentLoaded',()=>{ try{ Chart.register(ChartDataLabels); }catch(e){} });</script>
 <link rel="stylesheet" href="support-report.css"><link rel="stylesheet" href="report-chart-layout.css?v=2026.11.08-mobile">
-/* UVM only: preserve all original sections, but show integrated whole-person panel on ISA tab. */
-body:not(.print-export):not(.quick-look-mode)[data-report-view="isa"] main.page > [data-print-section="Caregiver Overview"] > #wholePersonIntegratedPanel{display:block!important}
-body:not(.print-export):not(.quick-look-mode)[data-report-view="isa"] main.page > [data-print-section="Caregiver Overview"] > #isaProgressPanel{display:none!important}
-</style></head>
+</head>
 <body>
 <!-- ===== MINI STATUS BAR (no console needed) ===== -->
 <style>

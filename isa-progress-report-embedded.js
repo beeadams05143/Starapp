@@ -50,7 +50,10 @@ export function buildIsaProgress(entries, cards, scope = {}) {
     const seenAnswers = new Set();
     for (const answer of stored) {
       if (!answer || !answer.outcome_id || !answer.measurement_id) continue;
-      if (answer.value === null || answer.value === undefined || String(answer.value).trim() === '') continue;
+      const occurrence = answer.response_format === 'objective_occurrence';
+      const notes = occurrence && typeof answer.notes === 'string' ? answer.notes.trim() : '';
+      const value = String(answer.value ?? '').trim();
+      if (!value && !notes) continue;
       const identity = String(answer.outcome_id) + ':' + String(answer.measurement_id);
       if (seenAnswers.has(identity)) continue;
       seenAnswers.add(identity);
@@ -67,18 +70,18 @@ export function buildIsaProgress(entries, cards, scope = {}) {
         };
         groups.set(outcomeId, group);
       }
-      const measurementId = String(answer.measurement_id);
+      const measurementId = String(answer.measurement_id) + (occurrence ? ':occurrence' : '');
       const label = String(answer.measurement_label || 'Recorded measurement');
       const unit = String(answer.unit || '');
       const kind = String(answer.answer_type || '');
       let metric = group.measurements.get(measurementId);
       if (!metric) {
-        metric = {id: measurementId, label, unit, kind, answers: []};
+        metric = {id: measurementId, label, unit, kind, occurrence, answers: []};
         group.measurements.set(measurementId, metric);
       }
       const observation = {
         date, caregiver: String(row.caregiver_name || payload.caregiver_name || 'Caregiver'),
-        label, value: String(answer.value), unit, kind,
+        label, value, unit, kind, notes,
         activity: String(answer.activity || ''), version: answer.outcome_version ?? null,
         recordId
       };
@@ -112,6 +115,11 @@ export function summarizeIsaMeasurement(metric) {
   const answers = Array.isArray(metric?.answers) ? metric.answers : [];
   const label = String(metric?.label || 'Recorded measurement').trim().replace(/[.\s]+$/, '');
   if (!answers.length) return label + ': No recorded responses for this period.';
+  if (metric.occurrence) {
+    const yes = answers.filter(answer => answer.value === 'Yes').length;
+    const no = answers.filter(answer => answer.value === 'No').length;
+    return label + ': Yes (' + yes + '), No (' + no + ').';
+  }
   const days = new Set(answers.map(a => a.date).filter(Boolean)).size;
   const unitValues = new Set(answers.map(a => String(a.unit || '').trim()));
   const numbers = answers.map(a => {
@@ -188,6 +196,13 @@ export function formatIsaProgressText(report) {
     for(const metric of outcome.measurements||[]){
       const answers=Array.isArray(metric.answers)?metric.answers:[];
       if(!answers.length)continue;
+      if (metric.occurrence) {
+        lines.push(summarizeIsaMeasurement(metric));
+        for (const answer of [...answers].sort((a,b) => a.date.localeCompare(b.date))) {
+          if (answer.notes) lines.push(answer.date + (answer.value ? ' · ' + answer.value : '') + ' · ' + answer.notes);
+        }
+        continue;
+      }
       const numbers=answers.map(a=>String(a.value??'').trim()).map(v=>v!==''&&/^[-+]?(?:\d+\.?\d*|\.\d+)$/.test(v)?Number(v):NaN);
       const units=[...new Set(answers.map(a=>String(a.unit||'').trim()))];
       const label=String(metric.label||'this skill').replace(/[:.]+$/,'');
@@ -289,7 +304,9 @@ export function createIsaProgressReport({rest, mapCards = cards => cards, docume
         for (const obs of outcome.observations) {
           const li = doc.createElement('li');
           li.textContent = obs.date + ' · ' + obs.caregiver + ' · ' + obs.label + ': ' +
-            obs.value + (obs.unit ? ' ' + obs.unit : '') + (obs.activity ? ' · ' + obs.activity : '');
+            (obs.value || 'Notes only') + (obs.unit ? ' ' + obs.unit : '') +
+            (obs.activity && obs.activity !== obs.label ? ' · ' + obs.activity : '') +
+            (obs.notes ? ' · ' + obs.notes : '');
           list.append(li);
         }
         history.append(list);

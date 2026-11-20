@@ -35,23 +35,24 @@ function recordedValue(sourceField,measurement){
 function collectEntries(){
  if(!loaded)return [];
  const items=[];
- for(const {card,measurement,control,gate,checkboxes} of rendered){
-  if (gate && gate.value !== 'yes') continue;
-  const raw=String(control.value ?? '').trim();
-  // Empty means not answered, NOT zero, no participation, or decline.
-  if(raw==='')continue;
-  if((measurement.kind==='count'||measurement.kind==='duration') && (!Number.isFinite(Number(raw)) || Number(raw)<0))continue;
+ for(const row of rendered){
+  const {card,measurement,control,notes,objective} = row;
+  const value = control.value;
+  const note = notes.value.trim();
+  if (!value && !note) {
+   if (row.previousEntry) items.push(row.previousEntry);
+   continue;
+  }
   items.push({
    outcome_id:card.id,outcome_title:card.title,outcome_version:card.version,
    outcome_category:card.category,measurement_id:measurement.id,
-   measurement_label:measurement.label,activity:measurement.activity||'',
-   answer_type:measurement.kind,unit:measurement.unit||'',
+   measurement_label:objective,activity:measurement.activity||'',
+   answer_type:'boolean',response_format:'objective_occurrence',
    frequency:measurement.frequency||'when_occurs',report_mode:measurement.report_mode||'summary',
    individual_id:selectedAssignment?.individual_id||null,
    assignment_id:selectedAssignment?.id||null,
    source_type:'isa_question',
-   ...(checkboxes.length ? { observed_steps: checkboxes.filter(box => box.checked).map(box => box.value) } : {}),
-   value:(measurement.kind==='count'||measurement.kind==='duration')?Number(raw):raw
+   value,notes:note
   });
  }
  for(const {card,measurement,sourceField,linkId} of linked){
@@ -77,36 +78,21 @@ function restoreEntries(){
  let entries=[];
  try{entries=JSON.parse(hidden.value||'[]');}catch{entries=[];}
  if(!Array.isArray(entries))entries=[];
- for(const {card,measurement,control,gate,answer,checkboxes} of rendered){
-  const found=entries.find(e=>e.outcome_id===card.id&&e.measurement_id===measurement.id);
-  control.value=found&&found.value!==null&&found.value!==undefined?String(found.value):'';
-  for (const box of checkboxes) box.checked = found?.observed_steps?.includes(box.value) || false;
-  if (gate) { gate.value = found ? 'yes' : ''; answer.hidden = !found; }
+ for (const row of rendered) {
+  const {card,measurement,control,notes} = row;
+  const found = entries.find(entry => entry.outcome_id === card.id && entry.measurement_id === measurement.id);
+  const value = String(found?.value ?? '').toLowerCase();
+  const occurrence = found?.response_format === 'objective_occurrence';
+  const yesNo = (occurrence || found?.answer_type === 'boolean') && ['yes','no','true','false'].includes(value);
+  control.value = yesNo ? (['yes','true'].includes(value) ? 'Yes' : 'No') : '';
+  notes.value = occurrence ? (found.notes || '') : '';
+  row.previousEntry = found && !occurrence && !yesNo && found.source_type !== 'admin_approved_checkin_reuse' ? found : null;
  }
  syncStored();
 }
 function syncStored(){
  const field=$('isa_entries');
  if(field)field.value=JSON.stringify(collectEntries());
-}
-function answerControl(m){
- let control;
- if(m.kind==='note'){
-  control=el('textarea');control.rows=2;control.placeholder='What did you observe? (optional)';
- }else if(m.kind==='choice'||m.kind==='rating'||m.kind==='boolean'){
-  control=el('select');
-  control.add(new Option('Not answered / skip',''));
-  const choices=m.kind==='boolean'?['Yes','No','Not observed']:(Array.isArray(m.choices)?m.choices:[]);
-  choices.forEach(choice=>control.add(new Option(choice,choice)));
- }else{
-  control=el('input');control.type='number';control.min='0';control.step='any';
-  control.placeholder='Leave blank if unknown';control.inputMode='decimal';
- }
- control.style.cssText='width:100%;border:1px solid #c5ccd0;border-radius:10px;min-height:44px;padding:10px;font-size:16px;background:#fff;color:#26364b';
- control.setAttribute('aria-label',m.label);
- control.addEventListener('input',syncStored);
- control.addEventListener('change',syncStored);
- return control;
 }
 const sectionIds = new Set(['homeFamilySection', 'communitySection', 'daily-living-step', 'vocationalSection',
  'physicalSection', 'behaviorSection', 'educational-step', 'final-notes-step']);
@@ -156,61 +142,32 @@ function render(){
   }
   const item = el('div');
   item.style.cssText = 'padding:12px;border:1px solid #dfd8c9;border-radius:12px;background:#fffdf8';
-  if (m.activity) item.append(el('p','muted',m.activity));
-  const steps = m.kind === 'count' && Array.isArray(placement?.steps)
-   ? [...new Set(placement.steps.filter(step => typeof step === 'string' && step.trim()))].slice(0,20) : [];
-  const control = answerControl(m);
-  const checkboxes = [];
-  let answer;
-  if (steps.length) {
-   answer = el('fieldset');
-   answer.append(el('legend','',m.label));
-   control.type = 'hidden';
-   answer.append(control);
-   for (const step of steps) {
-    const option = el('label');
-    option.style.cssText = 'display:flex;gap:10px;align-items:center;min-height:44px';
-    const checkbox = el('input');
-    checkbox.type = 'checkbox';
-    checkbox.value = step;
-    checkbox.style.width = 'auto';
-    checkbox.addEventListener('change', () => {
-     const count = checkboxes.filter(box => box.checked).length;
-     control.value = count ? String(count) : '';
-     syncStored();
-    });
-    checkboxes.push(checkbox);
-    option.append(checkbox, step);
-    answer.append(option);
-   }
-  } else {
-   answer = el('label','',m.label + (m.kind === 'duration' ? ' (' + (m.unit || 'minutes') + ')' : ''));
-   answer.append(control);
-  }
-  let gate;
-  if (typeof placement?.prompt === 'string' && placement.prompt.trim()) {
-   const label = el('label','',placement.prompt);
-   gate = el('select');
-   for (const [text,value] of [['Select an answer',''],['Yes','yes'],['No','no'],['Not observed','skip']]) {
-    gate.add(new Option(text,value));
-   }
-   answer.hidden = true;
-   answer.classList.add('isa-gated-answer');
-   answer.style.setProperty('margin-top','8px');
-   gate.addEventListener('change', () => {
-    answer.hidden = gate.value !== 'yes';
-    if (answer.hidden) {
-     control.value = '';
-     for (const box of checkboxes) box.checked = false;
-    }
-    syncStored();
-   });
-   label.append(gate);
-   item.append(label);
-  }
-  item.append(answer);
+  const objective = placement?.prompt?.trim() || m.activity?.trim() ||
+   (card.measurements.length === 1 ? card.title : m.label);
+  const control = el('select');
+  control.add(new Option('Select Yes or No',''));
+  control.add(new Option('Yes','Yes'));
+  control.add(new Option('No','No'));
+  control.setAttribute('aria-label', objective + ' — Did this happen?');
+  const answer = el('label','',objective);
+  answer.append(control);
+  const notes = el('textarea');
+  notes.rows = 2;
+  notes.placeholder = 'Add any details to share with the case manager';
+  notes.setAttribute('aria-label', 'Notes for ' + objective);
+  const notesLabel = el('label','', 'Notes (optional)');
+  notesLabel.style.marginTop = '8px';
+  notesLabel.append(notes);
+  const row = {card,measurement:m,control,notes,objective,section,previousEntry:null};
+  const save = () => {
+   row.previousEntry = null;
+   syncStored();
+  };
+  control.addEventListener('change',save);
+  notes.addEventListener('input',save);
+  item.append(answer,notesLabel);
   groups.get(key).append(item);
-  rendered.push({card,measurement:m,control,gate,answer,section,checkboxes});
+  rendered.push(row);
  }
  restoreEntries();
 }

@@ -1591,9 +1591,7 @@
                 included: row.querySelector('[data-isa-include]').checked,
                 section: row.querySelector('[data-isa-section]').value,
                 after: row.querySelector('[data-isa-after]').value,
-                prompt: row.querySelector('[data-isa-prompt]').value.trim(),
-                steps: (row.querySelector('[data-isa-steps]')?.value || '').split('\n')
-                  .map(line => line.trim()).filter(Boolean).slice(0,20)
+                prompt: row.querySelector('[data-isa-prompt]').value.trim()
               }
             ])
           );
@@ -1803,21 +1801,11 @@
         prompt.placeholder = 'Did Taylor practice a phone call?';
         prompt.value = placement?.prompt || '';
         prompt.dataset.isaPrompt = '';
-        const promptLabel = addSetting('Optional yes/no question before the follow-up', prompt);
-        let stepsLabel;
-        if (m.kind === 'count') {
-          const steps = document.createElement('textarea');
-          steps.rows = 3;
-          steps.maxLength = 1000;
-          steps.dataset.isaSteps = '';
-          steps.value = Array.isArray(placement?.steps) ? placement.steps.join('\n') : '';
-          stepsLabel = addSetting('Optional checklist, one step per line', steps);
-        }
+        const promptLabel = addSetting('Optional wording for the Yes or No question', prompt);
         const syncPlacement = () => {
           const followUp = include.checked && !select.value;
           label.style.display = include.checked ? 'block' : 'none';
           note.hidden = !include.checked;
-          if (stepsLabel) stepsLabel.style.display = followUp ? 'grid' : 'none';
           sectionLabel.style.display = promptLabel.style.display = followUp ? 'grid' : 'none';
           afterLabel.style.display = followUp && section.value === 'homeFamilySection' ? 'grid' : 'none';
         };

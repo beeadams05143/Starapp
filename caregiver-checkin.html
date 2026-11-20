@@ -2119,6 +2119,11 @@
     .care-date-pending #draftSaveBar > :not(#caregiverBackHome) { display:none !important; }
     #draftSaveFeedback:empty { display:none; }
     #draftSaveFeedback { flex-basis:100%; }
+    #shiftSupportLog .support-entry { min-width:0; margin:12px 0; padding:12px; }
+    #shiftSupportLog .support-entry > label:not([hidden]) { display:block; margin:8px 0; }
+    #shiftSupportLog :is(select, input:not([type="checkbox"]), textarea) { width:100%; min-height:44px; }
+    #shiftSupportLog .support-activities label { display:flex; align-items:center; gap:8px; padding:6px 0; }
+    #shiftSupportLog input[type="checkbox"] { width:auto; }
     #prnEntriesWrap.is-hidden { display:none; }
     #centralPrnSection:not(:has(#prnEntriesWrap:not(.is-hidden))) { padding:10px 12px; gap:6px; }
     #centralPrnSection .question-block { margin:0; display:flex; align-items:center; flex-wrap:wrap; gap:4px 12px; }
@@ -2212,7 +2217,7 @@
       <div class="prog-item" data-step="1"><div class="prog-label">Behavior / Mental Health</div><div class="seg"></div></div>
       <div class="prog-item" data-step="2"><div class="prog-label">Vocational</div><div class="seg"></div></div>
       <div class="prog-item" data-step="3"><div class="prog-label">Home / Family</div><div class="seg"></div></div>
-      <div class="prog-item" data-step="4"><div class="prog-label">Community</div><div class="seg"></div></div>
+      <div class="prog-item" data-step="4"><div class="prog-label">Supports Provided</div><div class="seg"></div></div>
       <div class="prog-item" data-step="5"><div class="prog-label">Daily Living</div><div class="seg"></div></div>
       <div class="prog-item" data-step="6"><div class="prog-label">Educational</div><div class="seg"></div></div>
     </div>
@@ -2896,10 +2901,25 @@
       <!-- STEP 5: Community / Interaction -->
       <div id="communitySection" class="step" data-step="4">
         <div class="section-card section-detail">
-          <div class="section-header">Community <span>→</span></div>
+          <div class="section-header">Supports Provided <span>→</span></div>
           <div class="section-content">
           <button class="back-btn" type="button">← Back</button>
         <fieldset class="panel">
+          <div class="section-title">Supports Provided</div>
+          <section id="shiftSupportLog" aria-label="Supports provided this shift">
+            <p>Choose the service you provided. Add another entry for a different service or setting. Count each block of time once.</p>
+            <datalist id="shiftSupportLocations">
+              <option value="Own or family home"></option>
+              <option value="Shared living home"></option>
+              <option value="Staffed residence"></option>
+              <option value="Respite provider’s home"></option>
+              <option value="Community"></option>
+              <option value="Workplace"></option>
+            </datalist>
+            <div id="shiftSupportEntries"></div>
+            <button class="btn" type="button" id="addShiftSupport">+ Add a support</button>
+          </section>
+          <div hidden aria-hidden="true">
           <div class="section-title">Community &amp; Social Interaction</div>
           <div class="subcap">Community at large</div>
           <div class="row cols-3 compact">
@@ -2984,6 +3004,7 @@
           </div>
           <div id="interactionDetailsNotes" class="row" style="display:none;grid-template-columns:minmax(0,1fr)">
             <label for="interaction_note" style="display:block;width:100%;min-width:0">Interaction note:<textarea id="interaction_note" name="interaction_note" rows="5" style="display:block;width:100%;min-height:130px;box-sizing:border-box;resize:vertical" placeholder="Describe who they interacted with, what happened, any prompting needed, and how they responded."></textarea></label>
+          </div>
           </div>
           <div class="controls">
             <div class="left-actions"><button class="btn" type="button" data-save>Save Draft</button><span class="action-note">Save a local recovery copy. This does not submit the check-in.</span><span class="savedAt" data-savedat></span></div>
@@ -3202,7 +3223,7 @@
     { key: 'behavior', navKey: 'behavior', stepId: 'behaviorSection', title: 'Behavior / Mental Health', quickStatus: 'stable', quickLabel: 'Stable — nothing to report', statusLabel: 'Stable' },
     { key: 'vocational', navKey: 'vocational', stepId: 'vocationalSection', title: 'Vocational', quickStatus: 'did_not_participate', quickLabel: 'Did not participate', statusLabel: 'Did not participate' },
     { key: 'home_family', navKey: 'homeFamily', stepId: 'homeFamilySection', title: 'Home / Family', quickStatus: 'no_notable_activity', quickLabel: 'No notable home/family activity', statusLabel: 'No notable activity' },
-    { key: 'community', navKey: 'community', stepId: 'communitySection', title: 'Community', quickStatus: 'did_not_participate', quickLabel: 'Did not participate', statusLabel: 'Did not participate' },
+    { key: 'community', navKey: 'community', stepId: 'communitySection', title: 'Supports Provided', quickStatus: 'did_not_participate', quickLabel: 'Did not participate', statusLabel: 'Did not participate' },
     { key: 'daily_living', navKey: 'dailyLiving', stepId: 'daily-living-step', title: 'Daily Living', quickStatus: 'did_not_participate', quickLabel: 'Did not participate', statusLabel: 'Did not participate' },
     { key: 'educational', navKey: 'educational', stepId: 'educational-step', title: 'Education & Skill Development', quickStatus: 'no_education', quickLabel: 'No educational activity recorded', statusLabel: 'No educational activity' }
   ];
@@ -4895,10 +4916,10 @@
 
     setStepAndNavHidden(physicalStep, progressItems.physical, false);
     setStepAndNavHidden(behaviorStep, progressItems.behavior, false);
-    setStepAndNavHidden(vocationalStep, progressItems.vocational, false);
-    setStepAndNavHidden(homeFamilyStep, progressItems.home_family, false);
+    setStepAndNavHidden(vocationalStep, progressItems.vocational, true);
+    setStepAndNavHidden(homeFamilyStep, progressItems.home_family, true);
     setStepAndNavHidden(communityStep, progressItems.community, false);
-    setStepAndNavHidden(dailyLivingStep, progressItems.daily_living, false);
+    setStepAndNavHidden(dailyLivingStep, progressItems.daily_living, true);
     setStepAndNavHidden(educationalStep, progressItems.educational, false);
 
     setConfigHidden([
@@ -4969,9 +4990,6 @@
 
     const physicalVisible = caregiverSetupState.selectedCategories.has('physical_health');
     const behaviorVisible = caregiverSetupState.selectedCategories.has('behavior_mental_health');
-    const vocationalVisible = caregiverSetupState.selectedCategories.has('vocational');
-    const communityVisible = caregiverSetupState.selectedCategories.has('community');
-    const dailyLivingVisible = caregiverSetupState.selectedCategories.has('daily_living');
     const educationalVisible = caregiverSetupState.selectedCategories.has('educational');
     const educationalItemsVisible = getConfiguredEducationalOptions().length > 0;
 
@@ -4990,10 +5008,11 @@
 
     setStepAndNavHidden(physicalStep, progressItems.physical, !physicalVisible);
     setStepAndNavHidden(behaviorStep, progressItems.behavior, !behaviorVisible);
-    setStepAndNavHidden(vocationalStep, progressItems.vocational, !vocationalVisible);
+    setStepAndNavHidden(vocationalStep, progressItems.vocational, true);
     setStepAndNavHidden(homeFamilyStep, progressItems.home_family, true);
-    setStepAndNavHidden(communityStep, progressItems.community, !communityVisible);
-    setStepAndNavHidden(dailyLivingStep, progressItems.daily_living, !dailyLivingVisible);
+    setStepAndNavHidden(communityStep, progressItems.community, !getAvailableShiftSupportTypes().length);
+    updateShiftSupportAddButton();
+    setStepAndNavHidden(dailyLivingStep, progressItems.daily_living, true);
     // The short optional educational note is available regardless of setup.
     // Detailed educational tracking remains conditional on caregiver setup.
     setStepAndNavHidden(educationalStep, progressItems.educational, false);
@@ -5717,6 +5736,7 @@
 	    steps.forEach((step, idx) => {
 	      step.querySelector('[data-next]')?.addEventListener('click', () => {
 	        if (idx === 0 && !validateCentralPrns()) return;
+            if (step.id === 'communitySection' && !validateShiftSupportRows()) return;
 	        markSectionDetailedComplete(step);
 	        continueGuidedFlow(idx);
 	      });
@@ -6580,6 +6600,158 @@
       }
       openSectionDetailByIndex(steps.findIndex(step => step.id === 'final-notes-step'));
     }
+    const SHIFT_SUPPORT_ACTIVITIES = {
+      'In-Home Support': [
+        'Meals, grocery shopping, and household tasks', 'Personal care and health routines',
+        'Budgeting and daily living skills', 'Communication, relationships, and boundaries',
+        'Safety and emotional support', 'Advocacy and appointments'
+      ],
+      'Community Support': [
+        'Community activities, recreation, or volunteering', 'Transportation and travel skills',
+        'Shopping, errands, and daily living skills', 'Relationships, communication, and self-advocacy',
+        'Health, wellness, and safety in the community'
+      ],
+      'Ongoing Supported Employment': [
+        'On-the-job coaching and task instruction', 'Commute and travel support',
+        'Workplace communication and relationships', 'Workplace accommodations',
+        'Job retention, problem-solving, and career growth'
+      ],
+      'Respite': [
+        'Supervision and companionship', 'Personal care and daily living routines',
+        'Recreation and community participation', 'Emotional, behavior, and safety support'
+      ]
+    };
+
+    function getAvailableShiftSupportTypes() {
+      if (!shouldUseCustomCaregiverSetup()) return Object.keys(SHIFT_SUPPORT_ACTIVITIES);
+      const selected = caregiverSetupState.selectedCategories;
+      const home = selected.has('daily_living') || selected.has('home_family');
+      const community = selected.has('community');
+      const work = selected.has('vocational');
+      return [
+        home && 'In-Home Support',
+        community && 'Community Support',
+        work && 'Ongoing Supported Employment',
+        (home || community || work || selected.has('respite')) && 'Respite'
+      ].filter(Boolean);
+    }
+
+    function shiftSupportField() {
+      return document.querySelector('[name="shift_supports"]');
+    }
+
+    function updateShiftSupportAddButton() {
+      document.getElementById('addShiftSupport').disabled = !getAvailableShiftSupportTypes().length;
+    }
+
+    function addShiftSupportRow(entry = {}) {
+      const row = document.createElement('fieldset');
+      row.className = 'panel support-entry';
+      row.innerHTML = `<legend>Support entry</legend>
+        <label>Service<select data-service><option value="">Choose a service</option></select></label>
+        <label data-respite-type hidden>Respite type<select><option value="">Choose a respite type</option>
+          <option>Hourly respite</option><option>24-hour respite</option></select></label>
+        <div class="support-activities" hidden></div>
+        <label>Where did you provide support?<input type="text" data-location list="shiftSupportLocations"></label>
+        <label>Minutes (optional)<input type="number" data-minutes min="0" max="1440" step="1" inputmode="numeric"></label>
+        <label>Note (optional)<textarea data-note rows="2" placeholder="What did you do, and how did the person participate?"></textarea></label>
+        <button class="btn" type="button" data-remove-support>Remove support</button>`;
+      const service = row.querySelector('[data-service]');
+      const respiteWrap = row.querySelector('[data-respite-type]');
+      const respite = respiteWrap.querySelector('select');
+      const activities = row.querySelector('.support-activities');
+      const types = new Set(getAvailableShiftSupportTypes());
+      if (entry.support) types.add(entry.support);
+      types.forEach(type => service.add(new Option(type, type)));
+      service.value = entry.support || '';
+      row.querySelector('[data-location]').value = entry.location || '';
+      row.querySelector('[data-minutes]').value = entry.minutes ?? '';
+      row.querySelector('[data-note]').value = entry.note || '';
+      respite.value = entry.respite_type || '';
+
+      function renderActivities(selected = []) {
+        respiteWrap.hidden = service.value !== 'Respite';
+        const labels = Object.hasOwn(SHIFT_SUPPORT_ACTIVITIES, service.value) ? SHIFT_SUPPORT_ACTIVITIES[service.value] : [];
+        activities.hidden = !labels.length;
+        activities.replaceChildren();
+        if (!labels.length) return;
+        const title = document.createElement('strong');
+        title.textContent = 'What did you support? (optional)';
+        activities.append(title);
+        labels.forEach(activity => {
+          const label = document.createElement('label');
+          const input = document.createElement('input');
+          input.type = 'checkbox';
+          input.value = activity;
+          input.checked = selected.includes(activity);
+          label.append(input, activity);
+          activities.append(label);
+        });
+      }
+
+      renderActivities(Array.isArray(entry.activities) ? entry.activities : []);
+      service.addEventListener('change', () => {
+        respite.value = '';
+        renderActivities();
+      });
+      row.querySelector('[data-location]').addEventListener('input', event => event.target.setCustomValidity(''));
+      row.addEventListener('input', syncShiftSupportField);
+      row.addEventListener('change', syncShiftSupportField);
+      row.querySelector('[data-remove-support]').addEventListener('click', () => {
+        row.remove();
+        syncShiftSupportField();
+        const field = shiftSupportField();
+        field.dispatchEvent(new Event('input', { bubbles: true }));
+        document.getElementById('addShiftSupport').focus();
+      });
+      document.getElementById('shiftSupportEntries').append(row);
+      return row;
+    }
+
+    function renderShiftSupportRows(rows) {
+      document.getElementById('shiftSupportEntries').replaceChildren();
+      rows.forEach(row => addShiftSupportRow(row));
+    }
+
+    function readShiftSupportRows() {
+      return Array.from(document.querySelectorAll('#shiftSupportEntries .support-entry'), row => {
+        const support = row.querySelector('[data-service]').value;
+        const location = row.querySelector('[data-location]').value.trim();
+        const note = row.querySelector('[data-note]').value.trim();
+        const rawMinutes = row.querySelector('[data-minutes]').value;
+        const activities = Array.from(row.querySelectorAll('input[type="checkbox"]:checked'), input => input.value);
+        const respite_type = support === 'Respite' ? row.querySelector('[data-respite-type] select').value : '';
+        return { support, location, minutes: rawMinutes === '' ? null : Number(rawMinutes), note, activities, respite_type };
+      }).filter(row => row.support || row.location || row.minutes !== null || row.note || row.activities.length);
+    }
+
+    function syncShiftSupportField() {
+      shiftSupportField().value = JSON.stringify(readShiftSupportRows());
+    }
+
+    function validateShiftSupportRows() {
+      syncShiftSupportField();
+      for (const row of document.querySelectorAll('#shiftSupportEntries .support-entry')) {
+        const service = row.querySelector('[data-service]');
+        const location = row.querySelector('[data-location]');
+        const minutes = row.querySelector('[data-minutes]');
+        const respite = row.querySelector('[data-respite-type] select');
+        const filled = !!(service.value || location.value.trim() || minutes.value ||
+          minutes.validity.badInput || row.querySelector('[data-note]').value.trim());
+        service.required = filled;
+        location.required = filled;
+        location.setCustomValidity(filled && !location.value.trim() ? 'Enter where you provided support.' : '');
+        respite.required = service.value === 'Respite';
+        for (const input of [service, location, minutes, respite]) {
+          if (input.validity.valid) continue;
+          openSectionDetailByIndex(steps.findIndex(step => step.id === 'communitySection'), 'instant');
+          input.reportValidity();
+          return false;
+        }
+      }
+      return true;
+    }
+
     function stepFields(step){
       const fields = Array.from(step.querySelectorAll('input,select,textarea'));
       // Keep existing draft step keys compatible after moving shared details.
@@ -6629,6 +6801,7 @@
       });
     }
     function captureCurrentFormAsDraft(){
+      syncShiftSupportField();
       syncPrnEntriesField();
       const data = {};
       const savedAt = {};
@@ -6708,6 +6881,7 @@
     }
     function applyDraftToForm(){
       steps.forEach((step, idx) => restore(step, idx));
+      renderShiftSupportRows(parseJsonArray(shiftSupportField().value));
       // Recover ISA answers from drafts made before ISA had its own step.
       const oldIsa=draft.data?.[7]?.isa_entries;
       const isaField=document.getElementById('isa_entries');
@@ -6830,6 +7004,7 @@
 	          if (def.key === 'physical') {
 	            if (data.entry_date) payload.entry_date = data.entry_date;
 	            if (data.caregiver_name) payload.caregiver_name = data.caregiver_name;
+	            if (data.shift_supports) payload.shift_supports = data.shift_supports;
 	            if (data.prn_used_today) payload.prn_used_today = data.prn_used_today;
 	            if (data.prn_entries) payload.prn_entries = data.prn_entries;
 	          }
@@ -6863,6 +7038,7 @@
     }
     function resetFormValues(){
       formEl.reset();
+      renderShiftSupportRows([]);
       formEl.querySelectorAll('input[type="checkbox"]').forEach((el) => {
         el.checked = false;
       });
@@ -7048,7 +7224,13 @@
 	        const sectionEl = document.getElementById(def.stepId);
         if (isStepHidden(sectionEl)) return;
 	        const status = getSectionStatus(def);
-	        const items = isQuickClearedStatus(def, status) ? [] : collectSectionReviewItems(sectionEl);
+	        const items = def.stepId === 'communitySection'
+          ? readShiftSupportRows().map(row => ({
+              label: row.support || 'Support',
+              value: [row.location, row.respite_type, row.minutes == null ? '' : row.minutes + ' min',
+                row.activities?.join(', '), row.note].filter(Boolean).join(' · ')
+            }))
+          : isQuickClearedStatus(def, status) ? [] : collectSectionReviewItems(sectionEl);
 	        if (isQuickClearedStatus(def, status)) {
 	          items.unshift({ label: 'Section status', value: def.statusLabel });
 	        } else if (status === 'completed') {
@@ -7095,7 +7277,7 @@
     async function submitFinal(e){
       e?.preventDefault?.();
       if (!submissionUI || isSubmittingFinal) return;
-      if (!validateCentralPrns()) return;
+      if (!validateCentralPrns() || !validateShiftSupportRows()) return;
       const legacyMedDraft = getLegacyMedDraftText();
       if (legacyMedDraft && !window.confirm(
         'This recovered draft has medication-change details that will not be submitted. Copy them into the admin-only Team Updates area first. Choose OK only after copying them, or Cancel to keep editing and preserve the draft.'
@@ -7491,7 +7673,12 @@
 	      });
 	    });
 
-	    document.getElementById('saveDraftAlways')?.addEventListener('click', saveDraftExplicitly);
+	    document.getElementById('addShiftSupport')?.addEventListener('click', () => {
+      const def = SECTION_STATUS_BY_STEP.get('communitySection');
+      if (isQuickClearedStatus(def)) setSectionStatus(def, 'needs_checkin');
+      addShiftSupportRow().querySelector('select').focus();
+    });
+    document.getElementById('saveDraftAlways')?.addEventListener('click', saveDraftExplicitly);
 
     const prnQuickNo = document.getElementById('prnQuickNo');
     const prnOpenQuestions = document.getElementById('prnOpenQuestions');

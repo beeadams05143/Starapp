@@ -1,5 +1,5 @@
 // ISA measurement questions are generated from administrator-owned outcome cards.
-// Keep them separate from physical health, medication and legacy check-in fields.
+// Render follow-ups beside the caregiver's regular check-in questions.
 import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
 import { ensureActiveGroupId } from './active-group.js?v=2026.10.29UVM3';
 
@@ -35,7 +35,8 @@ function recordedValue(sourceField,measurement){
 function collectEntries(){
  if(!loaded)return [];
  const items=[];
- for(const {card,measurement,control} of rendered){
+ for(const {card,measurement,control,gate,checkboxes} of rendered){
+  if (gate && gate.value !== 'yes') continue;
   const raw=String(control.value ?? '').trim();
   // Empty means not answered, NOT zero, no participation, or decline.
   if(raw==='')continue;
@@ -49,6 +50,7 @@ function collectEntries(){
    individual_id:selectedAssignment?.individual_id||null,
    assignment_id:selectedAssignment?.id||null,
    source_type:'isa_question',
+   ...(checkboxes.length ? { observed_steps: checkboxes.filter(box => box.checked).map(box => box.value) } : {}),
    value:(measurement.kind==='count'||measurement.kind==='duration')?Number(raw):raw
   });
  }
@@ -75,9 +77,11 @@ function restoreEntries(){
  let entries=[];
  try{entries=JSON.parse(hidden.value||'[]');}catch{entries=[];}
  if(!Array.isArray(entries))entries=[];
- for(const {card,measurement,control} of rendered){
+ for(const {card,measurement,control,gate,answer,checkboxes} of rendered){
   const found=entries.find(e=>e.outcome_id===card.id&&e.measurement_id===measurement.id);
   control.value=found&&found.value!==null&&found.value!==undefined?String(found.value):'';
+  for (const box of checkboxes) box.checked = found?.observed_steps?.includes(box.value) || false;
+  if (gate) { gate.value = found ? 'yes' : ''; answer.hidden = !found; }
  }
  syncStored();
 }
@@ -104,73 +108,115 @@ function answerControl(m){
  control.addEventListener('change',syncStored);
  return control;
 }
+const sectionIds = new Set(['homeFamilySection', 'communitySection', 'daily-living-step', 'vocationalSection',
+ 'physicalSection', 'behaviorSection', 'educational-step', 'final-notes-step']);
+function sectionFor(placement) {
+ const id = placement?.section;
+ const step = sectionIds.has(id) && $(id);
+ return step && !step.hidden && !step.classList.contains('config-hidden') ? id : 'final-notes-step';
+}
+function panelFor(id) {
+ const content = $(id)?.querySelector('.section-content');
+ return content?.querySelector('fieldset.panel') || content;
+}
+function insertFollowUp(node, panel) {
+ const controls = panel.querySelector(':scope > .controls');
+ if (controls) controls.before(node);
+ else panel.append(node);
+}
 function render(){
- const host=$('starIsaCheckin');if(!host)return;
- host.replaceChildren();rendered=[];
- if(!cards.length){host.hidden=true;return;}
- host.hidden=false;
- const intro=el('p','','Record only what you observed. Leave other questions blank.');
- intro.style.cssText='font-size:14px;line-height:1.5;color:#596270;margin:0 0 12px';
- host.append(intro);
- const total=cards.length;
- cards.forEach((card,i)=>{
-  const area=el('details','isa-outcome-card');
-  area.open=i===0;
-  area.style.cssText='margin:10px 0;padding:0;background:#fffdf8;border:1px solid #dfd8c9;border-radius:12px;overflow:hidden';
-  const summary=el('summary','',card.title);
-  summary.style.cssText='padding:14px 15px;font:700 16px/1.4 system-ui,sans-serif;color:#273449;cursor:pointer;list-style-position:inside';
-  summary.setAttribute('aria-label', 'Outcome '+(i+1)+' of '+total+': '+card.title);
-  area.append(summary);
-  const body=el('div');body.style.cssText='padding:0 15px 13px';
-  if(card.outcome_text||(Array.isArray(card.strategies)&&card.strategies.length)){
-   const more=el('details');more.style.cssText='margin:5px 0 12px;font-size:13px;color:#58616d';
-   const moreTitle=el('summary','','View goal and support strategies (optional)');
-   moreTitle.style.cssText='padding:5px 0;cursor:pointer';
-   more.append(moreTitle);
-   if(card.outcome_text){const p=el('p','',card.outcome_text);p.style.cssText='font-size:13px;line-height:1.5;margin:8px 0';more.append(p);}
-   (Array.isArray(card.strategies)?card.strategies:[]).forEach(s=>{
-    const p=el('p','',s.text+(s.when?' · '+s.when:''));
-    p.style.cssText='font-size:13px;line-height:1.5;margin:6px 0';more.append(p);
+ rendered=[];
+ const placements = selectedAssignment?.selected_items?.__isa_placement__;
+ const groups = new Map();
+ for (const card of cards) for (const m of (Array.isArray(card.measurements) ? card.measurements : [])) {
+  if (!m?.id || !m.label) continue;
+  // An approved source is the only question, including shifts where its field is skipped.
+  if (linked.some(link => link.card.id === card.id && link.measurement.id === m.id)) continue;
+  const placement = placements?.[card.id + ':' + m.id];
+  const section = sectionFor(placement);
+  const panel = panelFor(section);
+  if (!panel) continue;
+  const afterHome = section === 'homeFamilySection' && placement?.after === 'homeActivities';
+  const key = section + ':' + afterHome;
+  if (!groups.has(key)) {
+   const host = el('div','isa-inline-questions');
+   host.style.cssText = 'margin:16px 0;display:grid;gap:12px';
+   const anchor = afterHome && $('homeNotesWrap');
+   if (anchor && panel.contains(anchor)) anchor.after(host);
+   else insertFollowUp(host,panel);
+   groups.set(key,host);
+  }
+  const item = el('div');
+  item.style.cssText = 'padding:12px;border:1px solid #dfd8c9;border-radius:12px;background:#fffdf8';
+  if (m.activity) item.append(el('p','muted',m.activity));
+  const steps = m.kind === 'count' && Array.isArray(placement?.steps)
+   ? [...new Set(placement.steps.filter(step => typeof step === 'string' && step.trim()))].slice(0,20) : [];
+  const control = answerControl(m);
+  const checkboxes = [];
+  let answer;
+  if (steps.length) {
+   answer = el('fieldset');
+   answer.append(el('legend','',m.label));
+   control.type = 'hidden';
+   answer.append(control);
+   for (const step of steps) {
+    const option = el('label');
+    option.style.cssText = 'display:flex;gap:10px;align-items:center;min-height:44px';
+    const checkbox = el('input');
+    checkbox.type = 'checkbox';
+    checkbox.value = step;
+    checkbox.style.width = 'auto';
+    checkbox.addEventListener('change', () => {
+     const count = checkboxes.filter(box => box.checked).length;
+     control.value = count ? String(count) : '';
+     syncStored();
+    });
+    checkboxes.push(checkbox);
+    option.append(checkbox, step);
+    answer.append(option);
+   }
+  } else {
+   answer = el('label','',m.label + (m.kind === 'duration' ? ' (' + (m.unit || 'minutes') + ')' : ''));
+   answer.append(control);
+  }
+  let gate;
+  if (typeof placement?.prompt === 'string' && placement.prompt.trim()) {
+   const label = el('label','',placement.prompt);
+   gate = el('select');
+   for (const [text,value] of [['Select an answer',''],['Yes','yes'],['No','no'],['Not observed','skip']]) {
+    gate.add(new Option(text,value));
+   }
+   answer.hidden = true;
+   answer.classList.add('isa-gated-answer');
+   answer.style.setProperty('margin-top','8px');
+   gate.addEventListener('change', () => {
+    answer.hidden = gate.value !== 'yes';
+    if (answer.hidden) {
+     control.value = '';
+     for (const box of checkboxes) box.checked = false;
+    }
+    syncStored();
    });
-   body.append(more);
+   label.append(gate);
+   item.append(label);
   }
-  for(const m of (Array.isArray(card.measurements)?card.measurements:[])){
-   if(!m?.id||!m.label)continue;
-   const approved=linked.some(x=>x.card.id===card.id&&x.measurement.id===m.id&&availableSourceFields(x.sourceField).length);
-   if(approved)continue; // Admin approved reuse; never ask the same question again.
-   const item=el('div');item.style.cssText='padding:9px 0 5px;border-top:1px solid #ece6dd';
-   if(m.activity){const context=el('div','',m.activity);context.style.cssText='font-size:13px;color:#626a75;margin:0 0 5px';item.append(context);}
-   const label=el('label','',m.label+(m.kind==='duration'?' ('+(m.unit||'minutes')+')':''));
-   label.style.cssText='display:block;font-weight:650;font-size:15px;margin:4px 0 8px';
-   const control=answerControl(m);
-   label.append(control);item.append(label);body.append(item);
-   rendered.push({card,measurement:m,control});
-  }
-  area.append(body);
-  area.addEventListener('toggle',()=>{
-   if(!area.open)return;
-   host.querySelectorAll('details.isa-outcome-card').forEach(other=>{if(other!==area)other.open=false;});
-  });
-  host.append(area);
- });
+  item.append(answer);
+  groups.get(key).append(item);
+  rendered.push({card,measurement:m,control,gate,answer,section,checkboxes});
+ }
  restoreEntries();
 }
-async function init(){
- const host=$('starIsaCheckin');if(!host)return;
+async function init(context, generation){
+ if (context.isParent) return;
  const session=getSessionFromStorage();if(!session?.user?.id)return;
- const group=await ensureActiveGroupId(session.user.id);if(!group)return;
- // Wait until the caregiver's own check-in configuration identifies the individual.
- if(!window.starCheckinAssignmentContext){
-   await new Promise(resolve=>{
-     const timeout=setTimeout(resolve,3500);
-     window.addEventListener('star-caregiver-assignment-ready',()=>{clearTimeout(timeout);resolve();},{once:true});
-   });
- }
- const context=window.starCheckinAssignmentContext||{};
+ const group=await ensureActiveGroupId(session.user.id);if(!group || group !== context.groupId)return;
+ const preview = new URLSearchParams(window.location.search).has('previewAssignment');
+ if (preview && (!context.assignmentId || context.groupId !== group || !context.caregiverUserId)) return;
+ const caregiverUserId = preview ? context.caregiverUserId : session.user.id;
  const assignmentRows=await rest('star_caregiver_checkin_assignments?select=*&active=eq.true&group_id=eq.'+
-   encodeURIComponent(group)+'&caregiver_user_id=eq.'+encodeURIComponent(session.user.id)+'&order=created_at.asc');
- selectedAssignment=(assignmentRows||[]).find(x=>x.id===context.assignmentId)||null;
- const individualId=selectedAssignment?.individual_id||'';
+   encodeURIComponent(group)+'&caregiver_user_id=eq.'+encodeURIComponent(caregiverUserId)+'&order=created_at.asc');
+ const assignment=(assignmentRows||[]).find(x=>x.id===context.assignmentId)||null;
+ const individualId=assignment?.individual_id||'';
  // Preserve historical group-level cards only for groups without per-person assignment.
  const rows=await rest('star_isa_outcomes?select=*&group_id=eq.'+encodeURIComponent(group)+
    '&status=eq.active&order=created_at.asc&limit=300');
@@ -182,15 +228,18 @@ async function init(){
    const individuals=people.filter(p=>p.role==='individual');
    legacyAllowed=individuals.length===1&&individuals[0].id===individualId;
  }
- cards=(rows||[]).filter(card=>{
+ const matchingCards=(rows||[]).filter(card=>{
    // Legacy outcome cards use an empty individual_id; only associate with the sole
    // registered individual of that group. Do not alter historical card ownership.
    if(card.individual_id!==individualId && !(card.individual_id==='' && legacyAllowed))return false;
    const assignees=Array.isArray(card.assigned_user_ids)?card.assigned_user_ids:[];
-   return !assignees.length||assignees.includes(session.user.id);
+   return !assignees.length||assignees.includes(caregiverUserId);
  });
- const allLinks=selectedAssignment?
-  await rest('star_isa_measure_links?select=*&assignment_id=eq.'+encodeURIComponent(selectedAssignment.id)):[];
+ const allLinks=assignment?
+  await rest('star_isa_measure_links?select=*&assignment_id=eq.'+encodeURIComponent(assignment.id)):[];
+ if (generation !== loadGeneration) return;
+ selectedAssignment=assignment;
+ cards=matchingCards;
  const approved=allLinks||[];
  linked=[];
  for(const card of cards)for(const measurement of (Array.isArray(card.measurements)?card.measurements:[])){
@@ -198,25 +247,28 @@ async function init(){
    if(link)linked.push({card,measurement,sourceField:link.source_field,linkId:link.id});
  }
  loaded=true;render();
- window.starIsaHasAssignedOutcomes=rendered.length>0 || linked.some(x=>availableSourceFields(x.sourceField).length>0);
- window.starIsaReady=true;
- window.dispatchEvent(new Event('star-isa-outcomes-ready'));
 }
 
+let loadGeneration = 0;
 document.addEventListener('DOMContentLoaded',()=>{
  window.starIsaCollectEntries=collectEntries;
  window.starIsaRestoreEntries=restoreEntries;
- window.starIsaReady=false;
- window.starIsaLoadFailed=false;
- const reload=()=>{loaded=false;cards=[];linked=[];rendered=[];init().catch(error=>{
-  const host=$('starIsaCheckin');if(!host)return;
-  host.hidden=false;host.replaceChildren(el('p','','ISA questions could not load. Refresh this page to try again. You can skip the ISA step if needed.'));
-  window.starIsaLoadFailed=true;
-  window.starIsaReady=true;
-  window.dispatchEvent(new Event('star-isa-outcomes-ready'));
- });};
- reload();
- window.addEventListener('star-caregiver-assignment-ready',()=>{
-   if(window.starIsaReady)reload();
- });
+ window.starIsaReviewSection=entry=>rendered.find(row=>row.card.id===entry.outcome_id &&
+  row.measurement.id===entry.measurement_id)?.section || 'final-notes-step';
+ const reload=()=>{
+  const context=window.starCheckinAssignmentContext;
+  if (!context) return;
+  const generation=++loadGeneration;
+  loaded=false;
+  rendered=[];
+  document.querySelectorAll('.isa-inline-questions').forEach(node=>node.remove());
+  window.starIsaLoad = init(context,generation).catch(()=>{
+   if (generation !== loadGeneration) return;
+   const message=el('p','isa-inline-questions','Assigned follow-up questions could not load. Refresh this page to try again.');
+   const panel=panelFor('final-notes-step');
+   if (panel) insertFollowUp(message,panel);
+  });
+ };
+ window.addEventListener('star-caregiver-assignment-ready',reload);
+ if (window.starCheckinAssignmentContext) reload();
 });

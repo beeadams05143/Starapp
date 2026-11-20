@@ -1,10 +1,12 @@
-import { rest, getSessionFromStorage } from './restClient.js';
-import { readCachedOnboardingCompletion } from './onboarding-flow.js';
+import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
+import { readCachedOnboardingCompletion, completeGuidedOnboarding } from './onboarding-flow.js?v=2026.10.29UVM3';
+
+import { loadSignedInRole } from './signed-in-role.js';
 
 export async function next() {
   const session = getSessionFromStorage();
   if (!session?.user?.id || !session?.access_token) {
-    window.location.href = 'login.html';
+    window.location.href = 'auth.html';
     return;
   }
 
@@ -15,14 +17,17 @@ export async function next() {
     );
     profile = Array.isArray(rows) ? rows[0] || null : null;
   } catch (error) {
-    console.warn('[ROUTER] profile fetch failed, using onboarding cache fallback when available', error);
+    console.warn('[ROUTER] unable to verify profile, directing user to sign in', error);
+    window.location.href = 'auth.html?reauth=1';
+    return;
   }
   const onboardingComplete = profile && Object.prototype.hasOwnProperty.call(profile, 'onboarding_complete')
     ? profile.onboarding_complete === true
     : readCachedOnboardingCompletion(session.user.id);
 
   if (onboardingComplete === true) {
-    window.location.href = profile?.role === 'individual' ? 'my-star.html' : 'dashboard.html';
+    const role = await loadSignedInRole();
+    window.location.href = role === 'individual' ? 'my-star.html' : 'dashboard.html';
     return;
   }
 
@@ -46,7 +51,24 @@ export async function next() {
     return;
   }
 
+  const teamRole = await loadSignedInRole();
+  if (teamRole === 'case_manager') {
+    window.location.href = 'dashboard.html';
+    return;
+  }
+
   if (profile.onboarding_step === 'caregiver-setup') {
+    // Either a group configuration or a caregiver assignment completes setup.
+    // A failed lookup must not prevent checking the other storage path.
+    const checks = await Promise.allSettled([
+      rest(`caregiver_checkin_configs?group_id=eq.${encodeURIComponent(profile.group_id)}&select=id&limit=1`),
+      rest(`star_caregiver_checkin_assignments?group_id=eq.${encodeURIComponent(profile.group_id)}&active=eq.true&select=id&limit=1`),
+    ]);
+    if (checks.some(result => result.status === 'fulfilled' && Array.isArray(result.value) && result.value.length > 0)) {
+      await completeGuidedOnboarding(session.user.id);
+      window.location.href = 'dashboard.html';
+      return;
+    }
     window.location.href = 'caregiver-setup-wizard.html';
     return;
   }

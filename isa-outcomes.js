@@ -1,5 +1,5 @@
-import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.19B';
-import { ensureActiveGroupId } from './active-group.js?v=2026.10.07A';
+import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
+import { ensureActiveGroupId } from './active-group.js?v=2026.10.29UVM3';
 
 const $ = id => document.getElementById(id);
 const state = { groupId:null, userId:null, isAdmin:false, editing:null, records:[], strategies:[], measurements:[], members:[], selectedAssignees:[] };
@@ -26,27 +26,84 @@ function bankOptions(){
 function bankChanged(){
  const category=val('isaBankCategory');
  const box=$('isaBankExample');box.replaceChildren();
+ // The bank category is also the category of the card being created.
+ // Selecting a different bank category intentionally updates the editable field.
+ if (!$('isaEditor').hidden) $('isaCategory').value=category==='__custom'?'':category;
  if(category==='__custom'){box.add(new Option('Enter your own outcome below',''));return;}
  (categories[category]||[]).forEach(k=>box.add(new Option(k,k)));
 }
 function activeCardStatus(row){return row.status==='active'?'Active':row.status==='archived'?'Archived':'Draft';}
+let view = 'active';
+let evidence = [];
+
+function installViews(){
+ const nav = el('nav','bar');
+ nav.setAttribute('aria-label','ISA views');
+ const buttons = new Map();
+ for(const [key,label] of [['active','Active ISA'],['draft','Draft ISA'],['archived','Forms & History']]){
+  const button = el('button','alt',label);
+  button.type='button';
+  buttons.set(key,button);
+  button.addEventListener('click',()=>{
+   view=key;
+   setEditor(false);
+   updateViews();
+   renderList();
+  });
+  nav.append(button);
+ }
+ function updateViews(){
+  for(const [key,button] of buttons){
+   button.setAttribute('aria-pressed',String(key===view));
+   button.classList.toggle('alt',key!==view);
+  }
+  $('isaNew').hidden=!(state.isAdmin&&view==='draft');
+ }
+ $('isaList').before(nav);
+ updateViews();
+}
+
+function appendEvidence(row,card){
+ if(!state.isAdmin)return;
+ const entries = evidence.filter(item=>item.outcome_id===card.id);
+ const details=el('details','subpanel');
+ details.append(el('summary','',entries.length
+  ? 'Caregiver check-ins · '+entries.length+' recent measurements'
+  : 'Caregiver check-ins'));
+ if(!entries.length)details.append(el('p','hint','No linked answers in the check-ins loaded for this view.'));
+ for(const item of entries.slice(0,8)){
+  const value=typeof item.value==='boolean'?(item.value?'Yes':'No'):String(item.value);
+  details.append(el('p','',item.date+' · '+(item.caregiver_name||'Caregiver')+' — '+(item.measurement_label||'Recorded answer')+': '+value+(item.unit?' '+item.unit:'')));
+ }
+ row.append(details);
+}
+
 function renderList(){
  const host=$('isaList');host.replaceChildren();
- if(!state.records.length){host.append(el('p','muted','No ISA outcome cards yet. An administrator can create one from the bank or from scratch.'));return;}
- for(const item of state.records){
+ if(view==='archived'){
+  for(const [href,label] of [['./resources/isa-basic-form.pdf','ISA Basic Form'],['./resources/isa-required-approvals.pdf','ISA Required Approvals Form'],['./resources/isa-review-change-form.pdf','ISA Review/Change Form']]){
+   const link=el('a','',label+' (PDF)');link.href=href;
+   const line=el('p');line.append(link);host.append(line);
+  }
+  host.append(el('h3','','Archived outcome cards'));
+ }
+ const visible=state.records.filter(card=>card.status===view);
+ if(!visible.length)host.append(el('p','muted',view==='draft'?'No draft outcomes in progress.':'No '+view+' outcomes.'));
+ for(const item of visible){
   const row=el('div','entry'), bar=el('div','bar'), title=el('h3','',item.title), badge=el('span','pill',activeCardStatus(item));
   bar.append(title,badge);row.append(bar);
   row.append(el('p','hint',item.category+' · '+(item.measurements||[]).length+' measurement(s) · '+(item.strategies||[]).length+' support strategy/strategies'));
   if(item.outcome_text)row.append(el('p','',item.outcome_text));
   if(item.voice_text)row.append(el('p','muted',(item.voice_source==='individual'?'Individual’s words: ':'Observed preference: ')+item.voice_text));
-  if(state.isAdmin){const b=el('button','alt','Edit card');b.type='button';b.addEventListener('click',()=>openCard(item));row.append(b);}
+  if(view==='active')appendEvidence(row,item);
+  if(state.isAdmin&&view==='draft'){const b=el('button','alt','Edit card');b.type='button';b.addEventListener('click',()=>openCard(item));row.append(b);}
   host.append(row);
  }
 }
 function blankCard(){
  state.editing=null;state.strategies=[];state.measurements=[];state.selectedAssignees=[];
  $('isaForm').reset();$('isaEditorTitle').textContent='New Personal Outcome Card';
- $('isaCategory').value='Communication';$('isaCardStatus').value='draft';$('isaVoiceSource').value='none';
+ $('isaCategory').value=val('isaBankCategory')==='__custom'?'':val('isaBankCategory');$('isaCardStatus').value='draft';$('isaVoiceSource').value='none';
  renderStrategies();renderMeasurements();renderAssignees();updateKind();setEditor(true);
 }
 function openCard(card){
@@ -113,20 +170,36 @@ async function individualName(){
 }
 async function loadMembers(){
  try {
-  const members=await rest('group_members?select=user_id,role&group_id=eq.'+encodeURIComponent(state.groupId));
-  const ids=(members||[]).map(m=>m.user_id);
-  let profiles=[];
-  if(ids.length){
-   try{profiles=await rest('profiles?select=id,display_name,full_name,public_name&id=in.('+ids.join(',')+')');}
-   catch(e){console.warn('Team member names unavailable',e?.message);}
-  }
-  state.members=(members||[]).map((m,i)=>{const p=profiles.find(x=>x.id===m.user_id);return {...m,name:p?.public_name||p?.display_name||p?.full_name||('Team member '+(i+1))};});
+  const members=await rest('rpc/star_team_members',{method:'POST',expectedUserId:state.userId,body:JSON.stringify({p_group_id:state.groupId})});
+  state.people=members.filter(member=>member.assigned_role==='individual');
+  state.members=members.filter(member=>['caregiver','administrator'].includes(member.assigned_role)).map(member=>({...member,name:member.display_name}));
  } catch(e){console.warn('Unable to load group membership display',e?.message);state.members=[];}
 }
 async function loadCards(){
- const records=await rest('star_isa_outcomes?select=*&group_id=eq.'+encodeURIComponent(state.groupId)+'&individual_id=eq.&order=created_at.asc&limit=500');
+ const person=val('isaIndividual');
+ const filter=person?(state.people.length===1?'or=(individual_id.eq.'+encodeURIComponent(person)+',individual_id.eq."")':'individual_id=eq.'+encodeURIComponent(person)):'individual_id=eq.';
+ const records=await rest('star_isa_outcomes?select=*&group_id=eq.'+encodeURIComponent(state.groupId)+'&'+filter+'&order=created_at.asc&limit=500');
  if(records?.length>=500)throw new Error('Too many outcome cards to load safely. Contact the administrator.');
- state.records=records||[];renderList();
+ state.records=records||[];
+ evidence=[];
+ if(state.isAdmin){
+  try{
+   const checkins=await rest('caregiver_checkins?select=date,caregiver_name,payload&group_id=eq.'+encodeURIComponent(state.groupId)+'&order=date.desc,id.desc&limit=100',{expectedUserId:state.userId});
+   for(const checkin of checkins){
+    const payload=checkin.payload;
+    if(payload?.individual_id && payload.individual_id!==val('isaIndividual'))continue;
+    let entries=payload?.isa_entries;
+    if(typeof entries==='string'){try{entries=JSON.parse(entries)}catch{continue}}
+    if(!Array.isArray(entries))continue;
+    for(const item of entries){
+     if(item?.value!==null&&item?.value!==undefined&&item.value!=='')
+      evidence.push({...item,date:checkin.date,caregiver_name:checkin.caregiver_name});
+    }
+   }
+  }catch(error){console.warn('ISA check-in evidence unavailable',error);}
+ }
+ if(state.groupId!==await ensureActiveGroupId(state.userId)||getSessionFromStorage()?.user?.id!==state.userId)throw new Error('Your account or group changed. Reload ISA Outcomes.');
+ renderList();
  tell(state.records.length+' ISA outcome card(s) loaded.');
 }
 async function saveCard(e){
@@ -145,7 +218,7 @@ async function saveCard(e){
   };
   if(values.status==='active'&&!values.measurements.length)throw new Error('Add at least one measurement before activating this card.');
   if(values.voice_source==='none')values.voice_text='';
-  const opts={method:state.editing?'PATCH':'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(state.editing?values:{...values,group_id:state.groupId,individual_id:''})};
+  const opts={method:state.editing?'PATCH':'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(state.editing?values:{...values,group_id:state.groupId,individual_id:val('isaIndividual')})};
   await rest('star_isa_outcomes'+(state.editing?'?id=eq.'+encodeURIComponent(state.editing)+'&group_id=eq.'+encodeURIComponent(state.groupId):''),opts);
   setEditor(false);await loadCards();tell('Outcome card saved. Active cards now drive the ISA questions in caregiver check-ins.');
  }catch(error){tell(error.message||'Unable to save the outcome.',true);}
@@ -159,10 +232,14 @@ async function start(){
  $('isaGroup').textContent=localStorage.getItem('currentGroupName')||'Current STAR group';
  const roles=await rest('group_members?select=role&group_id=eq.'+encodeURIComponent(state.groupId)+'&user_id=eq.'+encodeURIComponent(state.userId)+'&limit=1');
  state.isAdmin=roles?.[0]?.role==='admin';
- $('isaPermission').textContent=state.isAdmin?'Administrator: you can add, activate, edit and archive outcome cards.':'Team member: read-only outcome cards.';
- $('isaNew').hidden=!state.isAdmin;
- const name=await individualName();$('isaIndividual').replaceChildren(new Option(name,''));
- await loadMembers();await loadCards();
+ $('isaPermission').textContent=state.isAdmin?'Administrator · Draft outcomes can be edited in Draft ISA.':'Team member: read-only outcome cards.';
+ installViews();
+ $('isaEvidenceLinks').hidden=!state.isAdmin;
+ await loadMembers();
+ const people=state.people||[];
+ $('isaIndividual').replaceChildren(...(people.length?people.map(p=>new Option(p.display_name,p.user_id)):[new Option(await individualName(),'')]));
+ $('isaIndividual').addEventListener('change',()=>{setEditor(false);loadCards().catch(error=>tell(error.message,true));});
+ await loadCards();
 }
 document.addEventListener('DOMContentLoaded',()=>{
  bankOptions();
@@ -173,7 +250,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   $('isaCategory').value=category;$('isaTitle').value=title;
   $('isaDescription').value='';$('isaTitle').focus();
  });
- $('isaBlank').addEventListener('click',()=>{$('isaCategory').value='';$('isaTitle').value='';$('isaDescription').value='';$('isaCategory').focus();});
+ $('isaBlank').addEventListener('click',()=>{const category=val('isaBankCategory');$('isaCategory').value=category==='__custom'?'':category;$('isaTitle').value='';$('isaDescription').value='';(category==='__custom'?$('isaCategory'):$('isaTitle')).focus();});
  $('isaNew').addEventListener('click',blankCard);
  $('isaCancel').addEventListener('click',()=>setEditor(false));
  $('isaAddStrategy').addEventListener('click',addStrategy);

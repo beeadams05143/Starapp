@@ -11,7 +11,7 @@ export function getSessionFromStorage() {
 
 export async function requireSession() {
   const session = await coreEnsureSession();
-  if (!session?.access_token) throw new Error('Supabase session required');
+  if (!session?.access_token) throw new Error('Your STAR sign-in has expired. Sign in again.');
   return session;
 }
 

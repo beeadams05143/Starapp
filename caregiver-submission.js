@@ -91,6 +91,33 @@ export class CaregiverSubmission {
       return { state: 'uncertain', message: 'STAR cannot confirm this save yet. Your recovery copy is retained. Reconnect or sign in to the original account, then check save status.', id: this.attempt.row.id };
     } finally { this.busy = false; }
   }
+  // An explicit recovery action reuses the persisted primary key and exact answers.
+  // ON CONFLICT DO NOTHING prevents a delayed original POST from making a duplicate.
+  async retryOriginal() {
+    if(this.busy)return {state:'saving'};
+    if(!this.attempt?.sent||!this.attempt.row?.id)return {state:'failed',message:'No original submission to recover.'};
+    this.busy=true;
+    const row=this.attempt.row;
+    try{
+      await this.assertContext(row);
+      if(!validSelectedDate(row.date)||row.payload?.entry_date!==row.date)throw new Error('The original date could not be verified.');
+      const existing=await this.call(`caregiver_checkins?select=id,user_id,group_id,date,payload&id=eq.${encodeURIComponent(row.id)}&user_id=eq.${encodeURIComponent(row.user_id)}&group_id=eq.${encodeURIComponent(row.group_id)}&limit=2`,{expectedUserId:row.user_id});
+      if(!Array.isArray(existing))throw new Error('Original save status could not be checked.');
+      if(existing.length)return await this.readAttempt();
+      try{
+        await this.call('caregiver_checkins?on_conflict=id',{
+          method:'POST',expectedUserId:row.user_id,
+          headers:{Prefer:'resolution=ignore-duplicates,return=representation'},body:JSON.stringify([row])
+        });
+      }catch(error){
+        const checked=await this.readAttempt().catch(()=>null);
+        if(checked?.state==='verified')return checked;
+        return {state:'uncertain',id:row.id,message:'The original save is still unconfirmed. Your answers and original attempt ID are preserved. '+(error.message||'')};
+      }
+      return await this.readAttempt();
+    }catch(error){return {state:'uncertain',id:row.id,message:error.message||'The original save could not be recovered.'};}
+    finally{this.busy=false;}
+  }
   async submit(row, { confirmed = false, approvedDuplicateIds = [] } = {}) {
     if (this.busy) return { state: 'saving' };
     // Once POST may have been sent, this object can ONLY read that attempt, never POST again.

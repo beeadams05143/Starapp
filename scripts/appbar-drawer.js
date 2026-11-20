@@ -6,7 +6,6 @@
     getSessionFromStorage,
     clearSavedSession,
   } = await import('/supabaseClient.js?v=2026.07.03A');
-  const { loadSignedInRole } = await import('/signed-in-role.js');
   const APP_CONFIG_KEY = 'star_app_config';
   const LOGIN_URL = '/auth.html';
   const INACTIVITY_WARNING_DELAY_MS = 14 * 60 * 1000; // Production: show warning after 14 minutes of inactivity
@@ -295,6 +294,7 @@
         letter-spacing:.01em;
         color:${isDocsFamilyPage ? '#6f4518' : '#111'};
       }
+      nav.drawer .drawer-item[hidden]{display:none!important;}
       nav.drawer .drawer-item{
         display:block;
         padding:0;
@@ -401,18 +401,17 @@
       <div class="drawer-item" data-role="shared">
         <a href="/profile.html"><i class="ti ti-user nav-icon" aria-hidden="true"></i><span class="nav-text">Profile</span></a>
       </div>
-      <details data-role="caregiver">
-        <summary><i class="ti ti-settings nav-icon" aria-hidden="true"></i><span class="nav-text">Settings & Admin</span><i class="ti ti-chevron-down drawer-chevron" aria-hidden="true"></i></summary>
-        <div class="detail-body">
-          <div class="detail-body-inner">
-            <div class="sub">
-              <a href="/group-settings.html">Group Settings</a>
-              <a href="/caregiver-setup-wizard.html" data-caregiver-edit-link>Edit Caregiver Check-In</a>
-            </div>
-          </div>
-        </div>
-      </details>
+      <div class="drawer-item" data-role="shared">
+        <a href="/feature-guide.html#resources"><i class="ti ti-book nav-icon" aria-hidden="true"></i><span class="nav-text">Resources</span></a>
+      </div>
       <div class="drawer-item" data-role="caregiver">
+        <a href="/feature-guide.html"><i class="ti ti-book nav-icon" aria-hidden="true"></i><span class="nav-text">Feature Guide</span></a>
+      </div>
+
+      <div class="drawer-item" data-admin-only hidden data-role="caregiver"><a href="/settings-admin.html"><i class="ti ti-settings nav-icon" aria-hidden="true"></i><span class="nav-text">Settings & Administration</span></a></div>
+      <div class="drawer-item" data-admin-only hidden data-role="caregiver"><a href="/group-settings.html"><i class="ti ti-users nav-icon" aria-hidden="true"></i><span class="nav-text">Group Settings & Invitations</span></a></div>
+      <div class="drawer-item" data-role="caregiver" data-admin-only hidden><a href="/caregiver-checkin-setup/" data-caregiver-edit-link><i class="ti ti-adjustments nav-icon" aria-hidden="true"></i><span class="nav-text">Edit Caregiver Check-In</span></a></div>
+      <div class="drawer-item" data-role="caregiver case_manager">
         <a href="/dashboard.html" class="active"><i class="ti ti-home nav-icon" aria-hidden="true"></i><span class="nav-text">Dashboard</span></a>
       </div>
       <div class="drawer-item" data-role="shared">
@@ -421,13 +420,16 @@
       <div class="drawer-item" data-role="individual">
         <a href="/my-star.html"><i class="ti ti-home nav-icon" aria-hidden="true"></i><span class="nav-text">My STAR</span></a>
       </div>
+      <div class="drawer-item" data-role="case_manager">
+        <a href="/isa-outcomes.html"><i class="ti ti-star nav-icon" aria-hidden="true"></i><span class="nav-text">ISA Outcomes</span></a>
+      </div>
       <div class="drawer-item" data-role="caregiver">
         <a href="/caregiver-checkin.html"><i class="ti ti-checkbox nav-icon" aria-hidden="true"></i><span class="nav-text">Caregiver Check-In</span></a>
       </div>
-      <div class="drawer-item" data-role="caregiver">
+      <div class="drawer-item" data-role="caregiver case_manager">
         <a href="/caregiver-report.html"><i class="ti ti-chart-bar nav-icon" aria-hidden="true"></i><span class="nav-text">Caregiver Report</span></a>
       </div>
-      <div class="drawer-item" data-role="shared">
+      <div class="drawer-item" data-role="caregiver individual">
         <a href="/chat.html" data-feature="chat"><i class="ti ti-message nav-icon" aria-hidden="true"></i><span class="nav-text">Group Chat</span></a>
       </div>
       <div class="drawer-item" data-role="caregiver">
@@ -440,15 +442,11 @@
         <summary><i class="ti ti-files nav-icon" aria-hidden="true"></i><span class="nav-text">Documents</span><i class="ti ti-chevron-down drawer-chevron" aria-hidden="true"></i></summary>
         <div class="detail-body">
           <div class="detail-body-inner">
-            <div class="helper">Access important records, ISA/IEP plans, meeting notes, medical details, finance, caregiving, HR, year end paperwork, guardianship, and uploaded files.</div>
+            <div class="helper">Find meeting minutes, medical records, year-end paperwork, guardianship documents, and uploaded files.</div>
             <div class="sub">
               <a href="/emergency-medical.html" data-doc-type="emergency">Emergency Sheet</a>
-              <a href="/documents/documents.html?cat=ISA" data-doc-type="isa_iep">ISA / IEP</a>
               <a href="/documents/minutes-form.html" data-doc-type="isa_iep">Meeting Minutes</a>
               <a href="/documents/documents.html?cat=Medical" data-doc-type="medical">Medical</a>
-              <a href="/documents/documents.html?cat=Caregiving" data-doc-type="caregiving">Caregiving</a>
-              <a href="/documents/documents.html?cat=HR" data-doc-type="hr_finance">HR</a>
-              <a href="/documents/documents.html?cat=Finance" data-doc-type="hr_finance">Finance</a>
               <a href="/documents/documents.html?cat=Year%20End%20Paperwork" data-doc-type="year_end">Year End Paperwork</a>
               <a href="/documents/documents.html?cat=Guardianship" data-doc-type="guardianship">Guardianship</a>
               <a href="/documents/documents.html?cat=Uploaded%20Files" data-doc-type="uploaded_files">Uploaded Files</a>
@@ -575,8 +573,11 @@
 
   function applyRoleVisibility(role) {
     overlay.querySelectorAll('[data-role]').forEach(node => {
-      const roles = (node.dataset.role || '').split(/\s+/).filter(Boolean);
-      node.style.display = (roles.includes('shared') || roles.includes(role)) ? '' : 'none';
+      const roles = node.dataset.role.split(/\s+/);
+      const mapped = role === 'administrator' ? 'caregiver' : role;
+      const allowed = roles.includes('shared') || roles.includes(mapped);
+      node.style.display = allowed ? '' : 'none';
+      if (node.hasAttribute('data-admin-only')) node.hidden = role !== 'administrator';
     });
     applyFeatureVisibility(role);
   }
@@ -584,8 +585,8 @@
   async function refreshRoleVisibility() {
     applyRoleVisibility(null);
     try {
-      const role = await loadSignedInRole();
-      applyRoleVisibility(role === 'individual' ? 'individual' : role ? 'caregiver' : null);
+      const { loadSignedInRole } = await import('/signed-in-role.js');
+      applyRoleVisibility(await loadSignedInRole());
     } catch (error) {
       console.warn('[drawer] Role lookup failed', error);
     }

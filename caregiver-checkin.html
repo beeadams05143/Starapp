@@ -1918,6 +1918,7 @@
     @media(max-width:600px) { .draft-save-bar { top:52px; } }
 
 .top-actions,#downloadRecovery,#storageNotice,#submissionContext{display:none!important}
+.top-actions.has-pending-recovery{display:flex!important;flex-wrap:wrap;gap:12px;padding:14px;border:2px solid #8a4b22;border-radius:12px;background:#fff9e9}
 #checkinSubmitPanel>p:not(#checkinDateLabel):not(#submissionStatus),#checkinSubmitPanel>a[href="caregiver-report.html"]{display:none}
 .prn-quick-row{padding:15px;border-bottom:1px solid #e9e8e4;display:grid;gap:10px}
 .prn-quick-row>div{display:flex;justify-content:space-between;gap:12px;align-items:center}
@@ -2152,7 +2153,8 @@
       .guided-checkin-navigation label { width:100%; }
       .guided-checkin-navigation button { width:100%; }
     }
-</style>
+#assignedIndividualWrap[hidden]{display:none!important}
+  </style>
 </head>
 <body class="care-date-pending">
   <section class="starfield-page-header">
@@ -2216,20 +2218,33 @@
         </label>
         <button type="button" id="skipGuidedSection">Skip this section for now →</button>
       </nav>
-      <!-- STEP 1: Physical -->
-      <div id="physicalSection" class="step active" data-step="0">
-        <div class="top-card">
+      <!-- Shift details belong to the whole check-in, independent of optional sections. -->
+        <div id="shiftDetails" class="top-card">
           <label class="care-date-original" for="entryDateInput">Care date:
             <input type="date" id="entryDateInput" name="entry_date"/>
             <span class="muted">Pick another day if you missed logging it.</span>
           </label>
-	          <div id="question-caregiver-name" class="question-block">
+	          <div id="assignedIndividualWrap" hidden class="question-block">
+            <label for="assignedIndividualSelect">Individual for this shift
+              <select id="assignedIndividualSelect" aria-label="Individual for this assigned caregiver check-in"></select>
+            </label>
+          </div>
+          <div id="question-caregiver-name" class="question-block">
 	            <label for="caregiver_name">Caregiver Name:
 	              <input id="caregiver_name" name="caregiver_name" type="text" placeholder="Enter your name" required />
 	            </label>
 	          </div>
+          <section id="shiftSupports" class="question-block" aria-labelledby="shiftSupportsTitle">
+            <h2 id="shiftSupportsTitle">Supports Provided This Shift</h2>
+            <p>Enter each support and where it happened. Minutes are optional. Split time between entries; do not repeat the same minutes. Leave unknown time blank.</p><input type="hidden" name="shift_supports" value="[]">
+            <div data-support-rows></div>
+            <button class="btn" type="button" data-add-support>+ Add another support</button>
+            <p data-support-error role="alert" hidden></p>
+          </section>
 	        </div>
 
+      <!-- STEP 1: Physical -->
+      <div id="physicalSection" class="step active" data-step="0">
 	        <section class="central-prn-card" id="centralPrnSection" aria-labelledby="centralPrnTitle">
 	          <h2 id="centralPrnTitle">PRN Medication</h2>
 	          <input type="hidden" name="prn_entries" id="prn_entries" value="[]"/>
@@ -3143,12 +3158,11 @@
           <div class="section-header">Notes &amp; Important Observations <span>★</span></div>
           <div class="section-content">
             <fieldset class="panel">
-              <div class="section-title">Notes &amp; Important Observations</div>
-              <p class="muted">Use the gold-star box to preserve one important experience, accomplishment, or observation in the monthly team letter (180 characters maximum). Medication changes, PRNs, and safety incidents already have their own sections.</p>
+              <p class="muted">Save a meaningful moment for the monthly team letter. This is separate from ISA progress.</p>
 
           <div id="summaryHighlightBox" style="margin:18px 0;padding:14px;border:1px solid #d9ccb8;border-radius:12px;background:#fffaf2">
-            <label for="summary_highlight_note" style="display:block;font-weight:700"><span class="summary-star" aria-hidden="true">★</span> Important observation for the monthly team letter (optional)</label>
-            <p class="muted" style="margin:6px 0 10px">Highlight a meaningful accomplishment, new experience, or important observation worth preserving in the monthly letter. If medication or safety details were already documented elsewhere, avoid repeating them here. Every gold-star entry is shown with its date. Maximum 180 characters.</p>
+            <label for="summary_highlight_note" style="display:block;font-weight:700"><span class="summary-star" aria-hidden="true">★</span> Gold-star observation (optional)</label>
+            <p class="muted" style="margin:6px 0 10px">One meaningful moment, included with its date in the monthly letter. Up to 180 characters.</p>
             <textarea id="summary_highlight_note" name="summary_highlight_note" maxlength="180" rows="4" style="width:100%;min-height:110px;box-sizing:border-box;resize:vertical" placeholder="For example: Tried a new hiking trail, independently greeted a neighbor, or made progress toward a personal goal."></textarea>
             <div id="summaryHighlightCount" class="muted" style="text-align:right;margin-top:5px" aria-live="polite">0 / 180 characters</div>
           </div>
@@ -3205,17 +3219,23 @@
 
   <div id="toast"></div>
   <div id="successBanner" role="status" aria-live="polite" aria-atomic="true"></div>
-<script type="module" src="./isa-checkin.js?v=2026.10.27LIVEA"></script>
+<script type="module" src="./isa-checkin.js?v=2026.11.02UVM4"></script>
 <!-- App logic -->
 <script type="module">
   // 1) Imports MUST be first in the module
-  import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.19B';
-  import { CheckinSubmissionUI } from './caregiver-submission-ui.js?v=2026.11.15-date-choice';
+  import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
+  import { CheckinSubmissionUI } from './caregiver-submission-ui.js?v=2026.11.07-recovery';
+  import {normalizeSupportEntries} from './support-report.js';
+  import {loadSignedInRole} from './signed-in-role.js';
+  if(await loadSignedInRole()==='case_manager'){
+    location.replace('caregiver-report.html');
+    throw new Error('Case managers have read-only report access.');
+  }
   import { normalizeSleepPayload } from './caregiver-sleep.js?v=2026.11.15-sleep-scope';
   import { sleepOnsetAnswer, restoredSleepResponse } from './caregiver-care-date.js?v=2026.11.15-date-choice';
   import { validSelectedDate } from './caregiver-submission.js';
   import { ANSWER_VERSION, optionalEngagement, optionalYesNo } from './caregiver-answer-quality.js?v=2026.10.20A';
-  import { ensureActiveGroupId } from './active-group.js?v=2026.10.07A';
+  import { ensureActiveGroupId } from './active-group.js?v=2026.10.29UVM3';
 
   // 2) Optional: expose for console debugging
   window.rest = rest;
@@ -3306,6 +3326,7 @@
     selectedCategories: new Set(),
     selectedItems: {},
     itemDescriptions: {},
+    assignmentId: null, assignedIndividualId: null, assignedCaregiverUserId: null,
   };
   const CHECKIN_FIELD_CATEGORY_MAP = {
     sleep: ['sleep_reporting', 'sleep_notes', 'hours_sleep', 'sleep_fell_asleep_time', 'sleep_onset_difficulty', 'night_wake_flag', 'night_wake_count', 'prn_used_for_sleep_disturbance'],
@@ -4856,35 +4877,74 @@
   }
 
   async function loadGroupCaregiverSetup(userId){
-    if (caregiverSetupState.forceLegacyMode) {
-      caregiverSetupState.groupId = await ensureGroupId(userId);
+    const currentGroup=await ensureGroupId(userId);
+    let assignments=[];
+    if(currentGroup && userId){
+      assignments=await rest('star_caregiver_checkin_assignments?select=*&active=eq.true&group_id=eq.'+
+        encodeURIComponent(currentGroup)+'&caregiver_user_id=eq.'+encodeURIComponent(userId)+'&order=created_at.asc');
+    }
+    const individualSelect=document.getElementById('assignedIndividualSelect');
+    const individualWrap=document.getElementById('assignedIndividualWrap');
+    let assigned=null;
+    if(assignments.length){
+      caregiverSetupState.forceLegacyMode=false;
+      const remembered=individualSelect?.value||caregiverSetupState.assignedIndividualId;
+      assigned=assignments.find(a=>a.individual_id===remembered)||assignments[0];
+      if(individualSelect && individualWrap){
+        const ids=assignments.map(a=>a.individual_id);
+        const profiles=await rest('profiles?select=id,display_name,public_name,full_name&id=in.('+ids.map(encodeURIComponent).join(',')+')');
+        individualSelect.replaceChildren();
+        for(const a of assignments){
+          const p=(profiles||[]).find(x=>x.id===a.individual_id);
+          individualSelect.add(new Option(p?.public_name||p?.display_name||p?.full_name||'Registered individual',a.individual_id));
+        }
+        individualSelect.value=assigned.individual_id;
+        individualWrap.hidden=false;
+      }
+    }
+    const groupId = currentGroup;
+    let config = assigned;
+    if (!config && groupId) {
+      const rows = await rest(
+        `caregiver_checkin_configs?group_id=eq.${encodeURIComponent(groupId)}&select=id,group_id,individual_id,selected_categories,selected_items,updated_at&order=updated_at.desc.nullslast&limit=1`
+      );
+      config = rows?.[0] || null;
+    }
+    caregiverSetupState.groupIndividualName = '';
+    if (!assigned && individualWrap && individualSelect) {
+      const profile = parseConfigObject(config?.selected_items)?.__individual_profile__;
+      const name = typeof profile?.preferred_name === 'string' ? profile.preferred_name.trim() : '';
+      individualSelect.replaceChildren();
+      if (name) individualSelect.add(new Option(name, name));
+      individualWrap.hidden = !name;
+      caregiverSetupState.groupIndividualName = name;
+    }
+    caregiverSetupState.assignmentId=assigned?.id||null;
+    caregiverSetupState.assignedIndividualId=assigned?.individual_id||config?.individual_id||null;
+    caregiverSetupState.assignedCaregiverUserId=assigned?.caregiver_user_id||null;
+    const announce=()=>{
+      window.starCheckinAssignmentContext={
+        assignmentId:caregiverSetupState.assignmentId, individualId:caregiverSetupState.assignedIndividualId,
+        caregiverUserId:userId,groupId:currentGroup
+      };
+      window.dispatchEvent(new Event('star-caregiver-assignment-ready'));
+    };
+    if (caregiverSetupState.forceLegacyMode && !assigned) {
+      caregiverSetupState.groupId = currentGroup;
       caregiverSetupState.configRowId = null;
       caregiverSetupState.hasConfig = false;
       caregiverSetupState.selectedCategories = new Set();
       caregiverSetupState.selectedItems = {};
       caregiverSetupState.itemDescriptions = {};
+      announce();
       return;
     }
-    const groupId = await ensureGroupId(userId);
     caregiverSetupState.groupId = groupId || null;
     caregiverSetupState.configRowId = null;
     caregiverSetupState.hasConfig = false;
     caregiverSetupState.selectedCategories = new Set();
     caregiverSetupState.selectedItems = {};
     caregiverSetupState.itemDescriptions = {};
-    let config = null;
-    if (groupId) {
-      const rows = await rest(
-        `caregiver_checkin_configs?group_id=eq.${encodeURIComponent(groupId)}&select=id,group_id,individual_id,selected_categories,selected_items,updated_at&order=updated_at.desc.nullslast&limit=1`
-      );
-      config = rows?.[0] || null;
-    }
-    if (!config && userId) {
-      const rows = await rest(
-        `caregiver_checkin_configs?individual_id=eq.${encodeURIComponent(userId)}&select=id,individual_id,group_id,selected_categories,selected_items,updated_at&order=updated_at.desc.nullslast&limit=1`
-      );
-      config = rows?.[0] || null;
-    }
     if (config && isCustomCaregiverSetupEnabled(config)) {
       caregiverSetupState.configRowId = config.id || null;
       caregiverSetupState.hasConfig = true;
@@ -4893,10 +4953,10 @@
       caregiverSetupState.itemDescriptions = normalizeItemDescriptions(parseConfigObject(config.selected_items)?.__item_descriptions__);
     }
 
-    const localWizardConfig = parseConfigObject(localStorage.getItem('caregiver_config'));
-    if (!caregiverSetupState.forceLegacyMode && !caregiverSetupState.hasConfig && localWizardConfig) {
-      applyLocalWizardConfigToSetupState(localWizardConfig);
-    }
+    // In UVM Testing, the shared admin editor and its Supabase records are the
+    // single source of truth. Old browser-only wizard settings must not override
+    // the check-in assigned to the signed-in caregiver.
+    announce();
   }
 
   function applyLegacyCheckinVisibility({ updateView = true } = {}){
@@ -5731,6 +5791,21 @@
       console.warn('[cg] caregiver setup config unavailable', error?.message || error);
     }
 
+    document.getElementById('assignedIndividualSelect')?.addEventListener('change',async(event)=>{
+      const prior=caregiverSetupState.assignedIndividualId;
+      const next=event.target.value;
+      if(prior===next)return;
+      if(!window.confirm('Switching individuals starts a blank check-in. Unsaved answers for the previous individual will be cleared. Continue?')){
+        event.target.value=prior||'';
+        return;
+      }
+      const userId=getSessionFromStorage()?.user?.id;
+      try{
+        resetForm();
+        await loadGroupCaregiverSetup(userId);
+        applyCaregiverSetupVisibility();
+      }catch(error){console.error('[cg] unable to switch assigned individual',error);}
+    });
     initAdlControls();
     movementEls = {
       bodyWrap: document.querySelector('[data-movement-body-wrap]'),
@@ -6672,10 +6747,68 @@
       }
       openSectionDetailByIndex(steps.findIndex(step => step.id === 'final-notes-step'));
     }
+    const shiftSupports = document.getElementById('shiftSupports');
+    const shiftSupportRows = shiftSupports.querySelector('[data-support-rows]');
+    const shiftSupportField = shiftSupports.querySelector('[name=shift_supports]');
+    const supportOptions = ['In-home support','Community support','Employment support','Respite','Not sure — needs review'];
+    const locationOptions = ['At home','In the community','At a place of employment','Other'];
+    function addShiftSupport(values = {}){
+      const row = document.createElement('fieldset');
+      row.className = 'question-block';
+      row.style.minWidth = '0';
+      row.innerHTML = '<legend>Support entry</legend><label>Support provided<select data-support></select></label>' +
+        '<label>Where it happened<select data-location></select></label>' +
+        '<label>Time for this support (minutes, optional)<input data-minutes type="number" min="0" max="1440" step="1" inputmode="numeric"></label>' +
+        '<label>Place or short note (optional)<input data-note type="text" maxlength="160"></label>' +
+        '<button type="button" class="btn" data-remove-support>Remove support entry</button>';
+      for (const [selector, options, value, placeholder] of [
+        ['[data-support]',supportOptions,values.support,'Choose a support'],
+        ['[data-location]',locationOptions,values.location,'Choose a location']
+      ]) {
+        const select = row.querySelector(selector);
+        select.add(new Option(placeholder,''));
+        options.forEach(option => select.add(new Option(option,option)));
+        select.value = options.includes(value) ? value : '';
+      }
+      row.querySelector('[data-note]').value = values.note || '';
+      row.querySelector('[data-minutes]').value = values.minutes ?? '';
+      row.querySelector('[data-remove-support]').onclick = () => {
+        row.remove();
+        if (!shiftSupportRows.children.length) addShiftSupport();
+        syncShiftSupports();
+        shiftSupports.querySelector('[data-add-support]').focus();
+      };
+      shiftSupportRows.append(row);
+      return row;
+    }
+    function readShiftSupports(){
+      return Array.from(shiftSupportRows.children, row => ({
+        support: row.querySelector('[data-support]').value,
+        location: row.querySelector('[data-location]').value,
+        note: row.querySelector('[data-note]').value.trim(),
+        minutes: row.querySelector('[data-minutes]').value
+      })).filter(entry => entry.support || entry.location || entry.note || entry.minutes !== '');
+    }
+    function syncShiftSupports(){
+      shiftSupportField.value = JSON.stringify(readShiftSupports());
+    }
+    shiftSupports.querySelector('[data-add-support]').onclick = () => addShiftSupport().querySelector('select').focus();
+    shiftSupportRows.addEventListener('input',syncShiftSupports);
+    shiftSupportRows.addEventListener('change',syncShiftSupports);
+    addShiftSupport();
+    function stepFields(step){
+      const fields = Array.from(step.querySelectorAll('input,select,textarea'));
+      // Keep existing draft step keys compatible after moving shared details.
+      if (step.id === 'physicalSection') {
+        fields.push(...document.getElementById('shiftDetails').querySelectorAll('input,select,textarea'));
+      }
+      return fields;
+    }
     function serialize(step){
+      if(step.id === 'physicalSection')syncShiftSupports();
       const data={};
       if (step.querySelector('[name="sleep_onset_difficulty"]')) data.sleep_onset_difficulty = null;
-      step.querySelectorAll('input,select,textarea').forEach(el=>{
+      stepFields(step).forEach(el=>{
         if(!el.name) return;
         if(el.type==='checkbox') data[el.name]=!!el.checked;
         else if(el.type==='radio'){ if(el.checked) {
@@ -6690,7 +6823,7 @@
     }
     function hydrate(step,data){
       if(!data) return;
-      step.querySelectorAll('input,select,textarea').forEach(el=>{
+      stepFields(step).forEach(el=>{
         const v = el.name === 'sleep_onset_difficulty' ? restoredSleepResponse(data) : data[el.name]; if(v===undefined) return;
         if(el.type==='checkbox') el.checked = !!v;
         else if(el.type==='radio'){
@@ -6759,6 +6892,11 @@
 	        hydrateAdlFieldsFromData(draft.data[idx] || {}, { silent: true });
 	      }
 	      if (idx === 0) {
+        shiftSupportRows.replaceChildren();
+        const supportEntries = parseJsonArray(draft.data[idx]?.shift_supports);
+        if (supportEntries.length) supportEntries.forEach(entry => addShiftSupport(entry));
+        else addShiftSupport();
+        syncShiftSupports();
 	        hydratePrnFromData(draft.data[idx] || {});
 	      }
 	      if (idx === movementStepIndex) {
@@ -7164,6 +7302,19 @@
       e?.preventDefault?.();
       if (!submissionUI || isSubmittingFinal) return;
       if (!validateCentralPrns()) return;
+      let supportRows;
+      try{supportRows=normalizeSupportEntries(readShiftSupports());}
+      catch(error){const node=shiftSupports.querySelector('[data-support-error]');node.hidden=false;node.textContent=error.message;openSectionDetailByIndex(0);shiftSupports.scrollIntoView({block:'center'});return;}
+      const missingIndividual = supportRows.length && !caregiverSetupState.assignedIndividualId && !caregiverSetupState.groupIndividualName;
+      const incomplete = supportRows.some(entry => !entry.support || !entry.location);
+      const supportError = shiftSupports.querySelector('[data-support-error]');
+      supportError.hidden = !incomplete && !missingIndividual;
+      if (incomplete || missingIndividual) {
+        supportError.textContent = missingIndividual ? 'Ask your admin to set the individual for this check-in before submitting support entries.' : 'Choose a support and location for each entry, or remove the incomplete entry.';
+        openSectionDetailByIndex(0);
+        shiftSupports.scrollIntoView({block:'center'});
+        return;
+      }
       const legacyMedDraft = getLegacyMedDraftText();
       if (legacyMedDraft && !window.confirm(
         'This recovered draft has medication-change details that will not be submitted. Copy them into the admin-only Team Updates area first. Choose OK only after copying them, or Cancel to keep editing and preserve the draft.'
@@ -7180,6 +7331,18 @@
         const group_id = submissionUI.context.groupId;
         const user = getSessionFromStorage()?.user;
         const payload = buildPayload();
+        payload.shift_supports = supportRows;
+        // Registered individual and assignment identifiers make the caregiver observation
+        // attributable without storing any invented caregiver titles or blank-as-zero data.
+        if(caregiverSetupState.groupIndividualName){
+          payload.individual_name=caregiverSetupState.groupIndividualName;
+        }
+        if(caregiverSetupState.assignedIndividualId){
+          payload.individual_id=caregiverSetupState.assignedIndividualId;
+          payload.individual_name=document.getElementById('assignedIndividualSelect').selectedOptions[0]?.text || '';
+          payload.checkin_assignment_id=caregiverSetupState.assignmentId;
+          payload.caregiver_user_id=user_id;
+        }
         // ISA answers are a separate typed collection; do not alter existing health fields.
         payload.isa_entries = window.starIsaCollectEntries?.() || [];
         // New check-ins never create medication-plan entries. Historical
@@ -7736,7 +7899,7 @@
 <div id="tabbar"></div>
 <!-- Bottom tab bar + hamburger drawer -->
 <script defer src="./load-tabbar.js?v=2025.01.09E"></script>
-<script defer src="./ui-shell.js?v=2026.10.27LIVEA"></script>
-<script defer src="./scripts/appbar-drawer.js?v=2026.10.27LIVEA"></script>
+<script defer src="./ui-shell.js?v=2026.11.19E"></script>
+<script defer src="./scripts/appbar-drawer.js?v=2026.11.19E"></script>
 </body>
 </html>

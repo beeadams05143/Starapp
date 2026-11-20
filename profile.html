@@ -352,7 +352,7 @@
   import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabaseClient.js?v=2026.03.29A';
   import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
   import { resolveActiveGroup } from './active-group.js?v=2026.03.29A';
-  import { loadAndRunRouter } from './routerLoader.js?v=2026.11.19A';
+  import { loadAndRunRouter } from './routerLoader.js?v=2026.11.19E';
   const defaultAvatar     = 'data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2096%2096%22%3E%3Crect%20width%3D%2296%22%20height%3D%2296%22%20rx%3D%2248%22%20fill%3D%22%23F5F2EC%22%2F%3E%3Ccircle%20cx%3D%2248%22%20cy%3D%2234%22%20r%3D%2217%22%20fill%3D%22%23D8D2C8%22%2F%3E%3Cpath%20d%3D%22M14%2090c0-23%2015-35%2034-35s34%2012%2034%2035%22%20fill%3D%22%23D8D2C8%22%2F%3E%3C%2Fsvg%3E';
   const avatarPreview     = document.getElementById('avatarPreview');
   const avatarFile        = document.getElementById('avatarFile');
@@ -442,20 +442,38 @@
     let groups = [];
     try {
       ensureSession();
-      const rows = await rest([
-        'group_members?select=group_id,groups!inner(id,name,archived)',
+      // Membership comes first: never treat an empty embedded join as
+      // evidence that a returning caregiver's group has disappeared.
+      const memberships = await rest([
+        'group_members?select=group_id',
         `user_id=eq.${encodeURIComponent(currentUser.id)}`,
         'order=joined_at.asc'
       ].join('&'));
-      groups = (rows || [])
-        .map(row => row.groups)
-        .filter(g => g?.id && !g?.archived);
+      const groupIds = [...new Set((Array.isArray(memberships) ? memberships : [])
+        .map(row => row?.group_id).filter(Boolean))];
+      if (groupIds.length) {
+        const groupRows = await rest(`groups?select=id,name,archived&id=in.(${groupIds.join(',')})`);
+        groups = (Array.isArray(groupRows) ? groupRows : []).filter(g => g?.id && !g?.archived);
+        if (!groups.length) throw new Error('Your saved group membership was found, but group details could not be loaded.');
+      } else {
+        const profileRows = await rest(
+          `profiles?id=eq.${encodeURIComponent(currentUser.id)}&select=group_id&limit=1`
+        );
+        if (profileRows?.[0]?.group_id) {
+          throw new Error('Your profile still has a saved group, but STAR could not verify its membership.');
+        }
+      }
     } catch (err) {
       console.warn('[PROFILE] groups fetch failed', err);
+      groupSelectEl.innerHTML = '<option value="">Unable to load groups — sign in again</option>';
+      showMessage('Group lookup failed. Your existing group has NOT been removed. Sign in again to reconnect.', false);
+      const retry = document.createElement('a'); retry.href='auth.html?reauth=1'; retry.textContent='Sign in again';
+      profileMessage?.append(document.createElement('br'),retry);
+      throw err;
     }
 
     if (!groups.length) {
-      groupSelectEl.innerHTML = '<option value="">(no groups yet)</option>';
+      groupSelectEl.innerHTML = '<option value="">No groups yet — create or join a group</option>';
       groupSelectEl.disabled = true;
       return;
     }
@@ -482,10 +500,12 @@
       currentAvatarUrl = null;
 
       const rows = await rest(
-        `profiles?id=eq.${encodeURIComponent(currentUser.id)}&select=display_name,public_name,full_name,avatar_url,group_id,updated_at`
+        `profiles?id=eq.${encodeURIComponent(currentUser.id)}&select=display_name,public_name,full_name,avatar_url,group_id,onboarding_complete,updated_at`
       );
       const profile = rows?.[0] || null;
       if (profile) {
+        if (!profile.onboarding_complete) showSetupNote();
+        else { setupNote?.classList.remove('is-visible'); setupChecklist?.classList.remove('is-visible'); }
         displayNameEl.value = profile.display_name || profile.public_name || profile.full_name || metaName;
         if (profile.avatar_url) {
           avatarPreview.src = profile.avatar_url;
@@ -502,7 +522,9 @@
       }
     } catch (err) {
       console.error('[PROFILE] fetchProfile failed', err);
-      showMessage('Could not load profile. Try again shortly.', false);
+      showMessage('Could not load your profile. Your saved group is still in STAR. Sign in again if needed.', false);
+      const retry = document.createElement('a'); retry.href='auth.html?reauth=1'; retry.textContent='Sign in again';
+      profileMessage?.append(document.createElement('br'),retry);
     }
   }
 
@@ -546,6 +568,10 @@
 
     const displayName = (displayNameEl.value || '').trim() || currentUser.email;
     const selectedGroupId = groupSelectEl.value || null;
+    if (!selectedGroupId || groupSelectEl.disabled) {
+      showMessage('The group list has not loaded. Please sign in again rather than saving an empty group.', false);
+      return;
+    }
 
     showMessage('Saving…', true);
     saveBtn.disabled = true;
@@ -643,7 +669,6 @@
     try {
       syncSaveButtonState();
       ensureSession();
-      showSetupNote();
       await loadGroups();
       await fetchProfile();
     } catch (err) {
@@ -652,8 +677,8 @@
   });
 </script>
 <!-- page logic(s) ... -->
-<script defer src="./scripts/appbar-drawer.js?v=2026.03.29A"></script>
-<script defer src="./ui-shell.js?v=2026.03.29A"></script>
+<script defer src="./scripts/appbar-drawer.js?v=2026.11.19E"></script>
+<script defer src="./ui-shell.js?v=2026.11.19E"></script>
 
 <!-- Floating avatar (optional) -->
 <script type="module" src="./avatar-float.js?v=2026.03.29A"></script>

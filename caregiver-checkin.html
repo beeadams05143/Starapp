@@ -2124,6 +2124,8 @@
     #shiftSupportLog :is(select, input:not([type="checkbox"]), textarea) { width:100%; min-height:44px; }
     #shiftSupportLog .support-activities label { display:flex; align-items:center; gap:8px; padding:6px 0; }
     #shiftSupportLog input[type="checkbox"] { width:auto; }
+    #healthConcernsPanel[hidden] { display:none !important; }
+    #healthConcernsPanel, .physical-general-row:has(#healthConcernsPanel) > .question-block { grid-column:1 / -1; }
     #prnEntriesWrap.is-hidden { display:none; }
     #centralPrnSection:not(:has(#prnEntriesWrap:not(.is-hidden))) { padding:10px 12px; gap:6px; }
     #centralPrnSection .question-block { margin:0; display:flex; align-items:center; flex-wrap:wrap; gap:4px 12px; }
@@ -2370,6 +2372,88 @@
                 <label class="yn-pill"><input type="radio" name="appears_good_health" value="no"> No</label>
               </div>
             </div>
+          <details class="health-concerns" id="healthConcernsPanel" hidden>
+            <summary>Illness / Discomfort</summary>
+            <div class="health-concerns-body">
+              <div class="temp-panel" id="tempPanel">
+                <div class="temp-head">
+                  <div>
+                    
+                    <p class="temp-desc">Track illness symptoms, pain, physical discomfort, shakiness, headache, stomach upset, or other body-based concerns in one place.</p>
+                  </div>
+                </div>
+                <div class="temp-yn" role="group" aria-label="Symptoms or discomfort today">
+                  <strong>Symptoms or discomfort today?</strong>
+                  <label class="temp-pill"><input type="radio" name="temp_present" value="no"> No</label>
+                  <label class="temp-pill"><input type="radio" name="temp_present" value="yes"> Yes</label>
+	                </div>
+                <div class="temp-body is-collapsed" data-temp-body-wrap>
+                  <div class="temp-row temp-row--illness">
+                    <div>
+                      <label class="temp-label" for="temp_value">Temperature (if taken)</label>
+                      <select name="temp_value" id="temp_value">
+                        <option value="">Select temp</option>
+                        <option value="96.0">96.0°F</option>
+                        <option value="96.5">96.5°F</option>
+                        <option value="97.0">97.0°F</option>
+                        <option value="97.5">97.5°F</option>
+                        <option value="98.0">98.0°F</option>
+                        <option value="98.6">98.6°F</option>
+                        <option value="99.0">99.0°F</option>
+                        <option value="99.5">99.5°F</option>
+                        <option value="100.0">100.0°F</option>
+                        <option value="100.4">100.4°F</option>
+                        <option value="101.0">101.0°F</option>
+                        <option value="101.5">101.5°F</option>
+                        <option value="102.0">102.0°F</option>
+                        <option value="102.5">102.5°F</option>
+                        <option value="103.0">103.0°F</option>
+                        <option value="104.0">104.0°F</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="temp-label" for="temp_method">How measured</label>
+                      <select name="temp_method" id="temp_method">
+                        <option value="">Select method</option>
+                        <option value="oral">Oral</option>
+                        <option value="ear">Ear</option>
+                        <option value="forehead">Forehead</option>
+                        <option value="axillary">Underarm</option>
+                        <option value="temporal">Temporal</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="temp-label" style="margin-top:12px">Symptoms / concerns</div>
+                  <div class="temp-grid temp-grid--illness checkbox-grid">
+                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="pain_discomfort">Pain / discomfort</label>
+                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="runny_nose">Runny nose</label>
+                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="cough">Cough</label>
+                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="congestion">Congestion</label>
+                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="sore_throat">Sore throat</label>
+                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="chills">Chills</label>
+                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="headache">Headache</label>
+                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="stomach_discomfort">Stomach discomfort</label>
+                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="fatigue">Fatigue</label>
+                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="body_aches">Body aches</label>
+                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="shakiness_restlessness">Shakiness / restlessness</label>
+                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="nausea">Nausea</label>
+                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="vomiting">Vomiting</label>
+                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="diarrhea">Diarrhea</label>
+                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="rash">Rash</label>
+                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="other">Other</label>
+                  </div>
+                  <div class="temp-inline-input" style="margin-top:8px">
+                    <input type="text" name="temp_symptom_other" id="temp_symptom_other" placeholder="Other symptom (optional)"/>
+                  </div>
+                  <input type="hidden" name="temp_symptoms" id="temp_symptoms" value=""/>
+
+                  <label class="temp-label" for="temp_notes" style="margin-top:10px">Notes (optional)</label>
+                  <input type="text" name="temp_notes" id="temp_notes" placeholder="Short note, e.g. warm at 7am"/>
+                </div>
+              </div>
+            </div>
+          </details>
             <div id="question-appears-tired" class="question-block">
               <div class="movement-label">Appears tired?</div>
               <div class="yn-pill-group" role="group" aria-label="Appears tired">
@@ -2452,88 +2536,6 @@
             </label>
             <div class="physical-spacer" aria-hidden="true"></div>
           </div>
-          <details class="health-concerns" id="healthConcernsPanel">
-            <summary>Illness / Discomfort</summary>
-            <div class="health-concerns-body">
-              <div class="temp-panel" id="tempPanel">
-                <div class="temp-head">
-                  <div>
-                    <div class="temp-title">Illness Symptoms / Discomfort</div>
-                    <p class="temp-desc">Track illness symptoms, pain, physical discomfort, shakiness, headache, stomach upset, or other body-based concerns in one place.</p>
-                  </div>
-                </div>
-                <div class="temp-yn" role="group" aria-label="Symptoms or discomfort today">
-                  <strong>Symptoms or discomfort today?</strong>
-                  <label class="temp-pill"><input type="radio" name="temp_present" value="no"> No</label>
-                  <label class="temp-pill"><input type="radio" name="temp_present" value="yes"> Yes</label>
-	                </div>
-                <div class="temp-body is-collapsed" data-temp-body-wrap>
-                  <div class="temp-row temp-row--illness">
-                    <div>
-                      <label class="temp-label" for="temp_value">Temperature (if taken)</label>
-                      <select name="temp_value" id="temp_value">
-                        <option value="">Select temp</option>
-                        <option value="96.0">96.0°F</option>
-                        <option value="96.5">96.5°F</option>
-                        <option value="97.0">97.0°F</option>
-                        <option value="97.5">97.5°F</option>
-                        <option value="98.0">98.0°F</option>
-                        <option value="98.6">98.6°F</option>
-                        <option value="99.0">99.0°F</option>
-                        <option value="99.5">99.5°F</option>
-                        <option value="100.0">100.0°F</option>
-                        <option value="100.4">100.4°F</option>
-                        <option value="101.0">101.0°F</option>
-                        <option value="101.5">101.5°F</option>
-                        <option value="102.0">102.0°F</option>
-                        <option value="102.5">102.5°F</option>
-                        <option value="103.0">103.0°F</option>
-                        <option value="104.0">104.0°F</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label class="temp-label" for="temp_method">How measured</label>
-                      <select name="temp_method" id="temp_method">
-                        <option value="">Select method</option>
-                        <option value="oral">Oral</option>
-                        <option value="ear">Ear</option>
-                        <option value="forehead">Forehead</option>
-                        <option value="axillary">Underarm</option>
-                        <option value="temporal">Temporal</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div class="temp-label" style="margin-top:12px">Symptoms / concerns</div>
-                  <div class="temp-grid temp-grid--illness checkbox-grid">
-                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="pain_discomfort">Pain / discomfort</label>
-                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="runny_nose">Runny nose</label>
-                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="cough">Cough</label>
-                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="congestion">Congestion</label>
-                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="sore_throat">Sore throat</label>
-                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="chills">Chills</label>
-                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="headache">Headache</label>
-                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="stomach_discomfort">Stomach discomfort</label>
-                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="fatigue">Fatigue</label>
-                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="body_aches">Body aches</label>
-                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="shakiness_restlessness">Shakiness / restlessness</label>
-                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="nausea">Nausea</label>
-                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="vomiting">Vomiting</label>
-                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="diarrhea">Diarrhea</label>
-                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="rash">Rash</label>
-                    <label class="temp-chip checkbox-card"><input type="checkbox" data-temp-symptom value="other">Other</label>
-                  </div>
-                  <div class="temp-inline-input" style="margin-top:8px">
-                    <input type="text" name="temp_symptom_other" id="temp_symptom_other" placeholder="Other symptom (optional)"/>
-                  </div>
-                  <input type="hidden" name="temp_symptoms" id="temp_symptoms" value=""/>
-
-                  <label class="temp-label" for="temp_notes" style="margin-top:10px">Notes (optional)</label>
-                  <input type="text" name="temp_notes" id="temp_notes" placeholder="Short note, e.g. warm at 7am"/>
-                </div>
-              </div>
-            </div>
-          </details>
           <div class="temp-panel" id="menstrualPanel">
             <div class="temp-head">
               <div>
@@ -5056,10 +5058,10 @@
 
     setConfigHidden([
       document.getElementById('question-appears-good-health'),
-    ], !visibility.goodHealth);
+    ], !(visibility.goodHealth || symptomPanelEnabled));
 
     setConfigHidden([
-      document.getElementById('tempPanel'),
+      document.getElementById('healthConcernsPanel'),
     ], !symptomPanelEnabled);
 
     setConfigHidden([
@@ -5434,7 +5436,10 @@
 
   const syncHealthConcernsDisclosure = (data = {}) => {
     if (!healthConcernsPanel) return;
-    healthConcernsPanel.open = hasHealthConcernData(data);
+    const health = getYnValue('appears_good_health');
+    const show = health === 'no' || (!health && hasHealthConcernData(data));
+    healthConcernsPanel.hidden = !show;
+    healthConcernsPanel.open = show;
   };
 
   const syncMedTimeWindow = () => {
@@ -5779,6 +5784,9 @@
         const present = el.value === 'yes';
         setMovementPresent(present);
       });
+    });
+    document.querySelectorAll('input[name="appears_good_health"]').forEach(el => {
+      el.addEventListener('change', () => syncHealthConcernsDisclosure());
     });
     document.querySelectorAll('input[name="temp_present"]').forEach((el) => {
       el.addEventListener('change', () => {
@@ -6653,10 +6661,16 @@
       if (caregiverSetupState.isParent) return [];
       const selected = caregiverSetupState.selectedCategories;
       const saved = caregiverSetupState.selectedItems?.__support_services__;
-      return Object.entries(SHIFT_SERVICE_KEYS).flatMap(([key, [support, legacy]]) => {
-        const enabled = saved && typeof saved === 'object'
+      const services = Object.entries(SHIFT_SERVICE_KEYS);
+      const legacyEnabled = (key, category) => selected.has(category) || (key === 'home' && selected.has('home_family'));
+      const hasExplicitServices = saved && typeof saved === 'object' &&
+        (caregiverSetupState.assignmentId || caregiverSetupState.hasConfig || Object.keys(saved).length);
+      const useStandardServices = !caregiverSetupState.assignmentId &&
+        !services.some(([key, [, category]]) => legacyEnabled(key, category));
+      return services.flatMap(([key, [support, legacy]]) => {
+        const enabled = hasExplicitServices
           ? Object.hasOwn(saved, key)
-          : isPractice || selected.has(legacy) || (key === 'home' && selected.has('home_family'));
+          : isPractice || useStandardServices || legacyEnabled(key, legacy);
         return enabled ? [{ support, location: typeof saved?.[key] === 'string' ? saved[key] : '' }] : [];
       });
     }
@@ -6987,6 +7001,9 @@
 	      const payload={};
 	      steps.forEach((s,idx)=>{
 	        const data = serialize(s);
+            if (s.id === 'physicalSection' && (healthConcernsPanel.hidden || healthConcernsPanel.classList.contains('config-hidden'))) {
+              for (const field of healthConcernsPanel.querySelectorAll('[name]')) delete data[field.name];
+            }
 	        const def = getSectionDefForStep(s);
 	        if (def && isQuickClearedStatus(def)) {
 	          if (def.key === 'physical') {
@@ -7060,7 +7077,7 @@
       clearTempFields();
       clearMenstrualFields();
       clearMedFields();
-      if (healthConcernsPanel) healthConcernsPanel.open = false;
+      syncHealthConcernsDisclosure();
       tempEls.bodyWrap?.classList.add('is-collapsed');
       menstrualEls.bodyWrap?.classList.add('is-collapsed');
       setMedChangePresent(false);
@@ -7092,7 +7109,7 @@
       clearTempFields();
       clearMenstrualFields();
       setMedChangePresent(false);
-      if (healthConcernsPanel) healthConcernsPanel.open = false;
+      syncHealthConcernsDisclosure();
       clearHomeCommunityAdlFields();
       renderAdlActivityChips();
       syncManiaControls();
@@ -7165,6 +7182,7 @@
       const radioSeen = new Set();
       const fields = container.querySelectorAll('input,select,textarea');
       fields.forEach((field) => {
+        if (field.closest("#healthConcernsPanel[hidden], #healthConcernsPanel.config-hidden")) return;
         const value = fieldDisplayValue(field, radioSeen);
         if (value === null || value === undefined || value === '') return;
         const label = extractLabelText(field);

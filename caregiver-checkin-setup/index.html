@@ -330,7 +330,9 @@
       .card-head{ flex-direction:column; align-items:stretch; }
       .count-pill{ align-self:flex-start; }
     }
-    .question-followups { display:block; font-weight:400; margin-top:4px; }
+    .question-followups { margin: 4px 0 14px 36px; padding-left: 20px; color: #26334a; line-height: 1.55; }
+  .question-context { margin: 8px 0 4px 36px; font-weight: 600; }
+  .question-followups li + li { margin-top: 3px; }
   [data-assigned-service] .item-label { margin:8px 0; }
   .optional-tracking { margin-top:12px; }
   .optional-tracking > summary { cursor:pointer; margin-bottom:8px; }
@@ -370,38 +372,47 @@
       <p id="assignmentHelp" class="muted">Select an individual and a caregiver to make a personal assignment.</p>
       <fieldset id="movementSetup" disabled>
         <legend>Involuntary Movements / Vocalizations</legend>
-        <label><input type="checkbox" id="trackMovement"> Show this question</label>
+        <label><input type="checkbox" id="trackMovement"> Any involuntary movements or vocalizations today?</label>
+        <ul class="question-followups"><li>Main symptom</li><li>Severity</li><li>Times</li><li>Notes (optional)</li><li>Optional symptom details</li></ul>
         <p id="movementSetupHelp" class="muted"></p>
       </fieldset>
       <fieldset id="assignedServices">
         <legend>Services this caregiver provides</legend>
-        <p>Choose the services to include in this check-in. Add a default location if the setting is consistent.</p>
+        <p>Choose the questions to include. The prompts listed under a checkbox are included with that question when they apply. Add a default location if the setting is consistent.</p>
         <div data-assigned-service="home" style="margin:12px 0">
           <label class="category-toggle"><input type="checkbox" data-service-toggle> In-Home Support</label>
-          <label class="item-label"><input type="checkbox" data-service-question="activity"><span>Engaged in a home/community activity?<small class="question-followups">Yes opens time spent, prompting, activity type, and home notes.</small></span></label>
-          <label class="item-label"><input type="checkbox" data-service-question="daily_living"><span>Daily Living activities<small class="question-followups">Includes activities, prompting or independence, and daily living notes.</small></span></label>
+          <label class="item-label"><input type="checkbox" data-service-question="activity"><span>Engaged in a home/community activity?</span></label>
+          <ul class="question-followups"><li>Time spent (home):</li><li>Prompting (home):</li><li>Home activity type</li><li>Home / family notes:</li></ul>
+          <label class="item-label"><input type="checkbox" data-service-question="daily_living"><span>Daily Living activities</span></label>
+          <ul class="question-followups"><li>ADL activities</li><li>ADL note:</li><li>Prompting / independence:</li><li>Daily living notes:</li></ul>
+          <p class="question-context">When pet tracking is available</p>
+          <ul class="question-followups"><li>Pet interaction?</li><li>Pet activity type:</li><li>Pet activity note:</li><li>Pet interaction notes:</li></ul>
           <label data-service-setting hidden>Default location (optional)
             <input type="text" maxlength="120" placeholder="Enter a location or setting">
           </label>
         </div>
         <div data-assigned-service="community" style="margin:12px 0">
           <label class="category-toggle"><input type="checkbox" data-service-toggle> Community Support</label>
-          <label class="item-label"><input type="checkbox" data-service-question="activity"><span>Participated in a community activity or event?<small class="question-followups">Yes opens the time spent and prompting dropdowns, activity type, and a note.</small></span></label>
-          <label class="item-label"><input type="checkbox" data-service-question="interaction"><span>Engaged with a community member appropriately?<small class="question-followups">Includes interaction type, prompting, and an interaction note.</small></span></label>
+          <label class="item-label"><input type="checkbox" data-service-question="activity"><span>Participated in a community activity or event?</span></label>
+          <ul class="question-followups"><li>Time spent (community-at-large):</li><li>Prompting (community-at-large):</li><li>Community activity type</li><li>Community activity note:</li></ul>
+          <label class="item-label"><input type="checkbox" data-service-question="interaction"><span>Engaged with a community member appropriately?</span></label>
+          <ul class="question-followups"><li>Interaction type</li><li>Prompting (interaction):</li><li>Interaction note:</li></ul>
           <label data-service-setting hidden>Default location (optional)
             <input type="text" maxlength="120" placeholder="Enter a location or setting">
           </label>
         </div>
         <div data-assigned-service="employment" style="margin:12px 0">
           <label class="category-toggle"><input type="checkbox" data-service-toggle> Ongoing Supported Employment</label>
-          <label class="item-label"><input type="checkbox" data-service-question="participation"><span>Participated in vocational activity?<small class="question-followups">Yes opens the time in vocational activity and prompting dropdowns, and vocational notes.</small></span></label>
+          <label class="item-label"><input type="checkbox" data-service-question="participation"><span>Participated in vocational activity?</span></label>
+          <ul class="question-followups"><li>Time in vocational activity:</li><li>Prompting (vocational):</li><li>Vocational notes:</li></ul>
           <label data-service-setting hidden>Default location (optional)
             <input type="text" maxlength="120" placeholder="Enter a location or setting">
           </label>
         </div>
         <div data-assigned-service="respite" style="margin:12px 0">
           <label class="category-toggle"><input type="checkbox" data-service-toggle> Respite</label>
-          <label class="item-label"><input type="checkbox" data-service-question="support"><span>What support did you provide during respite?<small class="question-followups">Includes support activities, location, minutes, and an optional note.</small></span></label>
+          <label class="item-label"><input type="checkbox" data-service-question="support"><span>What support did you provide during respite?</span></label>
+          <ul class="question-followups"><li>Minutes (optional)</li><li>Note (optional)</li></ul>
           <label data-service-setting hidden>Default location (optional)
             <input type="text" maxlength="120" placeholder="Enter a location or setting">
           </label>
@@ -906,6 +917,64 @@
       return DEFAULT_ITEM_DESCRIPTIONS[itemKey] || `Define what caregivers should count for ${itemLabel}.`;
     }
 
+    const checkinFollowups = {
+      "sleep": [
+        "Add sleep information / Sleep not observed",
+        "Time fell asleep",
+        "Did it take 2 hours or more to fall asleep?",
+        "Hours of sleep",
+        "Woke up during the night?",
+        "How many times?",
+        "Sleep notes (optional)"
+      ],
+      "appetite": [
+        "Appetite shift:"
+      ],
+      "prn_used": [
+        "Time",
+        "Medication",
+        "Reason",
+        "Notes (optional)"
+      ],
+      "illness_symptoms": [
+        "Symptoms or discomfort today?",
+        "Temperature (if taken)",
+        "How measured",
+        "Symptoms / concerns",
+        "Notes (optional)"
+      ],
+      "pain_discomfort": [
+        "Symptoms or discomfort today?",
+        "Symptoms / concerns",
+        "Notes (optional)"
+      ],
+      "menstrual_tracking": [
+        "Symptoms",
+        "Other symptom (optional)",
+        "Notes (optional)"
+      ],
+      "safety_incident_occurred": [
+        "Aggression was involved",
+        "Aggression type",
+        "Aggression intensity (0–5)",
+        "Where did it happen? (optional)",
+        "What happened? (Include what preceded it, staff response, and outcome if known)"
+      ]
+    };
+
+    function appendCheckinFollowups(container, itemKey) {
+      const questions = checkinFollowups[itemKey];
+      if (!questions) return;
+      const list = document.createElement('ul');
+      list.className = 'question-followups';
+      questions.forEach(question => {
+        const row = document.createElement('li');
+        row.textContent = question;
+        list.appendChild(row);
+      });
+      container.appendChild(list);
+    }
+
     function getItemTrackingOptions(itemKey) {
       return Array.isArray(DEFAULT_ITEM_TRACKING_OPTIONS[itemKey]) ? DEFAULT_ITEM_TRACKING_OPTIONS[itemKey] : [];
     }
@@ -1144,6 +1213,7 @@
             label.appendChild(text);
             li.appendChild(label);
             li.appendChild(buildItemDetail(input, itemKey, itemLabel));
+            appendCheckinFollowups(li, itemKey);
             itemList.appendChild(li);
 
             input.addEventListener('change', () => {
@@ -1199,6 +1269,7 @@
             label.appendChild(text);
             behaviorList.appendChild(label);
             if (!behavior.original) behaviorList.appendChild(buildItemDetail(input, behavior.key, behavior.label));
+            appendCheckinFollowups(behaviorList, behavior.key);
 
             input.addEventListener('change', () => {
               syncCategoryState(category.key);

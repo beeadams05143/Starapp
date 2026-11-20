@@ -3271,7 +3271,8 @@
   })();
 
   const shouldUseCustomCaregiverSetup = () => caregiverSetupState.hasConfig === true;
-  const shouldShowMovementSection = () => (
+  const shouldShowMovementSection = () => caregiverSetupState.groupTracksMovement !== false &&
+    caregiverSetupState.selectedItems?.__track_movement__ !== false && (
     shouldUseCustomCaregiverSetup()
       ? caregiverSetupState.selectedCategories.has('behavior_mental_health')
       : legacyCaregiverConfig.show_movement
@@ -4798,8 +4799,13 @@
 
   async function loadGroupCaregiverSetup(userId){
     const currentGroup=await ensureGroupId(userId);
+    caregiverSetupState.isParent = false;
     let assignments=[];
     if(currentGroup && userId){
+      const team = await rest('rpc/star_team_members', {
+        method:'POST', body:JSON.stringify({p_group_id:currentGroup})
+      });
+      caregiverSetupState.isParent = team?.some(member => member.user_id === userId && member.assigned_role === 'parent');
       assignments=await rest('star_caregiver_checkin_assignments?select=*&active=eq.true&group_id=eq.'+
         encodeURIComponent(currentGroup)+'&caregiver_user_id=eq.'+encodeURIComponent(userId)+'&order=created_at.asc');
     }
@@ -4823,13 +4829,15 @@
       }
     }
     const groupId = currentGroup;
-    let config = assigned;
-    if (!config && groupId) {
+    let groupConfig = null;
+    if (groupId) {
       const rows = await rest(
         `caregiver_checkin_configs?group_id=eq.${encodeURIComponent(groupId)}&select=id,group_id,individual_id,selected_categories,selected_items,updated_at&order=updated_at.desc.nullslast&limit=1`
       );
-      config = rows?.[0] || null;
+      groupConfig = rows?.[0] || null;
     }
+    const config = assigned || groupConfig;
+    caregiverSetupState.groupTracksMovement = parseConfigObject(groupConfig?.selected_items)?.__track_movement__ !== false;
     caregiverSetupState.groupIndividualName = '';
     if (!assigned && individualWrap && individualSelect) {
       const profile = parseConfigObject(config?.selected_items)?.__individual_profile__;
@@ -4849,7 +4857,7 @@
       };
       window.dispatchEvent(new Event('star-caregiver-assignment-ready'));
     };
-    if (caregiverSetupState.forceLegacyMode && !assigned) {
+    if (caregiverSetupState.forceLegacyMode && !assigned && !caregiverSetupState.isParent && !isCustomCaregiverSetupEnabled(config)) {
       caregiverSetupState.groupId = currentGroup;
       caregiverSetupState.configRowId = null;
       caregiverSetupState.hasConfig = false;
@@ -4866,11 +4874,29 @@
     caregiverSetupState.selectedItems = {};
     caregiverSetupState.itemDescriptions = {};
     if (config && isCustomCaregiverSetupEnabled(config)) {
+      caregiverSetupState.forceLegacyMode = false;
       caregiverSetupState.configRowId = config.id || null;
       caregiverSetupState.hasConfig = true;
       caregiverSetupState.selectedCategories = new Set(normalizeConfigCategories(config.selected_categories));
       caregiverSetupState.selectedItems = normalizeConfigItems(config.selected_items);
       caregiverSetupState.itemDescriptions = normalizeItemDescriptions(parseConfigObject(config.selected_items)?.__item_descriptions__);
+    }
+
+    if (caregiverSetupState.isParent) {
+      caregiverSetupState.forceLegacyMode = false;
+      caregiverSetupState.hasConfig = true;
+      if (!assigned) {
+        caregiverSetupState.selectedCategories = new Set(['physical_health','behavior_mental_health']);
+        caregiverSetupState.selectedItems = {
+          ...caregiverSetupState.selectedItems,
+          physical_health: ['sleep','good_health','illness_symptoms','pain_discomfort','energy_level','appetite'],
+        };
+      } else {
+        const allowed = new Set(['physical_health','behavior_mental_health']);
+        caregiverSetupState.selectedCategories = new Set(
+          [...caregiverSetupState.selectedCategories].filter(category => allowed.has(category))
+        );
+      }
     }
 
     // In UVM Testing, the shared admin editor and its Supabase records are the
@@ -4912,7 +4938,7 @@
     setStepAndNavHidden(communityStep, progressItems.community, !getAssignedShiftServices().length);
     syncAssignedShiftServiceCards();
     setStepAndNavHidden(dailyLivingStep, progressItems.daily_living, true);
-    setStepAndNavHidden(educationalStep, progressItems.educational, false);
+    setStepAndNavHidden(educationalStep, progressItems.educational, caregiverSetupState.isParent);
 
     setConfigHidden([
       document.getElementById('educationalAdvanced'),
@@ -4996,6 +5022,7 @@
     // Medication plans are managed by group admins in Team Updates,
     // never in caregiver shift check-ins. The PRN administration log stays here.
     const prnEnabled = visibility.prn;
+    setConfigHidden([document.getElementById("centralPrnSection")], caregiverSetupState.isParent && !prnEnabled);
     const movementEnabled = visibility.movement;
 
     setStepAndNavHidden(physicalStep, progressItems.physical, !physicalVisible);
@@ -5007,7 +5034,7 @@
     setStepAndNavHidden(dailyLivingStep, progressItems.daily_living, true);
     // The short optional educational note is available regardless of setup.
     // Detailed educational tracking remains conditional on caregiver setup.
-    setStepAndNavHidden(educationalStep, progressItems.educational, false);
+    setStepAndNavHidden(educationalStep, progressItems.educational, caregiverSetupState.isParent);
 
     setConfigHidden([
       labelForName('hours_sleep'),
@@ -5980,7 +6007,7 @@
     // Keep ISA as a separate, optional guided screen, only when assigned cards exist.
     const isaStep=document.getElementById('isa-outcomes-step');
     const updateIsaStepVisibility=()=>{
-      const showIsa=window.starIsaHasAssignedOutcomes===true || window.starIsaLoadFailed===true;
+      const showIsa=!caregiverSetupState.isParent && (window.starIsaHasAssignedOutcomes===true || window.starIsaLoadFailed===true);
       if (isaStep) {
         isaStep.hidden=!showIsa;
         isaStep.setAttribute('aria-hidden',String(!showIsa));
@@ -6624,6 +6651,7 @@
     let renderedShiftServices = '';
 
     function getAssignedShiftServices() {
+      if (caregiverSetupState.isParent) return [];
       const selected = caregiverSetupState.selectedCategories;
       const saved = caregiverSetupState.selectedItems?.__support_services__;
       return Object.entries(SHIFT_SERVICE_KEYS).flatMap(([key, [support, legacy]]) => {
@@ -7180,7 +7208,7 @@
 	      prnHeader.textContent = 'PRN Medication';
 	      prnCard.appendChild(prnHeader);
 	      prnItems.forEach((item) => appendReviewItem(prnCard, item));
-	      reviewSectionsEl.appendChild(prnCard);
+	      if (!document.getElementById("centralPrnSection").classList.contains("config-hidden")) reviewSectionsEl.appendChild(prnCard);
 	      SECTION_STATUS_DEFS.forEach((def) => {
 	        const sectionEl = document.getElementById(def.stepId);
         if (isStepHidden(sectionEl)) return;
@@ -7209,7 +7237,7 @@
         reviewSectionsEl.appendChild(card);
       });
       // Present ISA answers alongside existing health answers for review.
-      const isaReviewEntries = window.starIsaCollectEntries?.() || [];
+      const isaReviewEntries = caregiverSetupState.isParent ? [] : (window.starIsaCollectEntries?.() || []);
       if(isaReviewEntries.length){
         const isaCard=document.createElement('section');
         isaCard.className='review-section';
@@ -7269,7 +7297,7 @@
           payload.caregiver_user_id=user_id;
         }
         // ISA answers are a separate typed collection; do not alter existing health fields.
-        payload.isa_entries = window.starIsaCollectEntries?.() || [];
+        payload.isa_entries = caregiverSetupState.isParent ? [] : (window.starIsaCollectEntries?.() || []);
         // New check-ins never create medication-plan entries. Historical
         // submitted check-ins remain untouched, and PRN fields are unaffected.
         LEGACY_MED_FIELDS.forEach(key => delete payload[key]);

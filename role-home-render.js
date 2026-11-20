@@ -1,13 +1,15 @@
 import {roleHome,roleLabels} from './role-home-model.mjs';
 import {dashboardGroups,shortTitles,iconPaths} from './dashboard-layout.mjs';
-export function renderRoleHome(root,role,name,{preview=false}={}) {
+export function renderRoleHome(root,role,name,{preview=false,workspaceName=''}={}) {
   const view=roleHome(role,name),groups=dashboardGroups(view,role);
   root.replaceChildren();
   function el(tag,text,parent=root){const n=document.createElement(tag);if(text)n.textContent=text;parent.append(n);return n;}
   const header=el('header');header.className='dashboard-heading';
   el('p',roleLabels[role]+(preview?' · Preview':''),header).className='role-label';
   el('h1',role==='case_manager'?'Team overview':'Your STAR dashboard',header);
-  el('p',name+' · '+(preview?'View only':'Team workspace'),header).className='dashboard-person';
+  const groupLabel=workspaceName.trim();
+  const workspaceLabel=groupLabel && !groupLabel.includes('@') ? groupLabel : 'Team workspace';
+  el('p',preview?'View only':workspaceLabel,header).className='dashboard-person';
   const nav=el('nav');nav.className='dashboard-menu';nav.setAttribute('aria-label','Dashboard sections');nav.setAttribute('data-columns',String(groups.length));
   const content=el('div');content.className='dashboard-content';
   const buttons=[],panels=[];

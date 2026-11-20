@@ -45,7 +45,15 @@ const flatten=n=>[n,...n.children.flatMap(flatten)];
 test('working dashboards contain links; read-only previews share cards but cannot navigate or save',()=>{
  const render=renderer();for(const role of roles){const live=new Element('main'),preview=new Element('main');render(live,role,'Alex');render(preview,role,'Alex',{preview:true});const links=flatten(live).filter(n=>n.tagName==='a');assert.ok(links.length>=(role==='case_manager'?2:4));assert.equal(flatten(preview).filter(n=>n.tagName==='a'||n.tagName==='form').length,0);assert.deepEqual(links.map(n=>n.children[0].textContent),flatten(preview).filter(n=>n.attrs['aria-disabled']==='true').map(n=>n.children[0].textContent));}
 });
-test('names are rendered as text, never interpreted as markup',()=>{const root=new Element('main');renderer()(root,'case_manager','<img src=x onerror=alert(1)>');assert.ok(flatten(root).some(n=>n.textContent?.includes('<img')));assert.ok(flatten(root).every(n=>n.innerHTML===undefined));});
+test('names are rendered as text, never interpreted as markup',()=>{const root=new Element('main');renderer()(root,'case_manager','Alex',{workspaceName:'<img src=x onerror=alert(1)>'});assert.ok(flatten(root).some(n=>n.textContent?.includes('<img')));assert.ok(flatten(root).every(n=>n.innerHTML===undefined));});
+test('workspace header uses the group name and suppresses email-style labels',()=>{
+ const root=new Element('main'),render=renderer();
+ const label=()=>flatten(root).find(node=>node.className==='dashboard-person').textContent;
+ render(root,'administrator','individual@example.com',{workspaceName:'Family team'});
+ assert.equal(label(),'Family team');
+ render(root,'administrator','individual@example.com',{workspaceName:'individual@example.com'});
+ assert.equal(label(),'Team workspace');
+});
 const dash=readFileSync('role-dashboard.js','utf8').replace(/^import.*\n/gm,'').replace("await import('./home-activity.js')",'Promise.resolve()').replace(/init\(\)\.catch[\s\S]*$/,'globalThis.boot=init;');
 for(const role of roles)test(`${role} opens its working home after sign-in`,async()=>{
  const elements=Object.fromEntries(['homeStatus','roleHome','activitySection'].map(id=>[id,new Element('div')]));const replacements=[],renders=[];

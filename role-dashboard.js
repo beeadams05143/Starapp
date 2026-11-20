@@ -1,5 +1,5 @@
-import {loadRoleContext} from './role-context.js';
-import {renderRoleHome,setRoleBadge} from './role-home-render.js?v=2026.11.09-dashboard-sections';
+import {loadRoleContext} from './role-context.js?v=2026.11.19F';
+import {renderRoleHome,setRoleBadge} from './role-home-render.js?v=2026.11.19F';
 import {unreadMessagesQuery} from './chat-alerts.js';
 import {rest,getSessionFromStorage} from './restClient.js';
 import {getSavedDraftCount} from './home-saved-drafts.js?v=2026.10.28D';
@@ -9,8 +9,11 @@ async function init(){
   if(!context.group){status.textContent='Create or join a group to open your team workspace.';const a=document.createElement('a');a.href='group-setup.html';a.textContent=' Create or join a group';status.append(a);return;}
   if(context.role==='individual'){location.replace('my-star.html');return;}
   const people=context.members.filter(m=>m.assigned_role==='individual');
-  const name=people.length===1?people[0].display_name:people.length?'the individuals on your team':'the individual';
-  renderRoleHome(root,context.role,name);root.hidden=false;status.textContent='Signed in as '+context.self.display_name+'.';
+  const displayName=people.length===1 ? people[0].display_name?.trim() : '';
+  const name=displayName && !displayName.includes('@')
+    ? displayName
+    : people.length>1 ? 'the individuals on your team' : 'the individual';
+  renderRoleHome(root,context.role,name,{workspaceName:context.groupName});root.hidden=false;status.textContent='Signed in as '+context.self.display_name+'.';
   // Badge state survives switching between previews and the working Admin home.
   async function refreshBadges(){
     if(getSessionFromStorage()?.user?.id!==context.uid)return;

@@ -266,7 +266,7 @@ import { getSessionFromStorage } from "./restClient.js";
       if(activeRecognition!==recognition)return;
       btn.setAttribute('aria-pressed','true');
       btn.textContent='⏹ Stop Listening';
-      setDictateHint('Listening… say what you did. Your words should appear as you speak.');
+      setDictateHint('Listening… say your words. They should appear as you speak.');
     };
     recognition.onresult=function(event){
       if(activeRecognition!==recognition)return;
@@ -573,7 +573,8 @@ import { getSessionFromStorage } from "./restClient.js";
         dictateControls('micSetupText')+
         '<div class="actions">'+button('Back to My STAR','skip','primary')+'</div>');
     } else if(page==='feel'){
-      wrap('How I Feel','<p>Pick a face. You do not have to answer.</p><div class="choices">'+choice('Happy','😊','Happy')+choice('Okay','😐','Okay')+choice('Sad','😢','Sad')+choice('Upset','😠','Upset')+choice('Tired','😴','Tired')+choice('Unwell','🤒','Not feeling good')+'</div>'+support()+'<div class="actions">'+button('Done','done','primary')+button('Not now','skip')+'</div>');
+      wrap('How I Feel','<p>Pick a face. You do not have to answer.</p><div class="choices">'+choice('Happy','😊','Happy')+choice('Okay','😐','Okay')+choice('Sad','😢','Sad')+choice('Upset','😠','Upset')+choice('Tired','😴','Tired')+choice('Unwell','🤒','Not feeling good')+'</div><label for="moodNote">Want to say more? (optional)</label>'+
+        dictateControls('moodNote')+'<textarea class="voice-input" id="moodNote" maxlength="2000" placeholder="Say or type what you want your team to know."></textarea>'+support()+'<div class="actions">'+button('Done','done','primary')+button('Not now','skip')+'</div>');
     } else if(page==='pain'){
       painSide='front';painPart='';wrap('Something Hurts','<p>Tap where it hurts. Pick front or back.</p><div class="body-switch"><button type="button" data-side="front" aria-pressed="true">FRONT</button><button type="button" data-side="back" aria-pressed="false">BACK</button></div><div class="body-layout" id="painPoster">'+bodyPoster(true)+'</div><p id="painLocation" class="selected-location" role="status">Choose a body part</p><div id="painSymptoms"></div>'+support()+'<div class="actions">'+button('Send to my team','chat-details','primary')+button('Not now','skip')+'</div>');
     } else if(page==='day'){
@@ -759,7 +760,9 @@ import { getSessionFromStorage } from "./restClient.js";
         return;
       }
       if(current==='feel'||current==='pain'||current==='day'){
-        savePersonalCheckin(a,current==='feel'?'mood':current==='pain'?'comfort':'daily_experience',chosen,[],current==='day'?(document.getElementById('dayActivity')?.value||'').trim():'');
+        const noteField=current==='feel'?'moodNote':current==='day'?'dayActivity':null;
+        const note=noteField?(document.getElementById(noteField)?.value||'').trim().slice(0,2000):'';
+        savePersonalCheckin(a,current==='feel'?'mood':current==='pain'?'comfort':'daily_experience',chosen,[],note);
         return;
       }
       if(current==='tell'&&messageField?.value.trim()){

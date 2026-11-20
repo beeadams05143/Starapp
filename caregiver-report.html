@@ -549,6 +549,8 @@
     body.print-export .kpi{padding:6px 8px;font-size:12px}
     #kpi-row{display:none}
     body[data-report-view="isa"] #wholePersonIntegratedPanel{display:block!important}
+    .mood-trend-chart{position:relative;height:clamp(240px,60vw,350px);min-width:0}
+    #moodTable td:last-child{white-space:pre-wrap;overflow-wrap:anywhere;min-width:5rem}
     #mood-panel{display:none}
     body[data-report-view="mood"] #mood-panel{display:block}
     body:not(.print-export):not(.quick-look-mode)[data-report-view="mood"] main.page > [data-print-section="Caregiver Overview"],
@@ -1624,6 +1626,13 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       </div>
 
       <p class="muted" id="moodReportStatus" role="status">Loading mood check-ins…</p>
+      <section id="moodTrend" aria-labelledby="moodTrendHeading" hidden>
+        <h3 id="moodTrendHeading">Mood Over Time</h3>
+        <p class="muted" id="moodTrendDescription"></p>
+        <div class="mood-trend-chart">
+          <canvas id="moodTrendCanvas" role="img" aria-labelledby="moodTrendHeading moodTrendDescription"></canvas>
+        </div>
+      </section>
       <div class="mood-table-wrap" style="max-height:340px;overflow:auto;border-radius:8px">
         <table id="moodTable">
           <thead><tr><th>Date</th><th>Mood</th><th>Notes</th></tr></thead>
@@ -2108,7 +2117,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       throw new Error('Report access requires a staff role.');
     }
     const { loadRoleContext } = await import('./role-context.js');
-    const { fetchMoodReportRows } = await import('./mood-report-data.js?v=2026.11.19-mood2');
+    const { fetchMoodReportRows, buildMoodTrend } = await import('./mood-report-data.js?v=2026.11.19-trend');
     const canEditCaregiverReport = reportRole !== 'case_manager';
     window.rest = rest;
     const isaReport = createIsaProgressReport({rest});
@@ -7335,6 +7344,43 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
     quickLookUi.close?.addEventListener('click', () => toggleQuickLook(false));
     initCheckinPrintCenter();
 
+    let moodTrendChart;
+    function renderMoodTrend(entries){
+      const panel=$('#moodTrend');
+      moodTrendChart?.destroy();
+      moodTrendChart=null;
+      panel.hidden=true;
+      if(!entries.length || !window.Chart)return;
+
+      const {period,labels,series}=buildMoodTrend(entries);
+      const colors=['#835711','#27648a','#8c4780','#368357','#ab472e','#52509b','#475569'];
+      $('#moodTrendDescription').textContent=
+        `Check-ins by ${period}. Each color represents a mood. See individual check-ins below.`;
+      panel.hidden=false;
+      const canvas=$('#moodTrendCanvas');
+      try {
+        moodTrendChart=new window.Chart(canvas,{
+          type:'bar',
+          data:{labels,datasets:series.map(({mood,counts},index)=>({
+            label:mood,data:counts,backgroundColor:colors[index%colors.length],maxBarThickness:46
+          }))},
+          options:{
+            responsive:true,maintainAspectRatio:false,
+            interaction:{mode:'index',intersect:false},
+            plugins:{legend:{position:'bottom',labels:{boxWidth:12}}},
+            scales:{
+              x:{stacked:true,ticks:{maxTicksLimit:7,maxRotation:0}},
+              y:{stacked:true,beginAtZero:true,ticks:{precision:0},title:{display:true,text:'Check-ins'}}
+            }
+          }
+        });
+      } catch(error) {
+        window.Chart.getChart(canvas)?.destroy();
+        panel.hidden=true;
+        console.warn('[report] Mood chart unavailable',error);
+      }
+    }
+
     let moodReportRevision=0;
     async function renderMoodSection(){
       const revision=++moodReportRevision;
@@ -7348,6 +7394,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
         return row;
       };
       status.textContent='Loading mood check-ins…';
+      renderMoodTrend([]);
       tb.replaceChildren();
       for(const id of ['Total','Common','Positive','Challenging']){
         $('#moodSummary'+id).textContent='—';
@@ -7406,6 +7453,7 @@ import { rest, getSessionFromStorage } from './restClient.js?v=2026.03.29A';
       $('#moodSummaryCommonInline').textContent = commonMood;
       $('#moodSummaryPositiveInline').textContent = pct(buckets.Positive || 0);
       $('#moodSummaryChallengingInline').textContent = pct(buckets.Challenging || 0);
+      renderMoodTrend(filteredMood);
       window.latestMoodAllEntries = full.slice();
       window.latestMoodEntries = filteredMood.slice();
       applyChartRange();

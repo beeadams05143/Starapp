@@ -436,15 +436,16 @@
       </div>
     </section>
     <section id="setupGrid" class="grid" aria-label="Caregiver setup categories" hidden></section>
-    <section id="isaLinkSetup" class="hero" hidden aria-label="ISA measurement links">
-      <h2>ISA measures — reuse a question or ask separately</h2>
-      <p>Choose an existing check-in answer only when it truly measures the same thing with the same units and response choices. Nothing is linked automatically. Blank means STAR asks the original ISA question separately.</p>
+    <section id="isaLinkSetup" class="hero" hidden aria-label="ISA Question Placement">
+      <h2>ISA Question Placement</h2>
+      <p>Choose where each follow-up appears. If that section is unavailable, it appears under Important observation. Linked questions use the original check-in answer.</p>
       <div id="isaMappingList"></div>
     </section>
     <section id="bottomSavePanel" class="hero" hidden aria-label="Save caregiver setup">
       <div class="actions">
         <button id="saveBtnBottom" type="button" class="btn" disabled>Save Caregiver Setup</button>
       </div>
+      <div class="actions"><a id="previewAssignedBottom" class="btn secondary" style="display:none">Preview Assigned Check-In</a></div>
       <div id="setupStatusBottom" class="status" role="status" aria-live="polite"></div>
     </section>
   </main>
@@ -1492,6 +1493,13 @@
       if (!stillCurrent()) return;
       state.configRowId = configRowId;
       state.assignmentId = assignmentId;
+      const preview = document.getElementById('previewAssignedBottom');
+      preview.removeAttribute('href');
+      preview.style.display = 'none';
+      if (assignmentId && config.active !== false) {
+        preview.href = '/caregiver-checkin.html?' + new URLSearchParams({ previewAssignment: assignmentId });
+        preview.style.display = '';
+      }
       const selectedCategories = new Set(normalizeCategoryArray(config?.selected_categories));
       const selectedItems = normalizeSelectedItems(config?.selected_items);
       state.loadedCustomMode = selectedItems.__custom_mode__ === true;
@@ -1532,8 +1540,9 @@
         syncCategoryState(category.key);
       });
 
+      await renderIsaMapping(selectedItems.__isa_placement__, stillCurrent);
+      if (!stillCurrent()) return;
       saveBtn.disabled = false;
-      await renderIsaMapping();
       setStatus(state.selectedCaregiver?'Caregiver-specific configuration loaded.':'Group defaults loaded.', 'success');
     }
 
@@ -1567,6 +1576,17 @@
         };
 
         if (state.selectedIndividual && state.selectedCaregiver) {
+          payload.selected_items.__isa_placement__ = Object.fromEntries(
+            [...linkHost.querySelectorAll('[data-isa-placement]')].map(row => [
+              row.dataset.isaPlacement, {
+                section: row.querySelector('[data-isa-section]').value,
+                after: row.querySelector('[data-isa-after]').value,
+                prompt: row.querySelector('[data-isa-prompt]').value.trim(),
+                steps: (row.querySelector('[data-isa-steps]')?.value || '').split('\n')
+                  .map(line => line.trim()).filter(Boolean).slice(0,20)
+              }
+            ])
+          );
           const assignment={
             group_id:state.groupId, individual_id:state.selectedIndividual,
             caregiver_user_id:state.selectedCaregiver,
@@ -1597,7 +1617,7 @@
 
         await completeGuidedOnboarding(state.userId);
         await loadConfig();
-        setStatus('Caregiver setup and approved ISA links saved. You can preview the caregiver check-in.', 'success');
+        setStatus(state.assignmentId ? 'Assignment saved. Tap Preview Assigned Check-In.' : 'Group defaults saved.', 'success');
       } catch (error) {
         console.error('[cg-setup] save failed', error);
         setStatus(error?.message || 'Could not save caregiver setup.', 'error');
@@ -1644,6 +1664,9 @@
       document.getElementById('assignmentHelp').textContent='Only registered people from this group appear in these lists.';
     }
     function selectedTargets(){
+      const preview = document.getElementById('previewAssignedBottom');
+      preview.removeAttribute('href');
+      preview.style.display = 'none';
       saveBtn.disabled = true;
       serviceSettings.disabled = true;
       document.getElementById("movementSetup").disabled = true;
@@ -1682,7 +1705,7 @@
         return shared>=Math.min(2,wordSet.length)&&wordSet.length>0;
       }).map(field=>({...field,suggestion:true}));
     }
-    async function renderIsaMapping(){
+    async function renderIsaMapping(placements, stillCurrent){
       linkHost.replaceChildren();state.existingLinks=[];
       if(!state.selectedCaregiver||!state.selectedIndividual){linkPanel.hidden=true;return;}
       linkPanel.hidden=false;
@@ -1690,9 +1713,10 @@
         rest('star_isa_outcomes?select=*&group_id=eq.'+encodeURIComponent(state.groupId)+'&status=eq.active&order=created_at.asc&limit=300'),
         state.assignmentId?rest('star_isa_measure_links?select=*&assignment_id=eq.'+encodeURIComponent(state.assignmentId)) : Promise.resolve([])
       ]);
+      if (!stillCurrent()) return;
       state.existingLinks=links||[];
-      const registeredIndividuals=state.members.filter(p=>p.role==='individual');
-      const legacyGroupCardIsUnambiguous=registeredIndividuals.length===1&&registeredIndividuals[0].id===state.selectedIndividual;
+      const registeredIndividuals=state.members.filter(p=>(p.assigned_role || p.role)==='individual');
+      const legacyGroupCardIsUnambiguous=registeredIndividuals.length===1&&(registeredIndividuals[0].user_id || registeredIndividuals[0].id)===state.selectedIndividual;
       state.activeCards=(cards||[]).filter(card=>
         (card.individual_id===state.selectedIndividual||(card.individual_id===''&&legacyGroupCardIsUnambiguous))&&
         (!Array.isArray(card.assigned_user_ids)||!card.assigned_user_ids.length||card.assigned_user_ids.includes(state.selectedCaregiver))
@@ -1703,12 +1727,12 @@
         const wrap=document.createElement('div');wrap.style.cssText='border:1px solid #ded8c8;border-radius:12px;padding:12px;margin:10px 0';
         const title=document.createElement('strong');title.textContent=card.title+' — '+m.label;
         const label=document.createElement('label');label.style.cssText='display:block;margin-top:8px';
-        label.textContent='Where should STAR get this measurement? ';
+        label.textContent='Answer source ';
         const select=document.createElement('select');
         select.dataset.outcomeId=card.id;select.dataset.measurementId=m.id;
-        select.add(new Option('Ask this ISA question separately',''));
+        select.add(new Option('Ask a follow-up question',''));
         const options=compatibleFieldOptions(m);
-        for(const f of options)select.add(new Option('Review match — '+f.label,f.key));
+        for(const f of options)select.add(new Option('Use existing answer · '+f.label,f.key));
         const saved=state.existingLinks.find(x=>x.outcome_id===card.id&&x.measurement_id===m.id);
         select.value=saved?.source_field||'';
         if(saved&&!select.value){select.add(new Option('Previously linked: '+saved.source_field,saved.source_field));select.value=saved.source_field;}
@@ -1716,8 +1740,59 @@
         const note=document.createElement('small');note.style.cssText='display:block;margin-top:6px;color:#65707a';
         note.textContent=options.length?
           'Review the meaning, answer choices and units before approving. STAR never links automatically.':
-          'No clearly equivalent existing question was found; STAR will ask this ISA question separately.';
-        wrap.append(title,label,note);linkHost.append(wrap);count++;
+          'STAR will show the follow-up in the selected section.';
+        const key = card.id + ':' + m.id;
+        const placement = placements?.[key];
+        wrap.dataset.isaPlacement = key;
+        const addSetting = (caption, field) => {
+          const setting = document.createElement('label');
+          setting.style.cssText = 'display:grid;gap:5px;margin-top:10px';
+          setting.append(caption, field);
+          wrap.append(setting);
+          return setting;
+        };
+        wrap.append(title,label);
+        const section = document.createElement('select');
+        section.dataset.isaSection = '';
+        for (const [id, name] of [
+          ['final-notes-step','Important observation'], ['homeFamilySection','In-Home Support'],
+          ['communitySection','Community Support'], ['daily-living-step','Respite'],
+          ['vocationalSection','Ongoing Supported Employment'], ['physicalSection','Physical Health'],
+          ['behaviorSection','Behavior / Mental Health'], ['educational-step','Education & Learning']
+        ]) section.add(new Option(name,id));
+        if ([...section.options].some(option => option.value === placement?.section)) section.value = placement.section;
+        const sectionLabel = addSetting('Show this question under', section);
+        const after = document.createElement('select');
+        after.dataset.isaAfter = '';
+        after.add(new Option('Regular questions in this section',''));
+        after.add(new Option('Home activities','homeActivities'));
+        after.value = placement?.after === 'homeActivities' ? 'homeActivities' : '';
+        const afterLabel = addSetting('Place it after', after);
+        const prompt = document.createElement('input');
+        prompt.type = 'text';
+        prompt.maxLength = 160;
+        prompt.placeholder = 'Did Taylor practice a phone call?';
+        prompt.value = placement?.prompt || '';
+        prompt.dataset.isaPrompt = '';
+        const promptLabel = addSetting('Optional yes/no question before the follow-up', prompt);
+        let stepsLabel;
+        if (m.kind === 'count') {
+          const steps = document.createElement('textarea');
+          steps.rows = 3;
+          steps.maxLength = 1000;
+          steps.dataset.isaSteps = '';
+          steps.value = Array.isArray(placement?.steps) ? placement.steps.join('\n') : '';
+          stepsLabel = addSetting('Optional checklist, one step per line', steps);
+        }
+        const syncPlacement = () => {
+          if (stepsLabel) stepsLabel.style.display = select.value ? 'none' : 'grid';
+          sectionLabel.style.display = promptLabel.style.display = select.value ? 'none' : 'grid';
+          afterLabel.style.display = !select.value && section.value === 'homeFamilySection' ? 'grid' : 'none';
+        };
+        section.addEventListener('change', syncPlacement);
+        select.addEventListener('change', syncPlacement);
+        syncPlacement();
+        wrap.append(note);linkHost.append(wrap);count++;
       }
       if(!count){const msg=document.createElement('p');msg.textContent='No active ISA measurements are currently assigned to this caregiver and individual.';linkHost.append(msg);}
     }
@@ -1753,8 +1828,15 @@
     saveBtnBottom.addEventListener('click', () => {
       if (!saveBtn.hidden && !saveBtn.disabled) saveBtn.click();
     });
-    previewCheckinBtn?.addEventListener('click', () => {
-      setStatus('Opening caregiver check-in preview…', 'success');
+    previewCheckinBtn?.addEventListener('click', event => {
+      if (!individualSelect.value && !caregiverSelect.value) return;
+      event.preventDefault();
+      const preview = document.getElementById('previewAssignedBottom');
+      if (preview.hasAttribute('href') && !saveBtn.disabled) window.location.assign(preview.href);
+      else setStatus('Save the selected caregiver and individual before opening their preview.', 'error');
+    });
+    document.getElementById('previewAssignedBottom').addEventListener('click', event => {
+      if (saveBtn.disabled) event.preventDefault();
     });
 
     loadConfig().catch((error) => {

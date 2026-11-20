@@ -364,6 +364,11 @@
         <label>Caregiver <select id="targetCaregiver"><option value="">Group defaults</option></select></label>
       </div>
       <p id="assignmentHelp" class="muted">Select an individual and a caregiver to make a personal assignment.</p>
+      <fieldset id="movementSetup" disabled>
+        <legend>Involuntary Movements / Vocalizations</legend>
+        <label><input type="checkbox" id="trackMovement"> Show this question</label>
+        <p id="movementSetupHelp" class="muted"></p>
+      </fieldset>
       <fieldset id="assignedServices">
         <legend>Services this caregiver provides</legend>
         <p>Choose the services to include in this check-in. Add a default location if the setting is consistent.</p>
@@ -1265,7 +1270,8 @@
       if (Object.keys(state.itemDescriptions || {}).length) {
         selectedItems.__item_descriptions__ = state.itemDescriptions;
       }
-      selectedItems.__support_services__ = readAssignedServices();
+      selectedItems.__track_movement__ = document.getElementById("trackMovement").checked;
+      selectedItems.__support_services__ = serviceSettings.hidden ? {} : readAssignedServices();
       selectedItems.__custom_mode__ = true;
       return selectedItems;
     }
@@ -1320,6 +1326,7 @@
 
       if (!stillCurrent()) return;
       const configRowId = config?.id || null;
+      const groupTracksMovement = normalizeSelectedItems(config?.selected_items).__track_movement__ !== false;
       let assignmentId = null;
       if(state.selectedIndividual && state.selectedCaregiver){
         const assignments=await rest('star_caregiver_checkin_assignments?select=*&group_id=eq.'+encodeURIComponent(groupId)+'&individual_id=eq.'+encodeURIComponent(state.selectedIndividual)+'&caregiver_user_id=eq.'+encodeURIComponent(state.selectedCaregiver)+'&limit=1');
@@ -1331,6 +1338,20 @@
       state.assignmentId = assignmentId;
       const selectedCategories = new Set(normalizeCategoryArray(config?.selected_categories));
       const selectedItems = normalizeSelectedItems(config?.selected_items);
+      const parent = state.members.some(member => member.user_id === state.selectedCaregiver && member.assigned_role === 'parent');
+      if (parent && !assignmentId) {
+        selectedCategories.add('physical_health');
+        selectedCategories.add('behavior_mental_health');
+        selectedItems.physical_health = ['sleep','good_health','illness_symptoms','pain_discomfort','energy_level','appetite'];
+        if (!selectedItems.behavior_mental_health?.length) selectedItems.behavior_mental_health = getCategoryItems(CATEGORY_DEFS.find(c => c.key === 'behavior_mental_health')).map(item => item.key);
+      }
+      serviceSettings.hidden = parent;
+      const movementSetup = document.getElementById('movementSetup');
+      movementSetup.disabled = false;
+      document.getElementById('trackMovement').checked = selectedItems.__track_movement__ !== false;
+      document.getElementById('movementSetupHelp').textContent = state.selectedCaregiver
+        ? (groupTracksMovement ? 'Applies to this check-in when Behavior / Mental Health is included.' : 'Group defaults currently hide this question on every check-in.')
+        : 'Turn off to hide this question from every check-in in the group, including individual assignments.';
       loadAssignedServices(selectedItems.__support_services__, selectedCategories);
       serviceSettings.disabled = false;
       state.itemDescriptions = normalizeItemDescriptions(selectedItems.__item_descriptions__);
@@ -1445,22 +1466,25 @@
     const linkPanel=document.getElementById('isaLinkSetup');
     const linkHost=document.getElementById('isaMappingList');
     async function loadGroupPeople(){
-      const members=await rest('rpc/star_team_members',{
-        method:'POST',expectedUserId:state.userId,body:JSON.stringify({p_group_id:state.groupId})
-      });
-      state.members=members.map(member=>({id:member.user_id,role:member.assigned_role}));
-      individualSelect.replaceChildren(new Option('Select individual…',''));
-      caregiverSelect.replaceChildren(new Option('Group defaults (all caregivers)',''));
-      for(const member of members){
-        const name=member.display_name;
-        if(member.assigned_role==='individual')individualSelect.add(new Option(name,member.user_id));
-        if(['caregiver','administrator'].includes(member.assigned_role))caregiverSelect.add(new Option(name,member.user_id));
+      state.members = await rest('rpc/star_team_members', {
+        method:'POST', body:JSON.stringify({p_group_id:state.groupId})
+      }) || [];
+      if (!state.members.length) throw new Error('No group members were found.');
+      individualSelect.replaceChildren(new Option('Group defaults',''));
+      caregiverSelect.replaceChildren(new Option('Group defaults',''));
+      for (const member of state.members) {
+        const name = member.display_name || 'Unnamed registered member';
+        if (member.assigned_role === 'individual') individualSelect.add(new Option(name,member.user_id));
+        if (['caregiver','parent','administrator'].includes(member.assigned_role)) {
+          caregiverSelect.add(new Option(member.assigned_role === 'parent' ? name + ' (Parent)' : name, member.user_id));
+        }
       }
       document.getElementById('assignmentHelp').textContent='Only registered people from this group appear in these lists.';
     }
     function selectedTargets(){
       saveBtn.disabled = true;
       serviceSettings.disabled = true;
+      document.getElementById("movementSetup").disabled = true;
       state.selectedIndividual=individualSelect.value;
       state.selectedCaregiver=caregiverSelect.value;
       if(Boolean(state.selectedIndividual)!==Boolean(state.selectedCaregiver)){

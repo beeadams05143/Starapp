@@ -1518,6 +1518,7 @@ export async function saveMinutesRich(payload = {}, attachment = {}) {
   const tags = [category, ...relatedCategories, "Minutes", payload.facilitator ? `Facilitator: ${payload.facilitator}` : null]
     .filter(Boolean);
   const record = {
+    id: crypto.randomUUID(),
     title: payload.title || "Meeting Minutes",
     doc_type: "meeting_minutes",
     content: payload.discussion || payload.notes || "",
@@ -1528,18 +1529,14 @@ export async function saveMinutesRich(payload = {}, attachment = {}) {
     created_by: user.id,
   };
 
-  await rest("documents", {
+  const inserted = await rest("documents", {
     method: "POST",
-    headers: { Prefer: "return=minimal" },
+    headers: { Prefer: "return=representation" },
     body: JSON.stringify([record]),
   });
 
-  const newEntry = {
-    ...record,
-    id: crypto.randomUUID(),
-    created_at: new Date().toISOString(),
-  };
-  const normalized = normalizeDoc(newEntry);
+  const saved = Array.isArray(inserted) ? inserted[0] : null;
+  const normalized = normalizeDoc({ ...record, ...saved });
   docsStore.documents = [normalized, ...(docsStore.documents || [])].slice(0, 200);
   return normalized;
 }

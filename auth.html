@@ -170,6 +170,13 @@
 
         <button id="continueBtn" class="primary-btn" type="submit">Continue</button>
       </form>
+      <form id="mfaForm" hidden novalidate>
+        <p>Enter the six-digit code from your authenticator app.</p>
+        <label for="mfaCode">Authenticator code</label>
+        <input id="mfaCode" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required />
+        <button id="verifyMfaBtn" class="primary-btn" type="submit">Verify code</button>
+        <button id="cancelMfaBtn" class="primary-btn" type="button">Back to sign in</button>
+      </form>
       <div id="message" role="status" aria-live="polite"></div>
     </div>
   </div>
@@ -179,16 +186,21 @@
       SUPABASE_URL,
       SUPABASE_ANON_KEY,
       saveSession,
+      clearSavedSession,
       getSessionFromStorage,
     } from './supabaseClient.js?v=2026.03.29A';
     import { loadAndRunRouter } from './routerLoader.js?v=2026.11.19E';
 
-    const ROLE_SELECT_URL = 'role-select.html';
     const form = document.getElementById('authForm');
     const emailEl = document.getElementById('email');
     const passwordEl = document.getElementById('password');
     const continueBtn = document.getElementById('continueBtn');
     const messageEl = document.getElementById('message');
+    const mfaForm = document.getElementById('mfaForm');
+    const mfaCodeEl = document.getElementById('mfaCode');
+    const verifyMfaBtn = document.getElementById('verifyMfaBtn');
+    const cancelMfaBtn = document.getElementById('cancelMfaBtn');
+    let pendingMfa = null;
     const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     function setMessage(text, ok = false) {
@@ -226,13 +238,15 @@
       };
     }
 
-    async function requestAuth(path, body) {
+    async function requestAuth(path, body, accessToken) {
+      const headers = {
+        apikey: SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json',
+      };
+      if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
       const response = await fetch(`${SUPABASE_URL}${path}`, {
         method: 'POST',
-        headers: {
-          apikey: SUPABASE_ANON_KEY,
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify(body),
       });
       const text = await response.text();
@@ -249,8 +263,6 @@
         error.status = response.status;
         throw error;
       }
-      const session = normalizeSession(payload);
-      if (session) saveSession(session);
       return payload;
     }
 
@@ -271,8 +283,7 @@
 
     async function authenticate(email, password) {
       try {
-        await logIn(email, password);
-        return;
+        return await logIn(email, password);
       } catch (loginError) {
         if (!shouldAttemptSignup(loginError)) throw loginError;
         try {
@@ -284,13 +295,99 @@
           }
           throw signupError;
         }
-        await logIn(email, password);
+        return logIn(email, password);
       }
     }
 
-    if (getSessionFromStorage()?.user?.id) {
+    function authenticatorLevel(token) {
+      try {
+        const claims = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+        return JSON.parse(atob(claims)).aal;
+      } catch {
+        return null;
+      }
+    }
+
+    function finishSignIn(session) {
+      saveSession(session);
+      if (getSessionFromStorage()?.access_token !== session.access_token) {
+        throw new Error('STAR could not save your session. Check your browser storage settings and try again.');
+      }
+      try { localStorage.setItem('user_id', session.user.id); } catch {}
+      setMessage('Success! Redirecting…', true);
       void loadAndRunRouter();
     }
+
+    function continueSignIn(session) {
+      if (!session?.access_token || !session.user?.id) {
+        throw new Error('Authentication did not return a valid session.');
+      }
+      const factor = session.user.factors?.find(
+        item => item.id && item.factor_type === 'totp' && item.status === 'verified'
+      );
+      if (factor && authenticatorLevel(session.access_token) !== 'aal2') {
+        clearSavedSession();
+        try { localStorage.removeItem('user_id'); } catch {}
+        pendingMfa = { session, factorId: factor.id };
+        form.hidden = true;
+        mfaForm.hidden = false;
+        passwordEl.value = '';
+        mfaCodeEl.focus();
+        return;
+      }
+      finishSignIn(session);
+    }
+
+    mfaForm.addEventListener('submit', async event => {
+      event.preventDefault();
+      if (!pendingMfa || verifyMfaBtn.disabled) return;
+      const pending = pendingMfa;
+      const code = mfaCodeEl.value.trim();
+      if (!/^\d{6}$/.test(code)) {
+        setMessage('Enter a six-digit authenticator code.');
+        return;
+      }
+      verifyMfaBtn.disabled = true;
+      cancelMfaBtn.disabled = true;
+      setMessage('');
+      try {
+        const path = '/auth/v1/factors/' + encodeURIComponent(pending.factorId);
+        const challenge = await requestAuth(path + '/challenge', {}, pending.session.access_token);
+        if (!challenge?.id) throw new Error('Could not start verification. Try again.');
+        const result = await requestAuth(path + '/verify', { challenge_id: challenge.id, code }, pending.session.access_token);
+        const verified = normalizeSession(result);
+        if (!verified?.refresh_token || authenticatorLevel(verified.access_token) !== 'aal2' ||
+          (verified.user && verified.user.id !== pending.session.user.id)) {
+          throw new Error('Could not complete verification. Try again.');
+        }
+        finishSignIn({ ...verified, user: verified.user || pending.session.user });
+        pendingMfa = null;
+        mfaCodeEl.value = '';
+      } catch (error) {
+        if (['bad_jwt', 'jwt_expired', 'session_not_found'].includes(error?.payload?.error_code ?? error?.payload?.code)) {
+          resetMfa();
+          setMessage('Your sign-in expired. Enter your email and password again.');
+        } else {
+          setMessage(error?.message || 'Could not verify the code. Try again.');
+        }
+      } finally {
+        verifyMfaBtn.disabled = false;
+        cancelMfaBtn.disabled = false;
+      }
+    });
+
+    function resetMfa() {
+      pendingMfa = null;
+      mfaCodeEl.value = '';
+      mfaForm.hidden = true;
+      form.hidden = false;
+      passwordEl.focus();
+    }
+
+    cancelMfaBtn.addEventListener('click', () => {
+      resetMfa();
+      setMessage('');
+    });
 
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
@@ -310,12 +407,7 @@
         const passwordError = validatePassword(password);
         if (passwordError) throw new Error(passwordError);
 
-        await authenticate(email, password);
-        const session = getSessionFromStorage();
-        if (!session?.user?.id) throw new Error('Authentication did not return a valid session.');
-        try { localStorage.setItem('user_id', session.user.id); } catch {}
-        setMessage('Success! Redirecting…', true);
-        void loadAndRunRouter();
+        continueSignIn(normalizeSession(await authenticate(email, password)));
       } catch (error) {
         console.error('[AUTH] continue failed', error);
         setMessage(error?.message || 'Authentication failed.');
@@ -323,6 +415,15 @@
         setBusy(false);
       }
     });
+
+    const existingSession = getSessionFromStorage();
+    if (existingSession?.access_token && existingSession.user?.id) {
+      try {
+        continueSignIn(existingSession);
+      } catch (error) {
+        setMessage(error.message);
+      }
+    }
   </script>
 </body>
 </html>

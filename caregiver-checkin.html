@@ -4871,14 +4871,13 @@
     caregiverSetupState.configRowId = null;
     caregiverSetupState.hasConfig = false;
     caregiverSetupState.selectedCategories = new Set();
-    caregiverSetupState.selectedItems = {};
+    caregiverSetupState.selectedItems = normalizeConfigItems(config?.selected_items);
     caregiverSetupState.itemDescriptions = {};
     if (config && isCustomCaregiverSetupEnabled(config)) {
       caregiverSetupState.forceLegacyMode = false;
       caregiverSetupState.configRowId = config.id || null;
       caregiverSetupState.hasConfig = true;
       caregiverSetupState.selectedCategories = new Set(normalizeConfigCategories(config.selected_categories));
-      caregiverSetupState.selectedItems = normalizeConfigItems(config.selected_items);
       caregiverSetupState.itemDescriptions = normalizeItemDescriptions(parseConfigObject(config.selected_items)?.__item_descriptions__);
     }
 
@@ -7318,7 +7317,7 @@
         const normalizeMovement = () => {
           if (!shouldShowMovementSection()) {
             const cleared = {
-              movement_present: false,
+              movement_present: null,
               movement_type: null,
               movement_main_type: null,
               movement_severity: null,
@@ -7345,7 +7344,7 @@
           const bodyMap = parseJsonArray(payload.movement_body_map);
           const triggers = parseJsonArray(payload.movement_triggers);
           const cleaned = {
-            movement_present: movementPresent,
+            movement_present: presentRaw ? movementPresent : null,
             movement_type: trimOrNull(payload.movement_main_type),
             movement_main_type: trimOrNull(payload.movement_main_type),
             movement_severity: Number.isFinite(severityVal) ? severityVal : null,

@@ -1889,6 +1889,7 @@
     .checkin-date-label { font-size:1.35rem; font-weight:800; }
     .confirmation-choice { display:flex; align-items:flex-start; gap:12px; margin:18px 0; padding:12px; min-height:44px; }
     .confirmation-choice input[type="checkbox"] { width:24px; height:24px; flex:0 0 24px; margin:0; }
+    #submissionStatus:empty { display:none; }
     #submissionStatus { padding:14px; background:#eff6ff; border:1px solid #64748b; overflow-wrap:anywhere; }
     #submissionStatus[data-state="verified"] {
       padding:16px 18px;
@@ -2239,7 +2240,7 @@
             <p>Enter each support and where it happened. Minutes are optional. Split time between entries; do not repeat the same minutes. Leave unknown time blank.</p><input type="hidden" name="shift_supports" value="[]">
             <div data-support-rows></div>
             <button class="btn" type="button" data-add-support>+ Add another support</button>
-            <p data-support-error role="alert" hidden></p>
+            <p data-support-error role="alert" tabindex="-1" hidden></p>
           </section>
 	        </div>
 
@@ -3207,6 +3208,7 @@
         <button class="btn" id="changeCheckinDate" type="button">Change Date</button>
         <label class="confirmation-choice"><input type="checkbox" id="checkinDateConfirmed" autocomplete="off" required disabled> <strong id="checkinDateConfirmationText">I confirm the care date is correct.</strong></label>
         <button class="btn primary" id="submitAll" type="submit" disabled>Submit Check-In</button>
+        <button class="btn" id="editShiftSupports" type="button" hidden>Edit shift supports</button>
         <p id="submissionStatus" role="status" aria-live="assertive" aria-atomic="true" tabindex="-1">Loading submission safeguards…</p>
         <button class="btn" id="checkSaveStatus" type="button" hidden>Check original save status — no new submission</button>
         <button class="btn" id="startNewCheckin" type="button" hidden>Start a new blank check-in</button>
@@ -3224,7 +3226,7 @@
 <script type="module">
   // 1) Imports MUST be first in the module
   import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
-  import { CheckinSubmissionUI } from './caregiver-submission-ui.js?v=2026.11.07-recovery';
+  import { CheckinSubmissionUI } from './caregiver-submission-ui.js?v=2026.11.19-review';
   import {normalizeSupportEntries} from './support-report.js';
   import {loadSignedInRole} from './signed-in-role.js';
   import { normalizeSleepPayload } from './caregiver-sleep.js?v=2026.11.15-sleep-scope';
@@ -5786,6 +5788,11 @@
 
     // Guard native form submission before any asynchronous initialization.
     formEl.addEventListener('submit', submitFinal);
+    document.getElementById('editShiftSupports').addEventListener('click', () => {
+      const error = shiftSupports.querySelector('[data-support-error]');
+      error.focus({ preventScroll: true });
+      error.scrollIntoView({ block: 'center' });
+    });
     const session = getSessionFromStorage();
     try {
       caregiverSetupState.forceLegacyMode = await userHasLegacyCaregiverCheckins(session?.user?.id || null);
@@ -7313,17 +7320,28 @@
       e?.preventDefault?.();
       if (!submissionUI || isSubmittingFinal) return;
       if (!validateCentralPrns()) return;
-      let supportRows;
-      try{supportRows=normalizeSupportEntries(readShiftSupports());}
-      catch(error){const node=shiftSupports.querySelector('[data-support-error]');node.hidden=false;node.textContent=error.message;openSectionDetailByIndex(0);shiftSupports.scrollIntoView({block:'center'});return;}
-      const missingIndividual = supportRows.length && !caregiverSetupState.assignedIndividualId && !caregiverSetupState.groupIndividualName;
-      const incomplete = supportRows.some(entry => !entry.support || !entry.location);
       const supportError = shiftSupports.querySelector('[data-support-error]');
-      supportError.hidden = !incomplete && !missingIndividual;
-      if (incomplete || missingIndividual) {
-        supportError.textContent = missingIndividual ? 'Ask your admin to set the individual for this check-in before submitting support entries.' : 'Choose a support and location for each entry, or remove the incomplete entry.';
-        openSectionDetailByIndex(0);
-        shiftSupports.scrollIntoView({block:'center'});
+      const editSupports = document.getElementById('editShiftSupports');
+      supportError.hidden = true;
+      editSupports.hidden = true;
+      let supportRows;
+      try {
+        supportRows = normalizeSupportEntries(readShiftSupports());
+        if (supportRows.some(entry => !entry.support || !entry.location)) {
+          throw new Error('Choose a support and location for each shift entry, or remove the incomplete entry.');
+        }
+        // Existing group-scoped check-ins can record supports using the same
+        // group attribution as their other answers.
+        if (supportRows.length && !caregiverSetupState.forceLegacyMode &&
+            !caregiverSetupState.assignedIndividualId && !caregiverSetupState.groupIndividualName) {
+          throw new Error('Ask your admin to set the individual for this check-in before submitting support entries.');
+        }
+      } catch (error) {
+        supportError.textContent = error.message;
+        supportError.hidden = false;
+        editSupports.hidden = false;
+        submissionUI.status(error.message, true);
+        submissionUI.el.submissionStatus.focus();
         return;
       }
       const legacyMedDraft = getLegacyMedDraftText();

@@ -890,7 +890,6 @@
       font-weight:600;
     }
     .step[data-step="0"] .section-title{margin-top:8px}
-    #movementSymptomsPanel{display:none!important}
     #postSubmitPrompt{
       display:none;
       margin:18px auto 0;
@@ -2085,9 +2084,7 @@
     #communitySection label:has([name="interaction_note"]),
     #homeFamilySection label:has([name="home_notes"]),
     .step label:has([name="vocational_notes"]),
-    .step label:has([name="mood_regulation_notes"]),
     .step label:has([name="aggression_notes"]),
-    .step label:has([name="behavior_anomaly_notes"]),
     .step label:has([name="pet_activity_note"]),
     .step label:has([name="pet_activity_notes"]),
     .step .behavior-card-notes,
@@ -2114,6 +2111,41 @@
     #behaviorSafetyIncidentDetails input, #behaviorSafetyIncidentDetails select, #behaviorSafetyIncidentDetails textarea { box-sizing:border-box; width:100%; }
     #behaviorSafetyIncidentDetails label { display:block; }
 
+    .page-wrap:has(#cg-form.is-guided) :is(#shiftDetails, #careDateBanner) {
+      display:none !important;
+    }
+    #caregiverBackHome { display:inline-flex; align-items:center; min-height:44px; text-decoration:none; }
+    .care-date-pending #draftSaveBar:has(#caregiverBackHome) { display:flex !important; }
+    .care-date-pending #draftSaveBar > :not(#caregiverBackHome) { display:none !important; }
+    #draftSaveFeedback:empty { display:none; }
+    #draftSaveFeedback { flex-basis:100%; }
+    #prnEntriesWrap.is-hidden { display:none; }
+    #centralPrnSection:not(:has(#prnEntriesWrap:not(.is-hidden))) { padding:10px 12px; gap:6px; }
+    #centralPrnSection .question-block { margin:0; display:flex; align-items:center; flex-wrap:wrap; gap:4px 12px; }
+    #centralPrnSection .yn-pill-group { margin:0; }
+    #centralPrnSection .yn-pill { min-height:44px; padding:6px 12px; }
+    #physicalSection .section-content { padding:12px; }
+    #physicalSection .section-content > .panel { min-width:0; padding:12px; }
+    #physicalSection .physical-general-row,
+    #physicalSection .physical-sleep-row,
+    #physicalSection .physical-final-row { gap:8px; margin-bottom:8px; }
+    #sleepQuestions .physical-general-row { grid-template-columns:minmax(0,1fr); }
+    #physicalSection .physical-general-row > *,
+    #sleepNotesWrap { min-width:0; }
+    #physicalSection input[name="sleep_fell_asleep_time"],
+    #sleepNotesWrap textarea {
+      display:block;
+      box-sizing:border-box;
+      width:100%;
+      min-width:0;
+      max-width:100%;
+      min-height:44px;
+      border:1px solid #bcb4a4;
+      background:#fff;
+    }
+    #sleepNotesWrap { display:block; width:100%; }
+    #anomalyNotesWrap textarea { display:block; width:100%; }
+    #sleepNotesWrap textarea { min-height:64px; }
     #cg-form.is-guided .landing-actions { display:none !important; }
     #cg-form:not(.is-guided) .section-detail { display:none !important; }
     /* Shared check-in dropdown appearance; preserves native accessible picker. */
@@ -2185,7 +2217,7 @@
       <div class="prog-item" data-step="6"><div class="prog-label">Educational</div><div class="seg"></div></div>
     </div>
 
-    <div class="draft-save-bar" id="draftSaveBar"><div id="careDateBanner" tabindex="-1" role="status" aria-live="polite" hidden><div>Reporting care for<strong id="careDateBannerLabel"></strong></div><button type="button" id="careDateChange">Change care date</button></div><button type="button" id="saveDraftAlways" disabled>Save Draft</button><span id="draftSaveFeedback" role="status" aria-live="polite">Available once your check-in opens.</span></div>
+    <div class="draft-save-bar" id="draftSaveBar"><a class="btn" id="caregiverBackHome" href="dashboard.html">← Back to Home</a><div id="careDateBanner" tabindex="-1" role="status" aria-live="polite" hidden><div>Reporting care for<strong id="careDateBannerLabel"></strong></div><button type="button" id="careDateChange">Change care date</button></div><button type="button" id="saveDraftAlways" disabled>Save Draft</button><span id="draftSaveFeedback" role="status" aria-live="polite"></span></div>
     <section id="legacyMedChangeNotice" hidden role="status" class="legacy-med-note">
       <strong>Medication-change information found in this older draft</strong>
       <p>Medication plans now belong in Team Updates. Copy these details into Team Updates before submitting; they will not be included in this new caregiver check-in.</p>
@@ -2416,7 +2448,7 @@
             <div class="physical-spacer" aria-hidden="true"></div>
           </div>
           <details class="health-concerns" id="healthConcernsPanel">
-            <summary>Health changes or concerns</summary>
+            <summary>Illness / Discomfort</summary>
             <div class="health-concerns-body">
               <div class="temp-panel" id="tempPanel">
                 <div class="temp-head">
@@ -2497,158 +2529,6 @@
               </div>
             </div>
           </details>
-          <div class="movement-panel" id="movementSymptomsPanel" hidden>
-            <div class="movement-head">
-              <div>
-                <div class="movement-title">Observed Movement Changes</div>
-                <p class="movement-desc">Track involuntary movements, body-area changes, vocalizations, restlessness, or other noticeable movement patterns when they come up.</p>
-              </div>
-            </div>
-            <div class="movement-yn" role="group" aria-label="Any involuntary movements or vocalizations today">
-              <strong>Any involuntary movements or vocalizations today?</strong>
-              <label class="movement-pill"><input type="radio" name="movement_present" value="no"> No</label>
-              <label class="movement-pill"><input type="radio" name="movement_present" value="yes"> Yes</label>
-            </div>
-
-            <div class="movement-body is-collapsed" data-movement-body-wrap>
-              <div class="movement-row">
-                <div>
-                  <div class="movement-label">Main symptom</div>
-                  <div class="movement-chips">
-                    <label class="movement-chip checkbox-card"><input type="radio" name="movement_main_type" value="face_mouth">Face / mouth movements</label>
-                    <label class="movement-chip checkbox-card"><input type="radio" name="movement_main_type" value="hand_finger">Hand / finger movements</label>
-                    <label class="movement-chip checkbox-card"><input type="radio" name="movement_main_type" value="body_restlessness">Body movements / restlessness</label>
-                    <label class="movement-chip checkbox-card"><input type="radio" name="movement_main_type" value="vocalizations">Vocalizations</label>
-                    <label class="movement-chip checkbox-card"><input type="radio" name="movement_main_type" value="other">Other</label>
-                  </div>
-                </div>
-                <div>
-                  <div class="movement-label">Severity</div>
-                  <div class="movement-severity" data-movement-severity>
-                    <button class="movement-sev-btn" type="button" data-sev="0">0</button>
-                    <button class="movement-sev-btn" type="button" data-sev="1">1</button>
-                    <button class="movement-sev-btn" type="button" data-sev="2">2</button>
-                    <button class="movement-sev-btn" type="button" data-sev="3">3</button>
-                    <button class="movement-sev-btn" type="button" data-sev="4">4</button>
-                  </div>
-                  <input type="hidden" name="movement_severity" id="movement_severity" value=""/>
-                </div>
-              </div>
-
-              <div class="movement-row" style="margin-top:10px">
-                <div>
-                  <div class="movement-label">Times</div>
-                  <div class="movement-chips">
-                    <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-time value="AM">AM</label>
-                    <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-time value="PM">PM</label>
-                  </div>
-                  <input type="hidden" name="movement_times" id="movement_times" value=""/>
-                </div>
-                <div>
-                  <label class="movement-label" for="movement_notes">Notes (optional)</label>
-                  <input type="text" name="movement_notes" id="movement_notes" placeholder="Short note, e.g. lip smacking after lunch"/>
-                </div>
-              </div>
-
-              <div class="movement-actions">
-                <button class="btn" type="button" id="movementSameBtn">Same as last check-in</button>
-                <button class="btn" type="button" id="movementDetailsToggle" aria-expanded="false" aria-controls="movementDetails">Show body areas, frequency &amp; triggers</button>
-              </div>
-
-              <div class="movement-details is-hidden" id="movementDetails">
-                <div class="movement-label">Optional symptom details</div>
-                <div class="movement-grid checkbox-grid">
-                  <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-body value="eyes_blinking">Eyes blinking / eye movements</label>
-                  <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-body value="face_grimacing">Face grimacing</label>
-                  <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-body value="mouth_lips">Mouth / lips (smacking / chewing)</label>
-                  <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-body value="tongue_movements">Tongue movements</label>
-                  <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-body value="jaw_movements">Jaw movements</label>
-                  <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-body value="hands_tremor">Hands tremor</label>
-                  <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-body value="arms_jerks">Arms jerks / “air punching”</label>
-                  <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-body value="legs_feet">Legs / feet tapping / kicking</label>
-                  <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-body value="neck_trunk">Neck / trunk movements</label>
-                  <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-body value="vocalizations">Vocalizations / humming / tics</label>
-                  <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-body value="other_movement">Other movement</label>
-                </div>
-                <div class="movement-inline-input" style="margin-top:8px">
-                  <input type="text" name="movement_other_text" id="movement_other_text" placeholder="Other movement (optional)"/>
-                </div>
-                <input type="hidden" name="movement_body_map" id="movement_body_map" value=""/>
-
-                <div class="soft" style="margin:12px 0"></div>
-
-                <div class="movement-label">Frequency</div>
-                <div class="movement-chips">
-                  <label class="movement-chip checkbox-card"><input type="radio" name="movement_frequency" value="once">Once</label>
-                  <label class="movement-chip checkbox-card"><input type="radio" name="movement_frequency" value="few_times">A few times</label>
-                  <label class="movement-chip checkbox-card"><input type="radio" name="movement_frequency" value="often">Often</label>
-                  <label class="movement-chip checkbox-card"><input type="radio" name="movement_frequency" value="nearly_constant">Nearly constant</label>
-                </div>
-
-                <div class="soft" style="margin:12px 0"></div>
-
-                <div class="movement-label">Known triggers?</div>
-                <div class="movement-chips" data-known-triggers>
-                  <button class="movement-chip is-toggle active" type="button" data-known-trigger="no" aria-pressed="true">No</button>
-                  <button class="movement-chip is-toggle" type="button" data-known-trigger="yes" aria-pressed="false">Yes</button>
-                </div>
-
-                <div class="movement-collapse-body is-hidden" id="movementTriggersBody">
-                  <div class="movement-label" style="margin-top:10px">Triggers</div>
-                  <div class="movement-grid checkbox-grid">
-                    <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-trigger value="stress">Stress / anxiety</label>
-                    <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-trigger value="around_meds">Around meds</label>
-                    <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-trigger value="tired_sleep">Tired / poor sleep</label>
-                    <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-trigger value="before_eating">Before eating</label>
-                    <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-trigger value="after_eating">After eating</label>
-                    <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-trigger value="excitement">Excited / overstimulated</label>
-                    <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-trigger value="unknown">Unknown</label>
-                    <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-trigger value="other">Other</label>
-                  </div>
-                  <div class="movement-inline-input" style="margin-top:8px">
-                    <input type="text" name="movement_trigger_other" id="movement_trigger_other" placeholder="Other trigger (optional)"/>
-                  </div>
-                  <input type="hidden" name="movement_triggers" id="movement_triggers" value=""/>
-                </div>
-
-                <div class="soft" style="margin:12px 0"></div>
-
-                <div class="movement-row">
-                  <div>
-                    <div class="movement-label">Interfered with function?</div>
-                    <div class="movement-chips">
-                      <label class="movement-chip checkbox-card"><input type="radio" name="movement_interfered" value="no">No</label>
-                      <label class="movement-chip checkbox-card"><input type="radio" name="movement_interfered" value="yes">Yes</label>
-                    </div>
-                    <input type="text" name="movement_interfered_notes" placeholder="Notes (optional)" />
-                  </div>
-                </div>
-
-                <div class="movement-collapse" style="margin-top:10px">
-                  <div class="movement-label">Awareness / impact (optional)</div>
-                  <div class="movement-collapse-body" id="movementAwarenessBody">
-                    <div class="movement-chips" style="margin-top:8px">
-                      <label class="movement-chip checkbox-card"><input type="radio" name="movement_awareness" value="unaware">Unaware</label>
-                      <label class="movement-chip checkbox-card"><input type="radio" name="movement_awareness" value="aware_not_bothered">Aware not bothered</label>
-                      <label class="movement-chip checkbox-card"><input type="radio" name="movement_awareness" value="aware_bothered">Aware bothered</label>
-                      <label class="movement-chip checkbox-card"><input type="radio" name="movement_awareness" value="unknown">Unknown</label>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="movement-row" style="margin-top:10px">
-                  <div>
-                    <div class="movement-label">Safety risk?</div>
-                    <div class="movement-chips">
-                      <label class="movement-chip checkbox-card"><input type="radio" name="movement_safety_risk" value="no">No</label>
-                      <label class="movement-chip checkbox-card"><input type="radio" name="movement_safety_risk" value="yes">Yes</label>
-                    </div>
-                    <input type="text" name="movement_safety_notes" placeholder="Safety notes (optional)" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
           <div class="temp-panel" id="menstrualPanel">
             <div class="temp-head">
               <div>
@@ -2702,10 +2582,10 @@
           <input type="hidden" name="behavior_tracking" id="behavior_tracking" value=""/>
           <section id="behaviorSafetyIncidentCard" class="panel" aria-labelledby="behaviorSafetyIncidentHeading">
             <h3 id="behaviorSafetyIncidentHeading">Behavior &amp; Safety Incidents</h3>
-            <p class="muted">Document an incident factually, whether you observed it or another caregiver reported it. Routine behaviors and skill progress can still be tracked below.</p>
+            <p class="muted">Describe what you observed during your shift.</p>
             <div class="question-block">
-              <div class="movement-label">Was a behavior or safety incident observed or reported for this date?</div>
-              <div class="yn-pill-group" role="group" aria-label="Behavior or safety incident observed or reported">
+              <div class="movement-label">Did you observe a behavior or safety incident?</div>
+              <div class="yn-pill-group" role="group" aria-label="Did you observe a behavior or safety incident?">
                 <label class="yn-pill"><input type="radio" name="safety_incident_occurred" value="yes"> Yes</label>
                 <label class="yn-pill"><input type="radio" name="safety_incident_occurred" value="no"> No</label>
               </div>
@@ -2726,21 +2606,86 @@
               <label>Where did it happen? (optional)
                 <input type="text" name="safety_incident_location" placeholder="For example: workplace, home, or community" />
               </label>
-              <label>How was the incident documented?
-                <select name="safety_incident_source">
-                  <option value="">Select, if known</option>
-                  <option value="direct_observation">I observed it</option>
-                  <option value="reported_by_other">Someone else reported it</option>
-                </select>
-              </label>
-              <label>Who observed or reported it? (optional)
-                <input type="text" name="safety_incident_reporter" placeholder="Caregiver or reporting person's name" />
-              </label>
               <label>What happened? (Include what preceded it, staff response, and outcome if known)
-                <textarea name="safety_incident_details" rows="4" placeholder="Describe what was observed or reported. Only include details that are known."></textarea>
+                <textarea name="safety_incident_details" rows="4" placeholder="Describe what you observed."></textarea>
               </label>
             </div>
           </section>
+          <div class="movement-panel" id="movementSymptomsPanel">
+            <div class="movement-head">
+              <div>
+                <div class="movement-title">Involuntary Movements / Vocalizations</div>
+              </div>
+            </div>
+            <div class="movement-yn" role="group" aria-label="Any involuntary movements or vocalizations today">
+              <strong>Any involuntary movements or vocalizations today?</strong>
+              <label class="movement-pill"><input type="radio" name="movement_present" value="no"> No</label>
+              <label class="movement-pill"><input type="radio" name="movement_present" value="yes"> Yes</label>
+            </div>
+
+            <div class="movement-body is-collapsed" data-movement-body-wrap>
+              <div class="movement-row">
+                <div>
+                  <div class="movement-label">Main symptom</div>
+                  <div class="movement-chips">
+                    <label class="movement-chip checkbox-card"><input type="radio" name="movement_main_type" value="face_mouth">Face / mouth movements</label>
+                    <label class="movement-chip checkbox-card"><input type="radio" name="movement_main_type" value="hand_finger">Hand / finger movements</label>
+                    <label class="movement-chip checkbox-card"><input type="radio" name="movement_main_type" value="body_restlessness">Body movements / restlessness</label>
+                    <label class="movement-chip checkbox-card"><input type="radio" name="movement_main_type" value="vocalizations">Vocalizations</label>
+                    <label class="movement-chip checkbox-card"><input type="radio" name="movement_main_type" value="other">Other</label>
+                  </div>
+                </div>
+                <div>
+                  <div class="movement-label">Severity</div>
+                  <div class="movement-severity" data-movement-severity>
+                    <button class="movement-sev-btn" type="button" data-sev="0">0</button>
+                    <button class="movement-sev-btn" type="button" data-sev="1">1</button>
+                    <button class="movement-sev-btn" type="button" data-sev="2">2</button>
+                    <button class="movement-sev-btn" type="button" data-sev="3">3</button>
+                    <button class="movement-sev-btn" type="button" data-sev="4">4</button>
+                  </div>
+                  <input type="hidden" name="movement_severity" id="movement_severity" value=""/>
+                </div>
+              </div>
+
+              <div class="movement-row" style="margin-top:10px">
+                <div>
+                  <div class="movement-label">Times</div>
+                  <div class="movement-chips">
+                    <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-time value="AM">AM</label>
+                    <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-time value="PM">PM</label>
+                  </div>
+                  <input type="hidden" name="movement_times" id="movement_times" value=""/>
+                </div>
+                <div>
+                  <label class="movement-label" for="movement_notes">Notes (optional)</label>
+                  <input type="text" name="movement_notes" id="movement_notes" placeholder="Short note, e.g. lip smacking after lunch"/>
+                </div>
+              </div>
+
+              <div class="movement-actions">
+                <button class="btn" type="button" id="movementDetailsToggle" aria-expanded="false" aria-controls="movementDetails">Show body areas</button>
+              </div>
+
+              <div class="movement-details is-hidden" id="movementDetails">
+                <div class="movement-label">Optional symptom details</div>
+                <div class="movement-grid checkbox-grid">
+                  <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-body value="eyes_blinking">Eyes blinking / eye movements</label>
+                  <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-body value="face_grimacing">Face grimacing</label>
+                  <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-body value="mouth_lips">Mouth / lips (smacking / chewing)</label>
+                  <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-body value="tongue_movements">Tongue movements</label>
+                  <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-body value="jaw_movements">Jaw movements</label>
+                  <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-body value="hands_tremor">Hands tremor</label>
+                  <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-body value="arms_jerks">Arms jerks / “air punching”</label>
+                  <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-body value="legs_feet">Legs / feet tapping / kicking</label>
+                  <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-body value="neck_trunk">Neck / trunk movements</label>
+                  <label class="movement-chip checkbox-card"><input type="checkbox" data-movement-body value="vocalizations">Vocalizations / humming / tics</label>
+                </div>
+                <input type="hidden" name="movement_body_map" id="movement_body_map" value=""/>
+
+              </div>
+            </div>
+          </div>
           <div id="behaviorQuestionsWrap" class="row"></div>
           <div id="legacyBehaviorQuestions" class="config-hidden" aria-hidden="true">
 <hr class="soft"/>
@@ -2800,25 +2745,11 @@
 	                  <label class="mood-choice"><input type="radio" name="mood_irritability" value="significant">Significant</label>
 	                </div>
 	              </div>
-	              <label>Anything else you noticed?
-	                <textarea name="mood_regulation_notes" placeholder="Optional short note"></textarea>
-	              </label>
-	            </div>
-            <div class="subcap">Anomalies <span class="muted">(unexpected behavior, mood, movement, speech, or other changes)</span></div>
-            <div class="behavior-legacy-paired-row">
-              <div id="question-behavior-anomaly-flag" class="behavior-legacy-question-line">
-                <div class="movement-label">Noticed anything unusual in mood or behavior?</div>
-                <div class="yn-pill-group" role="group" aria-label="Noticed anything unusual in mood or behavior">
-                  <label class="yn-pill"><input type="radio" name="behavior_anomaly_flag" value="yes"> Yes</label>
-                  <label class="yn-pill"><input type="radio" name="behavior_anomaly_flag" value="no"> No</label>
-                </div>
-              </div>
-              <label id="anomalyTriggerWrap" style="display:none">Trigger or context:
-                <input type="text" name="behavior_anomaly_trigger" placeholder="e.g., loud noise, new staff, schedule change"/>
-              </label>
             </div>
-            <label id="anomalyNotesWrap" style="display:none">Anomaly details:<textarea name="behavior_anomaly_notes" placeholder="Describe changes in movement, speech, behavior, mood, or anything else unusual; include how long it lasted and what helped"></textarea></label>
-	          </div>
+          </div>
+          <label id="anomalyNotesWrap">Unusual behavior observed (optional)
+            <textarea name="behavior_anomaly_notes" rows="3" placeholder="Describe any unusual behavior you observed during this shift."></textarea>
+          </label>
           <div class="controls">
             <div class="left-actions"><button class="btn" type="button" data-save>Save Draft</button><span class="action-note">Save a local recovery copy. This does not submit the check-in.</span><span class="savedAt" data-savedat></span></div>
             <div>
@@ -3330,7 +3261,7 @@
   const shouldUseCustomCaregiverSetup = () => caregiverSetupState.hasConfig === true;
   const shouldShowMovementSection = () => (
     shouldUseCustomCaregiverSetup()
-      ? caregiverSetupState.selectedCategories.has('physical_health')
+      ? caregiverSetupState.selectedCategories.has('behavior_mental_health')
       : legacyCaregiverConfig.show_movement
   );
   const shouldShowMenstrualSection = () => (
@@ -5350,39 +5281,11 @@
     movementEls.severityInput.dispatchEvent(new Event('input', { bubbles: true }));
   };
 
-  const setKnownTriggers = (known) => {
-    movementEls.knownTriggerButtons?.forEach((btn) => {
-      const isYes = btn.dataset.knownTrigger === 'yes';
-      const active = known ? isYes : !isYes;
-      btn.classList.toggle('active', active);
-      btn.setAttribute('aria-pressed', active ? 'true' : 'false');
-    });
-    movementEls.triggersBody?.classList.toggle('is-hidden', !known);
-    if (!known) {
-      setMovementCheckboxValues('[data-movement-trigger]', []);
-      if (movementEls.triggersInput) movementEls.triggersInput.value = '';
-      const other = document.getElementById('movement_trigger_other');
-      if (other) other.value = '';
-      syncMovementArrays();
-    }
-  };
-
-  const setAwarenessExpanded = (expanded) => {
-    if (!movementEls.awarenessBody) return;
-    movementEls.awarenessBody.classList.remove('is-hidden');
-    if (!movementEls.awarenessToggle) return;
-    movementEls.awarenessToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-    const hint = movementEls.awarenessToggle.querySelector('.movement-toggle-hint');
-    if (hint) hint.textContent = expanded ? 'Hide' : 'Show';
-  };
-
   const syncMovementArrays = () => {
     const times = getMovementCheckboxValues('[data-movement-time]');
     const bodyMap = getMovementCheckboxValues('[data-movement-body]');
-    const triggers = getMovementCheckboxValues('[data-movement-trigger]');
     syncMovementHiddenField(movementEls.timesInput, times);
     syncMovementHiddenField(movementEls.bodyMapInput, bodyMap);
-    syncMovementHiddenField(movementEls.triggersInput, triggers);
   };
 
   const getMultiCheckboxValues = (selector) =>
@@ -5438,11 +5341,11 @@
       clearMovementFields({ keepPresent: true });
       movementEls.detailsPanel?.classList.add('is-hidden');
       movementEls.detailsToggle?.setAttribute('aria-expanded', 'false');
-      if (movementEls.detailsToggle) movementEls.detailsToggle.textContent = 'Show body map & triggers';
+      if (movementEls.detailsToggle) movementEls.detailsToggle.textContent = 'Show body areas';
     } else {
       movementEls.detailsPanel?.classList.remove('is-hidden');
       movementEls.detailsToggle?.setAttribute('aria-expanded', 'true');
-      if (movementEls.detailsToggle) movementEls.detailsToggle.textContent = 'Hide body map & triggers';
+      if (movementEls.detailsToggle) movementEls.detailsToggle.textContent = 'Hide body areas';
       const times = parseJsonArray(movementEls.timesInput?.value);
       if (!times.length) {
         setMovementCheckboxValues('[data-movement-time]', ['AM']);
@@ -5543,18 +5446,7 @@
     setMovementSeverity('');
     setMovementCheckboxValues('[data-movement-time]', []);
     setMovementCheckboxValues('[data-movement-body]', []);
-    setMovementCheckboxValues('[data-movement-trigger]', []);
-    ['movement_notes','movement_other_text','movement_trigger_other','movement_interfered_notes','movement_safety_notes']
-      .forEach((id) => {
-        const el = document.getElementById(id);
-        if (el) el.value = '';
-      });
-    ['movement_frequency','movement_interfered','movement_awareness','movement_safety_risk']
-      .forEach((name) => {
-        document.querySelectorAll(`input[name="${name}"]`).forEach((el) => (el.checked = false));
-      });
-    setKnownTriggers(false);
-    setAwarenessExpanded(true);
+    document.getElementById('movement_notes').value = '';
     syncMovementArrays();
   };
 
@@ -5594,7 +5486,7 @@
     const present = String(data.movement_present || '').toLowerCase() === 'yes'
       || data.movement_present === true;
     document.querySelectorAll('input[name="movement_present"]').forEach((el) => {
-      el.checked = present ? el.value === 'yes' : false;
+      el.checked = present ? el.value === 'yes' : el.value === 'no' && (data.movement_present === 'no' || data.movement_present === false);
     });
     setMovementPresent(present);
     if (!present) return;
@@ -5607,34 +5499,7 @@
     setMovementCheckboxValues('[data-movement-time]', times);
     const bodyMap = parseJsonArray(data.movement_body_map);
     setMovementCheckboxValues('[data-movement-body]', bodyMap);
-    const triggers = parseJsonArray(data.movement_triggers);
-    setMovementCheckboxValues('[data-movement-trigger]', triggers);
-    if (movementEls.timesInput) movementEls.timesInput.value = times.length ? JSON.stringify(times) : '';
-    if (movementEls.bodyMapInput) movementEls.bodyMapInput.value = bodyMap.length ? JSON.stringify(bodyMap) : '';
-    if (movementEls.triggersInput) movementEls.triggersInput.value = triggers.length ? JSON.stringify(triggers) : '';
-    const hasKnownTriggers = triggers.length > 0 || !!data.movement_trigger_other;
-    setKnownTriggers(hasKnownTriggers);
-
-    const simpleFields = [
-      ['movement_notes', data.movement_notes],
-      ['movement_other_text', data.movement_other_text],
-      ['movement_trigger_other', data.movement_trigger_other],
-      ['movement_interfered_notes', data.movement_interfered_notes],
-      ['movement_safety_notes', data.movement_safety_notes],
-    ];
-    simpleFields.forEach(([id, value]) => {
-      const el = document.getElementById(id);
-      if (el && value != null) el.value = value;
-    });
-    ['movement_frequency','movement_interfered','movement_awareness','movement_safety_risk']
-      .forEach((name) => {
-        const val = data[name];
-        if (!val) return;
-        document.querySelectorAll(`input[name="${name}"]`).forEach((el) => {
-          el.checked = el.value === val;
-        });
-      });
-    setAwarenessExpanded(!!data.movement_awareness);
+    document.getElementById('movement_notes').value = data.movement_notes ?? '';
     syncMovementArrays();
   };
 
@@ -5742,7 +5607,7 @@
     reviewSectionsEl = document.getElementById('reviewSections');
     steps         = Array.from(document.querySelectorAll('.step'));
       adlStepIndex  = steps.findIndex((step) => step.id === 'daily-living-step');
-      movementStepIndex = steps.findIndex((step) => step.dataset.step === '0');
+      movementStepIndex = steps.findIndex((step) => step.id === 'behaviorSection');
 	    entryDateInput = document.getElementById('entryDateInput');
 	    toggleAllBtn  = document.getElementById('toggleAll');
 	    resumeDraftBtn = document.getElementById('resumeDraftBtn');
@@ -5804,14 +5669,8 @@
       severityInput: document.getElementById('movement_severity'),
       timesInput: document.getElementById('movement_times'),
       bodyMapInput: document.getElementById('movement_body_map'),
-      triggersInput: document.getElementById('movement_triggers'),
-      triggersBody: document.getElementById('movementTriggersBody'),
-      knownTriggerButtons: Array.from(document.querySelectorAll('[data-known-trigger]')),
-      awarenessToggle: document.getElementById('movementAwarenessToggle'),
-      awarenessBody: document.getElementById('movementAwarenessBody'),
       detailsToggle: document.getElementById('movementDetailsToggle'),
-      detailsPanel: document.getElementById('movementDetails'),
-      sameBtn: document.getElementById('movementSameBtn')
+      detailsPanel: document.getElementById('movementDetails')
     };
     tempEls = {
       bodyWrap: document.querySelector('[data-temp-body-wrap]'),
@@ -5844,11 +5703,6 @@
     syncPublicActivityTypes();
     syncInteractionTypes();
     syncAdlMultiFields({ silent: true });
-    if (movementEls.sameBtn) {
-      movementEls.sameBtn.disabled = true;
-      movementEls.sameBtn.title = 'Previous movement details are no longer stored on this device.';
-    }
-
 	    const summaryHighlightInput = document.getElementById('summary_highlight_note');
     const summaryHighlightCount = document.getElementById('summaryHighlightCount');
     if (summaryHighlightInput && summaryHighlightCount) {
@@ -6021,13 +5875,8 @@
     movementEls.severityButtons?.forEach((btn) => {
       btn.addEventListener('click', () => setMovementSeverity(btn.dataset.sev));
     });
-    movementEls.knownTriggerButtons?.forEach((btn) => {
-      btn.addEventListener('click', () => {
-        setKnownTriggers(btn.dataset.knownTrigger === 'yes');
-      });
-    });
     document.addEventListener('change', (event) => {
-      if (event.target?.matches('[data-movement-time],[data-movement-body],[data-movement-trigger]')) {
+      if (event.target?.matches('[data-movement-time],[data-movement-body]')) {
         syncMovementArrays();
       }
       if (event.target?.matches('[data-home-type]')) {
@@ -6054,10 +5903,9 @@
       movementEls.detailsPanel?.classList.toggle('is-hidden', !isHidden);
       movementEls.detailsToggle.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
       movementEls.detailsToggle.textContent = isHidden
-        ? 'Hide body map & triggers'
-        : 'Show body map & triggers';
+        ? 'Hide body areas'
+        : 'Show body areas';
     });
-    movementEls.sameBtn?.addEventListener('click', () => {});
 
     const medFlagChecked = document.querySelector('input[name="med_change_flag"]:checked');
     setMedChangePresent(medFlagChecked?.value === 'yes');
@@ -6137,7 +5985,6 @@
     updateIsaStepVisibility();
 
     const ynFields = [
-      'behavior_anomaly_flag',
       'vocational_participation',
       'home_activity_flag',
       'public_activity_flag',
@@ -6307,10 +6154,6 @@
       });
     };
     const applyConditionalSections = () => {
-      toggleFieldGroup('behavior_anomaly_flag', {
-        showWhen: 'yes',
-        targets: ['anomalyTriggerWrap', 'anomalyNotesWrap']
-      });
       toggleFieldGroup('appetite_change_flag', {
         showWhen: 'yes',
         targets: ['appetiteDirectionWrap']
@@ -6760,6 +6603,7 @@
         else data[el.name]=el.value;
       });
       if (step.id === 'behaviorSection') {
+        if (data.behavior_anomaly_notes?.trim()) data.behavior_anomaly_flag = 'yes';
         data.aggression_flag = data.safety_incident_occurred === 'yes' && data.aggression_flag ? 'yes' : '';
         if (data.aggression_flag) data.aggression_notes = data.safety_incident_details;
       }
@@ -6846,7 +6690,11 @@
 	        hydratePrnFromData(draft.data[idx] || {});
 	      }
 	      if (idx === movementStepIndex) {
-        hydrateMovementFromData(draft.data[idx] || {});
+        // Older drafts recorded movement under Physical Health (step 0).
+        const behaviorData = draft.data[idx] || {};
+        hydrateMovementFromData(Object.hasOwn(behaviorData, 'movement_present') ? behaviorData : draft.data[0]);
+      }
+      if (step.id === 'physicalSection') {
         hydrateTempFromData(draft.data[idx] || {});
         hydrateMenstrualFromData(draft.data[idx] || {});
         syncMedTimeWindow();
@@ -7321,7 +7169,7 @@
           }
           const presentRaw = String(payload.movement_present || '').toLowerCase();
           const movementPresent = presentRaw === 'yes' || presentRaw === 'true';
-          const severityVal = Number(payload.movement_severity);
+          const severityVal = payload.movement_severity === '' ? NaN : Number(payload.movement_severity);
           const times = parseJsonArray(payload.movement_times);
           const bodyMap = parseJsonArray(payload.movement_body_map);
           const triggers = parseJsonArray(payload.movement_triggers);
@@ -7600,7 +7448,9 @@
 
     const scrollToSectionTop = (section, behavior = 'smooth') => {
       if (!section) return;
-      const top = Math.max(0, section.getBoundingClientRect().top + window.scrollY);
+      const toolbar = document.getElementById('draftSaveBar');
+      const offset = toolbar ? (parseFloat(getComputedStyle(toolbar).top) || 0) + toolbar.offsetHeight + 8 : 0;
+      const top = Math.max(0, section.getBoundingClientRect().top + window.scrollY - offset);
       window.scrollTo({ top, behavior });
     };
 
@@ -7620,42 +7470,16 @@
     };
 
 	    document.querySelectorAll('.section-list-item').forEach(item => {
-	      item.addEventListener('click', () => {
-	        const targetId = item.dataset.target || `${item.dataset.section}Section`;
-	        const targetStep = document.getElementById(targetId);
-	        const def = SECTION_STATUS_BY_NAV.get(item.dataset.section || '');
-	        const list = document.getElementById('sectionListView');
+      item.addEventListener('click', () => {
+        const targetStep = document.getElementById(item.dataset.target || `${item.dataset.section}Section`);
+        if (!targetStep) return;
+        const def = SECTION_STATUS_BY_NAV.get(item.dataset.section || '');
+        if (def && isQuickClearedStatus(def)) setSectionStatus(def, 'needs_checkin');
+        openSectionDetailByIndex(steps.indexOf(targetStep));
+      });
+    });
 
-	        if (list) list.style.display = 'none';
-
-        document.querySelectorAll('.section-detail').forEach(s => {
-          s.style.display = 'none';
-        });
-
-        document.querySelectorAll('.step').forEach(step => {
-          step.style.display = 'none';
-          step.classList.remove('active');
-        });
-
-	        if (targetStep) {
-	          if (def && isQuickClearedStatus(def)) {
-	            setSectionStatus(def, 'needs_checkin');
-	          }
-	          const targetIndex = steps.findIndex((step) => step === targetStep);
-	          if (targetIndex >= 0) current = targetIndex;
-	          targetStep.style.display = 'block';
-          targetStep.classList.add('active');
-          const detail = targetStep.querySelector('.section-detail');
-          if (detail) detail.style.display = 'block';
-          updateProgress();
-          requestAnimationFrame(() => {
-            scrollToSectionTop(targetStep, targetId === 'behaviorSection' ? 'auto' : 'smooth');
-          });
-        }
-	      });
-	    });
-
-	    document.querySelectorAll('[data-quick-clear]').forEach((button) => {
+    document.querySelectorAll('[data-quick-clear]').forEach((button) => {
 	      button.addEventListener('click', (event) => {
 	        event.stopPropagation();
 	        const def = SECTION_STATUS_BY_NAV.get(button.dataset.quickClear || '');
@@ -7685,7 +7509,6 @@
       const idx = steps.findIndex(step => step.id === 'physicalSection');
       if (idx >= 0) {
         openSectionDetailByIndex(idx);
-        requestAnimationFrame(() => document.getElementById('centralPrnSection')?.scrollIntoView({behavior:'smooth',block:'start'}));
       }
     });
     document.querySelectorAll('input[name="prn_used_today"]').forEach(el => el.addEventListener('change',updatePrnOverview));

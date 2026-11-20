@@ -491,28 +491,6 @@
     return headers;
   }
 
-  function hasCompletedCaregiverSetup() {
-    try {
-      const parsed = JSON.parse(localStorage.getItem('caregiver_config') || 'null');
-      if (!parsed || typeof parsed !== 'object') return false;
-      return [
-        'show_daily_living',
-        'show_behavior',
-        'show_movement',
-        'show_health',
-        'show_menstrual',
-        'show_community',
-        'show_vocational',
-        'show_educational',
-        'daily_living',
-        'behavior_fields',
-        'health_fields',
-      ].some((key) => key in parsed);
-    } catch {
-      return false;
-    }
-  }
-
   function getAppConfig() {
     try {
       const parsed = JSON.parse(localStorage.getItem(APP_CONFIG_KEY) || 'null');
@@ -565,17 +543,15 @@
       el.setAttribute('href', '/auth.html');
     }
 
-    const editLink = overlay.querySelector('[data-caregiver-edit-link]');
-    if (editLink) {
-      editLink.style.display = hasCompletedCaregiverSetup() ? '' : 'none';
-    }
   }
 
   function applyRoleVisibility(role) {
     overlay.querySelectorAll('[data-role]').forEach(node => {
       const roles = node.dataset.role.split(/\s+/);
       const mapped = role === 'administrator' ? 'caregiver' : role;
-      const allowed = roles.includes('shared') || roles.includes(mapped);
+      const parentLinks = ['/caregiver-checkin.html','/saved-drafts.html','/chat.html'];
+      const allowed = roles.includes('shared') || roles.includes(mapped) ||
+        (role === 'parent' && Array.from(node.querySelectorAll('a')).some(a => parentLinks.includes(a.getAttribute('href'))));
       node.style.display = allowed ? '' : 'none';
       if (node.hasAttribute('data-admin-only')) node.hidden = role !== 'administrator';
     });

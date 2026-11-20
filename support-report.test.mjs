@@ -54,14 +54,21 @@ test('chart controller selects linked individual and displays ISA, satisfaction 
  assert.match(text(elements.get('pcSupportUsage')),/2.25 recorded hours/);assert.match(text(elements.get('pcSupportUsage')),/1 entries with time not recorded/);
 });
 
-test('check-in capture and recovery keep the minutes field, including blank and zero',()=>{
+test('recovered check-ins retain support minutes without asking for support rows again',()=>{
  const html=readFileSync('caregiver-checkin.html','utf8');
- const start=html.indexOf('    function readShiftSupports(){'),end=html.indexOf('    shiftSupports.querySelector',start);
- const makeRow=(minutes,support='Community support',location='In the community')=>({querySelector:s=>({value:({'[data-support]':support,'[data-location]':location,'[data-note]':'optional note','[data-minutes]':minutes})[s]})});
- const context=vm.createContext({shiftSupportRows:{children:[makeRow('45'),makeRow('0'),makeRow('')]},shiftSupportField:{}});
- vm.runInContext(html.slice(start,end)+'\nglobalThis.capture=readShiftSupports;globalThis.sync=syncShiftSupports;',context);
- context.sync();const restored=normalizeSupportEntries(context.shiftSupportField.value);assert.equal(restored[0].minutes,45);assert.equal(restored[1].minutes,0);assert.equal(restored[2].minutes,null);
- assert.match(html,/data-minutes.*min="0".*max="1440"/);assert.match(html,/\[data-minutes\]'\)\.value = values.minutes \?\? ''/);
+ const parse=html.slice(html.indexOf('  const parseJsonArray ='),html.indexOf('  const parseMultiValue ='));
+ const form=html.slice(html.indexOf('    function serialize(step){'),html.indexOf('    function captureCurrentFormAsDraft(){'));
+ const field={name:'shift_supports',type:'hidden',value:'[]'};
+ const step={id:'physicalSection',querySelector:()=>null};
+ const {hydrate,serialize,parseJsonArray}=new Function('stepFields',parse+form+';return {hydrate,serialize,parseJsonArray};')(()=>[field]);
+ const rows=[45,0,null].map(minutes=>({support:'Community support',location:'In the community',minutes,note:'Library'}));
+ for(const saved of [rows,JSON.stringify(rows)]){
+   hydrate(step,{shift_supports:saved});
+   assert.deepEqual(parseJsonArray(serialize(step).shift_supports),rows);
+ }
+ assert.match(html,/type="hidden" name="shift_supports" value="\[\]"/);
+ assert.doesNotMatch(html,/Supports Provided This Shift|data-add-support/);
+ assert.match(html,/payload\.shift_supports = parseJsonArray\(payload\.shift_supports\)/);
 });
 
 

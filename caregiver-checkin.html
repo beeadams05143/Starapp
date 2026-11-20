@@ -2235,13 +2235,7 @@
 	              <input id="caregiver_name" name="caregiver_name" type="text" placeholder="Enter your name" required />
 	            </label>
 	          </div>
-          <section id="shiftSupports" class="question-block" aria-labelledby="shiftSupportsTitle">
-            <h2 id="shiftSupportsTitle">Supports Provided This Shift</h2>
-            <p>Enter each support and where it happened. Minutes are optional. Split time between entries; do not repeat the same minutes. Leave unknown time blank.</p><input type="hidden" name="shift_supports" value="[]">
-            <div data-support-rows></div>
-            <button class="btn" type="button" data-add-support>+ Add another support</button>
-            <p data-support-error role="alert" tabindex="-1" hidden></p>
-          </section>
+          <input type="hidden" name="shift_supports" value="[]">
 	        </div>
 
       <!-- STEP 1: Physical -->
@@ -2348,32 +2342,32 @@
             </div>
           </div>
           <div id="sleepReportScope" class="question-block">
-            <div class="movement-label" id="sleepScopeTitle">Are you reporting overnight sleep?</div>
+            <h3 id="sleepScopeTitle">Sleep</h3>
             <div class="yn-pill-group" role="group" aria-labelledby="sleepScopeTitle">
-              <label class="yn-pill"><input type="radio" name="sleep_reporting" value="yes"> Yes — I have sleep information</label>
-              <label class="yn-pill"><input type="radio" name="sleep_reporting" value="not_observed"> No — day shift / sleep not observed</label>
+              <label class="yn-pill"><input type="radio" name="sleep_reporting" value="yes"> Add sleep information</label>
+              <label class="yn-pill"><input type="radio" name="sleep_reporting" value="not_observed"> Sleep not observed</label>
             </div>
-            <p class="muted">Leave unanswered if sleep is not reported. This never means “no sleep difficulties.”</p>
-          </div>
           <fieldset id="sleepQuestions" hidden disabled style="border:0;padding:0;margin:0;min-width:0">
           <div class="physical-general-row">
-            <div id="sleepNightContext" class="sleep-night-context"><strong data-sleep-night>Choose the care date first.</strong><br>After-midnight times belong to the next morning. Record returning to sleep separately in notes.</div>
-            <label>Hours of sleep:
-              <select name="hours_sleep" class="yn"><option value="">Select</option><option>4</option><option>6</option><option>8</option><option>10+</option></select>
-            </label>
-            <label>Time they first fell asleep:
+            <label>Time fell asleep
               <input type="time" name="sleep_fell_asleep_time"/>
             </label>
           </div>
 	          <div class="physical-sleep-row">
 	                        <div id="sleepOnsetQuestion" class="question-block">
-              <div class="movement-label" id="sleepOnsetTitle">Did they have difficulty falling asleep (took about 2+ hours)?</div>
+              <div class="movement-label" id="sleepOnsetTitle">Did it take 2 hours or more to fall asleep?</div>
               <div class="yn-pill-group" role="group" aria-labelledby="sleepOnsetTitle">
                 <label class="yn-pill"><input type="radio" name="sleep_onset_difficulty" value="yes"> Yes</label>
                 <label class="yn-pill"><input type="radio" name="sleep_onset_difficulty" value="no"> No</label>
                 <label class="yn-pill"><input type="radio" name="sleep_onset_difficulty" value="not_sure"> Not sure</label>
               </div>
             </div>
+          </div>
+          <details>
+            <summary>More sleep details (optional)</summary>
+            <label>Hours of sleep
+              <select name="hours_sleep" class="yn"><option value="">Select</option><option>4</option><option>6</option><option>8</option><option>10+</option></select>
+            </label>
             <div id="question-night-wake-flag" class="question-block">
               <div class="movement-label">Woke up during the night?</div>
               <div class="yn-pill-group" role="group" aria-label="Woke up during the night">
@@ -2381,7 +2375,6 @@
                 <label class="yn-pill"><input type="radio" name="night_wake_flag" id="night_wake_flag_no" value="no"> No</label>
               </div>
             </div>
-	          </div>
           <label id="nightWakeCountWrap" style="display:none">How many times?
             <select name="night_wake_count" id="night_wake_count" class="yn">
               <option value="">Select</option>
@@ -2391,11 +2384,12 @@
               <option>4+</option>
             </select>
           </label>
-          <div class="muted" style="margin:-4px 0 8px">Record hours of sleep or time fell asleep — either one is fine, or both.</div>
           <label id="sleepNotesWrap">Sleep notes (optional)
-            <textarea name="sleep_notes" rows="2" placeholder="For example: First fell asleep at 5:30 a.m., or woke and returned to sleep at 5:30 a.m."></textarea>
+            <textarea name="sleep_notes" rows="2"></textarea>
           </label>
+          </details>
           </fieldset>
+          </div>
 	          <div class="physical-final-row">
             <div id="question-had-bm" class="question-block">
               <div class="movement-label">Had a BM today?</div>
@@ -2717,6 +2711,18 @@
               </div>
             </div>
             <div id="behaviorSafetyIncidentDetails" hidden>
+              <label><input type="checkbox" name="aggression_flag" value="yes"> Aggression was involved</label>
+              <div id="aggressionDetails" class="behavior-legacy-paired-row" style="display:none">
+                <label>Aggression type
+                  <select name="aggression_type" id="aggression_type" disabled>
+                    <option value="">Select type</option><option>Posturing</option><option>Physical</option><option>Verbal</option><option>Self-harm</option>
+                  </select>
+                </label>
+                <label>Aggression intensity (0–5)
+                  <input type="range" min="0" max="5" step="1" value="0" name="aggression_intensity" id="aggression_intensity" disabled>
+                  <span id="intensityVal">0</span>
+                </label>
+              </div>
               <label>Where did it happen? (optional)
                 <input type="text" name="safety_incident_location" placeholder="For example: workplace, home, or community" />
               </label>
@@ -2737,32 +2743,7 @@
           </section>
           <div id="behaviorQuestionsWrap" class="row"></div>
           <div id="legacyBehaviorQuestions" class="config-hidden" aria-hidden="true">
-            <div class="behavior-legacy-section">
-              <div id="question-aggression-flag" class="behavior-legacy-question-line">
-                <div class="movement-label">Behavior &amp; Safety Incidents</div>
-                <p class="muted">Was there an incident involving physical or verbal aggression today?</p>
-                <div class="yn-pill-group" role="group" aria-label="Incident involving physical or verbal aggression">
-                  <label class="yn-pill"><input type="radio" name="aggression_flag" value="yes"> Yes</label>
-                  <label class="yn-pill"><input type="radio" name="aggression_flag" value="no"> No</label>
-                </div>
-              </div>
-              <div id="aggressionDetails" class="behavior-legacy-paired-row" style="display:none">
-                <label>Incident type:
-                  <select name="aggression_type" id="aggression_type" disabled>
-                    <option value="">Select type</option>
-                    <option>Posturing</option><option>Physical</option><option>Verbal</option><option>Self-harm</option>
-                  </select>
-                </label>
-                <label>Intensity (0–5):
-                  <input type="range" min="0" max="5" step="1" value="0" name="aggression_intensity" id="aggression_intensity" disabled/>
-                  <div class="savedAt"><span id="intensityVal">0</span></div>
-                </label>
-              </div>
-            </div>
-            <label id="aggressionNotesWrap">Incident details:
-              <textarea name="aggression_notes" placeholder="What happened, where, what led up to it, and how the situation resolved"></textarea>
-            </label>
-	            <hr class="soft"/>
+<hr class="soft"/>
 	            <div class="section-subtitle">Mood &amp; Regulation</div>
 	            <div class="mood-regulation-card">
 	              <div class="mood-question">
@@ -3196,7 +3177,7 @@
       </fieldset>
       <section id="checkinSubmitPanel" class="panel checkin-submit-panel" aria-labelledby="checkinDateTitle">
         <p id="submissionContext">Loading caregiver and group… Questions remain disabled until ready.</p>
-        <details id="checkinAnswersReview"><summary>Review entered answers</summary><p class="sleep-night-context" data-sleep-night data-sleep-review></p><div id="reviewSections"></div></details>
+        <details id="checkinAnswersReview"><summary>Review entered answers</summary><div id="reviewSections"></div></details>
         <div id="duplicateNotice" role="alert" hidden>
           <p id="duplicateDateLabel"></p>
           <label class="confirmation-choice"><input type="checkbox" id="allowDuplicate" autocomplete="off"> I intend to create an additional check-in for this same date. Keep the existing record unchanged.</label>
@@ -3208,7 +3189,6 @@
         <button class="btn" id="changeCheckinDate" type="button">Change Date</button>
         <label class="confirmation-choice"><input type="checkbox" id="checkinDateConfirmed" autocomplete="off" required disabled> <strong id="checkinDateConfirmationText">I confirm the care date is correct.</strong></label>
         <button class="btn primary" id="submitAll" type="submit" disabled>Submit Check-In</button>
-        <button class="btn" id="editShiftSupports" type="button" hidden>Edit shift supports</button>
         <p id="submissionStatus" role="status" aria-live="assertive" aria-atomic="true" tabindex="-1">Loading submission safeguards…</p>
         <button class="btn" id="checkSaveStatus" type="button" hidden>Check original save status — no new submission</button>
         <button class="btn" id="startNewCheckin" type="button" hidden>Start a new blank check-in</button>
@@ -3227,7 +3207,6 @@
   // 1) Imports MUST be first in the module
   import { rest, getSessionFromStorage } from './restClient.js?v=2026.10.29UVM3';
   import { CheckinSubmissionUI } from './caregiver-submission-ui.js?v=2026.11.19-review';
-  import {normalizeSupportEntries} from './support-report.js';
   import {loadSignedInRole} from './signed-in-role.js';
   import { normalizeSleepPayload } from './caregiver-sleep.js?v=2026.11.15-sleep-scope';
   import { sleepOnsetAnswer, restoredSleepResponse } from './caregiver-care-date.js?v=2026.11.15-date-choice';
@@ -5093,7 +5072,6 @@
       labelForName('sleep_fell_asleep_time'),
       document.getElementById('sleepReportScope'),
       document.getElementById('sleepOnsetQuestion'),
-      document.getElementById('sleepNightContext'),
       document.getElementById('sleepNotesWrap'),
       document.getElementById('question-night-wake-flag'),
       document.getElementById('nightWakeCountWrap'),
@@ -5788,11 +5766,6 @@
 
     // Guard native form submission before any asynchronous initialization.
     formEl.addEventListener('submit', submitFinal);
-    document.getElementById('editShiftSupports').addEventListener('click', () => {
-      const error = shiftSupports.querySelector('[data-support-error]');
-      error.focus({ preventScroll: true });
-      error.scrollIntoView({ block: 'center' });
-    });
     const session = getSessionFromStorage();
     try {
       caregiverSetupState.forceLegacyMode = await userHasLegacyCaregiverCheckins(session?.user?.id || null);
@@ -6246,6 +6219,7 @@
     }
     document.querySelectorAll('input[name="safety_incident_occurred"]').forEach(input => {
       input.addEventListener('change', syncBehaviorSafetyIncidentDetails);
+      input.addEventListener('change', syncAggressionControls);
     });
     syncBehaviorSafetyIncidentDetails();
 
@@ -6254,9 +6228,8 @@
     const aInt  = document.getElementById('aggression_intensity');
     const aInstances = document.getElementById('aggression_instances_today');
     const aggressionDetails = document.getElementById('aggressionDetails');
-    const aggressionNotesWrap = document.getElementById('aggressionNotesWrap');
     function syncAggressionControls(){
-      const yes = getYnValue('aggression_flag') === 'yes';
+      const yes = getYnValue('safety_incident_occurred') === 'yes' && getYnValue('aggression_flag') === 'yes';
       [aType,aInt,aInstances].forEach(el=>el && (el.disabled=!yes));
       if(!yes){
         if(aType) aType.value='';
@@ -6264,7 +6237,6 @@
         if(aInt){ aInt.value=0; const iv=document.getElementById('intensityVal'); if(iv) iv.textContent='0'; }
       }
       if (aggressionDetails) aggressionDetails.style.display = yes ? '' : 'none';
-      if (aggressionNotesWrap) aggressionNotesWrap.style.display = yes ? '' : 'none';
     }
     // Mania enable/disable
     const manicInt  = document.getElementById('manic_intensity');
@@ -6765,55 +6737,6 @@
       }
       openSectionDetailByIndex(steps.findIndex(step => step.id === 'final-notes-step'));
     }
-    const shiftSupports = document.getElementById('shiftSupports');
-    const shiftSupportRows = shiftSupports.querySelector('[data-support-rows]');
-    const shiftSupportField = shiftSupports.querySelector('[name=shift_supports]');
-    const supportOptions = ['In-home support','Community support','Employment support','Respite','Not sure — needs review'];
-    const locationOptions = ['At home','In the community','At a place of employment','Other'];
-    function addShiftSupport(values = {}){
-      const row = document.createElement('fieldset');
-      row.className = 'question-block';
-      row.style.minWidth = '0';
-      row.innerHTML = '<legend>Support entry</legend><label>Support provided<select data-support></select></label>' +
-        '<label>Where it happened<select data-location></select></label>' +
-        '<label>Time for this support (minutes, optional)<input data-minutes type="number" min="0" max="1440" step="1" inputmode="numeric"></label>' +
-        '<label>Place or short note (optional)<input data-note type="text" maxlength="160"></label>' +
-        '<button type="button" class="btn" data-remove-support>Remove support entry</button>';
-      for (const [selector, options, value, placeholder] of [
-        ['[data-support]',supportOptions,values.support,'Choose a support'],
-        ['[data-location]',locationOptions,values.location,'Choose a location']
-      ]) {
-        const select = row.querySelector(selector);
-        select.add(new Option(placeholder,''));
-        options.forEach(option => select.add(new Option(option,option)));
-        select.value = options.includes(value) ? value : '';
-      }
-      row.querySelector('[data-note]').value = values.note || '';
-      row.querySelector('[data-minutes]').value = values.minutes ?? '';
-      row.querySelector('[data-remove-support]').onclick = () => {
-        row.remove();
-        if (!shiftSupportRows.children.length) addShiftSupport();
-        syncShiftSupports();
-        shiftSupports.querySelector('[data-add-support]').focus();
-      };
-      shiftSupportRows.append(row);
-      return row;
-    }
-    function readShiftSupports(){
-      return Array.from(shiftSupportRows.children, row => ({
-        support: row.querySelector('[data-support]').value,
-        location: row.querySelector('[data-location]').value,
-        note: row.querySelector('[data-note]').value.trim(),
-        minutes: row.querySelector('[data-minutes]').value
-      })).filter(entry => entry.support || entry.location || entry.note || entry.minutes !== '');
-    }
-    function syncShiftSupports(){
-      shiftSupportField.value = JSON.stringify(readShiftSupports());
-    }
-    shiftSupports.querySelector('[data-add-support]').onclick = () => addShiftSupport().querySelector('select').focus();
-    shiftSupportRows.addEventListener('input',syncShiftSupports);
-    shiftSupportRows.addEventListener('change',syncShiftSupports);
-    addShiftSupport();
     function stepFields(step){
       const fields = Array.from(step.querySelectorAll('input,select,textarea'));
       // Keep existing draft step keys compatible after moving shared details.
@@ -6823,7 +6746,6 @@
       return fields;
     }
     function serialize(step){
-      if(step.id === 'physicalSection')syncShiftSupports();
       const data={};
       if (step.querySelector('[name="sleep_onset_difficulty"]')) data.sleep_onset_difficulty = null;
       stepFields(step).forEach(el=>{
@@ -6837,10 +6759,21 @@
         } }
         else data[el.name]=el.value;
       });
+      if (step.id === 'behaviorSection') {
+        data.aggression_flag = data.safety_incident_occurred === 'yes' && data.aggression_flag ? 'yes' : '';
+        if (data.aggression_flag) data.aggression_notes = data.safety_incident_details;
+      }
       return step.querySelector('[name="sleep_reporting"]') ? normalizeSleepPayload(data) : data;
     }
     function hydrate(step,data){
       if(!data) return;
+      if (step.id === 'behaviorSection') {
+        const aggression = data.aggression_flag === 'yes' || data.aggression_flag === true;
+        data = { ...data, aggression_flag: aggression, safety_incident_occurred: aggression ? 'yes' : data.safety_incident_occurred };
+        if (data.aggression_notes && data.aggression_notes !== data.safety_incident_details) {
+          data.safety_incident_details = [data.safety_incident_details, data.aggression_notes].filter(Boolean).join('\n');
+        }
+      }
       stepFields(step).forEach(el=>{
         const v = el.name === 'sleep_onset_difficulty' ? restoredSleepResponse(data) : data[el.name]; if(v===undefined) return;
         if(el.type==='checkbox') el.checked = !!v;
@@ -6848,7 +6781,7 @@
           if (el.name === 'movement_present' || el.name === 'temp_present' || el.name === 'menstrual_present') return;
           el.checked = (el.value===v);
         }
-        else el.value = v;
+        else el.value = el.name === 'shift_supports' ? JSON.stringify(parseJsonArray(v)) : v;
       });
     }
     function captureCurrentFormAsDraft(){
@@ -6910,11 +6843,6 @@
 	        hydrateAdlFieldsFromData(draft.data[idx] || {}, { silent: true });
 	      }
 	      if (idx === 0) {
-        shiftSupportRows.replaceChildren();
-        const supportEntries = parseJsonArray(draft.data[idx]?.shift_supports);
-        if (supportEntries.length) supportEntries.forEach(entry => addShiftSupport(entry));
-        else addShiftSupport();
-        syncShiftSupports();
 	        hydratePrnFromData(draft.data[idx] || {});
 	      }
 	      if (idx === movementStepIndex) {
@@ -7320,30 +7248,6 @@
       e?.preventDefault?.();
       if (!submissionUI || isSubmittingFinal) return;
       if (!validateCentralPrns()) return;
-      const supportError = shiftSupports.querySelector('[data-support-error]');
-      const editSupports = document.getElementById('editShiftSupports');
-      supportError.hidden = true;
-      editSupports.hidden = true;
-      let supportRows;
-      try {
-        supportRows = normalizeSupportEntries(readShiftSupports());
-        if (supportRows.some(entry => !entry.support || !entry.location)) {
-          throw new Error('Choose a support and location for each shift entry, or remove the incomplete entry.');
-        }
-        // Existing group-scoped check-ins can record supports using the same
-        // group attribution as their other answers.
-        if (supportRows.length && !caregiverSetupState.forceLegacyMode &&
-            !caregiverSetupState.assignedIndividualId && !caregiverSetupState.groupIndividualName) {
-          throw new Error('Ask your admin to set the individual for this check-in before submitting support entries.');
-        }
-      } catch (error) {
-        supportError.textContent = error.message;
-        supportError.hidden = false;
-        editSupports.hidden = false;
-        submissionUI.status(error.message, true);
-        submissionUI.el.submissionStatus.focus();
-        return;
-      }
       const legacyMedDraft = getLegacyMedDraftText();
       if (legacyMedDraft && !window.confirm(
         'This recovered draft has medication-change details that will not be submitted. Copy them into the admin-only Team Updates area first. Choose OK only after copying them, or Cancel to keep editing and preserve the draft.'
@@ -7360,7 +7264,8 @@
         const group_id = submissionUI.context.groupId;
         const user = getSessionFromStorage()?.user;
         const payload = buildPayload();
-        payload.shift_supports = supportRows;
+        // Preserve support entries from drafts created with the previous form.
+        payload.shift_supports = parseJsonArray(payload.shift_supports);
         // Registered individual and assignment identifiers make the caregiver observation
         // attributable without storing any invented caregiver titles or blank-as-zero data.
         if(caregiverSetupState.groupIndividualName){

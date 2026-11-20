@@ -364,6 +364,34 @@
         <label>Caregiver <select id="targetCaregiver"><option value="">Group defaults</option></select></label>
       </div>
       <p id="assignmentHelp" class="muted">Select an individual and a caregiver to make a personal assignment.</p>
+      <fieldset id="assignedServices">
+        <legend>Services this caregiver provides</legend>
+        <p>Choose the services to include in this check-in. Add a default location if the setting is consistent.</p>
+        <div data-assigned-service="home" style="margin:12px 0">
+          <label><input type="checkbox"> In-Home Support</label>
+          <label data-service-setting hidden>Default location (optional)
+            <input type="text" maxlength="120" placeholder="Enter a location or setting">
+          </label>
+        </div>
+        <div data-assigned-service="community" style="margin:12px 0">
+          <label><input type="checkbox"> Community Support</label>
+          <label data-service-setting hidden>Default location (optional)
+            <input type="text" maxlength="120" placeholder="Enter a location or setting">
+          </label>
+        </div>
+        <div data-assigned-service="employment" style="margin:12px 0">
+          <label><input type="checkbox"> Ongoing Supported Employment</label>
+          <label data-service-setting hidden>Default location (optional)
+            <input type="text" maxlength="120" placeholder="Enter a location or setting">
+          </label>
+        </div>
+        <div data-assigned-service="respite" style="margin:12px 0">
+          <label><input type="checkbox"> Respite</label>
+          <label data-service-setting hidden>Default location (optional)
+            <input type="text" maxlength="120" placeholder="Enter a location or setting">
+          </label>
+        </div>
+      </fieldset>
     </section>
     <section class="hero" aria-labelledby="includedNotesHeading">
       <h2 id="includedNotesHeading">Always available in the caregiver check-in</h2>
@@ -989,6 +1017,7 @@
       CATEGORY_DEFS.forEach((category) => {
         const article = document.createElement('article');
         article.className = 'card';
+        if (Object.values(legacyServiceCategories).includes(category.key)) article.style.display = 'none';
 
         const head = document.createElement('div');
         head.className = 'card-head';
@@ -1196,6 +1225,33 @@
         .filter((categoryKey) => selectedCountForCategory(categoryKey) > 0);
     }
 
+    const serviceSettings = document.getElementById('assignedServices');
+    const legacyServiceCategories = {home: 'daily_living', community: 'community', employment: 'vocational', respite: 'respite'};
+
+    function readAssignedServices() {
+      return Object.fromEntries(Array.from(serviceSettings.querySelectorAll('[data-assigned-service]'))
+        .filter(row => row.querySelector('input[type="checkbox"]').checked)
+        .map(row => [row.dataset.assignedService, row.querySelector('input[type="text"]').value.trim()]));
+    }
+
+    function loadAssignedServices(saved, categories) {
+      serviceSettings.querySelectorAll('[data-assigned-service]').forEach(row => {
+        const key = row.dataset.assignedService;
+        const checkbox = row.querySelector('input[type="checkbox"]');
+        checkbox.checked = saved && typeof saved === 'object'
+          ? Object.hasOwn(saved, key)
+          : categories.has(legacyServiceCategories[key]) || (key === 'home' && categories.has('home_family'));
+        const location = row.querySelector('input[type="text"]');
+        location.value = typeof saved?.[key] === 'string' ? saved[key] : '';
+        row.querySelector('[data-service-setting]').hidden = !checkbox.checked;
+      });
+    }
+
+    serviceSettings.addEventListener('change', event => {
+      if (event.target.type !== 'checkbox') return;
+      event.target.closest('[data-assigned-service]').querySelector('[data-service-setting]').hidden = !event.target.checked;
+    });
+
     function buildSelectedItems() {
       const selectedItems = {};
       CATEGORY_DEFS.forEach((category) => {
@@ -1209,11 +1265,16 @@
       if (Object.keys(state.itemDescriptions || {}).length) {
         selectedItems.__item_descriptions__ = state.itemDescriptions;
       }
+      selectedItems.__support_services__ = readAssignedServices();
       selectedItems.__custom_mode__ = true;
       return selectedItems;
     }
 
+    let configLoadGeneration = 0;
     async function loadConfig() {
+      const generation = ++configLoadGeneration;
+      const target = [state.selectedIndividual, state.selectedCaregiver].join(":");
+      const stillCurrent = () => generation === configLoadGeneration && target === [state.selectedIndividual, state.selectedCaregiver].join(":");
       setStatus('');
       const session = getSessionFromStorage();
       if (!session?.user?.id) {
@@ -1257,15 +1318,21 @@
       let config = rows?.[0] || null;
 
 
-      state.configRowId = config?.id || null;
-      state.assignmentId=null;
+      if (!stillCurrent()) return;
+      const configRowId = config?.id || null;
+      let assignmentId = null;
       if(state.selectedIndividual && state.selectedCaregiver){
         const assignments=await rest('star_caregiver_checkin_assignments?select=*&group_id=eq.'+encodeURIComponent(groupId)+'&individual_id=eq.'+encodeURIComponent(state.selectedIndividual)+'&caregiver_user_id=eq.'+encodeURIComponent(state.selectedCaregiver)+'&limit=1');
         const found=assignments?.[0];
-        if(found){state.assignmentId=found.id;config=found;}
+        if(found){assignmentId=found.id;config=found;}
       }
+      if (!stillCurrent()) return;
+      state.configRowId = configRowId;
+      state.assignmentId = assignmentId;
       const selectedCategories = new Set(normalizeCategoryArray(config?.selected_categories));
       const selectedItems = normalizeSelectedItems(config?.selected_items);
+      loadAssignedServices(selectedItems.__support_services__, selectedCategories);
+      serviceSettings.disabled = false;
       state.itemDescriptions = normalizeItemDescriptions(selectedItems.__item_descriptions__);
 
       CATEGORY_DEFS.forEach((category) => {
@@ -1303,6 +1370,7 @@
 
       setStatus('Saving caregiver setup…');
       saveBtn.disabled = true;
+      individualSelect.disabled = caregiverSelect.disabled = true;
       const originalLabel = saveBtn.textContent;
       saveBtn.textContent = 'Saving…';
 
@@ -1352,6 +1420,7 @@
         setStatus(error?.message || 'Could not save caregiver setup.', 'error');
       } finally {
         saveBtn.disabled = false;
+        individualSelect.disabled = caregiverSelect.disabled = false;
         saveBtn.textContent = originalLabel;
       }
     }
@@ -1390,6 +1459,8 @@
       document.getElementById('assignmentHelp').textContent='Only registered people from this group appear in these lists.';
     }
     function selectedTargets(){
+      saveBtn.disabled = true;
+      serviceSettings.disabled = true;
       state.selectedIndividual=individualSelect.value;
       state.selectedCaregiver=caregiverSelect.value;
       if(Boolean(state.selectedIndividual)!==Boolean(state.selectedCaregiver)){

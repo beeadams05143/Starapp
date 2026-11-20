@@ -1272,7 +1272,7 @@
       }
       selectedItems.__track_movement__ = document.getElementById("trackMovement").checked;
       selectedItems.__support_services__ = serviceSettings.hidden ? {} : readAssignedServices();
-      selectedItems.__custom_mode__ = true;
+      selectedItems.__custom_mode__ = state.loadedCustomMode || buildSelectedCategories().length > 0 || Object.keys(selectedItems.__support_services__).length > 0;
       return selectedItems;
     }
 
@@ -1338,6 +1338,7 @@
       state.assignmentId = assignmentId;
       const selectedCategories = new Set(normalizeCategoryArray(config?.selected_categories));
       const selectedItems = normalizeSelectedItems(config?.selected_items);
+      state.loadedCustomMode = selectedItems.__custom_mode__ === true;
       const parent = state.members.some(member => member.user_id === state.selectedCaregiver && member.assigned_role === 'parent');
       if (parent && !assignmentId) {
         selectedCategories.add('physical_health');

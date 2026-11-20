@@ -127,7 +127,7 @@ export class CheckinSubmissionUI {
       this.resumeCloudDraft(cloudDraftParam).catch(error => this.status('Cloud draft not restored: '+(error?.message||'Please try again.'), true));
     }
     if (!context.userId || !context.groupId) this.status('Save Failed — sign in and open this form in the correct group before entering a check-in.', true);
-    else if (!requestedDraft && !cloudDraftParam) this.status(context.practice ? 'Practice Mode — completion does not save a real check-in.' : 'Choose the day you provided care to begin.');
+    else if (!requestedDraft && !cloudDraftParam) this.status(context.practice ? 'Practice Mode — completion does not save a real check-in.' : '');
     this.update();
   }
   setStore() {

@@ -330,6 +330,10 @@
       .card-head{ flex-direction:column; align-items:stretch; }
       .count-pill{ align-self:flex-start; }
     }
+    .question-followups { display:block; font-weight:400; margin-top:4px; }
+  [data-assigned-service] .item-label { margin:8px 0; }
+  .optional-tracking { margin-top:12px; }
+  .optional-tracking > summary { cursor:pointer; margin-bottom:8px; }
   </style>
 </head>
 <body>
@@ -373,25 +377,31 @@
         <legend>Services this caregiver provides</legend>
         <p>Choose the services to include in this check-in. Add a default location if the setting is consistent.</p>
         <div data-assigned-service="home" style="margin:12px 0">
-          <label><input type="checkbox"> In-Home Support</label>
+          <label class="category-toggle"><input type="checkbox" data-service-toggle> In-Home Support</label>
+          <label class="item-label"><input type="checkbox" data-service-question="activity"><span>Engaged in a home/community activity?<small class="question-followups">Yes opens time spent, prompting, activity type, and home notes.</small></span></label>
+          <label class="item-label"><input type="checkbox" data-service-question="daily_living"><span>Daily Living activities<small class="question-followups">Includes activities, prompting or independence, and daily living notes.</small></span></label>
           <label data-service-setting hidden>Default location (optional)
             <input type="text" maxlength="120" placeholder="Enter a location or setting">
           </label>
         </div>
         <div data-assigned-service="community" style="margin:12px 0">
-          <label><input type="checkbox"> Community Support</label>
+          <label class="category-toggle"><input type="checkbox" data-service-toggle> Community Support</label>
+          <label class="item-label"><input type="checkbox" data-service-question="activity"><span>Participated in a community activity or event?<small class="question-followups">Yes opens the time spent and prompting dropdowns, activity type, and a note.</small></span></label>
+          <label class="item-label"><input type="checkbox" data-service-question="interaction"><span>Engaged with a community member appropriately?<small class="question-followups">Includes interaction type, prompting, and an interaction note.</small></span></label>
           <label data-service-setting hidden>Default location (optional)
             <input type="text" maxlength="120" placeholder="Enter a location or setting">
           </label>
         </div>
         <div data-assigned-service="employment" style="margin:12px 0">
-          <label><input type="checkbox"> Ongoing Supported Employment</label>
+          <label class="category-toggle"><input type="checkbox" data-service-toggle> Ongoing Supported Employment</label>
+          <label class="item-label"><input type="checkbox" data-service-question="participation"><span>Participated in vocational activity?<small class="question-followups">Yes opens the time in vocational activity and prompting dropdowns, and vocational notes.</small></span></label>
           <label data-service-setting hidden>Default location (optional)
             <input type="text" maxlength="120" placeholder="Enter a location or setting">
           </label>
         </div>
         <div data-assigned-service="respite" style="margin:12px 0">
-          <label><input type="checkbox"> Respite</label>
+          <label class="category-toggle"><input type="checkbox" data-service-toggle> Respite</label>
+          <label class="item-label"><input type="checkbox" data-service-question="support"><span>What support did you provide during respite?<small class="question-followups">Includes support activities, location, minutes, and an optional note.</small></span></label>
           <label data-service-setting hidden>Default location (optional)
             <input type="text" maxlength="120" placeholder="Enter a location or setting">
           </label>
@@ -399,18 +409,18 @@
       </fieldset>
     </section>
     <section class="hero" aria-labelledby="includedNotesHeading">
-      <h2 id="includedNotesHeading">Always available in the caregiver check-in</h2>
-      <p>These optional notes are included for every caregiver, regardless of the questions selected below. Caregivers can leave either note blank.</p>
+      <h2 id="includedNotesHeading">Caregiver check-in notes</h2>
+      <p>Caregivers can leave these notes blank.</p>
       <div class="grid">
         <article class="card">
           <h3>★ Gold Star — Important Observations</h3>
           <p>Capture one meaningful moment, accomplishment, or important observation in up to 180 characters. Find it near the end of the check-in under <strong>Notes &amp; Important Observations</strong>.</p>
           <p class="muted">Included with its date in the monthly team letter. Separate from ISA progress. No setup checkbox is needed.</p>
         </article>
-        <article class="card">
-          <h3>Education &amp; Learning — Skill Development Note</h3>
+        <article class="card" id="educationNoteSettings">
+          <h3><label class="category-toggle"><input type="checkbox" id="includeEducationNote" checked> Education / skill development note (optional)</label></h3>
           <p>Record what was practiced or learned in the <strong>Education &amp; Skill Development</strong> section: for example, fire safety, using Siri to make a call, or reading a social story. Up to 180 characters.</p>
-          <p class="muted">The short note is always included. Choose additional educational measures in <strong>Education &amp; Learning — Detailed Tracking</strong> below.</p>
+          <p class="muted">Choose additional educational measures under <strong>Education &amp; Learning — Detailed Tracking</strong> below.</p>
         </article>
       </div>
     </section>
@@ -439,6 +449,26 @@
         key: 'behavior_mental_health',
         label: 'Behavior / Mental Health',
         items: [
+          {
+            key: 'checkin_safety',
+            label: 'Behavior & Safety Incidents',
+            behaviors: [
+              { key: 'safety_incident_occurred', label: 'Did you observe a behavior or safety incident?', original: true },
+            ],
+          },
+          {
+            key: 'checkin_mood',
+            label: 'Mood & Regulation',
+            behaviors: [
+              { key: 'mood_energy', label: 'Compared with their usual baseline, energy/activity was:', original: true },
+              { key: 'mood_speech', label: 'Speech today was:', original: true },
+              { key: 'mood_attention', label: 'Attention / ability to stay with an activity:', original: true },
+              { key: 'mood_engagement', label: 'Engagement with people and usual activities:', original: true },
+              { key: 'mood_pacing', label: 'Pacing or physical restlessness:', original: true },
+              { key: 'mood_irritability', label: 'Irritability / difficulty regulating emotions:', original: true },
+              { key: 'behavior_anomaly_notes', label: 'Unusual behavior observed (optional)', original: true },
+            ],
+          },
           {
             key: 'emotional_regulation',
             label: 'Emotional Regulation',
@@ -519,12 +549,13 @@
         key: 'physical_health',
         label: 'Physical Health',
         items: [
-          ['sleep', 'Sleep'],
-          ['appetite', 'Appetite'],
-          ['prn_used', 'PRN Used'],
-          ['energy_level', 'Energy Level'],
-          ['pain_discomfort', 'Pain / Discomfort'],
-          ['illness_symptoms', 'Illness Symptoms'],
+          ['good_health', 'Appears in good health?'],
+          ['sleep', 'Sleep during this shift'],
+          ['appetite', 'Any change in appetite?'],
+          ['prn_used', 'PRN used today?'],
+          ['energy_level', 'Appears tired?'],
+          ['pain_discomfort', 'Pain / discomfort (if not in good health)'],
+          ['illness_symptoms', 'Illness symptoms (if not in good health)'],
           ['menstrual_tracking', 'Menstrual Cycle Tracking'],
         ],
       },
@@ -1005,11 +1036,28 @@
       return total;
     }
 
+    function syncSelectAll(toggle, choices) {
+      toggle.checked = choices.length > 0 && choices.every(input => input.checked);
+      toggle.indeterminate = !toggle.checked && choices.some(input => input.checked);
+    }
+
+    function setQuestionChoices(choices, checked) {
+      choices.forEach(input => {
+        input.checked = checked;
+        input.dispatchEvent(new Event('change'));
+      });
+    }
+
     function syncCategoryState(categoryKey) {
       const categoryInput = state.categoryEls.get(categoryKey);
       if (!categoryInput) return;
       const count = selectedCountForCategory(categoryKey);
-      categoryInput.checked = count > 0;
+      const article = categoryInput.closest('article');
+      const questions = categoryKey === 'behavior_mental_health' ? article.querySelector(':scope > .item-list') : article;
+      syncSelectAll(categoryInput, [...questions.querySelectorAll('[data-item-key]')]);
+      article.querySelectorAll('[data-section-toggle]').forEach(toggle => {
+        syncSelectAll(toggle, [...toggle.closest('.item-section').querySelectorAll('[data-item-key]')]);
+      });
       const countEl = document.getElementById(`count-${categoryKey}`);
       if (countEl) {
         countEl.textContent = `${count} selected`;
@@ -1067,6 +1115,14 @@
 
         const itemList = document.createElement('ul');
         itemList.className = 'item-list';
+        const optional = document.createElement('details');
+        optional.className = 'optional-tracking';
+        const summary = document.createElement('summary');
+        summary.textContent = 'Optional tracking objectives';
+        optional.appendChild(summary);
+        const optionalItems = document.createElement('ul');
+        optionalItems.className = 'item-list';
+        optional.appendChild(optionalItems);
 
         category.items.forEach((item) => {
           if (Array.isArray(item)) {
@@ -1103,9 +1159,15 @@
           const sectionHead = document.createElement('div');
           sectionHead.className = 'item-section-head';
 
-          const sectionTitle = document.createElement('div');
-          sectionTitle.className = 'item-section-title';
-          sectionTitle.textContent = item.label;
+          const sectionTitle = document.createElement('label');
+          sectionTitle.className = 'item-section-title category-toggle';
+          const sectionToggle = document.createElement('input');
+          sectionToggle.type = 'checkbox';
+          sectionToggle.dataset.sectionToggle = '';
+          sectionTitle.append(sectionToggle, item.label);
+          sectionToggle.addEventListener('change', () => {
+            setQuestionChoices([...section.querySelectorAll('[data-item-key]')], sectionToggle.checked);
+          });
           sectionHead.appendChild(sectionTitle);
 
           if (item.objective) {
@@ -1136,7 +1198,7 @@
             label.appendChild(input);
             label.appendChild(text);
             behaviorList.appendChild(label);
-            behaviorList.appendChild(buildItemDetail(input, behavior.key, behavior.label));
+            if (!behavior.original) behaviorList.appendChild(buildItemDetail(input, behavior.key, behavior.label));
 
             input.addEventListener('change', () => {
               syncCategoryState(category.key);
@@ -1145,23 +1207,16 @@
 
           section.appendChild(behaviorList);
           li.appendChild(section);
-          itemList.appendChild(li);
+          (item.behaviors?.some(question => question.original) ? itemList : optionalItems).appendChild(li);
         });
 
         article.appendChild(itemList);
+        if (optionalItems.childElementCount) article.appendChild(optional);
         setupGridEl.appendChild(article);
 
         categoryInput.addEventListener('change', () => {
-          if (!categoryInput.checked) {
-            getCategoryItems(category).forEach(({ key: itemKey }) => {
-              const itemInput = state.itemEls.get(getCompositeKey(category.key, itemKey));
-              if (itemInput) {
-                itemInput.checked = false;
-                syncItemDetail(itemInput, itemInput.closest('.item-label')?.nextElementSibling);
-              }
-            });
-          }
-          syncCategoryState(category.key);
+          const questions = category.key === 'behavior_mental_health' ? itemList : article;
+          setQuestionChoices([...questions.querySelectorAll('[data-item-key]')], categoryInput.checked);
         });
       });
     }
@@ -1231,30 +1286,58 @@
     }
 
     const serviceSettings = document.getElementById('assignedServices');
+    const educationNote = document.getElementById('includeEducationNote');
     const legacyServiceCategories = {home: 'daily_living', community: 'community', employment: 'vocational', respite: 'respite'};
 
+    function checkedServiceQuestions(row) {
+      return [...row.querySelectorAll('[data-service-question]:checked')].map(input => input.dataset.serviceQuestion);
+    }
+
+    function syncServiceRow(row) {
+      const choices = [...row.querySelectorAll('[data-service-question]')];
+      syncSelectAll(row.querySelector('[data-service-toggle]'), choices);
+      row.querySelector('[data-service-setting]').hidden = !choices.some(input => input.checked);
+    }
+
     function readAssignedServices() {
-      return Object.fromEntries(Array.from(serviceSettings.querySelectorAll('[data-assigned-service]'))
-        .filter(row => row.querySelector('input[type="checkbox"]').checked)
+      return Object.fromEntries([...serviceSettings.querySelectorAll('[data-assigned-service]')]
+        .filter(row => checkedServiceQuestions(row).length)
         .map(row => [row.dataset.assignedService, row.querySelector('input[type="text"]').value.trim()]));
     }
 
-    function loadAssignedServices(saved, categories) {
+    function readAssignedServiceQuestions() {
+      return Object.fromEntries([...serviceSettings.querySelectorAll('[data-assigned-service]')]
+        .map(row => [row.dataset.assignedService, checkedServiceQuestions(row)]));
+    }
+
+    function loadAssignedServices(saved, categories, items) {
       serviceSettings.querySelectorAll('[data-assigned-service]').forEach(row => {
         const key = row.dataset.assignedService;
-        const checkbox = row.querySelector('input[type="checkbox"]');
-        checkbox.checked = saved && typeof saved === 'object'
+        const enabled = saved && typeof saved === 'object'
           ? Object.hasOwn(saved, key)
           : categories.has(legacyServiceCategories[key]) || (key === 'home' && categories.has('home_family'));
-        const location = row.querySelector('input[type="text"]');
-        location.value = typeof saved?.[key] === 'string' ? saved[key] : '';
-        row.querySelector('[data-service-setting]').hidden = !checkbox.checked;
+        const explicit = items.__service_questions__?.[key];
+        const legacyCommunity = items.community || [];
+        row.querySelectorAll('[data-service-question]').forEach(input => {
+          const question = input.dataset.serviceQuestion;
+          const legacyGroup = question === 'activity'
+            ? ['community_outing', 'transportation', 'recreation_participation']
+            : ['social_interaction', 'safety_in_community'];
+          input.checked = enabled && (Array.isArray(explicit) ? explicit.includes(question)
+            : key !== 'community' || !legacyCommunity.length || legacyGroup.some(item => legacyCommunity.includes(item)));
+        });
+        row.querySelector('input[type="text"]').value = typeof saved?.[key] === 'string' ? saved[key] : '';
+        syncServiceRow(row);
       });
     }
 
     serviceSettings.addEventListener('change', event => {
       if (event.target.type !== 'checkbox') return;
-      event.target.closest('[data-assigned-service]').querySelector('[data-service-setting]').hidden = !event.target.checked;
+      const row = event.target.closest('[data-assigned-service]');
+      if (event.target.matches('[data-service-toggle]')) {
+        setQuestionChoices([...row.querySelectorAll('[data-service-question]')], event.target.checked);
+      }
+      syncServiceRow(row);
     });
 
     function buildSelectedItems() {
@@ -1272,7 +1355,9 @@
       }
       selectedItems.__track_movement__ = document.getElementById("trackMovement").checked;
       selectedItems.__support_services__ = serviceSettings.hidden ? {} : readAssignedServices();
-      selectedItems.__custom_mode__ = state.loadedCustomMode || buildSelectedCategories().length > 0 || Object.keys(selectedItems.__support_services__).length > 0;
+      selectedItems.__education_note__ = educationNote.checked;
+      selectedItems.__service_questions__ = serviceSettings.hidden ? {} : readAssignedServiceQuestions();
+      selectedItems.__custom_mode__ = state.loadedCustomMode || buildSelectedCategories().length > 0 || Object.keys(selectedItems.__support_services__).length > 0 || !educationNote.checked;
       return selectedItems;
     }
 
@@ -1344,16 +1429,21 @@
         selectedCategories.add('physical_health');
         selectedCategories.add('behavior_mental_health');
         selectedItems.physical_health = ['sleep','good_health','illness_symptoms','pain_discomfort','energy_level','appetite'];
-        if (!selectedItems.behavior_mental_health?.length) selectedItems.behavior_mental_health = getCategoryItems(CATEGORY_DEFS.find(c => c.key === 'behavior_mental_health')).map(item => item.key);
+        if (!selectedItems.behavior_mental_health?.length) {
+          selectedItems.behavior_mental_health = CATEGORY_DEFS.find(category => category.key === 'behavior_mental_health')
+            .items.flatMap(section => section.behaviors.filter(question => question.original).map(question => question.key));
+        }
       }
       serviceSettings.hidden = parent;
+      document.getElementById('educationNoteSettings').hidden = parent;
+      educationNote.checked = selectedItems.__education_note__ !== false;
       const movementSetup = document.getElementById('movementSetup');
       movementSetup.disabled = false;
       document.getElementById('trackMovement').checked = selectedItems.__track_movement__ !== false;
       document.getElementById('movementSetupHelp').textContent = state.selectedCaregiver
         ? (groupTracksMovement ? 'Applies to this check-in when Behavior / Mental Health is included.' : 'Group defaults currently hide this question on every check-in.')
         : 'Turn off to hide this question from every check-in in the group, including individual assignments.';
-      loadAssignedServices(selectedItems.__support_services__, selectedCategories);
+      loadAssignedServices(selectedItems.__support_services__, selectedCategories, selectedItems);
       serviceSettings.disabled = false;
       state.itemDescriptions = normalizeItemDescriptions(selectedItems.__item_descriptions__);
 

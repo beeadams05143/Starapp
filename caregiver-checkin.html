@@ -2685,11 +2685,11 @@
             </div>
           </div>
           <div id="behaviorQuestionsWrap" class="row"></div>
-          <div id="legacyBehaviorQuestions" class="config-hidden" aria-hidden="true">
+          <div id="legacyBehaviorQuestions" class="config-hidden">
 <hr class="soft"/>
 	            <div class="section-subtitle">Mood &amp; Regulation</div>
 	            <div class="mood-regulation-card">
-	              <div class="mood-question">
+	              <div class="mood-question" data-checkin-mood="mood_energy">
 	                <div class="mood-question-title">Compared with their usual baseline, energy/activity was:</div>
 	                <div class="mood-choice-grid">
 	                  <label class="mood-choice"><input type="radio" name="mood_energy" value="lower">Lower than usual</label>
@@ -2698,7 +2698,7 @@
 	                  <label class="mood-choice"><input type="radio" name="mood_energy" value="much_higher">Much higher than usual</label>
 	                </div>
 	              </div>
-	              <div class="mood-question">
+	              <div class="mood-question" data-checkin-mood="mood_speech">
 	                <div class="mood-question-title">Speech today was:</div>
 	                <div class="mood-choice-grid">
 	                  <label class="mood-choice"><input type="radio" name="mood_speech" value="typical">Typical</label>
@@ -2707,7 +2707,7 @@
 	                  <label class="mood-choice"><input type="radio" name="mood_speech" value="difficult_to_interrupt">Very difficult to interrupt</label>
 	                </div>
 	              </div>
-	              <div class="mood-question">
+	              <div class="mood-question" data-checkin-mood="mood_attention">
 	                <div class="mood-question-title">Attention / ability to stay with an activity:</div>
 	                <div class="mood-choice-grid">
 	                  <label class="mood-choice"><input type="radio" name="mood_attention" value="typical">Typical</label>
@@ -2716,7 +2716,7 @@
 	                  <label class="mood-choice"><input type="radio" name="mood_attention" value="unable_to_stay_with_activities">Unable to stay with activities</label>
 	                </div>
 	              </div>
-	              <div class="mood-question">
+	              <div class="mood-question" data-checkin-mood="mood_engagement">
 	                <div class="mood-question-title">Engagement with people and usual activities:</div>
 	                <div class="mood-choice-grid">
 	                  <label class="mood-choice"><input type="radio" name="mood_engagement" value="0"><span>0 — Engaged<small>Interested in usual activities and people.</small></span></label>
@@ -2725,7 +2725,7 @@
 	                  <label class="mood-choice"><input type="radio" name="mood_engagement" value="3"><span>3 — Highly withdrawn<small>Little interest in usual activities or interaction.</small></span></label>
 	                </div>
 	              </div>
-	              <div class="mood-question">
+	              <div class="mood-question" data-checkin-mood="mood_pacing">
 	                <div class="mood-question-title">Pacing or physical restlessness:</div>
 	                <div class="mood-choice-grid">
 	                  <label class="mood-choice"><input type="radio" name="mood_pacing" value="none">None</label>
@@ -2734,7 +2734,7 @@
 	                  <label class="mood-choice"><input type="radio" name="mood_pacing" value="nearly_constant">Nearly constant</label>
 	                </div>
 	              </div>
-	              <div class="mood-question">
+	              <div class="mood-question" data-checkin-mood="mood_irritability">
 	                <div class="mood-question-title">Irritability / difficulty regulating emotions:</div>
 	                <div class="mood-choice-grid">
 	                  <label class="mood-choice"><input type="radio" name="mood_irritability" value="none">None</label>
@@ -2926,7 +2926,7 @@
           <div class="subcap">Community at large</div>
           <div class="row cols-3 compact">
             <div id="question-public-activity-flag" class="question-block">
-              <div class="movement-label">Engaged in a community-at-large activity?</div>
+              <div class="movement-label">Participated in a community activity or event?</div>
               <div class="yn-pill-group" role="group" aria-label="Community activity">
                 <label class="yn-pill"><input type="radio" name="public_activity_flag" value="" data-skip> Did not participate today / Skip</label>
                 <label class="yn-pill"><input type="radio" name="public_activity_flag" value="yes"> Yes</label>
@@ -3051,7 +3051,7 @@
           <label for="educational_note">Education / skill development note (optional)
             <textarea name="educational_note" id="educational_note" maxlength="180" rows="4" placeholder="For example: Practiced fire safety, using Siri to make calls, or read a social story."></textarea>
           </label>
-          <div class="muted" style="text-align:right">Up to 180 characters per check-in</div>
+          <div id="educationNoteLimit" class="muted" style="text-align:right">Up to 180 characters per check-in</div>
           <input type="hidden" name="educational_tracking" id="educational_tracking" value=""/>
           <details id="educationalAdvanced" class="health-concerns">
             <summary>Additional configured educational tracking (optional)</summary>
@@ -4162,6 +4162,10 @@
       .join(' ');
   };
 
+  const originalMoodQuestions = [...document.querySelectorAll('[data-checkin-mood]')];
+  const originalMoodKeys = new Set(originalMoodQuestions.map(question => question.dataset.checkinMood));
+  const originalBehaviorKeys = new Set([...originalMoodKeys, 'behavior_anomaly_notes', 'safety_incident_occurred']);
+
   function getConfiguredBehaviorOptions(){
     if (!caregiverSetupState.hasConfig || !caregiverSetupState.selectedCategories.has('behavior_mental_health')) {
       return [];
@@ -4170,7 +4174,7 @@
     const configured = (caregiverSetupState.selectedItems.behavior_mental_health || [])
       .map((entry, index) => {
         const key = toBehaviorKey(entry) || `behavior_${index + 1}`;
-        if (seen.has(key)) return null;
+        if (seen.has(key) || originalBehaviorKeys.has(key)) return null;
         seen.add(key);
         return {
           key,
@@ -4866,7 +4870,7 @@
     caregiverSetupState.selectedCategories = new Set();
     caregiverSetupState.selectedItems = normalizeConfigItems(config?.selected_items);
     caregiverSetupState.itemDescriptions = {};
-    if (config && isCustomCaregiverSetupEnabled(config)) {
+    if (assigned || (config && isCustomCaregiverSetupEnabled(config))) {
       caregiverSetupState.forceLegacyMode = false;
       caregiverSetupState.configRowId = config.id || null;
       caregiverSetupState.hasConfig = true;
@@ -4882,6 +4886,7 @@
         caregiverSetupState.selectedItems = {
           ...caregiverSetupState.selectedItems,
           physical_health: ['sleep','good_health','illness_symptoms','pain_discomfort','energy_level','appetite'],
+          behavior_mental_health: [...originalBehaviorKeys],
         };
       } else {
         const allowed = new Set(['physical_health','behavior_mental_health']);
@@ -4937,7 +4942,9 @@
       educationalQuestionsWrap,
     ], true);
     setConfigHidden([behaviorQuestionsWrap], true);
-    setConfigHidden([document.getElementById('legacyBehaviorQuestions')], false);
+    setConfigHidden([document.getElementById('legacyBehaviorQuestions'), document.getElementById('anomalyNotesWrap'),
+      document.getElementById('behaviorSafetyIncidentCard'),
+      labelForName('educational_note'), document.getElementById('educationNoteLimit'), ...originalMoodQuestions], false);
     setConfigHidden([
       document.getElementById('movementSymptomsPanel'),
     ], !shouldShowMovementSection());
@@ -4977,7 +4984,8 @@
       formEl?.parentNode?.insertBefore(emptyState, formEl);
     }
 
-    const anythingEnabled = hasAnyEnabledCategory() || getAssignedShiftServices().length > 0;
+    const educationNoteEnabled = !caregiverSetupState.isParent && caregiverSetupState.selectedItems.__education_note__ !== false;
+    const anythingEnabled = !!caregiverSetupState.assignmentId || hasAnyEnabledCategory() || getAssignedShiftServices().length > 0;
     setConfigHidden([formEl], !anythingEnabled);
     setConfigHidden([emptyState], anythingEnabled);
 
@@ -5026,7 +5034,9 @@
     setStepAndNavHidden(dailyLivingStep, progressItems.daily_living, !hasAssignedShiftService('Respite'));
     // The short optional educational note is available regardless of setup.
     // Detailed educational tracking remains conditional on caregiver setup.
-    setStepAndNavHidden(educationalStep, progressItems.educational, caregiverSetupState.isParent);
+    setStepAndNavHidden(educationalStep, progressItems.educational,
+      caregiverSetupState.isParent || (!educationNoteEnabled && !educationalItemsVisible));
+    setConfigHidden([labelForName('educational_note'), document.getElementById('educationNoteLimit')], !educationNoteEnabled);
 
     setConfigHidden([
       labelForName('hours_sleep'),
@@ -5082,9 +5092,18 @@
     setConfigHidden([
       behaviorQuestionsWrap,
     ], !behaviorVisible);
-    setConfigHidden([
-      document.getElementById('legacyBehaviorQuestions'),
-    ], true);
+    const behaviorItems = caregiverSetupState.selectedItems.behavior_mental_health || [];
+    const hasExplicitOriginalQuestions = caregiverSetupState.selectedItems.__service_questions__ != null ||
+      behaviorItems.some(key => originalBehaviorKeys.has(key));
+    setConfigHidden([document.getElementById('anomalyNotesWrap')], hasExplicitOriginalQuestions &&
+      !configItemEnabled('behavior_mental_health', 'behavior_anomaly_notes'));
+    setConfigHidden([document.getElementById('behaviorSafetyIncidentCard')], hasExplicitOriginalQuestions &&
+      !configItemEnabled('behavior_mental_health', 'safety_incident_occurred'));
+    originalMoodQuestions.forEach(question => {
+      setConfigHidden([question], !configItemEnabled('behavior_mental_health', question.dataset.checkinMood));
+    });
+    setConfigHidden([document.getElementById('legacyBehaviorQuestions')],
+      !originalMoodQuestions.some(question => !question.classList.contains('config-hidden')));
 
     renderEducationalQuestions();
     setConfigHidden([
@@ -5098,18 +5117,32 @@
       document.getElementById('vocationalNotesWrap'),
     ], !!caregiverSetupState.selectedItems?.vocational?.length && !anyConfigItemEnabled('vocational', ['attended_work_program', 'task_completion', 'prompting_needed', 'workplace_behavior', 'independence']));
 
+    const serviceQuestionEnabled = (service, question, fallback = true) => {
+      const selected = caregiverSetupState.selectedItems?.__service_questions__?.[service];
+      return Array.isArray(selected) ? selected.includes(question) : fallback;
+    };
+    setConfigHidden([
+      document.getElementById('question-home-activity-flag'),
+      document.getElementById('homeDetails'),
+      document.getElementById('homeDetailsNotes'),
+      document.getElementById('homeNotesWrap'),
+    ], !serviceQuestionEnabled('home', 'activity'));
+    setConfigHidden([document.getElementById('originalAdlQuestions')], !serviceQuestionEnabled('home', 'daily_living'));
+
     setConfigHidden([
       document.getElementById('question-public-activity-flag'),
       document.getElementById('publicDetails'),
       document.getElementById('publicDetailsNotes'),
       labelForName('public_activity_note'),
-    ], !!caregiverSetupState.selectedItems?.community?.length && !anyConfigItemEnabled('community', ['community_outing', 'transportation', 'recreation_participation']));
+    ], !serviceQuestionEnabled('community', 'activity',
+      !caregiverSetupState.selectedItems?.community?.length || anyConfigItemEnabled('community', ['community_outing', 'transportation', 'recreation_participation'])));
 
     setConfigHidden([
       document.getElementById('question-community-interaction-ok'),
       document.getElementById('interactionDetails'),
       document.getElementById('interactionDetailsNotes'),
-    ], !!caregiverSetupState.selectedItems?.community?.length && !anyConfigItemEnabled('community', ['social_interaction', 'safety_in_community']));
+    ], !serviceQuestionEnabled('community', 'interaction',
+      !caregiverSetupState.selectedItems?.community?.length || anyConfigItemEnabled('community', ['social_interaction', 'safety_in_community'])));
 
     setConfigHidden([
       labelForName('daily_living_notes'),
@@ -7004,6 +7037,11 @@
             if (s.id === 'physicalSection' && (healthConcernsPanel.hidden || healthConcernsPanel.classList.contains('config-hidden'))) {
               for (const field of healthConcernsPanel.querySelectorAll('[name]')) delete data[field.name];
             }
+            // Drafts can contain answers from a previous assignment. Submit only enabled question groups.
+            for (const field of stepFields(s)) {
+              if (field.closest('.config-hidden')) delete data[field.name];
+            }
+            if (!data.behavior_anomaly_notes) delete data.behavior_anomaly_flag;
 	        const def = getSectionDefForStep(s);
 	        if (def && isQuickClearedStatus(def)) {
 	          if (def.key === 'physical') {

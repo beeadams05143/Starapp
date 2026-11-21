@@ -378,7 +378,7 @@
       </fieldset>
       <fieldset id="assignedServices">
         <legend>Services this caregiver provides</legend>
-        <p>Choose the questions to include. The prompts listed under a checkbox are included with that question when they apply. Add a default location if the setting is consistent.</p>
+        <p>Choose which of the usual check-in questions this caregiver sees. Follow-up prompts appear when they apply. Add a default location if the setting is consistent.</p>
         <div data-assigned-service="home" style="margin:12px 0">
           <label class="category-toggle"><input type="checkbox" data-service-toggle> In-Home Support</label>
           <label class="item-label"><input type="checkbox" data-service-question="activity"><span>Engaged in a home/community activity?</span></label>
@@ -981,7 +981,7 @@
     }
 
     function syncItemDetail(input, detailWrap) {
-      if (!input || !detailWrap) return;
+      if (!input || detailWrap?.dataset.itemDetail !== input.dataset.itemKey) return;
       detailWrap.classList.toggle('is-hidden', !input.checked);
     }
 
@@ -1188,7 +1188,7 @@
         const optional = document.createElement('details');
         optional.className = 'optional-tracking';
         const summary = document.createElement('summary');
-        summary.textContent = 'Optional tracking objectives';
+        summary.textContent = 'Optional tracking questions';
         optional.appendChild(summary);
         const optionalItems = document.createElement('ul');
         optionalItems.className = 'item-list';
@@ -1213,7 +1213,7 @@
             label.appendChild(input);
             label.appendChild(text);
             li.appendChild(label);
-            li.appendChild(buildItemDetail(input, itemKey, itemLabel));
+            if (itemKey !== 'good_health') li.appendChild(buildItemDetail(input, itemKey, itemLabel));
             appendCheckinFollowups(li, itemKey);
             itemList.appendChild(li);
 

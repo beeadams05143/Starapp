@@ -542,7 +542,6 @@
             label: 'Mental Health / Internal State',
             objective: 'Observable indicators of anxiety, withdrawal, mood instability, or distress that affect participation',
             behaviors: [
-              { key: 'behavior_prn_used', label: 'PRN used for behavior / mental health support' },
               { key: 'anxiety_signs_present', label: 'Anxiety signs present' },
               { key: 'withdrawal_present', label: 'Withdrawal present' },
               { key: 'perseveration_present', label: 'Gets stuck on the same topic or idea' },
@@ -741,7 +740,6 @@
       reduces_verbal_outbursts: 'Uses a calmer voice and fewer verbal escalations.',
       uses_repair_after_conflict: 'Repairs after conflict through apology, calm return, or problem solving.',
       returns_to_activity: 'Returns to the planned activity after interruption or upset.',
-      behavior_prn_used: 'Use this when a PRN was given for anxiety, agitation, escalation, dysregulation, or another behavior / mental health reason during the shift.',
       anxiety_signs_present: 'Shows worry, tension, reassurance seeking, or other anxiety signs.',
       withdrawal_present: 'Pulls away from people, tasks, leisure activities, or participation more than usual.',
       perseveration_present: 'Gets stuck on one topic, thought, concern, or activity and has trouble shifting away from it.',
@@ -835,7 +833,6 @@
       reduces_verbal_outbursts: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
       uses_repair_after_conflict: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
       returns_to_activity: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Prompt level (0 Independent, 1 1-2 prompts, 2 Periodic prompts, 3 Frequent prompts, 4 Dependent)', 'Prompt type', 'Notes'],
-      behavior_prn_used: ['PRN used today?', 'When used: AM / Afternoon / Evening / Night', 'Reason / target behavior', 'Medication or support note'],
       anxiety_signs_present: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Intensity', 'Notes'],
       withdrawal_present: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Intensity', 'Notes'],
       perseveration_present: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Intensity', 'Notes'],
@@ -847,7 +844,7 @@
       distress_impacts_participation: ['Tracked today?', 'When observed: AM / Afternoon / Evening / Night', 'Intensity', 'Notes'],
       sleep: ['Hours of sleep', 'Time fell asleep', 'Difficulty falling asleep', 'Woke during the night', 'PRN used for sleep disturbance'],
       appetite: ['Change in appetite?', 'Appetite shift', 'Notes'],
-      prn_used: ['PRN used for sleep / pain / illness or other configured reason', 'Time / notes when relevant'],
+      prn_used: ['Time given, medication, and reason for each administration', 'Add another PRN if given again'],
       energy_level: ['Appears tired?', 'Notes'],
       pain_discomfort: ['Uses the same Illness Symptoms / Discomfort panel', 'Symptoms / concerns checklist', 'PRN used for symptoms / discomfort', 'Notes'],
       illness_symptoms: ['Symptoms or discomfort today?', 'Temperature if taken', 'How measured', 'Symptoms / concerns checklist', 'PRN used for symptoms / discomfort', 'Notes'],
@@ -1425,6 +1422,7 @@
       if (Object.keys(state.itemDescriptions || {}).length) {
         selectedItems.__item_descriptions__ = state.itemDescriptions;
       }
+      selectedItems.__central_prn_setup__ = true;
       selectedItems.__track_movement__ = document.getElementById("trackMovement").checked;
       selectedItems.__support_services__ = serviceSettings.hidden ? {} : readAssignedServices();
       selectedItems.__education_note__ = educationNote.checked;
@@ -1507,11 +1505,18 @@
       if (parent && !assignmentId) {
         selectedCategories.add('physical_health');
         selectedCategories.add('behavior_mental_health');
+        const includePrn = selectedItems.physical_health?.includes('prn_used');
         selectedItems.physical_health = ['sleep','good_health','illness_symptoms','pain_discomfort','energy_level','appetite'];
+        if (includePrn) selectedItems.physical_health.push('prn_used');
         if (!selectedItems.behavior_mental_health?.length) {
           selectedItems.behavior_mental_health = CATEGORY_DEFS.find(category => category.key === 'behavior_mental_health')
             .items.flatMap(section => section.behaviors.filter(question => question.original).map(question => question.key));
         }
+      }
+      if (selectedItems.__central_prn_setup__ !== true &&
+          (selectedCategories.has('behavior_mental_health') || (!parent && selectedCategories.has('physical_health')))) {
+        selectedCategories.add('physical_health');
+        selectedItems.physical_health = [...new Set([...(selectedItems.physical_health || []), 'prn_used'])];
       }
       serviceSettings.hidden = parent;
       document.getElementById('educationNoteSettings').hidden = parent;

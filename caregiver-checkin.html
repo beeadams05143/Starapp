@@ -4203,7 +4203,7 @@
     const configured = (caregiverSetupState.selectedItems.behavior_mental_health || [])
       .map((entry, index) => {
         const key = toBehaviorKey(entry) || `behavior_${index + 1}`;
-        if (seen.has(key) || originalBehaviorKeys.has(key)) return null;
+        if (seen.has(key) || originalBehaviorKeys.has(key) || key === 'behavior_prn_used') return null;
         seen.add(key);
         return {
           key,
@@ -4212,14 +4212,6 @@
       })
       .filter(Boolean);
 
-    // Behavior / Mental Health should always include a PRN tracker,
-    // even if admins did not explicitly select the dedicated library item.
-    if (!seen.has('behavior_prn_used')) {
-      configured.unshift({
-        key: 'behavior_prn_used',
-        label: toBehaviorLabel('behavior_prn_used'),
-      });
-    }
     return configured;
   }
 
@@ -4939,6 +4931,9 @@
           physical_health: ['sleep','good_health','illness_symptoms','pain_discomfort','energy_level','appetite'],
           behavior_mental_health: [...originalBehaviorKeys],
         };
+        if (normalizeConfigItems(config?.selected_items).physical_health?.includes('prn_used')) {
+          caregiverSetupState.selectedItems.physical_health.push('prn_used');
+        }
       } else {
         const allowed = new Set(['physical_health','behavior_mental_health']);
         caregiverSetupState.selectedCategories = new Set(
@@ -5003,7 +4998,7 @@
       document.getElementById('menstrualPanel'),
     ], !shouldShowMenstrualSection());
     setConfigHidden([
-      document.getElementById('prnPanel'),
+      document.getElementById('centralPrnSection'),
     ], false);
 
     renderAdlCategoryChips();
@@ -5072,11 +5067,14 @@
     const menstrualEnabled = visibility.menstrual;
     // Medication plans are managed by group admins in Team Updates,
     // never in caregiver shift check-ins. The PRN administration log stays here.
-    const prnEnabled = visibility.prn;
-    setConfigHidden([document.getElementById("centralPrnSection")], caregiverSetupState.isParent && !prnEnabled);
+    // Older setups showed the central log for staff in Physical Health and
+    // a separate PRN question whenever Behavior / Mental Health was enabled.
+    const prnEnabled = visibility.prn || (caregiverSetupState.selectedItems.__central_prn_setup__ !== true &&
+      (behaviorVisible || (!caregiverSetupState.isParent && physicalVisible)));
+    setConfigHidden([document.getElementById('centralPrnSection')], !prnEnabled);
     const movementEnabled = visibility.movement;
 
-    setStepAndNavHidden(physicalStep, progressItems.physical, !physicalVisible);
+    setStepAndNavHidden(physicalStep, progressItems.physical, !(physicalVisible || prnEnabled));
     setStepAndNavHidden(behaviorStep, progressItems.behavior, !behaviorVisible);
     setStepAndNavHidden(vocationalStep, progressItems.vocational, !hasAssignedShiftService('Ongoing Supported Employment'));
     setStepAndNavHidden(homeFamilyStep, progressItems.home_family, !hasAssignedShiftService('In-Home Support'));
@@ -5119,10 +5117,6 @@
     setConfigHidden([
       document.getElementById('movementSymptomsPanel'),
     ], !movementEnabled);
-
-    setConfigHidden([
-      document.getElementById('prnPanel'),
-    ], !prnEnabled);
 
     setConfigHidden([
       document.getElementById('menstrualPanel'),
@@ -6936,7 +6930,17 @@
 	        hydrateAdlFieldsFromData(draft.data[idx] || {}, { silent: true });
 	      }
 	      if (idx === 0) {
-	        hydratePrnFromData(draft.data[idx] || {});
+	        const physicalData = draft.data[idx] || {};
+	        const behaviorData = draft.data[movementStepIndex] || {};
+	        // Older drafts may only have answered the duplicate PRN question.
+	        // Leave the time and medication blank for the caregiver to confirm.
+	        const legacyPrn = !physicalData.prn_used_today &&
+	          behaviorData.behavior_occurred__behavior_prn_used === 'yes';
+	        hydratePrnFromData(legacyPrn ? {
+	          ...physicalData,
+	          prn_used_today: 'yes',
+	          prn_entries: [{ notes: behaviorData.behavior_notes__behavior_prn_used }],
+	        } : physicalData);
 	      }
 	      if (idx === movementStepIndex) {
         // Older drafts recorded movement under Physical Health (step 0).
